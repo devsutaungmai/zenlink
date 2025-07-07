@@ -15,6 +15,7 @@ import {
   EyeIcon
 } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
+import { useTranslation } from 'react-i18next'
 
 interface Employee {
   id: string
@@ -49,6 +50,7 @@ interface ShiftExchange {
 }
 
 export default function PendingRequestsPage() {
+  const { t } = useTranslation()
   const [pendingExchanges, setPendingExchanges] = useState<ShiftExchange[]>([])
   const [loading, setLoading] = useState(true)
   const [processingId, setProcessingId] = useState<string | null>(null)

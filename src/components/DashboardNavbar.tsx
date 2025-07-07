@@ -18,6 +18,8 @@ import {
 } from '@heroicons/react/24/outline'
 import { useRouter } from 'next/navigation'
 import { useUser } from '@/app/lib/useUser'
+import { useTranslation } from 'react-i18next'
+import LanguageSwitcher from './LanguageSwitcher'
 
 type NavigationChild = {
   name: string
@@ -31,50 +33,6 @@ type NavigationItem = {
   children?: NavigationChild[]
 }
 
-const adminNavigation: NavigationItem[] = [
-  { name: 'Home', href: '/dashboard', icon: HomeIcon },
-  { name: 'Users', href: '/dashboard/users', icon: UsersIcon },
-  {
-    name: 'Employees',
-    icon: UserGroupIcon,
-    children: [
-      { name: 'Departments', href: '/dashboard/departments' },
-      { name: 'Employees', href: '/dashboard/employees' },
-      { name: 'Employee Groups', href: '/dashboard/employee-groups' },
-      { name: 'Contracts', href: '/dashboard/employees' },
-      { name: 'Documents', href: '/dashboard/departments' },
-    ],
-  },
-  {
-    name: 'Schedule',
-    icon: ClockIcon,
-    children: [
-      { name: 'Shift', href: '/dashboard/shifts' },
-      { name: 'Schedule', href: '/dashboard/schedule' },
-      { name: 'Punch Clock', href: '/dashboard/punch-clock' },
-      { name: 'Availability', href: '/dashboard/availability' },
-      { name: 'Sick Leaves', href: '/dashboard/sick-leaves' },
-      { name: 'Pending Requests', href: '/dashboard/pending-requests' },
-    ],
-  },
-  {
-    name: 'Payroll',
-    icon: CurrencyDollarIcon,
-    children: [
-      { name: 'Payroll Periods', href: '/dashboard/payroll-periods' },
-      { name: 'Payroll Entries', href: '/dashboard/payroll-entries' },
-    ],
-  },
-  { name: 'Settings', href: '/dashboard/settings', icon: Cog6ToothIcon },
-]
-
-const employeeNavigation: NavigationItem[] = [
-  { name: 'Home', href: '/dashboard', icon: HomeIcon },
-  { name: 'Schedule', href: '/dashboard/schedule', icon: ClockIcon },
-  { name: 'Availability', href: '/employee/availability', icon: ClockIcon },
-  { name: 'Sick Leave', href: '/employee/sick-leaves', icon: UserIcon },
-]
-
 interface DashboardNavbarProps {
   setMobileMenuOpen: (open: boolean) => void
 }
@@ -82,8 +40,54 @@ interface DashboardNavbarProps {
 export default function DashboardNavbar({ setMobileMenuOpen }: DashboardNavbarProps) {
   const router = useRouter()
   const { user, loading } = useUser()
+  const { t } = useTranslation()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   console.log('User:', user);
+  
+  const adminNavigation: NavigationItem[] = [
+    { name: t('navigation.home'), href: '/dashboard', icon: HomeIcon },
+    { name: t('navigation.users'), href: '/dashboard/users', icon: UsersIcon },
+    {
+      name: t('navigation.employees'),
+      icon: UserGroupIcon,
+      children: [
+        { name: t('navigation.departments'), href: '/dashboard/departments' },
+        { name: t('navigation.employees'), href: '/dashboard/employees' },
+        { name: t('navigation.employee_groups'), href: '/dashboard/employee-groups' },
+        { name: t('navigation.contracts'), href: '/dashboard/employees' },
+        { name: t('navigation.documents'), href: '/dashboard/departments' },
+      ],
+    },
+    {
+      name: t('navigation.schedule'),
+      icon: ClockIcon,
+      children: [
+        { name: t('navigation.shift'), href: '/dashboard/shifts' },
+        { name: t('navigation.schedule'), href: '/dashboard/schedule' },
+        { name: t('navigation.punch_clock'), href: '/dashboard/punch-clock' },
+        { name: t('navigation.availability'), href: '/dashboard/availability' },
+        { name: t('navigation.sick_leaves'), href: '/dashboard/sick-leaves' },
+        { name: t('navigation.pending_requests'), href: '/dashboard/pending-requests' },
+      ],
+    },
+    {
+      name: t('navigation.payroll'),
+      icon: CurrencyDollarIcon,
+      children: [
+        { name: t('navigation.payroll_periods'), href: '/dashboard/payroll-periods' },
+        { name: t('navigation.payroll_entries'), href: '/dashboard/payroll-entries' },
+      ],
+    },
+    { name: t('navigation.settings'), href: '/dashboard/settings', icon: Cog6ToothIcon },
+  ]
+
+  const employeeNavigation: NavigationItem[] = [
+    { name: t('navigation.home'), href: '/dashboard', icon: HomeIcon },
+    { name: t('navigation.schedule'), href: '/dashboard/schedule', icon: ClockIcon },
+    { name: t('navigation.availability'), href: '/employee/availability', icon: ClockIcon },
+    { name: t('navigation.sick_leaves'), href: '/employee/sick-leaves', icon: UserIcon },
+  ]
+
   const navigation = user?.role === 'EMPLOYEE' ? employeeNavigation : adminNavigation
 
   const handleLogout = async () => {
@@ -175,8 +179,10 @@ export default function DashboardNavbar({ setMobileMenuOpen }: DashboardNavbarPr
           )}
         </div>
 
-        {/* Right section with notifications and profile */}
+        {/* Right section with language switcher, notifications and profile */}
         <div className="flex items-center space-x-3">
+          <LanguageSwitcher />
+          
           <button className="relative p-3 text-gray-600 hover:text-[#31BCFF] hover:bg-blue-50/50 rounded-xl transition-all duration-200 group">
             <BellIcon className="h-5 w-5 group-hover:scale-110 transition-transform duration-200" />
             <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full animate-pulse"></span>
@@ -226,7 +232,7 @@ export default function DashboardNavbar({ setMobileMenuOpen }: DashboardNavbarPr
                         } flex items-center px-4 py-3 text-sm font-medium rounded-xl mx-2 transition-all duration-200 hover:scale-105`}
                       >
                         <UserCircleIcon className="h-4 w-4 mr-3 opacity-60" />
-                        Edit Profile
+                        {t('navigation.edit_profile')}
                       </Link>
                     )}
                   </Menu.Item>
@@ -239,7 +245,7 @@ export default function DashboardNavbar({ setMobileMenuOpen }: DashboardNavbarPr
                         } flex items-center px-4 py-3 text-sm font-medium rounded-xl mx-2 transition-all duration-200 hover:scale-105`}
                       >
                         <ClockIcon className="h-4 w-4 mr-3 opacity-60" />
-                        Time Tracking Portal
+                        {t('navigation.time_tracking_portal')}
                       </Link>
                     )}
                   </Menu.Item> */}
@@ -255,7 +261,7 @@ export default function DashboardNavbar({ setMobileMenuOpen }: DashboardNavbarPr
                         <svg className="h-4 w-4 mr-3 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                         </svg>
-                        Log out
+                        {t('navigation.logout')}
                       </button>
                     )}
                   </Menu.Item>

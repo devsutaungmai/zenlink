@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslation } from 'react-i18next'
 import DepartmentForm from '@/components/DepartmentForm'
 
 interface Department {
@@ -18,6 +19,7 @@ interface Department {
 
 export default function EditDepartmentPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
+  const { t } = useTranslation()
   const departmentId = React.use(params).id
   const [department, setDepartment] = useState<Department | null>(null)
   const [loading, setLoading] = useState(true)
@@ -41,7 +43,7 @@ export default function EditDepartmentPage({ params }: { params: Promise<{ id: s
     fetchDepartment()
   }, [departmentId])
 
-  const handleSubmit = async (formData: Department) => {
+  const handleSubmit = async (formData: any) => {
     setSaving(true)
     setError(null)
 
@@ -85,7 +87,7 @@ export default function EditDepartmentPage({ params }: { params: Promise<{ id: s
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <h3 className="text-lg font-medium text-red-900 mb-2">Error Loading Department</h3>
+          <h3 className="text-lg font-medium text-red-900 mb-2">{t('common.error')}</h3>
           <p className="text-red-700">{error}</p>
         </div>
       </div>
@@ -99,15 +101,15 @@ export default function EditDepartmentPage({ params }: { params: Promise<{ id: s
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-              Edit Department
+              {t('departments.edit_department')}
             </h1>
             <p className="mt-2 text-gray-600">
-              Update department information
+              {t('departments.description')}
             </p>
             {department && (
               <div className="mt-3 flex items-center text-sm text-gray-500">
                 <div className="w-2 h-2 bg-[#31BCFF] rounded-full mr-2"></div>
-                Editing: {department.name}
+                {t('departments.edit_department_action')}: {department.name}
               </div>
             )}
           </div>
@@ -135,7 +137,16 @@ export default function EditDepartmentPage({ params }: { params: Promise<{ id: s
       {/* Form Container */}
       <div className="bg-white/80 p-3 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg">
         <DepartmentForm 
-          initialData={department}
+          initialData={department ? {
+            name: department.name,
+            number: department.number,
+            address: department.address,
+            address2: department.address2,
+            postCode: department.postCode,
+            city: department.city,
+            phone: department.phone,
+            country: department.country
+          } : undefined}
           onSubmit={handleSubmit} 
           loading={saving} 
         />

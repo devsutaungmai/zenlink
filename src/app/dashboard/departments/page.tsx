@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
+import { useTranslation } from 'react-i18next'
 import Swal from 'sweetalert2'
 
 interface Department {
@@ -21,6 +22,7 @@ interface Department {
 }
 
 export default function DepartmentsPage() {
+  const { t } = useTranslation()
   const [departments, setDepartments] = useState<Department[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -57,14 +59,14 @@ export default function DepartmentsPage() {
   const handleDelete = async (id: string) => {
     try {
       const result = await Swal.fire({
-        title: 'Are you sure?',
-        text: "You won't be able to revert this!",
+        title: t('common.confirm'),
+        text: t('departments.delete_department'),
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#31BCFF',
         cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, delete it!',
-        cancelButtonText: 'Cancel'
+        confirmButtonText: t('common.yes'),
+        cancelButtonText: t('common.cancel')
       })
 
       if (result.isConfirmed) {
@@ -76,8 +78,8 @@ export default function DepartmentsPage() {
           setDepartments(departments.filter(dept => dept.id !== id))
           
           await Swal.fire({
-            title: 'Deleted!',
-            text: 'Department has been deleted.',
+            title: t('common.success'),
+            text: t('departments.delete_department'),
             icon: 'success',
             confirmButtonColor: '#31BCFF',
           })
@@ -88,8 +90,8 @@ export default function DepartmentsPage() {
     } catch (error) {
       console.error('Error deleting department:', error)
       await Swal.fire({
-        title: 'Error!',
-        text: 'Failed to delete department.',
+        title: t('common.error'),
+        text: t('departments.delete_department'),
         icon: 'error',
         confirmButtonColor: '#31BCFF',
       })
@@ -116,19 +118,19 @@ export default function DepartmentsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between">
           <div className="mb-4 sm:mb-0">
             <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-              Departments
+              {t('departments.title')}
             </h1>
             <p className="mt-2 text-gray-600">
-              Manage and organize your company departments
+              {t('departments.description')}
             </p>
             <div className="mt-4 flex items-center space-x-4 text-sm text-gray-500">
               <span className="flex items-center">
                 <div className="w-2 h-2 bg-[#31BCFF] rounded-full mr-2"></div>
-                {departments.length} Total Departments
+                {t('departments.total_departments', { count: departments.length })}
               </span>
               <span className="flex items-center">
                 <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                {departments.reduce((sum, dept) => sum + dept._count.employees, 0)} Total Employees
+                {t('departments.total_employees', { count: departments.reduce((sum, dept) => sum + dept._count.employees, 0) })}
               </span>
             </div>
           </div>
@@ -137,7 +139,7 @@ export default function DepartmentsPage() {
             className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 group"
           >
             <PlusIcon className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
-            Create Department
+            {t('departments.create_department')}
           </Link>
         </div>
       </div>
@@ -153,12 +155,12 @@ export default function DepartmentsPage() {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search departments..."
+              placeholder={t('departments.search_placeholder')}
               className="block w-full pl-12 pr-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
             />
           </div>
           <div className="flex items-center text-sm text-gray-500">
-            Showing {filteredDepartments.length} of {departments.length} departments
+            {t('employees.showing', { current: filteredDepartments.length, total: departments.length })}
           </div>
         </div>
       </div>
@@ -169,9 +171,9 @@ export default function DepartmentsPage() {
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <MagnifyingGlassIcon className="w-8 h-8 text-gray-400" />
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No departments found</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">{t('departments.no_departments_found')}</h3>
           <p className="text-gray-500 mb-6">
-            {searchTerm ? 'Try adjusting your search terms' : 'Get started by creating your first department'}
+            {searchTerm ? t('departments.adjust_search') : t('departments.get_started')}
           </p>
           {!searchTerm && (
             <Link
@@ -179,7 +181,7 @@ export default function DepartmentsPage() {
               className="inline-flex items-center px-6 py-3 rounded-xl bg-[#31BCFF] text-white font-medium hover:bg-[#31BCFF]/90 transition-colors duration-200"
             >
               <PlusIcon className="w-5 h-5 mr-2" />
-              Create First Department
+              {t('departments.create_first_department')}
             </Link>
           )}
         </div>
@@ -198,7 +200,7 @@ export default function DepartmentsPage() {
                   </h3>
                   {department.number && (
                     <p className="text-sm text-gray-500 mt-1">
-                      Dept. #{department.number}
+                      {t('departments.department_number_label', { number: department.number })}
                     </p>
                   )}
                 </div>
@@ -234,7 +236,7 @@ export default function DepartmentsPage() {
                         {department._count.employees}
                       </p>
                       <p className="text-sm text-gray-500">
-                        {department._count.employees === 1 ? 'Employee' : 'Employees'}
+                        {department._count.employees === 1 ? t('departments.employees_count', { count: department._count.employees }) : t('departments.employees_count_plural', { count: department._count.employees })}
                       </p>
                     </div>
                   </div>
@@ -267,7 +269,7 @@ export default function DepartmentsPage() {
                   className="w-full inline-flex items-center justify-center px-4 py-2 rounded-xl bg-gray-50 text-gray-700 font-medium hover:bg-[#31BCFF] hover:text-white transition-all duration-200 group/btn"
                 >
                   <PencilIcon className="w-4 h-4 mr-2 group-hover/btn:scale-110 transition-transform duration-200" />
-                  Edit Department
+                  {t('departments.edit_department_action')}
                 </Link>
               </div>
             </div>

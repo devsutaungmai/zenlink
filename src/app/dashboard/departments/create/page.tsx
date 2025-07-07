@@ -2,10 +2,12 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslation } from 'react-i18next'
 import DepartmentForm from '@/components/DepartmentForm'
 
 export default function CreateDepartmentPage() {
   const router = useRouter()
+  const { t } = useTranslation()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -40,10 +42,10 @@ export default function CreateDepartmentPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-              Create Department
+              {t('departments.create_department')}
             </h1>
             <p className="mt-2 text-gray-600">
-              Add a new department to your organization
+              {t('departments.description')}
             </p>
           </div>
           <div className="hidden md:flex items-center space-x-2">
