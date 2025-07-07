@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
+import { useTranslation } from 'react-i18next'
 import Swal from 'sweetalert2'
 
 interface EmployeeGroup {
@@ -17,6 +18,7 @@ interface EmployeeGroup {
 }
 
 export default function EmployeeGroupsPage() {
+  const { t } = useTranslation()
   const [employeeGroups, setEmployeeGroups] = useState<EmployeeGroup[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -47,7 +49,7 @@ export default function EmployeeGroupsPage() {
       }
     } catch (error) {
       console.error('Error fetching employee groups:', error)
-      setError('Failed to load employee groups. Please try again later.')
+      setError(t('employee_groups.error_loading'))
       setEmployeeGroups([])
     } finally {
       setLoading(false)
@@ -57,14 +59,14 @@ export default function EmployeeGroupsPage() {
   const handleDelete = async (id: string) => {
     try {
       const result = await Swal.fire({
-        title: 'Are you sure?',
-        text: "You won't be able to revert this!",
+        title: t('employee_groups.confirm_delete'),
+        text: t('employee_groups.delete_warning'),
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#31BCFF',
         cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, delete it!',
-        cancelButtonText: 'Cancel'
+        confirmButtonText: t('employee_groups.delete_confirm'),
+        cancelButtonText: t('common.cancel')
       })
 
       if (result.isConfirmed) {
@@ -79,8 +81,8 @@ export default function EmployeeGroupsPage() {
         setEmployeeGroups(employeeGroups.filter(group => group.id !== id))
         
         await Swal.fire({
-          title: 'Deleted!',
-          text: 'Employee group has been deleted.',
+          title: t('employee_groups.deleted'),
+          text: t('employee_groups.delete_success'),
           icon: 'success',
           confirmButtonColor: '#31BCFF',
         })
@@ -88,8 +90,8 @@ export default function EmployeeGroupsPage() {
     } catch (error) {
       console.error('Error deleting employee group:', error)
       await Swal.fire({
-        title: 'Error!',
-        text: 'Failed to delete employee group. Please try again.',
+        title: t('common.error'),
+        text: t('employee_groups.delete_error'),
         icon: 'error',
         confirmButtonColor: '#31BCFF',
       })
@@ -113,12 +115,12 @@ export default function EmployeeGroupsPage() {
     return (
       <div className="p-6">
         <div className="text-center text-red-600">
-          Error: {error}
+          {t('common.error')}: {error}
           <button 
             onClick={fetchEmployeeGroups}
             className="ml-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
           >
-            Retry
+            {t('common.try_again')}
           </button>
         </div>
       </div>
@@ -132,10 +134,10 @@ export default function EmployeeGroupsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between">
           <div className="mb-4 sm:mb-0">
             <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-              Employee Groups
+              {t('employee_groups.title')}
             </h1>
             <p className="mt-2 text-gray-600">
-              Manage employee groups and their wage settings
+              {t('employee_groups.description')}
             </p>
           </div>
           <Link
@@ -143,7 +145,7 @@ export default function EmployeeGroupsPage() {
             className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 group"
           >
             <PlusIcon className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
-            Create Employee Group
+            {t('employee_groups.create_group')}
           </Link>
         </div>
       </div>
@@ -157,13 +159,13 @@ export default function EmployeeGroupsPage() {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search employee groups..."
+              placeholder={t('employee_groups.search_placeholder')}
               className="block w-full pl-12 pr-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
             />
           </div>
         </div>
         <div className="flex items-center justify-between mt-4 text-sm text-gray-500">
-          <span>Showing {filteredEmployeeGroups.length} of {employeeGroups.length} employee groups</span>
+          <span>{t('employee_groups.showing', { current: filteredEmployeeGroups.length, total: employeeGroups.length })}</span>
         </div>
       </div>
 
@@ -173,9 +175,9 @@ export default function EmployeeGroupsPage() {
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <MagnifyingGlassIcon className="w-8 h-8 text-gray-400" />
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No employee groups found</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">{t('employee_groups.no_groups_found')}</h3>
           <p className="text-gray-500 mb-6">
-            {searchTerm ? 'Try adjusting your search terms' : 'Get started by creating your first employee group'}
+            {searchTerm ? t('employee_groups.adjust_search') : t('employee_groups.get_started')}
           </p>
           {!searchTerm && (
             <Link
@@ -183,7 +185,7 @@ export default function EmployeeGroupsPage() {
               className="inline-flex items-center px-6 py-3 rounded-xl bg-[#31BCFF] text-white font-medium hover:bg-[#31BCFF]/90 transition-colors duration-200"
             >
               <PlusIcon className="w-5 h-5 mr-2" />
-              Create First Group
+              {t('employee_groups.create_first_group')}
             </Link>
           )}
         </div>
@@ -194,22 +196,22 @@ export default function EmployeeGroupsPage() {
               <thead className="bg-gray-50/80">
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Group Name
+                    {t('employee_groups.table.group_name')}
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Wage Type
+                    {t('employee_groups.table.wage_type')}
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Hourly Wage
+                    {t('employee_groups.table.hourly_wage')}
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Wage/Shift
+                    {t('employee_groups.table.wage_shift')}
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Employees
+                    {t('employee_groups.table.employees')}
                   </th>
                   <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
+                    {t('actions')}
                   </th>
                 </tr>
               </thead>
@@ -238,7 +240,7 @@ export default function EmployeeGroupsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                        {group._count.employees} employees
+                        {group._count.employees} {t('employee_groups.table.employees')}
                       </span>
                     </td>
                     <td className="px-6 py-4">
@@ -246,14 +248,14 @@ export default function EmployeeGroupsPage() {
                         <Link
                           href={`/dashboard/employee-groups/${group.id}/edit`}
                           className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
-                          title="Edit Employee Group"
+                          title={t('employee_groups.edit_group')}
                         >
                           <PencilIcon className="h-4 w-4" />
                         </Link>
                         <button
                           onClick={() => handleDelete(group.id)}
                           className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                          title="Delete Employee Group"
+                          title={t('employee_groups.delete_group')}
                         >
                           <TrashIcon className="h-4 w-4" />
                         </button>

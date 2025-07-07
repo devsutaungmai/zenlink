@@ -1,4 +1,5 @@
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 
 export enum WageType {
   HOURLY = 'HOURLY',
@@ -19,6 +20,7 @@ interface EmployeeGroupFormProps {
 }
 
 export default function EmployeeGroupForm({ initialData, onSubmit, loading }: EmployeeGroupFormProps) {
+  const { t } = useTranslation()
   const [formData, setFormData] = React.useState<EmployeeGroupFormData>(
     initialData || {
       name: '',
@@ -46,14 +48,14 @@ export default function EmployeeGroupForm({ initialData, onSubmit, loading }: Em
       <div className="grid grid-cols-1 gap-6">
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Group Name <span className="text-red-500">*</span>
+            {t('employee_groups.form.group_name')} <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             className="block w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-            placeholder="Enter group name"
+            placeholder={t('employee_groups.form.group_name_placeholder')}
             required
           />
         </div>
@@ -61,7 +63,7 @@ export default function EmployeeGroupForm({ initialData, onSubmit, loading }: Em
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Hourly Wage <span className="text-red-500">*</span>
+              {t('employee_groups.form.hourly_wage')} <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">$</span>
@@ -74,12 +76,12 @@ export default function EmployeeGroupForm({ initialData, onSubmit, loading }: Em
                 required
               />
             </div>
-            <p className="mt-1 text-xs text-gray-500">Amount paid per hour worked</p>
+            <p className="mt-1 text-xs text-gray-500">{t('employee_groups.form.hourly_wage_help')}</p>
           </div>
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Wage Per Shift <span className="text-red-500">*</span>
+              {t('employee_groups.form.wage_per_shift')} <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">$</span>
@@ -92,13 +94,13 @@ export default function EmployeeGroupForm({ initialData, onSubmit, loading }: Em
                 required
               />
             </div>
-            <p className="mt-1 text-xs text-gray-500">Fixed amount paid per shift</p>
+            <p className="mt-1 text-xs text-gray-500">{t('employee_groups.form.wage_per_shift_help')}</p>
           </div>
         </div>
 
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Default Wage Type <span className="text-red-500">*</span>
+            {t('employee_groups.form.default_wage_type')} <span className="text-red-500">*</span>
           </label>
           <select
             value={formData.defaultWageType}
@@ -106,10 +108,10 @@ export default function EmployeeGroupForm({ initialData, onSubmit, loading }: Em
             className="block w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
             required
           >
-            <option value={WageType.HOURLY}>Hourly Wage</option>
-            <option value={WageType.PER_SHIFT}>Wage Per Shift</option>
+            <option value={WageType.HOURLY}>{t('employee_groups.form.hourly_wage_option')}</option>
+            <option value={WageType.PER_SHIFT}>{t('employee_groups.form.wage_per_shift_option')}</option>
           </select>
-          <p className="mt-1 text-xs text-gray-500">Choose the primary payment method for this group</p>
+          <p className="mt-1 text-xs text-gray-500">{t('employee_groups.form.default_wage_type_help')}</p>
         </div>
       </div>
 
@@ -119,7 +121,7 @@ export default function EmployeeGroupForm({ initialData, onSubmit, loading }: Em
           onClick={() => window.history.back()}
           className="px-6 py-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#31BCFF] transition-all duration-200"
         >
-          Cancel
+          {t('common.cancel')}
         </button>
         <button
           type="submit"
@@ -129,10 +131,10 @@ export default function EmployeeGroupForm({ initialData, onSubmit, loading }: Em
           {loading ? (
             <>
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-              Creating...
+              {initialData ? t('employee_groups.form.updating') : t('employee_groups.form.creating')}
             </>
           ) : (
-            'Create Group'
+            initialData ? t('employee_groups.form.update_group') : t('employee_groups.form.create_group')
           )}
         </button>
       </div>

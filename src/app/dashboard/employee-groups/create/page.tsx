@@ -2,9 +2,11 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslation } from 'react-i18next'
 import EmployeeGroupForm from '@/components/EmployeeGroupForm'
 
 export default function CreateEmployeeGroupPage() {
+  const { t } = useTranslation()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -37,7 +39,7 @@ export default function CreateEmployeeGroupPage() {
   return (
     <div className="py-6">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-2xl font-semibold text-gray-900">Create New Employee Group</h1>
+        <h1 className="text-2xl font-semibold text-gray-900">{t('employee_groups.create_page.title')}</h1>
         
         {error && (
           <div className="mt-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-md">

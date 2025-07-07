@@ -10,6 +10,7 @@ import {
   ArrowsRightLeftIcon,
   ClockIcon
 } from '@heroicons/react/24/outline'
+import { useTranslation } from 'react-i18next'
 import Swal from 'sweetalert2'
 import ShiftExchangeInfo from '@/components/ShiftExchangeInfo'
 
@@ -59,6 +60,7 @@ interface EmployeeOption {
 }
 
 export default function ShiftsPage() {
+  const { t } = useTranslation()
   const [shifts, setShifts] = useState<Shift[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -94,14 +96,14 @@ export default function ShiftsPage() {
   const handleDelete = async (id: string) => {
     try {
       const result = await Swal.fire({
-        title: 'Are you sure?',
-        text: "You won't be able to revert this!",
+        title: t('shifts.confirm_delete'),
+        text: t('shifts.delete_warning'),
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#31BCFF',
         cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, delete it!',
-        cancelButtonText: 'Cancel'
+        confirmButtonText: t('shifts.delete_confirm'),
+        cancelButtonText: t('cancel')
       })
 
       if (result.isConfirmed) {
@@ -113,8 +115,8 @@ export default function ShiftsPage() {
           setShifts(shifts.filter(shift => shift.id !== id))
           
           await Swal.fire({
-            title: 'Deleted!',
-            text: 'Shift has been deleted.',
+            title: t('shifts.deleted'),
+            text: t('shifts.delete_success'),
             icon: 'success',
             confirmButtonColor: '#31BCFF',
           })
@@ -125,8 +127,8 @@ export default function ShiftsPage() {
     } catch (error) {
       console.error('Error deleting shift:', error)
       await Swal.fire({
-        title: 'Error!',
-        text: 'Failed to delete shift.',
+        title: t('error'),
+        text: t('shifts.delete_error'),
         icon: 'error',
         confirmButtonColor: '#31BCFF',
       })
@@ -140,11 +142,11 @@ export default function ShiftsPage() {
       .join('')
 
     const { value: employeeId } = await Swal.fire({
-      title: 'Exchange Shift',
+      title: t('shifts.exchange_shift'),
       html: `
-        <label for="employee-select" style="display:block;text-align:left;margin-bottom:8px;">Select the new employee</label>
+        <label for="employee-select" style="display:block;text-align:left;margin-bottom:8px;">${t('shifts.select_new_employee')}</label>
         <select id="employee-select" class="swal2-input" style="width:100%">
-          <option value="">Select employee</option>
+          <option value="">${t('shifts.select_employee')}</option>
           ${optionsHtml}
         </select>
       `,
@@ -166,18 +168,18 @@ export default function ShiftsPage() {
         })
         
         if (res.ok) {
-          await Swal.fire('Success', 'Shift exchanged successfully!', 'success')
+          await Swal.fire(t('success'), t('shifts.exchange_success'), 'success')
           fetchShifts()
         } else {
           const errorData = await res.json()
           
           if (res.status === 409 && errorData.conflict) {
             await Swal.fire({
-              title: 'Scheduling Conflict',
+              title: t('shifts.scheduling_conflict'),
               html: `
                 <div class="text-left">
                   <p>${errorData.error}</p>
-                  <p class="mt-2"><strong>Conflicting shift time:</strong> ${errorData.conflict.time}</p>
+                  <p class="mt-2"><strong>${t('shifts.conflicting_shift_time')}:</strong> ${errorData.conflict.time}</p>
                 </div>
               `,
               icon: 'warning',
@@ -189,7 +191,7 @@ export default function ShiftsPage() {
         }
       } catch (error) {
         console.error('Error exchanging shift:', error)
-        await Swal.fire('Error', 'Failed to exchange shift.', 'error')
+        await Swal.fire(t('error'), t('shifts.exchange_error'), 'error')
       }
     }
   }
@@ -206,8 +208,8 @@ export default function ShiftsPage() {
       
       if (exchanges.length === 0) {
         await Swal.fire({
-          title: 'No History',
-          text: 'This shift has no exchange history.',
+          title: t('shifts.no_history'),
+          text: t('shifts.no_exchange_history'),
           icon: 'info',
           confirmButtonColor: '#31BCFF',
         })
@@ -217,21 +219,21 @@ export default function ShiftsPage() {
       // Format the exchange history for display
       const historyHtml = exchanges.map((exchange: any) => `
         <div class="border-b pb-2 mb-2">
-          <p><strong>From:</strong> ${exchange.fromEmployee.firstName} ${exchange.fromEmployee.lastName}</p>
-          <p><strong>To:</strong> ${exchange.toEmployee.firstName} ${exchange.toEmployee.lastName}</p>
-          <p><strong>Date:</strong> ${new Date(exchange.exchangedAt).toLocaleString()}</p>
+          <p><strong>${t('shifts.from')}:</strong> ${exchange.fromEmployee.firstName} ${exchange.fromEmployee.lastName}</p>
+          <p><strong>${t('shifts.to')}:</strong> ${exchange.toEmployee.firstName} ${exchange.toEmployee.lastName}</p>
+          <p><strong>${t('shifts.date')}:</strong> ${new Date(exchange.exchangedAt).toLocaleString()}</p>
         </div>
       `).join('')
       
       await Swal.fire({
-        title: 'Shift Exchange History',
+        title: t('shifts.exchange_history'),
         html: `<div class="text-left">${historyHtml}</div>`,
         confirmButtonColor: '#31BCFF',
         width: 600,
       })
     } catch (error) {
       console.error('Error fetching exchange history:', error)
-      await Swal.fire('Error', 'Failed to load exchange history.', 'error')
+      await Swal.fire(t('error'), t('shifts.history_error'), 'error')
     }
   }
 
@@ -244,16 +246,16 @@ export default function ShiftsPage() {
   )
 
   if (loading) {
-    return <div className="flex items-center justify-center h-32">Loading...</div>
+    return <div className="flex items-center justify-center h-32">{t('loading')}...</div>
   }
 
   return (
     <>
       <div className="sm:flex sm:items-center">
         <div className="sm:flex-auto">
-          <h1 className="text-xl font-semibold text-gray-900">Shifts</h1>
+          <h1 className="text-xl font-semibold text-gray-900">{t('shifts.title')}</h1>
           <p className="mt-2 text-sm text-gray-700">
-            A list of all shifts in your organization.
+            {t('shifts.description')}
           </p>
         </div>
         <div className="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
@@ -262,7 +264,7 @@ export default function ShiftsPage() {
             className="inline-flex items-center justify-center rounded-md border border-transparent bg-[#31BCFF] px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-[#31BCFF]/90"
           >
             <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
-            Create Shift
+            {t('shifts.create_shift')}
           </Link>
         </div>
       </div>
@@ -276,7 +278,7 @@ export default function ShiftsPage() {
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search shifts..."
+            placeholder={t('shifts.search_placeholder')}
             className="block w-full rounded-md border border-gray-300 bg-white py-2 pl-10 pr-3 text-sm placeholder-gray-500 focus:border-[#31BCFF] focus:outline-none focus:ring-1 focus:ring-[#31BCFF]"
           />
         </div>
@@ -289,14 +291,14 @@ export default function ShiftsPage() {
               <table className="min-w-full divide-y divide-gray-300">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Date</th>
-                    <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Time</th>
-                    <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Employee</th>
-                    <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Group</th>
-                    <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Type</th>
-                    <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Status</th>
+                    <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">{t('shifts.table.date')}</th>
+                    <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">{t('shifts.table.time')}</th>
+                    <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">{t('shifts.table.employee')}</th>
+                    <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">{t('group')}</th>
+                    <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">{t('shifts.table.type')}</th>
+                    <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">{t('shifts.table.status')}</th>
                     <th className="relative py-3.5 pl-3 pr-4 sm:pr-6">
-                      <span className="sr-only">Actions</span>
+                      <span className="sr-only">{t('shifts.table.actions')}</span>
                     </th>
                   </tr>
                 </thead>
@@ -323,7 +325,7 @@ export default function ShiftsPage() {
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                             shift.approved ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
                           }`}>
-                            {shift.approved ? 'Approved' : 'Pending'}
+                            {shift.approved ? t('shifts.status.approved') : t('shifts.status.pending')}
                           </span>
                         </td>
                         <td className="relative whitespace-nowrap pl-3 pr-4 sm:pr-6 flex items-center space-x-4">
@@ -342,14 +344,14 @@ export default function ShiftsPage() {
                           <button
                             onClick={() => handleExchange(shift)}
                             className="text-indigo-600 hover:text-indigo-900"
-                            title="Exchange Shift"
+                            title={t('exchange_shift')}
                           >
                             <ArrowsRightLeftIcon className="h-5 w-5 mt-3" />
                           </button>
                           <button
                             onClick={() => handleViewHistory(shift.id)}
                             className="text-amber-600 hover:text-amber-900"
-                            title="View Exchange History"
+                            title={t('view_exchange_history')}
                           >
                             <ClockIcon className="h-5 w-5 mt-3" />
                           </button>

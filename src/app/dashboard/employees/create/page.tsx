@@ -2,10 +2,12 @@
 
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslation } from 'react-i18next'
 import EmployeeForm from '@/components/EmployeeForm'
 import { Department, EmployeeGroup } from '@prisma/client'
 
 export default function CreateEmployeePage() {
+  const { t } = useTranslation()
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -77,7 +79,7 @@ export default function CreateEmployeePage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="p-4 text-gray-500">Loading form data...</div>
+        <div className="p-4 text-gray-500">{t('employees.create_page.loading')}</div>
       </div>
     )
   }
@@ -93,14 +95,14 @@ export default function CreateEmployeePage() {
                 onClick={() => router.push('/dashboard')}
                 className="w-full px-4 py-2 text-sm font-medium text-white bg-[#31BCFF] rounded-md hover:bg-[#31BCFF]/90"
               >
-                Back to Dashboard
+                {t('employees.create_page.back_to_dashboard')}
               </button>
             ) : (
               <button
                 onClick={() => {}}
                 className="w-full px-4 py-2 text-sm font-medium text-white bg-[#31BCFF] rounded-md hover:bg-[#31BCFF]/90"
               >
-                Try Again
+                {t('employees.create_page.try_again')}
               </button>
             )}
           </div>
@@ -112,7 +114,7 @@ export default function CreateEmployeePage() {
   return (
     <div className="py-6">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-2xl font-semibold text-gray-900">Create New Employee</h1>
+        <h1 className="text-2xl font-semibold text-gray-900">{t('employees.create_page.title')}</h1>
         
         {error && (
           <div className="mt-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-md">

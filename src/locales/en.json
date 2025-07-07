@@ -51,8 +51,10 @@
   },
   "employees": {
     "title": "Employees",
-    "search_placeholder": "Search employees...",
+    "description": "Manage your organization's employees and their information",
+    "search_placeholder": "Search by name, employee number, department, or mobile...",
     "add_employee": "Add Employee",
+    "create_employee": "Create Employee",
     "edit_employee": "Edit Employee",
     "delete_employee": "Delete Employee",
     "employee_details": "Employee Details",
@@ -61,6 +63,7 @@
     "last_name": "Last Name",
     "email": "Email",
     "phone": "Phone",
+    "mobile": "Mobile",
     "department": "Department",
     "employee_group": "Employee Group",
     "hire_date": "Hire Date",
@@ -71,11 +74,218 @@
     "view": "View",
     "active": "Active",
     "inactive": "Inactive",
-    "create_employee": "Create Employee",
     "save": "Save",
     "cancel": "Cancel",
     "loading": "Loading...",
-    "no_employees": "No employees found"
+    "no_employees": "No employees found",
+    "no_employees_message": "Try adjusting your search terms",
+    "get_started": "Get started by adding your first employee",
+    "add_first_employee": "Add First Employee",
+    "showing": "Showing {{current}} of {{total}} employees",
+    "team_leader": "Team Leader",
+    "no_group": "No group",
+    "send_invite": "Send Invite",
+    "set_pin": "Set PIN",
+    "confirm_delete": "Are you sure?",
+    "delete_warning": "You won't be able to revert this!",
+    "delete_success": "Employee has been deleted.",
+    "delete_error": "Failed to delete employee.",
+    "invite_modal": {
+      "title": "Send Invite",
+      "email_label": "Email",
+      "send_button": "Send Invite",
+      "sending": "Sending...",
+      "success": "Invite sent successfully!",
+      "error": "Failed to send invite."
+    },
+    "pin_modal": {
+      "title": "Set PIN for {{name}}",
+      "pin_label": "6-Digit PIN",
+      "pin_placeholder": "123456",
+      "pin_help": "Enter a 6-digit PIN for time tracking",
+      "set_button": "Set PIN",
+      "invalid_pin": "PIN must be exactly 6 digits",
+      "success": "PIN has been set successfully!",
+      "error": "Failed to set PIN. Please try again."
+    },
+    "edit_page": {
+      "title": "Edit Employee",
+      "back_to_employees": "Back to Employees",
+      "try_again": "Try Again",
+      "employee_info": "Manage employee information, shifts, payslips, and sick leave",
+      "tabs": {
+        "details": "Employee Details",
+        "shifts": "Shifts",
+        "payslips": "Payslips",
+        "sick_leave": "Sick Leave"
+      },
+      "shifts_tab": {
+        "title": "Employee Shifts",
+        "showing_for": "Showing shifts for {{name}}",
+        "filter_shifts": "Filter Shifts",
+        "search_placeholder": "Search shifts...",
+        "all_months": "All Months",
+        "clear_filters": "Clear Filters",
+        "no_shifts": "No Shifts Found",
+        "no_shifts_assigned": "This employee has no shifts assigned yet.",
+        "no_shifts_filtered": "No shifts match your current filters. Try adjusting the search criteria.",
+        "table": {
+          "date_time": "Date & Time",
+          "type": "Type",
+          "group": "Group",
+          "wage": "Wage",
+          "status": "Status",
+          "notes": "Notes"
+        },
+        "status": {
+          "active": "Active",
+          "completed": "Completed",
+          "pending": "Pending"
+        }
+      },
+      "payslips_tab": {
+        "title": "Employee Payslips",
+        "description": "Download and view payslips",
+        "archive_title": "Payslips Archive",
+        "archive_description": "Access and download payslips for this employee"
+      },
+      "sick_leave_tab": {
+        "title": "Sick Leave Records",
+        "description": "View and manage sick leave requests",
+        "no_records": "No Sick Leave Records",
+        "no_records_description": "This employee has no sick leave records yet."
+      }
+    },
+    "create_page": {
+      "title": "Create New Employee",
+      "loading": "Loading form data...",
+      "back_to_dashboard": "Back to Dashboard",
+      "try_again": "Try Again"
+    },
+    "table": {
+      "employee": "Employee",
+      "employee_no": "Employee No.",
+      "department": "Department",
+      "group": "Group",
+      "contact": "Contact",
+      "actions": "Actions",
+      "team_leader": "Team Leader",
+      "no_group": "No group",
+      "send_invite": "Send Invite",
+      "set_pin": "Set PIN",
+      "edit_employee": "Edit Employee",
+      "delete_employee": "Delete Employee"
+    },
+    "invite_modal": {
+      "title": "Send Invite",
+      "email": "Email",
+      "send": "Send",
+      "sending": "Sending...",
+      "success": "Invite sent successfully!",
+      "error": "Failed to send invite."
+    },
+    "pin_modal": {
+      "title": "Set PIN for {{name}}",
+      "pin_label": "6-Digit PIN",
+      "pin_description": "Enter a 6-digit PIN that the employee will use to punch in/out",
+      "set_pin": "Set PIN",
+      "success": "PIN set successfully!",
+      "error": "Failed to set PIN."
+    },
+    "form": {
+      "first_name": "First Name",
+      "last_name": "Last Name",
+      "birthday": "Birthday",
+      "gender": "Gender",
+      "male": "Male",
+      "female": "Female",
+      "other": "Other",
+      "social_security_no": "Social Security Number",
+      "employee_number": "Employee Number",
+      "date_of_hire": "Date of Hire",
+      "hours_per_month": "Hours Per Month",
+      "department": "Department",
+      "select_department": "Select a department",
+      "employee_group": "Employee Group",
+      "no_group": "No group",
+      "address": "Address",
+      "mobile": "Mobile",
+      "bank_account": "Bank Account",
+      "team_leader": "Team Leader",
+      "saving": "Saving..."
+    },
+    "edit_page": {
+      "title": "Edit Employee",
+      "back_to_employees": "Back to Employees",
+      "try_again": "Try Again",
+      "employee_info": "Manage employee information, shifts, payslips, and sick leave",
+      "tabs": {
+        "details": "Employee Details",
+        "shifts": "Shifts",
+        "payslips": "Payslips",
+        "sick_leave": "Sick Leave"
+      }
+    }
+  },
+  "employee_groups": {
+    "title": "Employee Groups",
+    "description": "Manage employee groups and their wage settings",
+    "create_group": "Create Employee Group",
+    "edit_group": "Edit Employee Group",
+    "delete_group": "Delete Employee Group",
+    "search_placeholder": "Search employee groups...",
+    "showing": "Showing {{current}} of {{total}} employee groups",
+    "no_groups_found": "No employee groups found",
+    "adjust_search": "Try adjusting your search terms",
+    "get_started": "Get started by creating your first employee group",
+    "create_first_group": "Create First Group",
+    "confirm_delete": "Are you sure?",
+    "delete_warning": "You won't be able to revert this!",
+    "delete_confirm": "Yes, delete it!",
+    "deleted": "Deleted!",
+    "delete_success": "Employee group has been deleted.",
+    "delete_error": "Failed to delete employee group. Please try again.",
+    "error_loading": "Failed to load employee groups. Please try again later.",
+    "error_invalid_response": "Invalid response format from server",
+    "create_page": {
+      "title": "Create New Employee Group",
+      "back_to_groups": "Back to Employee Groups",
+      "try_again": "Try Again"
+    },
+    "edit_page": {
+      "title": "Edit Employee Group",
+      "back_to_groups": "Back to Employee Groups",
+      "try_again": "Try Again",
+      "loading": "Loading employee group...",
+      "error_not_found": "Employee group not found"
+    },
+    "table": {
+      "group_name": "Group Name",
+      "wage_type": "Wage Type",
+      "hourly_wage": "Hourly Wage",
+      "wage_shift": "Wage/Shift",
+      "employees": "Employees"
+    },
+    "wage_types": {
+      "hourly": "Hourly",
+      "per_shift": "Per Shift"
+    },
+    "form": {
+      "group_name": "Group Name",
+      "group_name_placeholder": "Enter group name",
+      "hourly_wage": "Hourly Wage",
+      "wage_per_shift": "Wage Per Shift",
+      "default_wage_type": "Default Wage Type",
+      "hourly_wage_help": "Amount paid per hour worked",
+      "wage_per_shift_help": "Fixed amount paid per shift",
+      "default_wage_type_help": "Choose the primary payment method for this group",
+      "hourly_wage_option": "Hourly Wage",
+      "wage_per_shift_option": "Wage Per Shift",
+      "creating": "Creating...",
+      "create_group": "Create Group",
+      "updating": "Updating...",
+      "update_group": "Update Group"
+    }
   },
   "availability": {
     "title": "Employee Availability",
@@ -167,10 +377,45 @@
   },
   "shifts": {
     "title": "Shifts",
+    "description": "Manage employee shifts and schedules",
     "create_shift": "Create Shift",
     "edit_shift": "Edit Shift",
     "delete_shift": "Delete Shift",
     "shift_details": "Shift Details",
+    "search_placeholder": "Search shifts by employee, department, or type...",
+    "showing": "Showing {{current}} of {{total}} shifts",
+    "no_shifts_found": "No shifts found",
+    "adjust_search": "Try adjusting your search terms",
+    "get_started": "Get started by creating your first shift",
+    "create_first_shift": "Create First Shift",
+    "confirm_delete": "Are you sure?",
+    "delete_warning": "You won't be able to revert this!",
+    "delete_confirm": "Yes, delete it!",
+    "deleted": "Deleted!",
+    "delete_success": "Shift has been deleted.",
+    "delete_error": "Failed to delete shift. Please try again.",
+    "error_loading": "Failed to load shifts. Please try again later.",
+    "all_statuses": "All Statuses",
+    "all_departments": "All Departments",
+    "all_shift_types": "All Shift Types",
+    "table": {
+      "employee": "Employee",
+      "date": "Date",
+      "time": "Time",
+      "type": "Type",
+      "wage": "Wage",
+      "department": "Department",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "status": {
+      "scheduled": "Scheduled",
+      "in_progress": "In Progress",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "approved": "Approved",
+      "pending": "Pending"
+    },
     "start_time": "Start Time",
     "end_time": "End Time",
     "break_duration": "Break Duration",
@@ -178,12 +423,21 @@
     "employee": "Employee",
     "date": "Date",
     "duration": "Duration",
-    "status": {
-      "scheduled": "Scheduled",
-      "in_progress": "In Progress",
-      "completed": "Completed",
-      "cancelled": "Cancelled"
-    }
+    "shift_exchanges": "Shift Exchanges",
+    "view_exchanges": "View Exchanges",
+    "exchange_shift": "Exchange Shift",
+    "select_new_employee": "Select the new employee for this shift",
+    "select_employee": "Select Employee",
+    "exchange_success": "Shift exchanged successfully!",
+    "exchange_error": "Failed to exchange shift. Please try again.",
+    "scheduling_conflict": "Scheduling Conflict",
+    "conflicting_shift_time": "Conflicting shift time",
+    "no_history": "No History",
+    "no_exchange_history": "This shift has no exchange history",
+    "exchange_history": "Shift Exchange History",
+    "history_error": "Failed to load exchange history. Please try again.",
+    "from": "From",
+    "to": "To"
   },
   "sick_leaves": {
     "title": "Sick Leaves",
@@ -304,7 +558,11 @@
     "back": "Back",
     "next": "Next",
     "previous": "Previous",
-    "try_again": "Try Again"
+    "try_again": "Try Again",
+    "shifts_overview": "Shifts Overview",
+    "a_list_of_all_shifts_in_your_organization": "A list of all shifts in your organization",
+    "search_shifts": "Search shifts by employee, department, or type...",
+    "create_shift": "Create Shift"
   },
   "language": {
     "english": "English",

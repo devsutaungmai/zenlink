@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslation } from 'react-i18next'
 import { ChevronLeftIcon } from '@heroicons/react/24/outline'
 import EmployeeGroupForm from '@/components/EmployeeGroupForm'
 import { WageType, EmployeeGroupFormData } from '@/components/EmployeeGroupForm'
@@ -15,6 +16,7 @@ interface EmployeeGroup {
 }
 
 export default function EditEmployeeGroupPage({ params }: { params: Promise<{ id: string }> }) {
+  const { t } = useTranslation()
   const employeeGroupId = React.use(params).id
   const router = useRouter()
   const [employeeGroup, setEmployeeGroup] = useState<EmployeeGroup | null>(null)
@@ -72,7 +74,7 @@ export default function EditEmployeeGroupPage({ params }: { params: Promise<{ id
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="p-4 text-gray-500">Loading employee group...</div>
+        <div className="p-4 text-gray-500">{t('employee_groups.edit_page.loading')}</div>
       </div>
     )
   }
@@ -86,7 +88,7 @@ export default function EditEmployeeGroupPage({ params }: { params: Promise<{ id
             onClick={() => router.push('/dashboard/employee-groups')}
             className="mt-2 px-4 py-2 text-sm font-medium text-white bg-[#31BCFF] rounded-md hover:bg-[#31BCFF]/90"
           >
-            Back to Employee Groups
+            {t('employee_groups.edit_page.back_to_groups')}
           </button>
         </div>
       </div>
@@ -106,10 +108,10 @@ export default function EditEmployeeGroupPage({ params }: { params: Promise<{ id
           </button>
           <div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-              {employeeGroup ? employeeGroup.name : 'Edit Employee Group'}
+              {employeeGroup ? employeeGroup.name : t('employee_groups.edit_page.title')}
             </h1>
             <p className="mt-2 text-gray-600">
-              Manage employee group wage settings and configurations
+              {t('employee_groups.description')}
             </p>
           </div>
         </div>
@@ -133,7 +135,7 @@ export default function EditEmployeeGroupPage({ params }: { params: Promise<{ id
             />
           ) : (
             <div className="p-4 text-gray-500 text-center">
-              Employee group data not available
+              {t('employee_groups.edit_page.error_not_found')}
             </div>
           )}
         </div>

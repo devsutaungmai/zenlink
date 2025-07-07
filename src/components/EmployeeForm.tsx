@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslation } from 'react-i18next'
 import { Sex } from '@prisma/client'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
@@ -38,6 +39,7 @@ export default function EmployeeForm({
   departments,
   employeeGroups,
 }: EmployeeFormProps) {
+  const { t } = useTranslation()
   const [formData, setFormData] = React.useState<EmployeeFormData>({
     firstName: '',
     lastName: '',
@@ -87,7 +89,7 @@ export default function EmployeeForm({
         {/* Personal Information */}
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            First Name <span className="text-red-500">*</span>
+            {t('employees.form.first_name')} <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -101,7 +103,7 @@ export default function EmployeeForm({
 
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            Last Name <span className="text-red-500">*</span>
+            {t('employees.form.last_name')} <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -115,7 +117,7 @@ export default function EmployeeForm({
 
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            Birthday <span className="text-red-500">*</span>
+            {t('employees.form.birthday')} <span className="text-red-500">*</span>
           </label>
           <DatePicker
             selected={formData.birthday}
@@ -127,7 +129,7 @@ export default function EmployeeForm({
 
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            Gender <span className="text-red-500">*</span>
+            {t('employees.form.gender')} <span className="text-red-500">*</span>
           </label>
           <select
             name="sex"
@@ -136,16 +138,16 @@ export default function EmployeeForm({
             className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-[#31BCFF] focus:outline-none focus:ring-1 focus:ring-[#31BCFF]"
             required
           >
-            <option value="MALE">Male</option>
-            <option value="FEMALE">Female</option>
-            <option value="OTHER">Other</option>
+            <option value="MALE">{t('employees.form.male')}</option>
+            <option value="FEMALE">{t('employees.form.female')}</option>
+            <option value="OTHER">{t('employees.form.other')}</option>
           </select>
         </div>
 
         {/* Employment Details */}
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            Social Security Number <span className="text-red-500">*</span>
+            {t('employees.form.social_security_no')} <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -159,7 +161,7 @@ export default function EmployeeForm({
 
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            Employee Number <span className="text-red-500">*</span>
+            {t('employees.form.employee_number')} <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -173,7 +175,7 @@ export default function EmployeeForm({
 
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            Date of Hire <span className="text-red-500">*</span>
+            {t('employees.form.date_of_hire')} <span className="text-red-500">*</span>
           </label>
           <DatePicker
             selected={formData.dateOfHire}
@@ -185,7 +187,7 @@ export default function EmployeeForm({
 
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            Hours Per Month <span className="text-red-500">*</span>
+            {t('employees.form.hours_per_month')} <span className="text-red-500">*</span>
           </label>
           <input
             type="number"
@@ -199,7 +201,7 @@ export default function EmployeeForm({
         {/* Department and Group */}
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            Department <span className="text-red-500">*</span>
+            {t('employees.form.department')} <span className="text-red-500">*</span>
           </label>
           <select
             name="departmentId"
@@ -208,7 +210,7 @@ export default function EmployeeForm({
             className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-[#31BCFF] focus:outline-none focus:ring-1 focus:ring-[#31BCFF]"
             required
           >
-            <option value="">Select a department</option>
+            <option value="">{t('employees.form.select_department')}</option>
             {departments.map(dept => (
               <option key={dept.id} value={dept.id}>
                 {dept.name}
@@ -219,7 +221,7 @@ export default function EmployeeForm({
 
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            Employee Group
+            {t('employees.form.employee_group')}
           </label>
           <select
             name="employeeGroupId"
@@ -227,7 +229,7 @@ export default function EmployeeForm({
             onChange={handleChange}
             className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-[#31BCFF] focus:outline-none focus:ring-1 focus:ring-[#31BCFF]"
           >
-            <option value="">No group</option>
+            <option value="">{t('employees.form.no_group')}</option>
             {employeeGroups.map(group => (
               <option key={group.id} value={group.id}>
                 {group.name}
@@ -239,7 +241,7 @@ export default function EmployeeForm({
         {/* Contact Information */}
         <div className="sm:col-span-2">
           <label className="block text-sm font-medium text-gray-700">
-            Address <span className="text-red-500">*</span>
+            {t('employees.form.address')} <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -253,7 +255,7 @@ export default function EmployeeForm({
 
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            Mobile <span className="text-red-500">*</span>
+            {t('employees.form.mobile')} <span className="text-red-500">*</span>
           </label>
           <input
             type="tel"
@@ -267,7 +269,7 @@ export default function EmployeeForm({
 
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            Bank Account <span className="text-red-500">*</span>
+            {t('employees.form.bank_account')} <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -289,7 +291,7 @@ export default function EmployeeForm({
             className="h-4 w-4 rounded border-gray-300 text-[#31BCFF] focus:ring-[#31BCFF]"
           />
           <label className="ml-2 block text-sm text-gray-700">
-            Team Leader
+            {t('employees.form.team_leader')}
           </label>
         </div>
       </div>
@@ -300,14 +302,14 @@ export default function EmployeeForm({
           onClick={() => router.back()}
           className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#31BCFF]"
         >
-          Cancel
+          {t('common.cancel')}
         </button>
         <button
           type="submit"
           disabled={loading}
           className="px-4 py-2 text-sm font-medium text-white bg-[#31BCFF] border border-transparent rounded-md hover:bg-[#31BCFF]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#31BCFF] disabled:opacity-50"
         >
-          {loading ? 'Saving...' : 'Save'}
+          {loading ? t('employees.form.saving') : t('common.save')}
         </button>
       </div>
     </form>

@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
+import { useTranslation } from 'react-i18next'
 import Swal from 'sweetalert2'
 import {
   Dialog,
@@ -32,6 +33,7 @@ interface Employee {
 }
 
 export default function EmployeesPage() {
+  const { t } = useTranslation()
   const [employees, setEmployees] = useState<Employee[]>([]) 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -81,14 +83,14 @@ export default function EmployeesPage() {
   const handleDelete = async (id: string) => {
     try {
       const result = await Swal.fire({
-        title: 'Are you sure?',
-        text: "You won't be able to revert this!",
+        title: t('employees.confirm_delete'),
+        text: t('employees.delete_warning'),
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#31BCFF',
         cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, delete it!',
-        cancelButtonText: 'Cancel'
+        confirmButtonText: t('common.yes'),
+        cancelButtonText: t('common.cancel')
       })
 
       if (result.isConfirmed) {
@@ -100,8 +102,8 @@ export default function EmployeesPage() {
           setEmployees(employees.filter(emp => emp.id !== id))
           
           await Swal.fire({
-            title: 'Deleted!',
-            text: 'Employee has been deleted.',
+            title: t('common.success'),
+            text: t('employees.delete_success'),
             icon: 'success',
             confirmButtonColor: '#31BCFF',
           })
@@ -112,8 +114,8 @@ export default function EmployeesPage() {
     } catch (error) {
       console.error('Error deleting employee:', error)
       Swal.fire({
-        title: 'Error!',
-        text: 'Failed to delete employee.',
+        title: t('common.error'),
+        text: t('employees.delete_error'),
         icon: 'error',
         toast: true,
         position: 'top-end',
@@ -142,8 +144,8 @@ export default function EmployeesPage() {
     
     if (!/^\d{6}$/.test(newPin)) {
       Swal.fire({
-        title: 'Invalid PIN',
-        text: 'PIN must be exactly 6 digits',
+        title: t('employees.pin_modal.invalid_pin'),
+        text: t('employees.pin_modal.invalid_pin'),
         icon: 'error',
         toast: true,
         position: 'top-end',
@@ -163,8 +165,8 @@ export default function EmployeesPage() {
 
       if (res.ok) {
         Swal.fire({
-          title: 'Success',
-          text: 'PIN has been set successfully!',
+          title: t('common.success'),
+          text: t('employees.pin_modal.success'),
           icon: 'success',
           toast: true,
           position: 'top-end',
@@ -180,8 +182,8 @@ export default function EmployeesPage() {
     } catch (error) {
       console.error('Error setting PIN:', error);
       Swal.fire({
-        title: 'Error',
-        text: 'Failed to set PIN. Please try again.',
+        title: t('common.error'),
+        text: t('employees.pin_modal.error'),
         icon: 'error',
         toast: true,
         position: 'top-end',
@@ -216,12 +218,12 @@ export default function EmployeesPage() {
     return (
       <div className="p-6">
         <div className="text-center text-red-600">
-          Error: {error}
+          {t('common.error')}: {error}
           <button 
             onClick={fetchEmployees}
             className="ml-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
           >
-            Retry
+            {t('common.try_again')}
           </button>
         </div>
       </div>
@@ -235,10 +237,10 @@ export default function EmployeesPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between">
           <div className="mb-4 sm:mb-0">
             <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-              Employees
+              {t('employees.title')}
             </h1>
             <p className="mt-2 text-gray-600">
-              Manage your organization's employees and their information
+              {t('employees.description')}
             </p>
           </div>
           <Link
@@ -246,7 +248,7 @@ export default function EmployeesPage() {
             className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 group"
           >
             <PlusIcon className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
-            Add Employee
+            {t('employees.add_employee')}
           </Link>
         </div>
       </div>
@@ -260,13 +262,13 @@ export default function EmployeesPage() {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search by name, employee number, department, or mobile..."
+              placeholder={t('employees.search_placeholder')}
               className="block w-full pl-12 pr-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
             />
           </div>
         </div>
         <div className="flex items-center justify-between mt-4 text-sm text-gray-500">
-          <span>Showing {filteredEmployees.length} of {employees.length} employees</span>
+          <span>{t('employees.showing', { current: filteredEmployees.length, total: employees.length })}</span>
         </div>
       </div>
 
@@ -276,9 +278,9 @@ export default function EmployeesPage() {
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <MagnifyingGlassIcon className="w-8 h-8 text-gray-400" />
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No employees found</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">{t('employees.no_employees')}</h3>
           <p className="text-gray-500 mb-6">
-            {searchTerm ? 'Try adjusting your search terms' : 'Get started by adding your first employee'}
+            {searchTerm ? t('employees.no_employees_message') : t('employees.get_started')}
           </p>
           {!searchTerm && (
             <Link
@@ -286,7 +288,7 @@ export default function EmployeesPage() {
               className="inline-flex items-center px-6 py-3 rounded-xl bg-[#31BCFF] text-white font-medium hover:bg-[#31BCFF]/90 transition-colors duration-200"
             >
               <PlusIcon className="w-5 h-5 mr-2" />
-              Add First Employee
+              {t('employees.add_first_employee')}
             </Link>
           )}
         </div>
@@ -297,22 +299,22 @@ export default function EmployeesPage() {
               <thead className="bg-gray-50/80">
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Employee
+                    {t('employees.table.employee')}
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Employee No.
+                    {t('employees.table.employee_no')}
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Department
+                    {t('employees.table.department')}
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Group
+                    {t('employees.table.group')}
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Contact
+                    {t('employees.table.contact')}
                   </th>
                   <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
+                    {t('employees.table.actions')}
                   </th>
                 </tr>
               </thead>
@@ -326,7 +328,7 @@ export default function EmployeesPage() {
                         </div>
                         {employee.isTeamLeader && (
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mt-1">
-                            Team Leader
+                            {t('employees.table.team_leader')}
                           </span>
                         )}
                       </div>
@@ -340,7 +342,7 @@ export default function EmployeesPage() {
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-900">
                         {employee.employeeGroup?.name || (
-                          <span className="text-gray-400 italic">No group</span>
+                          <span className="text-gray-400 italic">{t('employees.table.no_group')}</span>
                         )}
                       </div>
                     </td>
@@ -355,7 +357,7 @@ export default function EmployeesPage() {
                         <button
                           onClick={() => handleInvite(employee.email || '', employee.id)}
                           className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
-                          title="Send Invite"
+                          title={t('employees.table.send_invite')}
                         >
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -375,7 +377,7 @@ export default function EmployeesPage() {
                         <button
                           onClick={() => handleSetPin(employee.id, `${employee.firstName} ${employee.lastName}`)}
                           className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200"
-                          title="Set PIN"
+                          title={t('employees.table.set_pin')}
                         >
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -395,14 +397,14 @@ export default function EmployeesPage() {
                         <Link
                           href={`/dashboard/employees/${employee.id}/edit`}
                           className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
-                          title="Edit Employee"
+                          title={t('employees.table.edit_employee')}
                         >
                           <PencilIcon className="h-4 w-4" />
                         </Link>
                         <button
                           onClick={() => handleDelete(employee.id)}
                           className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                          title="Delete Employee"
+                          title={t('employees.table.delete_employee')}
                         >
                           <TrashIcon className="h-4 w-4" />
                         </button>
@@ -421,7 +423,7 @@ export default function EmployeesPage() {
       <Dialog open={showInviteModal} onOpenChange={(open) => !open && setShowInviteModal(false)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Send Invite</DialogTitle>
+            <DialogTitle>{t('employees.invite_modal.title')}</DialogTitle>
           </DialogHeader>
           <form
             onSubmit={async (e) => {
@@ -445,8 +447,8 @@ export default function EmployeesPage() {
                   ));
                   
                   Swal.fire({
-                    title: 'Success',
-                    text: 'Invite sent successfully!',
+                    title: t('common.success'),
+                    text: t('employees.invite_modal.success'),
                     icon: 'success',
                     toast: true,
                     position: 'top-end',
@@ -461,8 +463,8 @@ export default function EmployeesPage() {
               } catch (error) {
                 console.error('Error sending invite:', error);
                 Swal.fire({
-                  title: 'Error',
-                  text: 'Failed to send invite.',
+                  title: t('common.error'),
+                  text: t('employees.invite_modal.error'),
                   icon: 'error',
                   toast: true,
                   position: 'top-end',
@@ -478,7 +480,7 @@ export default function EmployeesPage() {
             className="space-y-4"
           >
             <div>
-              <Label htmlFor="invite-email">Email</Label>
+              <Label htmlFor="invite-email">{t('employees.invite_modal.email')}</Label>
               <Input
                 id="invite-email"
                 type="email"
@@ -494,14 +496,14 @@ export default function EmployeesPage() {
                 onClick={() => setShowInviteModal(false)}
                 disabled={inviteLoading}
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button 
                 type="submit"
                 disabled={inviteLoading}
                 className="bg-[#31BCFF] hover:bg-[#31BCFF]/90 text-white"
               >
-                {inviteLoading ? 'Sending...' : 'Send'}
+                {inviteLoading ? t('employees.invite_modal.sending') : t('employees.invite_modal.send')}
               </Button>
             </div>
           </form>
@@ -512,11 +514,11 @@ export default function EmployeesPage() {
       <Dialog open={showPinModal} onOpenChange={(open) => !open && setShowPinModal(false)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Set PIN for {pinEmployeeName}</DialogTitle>
+            <DialogTitle>{t('employees.pin_modal.title', { name: pinEmployeeName })}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handlePinSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="pin-input">6-Digit PIN</Label>
+              <Label htmlFor="pin-input">{t('employees.pin_modal.pin_label')}</Label>
               <Input
                 id="pin-input"
                 type="text"
@@ -533,7 +535,7 @@ export default function EmployeesPage() {
                 required
               />
               <p className="mt-1 text-xs text-gray-500">
-                Enter a 6-digit PIN that the employee will use to punch in/out
+                {t('employees.pin_modal.pin_description')}
               </p>
             </div>
             <div className="flex justify-end space-x-2">
@@ -542,13 +544,13 @@ export default function EmployeesPage() {
                 variant="outline"
                 onClick={() => setShowPinModal(false)}
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button
                 type="submit"
                 disabled={newPin.length !== 6}
               >
-                Set PIN
+                {t('employees.pin_modal.set_pin')}
               </Button>
             </div>
           </form>

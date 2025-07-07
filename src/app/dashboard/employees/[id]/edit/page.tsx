@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslation } from 'react-i18next'
 import EmployeeForm from '@/components/EmployeeForm'
 import { Department, EmployeeGroup } from '@prisma/client'
 import { 
@@ -36,6 +37,7 @@ interface Shift {
 
 export default function EditEmployeePage({ params }: { params: Promise<{ id: string }> }) {
   const employeeId = React.use(params).id
+  const { t } = useTranslation()
   const router = useRouter()
   const [employee, setEmployee] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -211,22 +213,22 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
   const tabs = [
     {
       id: 'details' as TabType,
-      name: 'Employee Details',
+      name: t('employees.edit_page.tabs.details'),
       icon: UserIcon,
     },
     {
       id: 'shifts' as TabType,
-      name: 'Shifts',
+      name: t('employees.edit_page.tabs.shifts'),
       icon: ClockIcon,
     },
     {
       id: 'payslips' as TabType,
-      name: 'Payslips',
+      name: t('employees.edit_page.tabs.payslips'),
       icon: DocumentTextIcon,
     },
     {
       id: 'sickleave' as TabType,
-      name: 'Sick Leave',
+      name: t('employees.edit_page.tabs.sick_leave'),
       icon: HeartIcon,
     }
   ]
@@ -249,13 +251,13 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
               onClick={() => router.push('/dashboard/employees')}
               className="w-full px-4 py-2 text-sm font-medium text-white bg-[#31BCFF] rounded-md hover:bg-[#31BCFF]/90"
             >
-              Back to Employees
+              {t('employees.edit_page.back_to_employees')}
             </button>
             <button
               onClick={() => {}}
               className="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
             >
-              Try Again
+              {t('employees.edit_page.try_again')}
             </button>
           </div>
         </div>
@@ -276,10 +278,10 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
           </button>
           <div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-              {employee ? `${employee.firstName} ${employee.lastName}` : 'Edit Employee'}
+              {employee ? `${employee.firstName} ${employee.lastName}` : t('employees.edit_page.title')}
             </h1>
             <p className="mt-2 text-gray-600">
-              Manage employee information, shifts, payslips, and sick leave
+              {t('employees.edit_page.employee_info')}
             </p>
           </div>
         </div>
