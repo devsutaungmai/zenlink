@@ -386,8 +386,8 @@
     "retry": "Erneut versuchen"
   },
   "shifts": {
-    "title": "Schichten",
-    "description": "Verwalten Sie Mitarbeiterschichten und Zeitpläne",
+    "title": "Schichtübersicht",
+    "description": "Verwalten Sie Mitarbeiterschichten und Zeitpläne in allen Abteilungen",
     "create_shift": "Schicht erstellen",
     "edit_shift": "Schicht bearbeiten",
     "delete_shift": "Schicht löschen",
@@ -405,9 +405,16 @@
     "delete_success": "Schicht wurde gelöscht.",
     "delete_error": "Schicht konnte nicht gelöscht werden. Bitte versuchen Sie es erneut.",
     "error_loading": "Schichten konnten nicht geladen werden. Bitte versuchen Sie es später erneut.",
-    "all_statuses": "Alle Status",
-    "all_departments": "Alle Abteilungen",
-    "all_shift_types": "Alle Schichttypen",
+    "filters": {
+      "all_departments": "Alle Abteilungen",
+      "all_groups": "Alle Gruppen",
+      "all_employees": "Alle Mitarbeiter",
+      "select_department": "Abteilung auswählen",
+      "select_group": "Gruppe auswählen",
+      "select_employees": "Mitarbeiter auswählen",
+      "clear_filters": "Filter löschen",
+      "apply_filters": "Filter anwenden"
+    },
     "table": {
       "employee": "Mitarbeiter",
       "date": "Datum",
@@ -569,6 +576,9 @@
     "next": "Nächste",
     "previous": "Vorherige",
     "try_again": "Erneut versuchen",
+    "show": "Zeigen",
+    "hide": "Verbergen",
+    "filters": "Filter",
     "shifts_overview": "Schichtübersicht",
     "a_list_of_all_shifts_in_your_organization": "Eine Liste aller Schichten in Ihrer Organisation",
     "search_shifts": "Schichten nach Mitarbeiter, Abteilung oder Typ suchen...",

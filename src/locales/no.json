@@ -386,8 +386,8 @@
     "retry": "Prøv igjen"
   },
   "shifts": {
-    "title": "Skift",
-    "description": "Administrer ansattes skift og tidsplaner",
+    "title": "Skiftoversikt",
+    "description": "Administrer ansattes skift og tidsplaner på tvers av alle avdelinger",
     "create_shift": "Opprett skift",
     "edit_shift": "Rediger skift",
     "delete_shift": "Slett skift",
@@ -405,9 +405,16 @@
     "delete_success": "Skift har blitt slettet.",
     "delete_error": "Kunne ikke slette skift. Prøv igjen.",
     "error_loading": "Kunne ikke laste skift. Prøv igjen senere.",
-    "all_statuses": "Alle statuser",
-    "all_departments": "Alle avdelinger",
-    "all_shift_types": "Alle skifttyper",
+    "filters": {
+      "all_departments": "Alle avdelinger",
+      "all_groups": "Alle grupper",
+      "all_employees": "Alle ansatte",
+      "select_department": "Velg avdeling",
+      "select_group": "Velg gruppe",
+      "select_employees": "Velg ansatte",
+      "clear_filters": "Fjern filtre",
+      "apply_filters": "Bruk filtre"
+    },
     "table": {
       "employee": "Ansatt",
       "date": "Dato",
@@ -569,6 +576,9 @@
     "next": "Neste",
     "previous": "Forrige",
     "try_again": "Prøv igjen",
+    "show": "Vis",
+    "hide": "Skjul",
+    "filters": "Filtre",
     "shifts_overview": "Skiftoversikt",
     "a_list_of_all_shifts_in_your_organization": "En liste over alle skift i organisasjonen din",
     "search_shifts": "Søk skift etter ansatt, avdeling eller type...",

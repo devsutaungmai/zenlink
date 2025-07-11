@@ -176,22 +176,6 @@
       "edit_employee": "Edit Employee",
       "delete_employee": "Delete Employee"
     },
-    "invite_modal": {
-      "title": "Send Invite",
-      "email": "Email",
-      "send": "Send",
-      "sending": "Sending...",
-      "success": "Invite sent successfully!",
-      "error": "Failed to send invite."
-    },
-    "pin_modal": {
-      "title": "Set PIN for {{name}}",
-      "pin_label": "6-Digit PIN",
-      "pin_description": "Enter a 6-digit PIN that the employee will use to punch in/out",
-      "set_pin": "Set PIN",
-      "success": "PIN set successfully!",
-      "error": "Failed to set PIN."
-    },
     "form": {
       "first_name": "First Name",
       "last_name": "Last Name",
@@ -213,18 +197,6 @@
       "bank_account": "Bank Account",
       "team_leader": "Team Leader",
       "saving": "Saving..."
-    },
-    "edit_page": {
-      "title": "Edit Employee",
-      "back_to_employees": "Back to Employees",
-      "try_again": "Try Again",
-      "employee_info": "Manage employee information, shifts, payslips, and sick leave",
-      "tabs": {
-        "details": "Employee Details",
-        "shifts": "Shifts",
-        "payslips": "Payslips",
-        "sick_leave": "Sick Leave"
-      }
     }
   },
   "employee_groups": {
@@ -376,8 +348,8 @@
     "retry": "Retry"
   },
   "shifts": {
-    "title": "Shifts",
-    "description": "Manage employee shifts and schedules",
+    "title": "Shift Overview",
+    "description": "Manage employee shifts and schedules across all departments",
     "create_shift": "Create Shift",
     "edit_shift": "Edit Shift",
     "delete_shift": "Delete Shift",
@@ -395,9 +367,16 @@
     "delete_success": "Shift has been deleted.",
     "delete_error": "Failed to delete shift. Please try again.",
     "error_loading": "Failed to load shifts. Please try again later.",
-    "all_statuses": "All Statuses",
-    "all_departments": "All Departments",
-    "all_shift_types": "All Shift Types",
+    "filters": {
+      "all_departments": "All Departments",
+      "all_groups": "All Groups",
+      "all_employees": "All Employees",
+      "select_department": "Select Department",
+      "select_group": "Select Group",
+      "select_employees": "Select Employees",
+      "clear_filters": "Clear Filters",
+      "apply_filters": "Apply Filters"
+    },
     "table": {
       "employee": "Employee",
       "date": "Date",
@@ -559,6 +538,10 @@
     "next": "Next",
     "previous": "Previous",
     "try_again": "Try Again",
+    "show": "Show",
+    "hide": "Hide",
+    "filters": "Filters",
+    "employee_group": "Employee Group",
     "shifts_overview": "Shifts Overview",
     "a_list_of_all_shifts_in_your_organization": "A list of all shifts in your organization",
     "search_shifts": "Search shifts by employee, department, or type...",
