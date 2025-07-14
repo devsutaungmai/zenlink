@@ -1,0 +1,33 @@
+{
+  "schedule": {
+    "title": "Schedule",
+    "header": {
+      "all_employees": "All Employees",
+      "week": "Week",
+      "day": "Day",
+      "today": "Today"
+    },
+    "week_view": {
+      "today": "Today",
+      "shifts": "Shifts"
+    },
+    "day_view": {
+      "today": "Today", 
+      "shifts": "Shifts",
+      "loading_employee_data": "Loading employee data..."
+    },
+    "shift_card": {
+      "unassigned": "Unassigned",
+      "active": "Active"
+    },
+    "messages": {
+      "success_created": "Shift created successfully!",
+      "success_updated": "Shift updated successfully!",
+      "error_create": "Failed to create shift.",
+      "error_update": "Failed to update shift.",
+      "error_fetching_employees": "Error fetching employees:",
+      "error_fetching_groups": "Error fetching employee groups:",
+      "error_fetching_shifts": "Error fetching shifts:"
+    }
+  }
+}

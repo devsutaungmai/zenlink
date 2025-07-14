@@ -1,0 +1,47 @@
+{
+  "title": "Stemplingsur - Oppmøteregistreringer",
+  "subtitle": "Spor og administrer ansattes oppmøte og arbeidstimer",
+  "header": {
+    "records_today": "Registreringer i dag",
+    "currently_working": "Jobber nå",
+    "completed": "Fullført",
+    "select_date": "Velg dato"
+  },
+  "search": {
+    "placeholder": "Søk ansatte eller avdelinger...",
+    "filter_label": "Filter:"
+  },
+  "filters": {
+    "all": "Alle",
+    "working": "Jobber",
+    "completed": "Fullført"
+  },
+  "table": {
+    "title": "Oppmøteregistreringer",
+    "columns": {
+      "employee": "Ansatt",
+      "department": "Avdeling",
+      "punch_in": "Inn-stempling",
+      "punch_out": "Ut-stempling",
+      "duration": "Varighet",
+      "status": "Status",
+      "shift_info": "Vaktinformasjon"
+    }
+  },
+  "status": {
+    "working": "Jobber",
+    "completed": "Fullført",
+    "still_working": "Jobber fortsatt",
+    "no_shift": "Ingen vakt tildelt"
+  },
+  "empty_state": {
+    "title": "Ingen oppmøteregistreringer funnet",
+    "subtitle_search": "Prøv å justere søkekriteriene dine.",
+    "subtitle_no_data": "Ingen har stemplet inn ennå i dag."
+  },
+  "loading": "Laster oppmøteregistreringer...",
+  "error": {
+    "failed_to_load": "Kunne ikke laste data",
+    "retry": "Prøv igjen"
+  }
+}

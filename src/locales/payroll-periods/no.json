@@ -1,0 +1,105 @@
+{
+  "title": "Lønnsperioder",
+  "subtitle": "Administrer lønnsperioder og planlegging",
+  "create_period": "Opprett Periode",
+  "create_first_period": "Opprett Første Periode",
+  "search_placeholder": "Søk etter periodenavn eller datoområde...",
+  "refresh": "Oppdater",
+  "showing": "Viser {{count}} av {{total}} perioder",
+  
+  "filters": {
+    "all_status": "All Status",
+    "all_years": "Alle År"
+  },
+  
+  "status": {
+    "active": "Aktiv",
+    "closed": "Stengt",
+    "draft": "Utkast"
+  },
+  
+  "table": {
+    "period_name": "Periodenavn",
+    "start_date": "Startdato",
+    "end_date": "Sluttdato",
+    "status": "Status",
+    "employees": "Ansatte",
+    "total_hours": "Totale Timer",
+    "actions": "Handlinger"
+  },
+  
+  "actions": {
+    "view_period": "Vis Periode",
+    "edit_period": "Rediger Periode",
+    "close_period": "Steng Periode",
+    "reopen_period": "Gjenåpne Periode",
+    "delete_period": "Slett Periode",
+    "generate_report": "Generer Rapport"
+  },
+  
+  "pagination": {
+    "previous": "Forrige",
+    "next": "Neste",
+    "page_of": "Side {{current}} av {{total}}"
+  },
+  
+  "empty": {
+    "no_periods_found": "Ingen lønnsperioder funnet",
+    "adjust_search": "Prøv å justere søkeordene dine",
+    "get_started": "Kom i gang ved å opprette din første lønnsperiode"
+  },
+  
+  "form": {
+    "period_name": "Periodenavn",
+    "start_date": "Startdato",
+    "end_date": "Sluttdato",
+    "description": "Beskrivelse",
+    "create": "Opprett Periode",
+    "update": "Oppdater Periode",
+    "cancel": "Avbryt"
+  },
+  
+  "confirm": {
+    "close_title": "Steng Lønnsperiode?",
+    "close_text": "Når den er stengt, kan denne perioden ikke endres. Er du sikker?",
+    "reopen_title": "Gjenåpne Lønnsperiode?",
+    "reopen_text": "Dette vil tillate endringer i perioden igjen.",
+    "delete_title": "Slett Lønnsperiode?",
+    "delete_text": "Denne handlingen kan ikke angres!",
+    "yes_close": "Ja, steng den!",
+    "yes_reopen": "Ja, gjenåpne den!",
+    "yes_delete": "Ja, slett den!",
+    "cancel": "Avbryt"
+  },
+  
+  "success": {
+    "created": "Lønnsperiode opprettet!",
+    "updated": "Lønnsperiode oppdatert!",
+    "closed": "Lønnsperiode stengt!",
+    "reopened": "Lønnsperiode gjenåpnet!",
+    "deleted": "Lønnsperiode slettet!",
+    "report_generated": "Lønnsrapport generert!"
+  },
+  
+  "errors": {
+    "create_failed": "Kunne ikke opprette lønnsperiode.",
+    "update_failed": "Kunne ikke oppdatere lønnsperiode.",
+    "close_failed": "Kunne ikke stenge lønnsperiode.",
+    "reopen_failed": "Kunne ikke gjenåpne lønnsperiode.",
+    "delete_failed": "Kunne ikke slette lønnsperiode.",
+    "fetch_failed": "Kunne ikke hente lønnsperioder",
+    "report_failed": "Kunne ikke generere rapport",
+    "invalid_date_range": "Sluttdato må være etter startdato",
+    "period_exists": "En periode med dette navnet eksisterer allerede"
+  },
+  
+  "validation": {
+    "period_name_required": "Periodenavn er påkrevd",
+    "start_date_required": "Startdato er påkrevd",
+    "end_date_required": "Sluttdato er påkrevd",
+    "min_length": "Må være minst {{min}} tegn",
+    "max_length": "Må ikke være mer enn {{max}} tegn"
+  },
+  
+  "loading": "Laster..."
+}

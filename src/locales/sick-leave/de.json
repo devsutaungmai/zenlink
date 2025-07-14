@@ -1,0 +1,80 @@
+{
+  "title": "Krankmeldungsverwaltung",
+  "subtitle": "Verwalten und verfolgen Sie Krankmeldungsanträge der Mitarbeiter",
+  "form": {
+    "title": "Krankmeldungsantrag einreichen",
+    "employee": "Mitarbeiter",
+    "select_employee": "Einen Mitarbeiter auswählen",
+    "start_date": "Startdatum",
+    "end_date": "Enddatum",
+    "reason": "Grund",
+    "reason_placeholder": "Bitte geben Sie Details zu Ihrer Krankmeldung an...",
+    "doctor_note": "Ärztliches Attest erforderlich",
+    "submit": "Antrag einreichen",
+    "submitting": "Wird eingereicht...",
+    "cancel": "Abbrechen"
+  },
+  "status": {
+    "pending": "Ausstehend",
+    "approved": "Genehmigt",
+    "rejected": "Abgelehnt",
+    "active": "Aktiv",
+    "completed": "Abgeschlossen"
+  },
+  "table": {
+    "title": "Krankmeldungsanträge",
+    "employee": "Mitarbeiter",
+    "department": "Abteilung",
+    "start_date": "Startdatum",
+    "end_date": "Enddatum",
+    "days": "Tage",
+    "reason": "Grund",
+    "status": "Status",
+    "actions": "Aktionen",
+    "no_requests": "Keine Krankmeldungsanträge gefunden"
+  },
+  "actions": {
+    "approve": "Genehmigen",
+    "reject": "Ablehnen",
+    "view": "Details anzeigen",
+    "edit": "Bearbeiten",
+    "delete": "Löschen"
+  },
+  "filters": {
+    "all": "Alle Anträge",
+    "pending": "Ausstehend",
+    "approved": "Genehmigt",
+    "rejected": "Abgelehnt",
+    "my_requests": "Meine Anträge"
+  },
+  "search": {
+    "placeholder": "Nach Mitarbeitername oder Grund suchen..."
+  },
+  "messages": {
+    "success": {
+      "submitted": "Krankmeldungsantrag erfolgreich eingereicht",
+      "approved": "Krankmeldungsantrag genehmigt",
+      "rejected": "Krankmeldungsantrag abgelehnt",
+      "deleted": "Krankmeldungsantrag gelöscht"
+    },
+    "error": {
+      "submit_failed": "Krankmeldungsantrag konnte nicht eingereicht werden",
+      "approve_failed": "Antrag konnte nicht genehmigt werden",
+      "reject_failed": "Antrag konnte nicht abgelehnt werden",
+      "delete_failed": "Antrag konnte nicht gelöscht werden",
+      "load_failed": "Krankmeldungsdaten konnten nicht geladen werden"
+    }
+  },
+  "validation": {
+    "employee_required": "Bitte wählen Sie einen Mitarbeiter aus",
+    "start_date_required": "Startdatum ist erforderlich",
+    "end_date_required": "Enddatum ist erforderlich",
+    "end_before_start": "Enddatum kann nicht vor dem Startdatum liegen",
+    "reason_required": "Grund ist erforderlich"
+  },
+  "loading": "Lade Krankmeldungsdaten...",
+  "empty_state": {
+    "title": "Keine Krankmeldungsanträge",
+    "subtitle": "Es wurden noch keine Krankmeldungsanträge eingereicht."
+  }
+}

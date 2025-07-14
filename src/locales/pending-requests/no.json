@@ -1,0 +1,80 @@
+{
+  "title": "Ventende forespørsler",
+  "subtitle": "Gjennomgå og administrer vaktbytteforespørsler",
+  "refresh": "Oppdater",
+  "total": "totalt",
+  "swaps": "bytter",
+  "handovers": "overleveringer",
+  "tabs": {
+    "swap_requests": "Bytteforespørsler",
+    "shift_requests": "Vaktforespørsler"
+  },
+  "showing": "Viser {{count}} av {{total}} forespørsler",
+  "table": {
+    "type": "Type",
+    "from_employee": "Fra ansatt",
+    "to_employee": "Til ansatt",
+    "shift_date_time": "Vaktdato og tid",
+    "requested": "Forespurt",
+    "actions": "Handlinger"
+  },
+  "empty": {
+    "no_swap_requests": "Ingen ventende bytteforespørsler",
+    "no_shift_requests": "Ingen ventende vaktforespørsler",
+    "swap_processed": "Alle vaktbytteforespørsler er behandlet.",
+    "shift_processed": "Alle vaktoverleveringsforespørsler er behandlet."
+  },
+  "actions": {
+    "view_details": "Vis detaljer",
+    "reject": "Avvis",
+    "approve": "Godkjenn",
+    "reject_request": "Avvis forespørsel",
+    "approve_request": "Godkjenn forespørsel"
+  },
+  "modal": {
+    "request_details": "Forespørselsdetaljer",
+    "shift_swap": "Vaktbytte",
+    "shift_handover": "Vaktoverlevering",
+    "request": "Forespørsel",
+    "close": "Lukk"
+  },
+  "request_info": {
+    "title": "Forespørselsinformasjon",
+    "request_type": "Forespørselstype",
+    "status": "Status",
+    "requested_date": "Forespurt dato",
+    "request_time": "Forespørselstid"
+  },
+  "employee_info": {
+    "title": "Ansattinformasjon",
+    "from_employee": "Fra ansatt",
+    "to_employee": "Til ansatt",
+    "name": "Navn",
+    "employee_no": "Ansatt nr.",
+    "department": "Avdeling"
+  },
+  "shift_details": {
+    "title": "Vaktdetaljer",
+    "date": "Dato",
+    "time": "Tid",
+    "shift_type": "Vakttype",
+    "regular_shift": "Vanlig vakt",
+    "open_end": "Åpen slutt"
+  },
+  "request_reason": {
+    "title": "Forespørselsårsak"
+  },
+  "types": {
+    "swap": "BYTTE",
+    "handover": "OVERLEVERING"
+  },
+  "success": {
+    "approved": "Forespørsel godkjent!",
+    "rejected": "Forespørsel avvist!"
+  },
+  "errors": {
+    "approve_failed": "Kunne ikke godkjenne forespørsel",
+    "reject_failed": "Kunne ikke avvise forespørsel",
+    "fetch_failed": "Kunne ikke hente ventende forespørsler"
+  }
+}

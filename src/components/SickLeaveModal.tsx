@@ -5,6 +5,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import SickLeaveForm from "./SickLeaveForm"
+import { useTranslation } from 'react-i18next'
 
 interface SickLeaveFormData {
   employeeId?: string
@@ -35,12 +36,14 @@ export default function SickLeaveModal({
   showEmployeeSelection = false,
   isEmployee = false
 }: SickLeaveModalProps) {
+  const { t } = useTranslation('sick-leave')
+  
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {initialData?.id ? 'Edit Sick Leave' : 'Add Sick Leave'}
+            {initialData?.id ? t('modal.edit_title') : t('modal.add_title')}
           </DialogTitle>
         </DialogHeader>
         <SickLeaveForm

@@ -1,0 +1,61 @@
+{
+  "title": "Payroll Entries",
+  "subtitle": "Manage employee payroll entries and calculations",
+  "create_entry": "Create Entry",
+  "create_first_entry": "Create First Entry",
+  "search_placeholder": "Search by employee name, number, or period...",
+  "filters": {
+    "all_status": "All Status",
+    "all_periods": "All Periods"
+  },
+  "status": {
+    "draft": "Draft",
+    "approved": "Approved",
+    "paid": "Paid"
+  },
+  "table": {
+    "employee": "Employee",
+    "period": "Period",
+    "hours": "Hours",
+    "gross_pay": "Gross Pay",
+    "net_pay": "Net Pay",
+    "status": "Status",
+    "actions": "Actions",
+    "regular": "Regular",
+    "overtime": "Overtime"
+  },
+  "actions": {
+    "view_entry": "View Entry",
+    "edit_entry": "Edit Entry",
+    "download_payslip": "Download PDF Payslip",
+    "delete_entry": "Delete Entry"
+  },
+  "pagination": {
+    "previous": "Previous",
+    "next": "Next",
+    "page_of": "Page {{current}} of {{total}}"
+  },
+  "showing": "Showing {{count}} of {{total}} entries",
+  "no_entries": {
+    "title": "No payroll entries found",
+    "search_message": "Try adjusting your search terms",
+    "empty_message": "Get started by creating your first payroll entry"
+  },
+  "delete": {
+    "confirm_title": "Are you sure?",
+    "confirm_text": "You won't be able to revert this!",
+    "confirm_button": "Yes, delete it!",
+    "cancel_button": "Cancel"
+  },
+  "success": {
+    "deleted": "Payroll entry has been deleted.",
+    "payslip_downloaded": "Payslip PDF has been downloaded successfully."
+  },
+  "errors": {
+    "delete_failed": "Failed to delete payroll entry.",
+    "payslip_failed": "Failed to export payslip.",
+    "fetch_entries_failed": "Error fetching entries",
+    "fetch_periods_failed": "Error fetching periods",
+    "generate_payslip_failed": "Failed to generate payslip"
+  }
+}

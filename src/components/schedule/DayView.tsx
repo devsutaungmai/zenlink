@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react'
 import { format } from 'date-fns'
+import { useTranslation } from 'react-i18next'
 import SpanningShiftCard from './SpanningShiftCard'
 import HourColumn from './HourColumn'
 import { useUser } from '@/app/lib/useUser'
@@ -20,6 +21,7 @@ export default function DayView({
   employees = []
 }: DayViewProps) {
   const { user } = useUser()
+  const { t } = useTranslation('schedule')
   const isEmployee = user?.role === 'EMPLOYEE'
   
   const [isDraggingToCreate, setIsDraggingToCreate] = useState(false)
@@ -119,7 +121,7 @@ export default function DayView({
   if (!employees) {
     return (
       <div className="mt-4 overflow-hidden">
-        <div className="text-center p-4">Loading employee data...</div>
+        <div className="text-center p-4">{t('week_view.loading')}</div>
       </div>
     );
   }
@@ -133,10 +135,10 @@ export default function DayView({
           <div className="relative day-column">
             <div className={`p-3 font-medium text-center border-r h-[72px] ${isToday ? 'bg-blue-50' : ''}`}>
               <div className={`text-gray-950 font-bold ${isToday ? 'text-blue-700' : ''}`}>
-                {isToday ? <span className="text-blue-700">Today</span> : format(selectedDate, 'EEEE, MMMM d, yyyy')}
+                {isToday ? <span className="text-blue-700">{t('week_view.today')}</span> : format(selectedDate, 'EEEE, MMMM d, yyyy')}
               </div>
               <div className="text-sm text-gray-900">
-                <span className="ml-2">{shifts.length} Shifts</span>
+                <span className="ml-2">{shifts.length} {t('week_view.shifts')}</span>
               </div>
             </div>
             

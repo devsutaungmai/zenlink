@@ -2,10 +2,13 @@
 
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useTranslation } from 'react-i18next'
 import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon, CalendarIcon, ClockIcon } from '@heroicons/react/24/outline'
 import { PayrollPeriod } from '@/types'
+import Swal from 'sweetalert2'
 
 export default function PayrollPeriodsPage() {
+  const { t } = useTranslation('payroll-periods')
   const [periods, setPeriods] = useState<PayrollPeriod[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -33,9 +36,21 @@ export default function PayrollPeriodsPage() {
         setTotalPages(data.pagination.pages)
       } else {
         console.error('Error fetching periods:', data.error)
+        await Swal.fire({
+          title: 'Error!',
+          text: t('errors.fetch_failed'),
+          icon: 'error',
+          confirmButtonColor: '#31BCFF',
+        })
       }
     } catch (error) {
       console.error('Error fetching periods:', error)
+      await Swal.fire({
+        title: 'Error!',
+        text: t('errors.fetch_failed'),
+        icon: 'error',
+        confirmButtonColor: '#31BCFF',
+      })
     } finally {
       setLoading(false)
     }
@@ -51,28 +66,53 @@ export default function PayrollPeriodsPage() {
     if (!period) return
 
     if (period.status !== 'DRAFT') {
-      alert('Cannot delete finalized or closed payroll periods')
-      return
-    }
-
-    if (!confirm('Are you sure you want to delete this payroll period? This action cannot be undone.')) {
+      await Swal.fire({
+        title: 'Error!',
+        text: t('errors.delete_failed'),
+        icon: 'error',
+        confirmButtonColor: '#31BCFF',
+      })
       return
     }
 
     try {
-      const response = await fetch(`/api/payroll-periods/${id}`, {
-        method: 'DELETE'
+      const result = await Swal.fire({
+        title: t('confirm.delete_title'),
+        text: t('confirm.delete_text'),
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#31BCFF',
+        cancelButtonColor: '#d33',
+        confirmButtonText: t('confirm.yes_delete'),
+        cancelButtonText: t('confirm.cancel')
       })
 
-      if (response.ok) {
-        setPeriods(prev => prev.filter(period => period.id !== id))
-      } else {
-        const data = await response.json()
-        alert(data.error || 'Failed to delete payroll period')
+      if (result.isConfirmed) {
+        const response = await fetch(`/api/payroll-periods/${id}`, {
+          method: 'DELETE'
+        })
+
+        if (response.ok) {
+          setPeriods(prev => prev.filter(period => period.id !== id))
+          await Swal.fire({
+            title: 'Deleted!',
+            text: t('success.deleted'),
+            icon: 'success',
+            confirmButtonColor: '#31BCFF',
+          })
+        } else {
+          const data = await response.json()
+          throw new Error(data.error || t('errors.delete_failed'))
+        }
       }
     } catch (error) {
       console.error('Error deleting period:', error)
-      alert('Failed to delete payroll period')
+      await Swal.fire({
+        title: 'Error!',
+        text: error instanceof Error ? error.message : t('errors.delete_failed'),
+        icon: 'error',
+        confirmButtonColor: '#31BCFF',
+      })
     }
   }
 
@@ -80,12 +120,20 @@ export default function PayrollPeriodsPage() {
     const styles = {
       DRAFT: 'bg-yellow-100 text-yellow-800 border-yellow-200',
       FINALIZED: 'bg-blue-100 text-blue-800 border-blue-200',
-      CLOSED: 'bg-gray-100 text-gray-800 border-gray-200'
+      CLOSED: 'bg-gray-100 text-gray-800 border-gray-200',
+      ACTIVE: 'bg-green-100 text-green-800 border-green-200'
+    }
+    
+    const statusLabels = {
+      DRAFT: t('status.draft'),
+      FINALIZED: t('status.active'),
+      CLOSED: t('status.closed'),
+      ACTIVE: t('status.active')
     }
     
     return (
       <span className={`px-3 py-1 rounded-full text-sm font-medium border ${styles[status as keyof typeof styles] || styles.DRAFT}`}>
-        {status}
+        {statusLabels[status as keyof typeof statusLabels] || status}
       </span>
     )
   }
@@ -98,6 +146,7 @@ export default function PayrollPeriodsPage() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#31BCFF]"></div>
+        <span className="ml-4 text-gray-600">{t('loading')}</span>
       </div>
     )
   }
@@ -109,23 +158,23 @@ export default function PayrollPeriodsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between">
           <div className="mb-4 sm:mb-0">
             <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-              Payroll Periods
+              {t('title')}
             </h1>
             <p className="mt-2 text-gray-600">
-              Manage your payroll periods and processing schedules
+              {t('subtitle')}
             </p>
             <div className="mt-4 flex items-center space-x-4 text-sm text-gray-500">
               <span className="flex items-center">
                 <div className="w-2 h-2 bg-[#31BCFF] rounded-full mr-2"></div>
-                {periods.length} Total Periods
+                {periods.length} {t('table.period_name')}
               </span>
               <span className="flex items-center">
                 <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                {periods.filter(p => p.status === 'DRAFT').length} Draft
+                {periods.filter(p => p.status === 'DRAFT').length} {t('status.draft')}
               </span>
               <span className="flex items-center">
                 <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
-                {periods.filter(p => p.status === 'FINALIZED').length} Finalized
+                {periods.filter(p => p.status === 'FINALIZED').length} {t('status.active')}
               </span>
             </div>
           </div>
@@ -134,7 +183,7 @@ export default function PayrollPeriodsPage() {
             className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 group"
           >
             <PlusIcon className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
-            Create Period
+            {t('create_period')}
           </Link>
         </div>
       </div>
@@ -150,7 +199,7 @@ export default function PayrollPeriodsPage() {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search payroll periods..."
+              placeholder={t('search_placeholder')}
               className="block w-full pl-12 pr-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
             />
           </div>
@@ -160,13 +209,13 @@ export default function PayrollPeriodsPage() {
               onChange={(e) => setStatusFilter(e.target.value)}
               className="px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
             >
-              <option value="all">All Status</option>
-              <option value="DRAFT">Draft</option>
-              <option value="FINALIZED">Finalized</option>
-              <option value="CLOSED">Closed</option>
+              <option value="all">{t('filters.all_status')}</option>
+              <option value="DRAFT">{t('status.draft')}</option>
+              <option value="FINALIZED">{t('status.active')}</option>
+              <option value="CLOSED">{t('status.closed')}</option>
             </select>
             <div className="text-sm text-gray-500">
-              Showing {filteredPeriods.length} of {periods.length} periods
+              {t('showing', { count: filteredPeriods.length, total: periods.length })}
             </div>
           </div>
         </div>
@@ -178,9 +227,9 @@ export default function PayrollPeriodsPage() {
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <CalendarIcon className="w-8 h-8 text-gray-400" />
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No payroll periods found</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">{t('empty.no_periods_found')}</h3>
           <p className="text-gray-500 mb-6">
-            {searchTerm ? 'Try adjusting your search terms' : 'Get started by creating your first payroll period'}
+            {searchTerm ? t('empty.adjust_search') : t('empty.get_started')}
           </p>
           {!searchTerm && (
             <Link
@@ -188,7 +237,7 @@ export default function PayrollPeriodsPage() {
               className="inline-flex items-center px-6 py-3 rounded-xl bg-[#31BCFF] text-white font-medium hover:bg-[#31BCFF]/90 transition-colors duration-200"
             >
               <PlusIcon className="w-5 h-5 mr-2" />
-              Create First Period
+              {t('create_first_period')}
             </Link>
           )}
         </div>
@@ -213,7 +262,7 @@ export default function PayrollPeriodsPage() {
                   <Link
                     href={`/dashboard/payroll-periods/${period.id}/edit`}
                     className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
-                    title="Edit Period"
+                    title={t('actions.edit_period')}
                   >
                     <PencilIcon className="h-4 w-4" />
                   </Link>
@@ -221,7 +270,7 @@ export default function PayrollPeriodsPage() {
                     <button
                       onClick={() => handleDelete(period.id)}
                       className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                      title="Delete Period"
+                      title={t('actions.delete_period')}
                     >
                       <TrashIcon className="h-4 w-4" />
                     </button>
@@ -238,7 +287,7 @@ export default function PayrollPeriodsPage() {
                     </div>
                     <div>
                       <p className="text-sm font-medium text-gray-900">
-                        Status
+                        {t('table.status')}
                       </p>
                       {getStatusBadge(period.status)}
                     </div>
@@ -269,7 +318,7 @@ export default function PayrollPeriodsPage() {
                   className="w-full inline-flex items-center justify-center px-4 py-2 rounded-xl bg-gray-50 text-gray-700 font-medium hover:bg-[#31BCFF] hover:text-white transition-all duration-200 group/btn"
                 >
                   <PencilIcon className="w-4 h-4 mr-2 group-hover/btn:scale-110 transition-transform duration-200" />
-                  Edit Period
+                  {t('actions.edit_period')}
                 </Link>
               </div>
             </div>
@@ -286,17 +335,17 @@ export default function PayrollPeriodsPage() {
               disabled={currentPage === 1}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-white/50 border border-gray-300 rounded-lg hover:bg-white/70 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
             >
-              Previous
+              {t('pagination.previous')}
             </button>
             <span className="text-sm text-gray-600">
-              Page {currentPage} of {totalPages}
+              {t('pagination.page_of', { current: currentPage, total: totalPages })}
             </span>
             <button
               onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
               disabled={currentPage === totalPages}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-white/50 border border-gray-300 rounded-lg hover:bg-white/70 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
             >
-              Next
+              {t('pagination.next')}
             </button>
           </div>
         </div>

@@ -1,0 +1,105 @@
+{
+  "title": "Lohnperioden",
+  "subtitle": "Lohnperioden und Planung verwalten",
+  "create_period": "Periode Erstellen",
+  "create_first_period": "Erste Periode Erstellen",
+  "search_placeholder": "Nach Periodenname oder Datumsbereich suchen...",
+  "refresh": "Aktualisieren",
+  "showing": "Zeige {{count}} von {{total}} Perioden",
+  
+  "filters": {
+    "all_status": "Alle Status",
+    "all_years": "Alle Jahre"
+  },
+  
+  "status": {
+    "active": "Aktiv",
+    "closed": "Geschlossen",
+    "draft": "Entwurf"
+  },
+  
+  "table": {
+    "period_name": "Periodenname",
+    "start_date": "Startdatum",
+    "end_date": "Enddatum",
+    "status": "Status",
+    "employees": "Mitarbeiter",
+    "total_hours": "Gesamtstunden",
+    "actions": "Aktionen"
+  },
+  
+  "actions": {
+    "view_period": "Periode Anzeigen",
+    "edit_period": "Periode Bearbeiten",
+    "close_period": "Periode Schließen",
+    "reopen_period": "Periode Wiedereröffnen",
+    "delete_period": "Periode Löschen",
+    "generate_report": "Bericht Generieren"
+  },
+  
+  "pagination": {
+    "previous": "Zurück",
+    "next": "Weiter",
+    "page_of": "Seite {{current}} von {{total}}"
+  },
+  
+  "empty": {
+    "no_periods_found": "Keine Lohnperioden gefunden",
+    "adjust_search": "Versuchen Sie, Ihre Suchbegriffe anzupassen",
+    "get_started": "Erstellen Sie Ihre erste Lohnperiode"
+  },
+  
+  "form": {
+    "period_name": "Periodenname",
+    "start_date": "Startdatum",
+    "end_date": "Enddatum",
+    "description": "Beschreibung",
+    "create": "Periode Erstellen",
+    "update": "Periode Aktualisieren",
+    "cancel": "Abbrechen"
+  },
+  
+  "confirm": {
+    "close_title": "Lohnperiode Schließen?",
+    "close_text": "Nach dem Schließen kann diese Periode nicht mehr geändert werden. Sind Sie sicher?",
+    "reopen_title": "Lohnperiode Wiedereröffnen?",
+    "reopen_text": "Dies ermöglicht wieder Änderungen an der Periode.",
+    "delete_title": "Lohnperiode Löschen?",
+    "delete_text": "Diese Aktion kann nicht rückgängig gemacht werden!",
+    "yes_close": "Ja, schließen!",
+    "yes_reopen": "Ja, wiedereröffnen!",
+    "yes_delete": "Ja, löschen!",
+    "cancel": "Abbrechen"
+  },
+  
+  "success": {
+    "created": "Lohnperiode erfolgreich erstellt!",
+    "updated": "Lohnperiode erfolgreich aktualisiert!",
+    "closed": "Lohnperiode erfolgreich geschlossen!",
+    "reopened": "Lohnperiode erfolgreich wiedereröffnet!",
+    "deleted": "Lohnperiode erfolgreich gelöscht!",
+    "report_generated": "Lohnbericht erfolgreich generiert!"
+  },
+  
+  "errors": {
+    "create_failed": "Lohnperiode konnte nicht erstellt werden.",
+    "update_failed": "Lohnperiode konnte nicht aktualisiert werden.",
+    "close_failed": "Lohnperiode konnte nicht geschlossen werden.",
+    "reopen_failed": "Lohnperiode konnte nicht wiedereröffnet werden.",
+    "delete_failed": "Lohnperiode konnte nicht gelöscht werden.",
+    "fetch_failed": "Lohnperioden konnten nicht abgerufen werden",
+    "report_failed": "Bericht konnte nicht generiert werden",
+    "invalid_date_range": "Enddatum muss nach dem Startdatum liegen",
+    "period_exists": "Eine Periode mit diesem Namen existiert bereits"
+  },
+  
+  "validation": {
+    "period_name_required": "Periodenname ist erforderlich",
+    "start_date_required": "Startdatum ist erforderlich",
+    "end_date_required": "Enddatum ist erforderlich",
+    "min_length": "Muss mindestens {{min}} Zeichen haben",
+    "max_length": "Darf nicht mehr als {{max}} Zeichen haben"
+  },
+  
+  "loading": "Lädt..."
+}

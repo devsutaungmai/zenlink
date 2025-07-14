@@ -90,14 +90,6 @@
     "delete_warning": "Du vil ikke kunne angre dette!",
     "delete_success": "Ansatt har blitt slettet.",
     "delete_error": "Kunne ikke slette ansatt.",
-    "invite_modal": {
-      "title": "Send invitasjon",
-      "email_label": "E-post",
-      "send_button": "Send invitasjon",
-      "sending": "Sender...",
-      "success": "Invitasjon sendt!",
-      "error": "Kunne ikke sende invitasjon."
-    },
     "pin_modal": {
       "title": "Sett PIN for {{name}}",
       "pin_label": "6-sifret PIN",
@@ -162,28 +154,6 @@
       "back_to_dashboard": "Tilbake til dashbord",
       "try_again": "Prøv igjen"
     },
-    "form": {
-      "first_name": "Fornavn",
-      "last_name": "Etternavn",
-      "birthday": "Bursdag",
-      "gender": "Kjønn",
-      "male": "Mann",
-      "female": "Kvinne",
-      "other": "Annet",
-      "social_security_no": "Personnummer",
-      "employee_number": "Ansattnummer",
-      "date_of_hire": "Ansettelsesdato",
-      "hours_per_month": "Timer per måned",
-      "department": "Avdeling",
-      "select_department": "Velg en avdeling",
-      "employee_group": "Ansattgruppe",
-      "no_group": "Ingen gruppe",
-      "address": "Adresse",
-      "mobile": "Mobil",
-      "bank_account": "Bankkonto",
-      "team_leader": "Teamleder",
-      "saving": "Lagrer..."
-    },
     "table": {
       "employee": "Ansatt",
       "employee_no": "Ansatt nr.",
@@ -205,14 +175,6 @@
       "sending": "Sender...",
       "success": "Invitasjon sendt!",
       "error": "Kunne ikke sende invitasjon."
-    },
-    "pin_modal": {
-      "title": "Sett PIN for {{name}}",
-      "pin_label": "6-sifret PIN",
-      "pin_description": "Skriv inn en 6-sifret PIN som ansatte vil bruke for å stemple inn/ut",
-      "set_pin": "Sett PIN",
-      "success": "PIN satt!",
-      "error": "Kunne ikke sette PIN."
     },
     "form": {
       "first_name": "Fornavn",

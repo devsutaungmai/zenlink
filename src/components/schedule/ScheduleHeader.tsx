@@ -1,5 +1,6 @@
 import { format } from 'date-fns'
 import { ArrowLeftIcon, ArrowRightIcon } from '@heroicons/react/24/outline'
+import { useTranslation } from 'react-i18next'
 
 interface Employee {
   id: string
@@ -32,12 +33,13 @@ export default function ScheduleHeader({
   selectedEmployeeId,
   onEmployeeChange
 }: ScheduleHeaderProps) {
+  const { t } = useTranslation('schedule')
   const safeEmployees = Array.isArray(employees) ? employees : []
   
   return (
     <div className="mb-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
       <div className="flex items-center">
-        <h1 className="text-2xl font-semibold text-gray-900 mr-4">Schedule</h1>
+        <h1 className="text-2xl font-semibold text-gray-900 mr-4">{t('schedule.title')}</h1>
         
         <div className="flex space-x-2">
           <button 
@@ -68,7 +70,7 @@ export default function ScheduleHeader({
             onChange={(e) => onEmployeeChange(e.target.value === "" ? null : e.target.value)}
             className="w-full px-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#31BCFF]"
           >
-            <option value="">All Employees</option>
+            <option value="">{t('schedule.header.all_employees')}</option>
             {safeEmployees.map(employee => (
               <option key={employee.id} value={employee.id}>
                 {employee.firstName} {employee.lastName}
@@ -76,6 +78,14 @@ export default function ScheduleHeader({
             ))}
           </select>
         </div>
+        
+        {/* Today Button */}
+        <button
+          onClick={onTodayClick}
+          className="px-3 py-1.5 rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200"
+        >
+          {t('schedule.header.today')}
+        </button>
         
         {/* View Mode Toggles */}
         <div className="flex space-x-2">
@@ -87,7 +97,7 @@ export default function ScheduleHeader({
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            Week
+            {t('schedule.header.week')}
           </button>
           <button
             onClick={() => onViewModeChange('day')}
@@ -97,7 +107,7 @@ export default function ScheduleHeader({
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            Day
+            {t('schedule.header.day')}
           </button>
         </div>
       </div>

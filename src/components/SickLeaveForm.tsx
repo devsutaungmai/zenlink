@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Upload, X, FileText, Calendar } from 'lucide-react'
 import Swal from 'sweetalert2'
+import { useTranslation } from 'react-i18next'
 
 interface SickLeaveFormData {
   employeeId?: string
@@ -31,6 +32,7 @@ export default function SickLeaveForm({
   showEmployeeSelection = false,
   isEmployee = false
 }: SickLeaveFormProps) {
+  const { t } = useTranslation('sick-leave')
   const [formData, setFormData] = useState<SickLeaveFormData>(() => ({
     employeeId: initialData?.employeeId || '',
     startDate: initialData?.startDate || '',
@@ -67,7 +69,7 @@ export default function SickLeaveForm({
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || 'Upload failed')
+        throw new Error(errorData.error || t('errors.upload_failed'))
       }
 
       const result = await response.json()
@@ -89,7 +91,7 @@ export default function SickLeaveForm({
         timer: 3000,
         timerProgressBar: true,
         icon: 'success',
-        title: 'Document uploaded successfully!'
+        title: t('success.document_uploaded')
       })
     } catch (error: any) {
       console.error('Upload error:', error)
@@ -100,7 +102,7 @@ export default function SickLeaveForm({
         timer: 3000,
         timerProgressBar: true,
         icon: 'error',
-        title: error.message || 'Upload failed'
+        title: error.message || t('errors.upload_failed')
       })
     } finally {
       setUploading(false)
@@ -136,7 +138,7 @@ export default function SickLeaveForm({
         timer: 3000,
         timerProgressBar: true,
         icon: 'error',
-        title: 'Start date and end date are required'
+        title: t('validation.dates_required')
       })
       return
     }
@@ -149,7 +151,7 @@ export default function SickLeaveForm({
         timer: 3000,
         timerProgressBar: true,
         icon: 'error',
-        title: 'End date cannot be before start date'
+        title: t('validation.end_date_before_start')
       })
       return
     }
@@ -162,7 +164,7 @@ export default function SickLeaveForm({
         timer: 3000,
         timerProgressBar: true,
         icon: 'error',
-        title: 'Please select an employee'
+        title: t('validation.employee_required')
       })
       return
     }
@@ -176,7 +178,7 @@ export default function SickLeaveForm({
       {showEmployeeSelection && (
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Employee <span className="text-red-500">*</span>
+            {t('form.employee')} <span className="text-red-500">*</span>
           </label>
           <select
             value={formData.employeeId}
@@ -184,7 +186,7 @@ export default function SickLeaveForm({
             className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF]"
             required
           >
-            <option value="">Select an employee...</option>
+            <option value="">{t('form.select_employee')}</option>
             {employees.map((employee) => (
               <option key={employee.id} value={employee.id}>
                 {employee.firstName} {employee.lastName} {employee.employeeNo ? `(${employee.employeeNo})` : ''}
@@ -199,7 +201,7 @@ export default function SickLeaveForm({
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             <Calendar className="w-4 h-4 inline mr-1" />
-            Start Date <span className="text-red-500">*</span>
+            {t('form.start_date')} <span className="text-red-500">*</span>
           </label>
           <input
             type="date"
@@ -213,7 +215,7 @@ export default function SickLeaveForm({
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             <Calendar className="w-4 h-4 inline mr-1" />
-            End Date <span className="text-red-500">*</span>
+            {t('form.end_date')} <span className="text-red-500">*</span>
           </label>
           <input
             type="date"
@@ -228,24 +230,24 @@ export default function SickLeaveForm({
       {/* Reason */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Reason for Sick Leave
+          {t('form.reason')}
         </label>
         <textarea
           value={formData.reason}
           onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
           rows={3}
           className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF]"
-          placeholder="Describe your illness or reason for leave..."
+          placeholder={t('form.reason_placeholder')}
         />
       </div>
 
       {/* Document Upload */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Supporting Document
+          {t('form.doctor_note')}
         </label>
         <p className="text-xs text-gray-500 mb-3">
-          Upload medical certificate, doctor's note, or other supporting documents (PDF, DOC, DOCX, or images, max 5MB)
+          {t('form.upload_description')}
         </p>
 
         {!uploadedFile ? (
@@ -254,7 +256,7 @@ export default function SickLeaveForm({
             <div className="mt-4">
               <label htmlFor="document-upload" className="cursor-pointer">
                 <span className="mt-2 block text-sm font-medium text-gray-900">
-                  {uploading ? 'Uploading...' : 'Click to upload document'}
+                  {uploading ? t('form.uploading') : t('form.upload_button')}
                 </span>
                 <input
                   id="document-upload"
@@ -298,14 +300,14 @@ export default function SickLeaveForm({
           onClick={onCancel}
           className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#31BCFF]"
         >
-          Cancel
+          {t('form.cancel')}
         </button>
         <button
           type="submit"
           disabled={loading || uploading}
           className="px-4 py-2 text-sm font-medium text-white bg-[#31BCFF] border border-transparent rounded-md hover:bg-[#31BCFF]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#31BCFF] disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {loading ? 'Saving...' : initialData?.id ? 'Update' : 'Submit'} Sick Leave
+          {loading ? t('form.submitting') : (initialData?.id ? t('form.update') : t('form.submit'))}
         </button>
       </div>
     </form>

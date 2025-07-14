@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react'
 import { format } from 'date-fns'
 import { PlusIcon } from '@heroicons/react/24/outline'
+import { useTranslation } from 'react-i18next'
 import SpanningShiftCard from './SpanningShiftCard'
 import HourColumn from './HourColumn'
 
@@ -19,6 +20,7 @@ export default function WeekView({
   onEditShift,
   onAddShift
 }: WeekViewProps) {
+  const { t } = useTranslation('schedule')
   const [isDragging, setIsDragging] = useState(false)
   const [startX, setStartX] = useState(0)
   const [scrollLeft, setScrollLeft] = useState(0)
@@ -175,11 +177,11 @@ export default function WeekView({
                 <div key={i} className="relative">
                   <div className={`p-3 font-medium text-center border-r h-[72px] ${isToday ? 'bg-blue-50' : ''}`}>
                     <div className={`text-gray-950 font-bold ${isToday ? 'text-blue-700' : ''}`}>
-                      {isToday ? <span className="text-blue-700">Today</span> : format(date, 'EEE, MMM d')}
+                      {isToday ? <span className="text-blue-700">{t('week_view.today')}</span> : format(date, 'EEE, MMM d')}
                     </div>
                     <div className="text-sm text-gray-900">
                       <PlusIcon className="inline h-4 w-4 mr-1" />
-                      {dayShifts.length} Shifts
+                      {dayShifts.length} {t('week_view.shifts')}
                     </div>
                   </div>
                   

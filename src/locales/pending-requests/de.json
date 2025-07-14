@@ -1,0 +1,80 @@
+{
+  "title": "Ausstehende Anfragen",
+  "subtitle": "Schichttausch-Anfragen überprüfen und verwalten",
+  "refresh": "Aktualisieren",
+  "total": "gesamt",
+  "swaps": "Tausch",
+  "handovers": "Übergaben",
+  "tabs": {
+    "swap_requests": "Tausch-Anfragen",
+    "shift_requests": "Schicht-Anfragen"
+  },
+  "showing": "{{count}} von {{total}} Anfragen anzeigen",
+  "table": {
+    "type": "Typ",
+    "from_employee": "Von Mitarbeiter",
+    "to_employee": "An Mitarbeiter",
+    "shift_date_time": "Schichtdatum und -zeit",
+    "requested": "Angefragt",
+    "actions": "Aktionen"
+  },
+  "empty": {
+    "no_swap_requests": "Keine ausstehenden Tausch-Anfragen",
+    "no_shift_requests": "Keine ausstehenden Schicht-Anfragen",
+    "swap_processed": "Alle Schichttausch-Anfragen wurden bearbeitet.",
+    "shift_processed": "Alle Schichtübergabe-Anfragen wurden bearbeitet."
+  },
+  "actions": {
+    "view_details": "Details anzeigen",
+    "reject": "Ablehnen",
+    "approve": "Genehmigen",
+    "reject_request": "Anfrage ablehnen",
+    "approve_request": "Anfrage genehmigen"
+  },
+  "modal": {
+    "request_details": "Anfragedetails",
+    "shift_swap": "Schichttausch",
+    "shift_handover": "Schichtübergabe",
+    "request": "Anfrage",
+    "close": "Schließen"
+  },
+  "request_info": {
+    "title": "Anfrageinformationen",
+    "request_type": "Anfragetyp",
+    "status": "Status",
+    "requested_date": "Anfragedatum",
+    "request_time": "Anfragezeit"
+  },
+  "employee_info": {
+    "title": "Mitarbeiterinformationen",
+    "from_employee": "Von Mitarbeiter",
+    "to_employee": "An Mitarbeiter",
+    "name": "Name",
+    "employee_no": "Mitarbeiter Nr.",
+    "department": "Abteilung"
+  },
+  "shift_details": {
+    "title": "Schichtdetails",
+    "date": "Datum",
+    "time": "Zeit",
+    "shift_type": "Schichttyp",
+    "regular_shift": "Reguläre Schicht",
+    "open_end": "Offenes Ende"
+  },
+  "request_reason": {
+    "title": "Anfragegrund"
+  },
+  "types": {
+    "swap": "TAUSCH",
+    "handover": "ÜBERGABE"
+  },
+  "success": {
+    "approved": "Anfrage erfolgreich genehmigt!",
+    "rejected": "Anfrage erfolgreich abgelehnt!"
+  },
+  "errors": {
+    "approve_failed": "Anfrage konnte nicht genehmigt werden",
+    "reject_failed": "Anfrage konnte nicht abgelehnt werden",
+    "fetch_failed": "Ausstehende Anfragen konnten nicht abgerufen werden"
+  }
+}

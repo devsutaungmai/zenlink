@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslation } from 'react-i18next'
 import { 
   CalendarIcon,
   ChevronLeftIcon,
@@ -56,6 +57,7 @@ interface AvailabilityStats {
 
 export default function AdminAvailabilityPage() {
   const router = useRouter()
+  const { t } = useTranslation('availability')
   const [currentDate, setCurrentDate] = useState(new Date())
   const [employees, setEmployees] = useState<Employee[]>([])
   const [availabilities, setAvailabilities] = useState<Availability[]>([])
@@ -91,7 +93,7 @@ export default function AdminAvailabilityPage() {
       ])
     } catch (error) {
       console.error('Error fetching data:', error)
-      setError('Failed to load availability data')
+      setError(t('error.failed_to_load'))
     } finally {
       setLoading(false)
     }
@@ -235,18 +237,15 @@ export default function AdminAvailabilityPage() {
     setCurrentPage(1)
   }, [searchTerm, selectedFilter, selectedDepartment])
 
-  const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ]
-
-  const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  const monthNames = t('calendar.months', { returnObjects: true }) as string[]
+  const weekDays = t('calendar.week_days', { returnObjects: true }) as string[]
   const days = getDaysInMonth(currentDate)
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#31BCFF]"></div>
+        <div className="ml-4 text-gray-600">{t('loading')}</div>
       </div>
     )
   }
@@ -258,7 +257,7 @@ export default function AdminAvailabilityPage() {
           <ExclamationTriangleIcon className="w-12 h-12 mx-auto mb-4" />
           <p className="text-lg font-semibold">{error}</p>
           <Button onClick={fetchData} className="mt-4">
-            Try Again
+            {t('error.try_again')}
           </Button>
         </div>
       </div>
@@ -272,10 +271,10 @@ export default function AdminAvailabilityPage() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-              Employee Availability
+              {t('title')}
             </h1>
             <p className="text-gray-600 mt-2">
-              Manage and view employee availability across all departments
+              {t('subtitle')}
             </p>
           </div>
           <CalendarIcon className="w-12 h-12 text-[#31BCFF]" />
@@ -289,7 +288,7 @@ export default function AdminAvailabilityPage() {
                 <UserGroupIcon className="w-8 h-8 text-blue-600" />
                 <div>
                   <p className="text-2xl font-bold text-gray-900">{stats.totalEmployees}</p>
-                  <p className="text-sm text-gray-600">Total Employees</p>
+                  <p className="text-sm text-gray-600">{t('header.total_employees')}</p>
                 </div>
               </div>
             </CardContent>
@@ -301,7 +300,7 @@ export default function AdminAvailabilityPage() {
                 <CheckCircleIcon className="w-8 h-8 text-green-600" />
                 <div>
                   <p className="text-2xl font-bold text-green-600">{stats.availableToday}</p>
-                  <p className="text-sm text-gray-600">Available Today</p>
+                  <p className="text-sm text-gray-600">{t('header.available_today')}</p>
                 </div>
               </div>
             </CardContent>

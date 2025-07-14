@@ -1,0 +1,61 @@
+{
+  "title": "Lohneinträge",
+  "subtitle": "Mitarbeiter-Lohneinträge und Berechnungen verwalten",
+  "create_entry": "Eintrag Erstellen",
+  "create_first_entry": "Ersten Eintrag Erstellen",
+  "search_placeholder": "Nach Mitarbeitername, Nummer oder Periode suchen...",
+  "filters": {
+    "all_status": "Alle Status",
+    "all_periods": "Alle Perioden"
+  },
+  "status": {
+    "draft": "Entwurf",
+    "approved": "Genehmigt",
+    "paid": "Bezahlt"
+  },
+  "table": {
+    "employee": "Mitarbeiter",
+    "period": "Periode",
+    "hours": "Stunden",
+    "gross_pay": "Bruttolohn",
+    "net_pay": "Nettolohn",
+    "status": "Status",
+    "actions": "Aktionen",
+    "regular": "Normal",
+    "overtime": "Überstunden"
+  },
+  "actions": {
+    "view_entry": "Eintrag Anzeigen",
+    "edit_entry": "Eintrag Bearbeiten",
+    "download_payslip": "PDF Lohnzettel Herunterladen",
+    "delete_entry": "Eintrag Löschen"
+  },
+  "pagination": {
+    "previous": "Zurück",
+    "next": "Weiter",
+    "page_of": "Seite {{current}} von {{total}}"
+  },
+  "showing": "Zeige {{count}} von {{total}} Einträgen",
+  "no_entries": {
+    "title": "Keine Lohneinträge gefunden",
+    "search_message": "Versuchen Sie, Ihre Suchbegriffe anzupassen",
+    "empty_message": "Erstellen Sie Ihren ersten Lohneintrag"
+  },
+  "delete": {
+    "confirm_title": "Sind Sie sicher?",
+    "confirm_text": "Sie können dies nicht rückgängig machen!",
+    "confirm_button": "Ja, löschen!",
+    "cancel_button": "Abbrechen"
+  },
+  "success": {
+    "deleted": "Lohneintrag wurde gelöscht.",
+    "payslip_downloaded": "Lohnzettel PDF wurde erfolgreich heruntergeladen."
+  },
+  "errors": {
+    "delete_failed": "Lohneintrag konnte nicht gelöscht werden.",
+    "payslip_failed": "Lohnzettel konnte nicht exportiert werden.",
+    "fetch_entries_failed": "Fehler beim Abrufen der Einträge",
+    "fetch_periods_failed": "Fehler beim Abrufen der Perioden",
+    "generate_payslip_failed": "Lohnzettel konnte nicht generiert werden"
+  }
+}

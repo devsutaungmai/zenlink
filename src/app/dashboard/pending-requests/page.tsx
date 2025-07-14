@@ -50,7 +50,7 @@ interface ShiftExchange {
 }
 
 export default function PendingRequestsPage() {
-  const { t } = useTranslation()
+  const { t } = useTranslation('pending-requests')
   const [pendingExchanges, setPendingExchanges] = useState<ShiftExchange[]>([])
   const [loading, setLoading] = useState(true)
   const [processingId, setProcessingId] = useState<string | null>(null)
@@ -70,7 +70,7 @@ export default function PendingRequestsPage() {
         const data = await response.json()
         setPendingExchanges(data)
       } else {
-        console.error('Failed to fetch pending exchanges')
+        console.error(t('errors.fetch_failed'))
       }
     } catch (error) {
       console.error('Error fetching pending exchanges:', error)
@@ -98,7 +98,7 @@ export default function PendingRequestsPage() {
           timer: 3000,
           timerProgressBar: true,
           icon: 'success',
-          title: `Request ${status.toLowerCase()} successfully!`
+          title: t(status === 'APPROVED' ? 'success.approved' : 'success.rejected')
         })
         await fetchPendingExchanges() // Refresh the list
       } else {
@@ -110,7 +110,7 @@ export default function PendingRequestsPage() {
           timer: 3000,
           timerProgressBar: true,
           icon: 'error',
-          title: error.error || `Failed to ${status.toLowerCase()} request`
+          title: error.error || t(status === 'APPROVED' ? 'errors.approve_failed' : 'errors.reject_failed')
         })
       }
     } catch (error) {
@@ -122,7 +122,7 @@ export default function PendingRequestsPage() {
         timer: 3000,
         timerProgressBar: true,
         icon: 'error',
-        title: `Failed to ${status.toLowerCase()} request`
+        title: t(status === 'APPROVED' ? 'errors.approve_failed' : 'errors.reject_failed')
       })
     } finally {
       setProcessingId(null)
@@ -208,22 +208,22 @@ export default function PendingRequestsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between">
           <div className="mb-4 sm:mb-0">
             <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-              Pending Requests
+              {t('title')}
             </h1>
             <p className="mt-2 text-gray-600">
-              Review and manage shift exchange requests
+              {t('subtitle')}
             </p>
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <Badge variant="secondary" className="px-3 py-1">
-                {pendingExchanges.length} total
+                {pendingExchanges.length} {t('total')}
               </Badge>
               <Badge variant="outline" className="px-3 py-1">
-                {swapCount} swaps
+                {swapCount} {t('swaps')}
               </Badge>
               <Badge variant="outline" className="px-3 py-1">
-                {handoverCount} handovers
+                {handoverCount} {t('handovers')}
               </Badge>
             </div>
             <Button 
@@ -232,7 +232,7 @@ export default function PendingRequestsPage() {
               className="flex items-center gap-2"
             >
               <ClockIcon className="w-4 h-4" />
-              Refresh
+              {t('refresh')}
             </Button>
           </div>
         </div>
@@ -252,7 +252,7 @@ export default function PendingRequestsPage() {
             >
               <div className="flex items-center gap-2">
                 <ArrowsRightLeftIcon className="w-4 h-4" />
-                Swap Requests
+                {t('tabs.swap_requests')}
                 {swapCount > 0 && (
                   <Badge variant="secondary" className="ml-1">
                     {swapCount}
@@ -270,7 +270,7 @@ export default function PendingRequestsPage() {
             >
               <div className="flex items-center gap-2">
                 <HandRaisedIcon className="w-4 h-4" />
-                Shift Requests
+                {t('tabs.shift_requests')}
                 {handoverCount > 0 && (
                   <Badge variant="secondary" className="ml-1">
                     {handoverCount}
@@ -281,7 +281,7 @@ export default function PendingRequestsPage() {
           </nav>
         </div>
         <div className="flex items-center justify-between mt-4 text-sm text-gray-500">
-          <span>Showing {filteredExchanges.length} of {pendingExchanges.length} requests</span>
+          <span>{t('showing', { count: filteredExchanges.length, total: pendingExchanges.length })}</span>
         </div>
       </div>
 
@@ -296,10 +296,10 @@ export default function PendingRequestsPage() {
             )}
           </div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">
-            {activeTab === 'swap' ? 'No Pending Swap Requests' : 'No Pending Shift Requests'}
+            {activeTab === 'swap' ? t('empty.no_swap_requests') : t('empty.no_shift_requests')}
           </h3>
           <p className="text-gray-500">
-            {activeTab === 'swap' ? 'All shift swap requests have been processed.' : 'All shift handover requests have been processed.'}
+            {activeTab === 'swap' ? t('empty.swap_processed') : t('empty.shift_processed')}
           </p>
         </div>
       ) : (
@@ -309,22 +309,22 @@ export default function PendingRequestsPage() {
               <thead className="bg-gray-50/80">
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Type
+                    {t('table.type')}
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    From Employee
+                    {t('table.from_employee')}
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    To Employee
+                    {t('table.to_employee')}
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Shift Date & Time
+                    {t('table.shift_date_time')}
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Requested
+                    {t('table.requested')}
                   </th>
                   <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
+                    {t('table.actions')}
                   </th>
                 </tr>
               </thead>
@@ -365,7 +365,7 @@ export default function PendingRequestsPage() {
                           {new Date(exchange.shift.date).toLocaleDateString()}
                         </div>
                         <div className="text-sm text-gray-500">
-                          {formatTime(exchange.shift.startTime)} - {exchange.shift.endTime ? formatTime(exchange.shift.endTime) : 'Open End'}
+                          {formatTime(exchange.shift.startTime)} - {exchange.shift.endTime ? formatTime(exchange.shift.endTime) : t('shift_details.open_end')}
                         </div>
                       </div>
                     </td>
@@ -379,7 +379,7 @@ export default function PendingRequestsPage() {
                         <button
                           onClick={() => showDetails(exchange)}
                           className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
-                          title="View Details"
+                          title={t('actions.view_details')}
                         >
                           <EyeIcon className="w-4 h-4" />
                         </button>
@@ -387,7 +387,7 @@ export default function PendingRequestsPage() {
                           onClick={() => handleApproveReject(exchange.id, 'REJECTED')}
                           disabled={processingId === exchange.id}
                           className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 disabled:opacity-50"
-                          title="Reject Request"
+                          title={t('actions.reject_request')}
                         >
                           <XMarkIcon className="w-4 h-4" />
                         </button>
@@ -395,7 +395,7 @@ export default function PendingRequestsPage() {
                           onClick={() => handleApproveReject(exchange.id, 'APPROVED')}
                           disabled={processingId === exchange.id}
                           className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200 disabled:opacity-50"
-                          title="Approve Request"
+                          title={t('actions.approve_request')}
                         >
                           <CheckIcon className="w-4 h-4" />
                         </button>
@@ -427,10 +427,10 @@ export default function PendingRequestsPage() {
                   {getTypeIcon(getExchangeType(selectedExchange))}
                   <div>
                     <h3 className="text-xl font-semibold text-gray-900">
-                      Request Details
+                      {t('modal.request_details')}
                     </h3>
                     <p className="text-sm text-gray-600">
-                      {getExchangeType(selectedExchange) === 'SWAP' ? 'Shift Swap' : 'Shift Handover'} Request
+                      {getExchangeType(selectedExchange) === 'SWAP' ? t('modal.shift_swap') : t('modal.shift_handover')} {t('modal.request')}
                     </p>
                   </div>
                 </div>
@@ -448,23 +448,23 @@ export default function PendingRequestsPage() {
               <div className="space-y-6">
                 {/* Request Information */}
                 <div>
-                  <h4 className="font-medium text-gray-900 mb-3">Request Information</h4>
+                  <h4 className="font-medium text-gray-900 mb-3">{t('request_info.title')}</h4>
                   <div className="bg-gray-50 rounded-lg p-4 space-y-3">
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
-                        <span className="text-gray-500">Request Type:</span>
-                        <p className="font-medium">{getExchangeType(selectedExchange)}</p>
+                        <span className="text-gray-500">{t('request_info.request_type')}:</span>
+                        <p className="font-medium">{t(`types.${getExchangeType(selectedExchange).toLowerCase()}`)}</p>
                       </div>
                       <div>
-                        <span className="text-gray-500">Status:</span>
+                        <span className="text-gray-500">{t('request_info.status')}:</span>
                         <p className="font-medium">{selectedExchange.status}</p>
                       </div>
                       <div>
-                        <span className="text-gray-500">Requested Date:</span>
+                        <span className="text-gray-500">{t('request_info.requested_date')}:</span>
                         <p className="font-medium">{new Date(selectedExchange.requestedAt).toLocaleDateString()}</p>
                       </div>
                       <div>
-                        <span className="text-gray-500">Request Time:</span>
+                        <span className="text-gray-500">{t('request_info.request_time')}:</span>
                         <p className="font-medium">{new Date(selectedExchange.requestedAt).toLocaleTimeString()}</p>
                       </div>
                     </div>
@@ -473,23 +473,23 @@ export default function PendingRequestsPage() {
 
                 {/* Employee Information */}
                 <div>
-                  <h4 className="font-medium text-gray-900 mb-3">Employee Information</h4>
+                  <h4 className="font-medium text-gray-900 mb-3">{t('employee_info.title')}</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="bg-blue-50 rounded-lg p-4">
-                      <h5 className="font-medium text-blue-900 mb-2">From Employee</h5>
+                      <h5 className="font-medium text-blue-900 mb-2">{t('employee_info.from_employee')}</h5>
                       <div className="space-y-1 text-sm">
-                        <p><span className="font-medium">Name:</span> {selectedExchange.fromEmployee.firstName} {selectedExchange.fromEmployee.lastName}</p>
-                        <p><span className="font-medium">Employee No:</span> {selectedExchange.fromEmployee.employeeNo}</p>
-                        <p><span className="font-medium">Department:</span> {selectedExchange.fromEmployee.department.name}</p>
+                        <p><span className="font-medium">{t('employee_info.name')}:</span> {selectedExchange.fromEmployee.firstName} {selectedExchange.fromEmployee.lastName}</p>
+                        <p><span className="font-medium">{t('employee_info.employee_no')}:</span> {selectedExchange.fromEmployee.employeeNo}</p>
+                        <p><span className="font-medium">{t('employee_info.department')}:</span> {selectedExchange.fromEmployee.department.name}</p>
                       </div>
                     </div>
                     
                     <div className="bg-green-50 rounded-lg p-4">
-                      <h5 className="font-medium text-green-900 mb-2">To Employee</h5>
+                      <h5 className="font-medium text-green-900 mb-2">{t('employee_info.to_employee')}</h5>
                       <div className="space-y-1 text-sm">
-                        <p><span className="font-medium">Name:</span> {selectedExchange.toEmployee.firstName} {selectedExchange.toEmployee.lastName}</p>
-                        <p><span className="font-medium">Employee No:</span> {selectedExchange.toEmployee.employeeNo}</p>
-                        <p><span className="font-medium">Department:</span> {selectedExchange.toEmployee.department.name}</p>
+                        <p><span className="font-medium">{t('employee_info.name')}:</span> {selectedExchange.toEmployee.firstName} {selectedExchange.toEmployee.lastName}</p>
+                        <p><span className="font-medium">{t('employee_info.employee_no')}:</span> {selectedExchange.toEmployee.employeeNo}</p>
+                        <p><span className="font-medium">{t('employee_info.department')}:</span> {selectedExchange.toEmployee.department.name}</p>
                       </div>
                     </div>
                   </div>
@@ -497,26 +497,26 @@ export default function PendingRequestsPage() {
 
                 {/* Shift Details */}
                 <div>
-                  <h4 className="font-medium text-gray-900 mb-3">Shift Details</h4>
+                  <h4 className="font-medium text-gray-900 mb-3">{t('shift_details.title')}</h4>
                   <div className="bg-sky-50 rounded-lg p-4">
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
-                        <span className="text-gray-500">Date:</span>
+                        <span className="text-gray-500">{t('shift_details.date')}:</span>
                         <p className="font-medium">{formatDate(selectedExchange.shift.date)}</p>
                       </div>
                       <div>
-                        <span className="text-gray-500">Time:</span>
+                        <span className="text-gray-500">{t('shift_details.time')}:</span>
                         <p className="font-medium">
-                          {formatTime(selectedExchange.shift.startTime)} - {selectedExchange.shift.endTime ? formatTime(selectedExchange.shift.endTime) : 'Open End'}
+                          {formatTime(selectedExchange.shift.startTime)} - {selectedExchange.shift.endTime ? formatTime(selectedExchange.shift.endTime) : t('shift_details.open_end')}
                         </p>
                       </div>
                       <div>
-                        <span className="text-gray-500">Shift Type:</span>
-                        <p className="font-medium">{selectedExchange.shift.shiftType || 'Regular Shift'}</p>
+                        <span className="text-gray-500">{t('shift_details.shift_type')}:</span>
+                        <p className="font-medium">{selectedExchange.shift.shiftType || t('shift_details.regular_shift')}</p>
                       </div>
                       {selectedExchange.shift.employee && selectedExchange.shift.employee.department && (
                         <div>
-                          <span className="text-gray-500">Department:</span>
+                          <span className="text-gray-500">{t('employee_info.department')}:</span>
                           <p className="font-medium">{selectedExchange.shift.employee.department.name}</p>
                         </div>
                       )}
@@ -527,7 +527,7 @@ export default function PendingRequestsPage() {
                 {/* Request Reason */}
                 {selectedExchange.reason && (
                   <div>
-                    <h4 className="font-medium text-gray-900 mb-3">Request Reason</h4>
+                    <h4 className="font-medium text-gray-900 mb-3">{t('request_reason.title')}</h4>
                     <div className="bg-gray-50 rounded-lg p-4">
                       <p className="text-sm text-gray-700">{selectedExchange.reason}</p>
                     </div>
@@ -543,7 +543,7 @@ export default function PendingRequestsPage() {
                   onClick={() => setShowDetailsModal(false)}
                   variant="outline"
                 >
-                  Close
+                  {t('modal.close')}
                 </Button>
                 
                 <div className="flex items-center gap-3">
@@ -557,7 +557,7 @@ export default function PendingRequestsPage() {
                     className="text-red-600 border-red-300 hover:bg-red-50"
                   >
                     <XMarkIcon className="w-4 h-4 mr-2" />
-                    Reject
+                    {t('actions.reject')}
                   </Button>
                   
                   <Button
@@ -569,7 +569,7 @@ export default function PendingRequestsPage() {
                     className="bg-green-600 hover:bg-green-700"
                   >
                     <CheckIcon className="w-4 h-4 mr-2" />
-                    Approve
+                    {t('actions.approve')}
                   </Button>
                 </div>
               </div>

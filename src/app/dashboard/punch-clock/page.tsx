@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslation } from 'react-i18next'
 import { 
   ClockIcon, 
   UserGroupIcon,
@@ -73,6 +74,7 @@ interface Attendance {
 
 export default function PunchClockPage() {
   const router = useRouter()
+  const { t } = useTranslation('punch-clock')
   const [business, setBusiness] = useState<Business | null>(null)
   const [employees, setEmployees] = useState<Employee[]>([])
   const [attendanceRecords, setAttendanceRecords] = useState<Attendance[]>([])
@@ -220,7 +222,7 @@ export default function PunchClockPage() {
       return (
         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
           <div className="w-2 h-2 bg-green-500 rounded-full mr-1 animate-pulse"></div>
-          Working
+          {t('status.working')}
         </span>
       )
     }
@@ -228,7 +230,7 @@ export default function PunchClockPage() {
     return (
       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
         <CheckCircleIcon className="w-3 h-3 mr-1" />
-        Completed
+        {t('status.completed')}
       </span>
     )
   }
@@ -240,6 +242,7 @@ export default function PunchClockPage() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#31BCFF]"></div>
+        <div className="ml-4 text-gray-600">{t('loading')}</div>
       </div>
     )
   }
@@ -248,12 +251,12 @@ export default function PunchClockPage() {
     return (
       <div className="p-6">
         <div className="text-center text-red-600">
-          Error: {error}
+          {t('error.failed_to_load')}: {error}
           <button 
             onClick={fetchData}
             className="ml-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
           >
-            Retry
+            {t('error.retry')}
           </button>
         </div>
       </div>
@@ -267,23 +270,23 @@ export default function PunchClockPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-2">
-              Punch Clock - Attendance Records
+              {t('title')}
             </h1>
             <p className="text-gray-600 text-base mb-4">
-              Track and manage employee attendance and working hours
+              {t('subtitle')}
             </p>
             <div className="flex items-center gap-8 text-sm text-gray-500">
               <div className="flex items-center gap-2">
                 <UserGroupIcon className="w-4 h-4" />
-                <span>{attendanceRecords.length} Records Today</span>
+                <span>{attendanceRecords.length} {t('header.records_today')}</span>
               </div>
               <div className="flex items-center gap-2">
                 <PlayIcon className="w-4 h-4" />
-                <span>{activeCount} Currently Working</span>
+                <span>{activeCount} {t('header.currently_working')}</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircleIcon className="w-4 h-4" />
-                <span>{completedCount} Completed</span>
+                <span>{completedCount} {t('header.completed')}</span>
               </div>
               <div className="flex items-center gap-2 text-blue-600 font-medium">
                 <ClockIcon className="w-4 h-4" />
@@ -298,7 +301,7 @@ export default function PunchClockPage() {
           </div>
           <div className="text-right">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Select Date
+              {t('header.select_date')}
             </label>
             <input
               type="date"
@@ -321,7 +324,7 @@ export default function PunchClockPage() {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search employees or departments..."
+              placeholder={t('search.placeholder')}
               className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF]"
             />
           </div>
@@ -329,12 +332,12 @@ export default function PunchClockPage() {
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
               <FunnelIcon className="w-4 h-4 text-gray-500" />
-              <span className="text-sm text-gray-500">Filter:</span>
+              <span className="text-sm text-gray-500">{t('search.filter_label')}</span>
             </div>
             {[
-              { value: 'all', label: 'All' },
-              { value: 'working', label: 'Working' },
-              { value: 'completed', label: 'Completed' }
+              { value: 'all', label: t('filters.all') },
+              { value: 'working', label: t('filters.working') },
+              { value: 'completed', label: t('filters.completed') }
             ].map((filter) => (
               <button
                 key={filter.value}
@@ -356,16 +359,16 @@ export default function PunchClockPage() {
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900">
-            Attendance Records ({filteredAttendance.length})
+            {t('table.title')} ({filteredAttendance.length})
           </h3>
         </div>
         
         {filteredAttendance.length === 0 ? (
           <div className="text-center py-12">
             <ClockIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No attendance records found</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">{t('empty_state.title')}</h3>
             <p className="text-gray-500">
-              {searchTerm ? 'Try adjusting your search criteria.' : 'No one has punched in yet today.'}
+              {searchTerm ? t('empty_state.subtitle_search') : t('empty_state.subtitle_no_data')}
             </p>
           </div>
         ) : (
@@ -374,25 +377,25 @@ export default function PunchClockPage() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Employee
+                    {t('table.columns.employee')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Department
+                    {t('table.columns.department')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Punch In
+                    {t('table.columns.punch_in')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Punch Out
+                    {t('table.columns.punch_out')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Duration
+                    {t('table.columns.duration')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
+                    {t('table.columns.status')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Shift Info
+                    {t('table.columns.shift_info')}
                   </th>
                 </tr>
               </thead>
@@ -428,7 +431,7 @@ export default function PunchClockPage() {
                           <div className="text-sm text-gray-500">{formatDate(record.punchOutTime)}</div>
                         </div>
                       ) : (
-                        <span className="text-sm text-gray-500">Still working</span>
+                        <span className="text-sm text-gray-500">{t('status.still_working')}</span>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -454,7 +457,7 @@ export default function PunchClockPage() {
                           </span>
                         </div>
                       ) : (
-                        <span className="text-sm text-gray-500">No shift assigned</span>
+                        <span className="text-sm text-gray-500">{t('status.no_shift')}</span>
                       )}
                     </td>
                   </tr>

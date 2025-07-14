@@ -5,6 +5,7 @@ import { PlusIcon, CheckIcon, XMarkIcon, EyeIcon, PencilIcon, TrashIcon } from '
 import { FileText, Calendar, User, Clock } from 'lucide-react'
 import Swal from 'sweetalert2'
 import SickLeaveModal from '@/components/SickLeaveModal'
+import { useTranslation } from 'react-i18next'
 
 interface SickLeave {
   id: string
@@ -38,6 +39,7 @@ interface SickLeaveFormData {
 }
 
 export default function SickLeavesPage() {
+  const { t } = useTranslation('sick-leave')
   const [sickLeaves, setSickLeaves] = useState<SickLeave[]>([])
   const [employees, setEmployees] = useState<Employee[]>([])
   const [loading, setLoading] = useState(true)
@@ -57,14 +59,14 @@ export default function SickLeavesPage() {
       
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to fetch sick leaves')
+        throw new Error(errorData.error || t('errors.fetch_failed'))
       }
       
       const data = await response.json()
       setSickLeaves(data)
     } catch (error) {
       console.error('Error fetching sick leaves:', error)
-      setError(error instanceof Error ? error.message : 'An unknown error occurred')
+      setError(error instanceof Error ? error.message : t('errors.unknown'))
     } finally {
       setLoading(false)
     }
@@ -75,7 +77,7 @@ export default function SickLeavesPage() {
       const response = await fetch('/api/employees')
       
       if (!response.ok) {
-        throw new Error('Failed to fetch employees')
+        throw new Error(t('errors.fetch_employees_failed'))
       }
       
       const data = await response.json()
@@ -106,7 +108,7 @@ export default function SickLeavesPage() {
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to save sick leave')
+        throw new Error(errorData.error || t('errors.save_failed'))
       }
 
       const result = await response.json()
@@ -124,7 +126,7 @@ export default function SickLeavesPage() {
         timer: 3000,
         timerProgressBar: true,
         icon: 'success',
-        title: `Sick leave ${editingData ? 'updated' : 'created'} successfully!`
+        title: t(editingData ? 'success.updated' : 'success.created')
       })
 
       setShowModal(false)
@@ -138,7 +140,7 @@ export default function SickLeavesPage() {
         timer: 3000,
         timerProgressBar: true,
         icon: 'error',
-        title: error.message || 'Failed to save sick leave'
+        title: error.message || t('errors.save_failed')
       })
     } finally {
       setSubmitting(false)
@@ -157,7 +159,7 @@ export default function SickLeavesPage() {
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to update sick leave')
+        throw new Error(errorData.error || t('errors.update_failed'))
       }
 
       const result = await response.json()
@@ -170,7 +172,7 @@ export default function SickLeavesPage() {
         timer: 3000,
         timerProgressBar: true,
         icon: 'success',
-        title: `Sick leave ${approved ? 'approved' : 'rejected'} successfully!`
+        title: t(approved ? 'success.approved' : 'success.rejected')
       })
     } catch (error: any) {
       console.error('Error updating sick leave:', error)
@@ -181,7 +183,7 @@ export default function SickLeavesPage() {
         timer: 3000,
         timerProgressBar: true,
         icon: 'error',
-        title: error.message || 'Failed to update sick leave'
+        title: error.message || t('errors.update_failed')
       })
     }
   }
@@ -189,14 +191,14 @@ export default function SickLeavesPage() {
   const handleDelete = async (id: string) => {
     try {
       const result = await Swal.fire({
-        title: 'Are you sure?',
-        text: "You won't be able to revert this!",
+        title: t('delete.confirm_title'),
+        text: t('delete.confirm_text'),
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#31BCFF',
         cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, delete it!',
-        cancelButtonText: 'Cancel'
+        confirmButtonText: t('delete.confirm_button'),
+        cancelButtonText: t('delete.cancel_button')
       })
 
       if (result.isConfirmed) {
@@ -214,10 +216,10 @@ export default function SickLeavesPage() {
             timer: 3000,
             timerProgressBar: true,
             icon: 'success',
-            title: 'Sick leave deleted successfully!'
+            title: t('success.deleted')
           })
         } else {
-          throw new Error('Failed to delete sick leave')
+          throw new Error(t('errors.delete_failed'))
         }
       }
     } catch (error: any) {
@@ -229,7 +231,7 @@ export default function SickLeavesPage() {
         timer: 3000,
         timerProgressBar: true,
         icon: 'error',
-        title: error.message || 'Failed to delete sick leave'
+        title: error.message || t('errors.delete_failed')
       })
     }
   }
@@ -269,7 +271,7 @@ export default function SickLeavesPage() {
   if (loading) {
     return (
       <div className="p-6">
-        <div className="text-center">Loading sick leaves...</div>
+        <div className="text-center">{t('loading')}</div>
       </div>
     )
   }
@@ -278,12 +280,12 @@ export default function SickLeavesPage() {
     return (
       <div className="p-6">
         <div className="text-center text-red-600">
-          Error: {error}
+          {t('error')}: {error}
           <button 
             onClick={fetchSickLeaves}
             className="ml-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
           >
-            Retry
+            {t('retry')}
           </button>
         </div>
       </div>
@@ -294,9 +296,9 @@ export default function SickLeavesPage() {
     <>
       <div className="sm:flex sm:items-center">
         <div className="sm:flex-auto">
-          <h1 className="text-xl font-semibold text-gray-900">Sick Leaves</h1>
+          <h1 className="text-xl font-semibold text-gray-900">{t('title')}</h1>
           <p className="mt-2 text-sm text-gray-700">
-            Manage sick leave requests and approvals.
+            {t('subtitle')}
           </p>
         </div>
         <div className="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
@@ -308,7 +310,7 @@ export default function SickLeavesPage() {
             className="inline-flex items-center justify-center rounded-md border border-transparent bg-[#31BCFF] px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-[#31BCFF]/90"
           >
             <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
-            Add Sick Leave
+            {t('form.submit')}
           </button>
         </div>
       </div>
@@ -320,7 +322,7 @@ export default function SickLeavesPage() {
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search employees..."
+            placeholder={t('filters.search_placeholder')}
             className="block w-full rounded-md border border-gray-300 bg-white py-2 px-3 text-sm placeholder-gray-500 focus:border-[#31BCFF] focus:outline-none focus:ring-1 focus:ring-[#31BCFF]"
           />
         </div>
@@ -330,9 +332,9 @@ export default function SickLeavesPage() {
             onChange={(e) => setStatusFilter(e.target.value as 'all' | 'pending' | 'approved')}
             className="block w-full rounded-md border border-gray-300 bg-white py-2 px-3 text-sm focus:border-[#31BCFF] focus:outline-none focus:ring-1 focus:ring-[#31BCFF]"
           >
-            <option value="all">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
+            <option value="all">{t('filters.all_status')}</option>
+            <option value="pending">{t('status.pending')}</option>
+            <option value="approved">{t('status.approved')}</option>
           </select>
         </div>
       </div>
@@ -344,28 +346,28 @@ export default function SickLeavesPage() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Employee
+                  {t('table.employee')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Period
+                  {t('table.period')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Duration
+                  {t('table.duration')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Reason
+                  {t('table.reason')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Document
+                  {t('table.document')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
+                  {t('table.status')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Submitted
+                  {t('table.submitted')}
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
+                  {t('table.actions')}
                 </th>
               </tr>
             </thead>
@@ -411,7 +413,7 @@ export default function SickLeavesPage() {
                         className="flex items-center text-blue-600 hover:text-blue-900"
                       >
                         <FileText className="h-4 w-4 mr-1" />
-                        View
+                        {t('table.view')}
                       </button>
                     ) : (
                       <span className="text-gray-400">-</span>
@@ -421,12 +423,12 @@ export default function SickLeavesPage() {
                     {sickLeave.approved ? (
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                         <CheckIcon className="w-3 h-3 mr-1" />
-                        Approved
+                        {t('status.approved')}
                       </span>
                     ) : (
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                         <Clock className="w-3 h-3 mr-1" />
-                        Pending
+                        {t('status.pending')}
                       </span>
                     )}
                   </td>
@@ -440,14 +442,14 @@ export default function SickLeavesPage() {
                           <button
                             onClick={() => handleApprove(sickLeave.id, true)}
                             className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-white bg-green-600 hover:bg-green-700"
-                            title="Approve"
+                            title={t('actions.approve')}
                           >
                             <CheckIcon className="w-3 h-3" />
                           </button>
                           <button
                             onClick={() => handleApprove(sickLeave.id, false)}
                             className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-white bg-red-600 hover:bg-red-700"
-                            title="Reject"
+                            title={t('actions.reject')}
                           >
                             <XMarkIcon className="w-3 h-3" />
                           </button>
@@ -456,14 +458,14 @@ export default function SickLeavesPage() {
                       <button
                         onClick={() => handleEdit(sickLeave)}
                         className="text-[#31BCFF] hover:text-[#31BCFF]/90 p-1"
-                        title="Edit"
+                        title={t('actions.edit')}
                       >
                         <PencilIcon className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(sickLeave.id)}
                         className="text-red-600 hover:text-red-900 p-1"
-                        title="Delete"
+                        title={t('actions.delete')}
                       >
                         <TrashIcon className="h-4 w-4" />
                       </button>
@@ -480,7 +482,7 @@ export default function SickLeavesPage() {
         <div className="mt-8 bg-white shadow rounded-lg">
           <div className="text-center py-12">
             <User className="mx-auto h-12 w-12 text-gray-400" />
-            <div className="mt-4 text-gray-500">No sick leaves found.</div>
+            <div className="mt-4 text-gray-500">{t('no_data')}</div>
           </div>
         </div>
       )}

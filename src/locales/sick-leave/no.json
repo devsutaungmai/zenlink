@@ -1,0 +1,80 @@
+{
+  "title": "Sykmeldingshåndtering",
+  "subtitle": "Administrer og spor ansattes sykmeldingsforespørsler",
+  "form": {
+    "title": "Send inn sykmeldingsforespørsel",
+    "employee": "Ansatt",
+    "select_employee": "Velg en ansatt",
+    "start_date": "Startdato",
+    "end_date": "Sluttdato",
+    "reason": "Årsak",
+    "reason_placeholder": "Vennligst oppgi detaljer om din sykmelding...",
+    "doctor_note": "Legeerklæring påkrevd",
+    "submit": "Send forespørsel",
+    "submitting": "Sender...",
+    "cancel": "Avbryt"
+  },
+  "status": {
+    "pending": "Venter",
+    "approved": "Godkjent",
+    "rejected": "Avvist",
+    "active": "Aktiv",
+    "completed": "Fullført"
+  },
+  "table": {
+    "title": "Sykmeldingsforespørsler",
+    "employee": "Ansatt",
+    "department": "Avdeling",
+    "start_date": "Startdato",
+    "end_date": "Sluttdato",
+    "days": "Dager",
+    "reason": "Årsak",
+    "status": "Status",
+    "actions": "Handlinger",
+    "no_requests": "Ingen sykmeldingsforespørsler funnet"
+  },
+  "actions": {
+    "approve": "Godkjenn",
+    "reject": "Avvis",
+    "view": "Vis detaljer",
+    "edit": "Rediger",
+    "delete": "Slett"
+  },
+  "filters": {
+    "all": "Alle forespørsler",
+    "pending": "Venter",
+    "approved": "Godkjent",
+    "rejected": "Avvist",
+    "my_requests": "Mine forespørsler"
+  },
+  "search": {
+    "placeholder": "Søk etter ansattnavn eller årsak..."
+  },
+  "messages": {
+    "success": {
+      "submitted": "Sykmeldingsforespørsel sendt inn",
+      "approved": "Sykmeldingsforespørsel godkjent",
+      "rejected": "Sykmeldingsforespørsel avvist",
+      "deleted": "Sykmeldingsforespørsel slettet"
+    },
+    "error": {
+      "submit_failed": "Kunne ikke sende inn sykmeldingsforespørsel",
+      "approve_failed": "Kunne ikke godkjenne forespørsel",
+      "reject_failed": "Kunne ikke avvise forespørsel",
+      "delete_failed": "Kunne ikke slette forespørsel",
+      "load_failed": "Kunne ikke laste sykmeldingsdata"
+    }
+  },
+  "validation": {
+    "employee_required": "Vennligst velg en ansatt",
+    "start_date_required": "Startdato er påkrevd",
+    "end_date_required": "Sluttdato er påkrevd",
+    "end_before_start": "Sluttdato kan ikke være før startdato",
+    "reason_required": "Årsak er påkrevd"
+  },
+  "loading": "Laster sykmeldingsdata...",
+  "empty_state": {
+    "title": "Ingen sykmeldingsforespørsler",
+    "subtitle": "Ingen sykmeldingsforespørsler har blitt sendt inn ennå."
+  }
+}

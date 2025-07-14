@@ -1,0 +1,58 @@
+{
+  "title": "Ansatttilgjengelighet",
+  "subtitle": "Administrer og vis ansattes tilgjengelighet på tvers av alle avdelinger",
+  "header": {
+    "total_employees": "Totalt ansatte",
+    "available_today": "Tilgjengelig i dag",
+    "unavailable_today": "Ikke tilgjengelig i dag",
+    "pending_requests": "Ventende forespørsler"
+  },
+  "search": {
+    "placeholder": "Søk ansatte...",
+    "showing": "Viser",
+    "of": "av",
+    "employees": "ansatte"
+  },
+  "filters": {
+    "all_employees": "Alle ansatte",
+    "available_today": "Tilgjengelig i dag",
+    "unavailable_today": "Ikke tilgjengelig i dag",
+    "all_departments": "Alle avdelinger"
+  },
+  "view_mode": {
+    "view": "Visning:",
+    "calendar": "Kalender",
+    "list": "Liste"
+  },
+  "pagination": {
+    "previous": "Forrige",
+    "next": "Neste",
+    "page": "Side",
+    "of": "av"
+  },
+  "calendar": {
+    "employee": "Ansatt",
+    "months": [
+      "Januar", "Februar", "Mars", "April", "Mai", "Juni",
+      "Juli", "August", "September", "Oktober", "November", "Desember"
+    ],
+    "week_days": ["Søn", "Man", "Tir", "Ons", "Tor", "Fre", "Lør"]
+  },
+  "list": {
+    "title": "Liste over ansattes tilgjengelighet",
+    "available_today": "Tilgjengelig i dag",
+    "unavailable_today": "Ikke tilgjengelig i dag",
+    "note": "Notat"
+  },
+  "legend": {
+    "available": "Tilgjengelig",
+    "unavailable": "Ikke tilgjengelig",
+    "today": "I dag",
+    "has_note": "Har notat"
+  },
+  "loading": "Laster tilgjengelighetsdata...",
+  "error": {
+    "failed_to_load": "Kunne ikke laste tilgjengelighetsdata",
+    "try_again": "Prøv igjen"
+  }
+}

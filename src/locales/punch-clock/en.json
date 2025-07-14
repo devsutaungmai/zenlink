@@ -1,0 +1,47 @@
+{
+  "title": "Punch Clock - Attendance Records",
+  "subtitle": "Track and manage employee attendance and working hours",
+  "header": {
+    "records_today": "Records Today",
+    "currently_working": "Currently Working",
+    "completed": "Completed",
+    "select_date": "Select Date"
+  },
+  "search": {
+    "placeholder": "Search employees or departments...",
+    "filter_label": "Filter:"
+  },
+  "filters": {
+    "all": "All",
+    "working": "Working",
+    "completed": "Completed"
+  },
+  "table": {
+    "title": "Attendance Records",
+    "columns": {
+      "employee": "Employee",
+      "department": "Department",
+      "punch_in": "Punch In",
+      "punch_out": "Punch Out",
+      "duration": "Duration",
+      "status": "Status",
+      "shift_info": "Shift Info"
+    }
+  },
+  "status": {
+    "working": "Working",
+    "completed": "Completed",
+    "still_working": "Still working",
+    "no_shift": "No shift assigned"
+  },
+  "empty_state": {
+    "title": "No attendance records found",
+    "subtitle_search": "Try adjusting your search criteria.",
+    "subtitle_no_data": "No one has punched in yet today."
+  },
+  "loading": "Loading attendance records...",
+  "error": {
+    "failed_to_load": "Failed to load data",
+    "retry": "Retry"
+  }
+}

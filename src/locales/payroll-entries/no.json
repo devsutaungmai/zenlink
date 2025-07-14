@@ -1,0 +1,61 @@
+{
+  "title": "Lønnsoppføringer",
+  "subtitle": "Administrer ansattes lønnsoppføringer og beregninger",
+  "create_entry": "Opprett Oppføring",
+  "create_first_entry": "Opprett Første Oppføring",
+  "search_placeholder": "Søk etter ansattnavn, nummer eller periode...",
+  "filters": {
+    "all_status": "All Status",
+    "all_periods": "Alle Perioder"
+  },
+  "status": {
+    "draft": "Utkast",
+    "approved": "Godkjent",
+    "paid": "Betalt"
+  },
+  "table": {
+    "employee": "Ansatt",
+    "period": "Periode",
+    "hours": "Timer",
+    "gross_pay": "Bruttolønn",
+    "net_pay": "Nettolønn",
+    "status": "Status",
+    "actions": "Handlinger",
+    "regular": "Vanlig",
+    "overtime": "Overtid"
+  },
+  "actions": {
+    "view_entry": "Vis Oppføring",
+    "edit_entry": "Rediger Oppføring",
+    "download_payslip": "Last ned PDF Lønnslipp",
+    "delete_entry": "Slett Oppføring"
+  },
+  "pagination": {
+    "previous": "Forrige",
+    "next": "Neste",
+    "page_of": "Side {{current}} av {{total}}"
+  },
+  "showing": "Viser {{count}} av {{total}} oppføringer",
+  "no_entries": {
+    "title": "Ingen lønnsoppføringer funnet",
+    "search_message": "Prøv å justere søkeordene dine",
+    "empty_message": "Kom i gang ved å opprette din første lønnsoppføring"
+  },
+  "delete": {
+    "confirm_title": "Er du sikker?",
+    "confirm_text": "Du vil ikke kunne angre dette!",
+    "confirm_button": "Ja, slett den!",
+    "cancel_button": "Avbryt"
+  },
+  "success": {
+    "deleted": "Lønnsoppføring har blitt slettet.",
+    "payslip_downloaded": "Lønnslipp PDF har blitt lastet ned."
+  },
+  "errors": {
+    "delete_failed": "Kunne ikke slette lønnsoppføring.",
+    "payslip_failed": "Kunne ikke eksportere lønnslipp.",
+    "fetch_entries_failed": "Feil ved henting av oppføringer",
+    "fetch_periods_failed": "Feil ved henting av perioder",
+    "generate_payslip_failed": "Kunne ikke generere lønnslipp"
+  }
+}

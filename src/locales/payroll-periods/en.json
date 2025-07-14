@@ -1,0 +1,105 @@
+{
+  "title": "Payroll Periods",
+  "subtitle": "Manage payroll periods and scheduling",
+  "create_period": "Create Period",
+  "create_first_period": "Create First Period",
+  "search_placeholder": "Search by period name or date range...",
+  "refresh": "Refresh",
+  "showing": "Showing {{count}} of {{total}} periods",
+  
+  "filters": {
+    "all_status": "All Status",
+    "all_years": "All Years"
+  },
+  
+  "status": {
+    "active": "Active",
+    "closed": "Closed",
+    "draft": "Draft"
+  },
+  
+  "table": {
+    "period_name": "Period Name",
+    "start_date": "Start Date",
+    "end_date": "End Date",
+    "status": "Status",
+    "employees": "Employees",
+    "total_hours": "Total Hours",
+    "actions": "Actions"
+  },
+  
+  "actions": {
+    "view_period": "View Period",
+    "edit_period": "Edit Period",
+    "close_period": "Close Period",
+    "reopen_period": "Reopen Period",
+    "delete_period": "Delete Period",
+    "generate_report": "Generate Report"
+  },
+  
+  "pagination": {
+    "previous": "Previous",
+    "next": "Next",
+    "page_of": "Page {{current}} of {{total}}"
+  },
+  
+  "empty": {
+    "no_periods_found": "No payroll periods found",
+    "adjust_search": "Try adjusting your search terms",
+    "get_started": "Get started by creating your first payroll period"
+  },
+  
+  "form": {
+    "period_name": "Period Name",
+    "start_date": "Start Date",
+    "end_date": "End Date",
+    "description": "Description",
+    "create": "Create Period",
+    "update": "Update Period",
+    "cancel": "Cancel"
+  },
+  
+  "confirm": {
+    "close_title": "Close Payroll Period?",
+    "close_text": "Once closed, this period cannot be modified. Are you sure?",
+    "reopen_title": "Reopen Payroll Period?",
+    "reopen_text": "This will allow modifications to the period again.",
+    "delete_title": "Delete Payroll Period?",
+    "delete_text": "This action cannot be undone!",
+    "yes_close": "Yes, close it!",
+    "yes_reopen": "Yes, reopen it!",
+    "yes_delete": "Yes, delete it!",
+    "cancel": "Cancel"
+  },
+  
+  "success": {
+    "created": "Payroll period created successfully!",
+    "updated": "Payroll period updated successfully!",
+    "closed": "Payroll period closed successfully!",
+    "reopened": "Payroll period reopened successfully!",
+    "deleted": "Payroll period deleted successfully!",
+    "report_generated": "Payroll report generated successfully!"
+  },
+  
+  "errors": {
+    "create_failed": "Failed to create payroll period.",
+    "update_failed": "Failed to update payroll period.",
+    "close_failed": "Failed to close payroll period.",
+    "reopen_failed": "Failed to reopen payroll period.",
+    "delete_failed": "Failed to delete payroll period.",
+    "fetch_failed": "Failed to fetch payroll periods",
+    "report_failed": "Failed to generate report",
+    "invalid_date_range": "End date must be after start date",
+    "period_exists": "A period with this name already exists"
+  },
+  
+  "validation": {
+    "period_name_required": "Period name is required",
+    "start_date_required": "Start date is required",
+    "end_date_required": "End date is required",
+    "min_length": "Must be at least {{min}} characters",
+    "max_length": "Must be no more than {{max}} characters"
+  },
+  
+  "loading": "Loading..."
+}

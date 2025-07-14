@@ -1,0 +1,47 @@
+{
+  "title": "Stechuhr - Anwesenheitsaufzeichnungen",
+  "subtitle": "Verfolgen und verwalten Sie die Anwesenheit und Arbeitszeiten der Mitarbeiter",
+  "header": {
+    "records_today": "Aufzeichnungen heute",
+    "currently_working": "Arbeitet derzeit",
+    "completed": "Abgeschlossen",
+    "select_date": "Datum auswählen"
+  },
+  "search": {
+    "placeholder": "Mitarbeiter oder Abteilungen suchen...",
+    "filter_label": "Filter:"
+  },
+  "filters": {
+    "all": "Alle",
+    "working": "Arbeitend",
+    "completed": "Abgeschlossen"
+  },
+  "table": {
+    "title": "Anwesenheitsaufzeichnungen",
+    "columns": {
+      "employee": "Mitarbeiter",
+      "department": "Abteilung",
+      "punch_in": "Einstempeln",
+      "punch_out": "Ausstempeln",
+      "duration": "Dauer",
+      "status": "Status",
+      "shift_info": "Schichtinformation"
+    }
+  },
+  "status": {
+    "working": "Arbeitend",
+    "completed": "Abgeschlossen",
+    "still_working": "Arbeitet noch",
+    "no_shift": "Keine Schicht zugewiesen"
+  },
+  "empty_state": {
+    "title": "Keine Anwesenheitsaufzeichnungen gefunden",
+    "subtitle_search": "Versuchen Sie, Ihre Suchkriterien anzupassen.",
+    "subtitle_no_data": "Niemand hat heute noch eingestempelt."
+  },
+  "loading": "Lade Anwesenheitsaufzeichnungen...",
+  "error": {
+    "failed_to_load": "Daten konnten nicht geladen werden",
+    "retry": "Erneut versuchen"
+  }
+}

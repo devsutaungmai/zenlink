@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useTranslation } from 'react-i18next'
 import { PayrollEntry, PayrollPeriod } from '@/types'
 import { 
   PlusIcon,
@@ -14,6 +15,7 @@ import {
 import Swal from 'sweetalert2'
 
 export default function PayrollEntriesPage() {
+  const { t } = useTranslation('payroll-entries')
   const [entries, setEntries] = useState<PayrollEntry[]>([])
   const [periods, setPeriods] = useState<PayrollPeriod[]>([])
   const [loading, setLoading] = useState(true)
@@ -47,9 +49,21 @@ export default function PayrollEntriesPage() {
         setTotalPages(data.pagination.pages)
       } else {
         console.error('Error fetching entries:', data.error)
+        await Swal.fire({
+          title: 'Error!',
+          text: t('errors.fetch_entries_failed'),
+          icon: 'error',
+          confirmButtonColor: '#31BCFF',
+        })
       }
     } catch (error) {
       console.error('Error fetching entries:', error)
+      await Swal.fire({
+        title: 'Error!',
+        text: t('errors.fetch_entries_failed'),
+        icon: 'error',
+        confirmButtonColor: '#31BCFF',
+      })
     } finally {
       setLoading(false)
     }
@@ -64,9 +78,21 @@ export default function PayrollEntriesPage() {
         setPeriods(data.payrollPeriods)
       } else {
         console.error('Error fetching periods:', data.error)
+        await Swal.fire({
+          title: 'Error!',
+          text: t('errors.fetch_periods_failed'),
+          icon: 'error',
+          confirmButtonColor: '#31BCFF',
+        })
       }
     } catch (error) {
       console.error('Error fetching periods:', error)
+      await Swal.fire({
+        title: 'Error!',
+        text: t('errors.fetch_periods_failed'),
+        icon: 'error',
+        confirmButtonColor: '#31BCFF',
+      })
     }
   }
 
@@ -81,14 +107,14 @@ export default function PayrollEntriesPage() {
   const handleDelete = async (id: string) => {
     try {
       const result = await Swal.fire({
-        title: 'Are you sure?',
-        text: "You won't be able to revert this!",
+        title: t('delete.confirm_title'),
+        text: t('delete.confirm_text'),
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#31BCFF',
         cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, delete it!',
-        cancelButtonText: 'Cancel'
+        confirmButtonText: t('delete.confirm_button'),
+        cancelButtonText: t('delete.cancel_button')
       })
 
       if (result.isConfirmed) {
@@ -101,20 +127,20 @@ export default function PayrollEntriesPage() {
           
           await Swal.fire({
             title: 'Deleted!',
-            text: 'Payroll entry has been deleted.',
+            text: t('success.deleted'),
             icon: 'success',
             confirmButtonColor: '#31BCFF',
           })
         } else {
           const data = await response.json()
-          throw new Error(data.error || 'Failed to delete payroll entry')
+          throw new Error(data.error || t('errors.delete_failed'))
         }
       }
     } catch (error) {
       console.error('Error deleting entry:', error)
       await Swal.fire({
         title: 'Error!',
-        text: error instanceof Error ? error.message : 'Failed to delete payroll entry.',
+        text: error instanceof Error ? error.message : t('errors.delete_failed'),
         icon: 'error',
         confirmButtonColor: '#31BCFF',
       })
@@ -142,19 +168,19 @@ export default function PayrollEntriesPage() {
 
         await Swal.fire({
           title: 'Success!',
-          text: 'Payslip PDF has been downloaded successfully.',
+          text: t('success.payslip_downloaded'),
           icon: 'success',
           confirmButtonColor: '#31BCFF',
         })
       } else {
         const data = await response.json()
-        throw new Error(data.error || 'Failed to generate payslip')
+        throw new Error(data.error || t('errors.generate_payslip_failed'))
       }
     } catch (error) {
       console.error('Error exporting payslip:', error)
       await Swal.fire({
         title: 'Error!',
-        text: error instanceof Error ? error.message : 'Failed to export payslip.',
+        text: error instanceof Error ? error.message : t('errors.payslip_failed'),
         icon: 'error',
         confirmButtonColor: '#31BCFF',
       })
@@ -168,9 +194,15 @@ export default function PayrollEntriesPage() {
       PAID: 'bg-green-100 text-green-800 border-green-200'
     }
     
+    const statusLabels = {
+      DRAFT: t('status.draft'),
+      APPROVED: t('status.approved'),
+      PAID: t('status.paid')
+    }
+    
     return (
       <span className={`px-3 py-1 rounded-full text-sm font-medium border ${styles[status as keyof typeof styles] || styles.DRAFT}`}>
-        {status}
+        {statusLabels[status as keyof typeof statusLabels] || status}
       </span>
     )
   }
@@ -185,6 +217,7 @@ export default function PayrollEntriesPage() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#31BCFF]"></div>
+        <span className="ml-4 text-gray-600">{t('loading')}</span>
       </div>
     )
   }
@@ -196,10 +229,10 @@ export default function PayrollEntriesPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between">
           <div className="mb-4 sm:mb-0">
             <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-              Payroll Entries
+              {t('title')}
             </h1>
             <p className="mt-2 text-gray-600">
-              Manage employee payroll entries and calculations
+              {t('subtitle')}
             </p>
           </div>
           <Link
@@ -207,7 +240,7 @@ export default function PayrollEntriesPage() {
             className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 group"
           >
             <PlusIcon className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
-            Create Entry
+            {t('create_entry')}
           </Link>
         </div>
       </div>
@@ -221,7 +254,7 @@ export default function PayrollEntriesPage() {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search by employee name, number, or period..."
+              placeholder={t('search_placeholder')}
               className="block w-full pl-12 pr-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
             />
           </div>
@@ -231,17 +264,17 @@ export default function PayrollEntriesPage() {
               onChange={(e) => setStatusFilter(e.target.value)}
               className="px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
             >
-              <option value="all">All Status</option>
-              <option value="DRAFT">Draft</option>
-              <option value="APPROVED">Approved</option>
-              <option value="PAID">Paid</option>
+              <option value="all">{t('filters.all_status')}</option>
+              <option value="DRAFT">{t('status.draft')}</option>
+              <option value="APPROVED">{t('status.approved')}</option>
+              <option value="PAID">{t('status.paid')}</option>
             </select>
             <select
               value={periodFilter}
               onChange={(e) => setPeriodFilter(e.target.value)}
               className="px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
             >
-              <option value="all">All Periods</option>
+              <option value="all">{t('filters.all_periods')}</option>
               {periods.map((period) => (
                 <option key={period.id} value={period.id}>
                   {period.name}
@@ -251,7 +284,7 @@ export default function PayrollEntriesPage() {
           </div>
         </div>
         <div className="flex items-center justify-between mt-4 text-sm text-gray-500">
-          <span>Showing {filteredEntries.length} of {entries.length} entries</span>
+          <span>{t('showing', { count: filteredEntries.length, total: entries.length })}</span>
         </div>
       </div>
 
@@ -261,9 +294,9 @@ export default function PayrollEntriesPage() {
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <MagnifyingGlassIcon className="w-8 h-8 text-gray-400" />
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No payroll entries found</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">{t('no_entries.title')}</h3>
           <p className="text-gray-500 mb-6">
-            {searchTerm ? 'Try adjusting your search terms' : 'Get started by creating your first payroll entry'}
+            {searchTerm ? t('no_entries.search_message') : t('no_entries.empty_message')}
           </p>
           {!searchTerm && (
             <Link
@@ -271,7 +304,7 @@ export default function PayrollEntriesPage() {
               className="inline-flex items-center px-6 py-3 rounded-xl bg-[#31BCFF] text-white font-medium hover:bg-[#31BCFF]/90 transition-colors duration-200"
             >
               <PlusIcon className="w-5 h-5 mr-2" />
-              Create First Entry
+              {t('create_first_entry')}
             </Link>
           )}
         </div>
@@ -282,25 +315,25 @@ export default function PayrollEntriesPage() {
               <thead className="bg-gray-50/80">
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Employee
+                    {t('table.employee')}
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Period
+                    {t('table.period')}
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Hours
+                    {t('table.hours')}
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Gross Pay
+                    {t('table.gross_pay')}
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Net Pay
+                    {t('table.net_pay')}
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
+                    {t('table.status')}
                   </th>
                   <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
+                    {t('table.actions')}
                   </th>
                 </tr>
               </thead>
@@ -327,10 +360,10 @@ export default function PayrollEntriesPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-900">
-                        Regular: {entry.regularHours}h
+                        {t('table.regular')}: {entry.regularHours}h
                       </div>
                       <div className="text-sm text-gray-500">
-                        Overtime: {entry.overtimeHours}h
+                        {t('table.overtime')}: {entry.overtimeHours}h
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -351,21 +384,21 @@ export default function PayrollEntriesPage() {
                         <Link
                           href={`/dashboard/payroll-entries/${entry.id}`}
                           className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
-                          title="View Entry"
+                          title={t('actions.view_entry')}
                         >
                           <EyeIcon className="h-4 w-4" />
                         </Link>
                         <Link
                           href={`/dashboard/payroll-entries/${entry.id}/edit`}
                           className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
-                          title="Edit Entry"
+                          title={t('actions.edit_entry')}
                         >
                           <PencilIcon className="h-4 w-4" />
                         </Link>
                         <button
                           onClick={() => handleExportPayslip(entry.id, `${entry.employee.firstName} ${entry.employee.lastName}`)}
                           className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200"
-                          title="Download PDF Payslip"
+                          title={t('actions.download_payslip')}
                         >
                           <DocumentArrowDownIcon className="h-4 w-4" />
                         </button>
@@ -373,7 +406,7 @@ export default function PayrollEntriesPage() {
                           <button
                             onClick={() => handleDelete(entry.id)}
                             className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                            title="Delete Entry"
+                            title={t('actions.delete_entry')}
                           >
                             <TrashIcon className="h-4 w-4" />
                           </button>
@@ -395,17 +428,17 @@ export default function PayrollEntriesPage() {
                   disabled={currentPage === 1}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-white/50 border border-gray-300 rounded-lg hover:bg-white/70 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                 >
-                  Previous
+                  {t('pagination.previous')}
                 </button>
                 <span className="text-sm text-gray-600">
-                  Page {currentPage} of {totalPages}
+                  {t('pagination.page_of', { current: currentPage, total: totalPages })}
                 </span>
                 <button
                   onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                   disabled={currentPage === totalPages}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-white/50 border border-gray-300 rounded-lg hover:bg-white/70 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                 >
-                  Next
+                  {t('pagination.next')}
                 </button>
               </div>
             </div>

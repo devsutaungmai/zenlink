@@ -1,0 +1,58 @@
+{
+  "title": "Employee Availability",
+  "subtitle": "Manage and view employee availability across all departments",
+  "header": {
+    "total_employees": "Total Employees",
+    "available_today": "Available Today",
+    "unavailable_today": "Unavailable Today",
+    "pending_requests": "Pending Requests"
+  },
+  "search": {
+    "placeholder": "Search employees...",
+    "showing": "Showing",
+    "of": "of",
+    "employees": "employees"
+  },
+  "filters": {
+    "all_employees": "All Employees",
+    "available_today": "Available Today",
+    "unavailable_today": "Unavailable Today",
+    "all_departments": "All Departments"
+  },
+  "view_mode": {
+    "view": "View:",
+    "calendar": "Calendar",
+    "list": "List"
+  },
+  "pagination": {
+    "previous": "Previous",
+    "next": "Next",
+    "page": "Page",
+    "of": "of"
+  },
+  "calendar": {
+    "employee": "Employee",
+    "months": [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ],
+    "week_days": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+  },
+  "list": {
+    "title": "Employee Availability List",
+    "available_today": "Available Today",
+    "unavailable_today": "Unavailable Today",
+    "note": "Note"
+  },
+  "legend": {
+    "available": "Available",
+    "unavailable": "Unavailable",
+    "today": "Today",
+    "has_note": "Has Note"
+  },
+  "loading": "Loading availability data...",
+  "error": {
+    "failed_to_load": "Failed to load availability data",
+    "try_again": "Try Again"
+  }
+}

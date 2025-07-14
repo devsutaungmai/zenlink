@@ -1,0 +1,80 @@
+{
+  "title": "Pending Requests",
+  "subtitle": "Review and manage shift exchange requests",
+  "refresh": "Refresh",
+  "total": "total",
+  "swaps": "swaps",
+  "handovers": "handovers",
+  "tabs": {
+    "swap_requests": "Swap Requests",
+    "shift_requests": "Shift Requests"
+  },
+  "showing": "Showing {{count}} of {{total}} requests",
+  "table": {
+    "type": "Type",
+    "from_employee": "From Employee",
+    "to_employee": "To Employee",
+    "shift_date_time": "Shift Date & Time",
+    "requested": "Requested",
+    "actions": "Actions"
+  },
+  "empty": {
+    "no_swap_requests": "No Pending Swap Requests",
+    "no_shift_requests": "No Pending Shift Requests",
+    "swap_processed": "All shift swap requests have been processed.",
+    "shift_processed": "All shift handover requests have been processed."
+  },
+  "actions": {
+    "view_details": "View Details",
+    "reject": "Reject",
+    "approve": "Approve",
+    "reject_request": "Reject Request",
+    "approve_request": "Approve Request"
+  },
+  "modal": {
+    "request_details": "Request Details",
+    "shift_swap": "Shift Swap",
+    "shift_handover": "Shift Handover",
+    "request": "Request",
+    "close": "Close"
+  },
+  "request_info": {
+    "title": "Request Information",
+    "request_type": "Request Type",
+    "status": "Status",
+    "requested_date": "Requested Date",
+    "request_time": "Request Time"
+  },
+  "employee_info": {
+    "title": "Employee Information",
+    "from_employee": "From Employee",
+    "to_employee": "To Employee",
+    "name": "Name",
+    "employee_no": "Employee No",
+    "department": "Department"
+  },
+  "shift_details": {
+    "title": "Shift Details",
+    "date": "Date",
+    "time": "Time",
+    "shift_type": "Shift Type",
+    "regular_shift": "Regular Shift",
+    "open_end": "Open End"
+  },
+  "request_reason": {
+    "title": "Request Reason"
+  },
+  "types": {
+    "swap": "SWAP",
+    "handover": "HANDOVER"
+  },
+  "success": {
+    "approved": "Request approved successfully!",
+    "rejected": "Request rejected successfully!"
+  },
+  "errors": {
+    "approve_failed": "Failed to approve request",
+    "reject_failed": "Failed to reject request",
+    "fetch_failed": "Failed to fetch pending exchanges"
+  }
+}

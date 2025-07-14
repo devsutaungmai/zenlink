@@ -6,6 +6,7 @@ import { FileText, Calendar, Clock, CheckCircle2, XCircle, AlertCircle } from 'l
 import Swal from 'sweetalert2'
 import SickLeaveModal from '@/components/SickLeaveModal'
 import { useUser } from '@/app/lib/useUser'
+import { useTranslation } from 'react-i18next'
 
 interface SickLeave {
   id: string
@@ -32,6 +33,7 @@ interface SickLeaveFormData {
 }
 
 export default function EmployeeSickLeavesPage() {
+  const { t } = useTranslation('sick-leave')
   const { user } = useUser()
   const [sickLeaves, setSickLeaves] = useState<SickLeave[]>([])
   const [loading, setLoading] = useState(true)
@@ -48,17 +50,16 @@ export default function EmployeeSickLeavesPage() {
       setError(null)
       
       const response = await fetch('/api/sick-leaves')
-      
-      if (!response.ok) {
+       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to fetch sick leaves')
+        throw new Error(errorData.error || t('errors.fetch_failed'))
       }
-      
+
       const data = await response.json()
       setSickLeaves(data)
     } catch (error) {
       console.error('Error fetching sick leaves:', error)
-      setError(error instanceof Error ? error.message : 'An unknown error occurred')
+      setError(error instanceof Error ? error.message : t('errors.unknown'))
     } finally {
       setLoading(false)
     }
@@ -77,7 +78,7 @@ export default function EmployeeSickLeavesPage() {
         timer: 3000,
         timerProgressBar: true,
         icon: 'error',
-        title: 'Employee information not found. Please log in again.'
+        title: t('errors.employee_not_found')
       })
       return
     }
@@ -103,7 +104,7 @@ export default function EmployeeSickLeavesPage() {
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to save sick leave')
+        throw new Error(errorData.error || t('errors.save_failed'))
       }
 
       const result = await response.json()
@@ -121,7 +122,7 @@ export default function EmployeeSickLeavesPage() {
         timer: 3000,
         timerProgressBar: true,
         icon: 'success',
-        title: `Sick leave ${editingData ? 'updated' : 'created'} successfully!`
+        title: t(editingData ? 'success.updated' : 'success.created')
       })
 
       setShowModal(false)
@@ -135,7 +136,7 @@ export default function EmployeeSickLeavesPage() {
         timer: 3000,
         timerProgressBar: true,
         icon: 'error',
-        title: error.message || 'Failed to save sick leave'
+        title: error.message || t('errors.save_failed')
       })
     } finally {
       setSubmitting(false)
@@ -145,14 +146,14 @@ export default function EmployeeSickLeavesPage() {
   const handleDelete = async (id: string) => {
     try {
       const result = await Swal.fire({
-        title: 'Are you sure?',
-        text: "You won't be able to revert this!",
+        title: t('delete.confirm_title'),
+        text: t('delete.confirm_text'),
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#31BCFF',
         cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, delete it!',
-        cancelButtonText: 'Cancel'
+        confirmButtonText: t('delete.confirm_button'),
+        cancelButtonText: t('delete.cancel_button')
       })
 
       if (result.isConfirmed) {
@@ -170,10 +171,10 @@ export default function EmployeeSickLeavesPage() {
             timer: 3000,
             timerProgressBar: true,
             icon: 'success',
-            title: 'Sick leave deleted successfully!'
+            title: t('success.deleted')
           })
         } else {
-          throw new Error('Failed to delete sick leave')
+          throw new Error(t('errors.delete_failed'))
         }
       }
     } catch (error: any) {
@@ -185,7 +186,7 @@ export default function EmployeeSickLeavesPage() {
         timer: 3000,
         timerProgressBar: true,
         icon: 'error',
-        title: error.message || 'Failed to delete sick leave'
+        title: error.message || t('errors.delete_failed')
       })
     }
   }
@@ -207,7 +208,7 @@ export default function EmployeeSickLeavesPage() {
     const start = new Date(startDate)
     const end = new Date(endDate)
     const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
-    return `${days} day${days > 1 ? 's' : ''}`
+    return `${days} ${t('table.day', { count: days })}`
   }
 
   const getStatusIcon = (approved: boolean) => {
@@ -218,7 +219,7 @@ export default function EmployeeSickLeavesPage() {
   }
 
   const getStatusText = (approved: boolean) => {
-    return approved ? 'Approved' : 'Pending'
+    return approved ? t('status.approved') : t('status.pending')
   }
 
   const getStatusColor = (approved: boolean) => {
@@ -239,7 +240,7 @@ export default function EmployeeSickLeavesPage() {
     return (
       <div className="min-h-screen bg-[#E5F1FF] p-6">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center">Loading sick leaves...</div>
+          <div className="text-center">{t('loading')}</div>
         </div>
       </div>
     )
@@ -250,12 +251,12 @@ export default function EmployeeSickLeavesPage() {
       <div className="min-h-screen bg-[#E5F1FF] p-6">
         <div className="max-w-7xl mx-auto">
           <div className="text-center text-red-600">
-            Error: {error}
+            {t('error')}: {error}
             <button 
               onClick={fetchSickLeaves}
               className="ml-4 px-4 py-2 bg-[#31BCFF] text-white rounded hover:bg-[#31BCFF]/90"
             >
-              Retry
+              {t('retry')}
             </button>
           </div>
         </div>
@@ -269,9 +270,9 @@ export default function EmployeeSickLeavesPage() {
         {/* Header */}
         <div className="sm:flex sm:items-center">
           <div className="sm:flex-auto">
-            <h1 className="text-2xl font-bold text-gray-900">My Sick Leaves</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{t('employee.title')}</h1>
             <p className="mt-2 text-sm text-gray-700">
-              View and manage your sick leave requests.
+              {t('employee.subtitle')}
             </p>
           </div>
           <div className="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
@@ -283,7 +284,7 @@ export default function EmployeeSickLeavesPage() {
               className="inline-flex items-center justify-center rounded-md border border-transparent bg-[#31BCFF] px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-[#31BCFF]/90"
             >
               <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
-              Request Sick Leave
+              {t('employee.request_button')}
             </button>
           </div>
         </div>
@@ -299,7 +300,7 @@ export default function EmployeeSickLeavesPage() {
                 <div className="ml-5 w-0 flex-1">
                   <dl>
                     <dt className="text-sm font-medium text-gray-500 truncate">
-                      Total Requests
+                      {t('employee.stats.total_requests')}
                     </dt>
                     <dd className="text-2xl font-semibold text-gray-900">
                       {sickLeaves.length}
@@ -319,7 +320,7 @@ export default function EmployeeSickLeavesPage() {
                 <div className="ml-5 w-0 flex-1">
                   <dl>
                     <dt className="text-sm font-medium text-gray-500 truncate">
-                      Approved
+                      {t('status.approved')}
                     </dt>
                     <dd className="text-2xl font-semibold text-gray-900">
                       {sickLeaves.filter(sl => sl.approved).length}
@@ -339,7 +340,7 @@ export default function EmployeeSickLeavesPage() {
                 <div className="ml-5 w-0 flex-1">
                   <dl>
                     <dt className="text-sm font-medium text-gray-500 truncate">
-                      Pending
+                      {t('status.pending')}
                     </dt>
                     <dd className="text-2xl font-semibold text-gray-900">
                       {sickLeaves.filter(sl => !sl.approved).length}
@@ -359,7 +360,7 @@ export default function EmployeeSickLeavesPage() {
                 <div className="ml-5 w-0 flex-1">
                   <dl>
                     <dt className="text-sm font-medium text-gray-500 truncate">
-                      Days This Year
+                      {t('employee.stats.days_this_year')}
                     </dt>
                     <dd className="text-2xl font-semibold text-gray-900">
                       {sickLeaves
@@ -386,9 +387,9 @@ export default function EmployeeSickLeavesPage() {
               onChange={(e) => setStatusFilter(e.target.value as 'all' | 'pending' | 'approved')}
               className="block w-full rounded-md border border-gray-300 bg-white py-2 px-3 text-sm focus:border-[#31BCFF] focus:outline-none focus:ring-1 focus:ring-[#31BCFF]"
             >
-              <option value="all">All Status</option>
-              <option value="pending">Pending</option>
-              <option value="approved">Approved</option>
+              <option value="all">{t('filters.all_status')}</option>
+              <option value="pending">{t('status.pending')}</option>
+              <option value="approved">{t('status.approved')}</option>
             </select>
           </div>
         </div>
@@ -400,25 +401,25 @@ export default function EmployeeSickLeavesPage() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
+                    {t('table.status')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Period
+                    {t('table.period')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Duration
+                    {t('table.duration')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Reason
+                    {t('table.reason')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Document
+                    {t('table.document')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Submitted
+                    {t('table.submitted')}
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
+                    {t('table.actions')}
                   </th>
                 </tr>
               </thead>
@@ -459,7 +460,7 @@ export default function EmployeeSickLeavesPage() {
                           className="flex items-center text-blue-600 hover:text-blue-900"
                         >
                           <FileText className="h-4 w-4 mr-1" />
-                          View
+                          {t('table.view')}
                         </button>
                       ) : (
                         <span className="text-gray-400">-</span>
@@ -474,14 +475,14 @@ export default function EmployeeSickLeavesPage() {
                           <button
                             onClick={() => handleEdit(sickLeave)}
                             className="text-[#31BCFF] hover:text-[#31BCFF]/90 p-1"
-                            title="Edit"
+                            title={t('actions.edit')}
                           >
                             <PencilIcon className="h-4 w-4" />
                           </button>
                           <button
                             onClick={() => handleDelete(sickLeave.id)}
                             className="text-red-600 hover:text-red-900 p-1"
-                            title="Delete"
+                            title={t('actions.delete')}
                           >
                             <TrashIcon className="h-4 w-4" />
                           </button>
@@ -501,8 +502,8 @@ export default function EmployeeSickLeavesPage() {
               <Calendar className="mx-auto h-12 w-12 text-gray-400" />
               <div className="mt-4 text-gray-500">
                 {sickLeaves.length === 0 
-                  ? "You haven't submitted any sick leave requests yet." 
-                  : "No sick leaves match the current filter."}
+                  ? t('employee.no_requests') 
+                  : t('employee.no_match')}
               </div>
               {sickLeaves.length === 0 && (
                 <button
@@ -510,7 +511,7 @@ export default function EmployeeSickLeavesPage() {
                   className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-[#31BCFF] hover:bg-[#31BCFF]/90"
                 >
                   <PlusIcon className="-ml-1 mr-2 h-4 w-4" />
-                  Request Your First Sick Leave
+                  {t('employee.first_request')}
                 </button>
               )}
             </div>

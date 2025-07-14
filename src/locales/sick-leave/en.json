@@ -1,0 +1,116 @@
+{
+  "title": "Sick Leave Management",
+  "subtitle": "Manage and track employee sick leave requests",
+  "loading": "Loading sick leave data...",
+  "error": "Error",
+  "retry": "Retry",
+  "no_data": "No sick leave requests found",
+  "form": {
+    "title": "Submit Sick Leave Request",
+    "employee": "Employee",
+    "select_employee": "Select an employee",
+    "start_date": "Start Date",
+    "end_date": "End Date",
+    "reason": "Reason for Sick Leave",
+    "reason_placeholder": "Describe your illness or reason for leave...",
+    "doctor_note": "Supporting Document",
+    "upload_description": "Upload medical certificate, doctor's note, or other supporting documents (PDF, DOC, DOCX, or images, max 5MB)",
+    "upload_button": "Click to upload document",
+    "uploading": "Uploading...",
+    "submit": "Add Sick Leave",
+    "update": "Update Request",
+    "submitting": "Submitting...",
+    "cancel": "Cancel"
+  },
+  "status": {
+    "pending": "Pending",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "active": "Active",
+    "completed": "Completed"
+  },
+  "table": {
+    "title": "Sick Leave Requests",
+    "employee": "Employee",
+    "department": "Department",
+    "start_date": "Start Date",
+    "end_date": "End Date",
+    "period": "Period",
+    "duration": "Duration",
+    "days": "Days",
+    "day": "day",
+    "day_plural": "days",
+    "reason": "Reason",
+    "document": "Document",
+    "status": "Status",
+    "submitted": "Submitted",
+    "actions": "Actions",
+    "no_requests": "No sick leave requests found",
+    "view": "View"
+  },
+  "actions": {
+    "approve": "Approve",
+    "reject": "Reject",
+    "view": "View Details",
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "filters": {
+    "all": "All Requests",
+    "all_status": "All Status",
+    "pending": "Pending",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "my_requests": "My Requests",
+    "search_placeholder": "Search employees..."
+  },
+  "employee": {
+    "title": "My Sick Leaves",
+    "subtitle": "View and manage your sick leave requests",
+    "request_button": "Request Sick Leave",
+    "stats": {
+      "total_requests": "Total Requests",
+      "days_this_year": "Days This Year"
+    },
+    "no_requests": "You haven't submitted any sick leave requests yet.",
+    "no_match": "No sick leaves match the current filter.",
+    "first_request": "Request Your First Sick Leave"
+  },
+  "modal": {
+    "add_title": "Add Sick Leave",
+    "edit_title": "Edit Sick Leave"
+  },
+  "success": {
+    "created": "Sick leave created successfully!",
+    "updated": "Sick leave updated successfully!",
+    "approved": "Sick leave approved successfully!",
+    "rejected": "Sick leave rejected successfully!",
+    "deleted": "Sick leave deleted successfully!",
+    "document_uploaded": "Document uploaded successfully!"
+  },
+  "errors": {
+    "fetch_failed": "Failed to fetch sick leaves",
+    "fetch_employees_failed": "Failed to fetch employees",
+    "save_failed": "Failed to save sick leave",
+    "update_failed": "Failed to update sick leave",
+    "delete_failed": "Failed to delete sick leave",
+    "upload_failed": "Upload failed",
+    "employee_not_found": "Employee information not found. Please log in again.",
+    "unknown": "An unknown error occurred"
+  },
+  "delete": {
+    "confirm_title": "Are you sure?",
+    "confirm_text": "You won't be able to revert this!",
+    "confirm_button": "Yes, delete it!",
+    "cancel_button": "Cancel"
+  },
+  "validation": {
+    "employee_required": "Please select an employee",
+    "start_date_required": "Start date is required",
+    "end_date_required": "End date is required",
+    "end_before_start": "End date cannot be before start date",
+    "dates_required": "Start date and end date are required",
+    "end_date_before_start": "End date cannot be before start date",
+    "reason_required": "Reason is required"
+  }
+}

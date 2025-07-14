@@ -1,0 +1,58 @@
+{
+  "title": "Mitarbeiterverfügbarkeit",
+  "subtitle": "Verwalten und anzeigen der Mitarbeiterverfügbarkeit in allen Abteilungen",
+  "header": {
+    "total_employees": "Gesamte Mitarbeiter",
+    "available_today": "Heute verfügbar",
+    "unavailable_today": "Heute nicht verfügbar",
+    "pending_requests": "Ausstehende Anfragen"
+  },
+  "search": {
+    "placeholder": "Mitarbeiter suchen...",
+    "showing": "Zeige",
+    "of": "von",
+    "employees": "Mitarbeitern"
+  },
+  "filters": {
+    "all_employees": "Alle Mitarbeiter",
+    "available_today": "Heute verfügbar",
+    "unavailable_today": "Heute nicht verfügbar",
+    "all_departments": "Alle Abteilungen"
+  },
+  "view_mode": {
+    "view": "Ansicht:",
+    "calendar": "Kalender",
+    "list": "Liste"
+  },
+  "pagination": {
+    "previous": "Vorherige",
+    "next": "Nächste",
+    "page": "Seite",
+    "of": "von"
+  },
+  "calendar": {
+    "employee": "Mitarbeiter",
+    "months": [
+      "Januar", "Februar", "März", "April", "Mai", "Juni",
+      "Juli", "August", "September", "Oktober", "November", "Dezember"
+    ],
+    "week_days": ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"]
+  },
+  "list": {
+    "title": "Mitarbeiterverfügbarkeitsliste",
+    "available_today": "Heute verfügbar",
+    "unavailable_today": "Heute nicht verfügbar",
+    "note": "Notiz"
+  },
+  "legend": {
+    "available": "Verfügbar",
+    "unavailable": "Nicht verfügbar",
+    "today": "Heute",
+    "has_note": "Hat Notiz"
+  },
+  "loading": "Lade Verfügbarkeitsdaten...",
+  "error": {
+    "failed_to_load": "Verfügbarkeitsdaten konnten nicht geladen werden",
+    "try_again": "Erneut versuchen"
+  }
+}
