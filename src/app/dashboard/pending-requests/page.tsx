@@ -38,12 +38,14 @@ interface Shift {
 
 interface ShiftExchange {
   id: string
-  status: 'PENDING' | 'APPROVED' | 'REJECTED'
+  status: 'EMPLOYEE_PENDING' | 'EMPLOYEE_ACCEPTED' | 'EMPLOYEE_REJECTED' | 'ADMIN_PENDING' | 'APPROVED' | 'REJECTED'
   type: 'SWAP' | 'HANDOVER'
   reason: string
   requestedAt: string
   approvedAt?: string | null
   approvedBy?: string | null
+  employeeResponseAt?: string | null
+  employeeResponseBy?: string | null
   fromEmployee: Employee
   toEmployee: Employee
   shift: Shift
@@ -65,7 +67,8 @@ export default function PendingRequestsPage() {
   const fetchPendingExchanges = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/shift-exchanges?status=PENDING')
+      // Only fetch exchanges that have been accepted by employees and are pending admin approval
+      const response = await fetch('/api/shift-exchanges?status=EMPLOYEE_ACCEPTED')
       if (response.ok) {
         const data = await response.json()
         setPendingExchanges(data)

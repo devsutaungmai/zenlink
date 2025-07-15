@@ -226,9 +226,11 @@ model ShiftExchange {
   toEmployee     Employee @relation("ToEmployee", fields: [toEmployeeId], references: [id])
   toEmployeeId   String
   type           String   @default("SWAP") // SWAP, HANDOVER
-  status         String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  status         String   @default("EMPLOYEE_PENDING") // EMPLOYEE_PENDING, EMPLOYEE_ACCEPTED, EMPLOYEE_REJECTED, ADMIN_PENDING, APPROVED, REJECTED
   reason         String?
   requestedAt    DateTime @default(now())
+  employeeResponseAt DateTime?
+  employeeResponseBy String?
   approvedAt     DateTime?
   approvedBy     String?
   createdAt      DateTime @default(now())

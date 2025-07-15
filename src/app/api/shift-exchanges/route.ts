@@ -51,7 +51,9 @@ export async function POST(request: NextRequest) {
     const existingExchange = await prisma.shiftExchange.findFirst({
       where: {
         shiftId: fromShiftId,
-        status: 'PENDING'
+        status: {
+          in: ['EMPLOYEE_PENDING', 'EMPLOYEE_ACCEPTED', 'ADMIN_PENDING']
+        }
       }
     })
 
@@ -69,7 +71,7 @@ export async function POST(request: NextRequest) {
         fromEmployeeId: shift.employeeId!,
         toEmployeeId,
         type,
-        status: 'PENDING',
+        status: 'EMPLOYEE_PENDING',
         reason: requestReason || `${type} request`,
         requestedAt: new Date()
       },
@@ -108,7 +110,12 @@ export async function GET(request: NextRequest) {
     }
 
     if (status) {
-      whereClause.status = status
+      if (status === 'PENDING') {
+        // For backward compatibility, map PENDING to EMPLOYEE_PENDING
+        whereClause.status = 'EMPLOYEE_PENDING'
+      } else {
+        whereClause.status = status
+      }
     }
 
     const exchanges = await prisma.shiftExchange.findMany({

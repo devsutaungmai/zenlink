@@ -47,9 +47,11 @@ export interface ShiftExchange {
   fromEmployeeId: string
   toEmployeeId: string
   type: 'SWAP' | 'HANDOVER'
-  status: 'PENDING' | 'APPROVED' | 'REJECTED'
+  status: 'EMPLOYEE_PENDING' | 'EMPLOYEE_ACCEPTED' | 'EMPLOYEE_REJECTED' | 'ADMIN_PENDING' | 'APPROVED' | 'REJECTED'
   reason?: string
   requestedAt: string
+  employeeResponseAt?: string
+  employeeResponseBy?: string
   approvedAt?: string
   approvedBy?: string
   fromEmployee: {

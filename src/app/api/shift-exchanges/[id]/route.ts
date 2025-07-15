@@ -18,6 +18,26 @@ export async function PATCH(
       )
     }
 
+    // Get the exchange to check current status
+    const existingExchange = await prisma.shiftExchange.findUnique({
+      where: { id: params.id }
+    })
+
+    if (!existingExchange) {
+      return NextResponse.json(
+        { error: 'Exchange request not found' },
+        { status: 404 }
+      )
+    }
+
+    // Only allow admin approval if employee has already accepted
+    if (existingExchange.status !== 'EMPLOYEE_ACCEPTED' && existingExchange.status !== 'ADMIN_PENDING') {
+      return NextResponse.json(
+        { error: 'Exchange request must be accepted by employee first' },
+        { status: 400 }
+      )
+    }
+
     const exchange = await prisma.shiftExchange.update({
       where: { id: params.id },
       data: {
@@ -72,9 +92,9 @@ export async function DELETE(
       )
     }
 
-    if (exchange.status !== 'PENDING') {
+    if (!['EMPLOYEE_PENDING', 'EMPLOYEE_REJECTED'].includes(exchange.status)) {
       return NextResponse.json(
-        { error: 'Can only cancel pending exchange requests' },
+        { error: 'Can only cancel pending or rejected exchange requests' },
         { status: 400 }
       )
     }

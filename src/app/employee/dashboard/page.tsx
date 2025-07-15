@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator"
 import PunchClockModal from "@/components/PunchClockModal"
 import ShiftExchangeInfo from "@/components/ShiftExchangeInfo"
 import ShiftDetailsModal from "@/components/ShiftDetailsModal"
+import PendingRequestsModal from "@/components/PendingRequestsModal"
 import {
   Building2,
   Clock,
@@ -145,6 +146,8 @@ function EmployeeDashboardContent() {
   const [employeeGroups, setEmployeeGroups] = useState([])
   const [departments, setDepartments] = useState([])
   const [pendingExchanges, setPendingExchanges] = useState<any[]>([])
+  const [showPendingRequestsModal, setShowPendingRequestsModal] = useState(false)
+  const [pendingRequestsCount, setPendingRequestsCount] = useState(0)
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -274,6 +277,9 @@ function EmployeeDashboardContent() {
       await fetchTodayShift(employeeData.id)
       await fetchUpcomingShifts(employeeData.id)
       
+      // Fetch pending requests count
+      await fetchPendingRequestsCount(employeeData.id)
+      
       // Fetch current attendance (if punched in but not out)
       await fetchCurrentAttendance(employeeData.id)
     } catch (error) {
@@ -338,6 +344,19 @@ function EmployeeDashboardContent() {
       }
     } catch (error) {
       console.error('Error fetching pending exchanges:', error)
+    }
+  }
+
+  const fetchPendingRequestsCount = async (employeeId: string) => {
+    try {
+      const response = await fetch('/api/employee/pending-requests')
+      if (response.ok) {
+        const requests = await response.json()
+        setPendingRequestsCount(requests.length)
+      }
+    } catch (error) {
+      console.error('Error fetching pending requests count:', error)
+      setPendingRequestsCount(0)
     }
   }
 
@@ -468,6 +487,15 @@ function EmployeeDashboardContent() {
     if (employee) {
       await fetchPendingExchangesForShifts(employee.id)
       await fetchUpcomingShifts(employee.id)
+    }
+  }
+
+  const handlePendingRequestsUpdate = async () => {
+    // Refresh data when pending requests are updated
+    if (employee) {
+      await fetchPendingExchangesForShifts(employee.id)
+      await fetchUpcomingShifts(employee.id)
+      await fetchPendingRequestsCount(employee.id)
     }
   }
 
@@ -1049,6 +1077,19 @@ function EmployeeDashboardContent() {
                 <div className="grid grid-cols-2 gap-3">
                   <Button 
                     variant="outline" 
+                    className="border-sky-300 text-sky-700 hover:bg-sky-50 py-3 relative"
+                    onClick={() => setShowPendingRequestsModal(true)}
+                  >
+                    <Bell className="w-4 h-4 mr-2" />
+                    Requests
+                    {pendingRequestsCount > 0 && (
+                      <Badge className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full min-w-[20px] h-5 flex items-center justify-center">
+                        {pendingRequestsCount}
+                      </Badge>
+                    )}
+                  </Button>
+                  <Button 
+                    variant="outline" 
                     className="border-sky-300 text-sky-700 hover:bg-sky-50 py-3"
                     onClick={() => router.push('/dashboard/teams')}
                   >
@@ -1106,6 +1147,14 @@ function EmployeeDashboardContent() {
         onClose={handleCloseShiftDetails}
         shift={selectedShiftForDetails}
         currentEmployeeId={employee?.id || ''}
+      />
+
+      {/* Pending Requests Modal */}
+      <PendingRequestsModal
+        isOpen={showPendingRequestsModal}
+        onClose={() => setShowPendingRequestsModal(false)}
+        employeeId={employee?.id || ''}
+        onUpdate={handlePendingRequestsUpdate}
       />
     </div>
   )
