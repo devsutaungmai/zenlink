@@ -1,33 +1,31 @@
 {
-  "schedule": {
-    "title": "Zeitplan",
-    "header": {
-      "all_employees": "Alle Mitarbeiter",
-      "week": "Woche",
-      "day": "Tag",
-      "today": "Heute"
-    },
-    "week_view": {
-      "today": "Heute",
-      "shifts": "Schichten"
-    },
-    "day_view": {
-      "today": "Heute",
-      "shifts": "Schichten",
-      "loading_employee_data": "Mitarbeiterdaten werden geladen..."
-    },
-    "shift_card": {
-      "unassigned": "Nicht zugewiesen",
-      "active": "Aktiv"
-    },
-    "messages": {
-      "success_created": "Schicht erfolgreich erstellt!",
-      "success_updated": "Schicht erfolgreich aktualisiert!",
-      "error_create": "Schicht konnte nicht erstellt werden.",
-      "error_update": "Schicht konnte nicht aktualisiert werden.",
-      "error_fetching_employees": "Fehler beim Abrufen der Mitarbeiter:",
-      "error_fetching_groups": "Fehler beim Abrufen der Mitarbeitergruppen:",
-      "error_fetching_shifts": "Fehler beim Abrufen der Schichten:"
-    }
+  "title": "Zeitplan",
+  "header": {
+    "all_employees": "Alle Mitarbeiter",
+    "week": "Woche",
+    "day": "Tag",
+    "today": "Heute"
+  },
+  "week_view": {
+    "today": "Heute",
+    "shifts": "Schichten"
+  },
+  "day_view": {
+    "today": "Heute",
+    "shifts": "Schichten",
+    "loading_employee_data": "Mitarbeiterdaten werden geladen..."
+  },
+  "shift_card": {
+    "unassigned": "Nicht zugewiesen",
+    "active": "Aktiv"
+  },
+  "messages": {
+    "success_created": "Schicht erfolgreich erstellt!",
+    "success_updated": "Schicht erfolgreich aktualisiert!",
+    "error_create": "Schicht konnte nicht erstellt werden.",
+    "error_update": "Schicht konnte nicht aktualisiert werden.",
+    "error_fetching_employees": "Fehler beim Abrufen der Mitarbeiter:",
+    "error_fetching_groups": "Fehler beim Abrufen der Mitarbeitergruppen:",
+    "error_fetching_shifts": "Fehler beim Abrufen der Schichten:"
   }
 }

@@ -4,6 +4,7 @@ import { PlusIcon } from '@heroicons/react/24/outline'
 import { useTranslation } from 'react-i18next'
 import SpanningShiftCard from './SpanningShiftCard'
 import HourColumn from './HourColumn'
+import { Shift, Employee } from '@prisma/client'
 
 interface WeekViewProps {
   weekDates: Date[]
@@ -20,7 +21,7 @@ export default function WeekView({
   onEditShift,
   onAddShift
 }: WeekViewProps) {
-  const { t } = useTranslation('schedule')
+  const { t, i18n } = useTranslation('schedule')
   const [isDragging, setIsDragging] = useState(false)
   const [startX, setStartX] = useState(0)
   const [scrollLeft, setScrollLeft] = useState(0)
@@ -105,7 +106,10 @@ export default function WeekView({
   }
 
   const getDayShiftCount = (date: string) => {
-    return shifts.filter(shift => shift.date.substring(0, 10) === date).length
+    return shifts.filter(shift => {
+      const shiftDate = typeof shift.date === 'string' ? shift.date : format(shift.date, 'yyyy-MM-dd')
+      return shiftDate.substring(0, 10) === date
+    }).length
   }
 
   const groupOverlappingShifts = (shifts: Shift[]) => {
@@ -167,7 +171,10 @@ export default function WeekView({
             
             {weekDates.map((date, i) => {
               const formattedDate = format(date, 'yyyy-MM-dd')
-              const dayShifts = shifts.filter(shift => shift.date.substring(0, 10) === formattedDate)
+              const dayShifts = shifts.filter(shift => {
+                const shiftDate = typeof shift.date === 'string' ? shift.date : format(shift.date, 'yyyy-MM-dd')
+                return shiftDate.substring(0, 10) === formattedDate
+              })
               const isToday = new Date().toDateString() === date.toDateString()
               
               // Group overlapping shifts

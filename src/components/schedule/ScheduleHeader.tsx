@@ -39,7 +39,7 @@ export default function ScheduleHeader({
   return (
     <div className="mb-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
       <div className="flex items-center">
-        <h1 className="text-2xl font-semibold text-gray-900 mr-4">{t('schedule.title')}</h1>
+        <h1 className="text-2xl font-semibold text-gray-900 mr-4">{t('title')}</h1>
         
         <div className="flex space-x-2">
           <button 
@@ -70,7 +70,7 @@ export default function ScheduleHeader({
             onChange={(e) => onEmployeeChange(e.target.value === "" ? null : e.target.value)}
             className="w-full px-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#31BCFF]"
           >
-            <option value="">{t('schedule.header.all_employees')}</option>
+            <option value="">{t('header.all_employees')}</option>
             {safeEmployees.map(employee => (
               <option key={employee.id} value={employee.id}>
                 {employee.firstName} {employee.lastName}
@@ -84,7 +84,7 @@ export default function ScheduleHeader({
           onClick={onTodayClick}
           className="px-3 py-1.5 rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200"
         >
-          {t('schedule.header.today')}
+          {t('header.today')}
         </button>
         
         {/* View Mode Toggles */}
@@ -97,7 +97,7 @@ export default function ScheduleHeader({
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            {t('schedule.header.week')}
+            {t('header.week')}
           </button>
           <button
             onClick={() => onViewModeChange('day')}
@@ -107,7 +107,7 @@ export default function ScheduleHeader({
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            {t('schedule.header.day')}
+            {t('header.day')}
           </button>
         </div>
       </div>

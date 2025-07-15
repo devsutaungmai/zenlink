@@ -1,33 +1,31 @@
 {
-  "schedule": {
-    "title": "Tidsplan",
-    "header": {
-      "all_employees": "Alle ansatte",
-      "week": "Uke",
-      "day": "Dag",
-      "today": "I dag"
-    },
-    "week_view": {
-      "today": "I dag",
-      "shifts": "Skift"
-    },
-    "day_view": {
-      "today": "I dag",
-      "shifts": "Skift", 
-      "loading_employee_data": "Laster ansattdata..."
-    },
-    "shift_card": {
-      "unassigned": "Ikke tildelt",
-      "active": "Aktiv"
-    },
-    "messages": {
-      "success_created": "Skift opprettet!",
-      "success_updated": "Skift oppdatert!",
-      "error_create": "Kunne ikke opprette skift.",
-      "error_update": "Kunne ikke oppdatere skift.",
-      "error_fetching_employees": "Feil ved henting av ansatte:",
-      "error_fetching_groups": "Feil ved henting av ansattgrupper:",
-      "error_fetching_shifts": "Feil ved henting av skift:"
-    }
+  "title": "Tidsplan",
+  "header": {
+    "all_employees": "Alle ansatte",
+    "week": "Uke",
+    "day": "Dag",
+    "today": "I dag"
+  },
+  "week_view": {
+    "today": "I dag",
+    "shifts": "Skift"
+  },
+  "day_view": {
+    "today": "I dag",
+    "shifts": "Skift", 
+    "loading_employee_data": "Laster ansattdata..."
+  },
+  "shift_card": {
+    "unassigned": "Ikke tildelt",
+    "active": "Aktiv"
+  },
+  "messages": {
+    "success_created": "Skift opprettet!",
+    "success_updated": "Skift oppdatert!",
+    "error_create": "Kunne ikke opprette skift.",
+    "error_update": "Kunne ikke oppdatere skift.",
+    "error_fetching_employees": "Feil ved henting av ansatte:",
+    "error_fetching_groups": "Feil ved henting av ansattgrupper:",
+    "error_fetching_shifts": "Feil ved henting av skift:"
   }
 }
