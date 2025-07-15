@@ -19,6 +19,15 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 
 interface Employee {
   id: string
@@ -71,7 +80,7 @@ export default function AdminAvailabilityPage() {
   const [selectedFilter, setSelectedFilter] = useState('all')
   const [selectedDepartment, setSelectedDepartment] = useState('all')
   const [currentPage, setCurrentPage] = useState(1)
-  const [employeesPerPage] = useState(20) // Limit employees per page
+  const [employeesPerPage] = useState(10) // Reduced from 20 to 10 for better scrolling
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar') // Add view mode toggle
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -237,6 +246,12 @@ export default function AdminAvailabilityPage() {
     setCurrentPage(1)
   }, [searchTerm, selectedFilter, selectedDepartment])
 
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    // Scroll to top when page changes
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   const monthNames = t('calendar.months', { returnObjects: true }) as string[]
   const weekDays = t('calendar.week_days', { returnObjects: true }) as string[]
   const days = getDaysInMonth(currentDate)
@@ -377,7 +392,14 @@ export default function AdminAvailabilityPage() {
           <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
             <div className="flex items-center gap-4">
               <span>
-                Showing {currentEmployees.length} of {filteredEmployees.length} employees
+                {currentEmployees.length > 0 
+                  ? t('showing_paginated', { 
+                      start: (currentPage - 1) * employeesPerPage + 1, 
+                      end: Math.min(currentPage * employeesPerPage, filteredEmployees.length), 
+                      total: filteredEmployees.length 
+                    })
+                  : `Showing 0 of ${filteredEmployees.length} employees`
+                }
               </span>
               
               {/* View mode toggle */}
@@ -408,28 +430,10 @@ export default function AdminAvailabilityPage() {
               </div>
             </div>
             
-            {filteredEmployees.length > employeesPerPage && (
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                  disabled={currentPage === 1}
-                >
-                  Previous
-                </Button>
-                <span className="px-2">
-                  Page {currentPage} of {totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                  disabled={currentPage === totalPages}
-                >
-                  Next
-                </Button>
-              </div>
+            {totalPages > 1 && (
+              <span className="text-xs text-gray-400">
+                {t('page_info', { current: currentPage, total: totalPages })}
+              </span>
             )}
           </div>
         </CardContent>
@@ -581,6 +585,60 @@ export default function AdminAvailabilityPage() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious 
+                  onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
+                  className={currentPage <= 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                />
+              </PaginationItem>
+              
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                // Show first page, last page, current page, and pages around current page
+                if (
+                  page === 1 ||
+                  page === totalPages ||
+                  (page >= currentPage - 1 && page <= currentPage + 1)
+                ) {
+                  return (
+                    <PaginationItem key={page}>
+                      <PaginationLink
+                        onClick={() => handlePageChange(page)}
+                        isActive={page === currentPage}
+                        className="cursor-pointer"
+                      >
+                        {page}
+                      </PaginationLink>
+                    </PaginationItem>
+                  )
+                } else if (
+                  page === currentPage - 2 ||
+                  page === currentPage + 2
+                ) {
+                  return (
+                    <PaginationItem key={page}>
+                      <PaginationEllipsis />
+                    </PaginationItem>
+                  )
+                }
+                return null
+              })}
+              
+              <PaginationItem>
+                <PaginationNext 
+                  onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
+                  className={currentPage >= totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
       )}
 
       {/* Legend */}

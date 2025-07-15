@@ -92,8 +92,8 @@
     "delete_error": "Mitarbeiter konnte nicht gelöscht werden.",
     "invite_modal": {
       "title": "Einladung senden",
-      "email_label": "E-Mail",
-      "send_button": "Einladung senden",
+      "email": "E-Mail",
+      "send": "Einladung senden",
       "sending": "Senden...",
       "success": "Einladung erfolgreich gesendet!",
       "error": "Einladung konnte nicht gesendet werden."
@@ -103,7 +103,9 @@
       "pin_label": "6-stellige PIN",
       "pin_placeholder": "123456",
       "pin_help": "Geben Sie eine 6-stellige PIN für die Zeiterfassung ein",
+      "pin_description": "Geben Sie eine 6-stellige PIN für die Zeiterfassung ein",
       "set_button": "PIN setzen",
+      "set_pin": "PIN setzen",
       "invalid_pin": "PIN muss genau 6 Ziffern haben",
       "success": "PIN wurde erfolgreich gesetzt!",
       "error": "PIN konnte nicht gesetzt werden. Bitte versuchen Sie es erneut."
@@ -394,6 +396,8 @@
     "shift_details": "Schichtdetails",
     "search_placeholder": "Schichten nach Mitarbeiter, Abteilung oder Typ suchen...",
     "showing": "Zeige {{current}} von {{total}} Schichten",
+    "showing_paginated": "Zeige {{start}} bis {{end}} von {{total}} Schichten ({{totalAll}} insgesamt)",
+    "page_info": "Seite {{current}} von {{total}}",
     "no_shifts_found": "Keine Schichten gefunden",
     "adjust_search": "Versuchen Sie, Ihre Suchbegriffe anzupassen",
     "get_started": "Beginnen Sie mit der Erstellung Ihrer ersten Schicht",
@@ -584,6 +588,8 @@
     "search_shifts": "Schichten nach Mitarbeiter, Abteilung oder Typ suchen...",
     "create_shift": "Schicht erstellen"
   },
+  "showing_paginated": "Zeige {{start}} bis {{end}} von {{total}}",
+  "page_info": "Seite {{current}} von {{total}}",
   "language": {
     "english": "Englisch",
     "norwegian": "Norwegisch",

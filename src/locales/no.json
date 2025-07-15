@@ -95,7 +95,9 @@
       "pin_label": "6-sifret PIN",
       "pin_placeholder": "123456",
       "pin_help": "Skriv inn en 6-sifret PIN for tidssporing",
+      "pin_description": "Skriv inn en 6-sifret PIN for tidssporing",
       "set_button": "Sett PIN",
+      "set_pin": "Sett PIN",
       "invalid_pin": "PIN må være nøyaktig 6 siffer",
       "success": "PIN har blitt satt!",
       "error": "Kunne ikke sette PIN. Prøv igjen."
@@ -356,6 +358,8 @@
     "shift_details": "Skiftdetaljer",
     "search_placeholder": "Søk skift etter ansatt, avdeling eller type...",
     "showing": "Viser {{current}} av {{total}} skift",
+    "showing_paginated": "Viser {{start}} til {{end}} av {{total}} skift ({{totalAll}} totalt)",
+    "page_info": "Side {{current}} av {{total}}",
     "no_shifts_found": "Ingen skift funnet",
     "adjust_search": "Prøv å justere søkeordene",
     "get_started": "Kom i gang ved å opprette ditt første skift",
@@ -546,6 +550,8 @@
     "search_shifts": "Søk skift etter ansatt, avdeling eller type...",
     "create_shift": "Opprett skift"
   },
+  "showing_paginated": "Viser {{start}} til {{end}} av {{total}}",
+  "page_info": "Side {{current}} av {{total}}",
   "language": {
     "english": "Engelsk",
     "norwegian": "Norsk",

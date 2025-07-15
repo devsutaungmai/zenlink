@@ -13,6 +13,15 @@ import {
 import { useTranslation } from 'react-i18next'
 import Swal from 'sweetalert2'
 import ShiftExchangeInfo from '@/components/ShiftExchangeInfo'
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 
 interface Shift {
   id: string
@@ -89,6 +98,10 @@ export default function ShiftsPage() {
   const [selectedGroup, setSelectedGroup] = useState<string>('')
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([])
   const [showFilters, setShowFilters] = useState(false)
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage] = useState(10) // You can make this configurable
 
   useEffect(() => {
     fetchShifts()
@@ -308,11 +321,29 @@ export default function ShiftsPage() {
     return matchesSearch && matchesDepartment && matchesGroup && matchesEmployees
   })
 
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredShifts.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedShifts = filteredShifts.slice(startIndex, endIndex)
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, selectedDepartment, selectedGroup, selectedEmployees])
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    // Scroll to top of table when page changes
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   const clearFilters = () => {
     setSelectedDepartment('')
     setSelectedGroup('')
     setSelectedEmployees([])
     setSearchTerm('')
+    setCurrentPage(1)
   }
 
   const handleEmployeeToggle = (employeeName: string) => {
@@ -438,11 +469,21 @@ export default function ShiftsPage() {
               </button>
             </div>
           </div>
-        )}
-
-        <div className="flex items-center justify-between mt-4 text-sm text-gray-500">
-          <span>{t('shifts.showing', { current: filteredShifts.length, total: shifts.length })}</span>
-        </div>
+        )}            <div className="flex items-center justify-between mt-4 text-sm text-gray-500">
+              <span>
+                {t('shifts.showing_paginated', { 
+                  start: filteredShifts.length === 0 ? 0 : startIndex + 1,
+                  end: Math.min(endIndex, filteredShifts.length),
+                  total: filteredShifts.length,
+                  totalAll: shifts.length
+                })}
+              </span>
+              {totalPages > 1 && (
+                <span className="text-xs">
+                  {t('shifts.page_info', { current: currentPage, total: totalPages })}
+                </span>
+              )}
+            </div>
       </div>
 
       {/* Shifts List */}
@@ -497,7 +538,7 @@ export default function ShiftsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200/50">
-                {filteredShifts.map((shift) => (
+                {paginatedShifts.map((shift) => (
                   <React.Fragment key={shift.id}>
                     <tr className="hover:bg-blue-50/30 transition-colors duration-200">
                       <td className="px-6 py-4">
@@ -587,6 +628,84 @@ export default function ShiftsPage() {
               </tbody>
             </table>
           </div>
+          
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center px-6 py-4 border-t border-gray-200/50">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                      className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                  
+                  {/* First page */}
+                  {currentPage > 2 && (
+                    <>
+                      <PaginationItem>
+                        <PaginationLink onClick={() => handlePageChange(1)} className="cursor-pointer">
+                          1
+                        </PaginationLink>
+                      </PaginationItem>
+                      {currentPage > 3 && <PaginationEllipsis />}
+                    </>
+                  )}
+                  
+                  {/* Previous page */}
+                  {currentPage > 1 && (
+                    <PaginationItem>
+                      <PaginationLink 
+                        onClick={() => handlePageChange(currentPage - 1)} 
+                        className="cursor-pointer"
+                      >
+                        {currentPage - 1}
+                      </PaginationLink>
+                    </PaginationItem>
+                  )}
+                  
+                  {/* Current page */}
+                  <PaginationItem>
+                    <PaginationLink isActive className="cursor-default">
+                      {currentPage}
+                    </PaginationLink>
+                  </PaginationItem>
+                  
+                  {/* Next page */}
+                  {currentPage < totalPages && (
+                    <PaginationItem>
+                      <PaginationLink 
+                        onClick={() => handlePageChange(currentPage + 1)} 
+                        className="cursor-pointer"
+                      >
+                        {currentPage + 1}
+                      </PaginationLink>
+                    </PaginationItem>
+                  )}
+                  
+                  {/* Last page */}
+                  {currentPage < totalPages - 1 && (
+                    <>
+                      {currentPage < totalPages - 2 && <PaginationEllipsis />}
+                      <PaginationItem>
+                        <PaginationLink onClick={() => handlePageChange(totalPages)} className="cursor-pointer">
+                          {totalPages}
+                        </PaginationLink>
+                      </PaginationItem>
+                    </>
+                  )}
+                  
+                  <PaginationItem>
+                    <PaginationNext 
+                      onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                      className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -5,6 +5,15 @@ import Link from 'next/link'
 import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 import { useTranslation } from 'react-i18next'
 import Swal from 'sweetalert2'
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 
 interface EmployeeGroup {
   id: string
@@ -23,6 +32,10 @@ export default function EmployeeGroupsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage] = useState(10)
 
   useEffect(() => {
     fetchEmployeeGroups()
@@ -103,6 +116,23 @@ export default function EmployeeGroupsPage() {
     group.defaultWageType.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredEmployeeGroups.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedEmployeeGroups = filteredEmployeeGroups.slice(startIndex, endIndex)
+
+  // Reset to page 1 when search changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm])
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    // Scroll to top of table when page changes
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -165,7 +195,21 @@ export default function EmployeeGroupsPage() {
           </div>
         </div>
         <div className="flex items-center justify-between mt-4 text-sm text-gray-500">
-          <span>{t('employee_groups.showing', { current: filteredEmployeeGroups.length, total: employeeGroups.length })}</span>
+          <span>
+            {filteredEmployeeGroups.length > 0 
+              ? t('showing_paginated', { 
+                  start: startIndex + 1, 
+                  end: Math.min(endIndex, filteredEmployeeGroups.length), 
+                  total: filteredEmployeeGroups.length 
+                })
+              : t('employee_groups.showing', { current: 0, total: employeeGroups.length })
+            }
+          </span>
+          {totalPages > 1 && (
+            <span className="text-xs text-gray-400">
+              {t('page_info', { current: currentPage, total: totalPages })}
+            </span>
+          )}
         </div>
       </div>
 
@@ -216,7 +260,7 @@ export default function EmployeeGroupsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200/50">
-                {filteredEmployeeGroups.map((group) => (
+                {paginatedEmployeeGroups.map((group) => (
                   <tr key={group.id} className="hover:bg-blue-50/30 transition-colors duration-200">
                     <td className="px-6 py-4">
                       <div className="text-sm font-medium text-gray-900">
@@ -266,6 +310,60 @@ export default function EmployeeGroupsPage() {
               </tbody>
             </table>
           </div>
+          
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center px-6 py-4 border-t border-gray-200/50">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
+                      className={currentPage <= 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                    />
+                  </PaginationItem>
+                  
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                    // Show first page, last page, current page, and pages around current page
+                    if (
+                      page === 1 ||
+                      page === totalPages ||
+                      (page >= currentPage - 1 && page <= currentPage + 1)
+                    ) {
+                      return (
+                        <PaginationItem key={page}>
+                          <PaginationLink
+                            onClick={() => handlePageChange(page)}
+                            isActive={page === currentPage}
+                            className="cursor-pointer"
+                          >
+                            {page}
+                          </PaginationLink>
+                        </PaginationItem>
+                      )
+                    } else if (
+                      page === currentPage - 2 ||
+                      page === currentPage + 2
+                    ) {
+                      return (
+                        <PaginationItem key={page}>
+                          <PaginationEllipsis />
+                        </PaginationItem>
+                      )
+                    }
+                    return null
+                  })}
+                  
+                  <PaginationItem>
+                    <PaginationNext 
+                      onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
+                      className={currentPage >= totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
         </div>
       )}
     </div>

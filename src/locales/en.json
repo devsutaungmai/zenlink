@@ -92,8 +92,8 @@
     "delete_error": "Failed to delete employee.",
     "invite_modal": {
       "title": "Send Invite",
-      "email_label": "Email",
-      "send_button": "Send Invite",
+      "email": "Email",
+      "send": "Send Invite",
       "sending": "Sending...",
       "success": "Invite sent successfully!",
       "error": "Failed to send invite."
@@ -103,7 +103,9 @@
       "pin_label": "6-Digit PIN",
       "pin_placeholder": "123456",
       "pin_help": "Enter a 6-digit PIN for time tracking",
+      "pin_description": "Enter a 6-digit PIN for time tracking",
       "set_button": "Set PIN",
+      "set_pin": "Set PIN",
       "invalid_pin": "PIN must be exactly 6 digits",
       "success": "PIN has been set successfully!",
       "error": "Failed to set PIN. Please try again."
@@ -356,6 +358,8 @@
     "shift_details": "Shift Details",
     "search_placeholder": "Search shifts by employee, department, or type...",
     "showing": "Showing {{current}} of {{total}} shifts",
+    "showing_paginated": "Showing {{start}} to {{end}} of {{total}} shifts ({{totalAll}} total)",
+    "page_info": "Page {{current}} of {{total}}",
     "no_shifts_found": "No shifts found",
     "adjust_search": "Try adjusting your search terms",
     "get_started": "Get started by creating your first shift",
@@ -547,6 +551,8 @@
     "search_shifts": "Search shifts by employee, department, or type...",
     "create_shift": "Create Shift"
   },
+  "showing_paginated": "Showing {{start}} to {{end}} of {{total}}",
+  "page_info": "Page {{current}} of {{total}}",
   "language": {
     "english": "English",
     "norwegian": "Norwegian",

@@ -14,6 +14,15 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 
 interface Employee {
   id: string
@@ -46,6 +55,10 @@ export default function EmployeesPage() {
   const [pinEmployeeName, setPinEmployeeName] = useState('');
   const [newPin, setNewPin] = useState('');
   const [inviteLoading, setInviteLoading] = useState(false);
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage] = useState(10)
 
   const fetchEmployees = async () => {
     try {
@@ -206,6 +219,23 @@ export default function EmployeesPage() {
     employee.mobile.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredEmployees.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedEmployees = filteredEmployees.slice(startIndex, endIndex)
+
+  // Reset to page 1 when search changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm])
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    // Scroll to top of table when page changes
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -268,7 +298,21 @@ export default function EmployeesPage() {
           </div>
         </div>
         <div className="flex items-center justify-between mt-4 text-sm text-gray-500">
-          <span>{t('employees.showing', { current: filteredEmployees.length, total: employees.length })}</span>
+          <span>
+            {filteredEmployees.length > 0 
+              ? t('showing_paginated', { 
+                  start: startIndex + 1, 
+                  end: Math.min(endIndex, filteredEmployees.length), 
+                  total: filteredEmployees.length 
+                })
+              : t('employees.showing', { current: 0, total: employees.length })
+            }
+          </span>
+          {totalPages > 1 && (
+            <span className="text-xs text-gray-400">
+              {t('page_info', { current: currentPage, total: totalPages })}
+            </span>
+          )}
         </div>
       </div>
 
@@ -319,7 +363,7 @@ export default function EmployeesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200/50">
-                {filteredEmployees.map((employee) => (
+                {paginatedEmployees.map((employee) => (
                   <tr key={employee.id} className="hover:bg-blue-50/30 transition-colors duration-200">
                     <td className="px-6 py-4">
                       <div>
@@ -415,6 +459,60 @@ export default function EmployeesPage() {
               </tbody>
             </table>
           </div>
+          
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center px-6 py-4 border-t border-gray-200/50">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
+                      className={currentPage <= 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                    />
+                  </PaginationItem>
+                  
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                    // Show first page, last page, current page, and pages around current page
+                    if (
+                      page === 1 ||
+                      page === totalPages ||
+                      (page >= currentPage - 1 && page <= currentPage + 1)
+                    ) {
+                      return (
+                        <PaginationItem key={page}>
+                          <PaginationLink
+                            onClick={() => handlePageChange(page)}
+                            isActive={page === currentPage}
+                            className="cursor-pointer"
+                          >
+                            {page}
+                          </PaginationLink>
+                        </PaginationItem>
+                      )
+                    } else if (
+                      page === currentPage - 2 ||
+                      page === currentPage + 2
+                    ) {
+                      return (
+                        <PaginationItem key={page}>
+                          <PaginationEllipsis />
+                        </PaginationItem>
+                      )
+                    }
+                    return null
+                  })}
+                  
+                  <PaginationItem>
+                    <PaginationNext 
+                      onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
+                      className={currentPage >= totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
         </div>
       )}
 
@@ -480,7 +578,7 @@ export default function EmployeesPage() {
             className="space-y-4"
           >
             <div>
-              <Label htmlFor="invite-email">{t('employees.invite_modal.email')}</Label>
+              <Label htmlFor="invite-email" className='mb-3'>{t('employees.invite_modal.email')}</Label>
               <Input
                 id="invite-email"
                 type="email"
@@ -518,7 +616,7 @@ export default function EmployeesPage() {
           </DialogHeader>
           <form onSubmit={handlePinSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="pin-input">{t('employees.pin_modal.pin_label')}</Label>
+              <Label htmlFor="pin-input" className='mb-3'>{t('employees.pin_modal.pin_label')}</Label>
               <Input
                 id="pin-input"
                 type="text"
