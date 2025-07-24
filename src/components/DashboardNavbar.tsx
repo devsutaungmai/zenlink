@@ -20,6 +20,7 @@ import { useRouter } from 'next/navigation'
 import { useUser } from '@/app/lib/useUser'
 import { useTranslation } from 'react-i18next'
 import LanguageSwitcher from './LanguageSwitcher'
+import NotificationCenter from './NotificationCenter'
 
 type NavigationChild = {
   name: string
@@ -183,10 +184,7 @@ export default function DashboardNavbar({ setMobileMenuOpen }: DashboardNavbarPr
         <div className="flex items-center space-x-3">
           <LanguageSwitcher />
           
-          <button className="relative p-3 text-gray-600 hover:text-[#31BCFF] hover:bg-blue-50/50 rounded-xl transition-all duration-200 group">
-            <BellIcon className="h-5 w-5 group-hover:scale-110 transition-transform duration-200" />
-            <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full animate-pulse"></span>
-          </button>
+          <NotificationCenter />
           
           <Menu as="div" className="relative">
             <Menu.Button className="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50/50 rounded-xl transition-all duration-200 group">

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/prisma'
 import { requireAuth } from '@/lib/auth'
+import { ShiftExchangeNotifications } from '@/lib/notifications'
 
 export async function PATCH(
   request: Request,
@@ -60,6 +61,18 @@ export async function PATCH(
           employeeId: exchange.toEmployeeId,
         },
       })
+    }
+
+    // Send notifications to both employees about admin decision
+    try {
+      if (status === 'APPROVED') {
+        await ShiftExchangeNotifications.notifyShiftExchangeApproved(exchange.id)
+      } else {
+        await ShiftExchangeNotifications.notifyShiftExchangeRejected(exchange.id)
+      }
+    } catch (notificationError) {
+      console.error('Failed to send notification:', notificationError)
+      // Don't fail the request if notification fails
     }
 
     return NextResponse.json(exchange)

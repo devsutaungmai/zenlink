@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/prisma'
+import { ShiftExchangeNotifications } from '@/lib/notifications'
 
 export async function POST(request: NextRequest) {
   try {
@@ -83,6 +84,14 @@ export async function POST(request: NextRequest) {
         toEmployee: true
       }
     })
+
+    // Send notification to target employee
+    try {
+      await ShiftExchangeNotifications.notifyShiftExchangeRequest(shiftExchange.id)
+    } catch (notificationError) {
+      console.error('Failed to send notification:', notificationError)
+      // Don't fail the request if notification fails
+    }
 
     return NextResponse.json(shiftExchange, { status: 201 })
   } catch (error) {

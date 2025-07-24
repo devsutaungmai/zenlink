@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/prisma'
 import { getCurrentEmployee } from '@/lib/auth'
+import { ShiftExchangeNotifications } from '@/lib/notifications'
 
 export async function PATCH(
   request: NextRequest,
@@ -74,6 +75,25 @@ export async function PATCH(
         toEmployee: true,
       },
     })
+
+    // Send notifications based on employee response
+    try {
+      if (action === 'accept') {
+        // Notify original requester that their request was accepted
+        await ShiftExchangeNotifications.notifyShiftExchangeAccepted(updatedExchange.id)
+        
+        // If it's a HANDOVER that was accepted, notify admins for approval
+        if (exchange.type === 'HANDOVER') {
+          await ShiftExchangeNotifications.notifyAdminForApproval(updatedExchange.id)
+        }
+      } else if (action === 'reject') {
+        // Notify original requester that their request was rejected
+        await ShiftExchangeNotifications.notifyShiftExchangeRejected(updatedExchange.id)
+      }
+    } catch (notificationError) {
+      console.error('Failed to send notification:', notificationError)
+      // Don't fail the request if notification fails
+    }
 
     return NextResponse.json(updatedExchange)
   } catch (error) {
