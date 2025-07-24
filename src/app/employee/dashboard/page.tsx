@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from 'next/navigation'
+import { useTranslation } from 'react-i18next'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -11,6 +12,7 @@ import ShiftExchangeInfo from "@/components/ShiftExchangeInfo"
 import ShiftDetailsModal from "@/components/ShiftDetailsModal"
 import PendingRequestsModal from "@/components/PendingRequestsModal"
 import NotificationCenter from "@/components/NotificationCenter"
+import LanguageSwitcher from "@/components/LanguageSwitcher"
 import {
   Building2,
   Clock,
@@ -127,6 +129,7 @@ function EmployeeDashboardContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const employeeId = searchParams.get('employeeId')
+  const { t } = useTranslation('employee-dashboard')
   
   const [employee, setEmployee] = useState<Employee | null>(null)
   const [activeShift, setActiveShift] = useState<Shift | null>(null)
@@ -650,12 +653,12 @@ function EmployeeDashboardContent() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-sky-50 to-blue-100">
         <div className="text-center">
-          <p className="text-sky-600 mb-4">Unable to load employee data</p>
+          <p className="text-sky-600 mb-4">{t('errors.failed_to_load')}</p>
           <button
             onClick={() => router.push('/employee/login')}
             className="bg-sky-500 text-white px-4 py-2 rounded-md hover:bg-sky-600"
           >
-            Return to Login
+            {t('errors.return_to_login')}
           </button>
         </div>
       </div>
@@ -672,11 +675,12 @@ function EmployeeDashboardContent() {
               <Building2 className="w-8 h-8 text-white" />
             </div> */}
             <div>
-              <h1 className="text-4xl font-bold text-sky-700">Zenlink Dashboard</h1>
-              <p className="text-sky-600 text-lg">Welcome back, {employee.firstName} {employee.lastName}</p>
+              <h1 className="text-4xl font-bold text-sky-700">{t('title')}</h1>
+              <p className="text-sky-600 text-lg">{t('welcome_back', { firstName: employee.firstName, lastName: employee.lastName })}</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
+            <LanguageSwitcher />
             <NotificationCenter employeeId={employee.id} />
             <Button 
               variant="outline" 
@@ -684,7 +688,7 @@ function EmployeeDashboardContent() {
               onClick={handleLogout}
             >
               <LogOut className="w-5 h-5 mr-2" />
-              Logout
+              {t('header.logout')}
             </Button>
           </div>
         </div>
@@ -715,19 +719,19 @@ function EmployeeDashboardContent() {
               <CardHeader>
                 <CardTitle className="text-sky-700 flex items-center gap-2">
                   <Clock className="w-6 h-6" />
-                 Punch Time
+                 {t('time_card.title')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="text-center">
                   <div className={`text-2xl font-bold mb-2 ${activeShift ? "text-green-600" : "text-gray-500"}`}>
-                    {activeShift ? "CLOCKED IN" : "CLOCKED OUT"}
+                    {activeShift ? t('time_card.clocked_in') : t('time_card.clocked_out')}
                   </div>
                   {activeShift && (
                     <div className="text-sky-600">
-                      <p>Since: {formatShiftStartTime(activeShift.date, activeShift.startTime)}</p>
-                      <p suppressHydrationWarning>Worked: {calculateWorkedTime()}</p>
-                      {isOnBreak && <p className="text-orange-600 font-medium">Currently on break</p>}
+                      <p>{t('time_card.since', { time: formatShiftStartTime(activeShift.date, activeShift.startTime) })}</p>
+                      <p suppressHydrationWarning>{t('time_card.worked', { duration: calculateWorkedTime() })}</p>
+                      {isOnBreak && <p className="text-orange-600 font-medium">{t('time_card.currently_on_break')}</p>}
                     </div>
                   )}
                 </div>
@@ -740,7 +744,7 @@ function EmployeeDashboardContent() {
                       className="w-full bg-green-500 hover:bg-green-600 text-white py-4 text-lg"
                     >
                       <Play className="w-5 h-5 mr-2" />
-                      {clockingIn ? 'Clocking In...' : 'Clock In'}
+                      {clockingIn ? t('time_card.clocking_in') : t('time_card.clock_in')}
                     </Button>
                   ) : (
                     <>
@@ -752,7 +756,7 @@ function EmployeeDashboardContent() {
                         } text-white`}
                       >
                         <Coffee className="w-5 h-5 mr-2" />
-                        {breakLoading ? 'Processing...' : (isOnBreak ? "End Break" : "Start Break")}
+                        {breakLoading ? t('time_card.processing') : (isOnBreak ? t('time_card.end_break') : t('time_card.start_break'))}
                       </Button>
                       <Button 
                         onClick={handleClockOut} 
@@ -760,7 +764,7 @@ function EmployeeDashboardContent() {
                         className="w-full bg-red-500 hover:bg-red-600 text-white py-3"
                       >
                         <Square className="w-5 h-5 mr-2" />
-                        {clockingOut ? 'Clocking Out...' : 'Clock Out'}
+                        {clockingOut ? t('time_card.clocking_out') : t('time_card.clock_out')}
                       </Button>
                     </>
                   )}
@@ -773,7 +777,7 @@ function EmployeeDashboardContent() {
               <CardHeader>
                 <CardTitle className="text-sky-700 flex items-center gap-2">
                   <User className="w-6 h-6" />
-                  Profile
+                  {t('profile.title')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -784,23 +788,23 @@ function EmployeeDashboardContent() {
                     </div>
                     <div>
                       <h3 className="font-semibold text-sky-700">{employee.firstName} {employee.lastName}</h3>
-                      <p className="text-sky-600">Employee</p>
+                      <p className="text-sky-600">{t('profile.employee')}</p>
                       <p className="text-sky-500 text-sm">{employee.department.name}</p>
                     </div>
                   </div>
                   <Separator />
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-sky-600">Employee ID:</span>
+                      <span className="text-sky-600">{t('profile.employee_id')}</span>
                       <span className="font-medium">{employee.employeeNo}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sky-600">Department:</span>
+                      <span className="text-sky-600">{t('profile.department')}</span>
                       <span className="font-medium">{employee.department.name}</span>
                     </div>
                     {employee.employeeGroup && (
                       <div className="flex justify-between">
-                        <span className="text-sky-600">Group:</span>
+                        <span className="text-sky-600">{t('profile.group')}</span>
                         <span className="font-medium">{employee.employeeGroup.name}</span>
                       </div>
                     )}
@@ -816,7 +820,7 @@ function EmployeeDashboardContent() {
               <CardHeader>
                 <CardTitle className="text-sky-700 flex items-center gap-2">
                   <Calendar className="w-6 h-6" />
-                  Today's Shift
+                  {t('todays_shift.title')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -846,24 +850,24 @@ function EmployeeDashboardContent() {
                           todayShift.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
                           'bg-yellow-100 text-yellow-800'
                         }`}>
-                          {todayShift.status === 'SCHEDULED' ? 'Scheduled' :
-                           todayShift.status === 'WORKING' ? 'Working' :
-                           todayShift.status === 'COMPLETED' ? 'Completed' :
-                           todayShift.status === 'CANCELLED' ? 'Cancelled' : todayShift.status}
+                          {todayShift.status === 'SCHEDULED' ? t('shift_status.scheduled') :
+                           todayShift.status === 'WORKING' ? t('shift_status.working') :
+                           todayShift.status === 'COMPLETED' ? t('shift_status.completed') :
+                           todayShift.status === 'CANCELLED' ? t('shift_status.cancelled') : todayShift.status}
                         </Badge>
                       </div>
                     </div>
 
                     {/* Attendance Section */}
                     <div className="space-y-3">
-                      <h4 className="font-medium text-sky-700">Attendance</h4>
+                      <h4 className="font-medium text-sky-700">{t('todays_shift.attendance')}</h4>
                       
                       {currentAttendance ? (
                         <div className="space-y-3">
                           <div className="text-center p-3 bg-green-50 rounded-lg">
-                            <p className="text-green-700 font-medium">Currently Punched In</p>
+                            <p className="text-green-700 font-medium">{t('todays_shift.currently_punched_in')}</p>
                             <p className="text-green-600 text-sm">
-                              Since: {new Date(currentAttendance.punchInTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                              {t('time_card.since', { time: new Date(currentAttendance.punchInTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) })}
                             </p>
                           </div>
                           
@@ -873,14 +877,14 @@ function EmployeeDashboardContent() {
                             className="w-full bg-red-500 hover:bg-red-600 text-white py-3"
                           >
                             <Square className="w-5 h-5 mr-2" />
-                            {clockingOut ? 'Punching Out...' : 'Punch Out'}
+                            {clockingOut ? t('time_card.punching_out') : t('time_card.punch_out')}
                           </Button>
                         </div>
                       ) : (
                         <div className="space-y-3">
                           {todayShift.status === 'COMPLETED' ? (
                             <div className="text-center p-3 bg-blue-50 rounded-lg">
-                              <p className="text-blue-700 font-medium">Shift Completed</p>
+                              <p className="text-blue-700 font-medium">{t('todays_shift.shift_completed')}</p>
                               <p className="text-blue-600 text-sm">
                                 {todayShift.startTime.substring(0, 5)} - {todayShift.endTime!.substring(0, 5)}
                               </p>
@@ -888,9 +892,9 @@ function EmployeeDashboardContent() {
                           ) : (
                             <>
                               <div className="text-center p-3 bg-gray-50 rounded-lg">
-                                <p className="text-gray-700 font-medium">Ready to Start</p>
+                                <p className="text-gray-700 font-medium">{t('todays_shift.ready_to_start')}</p>
                                 <p className="text-gray-600 text-sm">
-                                  Tap punch in to begin your shift
+                                  {t('todays_shift.ready_to_start_description')}
                                 </p>
                               </div>
                               
@@ -900,7 +904,7 @@ function EmployeeDashboardContent() {
                                 className="w-full bg-green-500 hover:bg-green-600 text-white py-3"
                               >
                                 <Play className="w-5 h-5 mr-2" />
-                                {clockingIn ? 'Punching In...' : 'Punch In'}
+                                {clockingIn ? t('time_card.punching_in') : t('time_card.punch_in')}
                               </Button>
                             </>
                           )}
@@ -911,8 +915,8 @@ function EmployeeDashboardContent() {
                 ) : (
                   <div className="text-center p-8 bg-gray-50 rounded-lg">
                     <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="font-semibold text-gray-700 mb-2">No Shift Today</h3>
-                    <p className="text-gray-600 text-sm">You don't have any scheduled shifts for today.</p>
+                    <h3 className="font-semibold text-gray-700 mb-2">{t('todays_shift.no_shift')}</h3>
+                    <p className="text-gray-600 text-sm">{t('todays_shift.no_shift_description')}</p>
                   </div>
                 )}
               </CardContent>
@@ -921,7 +925,7 @@ function EmployeeDashboardContent() {
             {/* Upcoming Shifts */}
             <Card className="bg-white/95 backdrop-blur border-sky-200">
               <CardHeader>
-                <CardTitle className="text-sky-700">Upcoming Shifts</CardTitle>
+                <CardTitle className="text-sky-700">{t('upcoming_shifts.title')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
@@ -936,12 +940,12 @@ function EmployeeDashboardContent() {
                       
                       const dayOfWeek = shiftDate.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase()
                       const formattedDate = isTomorrow 
-                        ? 'Tomorrow' 
+                        ? t('upcoming_shifts.tomorrow')
                         : shiftDate.toLocaleDateString('en-US', { 
                             month: 'short', 
                             day: 'numeric' 
                           })
-                      const timeRange = `${shift.startTime.substring(0, 5)} - ${shift.endTime ? shift.endTime.substring(0, 5) : 'TBD'}`
+                      const timeRange = `${shift.startTime.substring(0, 5)} - ${shift.endTime ? shift.endTime.substring(0, 5) : t('common.tbd')}`
                       
                       // Check for approved shift exchanges
                       const approvedExchange = shift.shiftExchanges?.find(exchange => exchange.approved)
@@ -961,7 +965,7 @@ function EmployeeDashboardContent() {
                         dayBadgeColor = 'bg-orange-500'
                         textColor = 'text-orange-700'
                         subtextColor = 'text-orange-600'
-                        statusLabel = 'For Sale'
+                        statusLabel = t('upcoming_shifts.for_sale')
                         borderClass = 'border border-orange-200'
                       } else if (hasPendingExchange) {
                         bgColor = 'bg-yellow-50'
@@ -969,7 +973,7 @@ function EmployeeDashboardContent() {
                         dayBadgeColor = 'bg-yellow-500'
                         textColor = 'text-yellow-700'
                         subtextColor = 'text-yellow-600'
-                        statusLabel = 'Pending Exchange'
+                        statusLabel = t('upcoming_shifts.pending_exchange')
                         borderClass = 'border border-yellow-200'
                       } else {
                         bgColor = 'bg-sky-50'
@@ -1002,10 +1006,10 @@ function EmployeeDashboardContent() {
                             </div>
                             <div className="text-right">
                               <div className={`text-sm ${subtextColor}`}>
-                                {shift.employeeGroup?.name || 'General'}
+                                {shift.employeeGroup?.name || t('common.general')}
                               </div>
                               <div className={`text-xs mt-1 ${isForSale ? 'text-orange-500' : hasPendingExchange ? 'text-yellow-500' : 'text-sky-500'}`}>
-                                Click for options
+                                {t('upcoming_shifts.click_for_options')}
                               </div>
                             </div>
                           </div>
@@ -1031,7 +1035,7 @@ function EmployeeDashboardContent() {
                   ) : (
                     <div className="text-center p-6 bg-gray-50 rounded-lg">
                       <Calendar className="w-8 h-8 text-gray-400 mx-auto mb-3" />
-                      <p className="text-gray-600 text-sm">No upcoming shifts scheduled</p>
+                      <p className="text-gray-600 text-sm">{t('upcoming_shifts.no_shifts')}</p>
                     </div>
                   )}
                 </div>
@@ -1045,7 +1049,7 @@ function EmployeeDashboardContent() {
               <CardHeader>
                 <CardTitle className="text-sky-700 flex items-center gap-2">
                   <Bell className="w-6 h-6" />
-                  Events & Announcements
+                  {t('events.title')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -1054,7 +1058,7 @@ function EmployeeDashboardContent() {
                     <div key={event.id} className="p-4 border border-sky-200 rounded-lg">
                       <div className="flex items-start justify-between mb-2">
                         <h4 className="font-medium text-sky-700">{event.title}</h4>
-                        <Badge className={getEventTypeColor(event.type)}>{event.type}</Badge>
+                        <Badge className={getEventTypeColor(event.type)}>{t(`events.${event.type}`)}</Badge>
                       </div>
                       <div className="space-y-1 text-sm text-sky-600">
                         <p className="flex items-center gap-1">
@@ -1075,7 +1079,7 @@ function EmployeeDashboardContent() {
             {/* Quick Actions */}
             <Card className="bg-white/95 backdrop-blur border-sky-200">
               <CardHeader>
-                <CardTitle className="text-sky-700">Quick Actions</CardTitle>
+                <CardTitle className="text-sky-700">{t('quick_actions.title')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 gap-3">
@@ -1085,7 +1089,7 @@ function EmployeeDashboardContent() {
                     onClick={() => setShowPendingRequestsModal(true)}
                   >
                     <Bell className="w-4 h-4 mr-2" />
-                    Requests
+                    {t('quick_actions.requests')}
                     {pendingRequestsCount > 0 && (
                       <Badge className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full min-w-[20px] h-5 flex items-center justify-center">
                         {pendingRequestsCount}
@@ -1098,7 +1102,7 @@ function EmployeeDashboardContent() {
                     onClick={() => router.push('/dashboard/teams')}
                   >
                     <Users className="w-4 h-4 mr-2" />
-                    Team
+                    {t('quick_actions.team')}
                   </Button>
                   <Button 
                     variant="outline" 
@@ -1106,7 +1110,7 @@ function EmployeeDashboardContent() {
                     onClick={() => router.push('/dashboard/schedule')}
                   >
                     <Calendar className="w-4 h-4 mr-2" />
-                    Schedule
+                    {t('quick_actions.schedule')}
                   </Button>
                   <Button 
                     variant="outline" 
@@ -1114,7 +1118,7 @@ function EmployeeDashboardContent() {
                     onClick={() => router.push('/employee/availability')}
                   >
                     <Clock className="w-4 h-4 mr-2" />
-                    Availability
+                    {t('quick_actions.availability')}
                   </Button>
                   <Button 
                     variant="outline" 
@@ -1122,7 +1126,7 @@ function EmployeeDashboardContent() {
                     onClick={() => router.push('/employee/sick-leaves')}
                   >
                     <Bell className="w-4 h-4 mr-2" />
-                    Sick Leave
+                    {t('quick_actions.sick_leave')}
                   </Button>
                 </div>
               </CardContent>

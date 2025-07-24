@@ -1,0 +1,92 @@
+{
+  "title": "Zenlink Dashboard",
+  "welcome_back": "Willkommen zurück, {{firstName}} {{lastName}}",
+  "header": {
+    "logout": "Abmelden"
+  },
+  "time_card": {
+    "title": "Zeiterfassung",
+    "punch_time": "Stempeln",
+    "clocked_in": "EINGESTEMPELT",
+    "clocked_out": "AUSGESTEMPELT",
+    "since": "Seit: {{time}}",
+    "worked": "Gearbeitet: {{duration}}",
+    "currently_on_break": "Derzeit in der Pause",
+    "clock_in": "Einstempeln",
+    "clock_out": "Ausstempeln",
+    "start_break": "Pause beginnen",
+    "end_break": "Pause beenden",
+    "clocking_in": "Stempelt ein...",
+    "clocking_out": "Stempelt aus...",
+    "processing": "Verarbeitung...",
+    "punch_in": "Einstanzen",
+    "punch_out": "Ausstanzen",
+    "punching_in": "Stanzt ein...",
+    "punching_out": "Stanzt aus..."
+  },
+  "profile": {
+    "title": "Profil",
+    "employee": "Mitarbeiter",
+    "employee_id": "Mitarbeiter-ID:",
+    "department": "Abteilung:",
+    "group": "Gruppe:"
+  },
+  "todays_shift": {
+    "title": "Heutige Schicht",
+    "no_shift": "Keine Schicht heute",
+    "no_shift_description": "Sie haben heute keine geplanten Schichten.",
+    "attendance": "Anwesenheit",
+    "currently_punched_in": "Derzeit eingestanzt",
+    "shift_completed": "Schicht abgeschlossen",
+    "ready_to_start": "Bereit zum Start",
+    "ready_to_start_description": "Drücken Sie Einstanzen, um Ihre Schicht zu beginnen"
+  },
+  "shift_status": {
+    "scheduled": "Geplant",
+    "working": "Arbeitet",
+    "completed": "Abgeschlossen",
+    "cancelled": "Storniert"
+  },
+  "upcoming_shifts": {
+    "title": "Kommende Schichten",
+    "no_shifts": "Keine kommenden Schichten geplant",
+    "tomorrow": "Morgen",
+    "for_sale": "Zu verkaufen",
+    "pending_exchange": "Wartet auf Tausch",
+    "click_for_options": "Klicken für Optionen"
+  },
+  "events": {
+    "title": "Veranstaltungen und Ankündigungen",
+    "meeting": "Besprechung",
+    "training": "Schulung",
+    "event": "Veranstaltung"
+  },
+  "quick_actions": {
+    "title": "Schnellaktionen",
+    "requests": "Anfragen",
+    "team": "Team",
+    "schedule": "Zeitplan",
+    "availability": "Verfügbarkeit",
+    "sick_leave": "Krankmeldung"
+  },
+  "current_time": "Aktuelle Zeit",
+  "loading": {
+    "dashboard": "Dashboard wird geladen...",
+    "spinner": "Lädt..."
+  },
+  "errors": {
+    "failed_to_load": "Mitarbeiterdaten konnten nicht geladen werden",
+    "return_to_login": "Zurück zur Anmeldung",
+    "failed_clock_in": "Einstempeln fehlgeschlagen",
+    "failed_clock_out": "Ausstempeln fehlgeschlagen",
+    "failed_punch_in": "Einstanzen fehlgeschlagen",
+    "failed_punch_out": "Ausstanzen fehlgeschlagen",
+    "failed_start_break": "Pause starten fehlgeschlagen",
+    "failed_end_break": "Pause beenden fehlgeschlagen"
+  },
+  "common": {
+    "general": "Allgemein",
+    "active": "Aktiv",
+    "tbd": "TBD"
+  }
+}

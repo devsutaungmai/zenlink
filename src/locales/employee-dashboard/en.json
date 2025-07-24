@@ -1,0 +1,98 @@
+{
+  "title": "Zenlink Dashboard",
+  "welcome_back": "Welcome back, {{firstName}} {{lastName}}",
+  "header": {
+    "logout": "Logout"
+  },
+  "time_card": {
+    "title": "Punch Time",
+    "clocked_in": "CLOCKED IN",
+    "clocked_out": "CLOCKED OUT",
+    "since": "Since: {{time}}",
+    "worked": "Worked: {{duration}}",
+    "currently_on_break": "Currently on break",
+    "clock_in": "Clock In",
+    "clock_out": "Clock Out",
+    "clocking_in": "Clocking In...",
+    "clocking_out": "Clocking Out...",
+    "start_break": "Start Break",
+    "end_break": "End Break",
+    "processing": "Processing...",
+    "punch_in": "Punch In",
+    "punch_out": "Punch Out",
+    "punching_in": "Punching In...",
+    "punching_out": "Punching Out..."
+  },
+  "profile": {
+    "title": "Profile",
+    "employee": "Employee",
+    "employee_id": "Employee ID:",
+    "department": "Department:",
+    "group": "Group:"
+  },
+  "todays_shift": {
+    "title": "Today's Shift",
+    "no_shift": "No Shift Today",
+    "no_shift_description": "You don't have any scheduled shifts for today.",
+    "active": "Active",
+    "attendance": "Attendance",
+    "currently_punched_in": "Currently Punched In",
+    "since_time": "Since: {{time}}",
+    "shift_completed": "Shift Completed",
+    "ready_to_start": "Ready to Start",
+    "ready_to_start_description": "Tap punch in to begin your shift"
+  },
+  "shift_status": {
+    "scheduled": "Scheduled",
+    "working": "Working",
+    "completed": "Completed",
+    "cancelled": "Cancelled"
+  },
+  "upcoming_shifts": {
+    "title": "Upcoming Shifts",
+    "tomorrow": "Tomorrow",
+    "for_sale": "For Sale",
+    "pending_exchange": "Pending Exchange",
+    "click_for_options": "Click for options",
+    "no_shifts": "No upcoming shifts scheduled"
+  },
+  "events": {
+    "title": "Events & Announcements",
+    "meeting": "Meeting",
+    "training": "Training", 
+    "event": "Event"
+  },
+  "quick_actions": {
+    "title": "Quick Actions",
+    "requests": "Requests",
+    "team": "Team",
+    "schedule": "Schedule",
+    "availability": "Availability",
+    "sick_leave": "Sick Leave"
+  },
+  "current_time": {
+    "label": "Current Time"
+  },
+  "loading": {
+    "dashboard": "Loading Dashboard...",
+    "employee_data": "Unable to load employee data",
+    "return_to_login": "Return to Login"
+  },
+  "errors": {
+    "failed_to_load": "Failed to load employee data",
+    "return_to_login": "Return to Login",
+    "unauthorized": "Unauthorized access",
+    "general_error": "An error occurred while loading the dashboard"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "retry": "Try Again",
+    "close": "Close",
+    "save": "Save",
+    "cancel": "Cancel",
+    "general": "General",
+    "active": "Active",
+    "tbd": "TBD"
+  }
+}

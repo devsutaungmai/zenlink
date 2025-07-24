@@ -42,6 +42,11 @@ import payrollPeriodsEn from '../locales/payroll-periods/en.json'
 import payrollPeriodsNo from '../locales/payroll-periods/no.json'
 import payrollPeriodsDe from '../locales/payroll-periods/de.json'
 
+// Import employee-dashboard-specific translations
+import employeeDashboardEn from '../locales/employee-dashboard/en.json'
+import employeeDashboardNo from '../locales/employee-dashboard/no.json'
+import employeeDashboardDe from '../locales/employee-dashboard/de.json'
+
 const resources = {
   en: { 
     translation: en,
@@ -51,7 +56,8 @@ const resources = {
     'sick-leave': sickLeaveEn,
     'pending-requests': pendingRequestsEn,
     'payroll-entries': payrollEntriesEn,
-    'payroll-periods': payrollPeriodsEn
+    'payroll-periods': payrollPeriodsEn,
+    'employee-dashboard': employeeDashboardEn
   },
   no: { 
     translation: no,
@@ -61,7 +67,8 @@ const resources = {
     'sick-leave': sickLeaveNo,
     'pending-requests': pendingRequestsNo,
     'payroll-entries': payrollEntriesNo,
-    'payroll-periods': payrollPeriodsNo
+    'payroll-periods': payrollPeriodsNo,
+    'employee-dashboard': employeeDashboardNo
   },
   de: { 
     translation: de,
@@ -71,7 +78,8 @@ const resources = {
     'sick-leave': sickLeaveDe,
     'pending-requests': pendingRequestsDe,
     'payroll-entries': payrollEntriesDe,
-    'payroll-periods': payrollPeriodsDe
+    'payroll-periods': payrollPeriodsDe,
+    'employee-dashboard': employeeDashboardDe
   }
 }
 
@@ -94,7 +102,7 @@ i18n
     },
 
     // Support for namespaces
-    ns: ['translation', 'schedule', 'punch-clock', 'availability', 'sick-leave', 'pending-requests', 'payroll-entries', 'payroll-periods'],
+    ns: ['translation', 'schedule', 'punch-clock', 'availability', 'sick-leave', 'pending-requests', 'payroll-entries', 'payroll-periods', 'employee-dashboard'],
     defaultNS: 'translation',
   })
 

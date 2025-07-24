@@ -1,0 +1,92 @@
+{
+  "title": "Zenlink Dashboard",
+  "welcome_back": "Velkommen tilbake, {{firstName}} {{lastName}}",
+  "header": {
+    "logout": "Logg ut"
+  },
+  "time_card": {
+    "title": "Stemplingsur",
+    "punch_time": "Stempling",
+    "clocked_in": "STEMPLET INN",
+    "clocked_out": "STEMPLET UT",
+    "since": "Siden: {{time}}",
+    "worked": "Arbeidet: {{duration}}",
+    "currently_on_break": "På pause nå",
+    "clock_in": "Stemple inn",
+    "clock_out": "Stemple ut",
+    "start_break": "Start pause",
+    "end_break": "Avslutt pause",
+    "clocking_in": "Stempler inn...",
+    "clocking_out": "Stempler ut...",
+    "processing": "Behandler...",
+    "punch_in": "Punch inn",
+    "punch_out": "Punch ut",
+    "punching_in": "Puncher inn...",
+    "punching_out": "Puncher ut..."
+  },
+  "profile": {
+    "title": "Profil",
+    "employee": "Ansatt",
+    "employee_id": "Ansatt-ID:",
+    "department": "Avdeling:",
+    "group": "Gruppe:"
+  },
+  "todays_shift": {
+    "title": "Dagens vakt",
+    "no_shift": "Ingen vakt i dag",
+    "no_shift_description": "Du har ingen planlagte vakter for i dag.",
+    "attendance": "Oppmøte",
+    "currently_punched_in": "For øyeblikket stemplet inn",
+    "shift_completed": "Vakt fullført",
+    "ready_to_start": "Klar til å starte",
+    "ready_to_start_description": "Trykk punch inn for å begynne vakten din"
+  },
+  "shift_status": {
+    "scheduled": "Planlagt",
+    "working": "Arbeider",
+    "completed": "Fullført",
+    "cancelled": "Kansellert"
+  },
+  "upcoming_shifts": {
+    "title": "Kommende vakter",
+    "no_shifts": "Ingen kommende vakter planlagt",
+    "tomorrow": "I morgen",
+    "for_sale": "Til salgs",
+    "pending_exchange": "Venter på bytte",
+    "click_for_options": "Klikk for alternativer"
+  },
+  "events": {
+    "title": "Hendelser og kunngjøringer",
+    "meeting": "møte",
+    "training": "opplæring",
+    "event": "hendelse"
+  },
+  "quick_actions": {
+    "title": "Hurtighandlinger",
+    "requests": "Forespørsler",
+    "team": "Team",
+    "schedule": "Timeplan",
+    "availability": "Tilgjengelighet",
+    "sick_leave": "Sykemelding"
+  },
+  "current_time": "Nåværende tid",
+  "loading": {
+    "dashboard": "Laster dashboard...",
+    "spinner": "Laster..."
+  },
+  "errors": {
+    "failed_to_load": "Kunne ikke laste ansattdata",
+    "return_to_login": "Tilbake til innlogging",
+    "failed_clock_in": "Kunne ikke stemple inn",
+    "failed_clock_out": "Kunne ikke stemple ut",
+    "failed_punch_in": "Kunne ikke punche inn",
+    "failed_punch_out": "Kunne ikke punche ut",
+    "failed_start_break": "Kunne ikke starte pause",
+    "failed_end_break": "Kunne ikke avslutte pause"
+  },
+  "common": {
+    "general": "Generell",
+    "active": "Aktiv",
+    "tbd": "TBD"
+  }
+}
