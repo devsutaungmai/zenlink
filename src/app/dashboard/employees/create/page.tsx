@@ -19,24 +19,25 @@ export default function CreateEmployeePage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch('/api/me')
-        const currentUser = await res.json()
-        if (!currentUser || currentUser.role !== 'ADMIN') {
-          throw new Error(`${currentUser}`)
+        // Check auth and fetch form data in parallel
+        const [authRes, formDataRes] = await Promise.all([
+          fetch('/api/me'),
+          fetch('/api/form-data')
+        ])
+
+        const currentUser = await authRes.json()
+        if (!authRes.ok || !currentUser || currentUser.role !== 'ADMIN') {
+          throw new Error('Unauthorized access')
         }
         setAuthChecked(true)
 
-        const [deptsRes, groupsRes] = await Promise.all([
-          fetch('/api/departments'),
-          fetch('/api/employee-groups'),
-        ])
-
-        if (!deptsRes.ok || !groupsRes.ok) {
-          throw new Error('Failed to fetch required data')
+        if (!formDataRes.ok) {
+          throw new Error('Failed to fetch form data')
         }
 
-        setDepartments(await deptsRes.json())
-        setEmployeeGroups(await groupsRes.json())
+        const { departments, employeeGroups } = await formDataRes.json()
+        setDepartments(departments)
+        setEmployeeGroups(employeeGroups)
       } catch (error) {
         setError(error instanceof Error ? error.message : 'Failed to load form data')
       } finally {

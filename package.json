@@ -11,6 +11,7 @@
     "vercel-build": "prisma generate && prisma migrate deploy && next build"
   },
   "dependencies": {
+    "@aws-sdk/client-sns": "^3.848.0",
     "@fullcalendar/interaction": "^6.1.17",
     "@fullcalendar/react": "^6.1.17",
     "@fullcalendar/timegrid": "^6.1.17",

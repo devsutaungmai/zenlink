@@ -35,7 +35,8 @@ export async function POST(req: Request) {
       employeeFound: !!employee,
       hasUser: !!employee?.user,
       hasPin: !!employee?.user?.pin,
-      pinLength: employee?.user?.pin?.length
+      pinLength: employee?.user?.pin?.length,
+      userIdMatch: employee?.userId === employee?.user?.id
     })
 
     if (!employee) {
@@ -46,9 +47,18 @@ export async function POST(req: Request) {
       )
     }
 
+    // Ensure this employee has their own User record with a PIN
     if (!employee.user.pin) {
       return NextResponse.json(
         { error: 'PIN not set. Please contact your administrator.' },
+        { status: 401 }
+      )
+    }
+
+    // Verify that the User record belongs to this specific employee
+    if (employee.userId !== employee.user.id) {
+      return NextResponse.json(
+        { error: 'User record mismatch. Please contact your administrator.' },
         { status: 401 }
       )
     }

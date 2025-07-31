@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,230 +8,225 @@ datasource db {
 }
 
 model User {
-  id         String    @id @default(cuid())
-  email      String    @unique
+  id         String     @id @default(cuid())
+  email      String     @unique
   password   String
   firstName  String
   lastName   String
-  pin        String?
-  role       String    @default("USER")
+  role       String     @default("USER")
   businessId String
-  business   Business  @relation(fields: [businessId], references: [id])
-  employees Employee[]
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  pin        String?
+  employees  Employee[]
+  business   Business   @relation(fields: [businessId], references: [id])
 }
 
 model Business {
-  id            String   @id @default(cuid())
-  name          String
-  address       String
-  type          String
+  id             String          @id @default(cuid())
+  name           String
+  address        String
+  type           String
   employeesCount Int
-  users         User[]
-  invitations   Invitation[]
-  departments   Department[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  attendances    Attendance[]
+  departments    Department[]
   employeeGroups EmployeeGroup[]
+  invitations    Invitation[]
   payrollPeriods PayrollPeriod[]
-  attendances   Attendance[]
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  users          User[]
 }
 
 model Employee {
-  id              String     @id @default(cuid())
-  user            User       @relation(fields: [userId], references: [id])
-  userId          String 
-  employeeGroup   EmployeeGroup? @relation("EmployeeToGroup", fields: [employeeGroupId], references: [id])
-  employeeGroupId String?
-  firstName       String
-  lastName        String
-  email           String?   @unique
-  birthday        DateTime
-  sex             Sex
-  socialSecurityNo String?    @unique
-  address         String
-  mobile          String
-  employeeNo      String?     @unique
-  bankAccount     String
-  hoursPerMonth   Float?
-  dateOfHire      DateTime
-  isTeamLeader    Boolean    @default(false)
-  department      Department @relation(fields: [departmentId], references: [id])
-  departmentId    String
-  timeEntries     TimeEntry[]
-  sickLeaves      SickLeave[]
-  workPlans       WorkPlan[]
-  shifts          Shift[]
+  id                 String          @id @default(cuid())
+  userId             String
+  firstName          String
+  lastName           String
+  birthday           DateTime
+  sex                Sex
+  socialSecurityNo   String?         @unique
+  address            String
+  mobile             String
+  employeeNo         String?         @unique
+  bankAccount        String
+  hoursPerMonth      Float?
+  dateOfHire         DateTime
+  isTeamLeader       Boolean         @default(false)
+  departmentId       String
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  employeeGroupId    String?
+  email              String?         @unique
+  attendances        Attendance[]
+  availabilities     Availability[]
+  department         Department      @relation(fields: [departmentId], references: [id])
+  employeeGroup      EmployeeGroup?  @relation("EmployeeToGroup", fields: [employeeGroupId], references: [id])
+  user               User            @relation(fields: [userId], references: [id])
+  notifications      Notification[]  @relation("NotificationRecipient")
+  payrollEntries     PayrollEntry[]
+  shifts             Shift[]
   fromShiftExchanges ShiftExchange[] @relation("FromEmployee")
   toShiftExchanges   ShiftExchange[] @relation("ToEmployee")
-  availabilities  Availability[]
-  payrollEntries  PayrollEntry[]
-  attendances     Attendance[]
-  notifications   Notification[] @relation("NotificationRecipient")
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
-}
-
-enum WageType {
-  HOURLY
-  PER_SHIFT
+  sickLeaves         SickLeave[]
+  timeEntries        TimeEntry[]
+  workPlans          WorkPlan[]
 }
 
 model EmployeeGroup {
-  id               String       @id @default(cuid())
-  name             String       
-  hourlyWage       Float
-  wagePerShift     Float
-  defaultWageType  WageType     @default(HOURLY)
-  salaryCode       String?      
-  businessId       String
-  business         Business     @relation(fields: [businessId], references: [id])
-  employees        Employee[]   @relation("EmployeeToGroup")
-  shifts           Shift[]
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
+  id              String     @id @default(cuid())
+  name            String
+  hourlyWage      Float
+  wagePerShift    Float
+  defaultWageType WageType   @default(HOURLY)
+  salaryCode      String?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  businessId      String
+  employees       Employee[] @relation("EmployeeToGroup")
+  business        Business   @relation(fields: [businessId], references: [id])
+  shifts          Shift[]
 
   @@unique([name, businessId])
 }
 
 model Department {
-  id          String     @id @default(cuid())
-  name        String
-  number      String?
-  address     String
-  address2    String?
-  postCode    String?
-  city        String
-  phone       String
-  country     String
-  businessId  String
-  business    Business   @relation(fields: [businessId], references: [id])
-  employees   Employee[]
-  projects    Project[]
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  id         String     @id @default(cuid())
+  name       String
+  address    String
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  address2   String?
+  city       String
+  country    String
+  number     String?
+  phone      String
+  postCode   String?
+  businessId String
+  business   Business   @relation(fields: [businessId], references: [id])
+  employees  Employee[]
+  projects   Project[]
 }
 
 model Project {
-  id           String     @id @default(cuid())
+  id           String      @id @default(cuid())
   name         String
-  department   Department @relation(fields: [departmentId], references: [id])
   departmentId String
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  department   Department  @relation(fields: [departmentId], references: [id])
   timeEntries  TimeEntry[]
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
 }
 
 model TimeEntry {
-  id          String   @id @default(cuid())
-  employee    Employee @relation(fields: [employeeId], references: [id])
-  employeeId  String
-  project     Project  @relation(fields: [projectId], references: [id])
-  projectId   String
-  checkIn     DateTime
-  checkOut    DateTime?
-  gpsLatitude Float?
+  id           String    @id @default(cuid())
+  employeeId   String
+  projectId    String
+  checkIn      DateTime
+  checkOut     DateTime?
+  gpsLatitude  Float?
   gpsLongitude Float?
-  approved    Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  approved     Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  employee     Employee  @relation(fields: [employeeId], references: [id])
+  project      Project   @relation(fields: [projectId], references: [id])
 }
 
 model SickLeave {
-  id          String   @id @default(cuid())
-  employee    Employee @relation(fields: [employeeId], references: [id])
-  employeeId  String
-  startDate   DateTime
-  endDate     DateTime
-  reason      String?
-  document    String?
-  approved    Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(cuid())
+  employeeId String
+  startDate  DateTime
+  endDate    DateTime
+  document   String?
+  approved   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  reason     String?
+  employee   Employee @relation(fields: [employeeId], references: [id])
 }
 
 model Availability {
   id          String   @id @default(cuid())
-  employee    Employee @relation(fields: [employeeId], references: [id])
   employeeId  String
   date        DateTime
   isAvailable Boolean  @default(true)
   note        String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  
+  employee    Employee @relation(fields: [employeeId], references: [id])
+
   @@unique([employeeId, date])
 }
 
 model WorkPlan {
-  id          String   @id @default(cuid())
-  employee    Employee @relation(fields: [employeeId], references: [id])
-  employeeId  String
-  date        DateTime
-  startTime   DateTime
-  endTime     DateTime
-  breaks      Break[]
-  approved    Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(cuid())
+  employeeId String
+  date       DateTime
+  startTime  DateTime
+  endTime    DateTime
+  approved   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  breaks     Break[]
+  employee   Employee @relation(fields: [employeeId], references: [id])
 }
 
 model Break {
-  id          String   @id @default(cuid())
-  workPlan    WorkPlan @relation(fields: [workPlanId], references: [id])
-  workPlanId  String
-  startTime   DateTime
-  endTime     DateTime
-  duration    Int
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(cuid())
+  workPlanId String
+  startTime  DateTime
+  endTime    DateTime
+  duration   Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  workPlan   WorkPlan @relation(fields: [workPlanId], references: [id])
 }
 
 model Shift {
-  id              String      @id @default(cuid())
+  id              String          @id @default(cuid())
   date            DateTime
-  startTime       String    
-  endTime         String?   
-  employee        Employee?   @relation(fields: [employeeId], references: [id])
+  startTime       String
+  endTime         String?
   employeeId      String?
-  employeeGroup   EmployeeGroup? @relation(fields: [employeeGroupId], references: [id])
   employeeGroupId String?
   shiftType       ShiftType
-  status          ShiftStatus @default(SCHEDULED)
-  breakStart      DateTime?   
+  breakStart      DateTime?
   breakEnd        DateTime?
-  breakPaid       Boolean     @default(false)
   wage            Float
-  wageType        WageType    @default(HOURLY)
+  wageType        WageType        @default(HOURLY)
   note            String?
-  approved        Boolean     @default(false)
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-  shiftExchanges  ShiftExchange[]
+  approved        Boolean         @default(false)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  breakPaid       Boolean         @default(false)
+  status          ShiftStatus     @default(SCHEDULED)
   attendances     Attendance[]
   notifications   Notification[]
+  employeeGroup   EmployeeGroup?  @relation(fields: [employeeGroupId], references: [id])
+  employee        Employee?       @relation(fields: [employeeId], references: [id])
+  shiftExchanges  ShiftExchange[]
 }
 
 model ShiftExchange {
-  id             String   @id @default(cuid())
-  shift          Shift    @relation(fields: [shiftId], references: [id])
-  shiftId        String
-  fromEmployee   Employee @relation("FromEmployee", fields: [fromEmployeeId], references: [id])
-  fromEmployeeId String
-  toEmployee     Employee @relation("ToEmployee", fields: [toEmployeeId], references: [id])
-  toEmployeeId   String
-  type           String   @default("SWAP") // SWAP, HANDOVER
-  status         String   @default("EMPLOYEE_PENDING") // EMPLOYEE_PENDING, EMPLOYEE_ACCEPTED, EMPLOYEE_REJECTED, ADMIN_PENDING, APPROVED, REJECTED
-  reason         String?
-  requestedAt    DateTime @default(now())
+  id                 String         @id @default(cuid())
+  shiftId            String
+  fromEmployeeId     String
+  toEmployeeId       String
+  approvedAt         DateTime?
+  approvedBy         String?
+  createdAt          DateTime       @default(now())
+  reason             String?
+  requestedAt        DateTime       @default(now())
+  status             String         @default("EMPLOYEE_PENDING")
+  updatedAt          DateTime       @updatedAt
+  type               String         @default("SWAP")
   employeeResponseAt DateTime?
   employeeResponseBy String?
-  approvedAt     DateTime?
-  approvedBy     String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  notifications  Notification[]
+  notifications      Notification[]
+  fromEmployee       Employee       @relation("FromEmployee", fields: [fromEmployeeId], references: [id])
+  shift              Shift          @relation(fields: [shiftId], references: [id])
+  toEmployee         Employee       @relation("ToEmployee", fields: [toEmployeeId], references: [id])
 }
 
 model Invitation {
@@ -247,47 +236,93 @@ model Invitation {
   firstName  String?
   lastName   String?
   businessId String
-  business   Business @relation(fields: [businessId], references: [id])
   expiresAt  DateTime
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+  business   Business @relation(fields: [businessId], references: [id])
 }
 
 model PayrollPeriod {
-  id          String   @id @default(cuid())
-  name        String
-  startDate   DateTime
-  endDate     DateTime
-  status      PayrollPeriodStatus @default(DRAFT)
-  business    Business @relation(fields: [businessId], references: [id])
-  businessId  String
+  id             String              @id @default(cuid())
+  name           String
+  startDate      DateTime
+  endDate        DateTime
+  status         PayrollPeriodStatus @default(DRAFT)
+  businessId     String
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
   payrollEntries PayrollEntry[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  business       Business            @relation(fields: [businessId], references: [id])
 
   @@unique([businessId, startDate, endDate])
 }
 
 model PayrollEntry {
-  id               String        @id @default(cuid())
-  employee         Employee      @relation(fields: [employeeId], references: [id])
-  employeeId       String
-  payrollPeriod    PayrollPeriod @relation(fields: [payrollPeriodId], references: [id])
-  payrollPeriodId  String
-  regularHours     Float         @default(0)
-  overtimeHours    Float         @default(0)
-  regularRate      Float
-  overtimeRate     Float
-  grossPay         Float
-  deductions       Float         @default(0)
-  netPay           Float
-  bonuses          Float         @default(0)
-  status           PayrollEntryStatus @default(DRAFT)
-  notes            String?
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
+  id              String             @id @default(cuid())
+  employeeId      String
+  payrollPeriodId String
+  regularHours    Float              @default(0)
+  overtimeHours   Float              @default(0)
+  regularRate     Float
+  overtimeRate    Float
+  grossPay        Float
+  deductions      Float              @default(0)
+  netPay          Float
+  bonuses         Float              @default(0)
+  status          PayrollEntryStatus @default(DRAFT)
+  notes           String?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  employee        Employee           @relation(fields: [employeeId], references: [id])
+  payrollPeriod   PayrollPeriod      @relation(fields: [payrollPeriodId], references: [id])
 
   @@unique([employeeId, payrollPeriodId])
+}
+
+model Attendance {
+  id           String    @id @default(cuid())
+  employeeId   String
+  businessId   String
+  shiftId      String?
+  punchInTime  DateTime
+  punchOutTime DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  business     Business  @relation(fields: [businessId], references: [id])
+  employee     Employee  @relation(fields: [employeeId], references: [id])
+  shift        Shift?    @relation(fields: [shiftId], references: [id])
+}
+
+model Notification {
+  id              String           @id @default(cuid())
+  type            NotificationType
+  title           String
+  message         String
+  data            Json?
+  recipientId     String
+  shiftExchangeId String?
+  shiftId         String?
+  isRead          Boolean          @default(false)
+  readAt          DateTime?
+  emailSent       Boolean          @default(false)
+  emailSentAt     DateTime?
+  emailError      String?
+  smsSent         Boolean          @default(false)
+  smsSentAt       DateTime?
+  smsError        String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  recipient       Employee         @relation("NotificationRecipient", fields: [recipientId], references: [id])
+  shiftExchange   ShiftExchange?   @relation(fields: [shiftExchangeId], references: [id])
+  shift           Shift?           @relation(fields: [shiftId], references: [id])
+
+  @@index([recipientId, isRead])
+  @@index([createdAt])
+}
+
+enum WageType {
+  HOURLY
+  PER_SHIFT
 }
 
 enum Role {
@@ -333,66 +368,13 @@ enum ShiftStatus {
   CANCELLED
 }
 
-model Attendance {
-  id           String    @id @default(cuid())
-  employee     Employee  @relation(fields: [employeeId], references: [id])
-  employeeId   String
-  businessId   String
-  business     Business  @relation(fields: [businessId], references: [id])
-  shift        Shift?    @relation(fields: [shiftId], references: [id])
-  shiftId      String?
-  punchInTime  DateTime
-  punchOutTime DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-}
-
-model Notification {
-  id          String           @id @default(cuid())
-  type        NotificationType
-  title       String
-  message     String
-  data        Json?           // Additional data like shift details, user info, etc.
-  
-  // Recipients
-  recipient   Employee        @relation("NotificationRecipient", fields: [recipientId], references: [id])
-  recipientId String
-  
-  // Optional reference to related entities
-  shiftExchange   ShiftExchange? @relation(fields: [shiftExchangeId], references: [id])
-  shiftExchangeId String?
-  
-  shift       Shift?          @relation(fields: [shiftId], references: [id])
-  shiftId     String?
-  
-  // Notification status
-  isRead      Boolean         @default(false)
-  readAt      DateTime?
-  
-  // Delivery status
-  emailSent   Boolean         @default(false)
-  emailSentAt DateTime?
-  emailError  String?
-  
-  smsSent     Boolean         @default(false)
-  smsSentAt   DateTime?
-  smsError    String?
-  
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-  
-  @@index([recipientId, isRead])
-  @@index([createdAt])
-}
-
 enum NotificationType {
-  SHIFT_EXCHANGE_REQUEST     // When someone requests to swap/handover shift
-  SHIFT_EXCHANGE_ACCEPTED    // When employee accepts the request
-  SHIFT_EXCHANGE_REJECTED    // When employee rejects the request
-  SHIFT_EXCHANGE_APPROVED    // When admin approves the exchange
-  SHIFT_EXCHANGE_CANCELLED   // When exchange is cancelled
-  SHIFT_REMINDER            // Shift reminders
-  SCHEDULE_UPDATED          // Schedule changes
-  SYSTEM_ANNOUNCEMENT       // General announcements
+  SHIFT_EXCHANGE_REQUEST
+  SHIFT_EXCHANGE_ACCEPTED
+  SHIFT_EXCHANGE_REJECTED
+  SHIFT_EXCHANGE_APPROVED
+  SHIFT_EXCHANGE_CANCELLED
+  SHIFT_REMINDER
+  SCHEDULE_UPDATED
+  SYSTEM_ANNOUNCEMENT
 }
-

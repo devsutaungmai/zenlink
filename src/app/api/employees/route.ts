@@ -14,9 +14,9 @@ export async function GET() {
 
     let businessId: string
     if (auth.type === 'user') {
-      businessId = auth.data.businessId
+      businessId = (auth.data as any).businessId
     } else {
-      businessId = auth.data.user.businessId
+      businessId = (auth.data as any).user.businessId
     }
 
     const employees = await prisma.employee.findMany({
@@ -25,14 +25,25 @@ export async function GET() {
           businessId: businessId
         }
       },
-      include: {
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        employeeNo: true,
+        email: true,
+        mobile: true,
+        isTeamLeader: true,
+        dateOfHire: true,
+        createdAt: true,
         department: {
           select: {
+            id: true,
             name: true
           }
         },
         employeeGroup: {
           select: {
+            id: true,
             name: true
           }
         }
@@ -64,7 +75,7 @@ export async function POST(request: Request) {
     }
 
     const data = await request.json()
-    const requiredFields = ['firstName', 'lastName', 'employeeNo', 'departmentId']
+    const requiredFields = ['firstName', 'lastName', 'departmentId']
     const missingFields = requiredFields.filter(field => !data[field])
     
     if (missingFields.length > 0) {
@@ -77,9 +88,107 @@ export async function POST(request: Request) {
       )
     }
 
+    // Generate employee number if not provided
+    let employeeNo = data.employeeNo
+    if (!employeeNo) {
+      // Find the highest existing employee number for this business
+      const lastEmployee = await prisma.employee.findFirst({
+        where: {
+          user: {
+            businessId: currentUser.businessId
+          }
+        },
+        orderBy: {
+          employeeNo: 'desc'
+        },
+        select: {
+          employeeNo: true
+        }
+      })
+
+      let nextNumber = 1
+      
+      if (lastEmployee?.employeeNo) {
+        // Try to parse the employee number as an integer
+        const lastNumber = parseInt(lastEmployee.employeeNo, 10)
+        
+        if (!isNaN(lastNumber)) {
+          // If it's a valid number, increment it
+          nextNumber = lastNumber + 1
+        } else {
+          // If it's not a number, find the highest numeric employee number
+          const employees = await prisma.employee.findMany({
+            where: {
+              user: {
+                businessId: currentUser.businessId
+              }
+            },
+            select: {
+              employeeNo: true
+            }
+          })
+
+          let highestNumber = 0
+          employees.forEach(emp => {
+            if (emp.employeeNo) {
+              const num = parseInt(emp.employeeNo, 10)
+              if (!isNaN(num) && num > highestNumber) {
+                highestNumber = num
+              }
+            }
+          })
+
+          nextNumber = highestNumber + 1
+        }
+      }
+
+      employeeNo = nextNumber.toString()
+
+      // Ensure the generated number is unique
+      let attempts = 0
+      while (attempts < 100) {
+        const existingEmployee = await prisma.employee.findFirst({
+          where: {
+            employeeNo,
+            user: {
+              businessId: currentUser.businessId
+            }
+          }
+        })
+
+        if (!existingEmployee) {
+          break
+        }
+
+        nextNumber++
+        employeeNo = nextNumber.toString()
+        attempts++
+      }
+
+      if (attempts >= 100) {
+        return NextResponse.json(
+          { error: 'Unable to generate unique employee number' },
+          { status: 500 }
+        )
+      }
+    }
+
+    // Create a separate User record for the employee
+    const employeeUser = await prisma.user.create({
+      data: {
+        email: `employee.${employeeNo}@company.local`,
+        password: '', // Temporary empty password, will be set when employee registers
+        firstName: data.firstName,
+        lastName: data.lastName,
+        role: 'EMPLOYEE',
+        businessId: currentUser.businessId,
+        pin: null, // No PIN set initially
+      }
+    })
+
     const employee = await prisma.employee.create({
       data: {
-        userId: currentUser.id,
+        userId: employeeUser.id, // Use the new employee user ID
         firstName: data.firstName,
         lastName: data.lastName,
         birthday: new Date(data.birthday),
@@ -88,7 +197,7 @@ export async function POST(request: Request) {
         address: data.address,
         mobile: data.mobile,
         sex: data.sex,
-        employeeNo: data.employeeNo,
+        employeeNo: employeeNo,
         bankAccount: data.bankAccount,
         hoursPerMonth: parseFloat(data.hoursPerMonth) || 0,
         isTeamLeader: Boolean(data.isTeamLeader),

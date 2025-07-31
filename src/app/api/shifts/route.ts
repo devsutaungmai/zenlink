@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
+import { SMSService, NotificationService } from '@/lib/notifications'
 import jwt from 'jsonwebtoken'
 import { cookies } from 'next/headers'
 
@@ -214,7 +215,23 @@ export async function POST(req: Request) {
           date: new Date(data.date),
           endTime: null,
         },
+        include: {
+          employee: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              mobile: true,
+              user: {
+                select: {
+                  businessId: true
+                }
+              }
+            }
+          }
+        }
       });
+
       return NextResponse.json(shift);
     }
 

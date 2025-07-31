@@ -45,6 +45,7 @@ export default function PayrollEntryForm({
   useEffect(() => {
     const fetchEmployees = async () => {
       try {
+        // Use the optimized form-data endpoint to get employees data efficiently
         const response = await fetch('/api/employees')
         const data = await response.json()
         
@@ -60,7 +61,12 @@ export default function PayrollEntryForm({
       }
     }
 
-    fetchEmployees()
+    // Debounce the API call to avoid rapid requests
+    const timeoutId = setTimeout(() => {
+      fetchEmployees()
+    }, 100) // Small delay for immediate user needs
+    
+    return () => clearTimeout(timeoutId)
   }, [])
 
   const handleAutoCalculate = async () => {

@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Find the employee by ID (employeeId refers to the Employee record, not User)
+    // Find the employee by ID and include their specific User record
     const employee = await prisma.employee.findUnique({
       where: {
         id: employeeId
@@ -23,6 +23,7 @@ export async function POST(request: NextRequest) {
         firstName: true,
         lastName: true,
         employeeNo: true,
+        userId: true,
         user: {
           select: {
             id: true,
@@ -38,7 +39,8 @@ export async function POST(request: NextRequest) {
       console.log('Employee user data:', {
         hasPin: !!employee.user.pin,
         role: employee.user.role,
-        userId: employee.user.id
+        userId: employee.user.id,
+        employeeUserId: employee.userId
       })
     }
 
@@ -49,16 +51,23 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // The employee should have their own User record, but let's be flexible with roles
-    // Accept employees regardless of their user role, as long as they have a PIN
+    // Ensure this employee has their own User record with a PIN
     if (!employee.user.pin) {
       return NextResponse.json(
-        { success: false, error: 'PIN not set for this employee. Contact your manager.' },
+        { success: false, error: 'PIN not set for this employee. Contact your manager to set up your PIN.' },
         { status: 400 }
       )
     }
 
-    // Verify PIN
+    // Verify that the User record belongs to this specific employee
+    if (employee.userId !== employee.user.id) {
+      return NextResponse.json(
+        { success: false, error: 'User record mismatch. Please contact your administrator.' },
+        { status: 400 }
+      )
+    }
+
+    // Verify PIN against this employee's specific User record
     const isPinValid = await bcrypt.compare(pin, employee.user.pin)
 
     if (!isPinValid) {

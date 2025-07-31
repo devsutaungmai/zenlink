@@ -1,6 +1,7 @@
 import { prisma } from '@/app/lib/prisma'
 import { NotificationType } from '@prisma/client'
 import nodemailer from 'nodemailer'
+import { SNSClient, PublishCommand } from '@aws-sdk/client-sns'
 
 // Email configuration
 const createEmailTransporter = () => {
@@ -40,27 +41,159 @@ export interface CreateNotificationParams {
   sendSms?: boolean
 }
 
-// SMS service (placeholder for Twilio implementation)
+// SMS service with AWS SNS implementation
 export class SMSService {
+  // Comprehensive phone number formatting for international use
+  static formatPhoneNumber(phoneNumber: string): string {
+    // Remove all non-digit characters except +
+    let formattedNumber = phoneNumber.replace(/[^\d+]/g, '')
+    
+    // If number already starts with +, return as is
+    if (formattedNumber.startsWith('+')) {
+      return formattedNumber
+    }
+    
+    // Handle different country-specific formatting
+    if (formattedNumber.startsWith('0')) {
+      // Common pattern: remove leading 0 and determine country code based on length and patterns
+      
+      // Thailand: 10 digits starting with 0
+      if (formattedNumber.length === 10 && formattedNumber.startsWith('0')) {
+        return '+66' + formattedNumber.substring(1)
+      }
+      
+      // UK: 11 digits starting with 0
+      if (formattedNumber.length === 11 && formattedNumber.startsWith('0')) {
+        return '+44' + formattedNumber.substring(1)
+      }
+      
+      // Germany: 11-12 digits starting with 0
+      if ((formattedNumber.length === 11 || formattedNumber.length === 12) && formattedNumber.startsWith('0')) {
+        return '+49' + formattedNumber.substring(1)
+      }
+      
+      // France: 10 digits starting with 0
+      if (formattedNumber.length === 10 && formattedNumber.startsWith('0')) {
+        return '+33' + formattedNumber.substring(1)
+      }
+      
+      // Default: assume it needs + prefix
+      return '+' + formattedNumber.substring(1)
+    }
+    
+    // If number doesn't start with 0 or +, determine by length
+    if (formattedNumber.length === 10) {
+      // Could be US number without country code
+      if (formattedNumber.match(/^[2-9]/)) {
+        return '+1' + formattedNumber
+      }
+    }
+    
+    // If we can't determine the country, add + prefix
+    if (!formattedNumber.startsWith('+')) {
+      return '+' + formattedNumber
+    }
+    
+    return formattedNumber
+  }
+
   static async sendSMS(to: string, message: string): Promise<{ success: boolean; error?: string }> {
-    // TODO: Implement Twilio SMS when ready
-    console.log(`SMS would be sent to ${to}: ${message}`)
-    
-    // For now, return success placeholder
-    return { success: true }
-    
-    // Future Twilio implementation:
-    // try {
-    //   const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
-    //   await client.messages.create({
-    //     body: message,
-    //     from: process.env.TWILIO_PHONE_NUMBER,
-    //     to: to
-    //   })
-    //   return { success: true }
-    // } catch (error) {
-    //   return { success: false, error: error.message }
-    // }
+    try {
+      // Initialize AWS SNS client
+      const accessKeyId = process.env.AWS_ACCESS_KEY_ID
+      const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY
+      const region = process.env.AWS_REGION || 'ap-southeast-1'
+      const senderId = process.env.AWS_SNS_SENDER_ID || 'Zenlink'
+
+      if (!accessKeyId || !secretAccessKey) {
+        console.error('AWS SNS configuration missing')
+        return { success: false, error: 'SMS service not configured' }
+      }
+
+      const snsClient = new SNSClient({
+        region,
+        credentials: {
+          accessKeyId,
+          secretAccessKey,
+        },
+      })
+
+      // Format phone number using the improved formatting function
+      const phoneNumber = this.formatPhoneNumber(to)
+
+      console.log(`SMS Debug - Original: ${to}, Formatted: ${phoneNumber}`)
+      console.log(`Sending SMS: "${message}" to ${phoneNumber}`)
+
+      // Send SMS using AWS SNS
+      const command = new PublishCommand({
+        PhoneNumber: phoneNumber,
+        Message: message,
+        MessageAttributes: {
+          'AWS.SNS.SMS.SenderID': {
+            DataType: 'String',
+            StringValue: senderId,
+          },
+          'AWS.SNS.SMS.SMSType': {
+            DataType: 'String',
+            StringValue: 'Transactional',
+          },
+        },
+      })
+
+      const result = await snsClient.send(command)
+      console.log(`SMS sent successfully via AWS SNS. MessageId: ${result.MessageId}`)
+      return { success: true }
+    } catch (error: any) {
+      console.error('Error sending SMS via AWS SNS:', error)
+      return { 
+        success: false, 
+        error: error.message || 'Failed to send SMS' 
+      }
+    }
+  }
+  
+  // Generate SMS message for shift exchange request
+  static generateShiftExchangeRequestSMS(data: NotificationData): string {
+    return `Zenlink: ${data.fromEmployeeName} requests to ${data.exchangeType?.toLowerCase()} shift on ${data.shiftDate} at ${data.shiftTime}. Check your dashboard to respond.`
+  }
+  
+  // Generate SMS message for accepted shift exchange
+  static generateShiftExchangeAcceptedSMS(data: NotificationData): string {
+    return `Zenlink: ${data.toEmployeeName} accepted your ${data.exchangeType?.toLowerCase()} request for ${data.shiftDate}. Pending admin approval.`
+  }
+  
+  // Generate SMS message for rejected shift exchange
+  static generateShiftExchangeRejectedSMS(data: NotificationData): string {
+    return `Zenlink: Your ${data.exchangeType?.toLowerCase()} request for ${data.shiftDate} was rejected by ${data.toEmployeeName}.`
+  }
+  
+  // Generate SMS message for approved shift exchange
+  static generateShiftExchangeApprovedSMS(data: NotificationData): string {
+    return `Zenlink: Your ${data.exchangeType?.toLowerCase()} request for ${data.shiftDate} has been approved! Check your updated schedule.`
+  }
+  
+  // Generate SMS message for admin approval needed
+  static generateAdminApprovalNeededSMS(data: NotificationData): string {
+    return `Zenlink Admin: ${data.exchangeType} request between ${data.fromEmployeeName} and ${data.toEmployeeName} for ${data.shiftDate} needs approval.`
+  }
+
+  // Generate SMS for clock in/out notifications
+  static generateClockInSMS(employeeName: string, time: string): string {
+    return `Zenlink: ${employeeName} clocked in at ${time}.`
+  }
+
+  static generateClockOutSMS(employeeName: string, time: string, duration: string): string {
+    return `Zenlink: ${employeeName} clocked out at ${time}. Total worked: ${duration}.`
+  }
+
+  // Generate SMS for shift reminders
+  static generateShiftReminderSMS(employeeName: string, shiftDate: string, startTime: string): string {
+    return `Zenlink: Reminder - You have a shift tomorrow (${shiftDate}) starting at ${startTime}. Don't forget!`
+  }
+
+  // Generate SMS for late arrival
+  static generateLateArrivalSMS(employeeName: string, expectedTime: string, actualTime: string): string {
+    return `Zenlink: ${employeeName} arrived late. Expected: ${expectedTime}, Actual: ${actualTime}.`
   }
 }
 
@@ -358,8 +491,41 @@ export class NotificationService {
 
   // Send SMS for a notification
   private static async sendNotificationSMS(notification: any): Promise<{ success: boolean; error?: string }> {
-    const message = `${notification.title}: ${notification.message}`
-    return SMSService.sendSMS(notification.recipient.mobile, message)
+    try {
+      if (!notification.recipient.mobile) {
+        return { success: false, error: 'No mobile number available for recipient' }
+      }
+      
+      let smsMessage = `${notification.title}: ${notification.message}`
+      
+      // Generate specific SMS messages based on notification type
+      if (notification.data) {
+        switch (notification.type) {
+          case 'SHIFT_EXCHANGE_REQUEST':
+            smsMessage = SMSService.generateShiftExchangeRequestSMS(notification.data)
+            break
+          case 'SHIFT_EXCHANGE_ACCEPTED':
+            smsMessage = SMSService.generateShiftExchangeAcceptedSMS(notification.data)
+            break
+          case 'SHIFT_EXCHANGE_REJECTED':
+            smsMessage = SMSService.generateShiftExchangeRejectedSMS(notification.data)
+            break
+          case 'SHIFT_EXCHANGE_APPROVED':
+            smsMessage = SMSService.generateShiftExchangeApprovedSMS(notification.data)
+            break
+          default:
+            // Use default message format for other notification types
+            break
+        }
+      }
+      
+      return await SMSService.sendSMS(notification.recipient.mobile, smsMessage)
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Failed to send SMS' 
+      }
+    }
   }
 
   // Get unread notifications for a user
@@ -487,7 +653,7 @@ export class ShiftExchangeNotifications {
       shiftId: exchange.shiftId,
       shiftExchangeId: exchange.id,
       sendEmail: true,
-      sendSms: false, // Enable when SMS is ready
+      sendSms: true, // SMS enabled
     })
   }
 

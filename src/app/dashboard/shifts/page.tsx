@@ -308,11 +308,13 @@ export default function ShiftsPage() {
 
     // Department filter
     const matchesDepartment = !selectedDepartment || 
-      shift.employee?.department?.id === selectedDepartment
+      (shift.employee?.department?.name && 
+       departments.find(dept => dept.id === selectedDepartment)?.name === shift.employee.department.name)
 
     // Employee group filter
     const matchesGroup = !selectedGroup || 
-      shift.employeeGroup?.id === selectedGroup
+      (shift.employeeGroup?.name && 
+       employeeGroups.find(group => group.id === selectedGroup)?.name === shift.employeeGroup.name)
 
     // Employee selection filter
     const matchesEmployees = selectedEmployees.length === 0 || 
@@ -577,9 +579,9 @@ export default function ShiftsPage() {
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                           shift.approved 
                             ? 'bg-green-100 text-green-800 border-green-200' 
-                            : 'bg-yellow-100 text-yellow-800 border-yellow-200'
+                            : 'bg-blue-100 text-blue-800 border-blue-200'
                         } border`}>
-                          {shift.approved ? t('shifts.status.approved') : t('shifts.status.pending')}
+                          {shift.approved ? t('shifts.status.approved') : 'In Progress'}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right">

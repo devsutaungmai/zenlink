@@ -1,11 +1,12 @@
 'use client'
 
-import React from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import { Sex } from '@prisma/client'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
+import { ChevronDownIcon, MagnifyingGlassIcon, CheckIcon } from '@heroicons/react/24/outline'
 
 interface EmployeeFormData {
   firstName: string
@@ -14,6 +15,7 @@ interface EmployeeFormData {
   sex: Sex
   socialSecurityNo: string
   address: string
+  countryCode: string
   mobile: string
   employeeNo: string
   bankAccount: string
@@ -22,6 +24,7 @@ interface EmployeeFormData {
   isTeamLeader: boolean
   departmentId: string
   employeeGroupId?: string
+  email?: string
 }
 
 interface EmployeeFormProps {
@@ -40,6 +43,62 @@ export default function EmployeeForm({
   employeeGroups,
 }: EmployeeFormProps) {
   const { t } = useTranslation()
+  const [employeeNumberMode, setEmployeeNumberMode] = React.useState<'manual' | 'automatic'>('automatic')
+  const [fetchingNextNumber, setFetchingNextNumber] = React.useState(false)
+  
+  // Country code select state
+  const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false)
+  const [countrySearch, setCountrySearch] = useState('')
+  const dropdownRef = useRef<HTMLDivElement>(null)
+  
+  // Common country codes
+  const countryCodes = [
+    { code: '+1', country: 'US/Canada' },
+    { code: '+44', country: 'United Kingdom' },
+    { code: '+33', country: 'France' },
+    { code: '+49', country: 'Germany' },
+    { code: '+39', country: 'Italy' },
+    { code: '+34', country: 'Spain' },
+    { code: '+31', country: 'Netherlands' },
+    { code: '+41', country: 'Switzerland' },
+    { code: '+43', country: 'Austria' },
+    { code: '+32', country: 'Belgium' },
+    { code: '+45', country: 'Denmark' },
+    { code: '+46', country: 'Sweden' },
+    { code: '+47', country: 'Norway' },
+    { code: '+358', country: 'Finland' },
+    { code: '+86', country: 'China' },
+    { code: '+81', country: 'Japan' },
+    { code: '+82', country: 'South Korea' },
+    { code: '+91', country: 'India' },
+    { code: '+65', country: 'Singapore' },
+    { code: '+60', country: 'Malaysia' },
+    { code: '+62', country: 'Indonesia' },
+    { code: '+63', country: 'Philippines' },
+    { code: '+66', country: 'Thailand' },
+    { code: '+84', country: 'Vietnam' },
+    { code: '+852', country: 'Hong Kong' },
+    { code: '+886', country: 'Taiwan' },
+    { code: '+61', country: 'Australia' },
+    { code: '+64', country: 'New Zealand' },
+    { code: '+7', country: 'Russia' },
+    { code: '+55', country: 'Brazil' },
+    { code: '+52', country: 'Mexico' },
+    { code: '+54', country: 'Argentina' },
+    { code: '+56', country: 'Chile' },
+    { code: '+57', country: 'Colombia' },
+    { code: '+27', country: 'South Africa' },
+    { code: '+20', country: 'Egypt' },
+    { code: '+971', country: 'UAE' },
+    { code: '+966', country: 'Saudi Arabia' },
+    { code: '+90', country: 'Turkey' },
+    { code: '+48', country: 'Poland' },
+    { code: '+420', country: 'Czech Republic' },
+    { code: '+36', country: 'Hungary' },
+    { code: '+40', country: 'Romania' },
+    { code: '+30', country: 'Greece' },
+    { code: '+351', country: 'Portugal' },
+  ]
   const [formData, setFormData] = React.useState<EmployeeFormData>({
     firstName: '',
     lastName: '',
@@ -47,6 +106,7 @@ export default function EmployeeForm({
     sex: 'MALE',
     socialSecurityNo: '',
     address: '',
+    countryCode: '+66', // Default to Thailand
     mobile: '',
     employeeNo: '',
     bankAccount: '',
@@ -54,14 +114,83 @@ export default function EmployeeForm({
     dateOfHire: new Date(),
     isTeamLeader: false,
     departmentId: '',
+    email: '',
     ...initialData
   })
 
   const router = useRouter()
+  
+  // Filter country codes based on search
+  const filteredCountryCodes = countryCodes.filter(country =>
+    country.country.toLowerCase().includes(countrySearch.toLowerCase()) ||
+    country.code.includes(countrySearch)
+  )
+  
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsCountryDropdownOpen(false)
+        setCountrySearch('')
+      }
+    }
+    
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+  
+  const handleCountryCodeSelect = (countryCode: string) => {
+    setFormData({ ...formData, countryCode })
+    setIsCountryDropdownOpen(false)
+    setCountrySearch('')
+  }
+
+  // Fetch next employee number when component mounts or mode changes to automatic
+  React.useEffect(() => {
+    if (employeeNumberMode === 'automatic' && !initialData?.employeeNo) {
+      // Debounce the API call to avoid rapid requests
+      const timeoutId = setTimeout(() => {
+        fetchNextEmployeeNumber()
+      }, 300)
+      
+      return () => clearTimeout(timeoutId)
+    }
+  }, [employeeNumberMode, initialData?.employeeNo])
+
+  const fetchNextEmployeeNumber = async () => {
+    setFetchingNextNumber(true)
+    try {
+      const response = await fetch('/api/employees/next-number')
+      if (response.ok) {
+        const data = await response.json()
+        setFormData(prev => ({ ...prev, employeeNo: data.nextEmployeeNumber }))
+      } else {
+        console.error('Failed to fetch next employee number')
+      }
+    } catch (error) {
+      console.error('Error fetching next employee number:', error)
+    } finally {
+      setFetchingNextNumber(false)
+    }
+  }
+
+  const handleEmployeeNumberModeChange = (mode: 'manual' | 'automatic') => {
+    setEmployeeNumberMode(mode)
+    if (mode === 'manual') {
+      setFormData(prev => ({ ...prev, employeeNo: '' }))
+    } else {
+      fetchNextEmployeeNumber()
+    }
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onSubmit(formData)
+    // Combine country code and mobile number for submission
+    const submissionData = {
+      ...formData,
+      mobile: formData.countryCode + formData.mobile
+    }
+    onSubmit(submissionData)
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -160,17 +289,62 @@ export default function EmployeeForm({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label className="block text-sm font-medium text-gray-700 mb-3">
             {t('employees.form.employee_number')} <span className="text-red-500">*</span>
           </label>
-          <input
-            type="text"
-            name="employeeNo"
-            value={formData.employeeNo}
-            onChange={handleChange}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-[#31BCFF] focus:outline-none focus:ring-1 focus:ring-[#31BCFF]"
-            required
-          />
+          
+          {/* Radio buttons for selection mode */}
+          <div className="flex gap-6 mb-3">
+            <label className="flex items-center">
+              <input
+                type="radio"
+                name="employeeNumberMode"
+                value="automatic"
+                checked={employeeNumberMode === 'automatic'}
+                onChange={(e) => handleEmployeeNumberModeChange('automatic')}
+                className="mr-2 text-[#31BCFF] focus:ring-[#31BCFF]"
+              />
+              <span className="text-sm text-gray-700">Automatic Generation</span>
+            </label>
+            <label className="flex items-center">
+              <input
+                type="radio"
+                name="employeeNumberMode"
+                value="manual"
+                checked={employeeNumberMode === 'manual'}
+                onChange={(e) => handleEmployeeNumberModeChange('manual')}
+                className="mr-2 text-[#31BCFF] focus:ring-[#31BCFF]"
+              />
+              <span className="text-sm text-gray-700">Manual Entry</span>
+            </label>
+          </div>
+
+          {/* Employee number input field */}
+          {employeeNumberMode === 'manual' ? (
+            <input
+              type="text"
+              name="employeeNo"
+              value={formData.employeeNo}
+              onChange={handleChange}
+              placeholder="Enter employee number"
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-[#31BCFF] focus:outline-none focus:ring-1 focus:ring-[#31BCFF]"
+              required
+            />
+          ) : (
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                name="employeeNo"
+                value={formData.employeeNo}
+                readOnly
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 bg-gray-50 text-gray-500 cursor-not-allowed"
+                required
+              />
+              {fetchingNextNumber && (
+                <div className="text-sm text-gray-500">Generating...</div>
+              )}
+            </div>
+          )}
         </div>
 
         <div>
@@ -257,14 +431,96 @@ export default function EmployeeForm({
           <label className="block text-sm font-medium text-gray-700">
             {t('employees.form.mobile')} <span className="text-red-500">*</span>
           </label>
+          <div className="flex gap-2">
+            {/* Custom Select2-style dropdown for country code */}
+            <div className="relative" ref={dropdownRef}>
+              <div
+                onClick={() => setIsCountryDropdownOpen(!isCountryDropdownOpen)}
+                className="mt-1 w-48 rounded-md border border-gray-300 px-3 py-2 focus:border-[#31BCFF] focus:outline-none focus:ring-1 focus:ring-[#31BCFF] cursor-pointer bg-white flex items-center justify-between"
+              >
+                <span className="text-gray-900 text-sm">
+                  {formData.countryCode} - {countryCodes.find(c => c.code === formData.countryCode)?.country}
+                </span>
+                <ChevronDownIcon 
+                  className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${
+                    isCountryDropdownOpen ? 'rotate-180' : ''
+                  }`} 
+                />
+              </div>
+              
+              {/* Dropdown */}
+              {isCountryDropdownOpen && (
+                <div className="absolute z-50 w-full mt-1 bg-white rounded-md shadow-lg border border-gray-300 max-h-80 overflow-hidden">
+                  {/* Search input */}
+                  <div className="p-3 border-b border-gray-200">
+                    <div className="relative">
+                      <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        type="text"
+                        value={countrySearch}
+                        onChange={(e) => setCountrySearch(e.target.value)}
+                        placeholder="Search country codes..."
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#31BCFF] focus:border-[#31BCFF]"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Options */}
+                  <div className="max-h-64 overflow-y-auto">
+                    {filteredCountryCodes.length > 0 ? (
+                      filteredCountryCodes.map((country) => (
+                        <div
+                          key={country.code}
+                          onClick={() => handleCountryCodeSelect(country.code)}
+                          className="flex items-center justify-between px-4 py-2 hover:bg-gray-50 cursor-pointer"
+                        >
+                          <span className="text-gray-900 text-sm">{country.code} - {country.country}</span>
+                          {formData.countryCode === country.code && (
+                            <CheckIcon className="w-4 h-4 text-[#31BCFF]" />
+                          )}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="px-4 py-6 text-center text-gray-500 text-sm">
+                        No country codes found
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <input
+              type="tel"
+              name="mobile"
+              value={formData.mobile}
+              onChange={handleChange}
+              placeholder="123456789"
+              className="mt-1 flex-1 rounded-md border border-gray-300 px-3 py-2 focus:border-[#31BCFF] focus:outline-none focus:ring-1 focus:ring-[#31BCFF]"
+              required
+            />
+          </div>
+          <p className="mt-1 text-xs text-gray-500">
+            Full number will be: {formData.countryCode}{formData.mobile}
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Email
+          </label>
           <input
-            type="tel"
-            name="mobile"
-            value={formData.mobile}
+            type="email"
+            name="email"
+            value={formData.email || ''}
             onChange={handleChange}
             className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-[#31BCFF] focus:outline-none focus:ring-1 focus:ring-[#31BCFF]"
-            required
+            placeholder="employee@company.com"
           />
+          <p className="mt-1 text-xs text-gray-500">
+            Optional. Will be used for account setup and notifications.
+          </p>
         </div>
 
         <div>
