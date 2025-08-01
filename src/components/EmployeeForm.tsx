@@ -77,6 +77,7 @@ export default function EmployeeForm({
     { code: '+63', country: 'Philippines' },
     { code: '+66', country: 'Thailand' },
     { code: '+84', country: 'Vietnam' },
+    { code: '+856', country: 'Laos' },
     { code: '+852', country: 'Hong Kong' },
     { code: '+886', country: 'Taiwan' },
     { code: '+61', country: 'Australia' },
@@ -99,23 +100,53 @@ export default function EmployeeForm({
     { code: '+30', country: 'Greece' },
     { code: '+351', country: 'Portugal' },
   ]
-  const [formData, setFormData] = React.useState<EmployeeFormData>({
-    firstName: '',
-    lastName: '',
-    birthday: new Date(),
-    sex: 'MALE',
-    socialSecurityNo: '',
-    address: '',
-    countryCode: '+66', // Default to Thailand
-    mobile: '',
-    employeeNo: '',
-    bankAccount: '',
-    hoursPerMonth: 0,
-    dateOfHire: new Date(),
-    isTeamLeader: false,
-    departmentId: '',
-    email: '',
-    ...initialData
+  
+  // Helper function to parse mobile number for edit mode
+  const parseMobileNumber = (fullMobile: string | undefined) => {
+    if (!fullMobile) return { countryCode: '+66', mobile: '' }
+    
+    // Find matching country code from the full mobile number
+    const matchingCountry = countryCodes.find(cc => fullMobile.startsWith(cc.code))
+    
+    if (matchingCountry) {
+      return {
+        countryCode: matchingCountry.code,
+        mobile: fullMobile.substring(matchingCountry.code.length)
+      }
+    }
+    
+    // Default fallback
+    return { countryCode: '+66', mobile: fullMobile }
+  }
+  
+  const [formData, setFormData] = React.useState<EmployeeFormData>(() => {
+    const baseData: EmployeeFormData = {
+      firstName: '',
+      lastName: '',
+      birthday: new Date(),
+      sex: 'MALE' as Sex,
+      socialSecurityNo: '',
+      address: '',
+      countryCode: '+66', // Default to Thailand
+      mobile: '',
+      employeeNo: '',
+      bankAccount: '',
+      hoursPerMonth: 0,
+      dateOfHire: new Date(),
+      isTeamLeader: false,
+      departmentId: '',
+      email: '',
+      ...initialData
+    }
+    
+    // Parse mobile number if editing existing employee
+    if (initialData?.mobile) {
+      const { countryCode, mobile } = parseMobileNumber(initialData.mobile)
+      baseData.countryCode = countryCode
+      baseData.mobile = mobile
+    }
+    
+    return baseData
   })
 
   const router = useRouter()
@@ -186,9 +217,14 @@ export default function EmployeeForm({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     // Combine country code and mobile number for submission
+    // Only concatenate if mobile doesn't already include country code
+    const fullMobile = formData.mobile.startsWith('+') 
+      ? formData.mobile 
+      : formData.countryCode + formData.mobile
+      
     const submissionData = {
       ...formData,
-      mobile: formData.countryCode + formData.mobile
+      mobile: fullMobile
     }
     onSubmit(submissionData)
   }
@@ -502,7 +538,7 @@ export default function EmployeeForm({
             />
           </div>
           <p className="mt-1 text-xs text-gray-500">
-            Full number will be: {formData.countryCode}{formData.mobile}
+            Full number will be: {formData.mobile.startsWith('+') ? formData.mobile : formData.countryCode + formData.mobile}
           </p>
         </div>
 
