@@ -47,9 +47,7 @@ export class SMSService {
   static formatPhoneNumber(phoneNumber: string): string {
     // Remove all non-digit characters except +
     let formattedNumber = phoneNumber.replace(/[^\d+]/g, '')
-    
-    // Employee mobile data is already in international format (+8562098126573)
-    // Just validate it starts with + and return as-is
+  
     if (formattedNumber.startsWith('+')) {
       return formattedNumber
     }
