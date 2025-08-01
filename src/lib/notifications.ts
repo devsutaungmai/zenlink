@@ -43,58 +43,19 @@ export interface CreateNotificationParams {
 
 // SMS service with AWS SNS implementation
 export class SMSService {
-  // Comprehensive phone number formatting for international use
+  // Simple phone number validation for international format
   static formatPhoneNumber(phoneNumber: string): string {
     // Remove all non-digit characters except +
     let formattedNumber = phoneNumber.replace(/[^\d+]/g, '')
     
-    // If number already starts with +, return as is
+    // Employee mobile data is already in international format (+8562098126573)
+    // Just validate it starts with + and return as-is
     if (formattedNumber.startsWith('+')) {
       return formattedNumber
     }
     
-    // Handle different country-specific formatting
-    if (formattedNumber.startsWith('0')) {
-      // Common pattern: remove leading 0 and determine country code based on length and patterns
-      
-      // Thailand: 10 digits starting with 0
-      if (formattedNumber.length === 10 && formattedNumber.startsWith('0')) {
-        return '+66' + formattedNumber.substring(1)
-      }
-      
-      // UK: 11 digits starting with 0
-      if (formattedNumber.length === 11 && formattedNumber.startsWith('0')) {
-        return '+44' + formattedNumber.substring(1)
-      }
-      
-      // Germany: 11-12 digits starting with 0
-      if ((formattedNumber.length === 11 || formattedNumber.length === 12) && formattedNumber.startsWith('0')) {
-        return '+49' + formattedNumber.substring(1)
-      }
-      
-      // France: 10 digits starting with 0
-      if (formattedNumber.length === 10 && formattedNumber.startsWith('0')) {
-        return '+33' + formattedNumber.substring(1)
-      }
-      
-      // Default: assume it needs + prefix
-      return '+' + formattedNumber.substring(1)
-    }
-    
-    // If number doesn't start with 0 or +, determine by length
-    if (formattedNumber.length === 10) {
-      // Could be US number without country code
-      if (formattedNumber.match(/^[2-9]/)) {
-        return '+1' + formattedNumber
-      }
-    }
-    
-    // If we can't determine the country, add + prefix
-    if (!formattedNumber.startsWith('+')) {
-      return '+' + formattedNumber
-    }
-    
-    return formattedNumber
+    // If somehow it doesn't start with +, add it
+    return '+' + formattedNumber
   }
 
   static async sendSMS(to: string, message: string): Promise<{ success: boolean; error?: string }> {
