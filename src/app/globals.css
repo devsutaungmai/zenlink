@@ -124,3 +124,34 @@ input, select {
     @apply bg-background text-foreground;
   }
 }
+
+/* SweetAlert custom styles */
+.swal-wide {
+  width: 600px !important;
+}
+
+.swal-wide .swal2-content {
+  white-space: pre-line;
+  text-align: left;
+}
+
+/* SweetAlert toast styles */
+.swal-toast-wide {
+  width: 350px !important;
+  font-size: 14px !important;
+}
+
+.swal-toast-wide .swal2-title {
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  margin-bottom: 8px !important;
+}
+
+.swal-toast-wide .swal2-content {
+  font-size: 13px !important;
+  margin: 0 !important;
+}
+
+.swal-toast-wide .swal2-timer-progress-bar {
+  background: rgba(255, 193, 7, 0.8) !important;
+}

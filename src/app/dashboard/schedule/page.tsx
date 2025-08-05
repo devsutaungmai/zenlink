@@ -9,6 +9,7 @@ import ScheduleHeader from '@/components/schedule/ScheduleHeader'
 import WeekView from '@/components/schedule/WeekView'
 import DayView from '@/components/schedule/DayView'
 import ShiftFormModal from '@/components/schedule/ShiftFormModel'
+import { laborLawValidator, formatValidationMessage, type LaborLawViolation } from '@/lib/laborLawValidation'
 
 export default function SchedulePage() {
   const [showShiftModal, setShowShiftModal] = useState(false)
@@ -99,7 +100,143 @@ export default function SchedulePage() {
     setCurrentDate(prevDate => addWeeks(prevDate, 1))
   }
 
+  // Check if employee already has a shift on the given date
+  const checkExistingShift = (employeeId: string, shiftDate: string, excludeShiftId?: string): boolean => {
+    return shifts.some(shift => {
+      const shiftDateStr = typeof shift.date === 'string' 
+        ? (shift.date as string).substring(0, 10) 
+        : format(new Date(shift.date), 'yyyy-MM-dd');
+      
+      return shift.employeeId === employeeId && 
+             shiftDateStr === shiftDate && 
+             (!excludeShiftId || shift.id !== excludeShiftId);
+    });
+  };
+
+  // Get existing shift details for better user information
+  const getExistingShift = (employeeId: string, shiftDate: string, excludeShiftId?: string) => {
+    return shifts.find(shift => {
+      const shiftDateStr = typeof shift.date === 'string' 
+        ? (shift.date as string).substring(0, 10) 
+        : format(new Date(shift.date), 'yyyy-MM-dd');
+      
+      return shift.employeeId === employeeId && 
+             shiftDateStr === shiftDate && 
+             (!excludeShiftId || shift.id !== excludeShiftId);
+    });
+  };
+
   const handleShiftFormSubmit = async (formData: any) => {
+    // Check for existing shift (only for new shifts or when changing employee/date)
+    if (formData.employeeId && formData.date) {
+      const hasExistingShift = checkExistingShift(formData.employeeId, formData.date, formData.id);
+      
+      if (hasExistingShift) {
+        const employee = employees.find(emp => emp.id === formData.employeeId);
+        const existingShift = getExistingShift(formData.employeeId, formData.date, formData.id);
+        const employeeName = employee ? `${employee.firstName} ${employee.lastName}` : 'This employee';
+        
+        let conflictTitle = `Shift Conflict: ${employeeName}`;
+        let conflictMessage = `Already has a shift on ${formData.date}`;
+        if (existingShift) {
+          conflictMessage += ` (${existingShift.startTime} - ${existingShift.endTime})`;
+        }
+        
+        // Show toast notification instead of blocking dialog
+        Swal.fire({
+          text: `${conflictTitle}: ${conflictMessage}`,
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 4000,
+          timerProgressBar: true,
+          customClass: {
+            popup: 'swal-toast-wide'
+          }
+        });
+        
+        return; // Don't proceed with shift creation
+      }
+    }
+
+    // Labor Law Validation
+    if (formData.employeeId && formData.startTime && formData.endTime) {
+      try {
+        const shiftData = {
+          id: formData.id,
+          date: formData.date,
+          startTime: formData.startTime,
+          endTime: formData.endTime,
+          breakStart: formData.breakStart,
+          breakEnd: formData.breakEnd,
+          employeeId: formData.employeeId
+        };
+
+        // Get existing shifts for the employee to validate against weekly rules
+        const shiftDate = new Date(formData.date);
+        const weekStart = new Date(shiftDate);
+        weekStart.setDate(shiftDate.getDate() - shiftDate.getDay());
+        
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6);
+        
+        const existingEmployeeShifts = shifts.filter(shift => 
+          shift.employeeId === formData.employeeId &&
+          shift.id !== formData.id && // Exclude current shift if editing
+          shift.endTime !== null && // Only include completed shifts
+          new Date(shift.date) >= weekStart &&
+          new Date(shift.date) <= weekEnd
+        ).map(shift => ({
+          id: shift.id,
+          date: shift.date,
+          startTime: shift.startTime,
+          endTime: shift.endTime as string, // Safe to cast since we filtered null values
+          breakStart: shift.breakStart || undefined,
+          breakEnd: shift.breakEnd || undefined,
+          employeeId: shift.employeeId
+        }));
+
+        const validation = await laborLawValidator.validateShift(shiftData, existingEmployeeShifts);
+        
+        if (!validation.isValid) {
+          // Show labor law violations as toast notifications
+          const violationMessages = validation.violations.map(formatValidationMessage).join('\n');
+          
+          Swal.fire({
+            text: violationMessages,
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 5000,
+            timerProgressBar: true,
+            customClass: {
+              popup: 'swal-toast-wide'
+            }
+          });
+          
+          return; // Don't proceed with shift creation
+        } else if (validation.warnings.length > 0) {
+          // Show warnings as toast notifications
+          const warningMessages = validation.warnings.map(w => w.message).join('\n');
+          
+          Swal.fire({
+            text: warningMessages,
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 5000,
+            timerProgressBar: true,
+            customClass: {
+              popup: 'swal-toast-wide'
+            }
+          });
+        }
+      } catch (error) {
+        console.error('Error validating labor laws:', error);
+        // Continue with shift creation if validation fails
+      }
+    }
+
     setLoading(true);
     try {
       const method = formData.id ? 'PUT' : 'POST';
@@ -116,13 +253,47 @@ export default function SchedulePage() {
       if (res.ok) {
         await fetchShifts();
         setShowShiftModal(false);
-        Swal.fire('Success', `Shift ${formData.id ? 'updated' : 'created'} successfully!`, 'success');
+        
+        Swal.fire({
+          text: `Shift ${formData.id ? 'updated' : 'created'} successfully!`,
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
+          customClass: {
+            popup: 'swal-toast-wide'
+          }
+        });
       } else {
-        Swal.fire('Error', `Failed to ${formData.id ? 'update' : 'create'} shift.`, 'error');
+        const errorData = await res.json();
+        
+        Swal.fire({
+          text: errorData.error || `Failed to ${formData.id ? 'update' : 'create'} shift.`,
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 4000,
+          timerProgressBar: true,
+          customClass: {
+            popup: 'swal-toast-wide'
+          }
+        });
       }
     } catch (error) {
       console.error('Error submitting shift form:', error);
-      Swal.fire('Error', `Failed to ${formData.id ? 'update' : 'create'} shift.`, 'error');
+      
+      Swal.fire({
+        text: `Failed to ${formData.id ? 'update' : 'create'} shift.`,
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 4000,
+        timerProgressBar: true,
+        customClass: {
+          popup: 'swal-toast-wide'
+        }
+      });
     }
     setLoading(false);
   };
