@@ -6,9 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
 import { AlertTriangle, Clock, Calendar, Shield, Save, RotateCcw } from 'lucide-react'
 import { LaborLawRules, COUNTRY_RULES, DEFAULT_LABOR_RULES } from '@/lib/laborLawValidation'
 import Swal from 'sweetalert2'
@@ -180,193 +178,181 @@ export default function LaborLawSettings({ onRulesChange }: LaborLawSettingsProp
       </Card>
 
       {/* Rules Configuration */}
-      <Tabs defaultValue="daily" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="daily">Daily Limits</TabsTrigger>
-          <TabsTrigger value="weekly">Weekly Limits</TabsTrigger>
-          <TabsTrigger value="breaks">Breaks & Rest</TabsTrigger>
-        </TabsList>
-
+      <div className="space-y-6">
         {/* Daily Limits */}
-        <TabsContent value="daily">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="w-5 h-5" />
-                Daily Work Limits
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="maxHoursPerDay">Maximum Hours Per Day</Label>
-                  <Input
-                    id="maxHoursPerDay"
-                    type="number"
-                    min="1"
-                    max="24"
-                    step="0.5"
-                    value={rules.maxHoursPerDay}
-                    onChange={(e) => handleRuleChange('maxHoursPerDay', parseFloat(e.target.value))}
-                    className="mt-1"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Maximum work hours allowed per day</p>
-                </div>
-
-                <div>
-                  <Label htmlFor="overtimeThreshold">Regular Hours Threshold</Label>
-                  <Input
-                    id="overtimeThreshold"
-                    type="number"
-                    min="1"
-                    max="12"
-                    step="0.5"
-                    value={rules.overtimeThreshold}
-                    onChange={(e) => handleRuleChange('overtimeThreshold', parseFloat(e.target.value))}
-                    className="mt-1"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Hours before overtime rules apply</p>
-                </div>
-
-                <div>
-                  <Label htmlFor="maxOvertimePerDay">Maximum Overtime Per Day</Label>
-                  <Input
-                    id="maxOvertimePerDay"
-                    type="number"
-                    min="0"
-                    max="12"
-                    step="0.5"
-                    value={rules.maxOvertimePerDay}
-                    onChange={(e) => handleRuleChange('maxOvertimePerDay', parseFloat(e.target.value))}
-                    className="mt-1"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Maximum overtime hours per day</p>
-                </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="w-5 h-5" />
+              Daily Work Limits
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="maxHoursPerDay">Maximum Hours Per Day</Label>
+                <Input
+                  id="maxHoursPerDay"
+                  type="number"
+                  min="1"
+                  max="24"
+                  step="0.5"
+                  value={rules.maxHoursPerDay}
+                  onChange={(e) => handleRuleChange('maxHoursPerDay', parseFloat(e.target.value))}
+                  className="mt-1"
+                />
+                <p className="text-xs text-gray-500 mt-1">Maximum work hours allowed per day</p>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+
+              <div>
+                <Label htmlFor="overtimeThreshold">Regular Hours Threshold</Label>
+                <Input
+                  id="overtimeThreshold"
+                  type="number"
+                  min="1"
+                  max="12"
+                  step="0.5"
+                  value={rules.overtimeThreshold}
+                  onChange={(e) => handleRuleChange('overtimeThreshold', parseFloat(e.target.value))}
+                  className="mt-1"
+                />
+                <p className="text-xs text-gray-500 mt-1">Hours before overtime rules apply</p>
+              </div>
+
+              <div>
+                <Label htmlFor="maxOvertimePerDay">Maximum Overtime Per Day</Label>
+                <Input
+                  id="maxOvertimePerDay"
+                  type="number"
+                  min="0"
+                  max="12"
+                  step="0.5"
+                  value={rules.maxOvertimePerDay}
+                  onChange={(e) => handleRuleChange('maxOvertimePerDay', parseFloat(e.target.value))}
+                  className="mt-1"
+                />
+                <p className="text-xs text-gray-500 mt-1">Maximum overtime hours per day</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Weekly Limits */}
-        <TabsContent value="weekly">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="w-5 h-5" />
-                Weekly Work Limits
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="maxHoursPerWeek">Maximum Hours Per Week</Label>
-                  <Input
-                    id="maxHoursPerWeek"
-                    type="number"
-                    min="1"
-                    max="168"
-                    step="1"
-                    value={rules.maxHoursPerWeek}
-                    onChange={(e) => handleRuleChange('maxHoursPerWeek', parseFloat(e.target.value))}
-                    className="mt-1"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Maximum work hours per week</p>
-                </div>
-
-                <div>
-                  <Label htmlFor="maxOvertimePerWeek">Maximum Overtime Per Week</Label>
-                  <Input
-                    id="maxOvertimePerWeek"
-                    type="number"
-                    min="0"
-                    max="50"
-                    step="1"
-                    value={rules.maxOvertimePerWeek}
-                    onChange={(e) => handleRuleChange('maxOvertimePerWeek', parseFloat(e.target.value))}
-                    className="mt-1"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Maximum overtime hours per week</p>
-                </div>
-
-                <div>
-                  <Label htmlFor="maxConsecutiveDays">Maximum Consecutive Days</Label>
-                  <Input
-                    id="maxConsecutiveDays"
-                    type="number"
-                    min="1"
-                    max="14"
-                    step="1"
-                    value={rules.maxConsecutiveDays}
-                    onChange={(e) => handleRuleChange('maxConsecutiveDays', parseInt(e.target.value))}
-                    className="mt-1"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Maximum consecutive working days</p>
-                </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="w-5 h-5" />
+              Weekly Work Limits
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="maxHoursPerWeek">Maximum Hours Per Week</Label>
+                <Input
+                  id="maxHoursPerWeek"
+                  type="number"
+                  min="1"
+                  max="168"
+                  step="1"
+                  value={rules.maxHoursPerWeek}
+                  onChange={(e) => handleRuleChange('maxHoursPerWeek', parseFloat(e.target.value))}
+                  className="mt-1"
+                />
+                <p className="text-xs text-gray-500 mt-1">Maximum work hours per week</p>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+
+              <div>
+                <Label htmlFor="maxOvertimePerWeek">Maximum Overtime Per Week</Label>
+                <Input
+                  id="maxOvertimePerWeek"
+                  type="number"
+                  min="0"
+                  max="50"
+                  step="1"
+                  value={rules.maxOvertimePerWeek}
+                  onChange={(e) => handleRuleChange('maxOvertimePerWeek', parseFloat(e.target.value))}
+                  className="mt-1"
+                />
+                <p className="text-xs text-gray-500 mt-1">Maximum overtime hours per week</p>
+              </div>
+
+              <div>
+                <Label htmlFor="maxConsecutiveDays">Maximum Consecutive Days</Label>
+                <Input
+                  id="maxConsecutiveDays"
+                  type="number"
+                  min="1"
+                  max="14"
+                  step="1"
+                  value={rules.maxConsecutiveDays}
+                  onChange={(e) => handleRuleChange('maxConsecutiveDays', parseInt(e.target.value))}
+                  className="mt-1"
+                />
+                <p className="text-xs text-gray-500 mt-1">Maximum consecutive working days</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Breaks & Rest */}
-        <TabsContent value="breaks">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="w-5 h-5" />
-                Breaks & Rest Periods
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="minRestHoursBetweenShifts">Minimum Rest Between Shifts (hours)</Label>
-                  <Input
-                    id="minRestHoursBetweenShifts"
-                    type="number"
-                    min="1"
-                    max="24"
-                    step="0.5"
-                    value={rules.minRestHoursBetweenShifts}
-                    onChange={(e) => handleRuleChange('minRestHoursBetweenShifts', parseFloat(e.target.value))}
-                    className="mt-1"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Minimum rest time required between shifts</p>
-                </div>
-
-                <div>
-                  <Label htmlFor="longShiftThreshold">Long Shift Threshold (hours)</Label>
-                  <Input
-                    id="longShiftThreshold"
-                    type="number"
-                    min="1"
-                    max="12"
-                    step="0.5"
-                    value={rules.longShiftThreshold}
-                    onChange={(e) => handleRuleChange('longShiftThreshold', parseFloat(e.target.value))}
-                    className="mt-1"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Hours that trigger mandatory break requirement</p>
-                </div>
-
-                <div>
-                  <Label htmlFor="minBreakForLongShifts">Minimum Break Duration (minutes)</Label>
-                  <Input
-                    id="minBreakForLongShifts"
-                    type="number"
-                    min="0"
-                    max="120"
-                    step="5"
-                    value={rules.minBreakForLongShifts}
-                    onChange={(e) => handleRuleChange('minBreakForLongShifts', parseInt(e.target.value))}
-                    className="mt-1"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Required break duration for long shifts</p>
-                </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="w-5 h-5" />
+              Breaks & Rest Periods
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="minRestHoursBetweenShifts">Minimum Rest Between Shifts (hours)</Label>
+                <Input
+                  id="minRestHoursBetweenShifts"
+                  type="number"
+                  min="1"
+                  max="24"
+                  step="0.5"
+                  value={rules.minRestHoursBetweenShifts}
+                  onChange={(e) => handleRuleChange('minRestHoursBetweenShifts', parseFloat(e.target.value))}
+                  className="mt-1"
+                />
+                <p className="text-xs text-gray-500 mt-1">Minimum rest time required between shifts</p>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+
+              <div>
+                <Label htmlFor="longShiftThreshold">Long Shift Threshold (hours)</Label>
+                <Input
+                  id="longShiftThreshold"
+                  type="number"
+                  min="1"
+                  max="12"
+                  step="0.5"
+                  value={rules.longShiftThreshold}
+                  onChange={(e) => handleRuleChange('longShiftThreshold', parseFloat(e.target.value))}
+                  className="mt-1"
+                />
+                <p className="text-xs text-gray-500 mt-1">Hours that trigger mandatory break requirement</p>
+              </div>
+
+              <div>
+                <Label htmlFor="minBreakForLongShifts">Minimum Break Duration (minutes)</Label>
+                <Input
+                  id="minBreakForLongShifts"
+                  type="number"
+                  min="0"
+                  max="120"
+                  step="5"
+                  value={rules.minBreakForLongShifts}
+                  onChange={(e) => handleRuleChange('minBreakForLongShifts', parseInt(e.target.value))}
+                  className="mt-1"
+                />
+                <p className="text-xs text-gray-500 mt-1">Required break duration for long shifts</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Action Buttons */}
       <div className="flex items-center justify-between">
