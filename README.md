@@ -18,10 +18,23 @@ Follow these steps to get the project up and running:
     ```env
     DATABASE_URL="postgresql://username:password@localhost:5432/zenlink"
     JWT_SECRET="yoursecretjwttoken"
+    # Gmail (recommended for production – use an App Password)
+    GMAIL_USER="zenlinkdev@gmail.com"
+    GMAIL_APP_PASSWORD="your-16-character-app-password"
+
+    # Optional: custom SMTP provider
+    # SMTP_PROVIDER="gmail" # or leave blank to auto-detect from vars
+    # SMTP_HOST="smtp.gmail.com"
+    # SMTP_PORT="465"
+    # SMTP_SECURE="true"
+    # SMTP_USER="zenlinkdev@gmail.com"
+    # SMTP_PASS="your-16-character-app-password"
+
+    # Dev fallback (Mailtrap)
     MAILTRAP_USER="yourmailtrapusername"
     MAILTRAP_PASS="yourmailtrappassword"
     ```
-    Replace `username`, `password`, `yoursecretjwttoken`, `yourmailtrapusername`, and `yourmailtrappassword` with your actual credentials.
+    Replace placeholders with your actual credentials. For Gmail, enable 2FA and create an App Password in Google Account > Security.
 
 4.  **Generate Prisma Client:**
     ```bash

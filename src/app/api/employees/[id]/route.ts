@@ -30,31 +30,92 @@ export async function PUT(
       )
     }
 
-    const updatedEmployee = await prisma.employee.update({
+    // Get current employee to check if email is being changed
+    const currentEmployee = await prisma.employee.findUnique({
       where: { id: params.id },
-      data: {
-        firstName: data.firstName,
-        lastName: data.lastName,
-        birthday: new Date(data.birthday),
-        dateOfHire: new Date(data.dateOfHire),
-        socialSecurityNo: data.socialSecurityNo,
-        address: data.address,
-        mobile: data.mobile,
-        sex: data.sex,
-        employeeNo: data.employeeNo,
-        bankAccount: data.bankAccount,
-        hoursPerMonth: parseFloat(data.hoursPerMonth) || 0,
-        isTeamLeader: Boolean(data.isTeamLeader),
-        departmentId: data.departmentId,
-        employeeGroupId: data.employeeGroupId || null,
-      },
-      include: {
-        department: true,
-        employeeGroup: true
-      }
+      include: { user: true }
     })
 
-    return NextResponse.json(updatedEmployee)
+    if (!currentEmployee) {
+      return NextResponse.json(
+        { error: 'Employee not found' },
+        { status: 404 }
+      )
+    }
+
+    // Check if email is already in use by another user (if email is being changed)
+    if (data.email && data.email !== currentEmployee.email) {
+      const existingUserWithEmail = await prisma.user.findUnique({
+        where: { email: data.email }
+      })
+
+      if (existingUserWithEmail && existingUserWithEmail.id !== currentEmployee.userId) {
+        return NextResponse.json(
+          { error: 'Email is already in use by another user' },
+          { status: 400 }
+        )
+      }
+
+      const existingEmployeeWithEmail = await prisma.employee.findUnique({
+        where: { email: data.email }
+      })
+
+      if (existingEmployeeWithEmail && existingEmployeeWithEmail.id !== currentEmployee.id) {
+        return NextResponse.json(
+          { error: 'Email is already in use by another employee' },
+          { status: 400 }
+        )
+      }
+    }
+
+    // Update employee and user in a transaction
+    const result = await prisma.$transaction(async (tx) => {
+      // Update employee record
+      const updatedEmployee = await tx.employee.update({
+        where: { id: params.id },
+        data: {
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.email || currentEmployee.email,
+          birthday: new Date(data.birthday),
+          dateOfHire: new Date(data.dateOfHire),
+          socialSecurityNo: data.socialSecurityNo,
+          address: data.address,
+          mobile: data.mobile,
+          sex: data.sex,
+          employeeNo: data.employeeNo,
+          bankAccount: data.bankAccount,
+          hoursPerMonth: parseFloat(data.hoursPerMonth) || 0,
+          isTeamLeader: Boolean(data.isTeamLeader),
+          departmentId: data.departmentId,
+          employeeGroupId: data.employeeGroupId || null,
+        },
+        include: {
+          department: true,
+          employeeGroup: true
+        }
+      })
+
+      // Update user record if email, firstName, or lastName changed
+      if (currentEmployee.userId && (
+        (data.email && data.email !== currentEmployee.email) ||
+        data.firstName !== currentEmployee.firstName ||
+        data.lastName !== currentEmployee.lastName
+      )) {
+        await tx.user.update({
+          where: { id: currentEmployee.userId },
+          data: {
+            email: data.email || currentEmployee.email,
+            firstName: data.firstName,
+            lastName: data.lastName
+          }
+        })
+      }
+
+      return updatedEmployee
+    })
+
+    return NextResponse.json(result)
 
   } catch (error: any) {
     console.error('Update employee error:', error)

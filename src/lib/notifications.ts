@@ -4,16 +4,47 @@ import nodemailer from 'nodemailer'
 import { SNSClient, PublishCommand } from '@aws-sdk/client-sns'
 
 // Email configuration
-const createEmailTransporter = () => {
+export const createEmailTransporter = () => {
+  const provider = (process.env.SMTP_PROVIDER || '').toLowerCase();
+  const gmailUser = process.env.GMAIL_USER;
+  const gmailPass = process.env.GMAIL_APP_PASSWORD;
+
+  // Prefer Gmail when configured
+  if (provider === 'gmail' || (gmailUser && gmailPass)) {
+    return nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
+      auth: {
+        user: gmailUser || process.env.SMTP_USER,
+        pass: gmailPass || process.env.SMTP_PASS,
+      },
+    });
+  }
+
+  // Generic SMTP (if provided)
+  if (process.env.SMTP_HOST) {
+    return nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: parseInt(process.env.SMTP_PORT || '587'),
+      secure: process.env.SMTP_SECURE === 'true' || process.env.SMTP_PORT === '465',
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    });
+  }
+
+  // Fallback to Mailtrap (dev)
   return nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'sandbox.smtp.mailtrap.io',
-    port: parseInt(process.env.SMTP_PORT || '2525'),
-    secure: false, // Mailtrap uses STARTTLS
+    host: 'sandbox.smtp.mailtrap.io',
+    port: 2525,
+    secure: false, // STARTTLS
     auth: {
-      user: process.env.SMTP_USER || process.env.MAILTRAP_USER,
-      pass: process.env.SMTP_PASS || process.env.MAILTRAP_PASS,
+      user: process.env.MAILTRAP_USER,
+      pass: process.env.MAILTRAP_PASS,
     },
-  })
+  });
 }
 
 // Types for notification data
@@ -163,7 +194,7 @@ export class EmailService {
       const transporter = createEmailTransporter()
       
       await transporter.sendMail({
-        from: process.env.FROM_EMAIL || 'noreply@zenlink.com',
+        from: process.env.FROM_EMAIL || process.env.GMAIL_USER || 'zenlinkdev@gmail.com',
         to,
         subject,
         html,

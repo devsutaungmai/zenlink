@@ -25,13 +25,14 @@ export async function POST(req: Request) {
       }
     }
 
-    // Create a Nodemailer transporter using Mailtrap
+    // Create a Nodemailer transporter using Gmail
     const transporter = nodemailer.createTransport({
-      host: "sandbox.smtp.mailtrap.io",
-      port: 2525,
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
       auth: {
-        user: process.env.MAILTRAP_USER,
-        pass: process.env.MAILTRAP_PASS,
+        user: process.env.GMAIL_USER || 'zenlinkdev@gmail.com',
+        pass: process.env.GMAIL_APP_PASSWORD,
       },
     });
 
@@ -39,7 +40,7 @@ export async function POST(req: Request) {
 
     // Send email
     const info = await transporter.sendMail({
-      from: '"Zen Link" <noreply@zenlink.com>',
+      from: `"Zen Link" <${process.env.FROM_EMAIL || process.env.GMAIL_USER || 'zenlinkdev@gmail.com'}>`,
       to: email,
       subject: "You're invited to join Zen Link",
       html: `
