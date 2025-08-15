@@ -203,6 +203,7 @@ export async function POST(request: Request) {
         isTeamLeader: Boolean(data.isTeamLeader),
         departmentId: data.departmentId,
         employeeGroupId: data.employeeGroupId || null,
+        email: data.email || null, // Add email field
       },
       include: {
         department: true,
@@ -221,6 +222,8 @@ export async function POST(request: Request) {
         errorMessage = 'Employee number already exists'
       } else if (error.meta?.target?.includes('socialSecurityNo')) {
         errorMessage = 'Social security number already in use'
+      } else if (error.meta?.target?.includes('email')) {
+        errorMessage = 'Email address already in use'
       }
       
       return NextResponse.json(

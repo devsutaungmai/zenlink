@@ -6,10 +6,9 @@ export async function POST(req: Request) {
   try {
     const { email, firstName, lastName, password, employeeId } = await req.json();
 
-    if (!email || !firstName || !lastName || !password) {
-      return NextResponse.json({ error: 'All fields are required' }, { status: 400 });
-    }
-
+    // Note: Client-side validation handles input validation to prevent UI issues
+    // Server-side focuses on database operations and business logic
+    
     // Check if a user with this email already exists
     const existingUser = await prisma.user.findUnique({
       where: { email },

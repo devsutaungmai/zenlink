@@ -28,6 +28,7 @@ function PasswordForm() {
   const [submitting, setSubmitting] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
 
   useEffect(() => {
     const fetchEmployeeData = async () => {
@@ -74,11 +75,46 @@ function PasswordForm() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData({ ...formData, [name]: value })
+    
+    // Clear validation error when user starts typing
+    if (validationErrors[name]) {
+      setValidationErrors(prev => ({ ...prev, [name]: '' }))
+    }
+    
+    // Real-time validation feedback
+    const newErrors = { ...validationErrors }
+    
+    if (name === 'password') {
+      if (value.length > 0 && value.length < 6) {
+        newErrors.password = 'Password must be at least 6 characters long'
+      } else if (value.length > 50) {
+        newErrors.password = 'Password cannot be longer than 50 characters'
+      } else {
+        delete newErrors.password
+      }
+      
+      // Check confirm password match if it exists
+      if (formData.confirmPassword && value !== formData.confirmPassword) {
+        newErrors.confirmPassword = 'Passwords do not match'
+      } else if (formData.confirmPassword && value === formData.confirmPassword) {
+        delete newErrors.confirmPassword
+      }
+    }
+    
+    if (name === 'confirmPassword') {
+      if (value !== formData.password) {
+        newErrors.confirmPassword = 'Passwords do not match'
+      } else {
+        delete newErrors.confirmPassword
+      }
+    }
+    
+    setValidationErrors(newErrors)
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
+  // Comprehensive client-side validation
+  const validateForm = () => {
+    // Required fields validation
     if (!employeeInfo.email) {
       Swal.fire({
         title: 'Error',
@@ -90,9 +126,156 @@ function PasswordForm() {
         timer: 3000,
         timerProgressBar: true
       })
-      return
+      return false
     }
-    
+
+    if (!employeeInfo.firstName.trim()) {
+      Swal.fire({
+        title: 'Error', 
+        text: 'First name is required',
+        icon: 'error',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true
+      })
+      return false
+    }
+
+    if (!employeeInfo.lastName.trim()) {
+      Swal.fire({
+        title: 'Error',
+        text: 'Last name is required', 
+        icon: 'error',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true
+      })
+      return false
+    }
+
+    if (!formData.password) {
+      Swal.fire({
+        title: 'Error',
+        text: 'Password is required',
+        icon: 'error',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true
+      })
+      return false
+    }
+
+    if (!formData.confirmPassword) {
+      Swal.fire({
+        title: 'Error',
+        text: 'Password confirmation is required',
+        icon: 'error',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true
+      })
+      return false
+    }
+
+    // Password strength validation
+    if (formData.password.length < 6) {
+      Swal.fire({
+        title: 'Error',
+        text: 'Password must be at least 6 characters long',
+        icon: 'error',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true
+      })
+      return false
+    }
+
+    // Enhanced password strength validation
+    if (formData.password.length > 50) {
+      Swal.fire({
+        title: 'Error',
+        text: 'Password cannot be longer than 50 characters',
+        icon: 'error',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true
+      })
+      return false
+    }
+
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(employeeInfo.email)) {
+      Swal.fire({
+        title: 'Error',
+        text: 'Please enter a valid email address',
+        icon: 'error',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true
+      })
+      return false
+    }
+
+    // Name length validation
+    if (employeeInfo.firstName.trim().length > 50) {
+      Swal.fire({
+        title: 'Error',
+        text: 'First name cannot be longer than 50 characters',
+        icon: 'error',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true
+      })
+      return false
+    }
+
+    if (employeeInfo.lastName.trim().length > 50) {
+      Swal.fire({
+        title: 'Error',
+        text: 'Last name cannot be longer than 50 characters',
+        icon: 'error',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true
+      })
+      return false
+    }
+
+    // Email length validation
+    if (employeeInfo.email.length > 100) {
+      Swal.fire({
+        title: 'Error',
+        text: 'Email address cannot be longer than 100 characters',
+        icon: 'error',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true
+      })
+      return false
+    }
+
+    // Password confirmation validation
     if (formData.password !== formData.confirmPassword) {
       Swal.fire({
         title: 'Error',
@@ -104,6 +287,17 @@ function PasswordForm() {
         timer: 3000,
         timerProgressBar: true
       })
+      return false
+    }
+
+    return true
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    // Run comprehensive client-side validation first
+    if (!validateForm()) {
       return
     }
 
@@ -205,7 +399,13 @@ function PasswordForm() {
                 required
                 value={formData.password}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-[#31BCFF] focus:border-[#31BCFF] outline-none text-gray-900"
+                className={`w-full px-4 py-2 border rounded-md focus:ring-[#31BCFF] focus:border-[#31BCFF] outline-none text-gray-900 ${
+                  validationErrors.password 
+                    ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
+                    : formData.password.length >= 6 && formData.password.length <= 50
+                      ? 'border-green-300 focus:border-[#31BCFF] focus:ring-[#31BCFF]'
+                      : 'border-gray-300'
+                }`}
                 placeholder="Password"
               />
               <button
@@ -220,6 +420,9 @@ function PasswordForm() {
                 )}
               </button>
             </div>
+            {validationErrors.password && (
+              <p className="mt-1 text-sm text-red-600">{validationErrors.password}</p>
+            )}
           </div>
 
           <div className="mb-6">
@@ -235,7 +438,13 @@ function PasswordForm() {
                 required
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-[#31BCFF] focus:border-[#31BCFF] outline-none text-gray-900"
+                className={`w-full px-4 py-2 border rounded-md focus:ring-[#31BCFF] focus:border-[#31BCFF] outline-none text-gray-900 ${
+                  validationErrors.confirmPassword 
+                    ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
+                    : formData.confirmPassword && formData.password === formData.confirmPassword
+                      ? 'border-green-300 focus:border-[#31BCFF] focus:ring-[#31BCFF]'
+                      : 'border-gray-300'
+                }`}
                 placeholder="Confirm Password"
               />
               <button
@@ -250,12 +459,21 @@ function PasswordForm() {
                 )}
               </button>
             </div>
+            {validationErrors.confirmPassword && (
+              <p className="mt-1 text-sm text-red-600">{validationErrors.confirmPassword}</p>
+            )}
           </div>
 
           <button
             type="submit"
-            disabled={submitting}
-            className="w-full bg-[#31BCFF] hover:bg-[#31BCFF]/90 text-white py-2 px-4 rounded-md transition-colors disabled:opacity-50"
+            disabled={
+              submitting || 
+              Object.keys(validationErrors).length > 0 ||
+              !formData.password ||
+              !formData.confirmPassword ||
+              formData.password !== formData.confirmPassword
+            }
+            className="w-full bg-[#31BCFF] hover:bg-[#31BCFF]/90 text-white py-2 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submitting ? 'Creating account...' : 'Create Account'}
           </button>

@@ -65,13 +65,18 @@ export default function CreateEmployeePage() {
 
       if (!res.ok) {
         const errorData = await res.json()
-        throw new Error(errorData.error || 'Failed to create employee')
+        console.error('Server error:', errorData.error)
+        // Since we have comprehensive client-side validation, server errors should be rare
+        // If they occur, it's likely a network issue or server problem
+        setError(errorData.error || 'Failed to create employee. Please check all fields and try again.')
+        return
       }
 
       router.push('/dashboard/employees')
       router.refresh()
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'An error occurred')
+      console.error('Network error:', error)
+      setError('Network error occurred. Please check your connection and try again.')
     } finally {
       setSaving(false)
     }
@@ -118,8 +123,15 @@ export default function CreateEmployeePage() {
         <h1 className="text-2xl font-semibold text-gray-900">{t('employees.create_page.title')}</h1>
         
         {error && (
-          <div className="mt-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-md">
-            {error}
+          <div className="mt-4 p-3 bg-orange-50 border border-orange-200 text-orange-800 rounded-md text-sm">
+            <p className="font-medium">Unable to save employee</p>
+            <p>{error}</p>
+            <button
+              onClick={() => setError(null)}
+              className="mt-2 text-orange-600 hover:text-orange-700 underline text-sm"
+            >
+              Dismiss
+            </button>
           </div>
         )}
 
