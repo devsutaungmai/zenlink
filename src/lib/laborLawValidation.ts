@@ -26,6 +26,7 @@ export interface LaborLawViolation {
   currentValue: number
   allowedValue: number
   affectedDate?: string
+  overridable?: boolean // For violations that can be overridden with admin confirmation
 }
 
 export interface LaborLawWarning {
@@ -221,7 +222,8 @@ export class LaborLawValidator {
         severity: 'ERROR',
         currentValue: shiftHours,
         allowedValue: this.rules.maxHoursPerDay,
-        affectedDate: typeof shift.date === 'string' ? shift.date : shift.date.toISOString().split('T')[0]
+        affectedDate: typeof shift.date === 'string' ? shift.date : shift.date.toISOString().split('T')[0],
+        overridable: true // Allow admin to override with confirmation
       })
     }
 
@@ -234,7 +236,8 @@ export class LaborLawValidator {
           severity: 'ERROR',
           currentValue: 0,
           allowedValue: this.rules.minBreakForLongShifts,
-          affectedDate: typeof shift.date === 'string' ? shift.date : shift.date.toISOString().split('T')[0]
+          affectedDate: typeof shift.date === 'string' ? shift.date : shift.date.toISOString().split('T')[0],
+          overridable: true // Allow admin to override with confirmation
         })
       } else {
         const breakStart = this.parseTime(shift.breakStart)
@@ -248,7 +251,8 @@ export class LaborLawValidator {
             severity: 'ERROR',
             currentValue: breakMinutes,
             allowedValue: this.rules.minBreakForLongShifts,
-            affectedDate: typeof shift.date === 'string' ? shift.date : shift.date.toISOString().split('T')[0]
+            affectedDate: typeof shift.date === 'string' ? shift.date : shift.date.toISOString().split('T')[0],
+            overridable: true // Allow admin to override with confirmation
           })
         }
       }
@@ -263,7 +267,8 @@ export class LaborLawValidator {
         severity: 'ERROR',
         currentValue: overtimeHours,
         allowedValue: this.rules.maxOvertimePerDay,
-        affectedDate: typeof shift.date === 'string' ? shift.date : shift.date.toISOString().split('T')[0]
+        affectedDate: typeof shift.date === 'string' ? shift.date : shift.date.toISOString().split('T')[0],
+        overridable: true // Allow admin to override with confirmation
       })
     }
 
@@ -340,7 +345,8 @@ export class LaborLawValidator {
         message: `Weekly overtime exceeds limit (${weeklyOvertime.toFixed(1)}h > ${this.rules.maxOvertimePerWeek}h)`,
         severity: 'ERROR',
         currentValue: weeklyOvertime,
-        allowedValue: this.rules.maxOvertimePerWeek
+        allowedValue: this.rules.maxOvertimePerWeek,
+        overridable: true // Allow admin to override with confirmation
       })
     }
 
@@ -469,6 +475,22 @@ export function formatValidationMessage(violation: LaborLawViolation): string {
     default:
       return violation.message
   }
+}
+
+// Helper function to separate overridable and non-overridable violations
+export function separateViolations(violations: LaborLawViolation[]) {
+  const overridable: LaborLawViolation[] = []
+  const nonOverridable: LaborLawViolation[] = []
+  
+  violations.forEach(violation => {
+    if (violation.overridable) {
+      overridable.push(violation)
+    } else {
+      nonOverridable.push(violation)
+    }
+  })
+  
+  return { overridable, nonOverridable }
 }
 
 // Export singleton instance with default rules

@@ -9,7 +9,7 @@ import ScheduleHeader from '@/components/schedule/ScheduleHeader'
 import WeekView from '@/components/schedule/WeekView'
 import DayView from '@/components/schedule/DayView'
 import ShiftFormModal from '@/components/schedule/ShiftFormModel'
-import { laborLawValidator, formatValidationMessage, type LaborLawViolation } from '@/lib/laborLawValidation'
+import { laborLawValidator, formatValidationMessage, separateViolations, type LaborLawViolation } from '@/lib/laborLawValidation'
 
 export default function SchedulePage() {
   const [showShiftModal, setShowShiftModal] = useState(false)
@@ -184,37 +184,115 @@ export default function SchedulePage() {
           shift.employeeId === formData.employeeId &&
           shift.id !== formData.id && // Exclude current shift if editing
           shift.endTime !== null && // Only include completed shifts
+          shift.employeeId !== null && // Ensure employeeId is not null
           new Date(shift.date) >= weekStart &&
           new Date(shift.date) <= weekEnd
         ).map(shift => ({
           id: shift.id,
-          date: shift.date,
+          date: typeof shift.date === 'string' ? shift.date : shift.date.toISOString().split('T')[0],
           startTime: shift.startTime,
           endTime: shift.endTime as string, // Safe to cast since we filtered null values
-          breakStart: shift.breakStart || undefined,
-          breakEnd: shift.breakEnd || undefined,
-          employeeId: shift.employeeId
+          breakStart: shift.breakStart ? (typeof shift.breakStart === 'string' ? shift.breakStart : shift.breakStart.toTimeString().substring(0, 5)) : undefined,
+          breakEnd: shift.breakEnd ? (typeof shift.breakEnd === 'string' ? shift.breakEnd : shift.breakEnd.toTimeString().substring(0, 5)) : undefined,
+          employeeId: shift.employeeId as string // Safe to cast since we filtered null values
         }));
 
         const validation = await laborLawValidator.validateShift(shiftData, existingEmployeeShifts);
         
         if (!validation.isValid) {
-          // Show labor law violations as toast notifications
-          const violationMessages = validation.violations.map(formatValidationMessage).join('\n');
+          // Separate overridable and non-overridable violations
+          const { overridable, nonOverridable } = separateViolations(validation.violations);
           
-          Swal.fire({
-            text: violationMessages,
-            toast: true,
-            position: 'top-end',
-            showConfirmButton: false,
-            timer: 5000,
-            timerProgressBar: true,
-            customClass: {
-              popup: 'swal-toast-wide'
+          // If there are non-overridable violations, block the shift creation
+          if (nonOverridable.length > 0) {
+            const violationMessages = nonOverridable.map(formatValidationMessage).join('\n');
+            
+            Swal.fire({
+              text: violationMessages,
+              toast: true,
+              position: 'top-end',
+              showConfirmButton: false,
+              timer: 5000,
+              timerProgressBar: true,
+              customClass: {
+                popup: 'swal-toast-wide'
+              }
+            });
+            
+            return; // Don't proceed with shift creation
+          }
+          
+          // If there are only overridable violations, show confirmation dialog
+          if (overridable.length > 0) {
+            // Close the shift form modal first to prevent layering issues
+            setShowShiftModal(false);
+            
+            // Create a comprehensive message for all overridable violations
+            const violationsList = overridable.map(violation => {
+              switch(violation.type) {
+                case 'MAX_HOURS_PER_DAY':
+                  return `• Shift duration: <strong>${violation.currentValue.toFixed(1)} hours</strong> (exceeds ${violation.allowedValue}h daily limit)`
+                case 'MAX_OVERTIME_PER_DAY':
+                  return `• Daily overtime: <strong>${violation.currentValue.toFixed(1)} hours</strong> (exceeds ${violation.allowedValue}h limit)`
+                case 'MAX_OVERTIME_PER_WEEK':
+                  return `• Weekly overtime: <strong>${violation.currentValue.toFixed(1)} hours</strong> (exceeds ${violation.allowedValue}h limit)`
+                case 'MISSING_BREAK':
+                  return `• Break requirement: <strong>${violation.currentValue} minutes</strong> (minimum ${violation.allowedValue} minutes required)`
+                default:
+                  return `• ${violation.message}`
+              }
+            }).join('<br>')
+            
+            const result = await Swal.fire({
+              title: 'Labor Law Violations Detected',
+              html: `
+                <div style="text-align: left; margin: 16px 0;">
+                  <p style="margin-bottom: 12px;">This shift violates the following labor law requirements:</p>
+                  <div style="background-color: #fef3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 12px; margin: 12px 0;">
+                    ${violationsList}
+                  </div>
+                  <p style="margin-top: 16px;"><strong>Do you want to create this shift anyway?</strong></p>
+                  <p style="font-size: 14px; color: #6b7280; margin-top: 8px;">As an admin, you can override these restrictions if necessary.</p>
+                </div>
+              `,
+              icon: 'warning',
+              showCancelButton: true,
+              confirmButtonColor: '#31BCFF',
+              cancelButtonColor: '#6b7280',
+              confirmButtonText: 'Yes, Create Shift',
+              cancelButtonText: 'Cancel',
+              reverseButtons: true,
+              heightAuto: false,
+              allowOutsideClick: false,
+              allowEscapeKey: false,
+              customClass: {
+                popup: 'swal2-popup-custom',
+                title: 'swal2-title-custom',
+                htmlContainer: 'swal2-html-custom'
+              }
+            });
+            
+            // If user cancels, reopen the shift form modal
+            if (!result.isConfirmed) {
+              setShowShiftModal(true);
+              return;
             }
-          });
-          
-          return; // Don't proceed with shift creation
+            
+            // Show warning toast for override
+            const violationCount = overridable.length;
+            Swal.fire({
+              text: `Admin override: Shift created despite ${violationCount} labor law violation${violationCount > 1 ? 's' : ''}`,
+              toast: true,
+              position: 'top-end',
+              showConfirmButton: false,
+              timer: 4000,
+              timerProgressBar: true,
+              icon: 'warning',
+              customClass: {
+                popup: 'swal-toast-wide'
+              }
+            });
+          }
         } else if (validation.warnings.length > 0) {
           // Show warnings as toast notifications
           const warningMessages = validation.warnings.map(w => w.message).join('\n');

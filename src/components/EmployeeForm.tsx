@@ -51,6 +51,8 @@ export default function EmployeeForm({
   const [countrySearch, setCountrySearch] = useState('')
   const dropdownRef = useRef<HTMLDivElement>(null)
   
+  console.log('EmployeeForm initialData:', initialData)
+  
   // Common country codes
   const countryCodes = [
     { code: '+1', country: 'US/Canada' },
@@ -105,8 +107,11 @@ export default function EmployeeForm({
   const parseMobileNumber = (fullMobile: string | undefined) => {
     if (!fullMobile) return { countryCode: '+66', mobile: '' }
     
+    // Sort country codes by length (longest first) to match the most specific prefix first
+    const sortedCountryCodes = [...countryCodes].sort((a, b) => b.code.length - a.code.length)
+    
     // Find matching country code from the full mobile number
-    const matchingCountry = countryCodes.find(cc => fullMobile.startsWith(cc.code))
+    const matchingCountry = sortedCountryCodes.find(cc => fullMobile.startsWith(cc.code))
     
     if (matchingCountry) {
       return {
@@ -115,7 +120,7 @@ export default function EmployeeForm({
       }
     }
     
-    // Default fallback
+    // Default fallback - if no match, assume it's already just the number without country code
     return { countryCode: '+66', mobile: fullMobile }
   }
   
@@ -144,6 +149,7 @@ export default function EmployeeForm({
       const { countryCode, mobile } = parseMobileNumber(initialData.mobile)
       baseData.countryCode = countryCode
       baseData.mobile = mobile
+      console.log('Parsing mobile:', initialData.mobile, '-> countryCode:', countryCode, 'mobile:', mobile)
     }
     
     return baseData
@@ -175,6 +181,19 @@ export default function EmployeeForm({
     setIsCountryDropdownOpen(false)
     setCountrySearch('')
   }
+
+  // Handle changes to initialData (for async loading)
+  React.useEffect(() => {
+    if (initialData?.mobile) {
+      const { countryCode, mobile } = parseMobileNumber(initialData.mobile)
+      setFormData(prevData => ({
+        ...prevData,
+        countryCode,
+        mobile
+      }))
+      console.log('useEffect - Parsing mobile:', initialData.mobile, '-> countryCode:', countryCode, 'mobile:', mobile)
+    }
+  }, [initialData?.mobile]) // Only re-run if mobile changes
 
   // Fetch next employee number when component mounts or mode changes to automatic
   React.useEffect(() => {
@@ -221,6 +240,12 @@ export default function EmployeeForm({
     const fullMobile = formData.mobile.startsWith('+') 
       ? formData.mobile 
       : formData.countryCode + formData.mobile
+      
+    console.log('Submitting mobile data:', {
+      countryCode: formData.countryCode,
+      mobile: formData.mobile,
+      fullMobile: fullMobile
+    })
       
     const submissionData = {
       ...formData,

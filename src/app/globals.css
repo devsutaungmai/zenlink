@@ -155,3 +155,39 @@ input, select {
 .swal-toast-wide .swal2-timer-progress-bar {
   background: rgba(255, 193, 7, 0.8) !important;
 }
+
+/* SweetAlert2 Custom Styles for Confirmation Dialogs */
+.swal2-popup-custom {
+  z-index: 99999 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+}
+
+.swal2-container {
+  z-index: 99999 !important;
+}
+
+.swal2-backdrop-show {
+  z-index: 99998 !important;
+}
+
+.swal2-title-custom {
+  color: #1f2937 !important;
+  font-weight: 600 !important;
+  font-size: 20px !important;
+}
+
+.swal2-html-custom {
+  color: #374151 !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+}
+
+.swal2-html-custom p {
+  margin: 8px 0 !important;
+}
+
+.swal2-html-custom strong {
+  font-weight: 600 !important;
+  color: #dc2626 !important;
+}
