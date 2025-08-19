@@ -10,13 +10,16 @@ import {
   BellIcon,
   UserCircleIcon,
   KeyIcon,
-  BuildingOfficeIcon
+  BuildingOfficeIcon,
+  ClockIcon
 } from '@heroicons/react/24/outline'
 import LaborLawSettings from '@/components/LaborLawSettings'
+import PunchClockProfiles from '@/components/PunchClockProfiles'
 
 export default function SettingsPage() {
   const router = useRouter()
   const [activeSection, setActiveSection] = useState<string>('labor-laws')
+  const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set())
 
   const settingSections = [
     {
@@ -25,6 +28,36 @@ export default function SettingsPage() {
       description: 'Configure work hour limits and break requirements',
       icon: ShieldCheckIcon,
       component: LaborLawSettings
+    },
+    {
+      id: 'punch-clock',
+      name: 'Punch Clock',
+      description: 'Time tracking and clock-in settings',
+      icon: ClockIcon,
+      hasSubmenus: true,
+      submenus: [
+        {
+          id: 'punch-clock-access',
+          name: 'Access',
+          description: 'Configure access permissions and restrictions'
+        },
+        {
+          id: 'punch-clock-general',
+          name: 'General',
+          description: 'General punch clock settings'
+        },
+        {
+          id: 'punch-clock-profiles',
+          name: 'Profiles',
+          description: 'Manage time tracking profiles',
+          component: PunchClockProfiles
+        },
+        {
+          id: 'punch-clock-advance',
+          name: 'Advance',
+          description: 'Advanced punch clock configurations'
+        }
+      ]
     },
     {
       id: 'notifications',
@@ -56,12 +89,36 @@ export default function SettingsPage() {
     }
   ]
 
-  const activeSettingSection = settingSections.find(section => section.id === activeSection)
-  const ActiveComponent = activeSettingSection?.component
+  const activeSettingSection = settingSections.find(section => {
+    if (section.id === activeSection) {
+      return true
+    }
+    if (section.hasSubmenus && section.submenus) {
+      return section.submenus.some(submenu => submenu.id === activeSection)
+    }
+    return false
+  })
+  
+  // If we're in a submenu, find the submenu details
+  const activeSubmenu = activeSettingSection?.hasSubmenus && activeSettingSection.submenus
+    ? activeSettingSection.submenus.find(submenu => submenu.id === activeSection)
+    : null
+    
+  const ActiveComponent = activeSettingSection?.component || activeSubmenu?.component
+
+  const toggleMenuExpansion = (menuId: string) => {
+    const newExpanded = new Set(expandedMenus)
+    if (newExpanded.has(menuId)) {
+      newExpanded.delete(menuId)
+    } else {
+      newExpanded.add(menuId)
+    }
+    setExpandedMenus(newExpanded)
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="">
         {/* Header */}
         <div className="mb-8">
           <nav className="flex" aria-label="Breadcrumb">
@@ -111,6 +168,46 @@ export default function SettingsPage() {
                         </div>
                         <ChevronRightIcon className="h-4 w-4 text-gray-400 group-hover:text-[#31BCFF]" />
                       </Link>
+                    ) : section.hasSubmenus ? (
+                      <>
+                        <button
+                          onClick={() => toggleMenuExpansion(section.id)}
+                          className="w-full flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:text-[#31BCFF] hover:bg-blue-50/50 rounded-lg transition-all group"
+                        >
+                          <section.icon className="h-5 w-5 mr-3 text-gray-400 group-hover:text-[#31BCFF]" />
+                          <div className="flex-1 text-left">
+                            <p className="font-medium">{section.name}</p>
+                            <p className="text-xs text-gray-500">{section.description}</p>
+                          </div>
+                          <ChevronRightIcon className={`h-4 w-4 text-gray-400 group-hover:text-[#31BCFF] transition-transform ${
+                            expandedMenus.has(section.id) ? 'rotate-90' : ''
+                          }`} />
+                        </button>
+                        {expandedMenus.has(section.id) && section.submenus && (
+                          <div className="ml-8 mt-2 space-y-1">
+                            {section.submenus.map((submenu) => (
+                              <button
+                                key={submenu.id}
+                                onClick={() => setActiveSection(submenu.id)}
+                                className={`w-full flex items-start px-3 py-2 text-sm rounded-lg transition-all ${
+                                  activeSection === submenu.id
+                                    ? 'bg-[#31BCFF] text-white'
+                                    : 'text-gray-600 hover:text-[#31BCFF] hover:bg-blue-50/50'
+                                }`}
+                              >
+                                <div className="flex-1 text-left">
+                                  <p className="font-medium">{submenu.name}</p>
+                                  <p className={`text-xs ${
+                                    activeSection === submenu.id ? 'text-blue-100' : 'text-gray-500'
+                                  }`}>
+                                    {submenu.description}
+                                  </p>
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </>
                     ) : (
                       <button
                         onClick={() => !section.disabled && setActiveSection(section.id)}
@@ -161,15 +258,31 @@ export default function SettingsPage() {
               <ActiveComponent />
             ) : (
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
-                <Cog6ToothIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <div className="flex items-center justify-center mb-4">
+                  {activeSettingSection?.icon && (
+                    <activeSettingSection.icon className="h-12 w-12 text-gray-400 mr-3" />
+                  )}
+                  {activeSubmenu && (
+                    <ClockIcon className="h-6 w-6 text-gray-400" />
+                  )}
+                </div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  {activeSettingSection?.name || 'Settings Section'}
+                  {activeSubmenu 
+                    ? `${activeSettingSection?.name} - ${activeSubmenu.name}`
+                    : activeSettingSection?.name || 'Settings Section'
+                  }
                 </h3>
                 <p className="text-gray-600 mb-4">
-                  {activeSettingSection?.description || 'This settings section is coming soon.'}
+                  {activeSubmenu 
+                    ? activeSubmenu.description 
+                    : activeSettingSection?.description || 'This settings section is coming soon.'
+                  }
                 </p>
                 <p className="text-sm text-gray-500">
-                  We're working on bringing you more configuration options.
+                  {activeSubmenu 
+                    ? 'This punch clock feature is coming soon.'
+                    : 'We\'re working on bringing you more configuration options.'
+                  }
                 </p>
               </div>
             )}

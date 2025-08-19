@@ -10,7 +10,8 @@ import {
   PlayIcon,
   PauseIcon,
   StopIcon,
-  FunnelIcon
+  FunnelIcon,
+  KeyIcon
 } from '@heroicons/react/24/outline'
 import { useUser } from '@/app/lib/useUser'
 
@@ -76,8 +77,23 @@ export default function TimeTrackingPage() {
   useEffect(() => {
     const storedBusinessName = localStorage.getItem('timeTrackingBusiness')
     const storedBusinessData = localStorage.getItem('timeTrackingBusinessData')
+    const storedProfile = localStorage.getItem('punchClockProfile')
     
-    if (!storedBusinessName) {
+    // Check if business is selected and profile is activated
+    if (!storedBusinessName || !storedProfile) {
+      router.push('/time-tracking/login')
+      return
+    }
+    
+    // Validate that the stored profile is valid
+    try {
+      const profileData = JSON.parse(storedProfile)
+      if (!profileData.id || !profileData.name) {
+        router.push('/time-tracking/login')
+        return
+      }
+    } catch (error) {
+      console.error('Error parsing stored profile data:', error)
       router.push('/time-tracking/login')
       return
     }
@@ -325,7 +341,22 @@ export default function TimeTrackingPage() {
       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100 flex-shrink-0">
         <div className="text-center">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex-1"></div>
+            <div className="flex-1 flex justify-start">
+              <button
+                onClick={() => {
+                  // Clear activation data from localStorage
+                  localStorage.removeItem('punchClockProfile')
+                  localStorage.removeItem('timeTrackingBusiness')
+                  localStorage.removeItem('timeTrackingBusinessData')
+                  // Redirect to login page
+                  router.push('/time-tracking/login')
+                }}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-red-500 to-red-600 border border-transparent rounded-lg hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200"
+              >
+                <StopIcon className="w-4 h-4" />
+                Deactivate
+              </button>
+            </div>
             <div className="flex-1">
               <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-2">
                 Welcome to {business?.name || businessName}

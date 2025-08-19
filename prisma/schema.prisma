@@ -23,19 +23,20 @@ model User {
 }
 
 model Business {
-  id             String          @id @default(cuid())
-  name           String
-  address        String
-  type           String
-  employeesCount Int
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  attendances    Attendance[]
-  departments    Department[]
-  employeeGroups EmployeeGroup[]
-  invitations    Invitation[]
-  payrollPeriods PayrollPeriod[]
-  users          User[]
+  id               String             @id @default(cuid())
+  name             String
+  address          String
+  type             String
+  employeesCount   Int
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  attendances      Attendance[]
+  departments      Department[]
+  employeeGroups   EmployeeGroup[]
+  invitations      Invitation[]
+  payrollPeriods   PayrollPeriod[]
+  users            User[]
+  punchClockProfiles PunchClockProfile[]
 }
 
 model Employee {
@@ -91,21 +92,37 @@ model EmployeeGroup {
 }
 
 model Department {
-  id         String     @id @default(cuid())
-  name       String
-  address    String
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
-  address2   String?
-  city       String
-  country    String
-  number     String?
-  phone      String
-  postCode   String?
-  businessId String
-  business   Business   @relation(fields: [businessId], references: [id])
-  employees  Employee[]
-  projects   Project[]
+  id               String             @id @default(cuid())
+  name             String
+  address          String
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  address2         String?
+  city             String
+  country          String
+  number           String?
+  phone            String
+  postCode         String?
+  businessId       String
+  business         Business           @relation(fields: [businessId], references: [id])
+  employees        Employee[]
+  projects         Project[]
+  punchClockProfiles PunchClockProfile[]
+}
+
+model PunchClockProfile {
+  id             String     @id @default(cuid())
+  name           String
+  departmentId   String
+  isActive       Boolean    @default(true)
+  activationCode String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  businessId     String
+  business       Business   @relation(fields: [businessId], references: [id])
+  department     Department @relation(fields: [departmentId], references: [id])
+  
+  @@unique([name, businessId])
 }
 
 model Project {
