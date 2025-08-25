@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { PayrollEntryFormData, Employee } from '@/types'
+import { useCurrency } from '@/hooks/useCurrency'
 
 interface PayrollEntryFormProps {
   initialData?: Partial<PayrollEntryFormData>
@@ -18,6 +19,8 @@ export default function PayrollEntryForm({
   mode = 'create',
   payrollPeriodId
 }: PayrollEntryFormProps) {
+  const { currencySymbol } = useCurrency()
+
   const [formData, setFormData] = useState<PayrollEntryFormData>({
     employeeId: initialData?.employeeId || '',
     regularHours: initialData?.regularHours || 0,
@@ -394,7 +397,7 @@ export default function PayrollEntryForm({
           {/* Regular Rate */}
           <div>
             <label htmlFor="regularRate" className="block text-sm font-medium text-gray-700 mb-2">
-              Regular Rate ($/hour) <span className="text-red-500">*</span>
+              Regular Rate ({currencySymbol}/hour) <span className="text-red-500">*</span>
             </label>
             <input
               type="number"
@@ -440,7 +443,7 @@ export default function PayrollEntryForm({
           {/* Overtime Rate */}
           <div>
             <label htmlFor="overtimeRate" className="block text-sm font-medium text-gray-700 mb-2">
-              Overtime Rate ($/hour) <span className="text-red-500">*</span>
+              Overtime Rate ({currencySymbol}/hour) <span className="text-red-500">*</span>
             </label>
             <input
               type="number"
@@ -463,7 +466,7 @@ export default function PayrollEntryForm({
           {/* Bonuses */}
           <div>
             <label htmlFor="bonuses" className="block text-sm font-medium text-gray-700 mb-2">
-              Bonuses ($)
+              Bonuses ({currencySymbol})
             </label>
             <input
               type="number"
@@ -486,7 +489,7 @@ export default function PayrollEntryForm({
           {/* Deductions */}
           <div>
             <label htmlFor="deductions" className="block text-sm font-medium text-gray-700 mb-2">
-              Deductions ($)
+              Deductions ({currencySymbol})
             </label>
             <input
               type="number"
@@ -538,37 +541,37 @@ export default function PayrollEntryForm({
             <div>
               <p className="text-gray-600">Regular Pay</p>
               <p className="text-lg font-bold text-gray-900">
-                ${(formData.regularHours * formData.regularRate).toFixed(2)}
+                {currencySymbol}{(formData.regularHours * formData.regularRate).toFixed(2)}
               </p>
             </div>
             <div>
               <p className="text-gray-600">Overtime Pay</p>
               <p className="text-lg font-bold text-gray-900">
-                ${(formData.overtimeHours * formData.overtimeRate).toFixed(2)}
+                {currencySymbol}{(formData.overtimeHours * formData.overtimeRate).toFixed(2)}
               </p>
             </div>
             <div>
               <p className="text-gray-600">Bonuses</p>
               <p className="text-lg font-bold text-gray-900">
-                ${formData.bonuses.toFixed(2)}
+                {currencySymbol}{formData.bonuses.toFixed(2)}
               </p>
             </div>
             <div>
               <p className="text-gray-600">Gross Pay</p>
               <p className="text-xl font-bold text-[#31BCFF]">
-                ${grossPay.toFixed(2)}
+                {currencySymbol}{grossPay.toFixed(2)}
               </p>
             </div>
             <div>
               <p className="text-gray-600">Deductions</p>
               <p className="text-lg font-bold text-red-600">
-                -${formData.deductions.toFixed(2)}
+                -{currencySymbol}{formData.deductions.toFixed(2)}
               </p>
             </div>
             <div>
               <p className="text-gray-600">Net Pay</p>
               <p className="text-xl font-bold text-green-600">
-                ${netPay.toFixed(2)}
+                {currencySymbol}{netPay.toFixed(2)}
               </p>
             </div>
           </div>

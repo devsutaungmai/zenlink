@@ -1,5 +1,6 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
+import { useCurrency } from '@/hooks/useCurrency'
 
 export enum WageType {
   HOURLY = 'HOURLY',
@@ -21,6 +22,7 @@ interface EmployeeGroupFormProps {
 
 export default function EmployeeGroupForm({ initialData, onSubmit, loading }: EmployeeGroupFormProps) {
   const { t } = useTranslation()
+  const { currencySymbol } = useCurrency()
   const [formData, setFormData] = React.useState<EmployeeGroupFormData>(
     initialData || {
       name: '',
@@ -66,7 +68,7 @@ export default function EmployeeGroupForm({ initialData, onSubmit, loading }: Em
               {t('employee_groups.form.hourly_wage')} <span className="text-red-500">*</span>
             </label>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">$</span>
+              <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">{currencySymbol}</span>
               <input
                 type="text"
                 value={formData.hourlyWage || ''}
@@ -84,7 +86,7 @@ export default function EmployeeGroupForm({ initialData, onSubmit, loading }: Em
               {t('employee_groups.form.wage_per_shift')} <span className="text-red-500">*</span>
             </label>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">$</span>
+              <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">{currencySymbol}</span>
               <input
                 type="text"
                 value={formData.wagePerShift || ''}
