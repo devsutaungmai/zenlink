@@ -3,12 +3,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { User } from 'lucide-react'
-import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSlot,
-} from '@/components/ui/input-otp'
+import { User, Delete } from 'lucide-react'
 import { APP_NAME } from '@/app/constants'
 
 function EmployeeLoginContent() {
@@ -29,8 +24,18 @@ function EmployeeLoginContent() {
     }
   }, [searchParams])
 
-  const handlePinInput = (value: string) => {
-    setPin(value)
+  const handleNumberPress = (number: string) => {
+    if (pin.length < 6) {
+      setPin(prev => prev + number)
+    }
+  }
+
+  const handleClear = () => {
+    setPin('')
+  }
+
+  const handleBackspace = () => {
+    setPin(prev => prev.slice(0, -1))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -100,7 +105,7 @@ function EmployeeLoginContent() {
             </div>
           )}
 
-          <div className="mb-4">
+          <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Employee ID
             </label>
@@ -122,32 +127,70 @@ function EmployeeLoginContent() {
             )}
           </div>
 
+          {/* PIN Display */}
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              PIN (6 digits)
+            <label className="block text-sm font-medium text-gray-700 mb-3 text-center">
+              Enter PIN (6 digits)
             </label>
-            <div className="flex justify-center mt-2">
-              <InputOTP
-                maxLength={6}
-                value={pin}
-                onChange={handlePinInput}
-                className="gap-2"
-              >
-                <InputOTPGroup>
-                  <InputOTPSlot index={0} className="w-12 h-12 text-lg font-mono border-gray-300 focus:border-[#31BCFF] focus:ring-[#31BCFF]" />
-                  <InputOTPSlot index={1} className="w-12 h-12 text-lg font-mono border-gray-300 focus:border-[#31BCFF] focus:ring-[#31BCFF]" />
-                  <InputOTPSlot index={2} className="w-12 h-12 text-lg font-mono border-gray-300 focus:border-[#31BCFF] focus:ring-[#31BCFF]" />
-                </InputOTPGroup>
-                <InputOTPGroup>
-                  <InputOTPSlot index={3} className="w-12 h-12 text-lg font-mono border-gray-300 focus:border-[#31BCFF] focus:ring-[#31BCFF]" />
-                  <InputOTPSlot index={4} className="w-12 h-12 text-lg font-mono border-gray-300 focus:border-[#31BCFF] focus:ring-[#31BCFF]" />
-                  <InputOTPSlot index={5} className="w-12 h-12 text-lg font-mono border-gray-300 focus:border-[#31BCFF] focus:ring-[#31BCFF]" />
-                </InputOTPGroup>
-              </InputOTP>
+            <div className="flex justify-center mb-6">
+              <div className="flex gap-2">
+                {[...Array(6)].map((_, index) => (
+                  <div
+                    key={index}
+                    className="w-12 h-12 border-2 border-gray-300 rounded-lg flex items-center justify-center bg-gray-50"
+                  >
+                    <span className="text-2xl font-mono text-gray-800">
+                      {pin[index] ? '•' : ''}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
-            <p className="text-center text-xs text-gray-600 mt-2">
-              Enter your 6-digit PIN
-            </p>
+
+            {/* Number Pad */}
+            <div className="grid grid-cols-3 gap-3 mb-4">
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((number) => (
+                <button
+                  key={number}
+                  type="button"
+                  onClick={() => handleNumberPress(number.toString())}
+                  className="w-full h-12 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 border border-gray-300 rounded-lg font-semibold text-lg text-gray-800 transition-colors"
+                  disabled={loading || pin.length >= 6}
+                >
+                  {number}
+                </button>
+              ))}
+              
+              {/* Clear Button */}
+              <button
+                type="button"
+                onClick={handleClear}
+                className="w-full h-12 bg-red-100 hover:bg-red-200 active:bg-red-300 border border-red-300 rounded-lg font-semibold text-sm text-red-700 transition-colors"
+                disabled={loading}
+              >
+                Clear
+              </button>
+              
+              {/* Zero */}
+              <button
+                type="button"
+                onClick={() => handleNumberPress('0')}
+                className="w-full h-12 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 border border-gray-300 rounded-lg font-semibold text-lg text-gray-800 transition-colors"
+                disabled={loading || pin.length >= 6}
+              >
+                0
+              </button>
+              
+              {/* Backspace Button */}
+              <button
+                type="button"
+                onClick={handleBackspace}
+                className="w-full h-12 bg-orange-100 hover:bg-orange-200 active:bg-orange-300 border border-orange-300 rounded-lg font-semibold text-orange-700 transition-colors flex items-center justify-center"
+                disabled={loading || pin.length === 0}
+              >
+                <Delete className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           <button
@@ -194,6 +237,11 @@ function LoadingEmployeeLogin() {
             <div className="flex justify-center gap-2 mb-6">
               {[...Array(6)].map((_, i) => (
                 <div key={i} className="w-12 h-12 bg-gray-200 rounded"></div>
+              ))}
+            </div>
+            <div className="grid grid-cols-3 gap-3 mb-4">
+              {[...Array(12)].map((_, i) => (
+                <div key={i} className="h-12 bg-gray-200 rounded"></div>
               ))}
             </div>
             <div className="h-12 bg-gray-200 rounded"></div>

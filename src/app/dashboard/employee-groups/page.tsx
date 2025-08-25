@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 import { useTranslation } from 'react-i18next'
 import Swal from 'sweetalert2'
+import { useCurrency } from '@/hooks/useCurrency'
 import {
   Pagination,
   PaginationContent,
@@ -28,6 +29,7 @@ interface EmployeeGroup {
 
 export default function EmployeeGroupsPage() {
   const { t } = useTranslation()
+  const { currencySymbol } = useCurrency()
   const [employeeGroups, setEmployeeGroups] = useState<EmployeeGroup[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -274,12 +276,12 @@ export default function EmployeeGroupsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-900 font-medium">
-                        ${group.hourlyWage}
+                        {currencySymbol}{group.hourlyWage}
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-900 font-medium">
-                        ${group.wagePerShift}
+                        {currencySymbol}{group.wagePerShift}
                       </div>
                     </td>
                     <td className="px-6 py-4">

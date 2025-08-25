@@ -15,6 +15,7 @@ import {
 } from '@heroicons/react/24/outline'
 import LaborLawSettings from '@/components/LaborLawSettings'
 import PunchClockProfiles from '@/components/PunchClockProfiles'
+import BusinessInfoSettings from '@/components/BusinessInfoSettings'
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -83,9 +84,9 @@ export default function SettingsPage() {
     {
       id: 'business',
       name: 'Business Settings',
-      description: 'Manage business information',
+      description: 'Manage business information and currency',
       icon: BuildingOfficeIcon,
-      disabled: true
+      component: BusinessInfoSettings
     }
   ]
 

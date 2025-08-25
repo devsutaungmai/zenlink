@@ -1,6 +1,7 @@
 import { format } from 'date-fns'
 import { Shift, Employee } from '@prisma/client'
 import ShiftExchangeInfo from '@/components/ShiftExchangeInfo'
+import { useCurrency } from '@/hooks/useCurrency'
 
 // Extended Shift type to include relations
 type ShiftWithRelations = Shift & {
@@ -53,6 +54,7 @@ export default function SpanningShiftCard({
   index = 0, 
   total = 1 
 }: SpanningShiftCardProps) {
+  const { currencySymbol } = useCurrency()
   const { top, height } = getShiftPosition(shift.startTime, shift.endTime)
   
   // Check if there's an approved exchange to determine the current assigned employee
@@ -121,8 +123,15 @@ export default function SpanningShiftCard({
         </div>
       )}
       
+      {/* Show wage information if height allows */}
+      {height > 60 && shift.wage && (
+        <div className="text-xs mt-1 font-semibold truncate">
+          {currencySymbol}{shift.wage}/{shift.wageType === 'HOURLY' ? 'hr' : 'day'}
+        </div>
+      )}
+      
       {/* Show exchange information if height allows */}
-      {height > 80 && (
+      {height > 100 && (
         <ShiftExchangeInfo shift={shift} />
       )}
     </div>

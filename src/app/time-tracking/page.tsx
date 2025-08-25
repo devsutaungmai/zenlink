@@ -607,9 +607,9 @@ export default function TimeTrackingPage() {
                       className="p-3 hover:bg-blue-50/70 transition-colors duration-200 touch-manipulation cursor-pointer border-2 border-transparent hover:border-blue-200 rounded-lg"
                       onClick={() => handleEmployeeClick(employee)}
                     >
-                      <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center justify-between mb-1">
                         <div className="font-medium text-gray-900 text-sm hover:text-blue-600 transition-colors">
-                          {employee.firstName} {employee.lastName}
+                          {employee.firstName} {employee.lastName} ({employee.employeeNo})
                         </div>
                         <div className="flex items-center gap-2">
                           {employee.isTeamLeader && (
@@ -620,7 +620,7 @@ export default function TimeTrackingPage() {
                           <div className={`w-2 h-2 rounded-full ${isWorking ? 'bg-green-500' : 'bg-gray-300'}`}></div>
                         </div>
                       </div>
-                      <div className="text-xs text-gray-600 space-y-1">
+                      {/* <div className="text-xs text-gray-600 space-y-1">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-xs bg-gray-100 px-2 py-0.5 rounded">
                             {employee.employeeNo}
@@ -643,7 +643,7 @@ export default function TimeTrackingPage() {
                         <div className="text-xs text-blue-600 font-medium mt-1">
                           👆 Tap to login
                         </div>
-                      </div>
+                      </div> */}
                     </div>
                   )
                 })}
