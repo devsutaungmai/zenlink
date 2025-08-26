@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { useCurrency } from '@/hooks/useCurrency'
 import { 
   ClockIcon, 
   PlayIcon,
@@ -56,6 +57,7 @@ function EmployeeDashboardContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const employeeId = searchParams.get('employeeId')
+  const { currencySymbol } = useCurrency()
   
   const [employee, setEmployee] = useState<Employee | null>(null)
   const [todayShifts, setTodayShifts] = useState<Shift[]>([])

@@ -38,6 +38,7 @@ model Business {
   payrollPeriods   PayrollPeriod[]
   users            User[]
   punchClockProfiles PunchClockProfile[]
+  punchClockAccessSettings PunchClockAccessSettings? @relation("PunchClockAccessSettings")
 }
 
 model Employee {
@@ -336,6 +337,29 @@ model Notification {
 
   @@index([recipientId, isRead])
   @@index([createdAt])
+}
+
+model PunchClockAccessSettings {
+  id                    String              @id @default(cuid())
+  businessId            String              @unique
+  allowPunchFromAnywhere Boolean            @default(true)
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  business              Business            @relation("PunchClockAccessSettings", fields: [businessId], references: [id])
+  allowedLocations      AllowedLocation[]
+}
+
+model AllowedLocation {
+  id           String                    @id @default(cuid())
+  settingsId   String
+  name         String
+  address      String
+  latitude     Float?
+  longitude    Float?
+  radius       Int                       @default(100) // in meters
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
+  settings     PunchClockAccessSettings  @relation(fields: [settingsId], references: [id], onDelete: Cascade)
 }
 
 enum WageType {

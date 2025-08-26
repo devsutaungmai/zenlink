@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import EmployeeForm from '@/components/EmployeeForm'
 import { Department, EmployeeGroup } from '@prisma/client'
+import { useCurrency } from '@/hooks/useCurrency'
 import { 
   UserIcon, 
   ClockIcon, 
@@ -39,6 +40,7 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
   const employeeId = React.use(params).id
   const { t } = useTranslation()
   const router = useRouter()
+  const { currencySymbol } = useCurrency()
   const [employee, setEmployee] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -492,7 +494,7 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
                               </td>
                               <td className="px-6 py-4">
                                 <div className="text-sm text-gray-900">
-                                  ${shift.wage.toFixed(2)}
+                                  {currencySymbol}{shift.wage.toFixed(2)}
                                   <span className="text-xs text-gray-500 ml-1">
                                     ({shift.wageType.toLowerCase()})
                                   </span>

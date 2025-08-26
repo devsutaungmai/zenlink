@@ -47,7 +47,6 @@ export default function DashboardNavbar({ setMobileMenuOpen }: DashboardNavbarPr
   
   const adminNavigation: NavigationItem[] = [
     { name: t('navigation.home'), href: '/dashboard', icon: HomeIcon },
-    { name: t('navigation.users'), href: '/dashboard/users', icon: UsersIcon },
     {
       name: t('navigation.employees'),
       icon: UserGroupIcon,

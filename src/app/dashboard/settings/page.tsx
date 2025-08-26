@@ -15,6 +15,7 @@ import {
 } from '@heroicons/react/24/outline'
 import LaborLawSettings from '@/components/LaborLawSettings'
 import PunchClockProfiles from '@/components/PunchClockProfiles'
+import PunchClockAccessSettings from '@/components/PunchClockAccessSettings'
 import BusinessInfoSettings from '@/components/BusinessInfoSettings'
 
 export default function SettingsPage() {
@@ -40,7 +41,8 @@ export default function SettingsPage() {
         {
           id: 'punch-clock-access',
           name: 'Access',
-          description: 'Configure access permissions and restrictions'
+          description: 'Configure access permissions and restrictions',
+          component: PunchClockAccessSettings
         },
         {
           id: 'punch-clock-general',
