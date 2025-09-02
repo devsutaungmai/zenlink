@@ -1,27 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { getCurrentUser } from '@/lib/auth'
 import { prisma } from '@/app/lib/prisma'
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
+    const currentUser = await getCurrentUser()
+    if (!currentUser?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Get business from user
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
+    const userWithBusiness = await prisma.user.findUnique({
+      where: { id: currentUser.id },
       include: { business: true }
     })
 
-    if (!user?.business) {
+    if (!userWithBusiness?.businessId) {
       return NextResponse.json({ error: 'Business not found' }, { status: 404 })
     }
 
     // Get punch clock access settings
     const settings = await prisma.punchClockAccessSettings.findUnique({
-      where: { businessId: user.business.id },
+      where: { businessId: userWithBusiness.businessId },
       include: {
         allowedLocations: true
       }
@@ -54,8 +54,8 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
+    const currentUser = await getCurrentUser()
+    if (!currentUser?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -63,20 +63,20 @@ export async function POST(req: NextRequest) {
     const { allowPunchFromAnywhere, specificLocations } = data
 
     // Get business from user
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
+    const userWithBusiness = await prisma.user.findUnique({
+      where: { id: currentUser.id },
       include: { business: true }
     })
 
-    if (!user?.business) {
+    if (!userWithBusiness?.businessId) {
       return NextResponse.json({ error: 'Business not found' }, { status: 404 })
     }
 
     // Update or create punch clock access settings
     const settings = await prisma.punchClockAccessSettings.upsert({
-      where: { businessId: user.business.id },
+      where: { businessId: userWithBusiness.businessId },
       create: {
-        businessId: user.business.id,
+        businessId: userWithBusiness.businessId,
         allowPunchFromAnywhere,
         allowedLocations: {
           create: specificLocations.map((location: any) => ({

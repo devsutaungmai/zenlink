@@ -11,6 +11,8 @@ import {
   UserIcon,
   KeyIcon
 } from '@heroicons/react/24/outline'
+import { LocationValidationResult, validatePunchLocation } from '@/lib/locationValidation'
+import LocationValidationModal from '@/components/LocationValidationModal'
 
 interface PunchClockProfile {
   id: string
@@ -32,6 +34,8 @@ export default function PunchClockPage() {
   const [punchInTime, setPunchInTime] = useState<Date | null>(null)
   const [workingDuration, setWorkingDuration] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showLocationModal, setShowLocationModal] = useState(false)
+  const [pendingPunchAction, setPendingPunchAction] = useState<'in' | 'out' | null>(null)
 
   useEffect(() => {
     // Check if user has a connected profile
@@ -80,49 +84,72 @@ export default function PunchClockPage() {
   }, [currentTime, isWorking, punchInTime])
 
   const handlePunchIn = async () => {
-    setLoading(true)
-    try {
-      // Simulate API call - you can implement actual time tracking API here
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      const now = new Date()
-      setIsWorking(true)
-      setPunchInTime(now)
-      
-      // Store in localStorage for demo purposes
-      localStorage.setItem('punchInTime', now.toISOString())
-      localStorage.setItem('isWorking', 'true')
-      
-    } catch (error) {
-      console.error('Error punching in:', error)
-      alert('Failed to punch in. Please try again.')
-    } finally {
-      setLoading(false)
-    }
+    // Set pending action and show location modal for validation
+    setPendingPunchAction('in')
+    setShowLocationModal(true)
   }
 
   const handlePunchOut = async () => {
+    // Set pending action and show location modal for validation
+    setPendingPunchAction('out')
+    setShowLocationModal(true)
+  }
+
+  const executePunchAction = async () => {
+    if (!pendingPunchAction) return
+
     setLoading(true)
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      setIsWorking(false)
-      setPunchInTime(null)
-      setWorkingDuration('')
-      
-      // Clear from localStorage
-      localStorage.removeItem('punchInTime')
-      localStorage.removeItem('isWorking')
-      
-      alert(`Punched out successfully! You worked for ${workingDuration}`)
+      if (pendingPunchAction === 'in') {
+        // Implement actual punch in API call here
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        
+        const now = new Date()
+        setIsWorking(true)
+        setPunchInTime(now)
+        
+        // Store in localStorage for demo purposes
+        localStorage.setItem('punchInTime', now.toISOString())
+        localStorage.setItem('isWorking', 'true')
+        
+        alert('Successfully punched in!')
+        
+      } else if (pendingPunchAction === 'out') {
+        // Implement actual punch out API call here
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        
+        setIsWorking(false)
+        setPunchInTime(null)
+        setWorkingDuration('')
+        
+        // Clear from localStorage
+        localStorage.removeItem('punchInTime')
+        localStorage.removeItem('isWorking')
+        
+        alert(`Punched out successfully! You worked for ${workingDuration}`)
+      }
       
     } catch (error) {
-      console.error('Error punching out:', error)
-      alert('Failed to punch out. Please try again.')
+      console.error(`Error punching ${pendingPunchAction}:`, error)
+      alert(`Failed to punch ${pendingPunchAction}. Please try again.`)
     } finally {
       setLoading(false)
+      setPendingPunchAction(null)
+      setShowLocationModal(false)
     }
+  }
+
+  const handleLocationValidationSuccess = () => {
+    // Location validation passed, execute the punch action
+    setShowLocationModal(false)
+    executePunchAction()
+  }
+
+  const handleLocationValidationFailed = (result: LocationValidationResult) => {
+    // Location validation failed, show error and reset state
+    setPendingPunchAction(null)
+    setShowLocationModal(false)
+    alert(result.message)
   }
 
   const handleDisconnect = () => {
@@ -292,6 +319,16 @@ export default function PunchClockPage() {
           </p>
         </div>
       </div>
+
+      {/* Location Validation Modal */}        <LocationValidationModal
+          isOpen={showLocationModal}
+          onClose={() => {
+            setShowLocationModal(false)
+            setPendingPunchAction(null)
+          }}
+          onValidationSuccess={handleLocationValidationSuccess}
+          onValidationFailed={handleLocationValidationFailed}
+        />
     </div>
   )
 }

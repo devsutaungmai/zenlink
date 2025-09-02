@@ -7,6 +7,7 @@ import {
   TrashIcon,
   ExclamationTriangleIcon 
 } from '@heroicons/react/24/outline'
+import GoogleMapsLocationPicker from './GoogleMapsLocationPicker'
 
 interface Location {
   id: string
@@ -30,6 +31,7 @@ export default function PunchClockAccessSettings() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [showAddLocation, setShowAddLocation] = useState(false)
+  const [showMapPicker, setShowMapPicker] = useState(false)
   const [newLocation, setNewLocation] = useState({
     name: '',
     address: '',
@@ -103,6 +105,30 @@ export default function PunchClockAccessSettings() {
 
     setNewLocation({ name: '', address: '', radius: 100 })
     setShowAddLocation(false)
+  }
+
+  const handleMapLocationSelect = (mapLocation: {
+    lat: number
+    lng: number
+    address: string
+    name: string
+    radius: number
+  }) => {
+    const location: Location = {
+      id: Date.now().toString(),
+      name: mapLocation.name,
+      address: mapLocation.address,
+      latitude: mapLocation.lat,
+      longitude: mapLocation.lng,
+      radius: mapLocation.radius
+    }
+
+    setSettings(prev => ({
+      ...prev,
+      specificLocations: [...prev.specificLocations, location]
+    }))
+
+    setShowMapPicker(false)
   }
 
   const removeLocation = (locationId: string) => {
@@ -182,13 +208,22 @@ export default function PunchClockAccessSettings() {
           <div className="border-t border-gray-200 pt-6">
             <div className="flex items-center justify-between mb-4">
               <h4 className="text-md font-medium text-gray-900">Allowed Locations</h4>
-              <button
-                onClick={() => setShowAddLocation(true)}
-                className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-[#31BCFF] hover:bg-[#2ba3e4] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#31BCFF] transition-colors"
-              >
-                <PlusIcon className="h-4 w-4 mr-2" />
-                Add Location
-              </button>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => setShowMapPicker(true)}
+                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-[#31BCFF] hover:bg-[#2ba3e4] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#31BCFF] transition-colors"
+                >
+                  <MapPinIcon className="h-4 w-4 mr-2" />
+                  Add with Map
+                </button>
+                <button
+                  onClick={() => setShowAddLocation(true)}
+                  className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#31BCFF] transition-colors"
+                >
+                  <PlusIcon className="h-4 w-4 mr-2" />
+                  Add Manually
+                </button>
+              </div>
             </div>
 
             {/* Existing Locations List */}
@@ -200,12 +235,22 @@ export default function PunchClockAccessSettings() {
                     className="flex items-center justify-between p-4 border border-gray-200 rounded-lg"
                   >
                     <div className="flex items-center space-x-3">
-                      <MapPinIcon className="h-5 w-5 text-gray-400" />
+                      <div className="relative">
+                        <MapPinIcon className="h-5 w-5 text-gray-400" />
+                        {location.latitude && location.longitude && (
+                          <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full"></div>
+                        )}
+                      </div>
                       <div>
                         <div className="text-sm font-medium text-gray-900">{location.name}</div>
                         <div className="text-sm text-gray-500">{location.address}</div>
-                        <div className="text-xs text-gray-400">
-                          Radius: {location.radius}m
+                        <div className="flex items-center gap-2 text-xs text-gray-400">
+                          <span>Radius: {location.radius}m</span>
+                          {location.latitude && location.longitude && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                              GPS Enabled
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -325,6 +370,13 @@ export default function PunchClockAccessSettings() {
           </button>
         </div>
       </div>
+
+      {/* Google Maps Location Picker */}
+      <GoogleMapsLocationPicker
+        isOpen={showMapPicker}
+        onClose={() => setShowMapPicker(false)}
+        onLocationSelect={handleMapLocationSelect}
+      />
     </div>
   )
 }

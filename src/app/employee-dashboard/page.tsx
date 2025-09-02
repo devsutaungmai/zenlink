@@ -3,6 +3,8 @@
 import React, { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCurrency } from '@/hooks/useCurrency'
+import { LocationValidationResult, validatePunchLocation } from '@/lib/locationValidation'
+import LocationValidationModal from '@/components/LocationValidationModal'
 import { 
   ClockIcon, 
   PlayIcon,
@@ -13,7 +15,8 @@ import {
   CheckCircleIcon,
   ArrowLeftIcon,
   PlusIcon,
-  XMarkIcon
+  XMarkIcon,
+  MapPinIcon
 } from '@heroicons/react/24/outline'
 
 interface Employee {
@@ -68,6 +71,11 @@ function EmployeeDashboardContent() {
   const [currentTime, setCurrentTime] = useState(new Date())
   const [showPunchForm, setShowPunchForm] = useState(false)
   const [isNewShift, setIsNewShift] = useState(false)
+  const [showLocationModal, setShowLocationModal] = useState(false)
+  const [pendingPunchAction, setPendingPunchAction] = useState<{
+    action: 'in' | 'out'
+    shift?: Shift
+  } | null>(null)
   const [punchFormData, setPunchFormData] = useState({
     shiftType: '',
     startTime: '',
@@ -135,45 +143,23 @@ function EmployeeDashboardContent() {
   }
 
   const handlePunchIn = async (shift: Shift) => {
-    setSelectedShift(shift)
-    setPunchAction('in')
-    
-    try {
-      const now = new Date()
-      const currentTime = now.toTimeString().substring(0, 5) // HH:MM format
-
-      const response = await fetch('/api/shifts/punch', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          shiftId: shift.id,
-          action: 'in',
-          time: currentTime
-        })
-      })
-
-      if (response.ok) {
-        // Refresh shifts after successful punch in
-        await fetchTodayShifts()
-        alert('Successfully punched in!')
-      } else {
-        const data = await response.json()
-        alert(data.error || 'Failed to punch in')
-      }
-    } catch (error) {
-      console.error('Error punching in:', error)
-      alert('Failed to punch in')
-    } finally {
-      setPunchAction(null)
-      setSelectedShift(null)
-    }
+    // Set pending action and show location modal for validation
+    setPendingPunchAction({ action: 'in', shift })
+    setShowLocationModal(true)
   }
 
   const handlePunchOut = async (shift: Shift) => {
+    // Set pending action and show location modal for validation
+    setPendingPunchAction({ action: 'out', shift })
+    setShowLocationModal(true)
+  }
+
+  const executePunchAction = async () => {
+    if (!pendingPunchAction) return
+
+    const { action, shift } = pendingPunchAction
     setSelectedShift(shift)
-    setPunchAction('out')
+    setPunchAction(action)
     
     try {
       const now = new Date()
@@ -186,26 +172,41 @@ function EmployeeDashboardContent() {
         },
         body: JSON.stringify({
           shiftId: shift.id,
-          action: 'out',
+          action: action,
           time: currentTime
         })
       })
 
       if (response.ok) {
-        // Refresh shifts after successful punch out
+        // Refresh shifts after successful punch
         await fetchTodayShifts()
-        alert('Successfully punched out!')
+        alert(`Successfully punched ${action}!`)
       } else {
         const data = await response.json()
-        alert(data.error || 'Failed to punch out')
+        alert(data.error || `Failed to punch ${action}`)
       }
     } catch (error) {
-      console.error('Error punching out:', error)
-      alert('Failed to punch out')
+      console.error(`Error punching ${action}:`, error)
+      alert(`Failed to punch ${action}`)
     } finally {
       setPunchAction(null)
       setSelectedShift(null)
+      setPendingPunchAction(null)
+      setShowLocationModal(false)
     }
+  }
+
+  const handleLocationValidationSuccess = () => {
+    // Location validation passed, execute the punch action
+    setShowLocationModal(false)
+    executePunchAction()
+  }
+
+  const handleLocationValidationFailed = (result: LocationValidationResult) => {
+    // Location validation failed, show error and reset state
+    setPendingPunchAction(null)
+    setShowLocationModal(false)
+    alert(result.message)
   }
 
   const handleOpenPunchForm = (shift?: Shift) => {
@@ -257,6 +258,14 @@ function EmployeeDashboardContent() {
 
     try {
       if (isNewShift) {
+        // For new shifts, validate location first
+        const locationValidation = await validatePunchLocation()
+        
+        if (!locationValidation.isAllowed) {
+          alert(locationValidation.message)
+          return
+        }
+
         // Create new shift and punch in
         const response = await fetch('/api/shifts', {
           method: 'POST',
@@ -284,7 +293,7 @@ function EmployeeDashboardContent() {
           alert(data.error || 'Failed to create shift')
         }
       } else if (selectedShift) {
-        // Punch in to existing shift
+        // Punch in to existing shift - this will trigger location validation via modal
         await handlePunchIn(selectedShift)
         handleClosePunchForm()
       }
@@ -697,6 +706,17 @@ function EmployeeDashboardContent() {
             </div>
           </div>
         )}
+
+        {/* Location Validation Modal */}
+        <LocationValidationModal
+          isOpen={showLocationModal}
+          onClose={() => {
+            setShowLocationModal(false)
+            setPendingPunchAction(null)
+          }}
+          onValidationSuccess={handleLocationValidationSuccess}
+          onValidationFailed={handleLocationValidationFailed}
+        />
       </div>
     </div>
   )
