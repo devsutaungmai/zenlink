@@ -39,6 +39,7 @@ model Business {
   users            User[]
   punchClockProfiles PunchClockProfile[]
   punchClockAccessSettings PunchClockAccessSettings? @relation("PunchClockAccessSettings")
+  contractTemplates ContractTemplate[]
 }
 
 model Employee {
@@ -89,6 +90,7 @@ model EmployeeGroup {
   employees       Employee[] @relation("EmployeeToGroup")
   business        Business   @relation(fields: [businessId], references: [id])
   shifts          Shift[]
+  contractTemplates ContractTemplate[]
 
   @@unique([name, businessId])
 }
@@ -362,6 +364,23 @@ model AllowedLocation {
   settings     PunchClockAccessSettings  @relation(fields: [settingsId], references: [id], onDelete: Cascade)
 }
 
+model ContractTemplate {
+  id               String        @id @default(cuid())
+  name             String
+  body             String
+  logoPath         String?
+  logoPosition     LogoPosition  @default(TOP_RIGHT)
+  businessId       String
+  employeeGroupId  String
+  createdBy        String
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  business         Business      @relation(fields: [businessId], references: [id])
+  employeeGroup    EmployeeGroup @relation(fields: [employeeGroupId], references: [id])
+
+  @@unique([name, businessId])
+}
+
 enum WageType {
   HOURLY
   PER_SHIFT
@@ -419,4 +438,13 @@ enum NotificationType {
   SHIFT_REMINDER
   SCHEDULE_UPDATED
   SYSTEM_ANNOUNCEMENT
+}
+
+enum LogoPosition {
+  TOP_LEFT
+  TOP_CENTER
+  TOP_RIGHT
+  BOTTOM_LEFT
+  BOTTOM_CENTER
+  BOTTOM_RIGHT
 }

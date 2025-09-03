@@ -11,17 +11,19 @@ import {
   UserCircleIcon,
   KeyIcon,
   BuildingOfficeIcon,
-  ClockIcon
+  ClockIcon,
+  UsersIcon
 } from '@heroicons/react/24/outline'
 import LaborLawSettings from '@/components/LaborLawSettings'
 import PunchClockProfiles from '@/components/PunchClockProfiles'
 import PunchClockAccessSettings from '@/components/PunchClockAccessSettings'
 import BusinessInfoSettings from '@/components/BusinessInfoSettings'
+import ContractTemplateForm from '@/components/ContractTemplateForm'
 
 export default function SettingsPage() {
   const router = useRouter()
-  const [activeSection, setActiveSection] = useState<string>('labor-laws')
-  const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set())
+  const [activeSection, setActiveSection] = useState<string>('people-contract-setup')
+  const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set(['people']))
 
   const settingSections = [
     {
@@ -59,6 +61,31 @@ export default function SettingsPage() {
           id: 'punch-clock-advance',
           name: 'Advance',
           description: 'Advanced punch clock configurations'
+        }
+      ]
+    },
+    {
+      id: 'people',
+      name: 'People',
+      description: 'Manage employee contracts and rules',
+      icon: UsersIcon,
+      hasSubmenus: true,
+      submenus: [
+        {
+          id: 'people-general',
+          name: 'General',
+          description: 'General people management settings'
+        },
+        {
+          id: 'people-contract-rules',
+          name: 'Contract Rules',
+          description: 'Define contract rules and policies'
+        },
+        {
+          id: 'people-contract-setup',
+          name: 'Contract Setup',
+          description: 'Configure contract templates and setup',
+          component: ContractTemplateForm
         }
       ]
     },
