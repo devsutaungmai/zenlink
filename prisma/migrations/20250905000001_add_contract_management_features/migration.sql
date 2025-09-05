@@ -5,6 +5,13 @@ EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 
+-- Add currency column to Business table if not exists
+DO $$ BEGIN
+ ALTER TABLE "Business" ADD COLUMN "currency" TEXT NOT NULL DEFAULT 'USD';
+EXCEPTION
+ WHEN duplicate_column THEN null;
+END $$;
+
 -- Add email column to Employee table if not exists
 DO $$ BEGIN
  ALTER TABLE "Employee" ADD COLUMN "email" TEXT;
