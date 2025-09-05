@@ -23,24 +23,24 @@ model User {
 }
 
 model Business {
-  id               String             @id @default(cuid())
-  name             String
-  address          String
-  type             String
-  employeesCount   Int
-  currency         String             @default("USD")
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  attendances      Attendance[]
-  departments      Department[]
-  employeeGroups   EmployeeGroup[]
-  invitations      Invitation[]
-  payrollPeriods   PayrollPeriod[]
-  users            User[]
-  punchClockProfiles PunchClockProfile[]
+  id                       String                    @id @default(cuid())
+  name                     String
+  address                  String
+  type                     String
+  employeesCount           Int
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
+  currency                 String                    @default("USD")
+  attendances              Attendance[]
+  contracts                Contract[]
+  contractTemplates        ContractTemplate[]
+  departments              Department[]
+  employeeGroups           EmployeeGroup[]
+  invitations              Invitation[]
+  payrollPeriods           PayrollPeriod[]
   punchClockAccessSettings PunchClockAccessSettings? @relation("PunchClockAccessSettings")
-  contractTemplates ContractTemplate[]
-  contracts         Contract[]
+  punchClockProfiles       PunchClockProfile[]
+  users                    User[]
 }
 
 model Employee {
@@ -65,6 +65,8 @@ model Employee {
   email              String?         @unique
   attendances        Attendance[]
   availabilities     Availability[]
+  contractsAsPerson  Contract[]      @relation("ContractPerson")
+  contracts          Contract[]
   department         Department      @relation(fields: [departmentId], references: [id])
   employeeGroup      EmployeeGroup?  @relation("EmployeeToGroup", fields: [employeeGroupId], references: [id])
   user               User            @relation(fields: [userId], references: [id])
@@ -76,25 +78,23 @@ model Employee {
   sickLeaves         SickLeave[]
   timeEntries        TimeEntry[]
   workPlans          WorkPlan[]
-  contracts          Contract[]
-  contractsAsPerson  Contract[]      @relation("ContractPerson")
 }
 
 model EmployeeGroup {
-  id              String     @id @default(cuid())
-  name            String
-  hourlyWage      Float
-  wagePerShift    Float
-  defaultWageType WageType   @default(HOURLY)
-  salaryCode      String?
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
-  businessId      String
-  employees       Employee[] @relation("EmployeeToGroup")
-  business        Business   @relation(fields: [businessId], references: [id])
-  shifts          Shift[]
+  id                String             @id @default(cuid())
+  name              String
+  hourlyWage        Float
+  wagePerShift      Float
+  defaultWageType   WageType           @default(HOURLY)
+  salaryCode        String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  businessId        String
+  contracts         Contract[]
   contractTemplates ContractTemplate[]
-  contracts       Contract[]
+  employees         Employee[]         @relation("EmployeeToGroup")
+  business          Business           @relation(fields: [businessId], references: [id])
+  shifts            Shift[]
 
   @@unique([name, businessId])
 }
@@ -106,38 +106,37 @@ model Contract {
   contractTemplateId String
   startDate          DateTime
   endDate            DateTime?
-  contractPersonId   String
   businessId         String
-  signedStatus       String?          @default("UNSIGNED") // UNSIGNED, SIGNED_PAPER, SIGNED_ELECTRONIC
-  signatureData      String?          // JSON string containing signature information
-  signedAt           DateTime?
-  signedBy           String?          // ID of the person who signed
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
-
-  employee         Employee         @relation(fields: [employeeId], references: [id])
-  employeeGroup    EmployeeGroup    @relation(fields: [employeeGroupId], references: [id])
-  contractTemplate ContractTemplate @relation(fields: [contractTemplateId], references: [id])
-  contractPerson   Employee         @relation("ContractPerson", fields: [contractPersonId], references: [id])
-  business         Business         @relation(fields: [businessId], references: [id])
+  contractPersonId   String
+  signatureData      String?
+  signedAt           DateTime?
+  signedBy           String?
+  signedStatus       String?          @default("UNSIGNED")
+  business           Business         @relation(fields: [businessId], references: [id])
+  contractPerson     Employee         @relation("ContractPerson", fields: [contractPersonId], references: [id])
+  contractTemplate   ContractTemplate @relation(fields: [contractTemplateId], references: [id])
+  employeeGroup      EmployeeGroup    @relation(fields: [employeeGroupId], references: [id])
+  employee           Employee         @relation(fields: [employeeId], references: [id])
 }
 
 model Department {
-  id               String             @id @default(cuid())
-  name             String
-  address          String
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  address2         String?
-  city             String
-  country          String
-  number           String?
-  phone            String
-  postCode         String?
-  businessId       String
-  business         Business           @relation(fields: [businessId], references: [id])
-  employees        Employee[]
-  projects         Project[]
+  id                 String              @id @default(cuid())
+  name               String
+  address            String
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  address2           String?
+  city               String
+  country            String
+  number             String?
+  phone              String
+  postCode           String?
+  businessId         String
+  business           Business            @relation(fields: [businessId], references: [id])
+  employees          Employee[]
+  projects           Project[]
   punchClockProfiles PunchClockProfile[]
 }
 
@@ -146,13 +145,13 @@ model PunchClockProfile {
   name           String
   departmentId   String
   isActive       Boolean    @default(true)
-  activationCode String?
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @default(now())
   businessId     String
+  activationCode String?
   business       Business   @relation(fields: [businessId], references: [id])
   department     Department @relation(fields: [departmentId], references: [id])
-  
+
   @@unique([name, businessId])
 }
 
@@ -369,42 +368,42 @@ model Notification {
 }
 
 model PunchClockAccessSettings {
-  id                    String              @id @default(cuid())
-  businessId            String              @unique
-  allowPunchFromAnywhere Boolean            @default(true)
-  createdAt             DateTime            @default(now())
-  updatedAt             DateTime            @default(now())
-  business              Business            @relation("PunchClockAccessSettings", fields: [businessId], references: [id])
-  allowedLocations      AllowedLocation[]
+  id                     String            @id @default(cuid())
+  businessId             String            @unique
+  allowPunchFromAnywhere Boolean           @default(true)
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime          @default(now())
+  allowedLocations       AllowedLocation[]
+  business               Business          @relation("PunchClockAccessSettings", fields: [businessId], references: [id])
 }
 
 model AllowedLocation {
-  id           String                    @id @default(cuid())
-  settingsId   String
-  name         String
-  address      String
-  latitude     Float?
-  longitude    Float?
-  radius       Int                       @default(100) // in meters
-  createdAt    DateTime                  @default(now())
-  updatedAt    DateTime                  @default(now())
-  settings     PunchClockAccessSettings  @relation(fields: [settingsId], references: [id], onDelete: Cascade)
+  id         String                   @id @default(cuid())
+  settingsId String
+  name       String
+  address    String
+  latitude   Float?
+  longitude  Float?
+  radius     Int                      @default(100)
+  createdAt  DateTime                 @default(now())
+  updatedAt  DateTime                 @default(now())
+  settings   PunchClockAccessSettings @relation(fields: [settingsId], references: [id], onDelete: Cascade)
 }
 
 model ContractTemplate {
-  id               String        @id @default(cuid())
-  name             String
-  body             String
-  logoPath         String?
-  logoPosition     LogoPosition  @default(TOP_RIGHT)
-  businessId       String
-  employeeGroupId  String
-  createdBy        String
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @default(now())
-  business         Business      @relation(fields: [businessId], references: [id])
-  employeeGroup    EmployeeGroup @relation(fields: [employeeGroupId], references: [id])
-  contracts        Contract[]
+  id              String        @id @default(cuid())
+  name            String
+  body            String
+  logoPath        String?
+  logoPosition    LogoPosition  @default(TOP_RIGHT)
+  businessId      String
+  employeeGroupId String
+  createdBy       String
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @default(now())
+  contracts       Contract[]
+  business        Business      @relation(fields: [businessId], references: [id])
+  employeeGroup   EmployeeGroup @relation(fields: [employeeGroupId], references: [id])
 
   @@unique([name, businessId])
 }
