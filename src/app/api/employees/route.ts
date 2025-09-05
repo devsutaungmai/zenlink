@@ -32,6 +32,7 @@ export async function GET() {
         employeeNo: true,
         email: true,
         mobile: true,
+        address: true,
         isTeamLeader: true,
         dateOfHire: true,
         createdAt: true,

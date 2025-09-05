@@ -54,8 +54,8 @@ export default function DashboardNavbar({ setMobileMenuOpen }: DashboardNavbarPr
         { name: t('navigation.departments'), href: '/dashboard/departments' },
         { name: t('navigation.employees'), href: '/dashboard/employees' },
         { name: t('navigation.employee_groups'), href: '/dashboard/employee-groups' },
-        { name: t('navigation.contracts'), href: '/dashboard/employees' },
-        { name: t('navigation.documents'), href: '/dashboard/departments' },
+        { name: t('navigation.contracts'), href: '/dashboard/contracts' },
+        { name: t('navigation.documents'), href: '/dashboard/documents' },
       ],
     },
     {

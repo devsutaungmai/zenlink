@@ -40,6 +40,7 @@ model Business {
   punchClockProfiles PunchClockProfile[]
   punchClockAccessSettings PunchClockAccessSettings? @relation("PunchClockAccessSettings")
   contractTemplates ContractTemplate[]
+  contracts         Contract[]
 }
 
 model Employee {
@@ -75,6 +76,8 @@ model Employee {
   sickLeaves         SickLeave[]
   timeEntries        TimeEntry[]
   workPlans          WorkPlan[]
+  contracts          Contract[]
+  contractsAsPerson  Contract[]      @relation("ContractPerson")
 }
 
 model EmployeeGroup {
@@ -91,8 +94,32 @@ model EmployeeGroup {
   business        Business   @relation(fields: [businessId], references: [id])
   shifts          Shift[]
   contractTemplates ContractTemplate[]
+  contracts       Contract[]
 
   @@unique([name, businessId])
+}
+
+model Contract {
+  id                 String           @id @default(cuid())
+  employeeId         String
+  employeeGroupId    String
+  contractTemplateId String
+  startDate          DateTime
+  endDate            DateTime?
+  contractPersonId   String
+  businessId         String
+  signedStatus       String?          @default("UNSIGNED") // UNSIGNED, SIGNED_PAPER, SIGNED_ELECTRONIC
+  signatureData      String?          // JSON string containing signature information
+  signedAt           DateTime?
+  signedBy           String?          // ID of the person who signed
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  employee         Employee         @relation(fields: [employeeId], references: [id])
+  employeeGroup    EmployeeGroup    @relation(fields: [employeeGroupId], references: [id])
+  contractTemplate ContractTemplate @relation(fields: [contractTemplateId], references: [id])
+  contractPerson   Employee         @relation("ContractPerson", fields: [contractPersonId], references: [id])
+  business         Business         @relation(fields: [businessId], references: [id])
 }
 
 model Department {
@@ -121,7 +148,7 @@ model PunchClockProfile {
   isActive       Boolean    @default(true)
   activationCode String?
   createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
+  updatedAt      DateTime   @default(now())
   businessId     String
   business       Business   @relation(fields: [businessId], references: [id])
   department     Department @relation(fields: [departmentId], references: [id])
@@ -134,7 +161,7 @@ model Project {
   name         String
   departmentId String
   createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  updatedAt    DateTime    @default(now())
   department   Department  @relation(fields: [departmentId], references: [id])
   timeEntries  TimeEntry[]
 }
@@ -149,7 +176,7 @@ model TimeEntry {
   gpsLongitude Float?
   approved     Boolean   @default(false)
   createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  updatedAt    DateTime  @default(now())
   employee     Employee  @relation(fields: [employeeId], references: [id])
   project      Project   @relation(fields: [projectId], references: [id])
 }
@@ -162,7 +189,7 @@ model SickLeave {
   document   String?
   approved   Boolean  @default(false)
   createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  updatedAt  DateTime @default(now())
   reason     String?
   employee   Employee @relation(fields: [employeeId], references: [id])
 }
@@ -174,7 +201,7 @@ model Availability {
   isAvailable Boolean  @default(true)
   note        String?
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  updatedAt   DateTime @default(now())
   employee    Employee @relation(fields: [employeeId], references: [id])
 
   @@unique([employeeId, date])
@@ -188,7 +215,7 @@ model WorkPlan {
   endTime    DateTime
   approved   Boolean  @default(false)
   createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  updatedAt  DateTime @default(now())
   breaks     Break[]
   employee   Employee @relation(fields: [employeeId], references: [id])
 }
@@ -200,7 +227,7 @@ model Break {
   endTime    DateTime
   duration   Int
   createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  updatedAt  DateTime @default(now())
   workPlan   WorkPlan @relation(fields: [workPlanId], references: [id])
 }
 
@@ -219,7 +246,7 @@ model Shift {
   note            String?
   approved        Boolean         @default(false)
   createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  updatedAt       DateTime        @default(now())
   breakPaid       Boolean         @default(false)
   status          ShiftStatus     @default(SCHEDULED)
   attendances     Attendance[]
@@ -259,7 +286,7 @@ model Invitation {
   businessId String
   expiresAt  DateTime
   createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  updatedAt  DateTime @default(now())
   business   Business @relation(fields: [businessId], references: [id])
 }
 
@@ -271,7 +298,7 @@ model PayrollPeriod {
   status         PayrollPeriodStatus @default(DRAFT)
   businessId     String
   createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
+  updatedAt      DateTime            @default(now())
   payrollEntries PayrollEntry[]
   business       Business            @relation(fields: [businessId], references: [id])
 
@@ -293,7 +320,7 @@ model PayrollEntry {
   status          PayrollEntryStatus @default(DRAFT)
   notes           String?
   createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
+  updatedAt       DateTime           @default(now())
   employee        Employee           @relation(fields: [employeeId], references: [id])
   payrollPeriod   PayrollPeriod      @relation(fields: [payrollPeriodId], references: [id])
 
@@ -308,7 +335,7 @@ model Attendance {
   punchInTime  DateTime
   punchOutTime DateTime?
   createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  updatedAt    DateTime  @default(now())
   business     Business  @relation(fields: [businessId], references: [id])
   employee     Employee  @relation(fields: [employeeId], references: [id])
   shift        Shift?    @relation(fields: [shiftId], references: [id])
@@ -332,7 +359,7 @@ model Notification {
   smsSentAt       DateTime?
   smsError        String?
   createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  updatedAt       DateTime         @default(now())
   recipient       Employee         @relation("NotificationRecipient", fields: [recipientId], references: [id])
   shiftExchange   ShiftExchange?   @relation(fields: [shiftExchangeId], references: [id])
   shift           Shift?           @relation(fields: [shiftId], references: [id])
@@ -346,7 +373,7 @@ model PunchClockAccessSettings {
   businessId            String              @unique
   allowPunchFromAnywhere Boolean            @default(true)
   createdAt             DateTime            @default(now())
-  updatedAt             DateTime            @updatedAt
+  updatedAt             DateTime            @default(now())
   business              Business            @relation("PunchClockAccessSettings", fields: [businessId], references: [id])
   allowedLocations      AllowedLocation[]
 }
@@ -360,7 +387,7 @@ model AllowedLocation {
   longitude    Float?
   radius       Int                       @default(100) // in meters
   createdAt    DateTime                  @default(now())
-  updatedAt    DateTime                  @updatedAt
+  updatedAt    DateTime                  @default(now())
   settings     PunchClockAccessSettings  @relation(fields: [settingsId], references: [id], onDelete: Cascade)
 }
 
@@ -374,9 +401,10 @@ model ContractTemplate {
   employeeGroupId  String
   createdBy        String
   createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
+  updatedAt        DateTime      @default(now())
   business         Business      @relation(fields: [businessId], references: [id])
   employeeGroup    EmployeeGroup @relation(fields: [employeeGroupId], references: [id])
+  contracts        Contract[]
 
   @@unique([name, businessId])
 }
