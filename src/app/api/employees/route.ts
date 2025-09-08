@@ -204,7 +204,7 @@ export async function POST(request: Request) {
         isTeamLeader: Boolean(data.isTeamLeader),
         departmentId: data.departmentId,
         employeeGroupId: data.employeeGroupId || null,
-        email: data.email || null, // Add email field
+        email: (!data.email || data.email === '') ? null : data.email, // Convert empty emails to null
       },
       include: {
         department: true,
