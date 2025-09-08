@@ -20,7 +20,6 @@ export async function POST(request: Request) {
       })
     }
 
-    // Check if email is already in use by another employee in the same business
     const existingEmployee = await prisma.employee.findFirst({
       where: {
         email: email.trim(),
@@ -37,7 +36,6 @@ export async function POST(request: Request) {
       }
     })
 
-    // Also check if email exists in User table (this might be causing the conflict)
     const existingUser = await prisma.user.findUnique({
       where: { email: email.trim() },
       select: {
