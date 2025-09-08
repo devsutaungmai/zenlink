@@ -37,12 +37,37 @@ export async function POST(request: Request) {
       }
     })
 
+    // Also check if email exists in User table (this might be causing the conflict)
+    const existingUser = await prisma.user.findUnique({
+      where: { email: email.trim() },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        businessId: true
+      }
+    })
+
     if (existingEmployee) {
       return NextResponse.json({
         available: false,
+        conflictType: 'employee',
         existingEmployee: {
           name: `${existingEmployee.firstName} ${existingEmployee.lastName}`,
           employeeNo: existingEmployee.employeeNo
+        }
+      })
+    }
+
+    if (existingUser) {
+      return NextResponse.json({
+        available: false,
+        conflictType: 'user',
+        existingUser: {
+          name: `${existingUser.firstName} ${existingUser.lastName}`,
+          role: existingUser.role,
+          businessId: existingUser.businessId
         }
       })
     }

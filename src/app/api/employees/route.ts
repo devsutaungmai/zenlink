@@ -175,9 +175,25 @@ export async function POST(request: Request) {
     }
 
     // Create a separate User record for the employee
+    // Use a guaranteed unique email for the User record (employees can have their own email in Employee table)
+    let userEmail = `employee.${employeeNo}@company.local`
+    let emailSuffix = 0
+    
+    // Ensure the user email is unique
+    while (true) {
+      const existingUser = await prisma.user.findUnique({
+        where: { email: userEmail }
+      })
+      
+      if (!existingUser) break
+      
+      emailSuffix++
+      userEmail = `employee.${employeeNo}.${emailSuffix}@company.local`
+    }
+
     const employeeUser = await prisma.user.create({
       data: {
-        email: `employee.${employeeNo}@company.local`,
+        email: userEmail, // Use the guaranteed unique email
         password: '', // Temporary empty password, will be set when employee registers
         firstName: data.firstName,
         lastName: data.lastName,
@@ -216,6 +232,11 @@ export async function POST(request: Request) {
 
   } catch (error: any) {
     console.error('Create employee error:', error)
+    console.error('Error details:', {
+      code: error.code,
+      meta: error.meta,
+      message: error.message
+    })
     
     if (error.code === 'P2002') {
       let errorMessage = 'Validation error'
@@ -224,7 +245,12 @@ export async function POST(request: Request) {
       } else if (error.meta?.target?.includes('socialSecurityNo')) {
         errorMessage = 'Social security number already in use'
       } else if (error.meta?.target?.includes('email')) {
-        errorMessage = 'Email address already in use'
+        // Check if it's User table or Employee table
+        if (error.meta?.modelName === 'User') {
+          errorMessage = 'Internal system email conflict (this should not happen - please contact support)'
+        } else {
+          errorMessage = 'Email address already in use'
+        }
       }
       
       return NextResponse.json(
