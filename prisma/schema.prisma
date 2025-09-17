@@ -333,6 +333,9 @@ model Attendance {
   shiftId      String?
   punchInTime  DateTime
   punchOutTime DateTime?
+  approved     Boolean   @default(true)
+  approvedAt   DateTime?
+  approvedBy   String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @default(now())
   business     Business  @relation(fields: [businessId], references: [id])

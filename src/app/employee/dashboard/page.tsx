@@ -28,6 +28,9 @@ import {
   Users,
   CheckCircle,
   AlertTriangle,
+  ChevronLeft,
+  ChevronRight,
+  X,
 } from "lucide-react"
 
 interface Employee {
@@ -58,6 +61,7 @@ interface Shift {
   breakStart?: string | null
   breakEnd?: string | null
   employeeId: string
+  approved: boolean
   status: 'SCHEDULED' | 'WORKING' | 'COMPLETED' | 'CANCELLED'
   note?: string | null
   employee: {
@@ -156,6 +160,63 @@ function EmployeeDashboardContent() {
   const [pendingRequestsCount, setPendingRequestsCount] = useState(0)
   const [locationValidation, setLocationValidation] = useState<LocationValidationResult | null>(null)
   const [checkingLocation, setCheckingLocation] = useState(false)
+  
+  // Schedule view state
+  const [showScheduleView, setShowScheduleView] = useState(false)
+  const [scheduleDate, setScheduleDate] = useState(new Date())
+  const [monthlyShifts, setMonthlyShifts] = useState<Shift[]>([])
+
+  // Schedule navigation functions
+  const navigateScheduleMonth = (direction: 'prev' | 'next') => {
+    const newDate = new Date(scheduleDate)
+    if (direction === 'prev') {
+      newDate.setMonth(newDate.getMonth() - 1)
+    } else {
+      newDate.setMonth(newDate.getMonth() + 1)
+    }
+    setScheduleDate(newDate)
+    if (employee) {
+      fetchMonthlyShifts(employee.id, newDate)
+    }
+  }
+
+  const getDaysInMonth = (date: Date) => {
+    const year = date.getFullYear()
+    const month = date.getMonth()
+    const firstDay = new Date(year, month, 1)
+    const lastDay = new Date(year, month + 1, 0)
+    const daysInMonth = lastDay.getDate()
+    const startingDayOfWeek = firstDay.getDay()
+    
+    const days = []
+    
+    // Add empty cells for days before the first day of the month
+    for (let i = 0; i < startingDayOfWeek; i++) {
+      days.push(null)
+    }
+    
+    // Add days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      days.push(day)
+    }
+    
+    return days
+  }
+
+  const getShiftForDay = (day: number) => {
+    if (!day) return null
+    const dateStr = new Date(scheduleDate.getFullYear(), scheduleDate.getMonth(), day)
+      .toISOString().split('T')[0]
+    return monthlyShifts.find(shift => shift.date.startsWith(dateStr))
+  }
+
+  const isToday = (day: number) => {
+    if (!day) return false
+    const today = new Date()
+    return today.getDate() === day &&
+           today.getMonth() === scheduleDate.getMonth() &&
+           today.getFullYear() === scheduleDate.getFullYear()
+  }
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -292,13 +353,12 @@ function EmployeeDashboardContent() {
 
       setEmployee(employeeData)
 
-      // Fetch active shift for this specific employee
       const activeShiftRes = await fetch(`/api/shifts/active?employeeId=${employeeData.id}`)
       if (activeShiftRes.ok) {
-        const activeShiftData = await activeShiftRes.json()
+        const activeShiftResponse = await activeShiftRes.json()
+        const activeShiftData = activeShiftResponse.activeShift
         setActiveShift(activeShiftData)
-        
-        // Check if currently on break
+
         if (activeShiftData && activeShiftData.breakStart && !activeShiftData.breakEnd) {
           setIsOnBreak(true)
         } else {
@@ -306,14 +366,11 @@ function EmployeeDashboardContent() {
         }
       }
 
-      // Fetch today's scheduled shift and upcoming shifts
       await fetchTodayShift(employeeData.id)
       await fetchUpcomingShifts(employeeData.id)
-      
-      // Fetch pending requests count
+
       await fetchPendingRequestsCount(employeeData.id)
-      
-      // Fetch current attendance (if punched in but not out)
+
       await fetchCurrentAttendance(employeeData.id)
     } catch (error) {
       console.error('Error fetching employee data:', error)
@@ -330,11 +387,13 @@ function EmployeeDashboardContent() {
       
       if (res.ok) {
         const shifts = await res.json()
-        // Find today's shift (could be different from active shift if pre-scheduled)
-        const todayScheduledShift = shifts.find((shift: Shift) => 
-          shift.date.substring(0, 10) === today && shift.employeeId === employeeId
+        // Find today's approved shift assigned to this employee
+        const todayApprovedShift = shifts.find((shift: Shift) => 
+          shift.date.substring(0, 10) === today && 
+          shift.employeeId === employeeId &&
+          shift.approved === true
         )
-        setTodayShift(todayScheduledShift || null)
+        setTodayShift(todayApprovedShift || null)
       }
     } catch (error) {
       console.error('Error fetching today\'s shift:', error)
@@ -356,9 +415,11 @@ function EmployeeDashboardContent() {
       
       if (res.ok) {
         const shifts = await res.json()
-        // Filter to only include shifts for this employee
-        const employeeShifts = shifts.filter((shift: Shift) => shift.employeeId === employeeId)
-        setUpcomingShifts(employeeShifts)
+        // Filter to only include approved shifts for this employee
+        const employeeApprovedShifts = shifts.filter((shift: Shift) => 
+          shift.employeeId === employeeId && shift.approved === true
+        )
+        setUpcomingShifts(employeeApprovedShifts)
         
         // Fetch pending exchanges for these shifts
         await fetchPendingExchangesForShifts(employeeId)
@@ -390,6 +451,28 @@ function EmployeeDashboardContent() {
     } catch (error) {
       console.error('Error fetching pending requests count:', error)
       setPendingRequestsCount(0)
+    }
+  }
+
+  const fetchMonthlyShifts = async (employeeId: string, date: Date) => {
+    try {
+      const year = date.getFullYear()
+      const month = date.getMonth()
+      const startDate = new Date(year, month, 1).toISOString().split('T')[0]
+      const endDate = new Date(year, month + 1, 0).toISOString().split('T')[0]
+      
+      const res = await fetch(`/api/shifts?startDate=${startDate}&endDate=${endDate}&employeeId=${employeeId}`)
+      
+      if (res.ok) {
+        const shifts = await res.json()
+        // Filter to only include approved shifts for this employee
+        const employeeApprovedShifts = shifts.filter((shift: Shift) => 
+          shift.employeeId === employeeId && shift.approved === true
+        )
+        setMonthlyShifts(employeeApprovedShifts)
+      }
+    } catch (error) {
+      console.error('Error fetching monthly shifts:', error)
     }
   }
 
@@ -743,97 +826,64 @@ function EmployeeDashboardContent() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Time Card & Profile */}
           <div className="space-y-6">
-            {/* Punch Time Card */}
+             {/* Quick Actions */}
             <Card className="bg-white/95 backdrop-blur border-sky-200">
               <CardHeader>
-                <CardTitle className="text-sky-700 flex items-center gap-2">
-                  <Clock className="w-6 h-6" />
-                 {t('time_card.title')}
-                </CardTitle>
+                <CardTitle className="text-sky-700">{t('quick_actions.title')}</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="text-center">
-                  <div className={`text-2xl font-bold mb-2 ${activeShift ? "text-green-600" : "text-gray-500"}`}>
-                    {activeShift ? t('time_card.clocked_in') : t('time_card.clocked_out')}
-                  </div>
-                  {activeShift && (
-                    <div className="text-sky-600">
-                      <p>{t('time_card.since', { time: formatShiftStartTime(activeShift.date, activeShift.startTime) })}</p>
-                      <p suppressHydrationWarning>{t('time_card.worked', { duration: calculateWorkedTime() })}</p>
-                      {isOnBreak && <p className="text-orange-600 font-medium">{t('time_card.currently_on_break')}</p>}
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-3">
-                  {!activeShift ? (
-                    <>
-                      <Button
-                        onClick={handleClockIn}
-                        disabled={clockingIn || (locationValidation?.isAllowed === false)}
-                        className="w-full bg-green-500 hover:bg-green-600 text-white py-4 text-lg disabled:bg-gray-400 disabled:cursor-not-allowed"
-                      >
-                        <Play className="w-5 h-5 mr-2" />
-                        {clockingIn ? t('time_card.clocking_in') : t('time_card.clock_in')}
-                      </Button>
-                      
-                      {/* Location requirement message - only show when location validation fails */}
-                      {locationValidation?.isAllowed === false && (
-                        <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                          <div className="flex items-center gap-2 mb-2">
-                            <AlertTriangle className="w-4 h-4 text-red-600 flex-shrink-0" />
-                            <p className="text-sm text-red-700">
-                              {locationValidation.message}
-                            </p>
-                          </div>
-                          <Button
-                            onClick={checkLocationAccess}
-                            disabled={checkingLocation}
-                            className="w-full text-xs py-1 h-8 bg-red-600 hover:bg-red-700 text-white"
-                          >
-                            {checkingLocation ? 'Checking...' : 'Retry Location Check'}
-                          </Button>
-                        </div>
-                      )}
-                      
-                      {/* Show loading state while checking location */}
-                      {checkingLocation && (
-                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                          <div className="flex items-center gap-2">
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
-                            <p className="text-sm text-gray-600">
-                              Checking location access...
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      <Button
-                        onClick={isOnBreak ? handleEndBreak : handleStartBreak}
-                        disabled={breakLoading}
-                        className={`w-full py-3 ${
-                          isOnBreak ? "bg-orange-500 hover:bg-orange-600" : "bg-sky-500 hover:bg-sky-600"
-                        } text-white`}
-                      >
-                        <Coffee className="w-5 h-5 mr-2" />
-                        {breakLoading ? t('time_card.processing') : (isOnBreak ? t('time_card.end_break') : t('time_card.start_break'))}
-                      </Button>
-                      <Button 
-                        onClick={handleClockOut} 
-                        disabled={clockingOut}
-                        className="w-full bg-red-500 hover:bg-red-600 text-white py-3"
-                      >
-                        <Square className="w-5 h-5 mr-2" />
-                        {clockingOut ? t('time_card.clocking_out') : t('time_card.clock_out')}
-                      </Button>
-                    </>
-                  )}
+              <CardContent>
+                <div className="grid grid-cols-2 gap-3">
+                  <Button 
+                    variant="outline" 
+                    className="border-sky-300 text-sky-700 hover:bg-sky-50 py-3 relative"
+                    onClick={() => setShowPendingRequestsModal(true)}
+                  >
+                    <Bell className="w-4 h-4 mr-2" />
+                    {t('quick_actions.requests')}
+                    {pendingRequestsCount > 0 && (
+                      <Badge className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full min-w-[20px] h-5 flex items-center justify-center">
+                        {pendingRequestsCount}
+                      </Badge>
+                    )}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="border-sky-300 text-sky-700 hover:bg-sky-50 py-3"
+                    onClick={() => router.push('/dashboard/teams')}
+                  >
+                    <Users className="w-4 h-4 mr-2" />
+                    {t('quick_actions.team')}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="border-sky-300 text-sky-700 hover:bg-sky-50 py-3"
+                    onClick={() => {
+                      setShowScheduleView(true)
+                      if (employee) fetchMonthlyShifts(employee.id, scheduleDate)
+                    }}
+                  >
+                    <Calendar className="w-4 h-4 mr-2" />
+                    {t('quick_actions.my_schedule')}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="border-sky-300 text-sky-700 hover:bg-sky-50 py-3"
+                    onClick={() => router.push('/employee/availability')}
+                  >
+                    <Clock className="w-4 h-4 mr-2" />
+                    {t('quick_actions.availability')}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="border-sky-300 text-sky-700 hover:bg-sky-50 py-3"
+                    onClick={() => router.push('/employee/sick-leaves')}
+                  >
+                    <Bell className="w-4 h-4 mr-2" />
+                    {t('quick_actions.sick_leave')}
+                  </Button>
                 </div>
               </CardContent>
             </Card>
-
             {/* Employee Profile */}
             <Card className="bg-white/95 backdrop-blur border-sky-200">
               <CardHeader>
@@ -904,8 +954,8 @@ function EmployeeDashboardContent() {
                         </div>
                       )}
                       
-                      {/* Shift Status Badge */}
-                      <div className="mt-3">
+                      {/* Shift Status Badges */}
+                      <div className="mt-3 flex flex-wrap justify-center gap-2">
                         <Badge className={`${
                           todayShift.status === 'WORKING' ? 'bg-green-100 text-green-800' :
                           todayShift.status === 'COMPLETED' ? 'bg-blue-100 text-blue-800' :
@@ -917,6 +967,12 @@ function EmployeeDashboardContent() {
                            todayShift.status === 'COMPLETED' ? t('shift_status.completed') :
                            todayShift.status === 'CANCELLED' ? t('shift_status.cancelled') : todayShift.status}
                         </Badge>
+                        {todayShift.approved && (
+                          <Badge className="bg-emerald-100 text-emerald-800">
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            {t('shift_status.approved')}
+                          </Badge>
+                        )}
                       </div>
                     </div>
 
@@ -1168,62 +1224,6 @@ function EmployeeDashboardContent() {
                 </div>
               </CardContent>
             </Card>
-
-            {/* Quick Actions */}
-            <Card className="bg-white/95 backdrop-blur border-sky-200">
-              <CardHeader>
-                <CardTitle className="text-sky-700">{t('quick_actions.title')}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-3">
-                  <Button 
-                    variant="outline" 
-                    className="border-sky-300 text-sky-700 hover:bg-sky-50 py-3 relative"
-                    onClick={() => setShowPendingRequestsModal(true)}
-                  >
-                    <Bell className="w-4 h-4 mr-2" />
-                    {t('quick_actions.requests')}
-                    {pendingRequestsCount > 0 && (
-                      <Badge className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full min-w-[20px] h-5 flex items-center justify-center">
-                        {pendingRequestsCount}
-                      </Badge>
-                    )}
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="border-sky-300 text-sky-700 hover:bg-sky-50 py-3"
-                    onClick={() => router.push('/dashboard/teams')}
-                  >
-                    <Users className="w-4 h-4 mr-2" />
-                    {t('quick_actions.team')}
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="border-sky-300 text-sky-700 hover:bg-sky-50 py-3"
-                    onClick={() => router.push('/dashboard/schedule')}
-                  >
-                    <Calendar className="w-4 h-4 mr-2" />
-                    {t('quick_actions.schedule')}
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="border-sky-300 text-sky-700 hover:bg-sky-50 py-3"
-                    onClick={() => router.push('/employee/availability')}
-                  >
-                    <Clock className="w-4 h-4 mr-2" />
-                    {t('quick_actions.availability')}
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="border-sky-300 text-sky-700 hover:bg-sky-50 py-3"
-                    onClick={() => router.push('/employee/sick-leaves')}
-                  >
-                    <Bell className="w-4 h-4 mr-2" />
-                    {t('quick_actions.sick_leave')}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </div>
@@ -1249,6 +1249,125 @@ function EmployeeDashboardContent() {
         shift={selectedShiftForDetails}
         currentEmployeeId={employee?.id || ''}
       />
+
+      {/* Schedule View Modal */}
+      {showScheduleView && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl max-h-[90vh] overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div className="flex items-center space-x-4">
+                <h2 className="text-xl font-semibold text-sky-700">
+                  {t('schedule.title')}
+                </h2>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigateScheduleMonth('prev')}
+                    className="border-sky-300 text-sky-700 hover:bg-sky-50"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  <span className="text-lg font-medium text-sky-700 min-w-[140px] text-center">
+                    {t(`schedule.months.${scheduleDate.toLocaleString('en', { month: 'long' }).toLowerCase()}`)} {scheduleDate.getFullYear()}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigateScheduleMonth('next')}
+                    className="border-sky-300 text-sky-700 hover:bg-sky-50"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowScheduleView(false)}
+                className="border-sky-300 text-sky-700 hover:bg-sky-50"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            
+            {/* Calendar Content */}
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-100px)]">
+              {/* Days of week header */}
+              <div className="grid grid-cols-7 gap-2 mb-4">
+                {['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'].map((day) => (
+                  <div key={day} className="p-2 text-center text-sm font-medium text-sky-600 bg-sky-50 rounded">
+                    {t(`schedule.days.${day}`)}
+                  </div>
+                ))}
+              </div>
+              
+              {/* Calendar Grid */}
+              <div className="grid grid-cols-7 gap-2">
+                {getDaysInMonth(scheduleDate).map((day, index) => {
+                  const shift = day ? getShiftForDay(day) : null
+                  const isCurrentDay = day ? isToday(day) : false
+                  
+                  return (
+                    <div
+                      key={index}
+                      className={`min-h-[100px] p-2 border rounded-lg ${
+                        day 
+                          ? isCurrentDay
+                            ? 'bg-sky-100 border-sky-300'
+                            : shift 
+                              ? 'bg-green-50 border-green-200 hover:bg-green-100 cursor-pointer'
+                              : 'bg-white border-gray-200'
+                          : 'bg-gray-50 border-gray-100'
+                      }`}
+                      onClick={() => {
+                        if (shift) {
+                          setSelectedShiftForDetails(shift)
+                          setShowShiftDetailsModal(true)
+                        }
+                      }}
+                    >
+                      {day && (
+                        <>
+                          <div className={`text-sm font-medium mb-2 ${
+                            isCurrentDay ? 'text-sky-700' : 'text-gray-700'
+                          }`}>
+                            {day}
+                            {isCurrentDay && (
+                              <span className="ml-1 text-xs bg-sky-500 text-white px-1 rounded">
+                                {t('schedule.today')}
+                              </span>
+                            )}
+                          </div>
+                          {shift && (
+                            <div className="space-y-1">
+                              <div className="text-xs font-medium text-green-700 truncate">
+                                {shift.department?.name || t('common.general')}
+                              </div>
+                              <div className="text-xs text-green-600">
+                                {shift.startTime} - {shift.endTime || t('common.tbd')}
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+              
+              {/* No shifts message */}
+              {monthlyShifts.length === 0 && (
+                <div className="text-center py-8">
+                  <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500">{t('schedule.no_shifts')}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Pending Requests Modal */}
       <PendingRequestsModal

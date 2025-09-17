@@ -108,6 +108,7 @@
       "set_pin": "Set PIN",
       "invalid_pin": "PIN must be exactly 6 digits",
       "success": "PIN has been set successfully!",
+      "email_sent": "The PIN has been sent to the employee's email address.",
       "error": "Failed to set PIN. Please try again."
     },
     "edit_page": {

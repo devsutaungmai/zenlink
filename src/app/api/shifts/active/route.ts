@@ -82,7 +82,9 @@ export async function GET() {
       }
     })
 
-    return NextResponse.json(activeShift)
+    return NextResponse.json({
+      activeShift: activeShift
+    })
   } catch (error) {
     console.error('Failed to fetch active shift:', error)
     return NextResponse.json(

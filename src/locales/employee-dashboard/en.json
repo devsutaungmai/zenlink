@@ -67,6 +67,7 @@
     "requests": "Requests",
     "team": "Team",
     "schedule": "Schedule",
+    "my_schedule": "My Schedule",
     "availability": "Availability",
     "sick_leave": "Sick Leave"
   },
@@ -83,6 +84,42 @@
     "return_to_login": "Return to Login",
     "unauthorized": "Unauthorized access",
     "general_error": "An error occurred while loading the dashboard"
+  },
+  "schedule": {
+    "title": "My Schedule",
+    "loading": "Loading schedule...",
+    "no_shifts": "No shifts scheduled for this month",
+    "previous_month": "Previous month",
+    "next_month": "Next month",
+    "shift_details": "Shift Details",
+    "start_time": "Start Time",
+    "end_time": "End Time",
+    "department": "Department",
+    "location": "Location",
+    "today": "Today",
+    "days": {
+      "sunday": "Sun",
+      "monday": "Mon", 
+      "tuesday": "Tue",
+      "wednesday": "Wed",
+      "thursday": "Thu",
+      "friday": "Fri",
+      "saturday": "Sat"
+    },
+    "months": {
+      "january": "January",
+      "february": "February",
+      "march": "March",
+      "april": "April",
+      "may": "May",
+      "june": "June",
+      "july": "July",
+      "august": "August",
+      "september": "September",
+      "october": "October",
+      "november": "November",
+      "december": "December"
+    }
   },
   "common": {
     "loading": "Loading...",

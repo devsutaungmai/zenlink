@@ -409,6 +409,7 @@ export default function PendingRequestsPage() {
               </tbody>
             </table>
           </div>
+          )}
         </div>
       )}
 

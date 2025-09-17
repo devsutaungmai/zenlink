@@ -53,13 +53,7 @@ export async function POST(req: Request) {
     path: '/',
     sameSite: 'lax' // Temporarily changed from 'strict' to 'lax'
   })
-
-  console.log('Login debug - Cookie set:', { 
-    token: token.substring(0, 20) + '...', 
-    env: process.env.NODE_ENV,
-    secure: process.env.NODE_ENV === 'production'
-  });
-  console.log('Login debug - User logged in:', user.id, user.email);
+  
   return res
 }
 

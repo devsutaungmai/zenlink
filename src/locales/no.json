@@ -100,6 +100,7 @@
       "set_pin": "Sett PIN",
       "invalid_pin": "PIN må være nøyaktig 6 siffer",
       "success": "PIN har blitt satt!",
+      "email_sent": "PIN-koden har blitt sendt til den ansattes e-postadresse.",
       "error": "Kunne ikke sette PIN. Prøv igjen."
     },
     "edit_page": {

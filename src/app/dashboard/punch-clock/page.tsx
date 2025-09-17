@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
+import { useUser } from '@/app/lib/useUser'
+import Swal from 'sweetalert2'
 import { 
   ClockIcon, 
   UserGroupIcon,
@@ -12,8 +14,22 @@ import {
   PlayIcon,
   StopIcon,
   CheckCircleIcon,
-  XCircleIcon
+  XCircleIcon,
+  PencilIcon,
+  ArrowDownTrayIcon,
+  DocumentTextIcon,
+  TableCellsIcon
 } from '@heroicons/react/24/outline'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 
 interface Business {
   id: string
@@ -52,6 +68,7 @@ interface Attendance {
   id: string
   punchInTime: string
   punchOutTime: string | null
+  approved: boolean
   employee: {
     firstName: string
     lastName: string
@@ -75,15 +92,28 @@ interface Attendance {
 export default function PunchClockPage() {
   const router = useRouter()
   const { t } = useTranslation('punch-clock')
+  const { user } = useUser() // Add user context
   const [business, setBusiness] = useState<Business | null>(null)
   const [employees, setEmployees] = useState<Employee[]>([])
   const [attendanceRecords, setAttendanceRecords] = useState<Attendance[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedFilter, setSelectedFilter] = useState('all')
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
+  const [dateRangeType, setDateRangeType] = useState<'single' | 'week' | 'month'>('single')
+  const [weekStartDate, setWeekStartDate] = useState('')
+  const [monthYear, setMonthYear] = useState('')
+  const [selectedEmployee, setSelectedEmployee] = useState<string>('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [currentTime, setCurrentTime] = useState(new Date())
+  const [editingRecord, setEditingRecord] = useState<Attendance | null>(null)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editFormData, setEditFormData] = useState({
+    punchInTime: '',
+    punchOutTime: ''
+  })
+
+  const isAdmin = user?.role === 'ADMIN'
 
   useEffect(() => {
     fetchData()
@@ -94,7 +124,35 @@ export default function PunchClockPage() {
     }, 1000)
 
     return () => clearInterval(timeInterval)
-  }, [selectedDate])
+  }, [selectedDate, weekStartDate, monthYear, dateRangeType])
+
+  const getDateRange = () => {
+    switch (dateRangeType) {
+      case 'week':
+        if (!weekStartDate) return null
+        const startDate = new Date(weekStartDate)
+        const endDate = new Date(startDate)
+        endDate.setDate(startDate.getDate() + 6)
+        return {
+          startDate: startDate.toISOString().split('T')[0],
+          endDate: endDate.toISOString().split('T')[0]
+        }
+      case 'month':
+        if (!monthYear) return null
+        const [year, month] = monthYear.split('-')
+        const firstDay = new Date(parseInt(year), parseInt(month) - 1, 1)
+        const lastDay = new Date(parseInt(year), parseInt(month), 0)
+        return {
+          startDate: firstDay.toISOString().split('T')[0],
+          endDate: lastDay.toISOString().split('T')[0]
+        }
+      default:
+        return {
+          startDate: selectedDate,
+          endDate: selectedDate
+        }
+    }
+  }
 
   const fetchData = async () => {
     try {
@@ -153,11 +211,20 @@ export default function PunchClockPage() {
         // For now, let's try without business ID to see if we get data
       }
 
-      const url = businessId 
-        ? `/api/attendance?businessId=${businessId}&date=${selectedDate}`
-        : `/api/attendance?date=${selectedDate}`
+      // Build query parameters
+      const dateRange = getDateRange()
+      if (!dateRange) {
+        setAttendanceRecords([])
+        return
+      }
+
+      const params = new URLSearchParams()
+      if (businessId) params.append('businessId', businessId)
+      params.append('startDate', dateRange.startDate)
+      params.append('endDate', dateRange.endDate)
+      if (selectedEmployee) params.append('employeeId', selectedEmployee)
         
-      const res = await fetch(url)
+      const res = await fetch(`/api/attendance?${params.toString()}`)
       if (res.ok) {
         const attendanceData = await res.json()
         setAttendanceRecords(attendanceData)
@@ -194,8 +261,13 @@ export default function PunchClockPage() {
     return new Date(timeString).toLocaleTimeString('en-US', { 
       hour: '2-digit', 
       minute: '2-digit',
-      hour12: true
+      hour12: false
     })
+  }
+
+  const formatShiftTime = (timeString: string) => {
+    // Return time string as is since it's already in HH:MM format
+    return timeString
   }
 
   const formatDate = (timeString: string) => {
@@ -215,6 +287,100 @@ export default function PunchClockPage() {
     const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
     
     return `${hours}h ${minutes}m`
+  }
+
+  const getEarlyLateStatus = (record: Attendance) => {
+    if (!record.shift) return null
+
+    const punchInTime = new Date(record.punchInTime)
+    
+    // Parse shift start time properly
+    let shiftStartTime: Date
+    if (record.shift.date && record.shift.startTime) {
+      const shiftDate = new Date(record.shift.date)
+      const datePart = shiftDate.toISOString().split('T')[0]
+      const timePart = record.shift.startTime.includes(':') ? record.shift.startTime : `${record.shift.startTime}:00`
+      const timeWithSeconds = timePart.split(':').length === 2 ? `${timePart}:00` : timePart
+      
+      shiftStartTime = new Date(`${datePart}T${timeWithSeconds}`)
+    } else {
+      return null
+    }
+
+    if (isNaN(shiftStartTime.getTime())) {
+      return null
+    }
+    
+    let status = []
+
+    // Check if punched in early or late
+    const timeDiffIn = punchInTime.getTime() - shiftStartTime.getTime()
+    if (timeDiffIn < -300000) { // 5 minutes early
+      status.push({ type: 'early-in', text: 'Early In', color: 'bg-blue-100 text-blue-800' })
+    } else if (timeDiffIn > 300000) { // 5 minutes late
+      status.push({ type: 'late-in', text: 'Late In', color: 'bg-red-100 text-red-800' })
+    }
+
+    // Check if punched out early (only if punched out and shift has end time)
+    if (record.punchOutTime && record.shift.endTime) {
+      const punchOutTime = new Date(record.punchOutTime)
+      
+      const shiftDate = new Date(record.shift.date)
+      const datePart = shiftDate.toISOString().split('T')[0]
+      const timePart = record.shift.endTime.includes(':') ? record.shift.endTime : `${record.shift.endTime}:00`
+      const timeWithSeconds = timePart.split(':').length === 2 ? `${timePart}:00` : timePart
+      
+      const shiftEndTime = new Date(`${datePart}T${timeWithSeconds}`)
+      
+      if (!isNaN(shiftEndTime.getTime())) {
+        const timeDiffOut = shiftEndTime.getTime() - punchOutTime.getTime()
+        
+        if (timeDiffOut > 300000) { // 5 minutes early
+          status.push({ type: 'early-out', text: 'Early Out', color: 'bg-orange-100 text-orange-800' })
+        }
+      }
+    }
+
+    return status.length > 0 ? status : null
+  }
+
+  // Helper function to get punch in time styling based on late status
+  const getPunchInTimeStyle = (record: Attendance) => {
+    if (!record.shift) {
+      return 'text-gray-900'
+    }
+
+    const punchInTime = new Date(record.punchInTime)
+    
+    let shiftStartTime: Date
+    
+    if (record.shift.date && record.shift.startTime) {
+      const shiftDate = new Date(record.shift.date)
+      const datePart = shiftDate.toISOString().split('T')[0]
+      const timePart = record.shift.startTime.includes(':') ? record.shift.startTime : `${record.shift.startTime}:00`
+      const timeWithSeconds = timePart.split(':').length === 2 ? `${timePart}:00` : timePart
+      
+      const isoString = `${datePart}T${timeWithSeconds}`
+      shiftStartTime = new Date(isoString)
+    } else {
+      return 'text-gray-900'
+    }
+
+    if (isNaN(shiftStartTime.getTime())) {
+      return 'text-gray-900'
+    }
+
+    const timeDiffIn = punchInTime.getTime() - shiftStartTime.getTime()
+
+    if (timeDiffIn > 900000) { // More than 15 minutes late
+      return 'text-red-700 font-semibold'
+    } else if (timeDiffIn > 300000) { // 5-15 minutes late
+      return 'text-orange-600 font-medium'
+    } else if (timeDiffIn < -300000) { // 5+ minutes early
+      return 'text-blue-600'
+    }
+
+    return 'text-gray-900'
   }
 
   const getStatusBadge = (record: Attendance) => {
@@ -237,6 +403,206 @@ export default function PunchClockPage() {
 
   const activeCount = attendanceRecords.filter(record => !record.punchOutTime).length
   const completedCount = attendanceRecords.filter(record => record.punchOutTime).length
+
+  // Admin functions
+  const handleEditRecord = (record: Attendance) => {
+    if (!isAdmin) return
+    setEditingRecord(record)
+    
+    // Format time to HH:MM for input fields
+    const formatTimeForInput = (timeString: string) => {
+      const date = new Date(timeString)
+      // Get hours and minutes in HH:MM format for time input
+      const hours = date.getHours().toString().padStart(2, '0')
+      const minutes = date.getMinutes().toString().padStart(2, '0')
+      return `${hours}:${minutes}`
+    }
+    
+    setEditFormData({
+      punchInTime: record.punchInTime ? formatTimeForInput(record.punchInTime) : '',
+      punchOutTime: record.punchOutTime ? formatTimeForInput(record.punchOutTime) : ''
+    })
+    setShowEditModal(true)
+  }
+
+  const handleSaveEdit = async () => {
+    if (!editingRecord || !isAdmin) return
+
+    try {
+      // Convert time strings to full datetime strings
+      const today = new Date(editingRecord.punchInTime).toDateString()
+      
+      const punchInDateTime = new Date(`${today} ${editFormData.punchInTime}`)
+      const punchOutDateTime = editFormData.punchOutTime ? new Date(`${today} ${editFormData.punchOutTime}`) : null
+
+      const response = await fetch(`/api/attendance/${editingRecord.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          punchInTime: punchInDateTime.toISOString(),
+          punchOutTime: punchOutDateTime ? punchOutDateTime.toISOString() : null
+        })
+      })
+
+      if (response.ok) {
+        setShowEditModal(false)
+        setEditingRecord(null)
+        // Show success toast
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
+          icon: 'success',
+          title: 'Attendance record updated successfully'
+        })
+        await fetchAttendance() // Refresh data
+      } else {
+        const errorData = await response.json()
+        // Show error toast
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
+          icon: 'error',
+          title: errorData.error || 'Failed to update record'
+        })
+      }
+    } catch (error) {
+      console.error('Error updating attendance record:', error)
+      // Show error toast
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        icon: 'error',
+        title: 'Failed to update record'
+      })
+    }
+  }
+
+  // Add attendance approval handler
+  const handleAttendanceApproval = async (attendanceId: string, approved: boolean) => {
+    if (!isAdmin) return
+
+    try {
+      const adminId = user?.id || 'admin'
+      const response = await fetch('/api/attendance/pending', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          attendanceId, 
+          approved,
+          adminId 
+        }),
+      })
+
+      if (response.ok) {
+        // Show success toast
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
+          icon: 'success',
+          title: approved ? 'Attendance approved successfully' : 'Attendance rejected successfully'
+        })
+        await fetchAttendance() // Refresh the list
+      } else {
+        const error = await response.json()
+        // Show error toast
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
+          icon: 'error',
+          title: error.error || (approved ? 'Failed to approve attendance' : 'Failed to reject attendance')
+        })
+      }
+    } catch (error) {
+      console.error(`Error ${approved ? 'approving' : 'rejecting'} attendance:`, error)
+      // Show error toast
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        icon: 'error',
+        title: approved ? 'Failed to approve attendance' : 'Failed to reject attendance'
+      })
+    }
+  }
+
+  const exportToCSV = () => {
+    if (!isAdmin) return
+    
+    const headers = ['Employee Name', 'Employee No', 'Department', 'Punch In', 'Punch Out', 'Duration', 'Status', 'Shift Info']
+    const csvData = filteredAttendance.map(record => [
+      `${record.employee.firstName} ${record.employee.lastName}`,
+      record.employee.employeeNo,
+      record.employee.department.name,
+      formatTime(record.punchInTime),
+      record.punchOutTime ? formatTime(record.punchOutTime) : 'Still working',
+      calculateWorkDuration(record.punchInTime, record.punchOutTime),
+      record.punchOutTime ? 'Completed' : 'Working',
+      record.shift ? `${record.shift.startTime} - ${record.shift.endTime || 'Active'}` : 'No shift'
+    ])
+
+    const csvContent = [headers, ...csvData]
+      .map(row => row.map(field => `"${field}"`).join(','))
+      .join('\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `attendance_${getDateRange()?.startDate || selectedDate}.csv`
+    a.click()
+    window.URL.revokeObjectURL(url)
+  }
+
+  const exportToPDF = async () => {
+    if (!isAdmin) return
+    
+    try {
+      const dateRange = getDateRange()
+      const params = new URLSearchParams({
+        startDate: dateRange?.startDate || selectedDate,
+        endDate: dateRange?.endDate || selectedDate,
+        ...(selectedEmployee && { employeeId: selectedEmployee })
+      })
+
+      const response = await fetch(`/api/attendance/export/pdf?${params.toString()}`)
+      
+      if (response.ok) {
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `attendance_${dateRange?.startDate || selectedDate}.pdf`
+        a.click()
+        window.URL.revokeObjectURL(url)
+      } else {
+        alert('Failed to export PDF')
+      }
+    } catch (error) {
+      console.error('Error exporting PDF:', error)
+      alert('Failed to export PDF')
+    }
+  }
 
   if (loading) {
     return (
@@ -294,64 +660,149 @@ export default function PunchClockPage() {
                   hour: '2-digit', 
                   minute: '2-digit',
                   second: '2-digit',
-                  hour12: true
+                  hour12: false
                 })}</span>
               </div>
             </div>
           </div>
           <div className="text-right">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('header.select_date')}
-            </label>
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="block px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF]"
-            />
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Date Range Type
+              </label>
+              <select
+                value={dateRangeType}
+                onChange={(e) => setDateRangeType(e.target.value as 'single' | 'week' | 'month')}
+                className="block px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] mr-2"
+              >
+                <option value="single">Single Day</option>
+                <option value="week">Week</option>
+                <option value="month">Month</option>
+              </select>
+            </div>
+            
+            {dateRangeType === 'single' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {t('header.select_date')}
+                </label>
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="block px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF]"
+                />
+              </div>
+            )}
+            
+            {dateRangeType === 'week' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Week Starting
+                </label>
+                <input
+                  type="date"
+                  value={weekStartDate}
+                  onChange={(e) => setWeekStartDate(e.target.value)}
+                  className="block px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF]"
+                />
+              </div>
+            )}
+            
+            {dateRangeType === 'month' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Month
+                </label>
+                <input
+                  type="month"
+                  value={monthYear}
+                  onChange={(e) => setMonthYear(e.target.value)}
+                  className="block px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF]"
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       {/* Search and Filter */}
       <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm mb-6">
-        <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-          <div className="relative flex-1 max-w-md">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+        <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
+          <div className="flex flex-col md:flex-row gap-4 items-center flex-1">
+            <div className="relative flex-1 max-w-md">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder={t('search.placeholder')}
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF]"
+              />
             </div>
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder={t('search.placeholder')}
-              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF]"
-            />
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <FunnelIcon className="w-4 h-4 text-gray-500" />
-              <span className="text-sm text-gray-500">{t('search.filter_label')}</span>
-            </div>
-            {[
-              { value: 'all', label: t('filters.all') },
-              { value: 'working', label: t('filters.working') },
-              { value: 'completed', label: t('filters.completed') }
-            ].map((filter) => (
-              <button
-                key={filter.value}
-                onClick={() => setSelectedFilter(filter.value)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 min-w-[80px] ${
-                  selectedFilter === filter.value
-                    ? 'bg-[#31BCFF] text-white shadow-md'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+            
+            <div className="flex items-center gap-3">
+              <select
+                value={selectedEmployee}
+                onChange={(e) => setSelectedEmployee(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF]"
               >
-                {filter.label}
-              </button>
-            ))}
+                <option value="">All Employees</option>
+                {employees.map((employee) => (
+                  <option key={employee.id} value={employee.id}>
+                    {employee.firstName} {employee.lastName}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <FunnelIcon className="w-4 h-4 text-gray-500" />
+                <span className="text-sm text-gray-500">{t('search.filter_label')}</span>
+              </div>
+              {[
+                { value: 'all', label: t('filters.all') },
+                { value: 'working', label: t('filters.working') },
+                { value: 'completed', label: t('filters.completed') }
+              ].map((filter) => (
+                <button
+                  key={filter.value}
+                  onClick={() => setSelectedFilter(filter.value)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 min-w-[80px] ${
+                    selectedFilter === filter.value
+                      ? 'bg-[#31BCFF] text-white shadow-md'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
           </div>
+
+          {/* Export Options - Admin Only */}
+          {isAdmin && (
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={exportToCSV}
+                className="inline-flex items-center"
+              >
+                <TableCellsIcon className="w-4 h-4 mr-2" />
+                Export CSV
+              </Button>
+              <Button
+                onClick={exportToPDF}
+                className="inline-flex items-center bg-red-600 hover:bg-red-700 text-white"
+              >
+                <DocumentTextIcon className="w-4 h-4 mr-2" />
+                Export PDF
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -397,6 +848,11 @@ export default function PunchClockPage() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     {t('table.columns.shift_info')}
                   </th>
+                  {isAdmin && (
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -421,7 +877,9 @@ export default function PunchClockPage() {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{formatTime(record.punchInTime)}</div>
+                      <div className={`text-sm ${getPunchInTimeStyle(record)}`}>
+                        {formatTime(record.punchInTime)}
+                      </div>
                       <div className="text-sm text-gray-500">{formatDate(record.punchInTime)}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -438,6 +896,12 @@ export default function PunchClockPage() {
                       <div className="text-sm font-medium text-gray-900">
                         {calculateWorkDuration(record.punchInTime, record.punchOutTime)}
                       </div>
+                      {/* Show early/late status indicators */}
+                      {getEarlyLateStatus(record)?.map((status, index) => (
+                        <span key={index} className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium mt-1 mr-1 ${status.color}`}>
+                          {status.text}
+                        </span>
+                      ))}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getStatusBadge(record)}
@@ -446,7 +910,7 @@ export default function PunchClockPage() {
                       {record.shift ? (
                         <div>
                           <div className="text-sm text-gray-900">
-                            {record.shift.startTime} - {record.shift.endTime || 'Active'}
+                            {formatShiftTime(record.shift.startTime)} - {record.shift.endTime ? formatShiftTime(record.shift.endTime) : 'Active'}
                           </div>
                           <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                             record.shift.status === 'WORKING' ? 'bg-green-100 text-green-800' :
@@ -457,9 +921,59 @@ export default function PunchClockPage() {
                           </span>
                         </div>
                       ) : (
-                        <span className="text-sm text-gray-500">{t('status.no_shift')}</span>
+                        <div>
+                          <span className="text-sm text-gray-500">{t('status.no_shift')}</span>
+                          {!record.approved && (
+                            <div className="mt-1">
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                Pending Approval
+                              </span>
+                            </div>
+                          )}
+                          {record.approved && !record.shift && (
+                            <div className="mt-1">
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <CheckCircleIcon className="w-3 h-3 mr-1" />
+                                Approved
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       )}
                     </td>
+                    {isAdmin && (
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleEditRecord(record)}
+                            className="inline-flex items-center px-3 py-1 text-sm font-medium rounded-lg text-blue-600 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                          >
+                            <PencilIcon className="w-4 h-4 mr-1" />
+                            Edit
+                          </button>
+                          
+                          {/* Show approval buttons for unscheduled work that needs approval */}
+                          {!record.shift && !record.approved && (
+                            <>
+                              <button
+                                onClick={() => handleAttendanceApproval(record.id, true)}
+                                className="inline-flex items-center px-3 py-1 text-sm font-medium rounded-lg text-green-600 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                              >
+                                <CheckCircleIcon className="w-4 h-4 mr-1" />
+                                Approve
+                              </button>
+                              <button
+                                onClick={() => handleAttendanceApproval(record.id, false)}
+                                className="inline-flex items-center px-3 py-1 text-sm font-medium rounded-lg text-red-600 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                              >
+                                <XCircleIcon className="w-4 h-4 mr-1" />
+                                Reject
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -467,6 +981,73 @@ export default function PunchClockPage() {
           </div>
         )}
       </div>
+
+      {/* Edit Modal - Admin Only */}
+      <Dialog open={isAdmin && showEditModal} onOpenChange={setShowEditModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Attendance Record</DialogTitle>
+            <DialogDescription>
+              {editingRecord && (
+                <>Employee: {editingRecord.employee.firstName} {editingRecord.employee.lastName}</>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          {editingRecord && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Punch In Time
+                </label>
+                <Input
+                  type="time"
+                  step="60"
+                  value={editFormData.punchInTime}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, punchInTime: e.target.value }))}
+                  className="font-mono text-lg tracking-wider"
+                  placeholder="HH:MM"
+                  pattern="^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$"
+                  title="Please enter time in 24-hour format (HH:MM)"
+                />
+                <p className="text-xs text-gray-500 mt-1">Format: 15:30 (3:30 PM)</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Punch Out Time
+                </label>
+                <Input
+                  type="time"
+                  step="60"
+                  value={editFormData.punchOutTime}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, punchOutTime: e.target.value }))}
+                  className="font-mono text-lg tracking-wider"
+                  placeholder="HH:MM"
+                  pattern="^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$"
+                  title="Please enter time in 24-hour format (HH:MM)"
+                />
+                <p className="text-xs text-gray-500 mt-1">Format: 21:15 (9:15 PM)</p>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowEditModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveEdit}
+              className="bg-[#31BCFF] hover:bg-[#0EA5E9]"
+            >
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

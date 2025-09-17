@@ -177,14 +177,22 @@ export default function EmployeesPage() {
       });
 
       if (res.ok) {
+        const data = await res.json();
+        
+        // Show different messages based on whether email was sent
+        let successMessage = t('employees.pin_modal.success');
+        if (data.emailSent) {
+          successMessage += ' ' + t('employees.pin_modal.email_sent');
+        }
+        
         Swal.fire({
           title: t('common.success'),
-          text: t('employees.pin_modal.success'),
+          text: successMessage,
           icon: 'success',
           toast: true,
           position: 'top-end',
           showConfirmButton: false,
-          timer: 3000,
+          timer: data.emailSent ? 5000 : 3000, // Show longer if email was sent
           timerProgressBar: true
         });
         setShowPinModal(false);

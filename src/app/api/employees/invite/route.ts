@@ -25,20 +25,31 @@ export async function POST(req: Request) {
       }
     }
 
-    // Create a Nodemailer transporter using Gmail
+    // Create a Nodemailer transporter using Gmail with improved configuration
     const transporter = nodemailer.createTransport({
+      service: 'gmail',
       host: 'smtp.gmail.com',
-      port: 465,
-      secure: true,
+      port: 587,
+      secure: false,
       auth: {
         user: process.env.GMAIL_USER || 'zenlinkdev@gmail.com',
         pass: process.env.GMAIL_APP_PASSWORD,
       },
+      tls: {
+        rejectUnauthorized: false
+      }
     });
 
     const registrationLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/employee/make-password?email=${encodeURIComponent(email)}${employeeId ? `&employeeId=${employeeId}` : ''}`;
 
-    // Send email
+    // Verify SMTP connection before attempting to send
+    try {
+      await transporter.verify();
+      console.log('SMTP connection verified successfully');
+    } catch (verifyError) {
+      console.error('SMTP verification failed:', verifyError);
+      throw new Error(`Email service unavailable: ${verifyError instanceof Error ? verifyError.message : 'Unknown error'}`);
+    }
     const info = await transporter.sendMail({
       from: `"Zen Link" <${process.env.FROM_EMAIL || process.env.GMAIL_USER || 'zenlinkdev@gmail.com'}>`,
       to: email,

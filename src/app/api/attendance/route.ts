@@ -38,7 +38,9 @@ export async function POST(request: NextRequest) {
         employeeId,
         businessId,
         shiftId: shiftId || null,
-        punchInTime: punchInTime ? new Date(punchInTime) : new Date()
+        punchInTime: punchInTime ? new Date(punchInTime) : new Date(),
+        // For unscheduled work (no shiftId), require admin approval
+        approved: shiftId ? true : false
       },
       include: {
         employee: {
@@ -78,6 +80,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const employeeId = searchParams.get('employeeId')
     const businessId = searchParams.get('businessId')
+    const startDate = searchParams.get('startDate')
+    const endDate = searchParams.get('endDate')
     const date = searchParams.get('date')
 
     const whereClause: any = {}
@@ -90,7 +94,18 @@ export async function GET(request: NextRequest) {
       whereClause.employeeId = employeeId
     }
 
-    if (date) {
+    // Handle date filtering - priority: startDate/endDate, then single date
+    if (startDate && endDate) {
+      const start = new Date(startDate)
+      start.setHours(0, 0, 0, 0)
+      const end = new Date(endDate)
+      end.setHours(23, 59, 59, 999)
+
+      whereClause.punchInTime = {
+        gte: start,
+        lte: end
+      }
+    } else if (date) {
       const startOfDay = new Date(date)
       startOfDay.setHours(0, 0, 0, 0)
       const endOfDay = new Date(date)
@@ -125,6 +140,7 @@ export async function GET(request: NextRequest) {
         shift: {
           select: {
             id: true,
+            date: true,
             startTime: true,
             endTime: true,
             shiftType: true,

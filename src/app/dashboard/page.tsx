@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { CalendarIcon, UserGroupIcon, ClockIcon, ChartBarIcon, PlayIcon } from '@heroicons/react/24/outline'
+import { CalendarIcon, UserGroupIcon, ClockIcon, ChartBarIcon, PlayIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
 import { useUser } from '@/app/lib/useUser'
 import PunchClockModal from '@/components/PunchClockModal'
 import ActiveShiftTimer from '@/components/ActiveShiftTimer'
@@ -11,6 +11,12 @@ interface Employee {
   firstName: string
   lastName: string
   userId: string
+  businessId?: string
+  department?: {
+    id: string
+    name: string
+    businessId: string
+  }
 }
 
 interface EmployeeGroup {
@@ -27,12 +33,45 @@ interface ActiveShift {
   id: string
   startTime: string
   date: string
+  approved?: boolean
+  status?: 'SCHEDULED' | 'WORKING' | 'COMPLETED' | 'CANCELLED'
+  shiftType?: string
+  breakStart?: string | null
+  breakEnd?: string | null
   department?: {
     name: string
   }
   employeeGroup?: {
     name: string
   }
+}
+
+interface TodayShift {
+  id: string
+  date: string
+  startTime: string
+  endTime: string | null
+  shiftType: string
+  approved: boolean
+  status: 'SCHEDULED' | 'WORKING' | 'COMPLETED' | 'CANCELLED'
+  breakStart?: string | null
+  breakEnd?: string | null
+  employeeGroup?: {
+    name: string
+  }
+  department?: {
+    name: string
+  }
+}
+
+interface Attendance {
+  id: string
+  employeeId: string
+  businessId: string
+  shiftId?: string | null
+  punchInTime: string
+  punchOutTime?: string | null
+  shift?: TodayShift | null
 }
 
 const stats = [
@@ -52,6 +91,13 @@ export default function DashboardPage() {
   const [activeShift, setActiveShift] = useState<ActiveShift | null>(null)
   const [loadingActiveShift, setLoadingActiveShift] = useState(false)
   const [endingShift, setEndingShift] = useState(false)
+  const [todayShift, setTodayShift] = useState<TodayShift | null>(null)
+  const [loadingTodayShift, setLoadingTodayShift] = useState(false)
+  const [currentAttendance, setCurrentAttendance] = useState<Attendance | null>(null)
+  const [clockingIn, setClockingIn] = useState(false)
+  const [clockingOut, setClockingOut] = useState(false)
+  const [isOnBreak, setIsOnBreak] = useState(false)
+  const [breakLoading, setBreakLoading] = useState(false)
 
   // Fetch data needed for the shift form and check for active shifts
   useEffect(() => {
@@ -62,6 +108,14 @@ export default function DashboardPage() {
       fetchActiveShift()
     }
   }, [user])
+
+  // Fetch today's shift after employees are loaded
+  useEffect(() => {
+    if (user?.role === 'EMPLOYEE' && employees.length > 0) {
+      fetchTodayShift()
+      fetchCurrentAttendance()
+    }
+  }, [employees, user])
 
   const fetchEmployees = async () => {
     try {
@@ -100,20 +154,87 @@ export default function DashboardPage() {
   }
 
   const fetchActiveShift = async () => {
-    console.log('🔍 Fetching active shift...')
     setLoadingActiveShift(true)
     try {
       const response = await fetch('/api/shifts/active')
-      console.log('📡 Active shift response status:', response.status)
       if (response.ok) {
         const data = await response.json()
-        console.log('📊 Active shift data:', data)
-        setActiveShift(data.activeShift)
+        const activeShiftData = data.activeShift
+        setActiveShift(activeShiftData || null)
+        
+        // Check if user is currently on break
+        if (activeShiftData && activeShiftData.breakStart && !activeShiftData.breakEnd) {
+          setIsOnBreak(true)
+        } else {
+          setIsOnBreak(false)
+        }
+      } else {
+        setActiveShift(null)
+        setIsOnBreak(false)
       }
     } catch (error) {
       console.error('Error fetching active shift:', error)
+      setActiveShift(null)
+      setIsOnBreak(false)
     } finally {
       setLoadingActiveShift(false)
+    }
+  }
+
+  const fetchTodayShift = async () => {
+    const currentEmployee = employees.find(emp => emp.userId === user?.id)
+    
+    if (!currentEmployee) {
+      return
+    }
+
+    setLoadingTodayShift(true)
+    try {
+      const today = new Date().toISOString().split('T')[0]
+      const response = await fetch(`/api/shifts?startDate=${today}&endDate=${today}&employeeId=${currentEmployee.id}`)
+      
+      if (response.ok) {
+        const shifts = await response.json()
+        
+        // Find today's approved shift assigned to this employee
+        const todayApprovedShift = shifts.find((shift: TodayShift) => 
+          shift.date.substring(0, 10) === today && 
+          shift.approved === true
+        )
+        
+        setTodayShift(todayApprovedShift || null)
+        
+        // Also check if this scheduled shift has break status
+        if (todayApprovedShift && todayApprovedShift.breakStart && !todayApprovedShift.breakEnd) {
+          setIsOnBreak(true)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching today\'s shift:', error)
+    } finally {
+      setLoadingTodayShift(false)
+    }
+  }
+
+  const fetchCurrentAttendance = async () => {
+    const currentEmployee = employees.find(emp => emp.userId === user?.id)
+    
+    if (!currentEmployee) {
+      return
+    }
+
+    try {
+      const today = new Date().toISOString().split('T')[0]
+      const response = await fetch(`/api/attendance?employeeId=${currentEmployee.id}&date=${today}`)
+      
+      if (response.ok) {
+        const attendances = await response.json()
+        // Find current attendance (punched in but not out)
+        const currentAtt = attendances.find((att: Attendance) => !att.punchOutTime)
+        setCurrentAttendance(currentAtt || null)
+      }
+    } catch (error) {
+      console.error('Error fetching current attendance:', error)
     }
   }
 
@@ -131,13 +252,10 @@ export default function DashboardPage() {
         body: JSON.stringify(formData),
       })
 
-      console.log('📡 Shift creation response status:', response.status)
       if (response.ok) {
         const result = await response.json()
         console.log('✅ Shift created successfully:', result)
         setShowShiftModal(false)
-        // Refresh active shift data
-        console.log('🔄 Refreshing active shift data...')
         await fetchActiveShift()
       } else {
         const errorData = await response.json()
@@ -167,6 +285,213 @@ export default function DashboardPage() {
       console.error('Error ending shift:', error)
     } finally {
       setEndingShift(false)
+    }
+  }
+
+  const handlePunchIn = async () => {
+    const currentEmployee = employees.find(emp => emp.userId === user?.id)
+    if (!currentEmployee) return
+
+    setClockingIn(true)
+    try {
+      const now = new Date()
+      const punchInData = {
+        employeeId: currentEmployee.id,
+        businessId: currentEmployee.businessId || currentEmployee.department?.businessId,
+        shiftId: todayShift?.id || null,
+        punchInTime: now.toISOString()
+      }
+
+      const res = await fetch('/api/attendance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(punchInData),
+      })
+
+      if (!res.ok) {
+        const errorData = await res.json()
+        throw new Error(errorData.error || 'Failed to punch in')
+      }
+
+      const result = await res.json()
+      setCurrentAttendance(result.attendance)
+      
+      // Refresh today's shift and attendance data
+      await fetchTodayShift()
+      await fetchCurrentAttendance()
+    } catch (error: any) {
+      console.error('Error punching in:', error)
+      alert(error.message || 'Failed to punch in')
+    } finally {
+      setClockingIn(false)
+    }
+  }
+
+  const handlePunchOut = async () => {
+    if (!currentAttendance) return
+
+    setClockingOut(true)
+    try {
+      const now = new Date()
+      const res = await fetch(`/api/attendance/${currentAttendance.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          punchOutTime: now.toISOString()
+        }),
+      })
+
+      if (!res.ok) {
+        const errorData = await res.json()
+        throw new Error(errorData.error || 'Failed to punch out')
+      }
+
+      setCurrentAttendance(null)
+      
+      // Refresh today's shift and attendance data
+      await fetchTodayShift()
+      await fetchCurrentAttendance()
+    } catch (error: any) {
+      console.error('Error punching out:', error)
+      alert(error.message || 'Failed to punch out')
+    } finally {
+      setClockingOut(false)
+    }
+  }
+
+  const handleStartBreak = async () => {
+    // Determine which approach to use based on available data
+    if (activeShift) {
+      // Use existing shift break endpoint for "Start New Shift" scenarios
+      await handleStartBreakForShift(activeShift.id)
+    } else if (currentAttendance?.shiftId && todayShift) {
+      // Use existing shift break endpoint for scheduled shifts
+      await handleStartBreakForShift(todayShift.id)
+    } else if (currentAttendance && !currentAttendance.shiftId) {
+      // Use attendance break endpoint for unscheduled work
+      await handleStartBreakForAttendance(currentAttendance.id)
+    } else {
+      alert('No active work session found to start break')
+      return
+    }
+  }
+
+  const handleStartBreakForShift = async (shiftId: string) => {
+    setBreakLoading(true)
+    try {
+      const res = await fetch(`/api/shifts/${shiftId}/break`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+      if (!res.ok) {
+        const errorData = await res.json()
+        throw new Error(errorData.error || 'Failed to start break')
+      }
+
+      const updatedShift = await res.json()
+      
+      // Update the appropriate shift state
+      if (activeShift && activeShift.id === shiftId) {
+        setActiveShift(updatedShift)
+      }
+      
+      setIsOnBreak(true)
+    } catch (error: any) {
+      console.error('Error starting break for shift:', error)
+      alert(error.message || 'Failed to start break')
+    } finally {
+      setBreakLoading(false)
+    }
+  }
+
+  const handleStartBreakForAttendance = async (attendanceId: string) => {
+    setBreakLoading(true)
+    try {
+      const res = await fetch(`/api/attendance/${attendanceId}/break`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+      if (!res.ok) {
+        const errorData = await res.json()
+        throw new Error(errorData.error || 'Failed to start break')
+      }
+
+      const result = await res.json()
+      
+      // Refresh attendance and shift data since a shift was auto-created
+      await fetchCurrentAttendance()
+      await fetchTodayShift()
+      
+      setIsOnBreak(true)
+    } catch (error: any) {
+      console.error('Error starting break for attendance:', error)
+      alert(error.message || 'Failed to start break')
+    } finally {
+      setBreakLoading(false)
+    }
+  }
+
+  const handleEndBreak = async () => {
+    setBreakLoading(true)
+    
+    try {
+      let shiftToUse = null
+      
+      // Priority 1: Use activeShift (from "Start New Shift")
+      if (activeShift) {
+        shiftToUse = activeShift
+      }
+      // Priority 2: If attendance has a shiftId, fetch that shift (for auto-created shifts from unscheduled work)
+      else if (currentAttendance?.shiftId) {
+        try {
+          const shiftRes = await fetch(`/api/shifts/${currentAttendance.shiftId}`)
+          if (shiftRes.ok) {
+            shiftToUse = await shiftRes.json()
+          }
+        } catch (error) {
+          console.error('Error fetching attendance shift:', error)
+        }
+      }
+      // Priority 3: Use todayShift (scheduled shift)
+      else if (todayShift) {
+        shiftToUse = todayShift
+      }
+      
+      if (!shiftToUse) {
+        alert('No active shift found to end break')
+        return
+      }
+
+      const res = await fetch(`/api/shifts/${shiftToUse.id}/break`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+      if (!res.ok) {
+        const errorData = await res.json()
+        throw new Error(errorData.error || 'Failed to end break')
+      }
+
+      const updatedShift = await res.json()
+      
+      // Update the appropriate shift state
+      if (activeShift && updatedShift.id === activeShift.id) {
+        setActiveShift(updatedShift)
+      }
+      // Refresh attendance and shift data if this was an auto-created shift
+      else if (currentAttendance?.shiftId === updatedShift.id) {
+        await fetchCurrentAttendance()
+        await fetchTodayShift()
+      }
+      
+      setIsOnBreak(false)
+    } catch (error: any) {
+      console.error('Error ending break:', error)
+      alert(error.message || 'Failed to end break')
+    } finally {
+      setBreakLoading(false)
     }
   }
 
@@ -213,35 +538,204 @@ export default function DashboardPage() {
         <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
       </div>
 
-      {/* Punch Clock Card - Only for Employees */}
+      {/* Today's Shift Section - Only for Employees */}
       {user?.role === 'EMPLOYEE' && (
         <div className="mt-8">
-          {activeShift ? (
-            <ActiveShiftTimer
-              activeShift={activeShift}
-              onEndShift={handleEndShift}
-              loading={endingShift}
-            />
-          ) : (
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900">Punch Clock</h3>
-                    <p className="text-sm text-gray-500 mt-1">Working as an extra shift today?</p>
-                  </div>
-                  <button 
-                    onClick={handleStartNewShift}
-                    disabled={loadingActiveShift}
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#31BCFF] hover:bg-[#31BCFF]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#31BCFF] disabled:opacity-50"
-                  >
-                    <PlayIcon className="h-5 w-5 mr-2" />
-                    {loadingActiveShift ? 'Loading...' : 'Start New Shift'}
-                  </button>
+          <div className="bg-white overflow-hidden shadow rounded-lg">
+            <div className="p-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Today's Schedule</h3>
+              {loadingTodayShift ? (
+                <div className="animate-pulse">
+                  <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
                 </div>
-              </div>
+              ) : todayShift ? (
+                <div className="bg-sky-50 border border-sky-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <CalendarIcon className="h-8 w-8 text-sky-600" />
+                      <div>
+                        <h4 className="font-semibold text-sky-800">
+                          {todayShift.startTime.substring(0, 5)} - {todayShift.endTime ? todayShift.endTime.substring(0, 5) : 'Active'}
+                        </h4>
+                        <p className="text-sm text-sky-600">
+                          {todayShift.shiftType} {todayShift.employeeGroup && `• ${todayShift.employeeGroup.name}`}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          todayShift.status === 'WORKING' ? 'bg-green-100 text-green-800' :
+                          todayShift.status === 'COMPLETED' ? 'bg-blue-100 text-blue-800' :
+                          todayShift.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
+                          'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {todayShift.status}
+                        </span>
+                        {todayShift.approved && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                            <CheckCircleIcon className="w-3 h-3 mr-1" />
+                            Approved
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Punch In/Out Buttons */}
+                  <div className="mt-4 pt-4 border-t border-sky-200">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm text-sky-600">
+                        {currentAttendance ? (
+                          <span className="flex items-center">
+                            <CheckCircleIcon className="w-4 h-4 mr-1 text-green-500" />
+                            Punched in at {new Date(currentAttendance.punchInTime).toLocaleTimeString('en-US', { 
+                              hour: 'numeric', 
+                              minute: '2-digit' 
+                            })}
+                            {isOnBreak && (
+                              <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                On Break
+                              </span>
+                            )}
+                          </span>
+                        ) : (
+                          <span>Ready to punch in</span>
+                        )}
+                      </div>
+                      <div className="flex space-x-2">
+                        {!currentAttendance ? (
+                          <button
+                            onClick={handlePunchIn}
+                            disabled={clockingIn}
+                            className="inline-flex items-center px-3 py-2 text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+                          >
+                            <PlayIcon className="w-4 h-4 mr-1" />
+                            {clockingIn ? 'Punching In...' : 'Punch In'}
+                          </button>
+                        ) : (
+                          <>
+                            <button
+                              onClick={handlePunchOut}
+                              disabled={clockingOut}
+                              className="inline-flex items-center px-3 py-2 text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+                            >
+                              <ClockIcon className="w-4 h-4 mr-1" />
+                              {clockingOut ? 'Punching Out...' : 'Punch Out'}
+                            </button>
+                            
+                            {/* Break buttons - show if there's an active shift or if attendance is linked to a shift */}
+                            {(activeShift || currentAttendance?.shiftId) && (
+                              !isOnBreak ? (
+                                <button
+                                  onClick={handleStartBreak}
+                                  disabled={breakLoading}
+                                  className="inline-flex items-center px-3 py-2 text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50"
+                                >
+                                  <ClockIcon className="w-4 h-4 mr-1" />
+                                  {breakLoading ? 'Starting...' : 'Start Break'}
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={handleEndBreak}
+                                  disabled={breakLoading}
+                                  className="inline-flex items-center px-3 py-2 text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+                                >
+                                  <PlayIcon className="w-4 h-4 mr-1" />
+                                  {breakLoading ? 'Ending...' : 'End Break'}
+                                </button>
+                              )
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                // No scheduled shift - allow punch in/out for unscheduled work
+                <div className="space-y-4">
+                  <div className="text-center p-4 bg-gray-50 rounded-lg">
+                    <CalendarIcon className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-gray-600">No approved shift scheduled for today</p>
+                    <p className="text-sm text-gray-500 mt-1">You can still punch in for unscheduled work</p>
+                  </div>
+                  
+                  {/* Punch In/Out for Unscheduled Work */}
+                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-semibold text-orange-800 mb-1">Unscheduled Work</h4>
+                        <div className="text-sm text-orange-600">
+                          {currentAttendance ? (
+                            <span className="flex items-center">
+                              <CheckCircleIcon className="w-4 h-4 mr-1 text-green-500" />
+                              Punched in at {new Date(currentAttendance.punchInTime).toLocaleTimeString('en-US', { 
+                                hour: 'numeric', 
+                                minute: '2-digit' 
+                              })}
+                              {isOnBreak && (
+                                <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                  On Break
+                                </span>
+                              )}
+                            </span>
+                          ) : (
+                            <span>Ready to punch in for unscheduled work</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex space-x-2">
+                        {!currentAttendance ? (
+                          <button
+                            onClick={handlePunchIn}
+                            disabled={clockingIn}
+                            className="inline-flex items-center px-3 py-2 text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+                          >
+                            <PlayIcon className="w-4 h-4 mr-1" />
+                            {clockingIn ? 'Punching In...' : 'Punch In'}
+                          </button>
+                        ) : (
+                          <>
+                            <button
+                              onClick={handlePunchOut}
+                              disabled={clockingOut}
+                              className="inline-flex items-center px-3 py-2 text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+                            >
+                              <ClockIcon className="w-4 h-4 mr-1" />
+                              {clockingOut ? 'Punching Out...' : 'Punch Out'}
+                            </button>
+                            
+                            {/* Break buttons are available for all punched in work */}
+                            {!isOnBreak ? (
+                              <button
+                                onClick={handleStartBreak}
+                                disabled={breakLoading}
+                                className="inline-flex items-center px-3 py-2 text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50"
+                              >
+                                <ClockIcon className="w-4 h-4 mr-1" />
+                                {breakLoading ? 'Starting...' : 'Start Break'}
+                              </button>
+                            ) : (
+                              <button
+                                onClick={handleEndBreak}
+                                disabled={breakLoading}
+                                className="inline-flex items-center px-3 py-2 text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+                              >
+                                <PlayIcon className="w-4 h-4 mr-1" />
+                                {breakLoading ? 'Ending...' : 'End Break'}
+                              </button>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
       )}
 

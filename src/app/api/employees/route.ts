@@ -27,6 +27,7 @@ export async function GET() {
       },
       select: {
         id: true,
+        userId: true,
         firstName: true,
         lastName: true,
         employeeNo: true,
@@ -39,7 +40,8 @@ export async function GET() {
         department: {
           select: {
             id: true,
-            name: true
+            name: true,
+            businessId: true
           }
         },
         employeeGroup: {

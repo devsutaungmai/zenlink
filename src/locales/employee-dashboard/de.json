@@ -66,6 +66,7 @@
     "requests": "Anfragen",
     "team": "Team",
     "schedule": "Zeitplan",
+    "my_schedule": "Mein Zeitplan",
     "availability": "Verfügbarkeit",
     "sick_leave": "Krankmeldung"
   },
@@ -83,6 +84,42 @@
     "failed_punch_out": "Ausstanzen fehlgeschlagen",
     "failed_start_break": "Pause starten fehlgeschlagen",
     "failed_end_break": "Pause beenden fehlgeschlagen"
+  },
+  "schedule": {
+    "title": "Mein Zeitplan",
+    "loading": "Zeitplan wird geladen...",
+    "no_shifts": "Keine Schichten für diesen Monat geplant",
+    "previous_month": "Vorheriger Monat",
+    "next_month": "Nächster Monat",
+    "shift_details": "Schichtdetails",
+    "start_time": "Startzeit",
+    "end_time": "Endzeit",
+    "department": "Abteilung",
+    "location": "Standort",
+    "today": "Heute",
+    "days": {
+      "sunday": "So",
+      "monday": "Mo", 
+      "tuesday": "Di",
+      "wednesday": "Mi",
+      "thursday": "Do",
+      "friday": "Fr",
+      "saturday": "Sa"
+    },
+    "months": {
+      "january": "Januar",
+      "february": "Februar",
+      "march": "März",
+      "april": "April",
+      "may": "Mai",
+      "june": "Juni",
+      "july": "Juli",
+      "august": "August",
+      "september": "September",
+      "october": "Oktober",
+      "november": "November",
+      "december": "Dezember"
+    }
   },
   "common": {
     "general": "Allgemein",

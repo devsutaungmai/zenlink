@@ -5,13 +5,13 @@
     "logout": "Logg ut"
   },
   "time_card": {
-    "title": "Stemplingsur",
-    "punch_time": "Stempling",
+    "title": "Tidskort",
+    "punch_time": "Stemple tid",
     "clocked_in": "STEMPLET INN",
     "clocked_out": "STEMPLET UT",
     "since": "Siden: {{time}}",
-    "worked": "Arbeidet: {{duration}}",
-    "currently_on_break": "På pause nå",
+    "worked": "Jobbet: {{duration}}",
+    "currently_on_break": "For øyeblikket på pause",
     "clock_in": "Stemple inn",
     "clock_out": "Stemple ut",
     "start_break": "Start pause",
@@ -19,8 +19,8 @@
     "clocking_in": "Stempler inn...",
     "clocking_out": "Stempler ut...",
     "processing": "Behandler...",
-    "punch_in": "Punch inn",
-    "punch_out": "Punch ut",
+    "punch_in": "Punche inn",
+    "punch_out": "Punche ut",
     "punching_in": "Puncher inn...",
     "punching_out": "Puncher ut..."
   },
@@ -32,24 +32,24 @@
     "group": "Gruppe:"
   },
   "todays_shift": {
-    "title": "Dagens vakt",
-    "no_shift": "Ingen vakt i dag",
-    "no_shift_description": "Du har ingen planlagte vakter for i dag.",
+    "title": "Dagens skift",
+    "no_shift": "Ingen skift i dag",
+    "no_shift_description": "Du har ingen planlagte skift i dag.",
     "attendance": "Oppmøte",
-    "currently_punched_in": "For øyeblikket stemplet inn",
-    "shift_completed": "Vakt fullført",
+    "currently_punched_in": "For øyeblikket innstemplet",
+    "shift_completed": "Skift fullført",
     "ready_to_start": "Klar til å starte",
-    "ready_to_start_description": "Trykk punch inn for å begynne vakten din"
+    "ready_to_start_description": "Trykk Punche inn for å starte skiftet ditt"
   },
   "shift_status": {
     "scheduled": "Planlagt",
     "working": "Arbeider",
     "completed": "Fullført",
-    "cancelled": "Kansellert"
+    "cancelled": "Avbrutt"
   },
   "upcoming_shifts": {
-    "title": "Kommende vakter",
-    "no_shifts": "Ingen kommende vakter planlagt",
+    "title": "Kommende skift",
+    "no_shifts": "Ingen kommende skift planlagt",
     "tomorrow": "I morgen",
     "for_sale": "Til salgs",
     "pending_exchange": "Venter på bytte",
@@ -66,12 +66,13 @@
     "requests": "Forespørsler",
     "team": "Team",
     "schedule": "Timeplan",
+    "my_schedule": "Min Timeplan",
     "availability": "Tilgjengelighet",
     "sick_leave": "Sykemelding"
   },
   "current_time": "Nåværende tid",
   "loading": {
-    "dashboard": "Laster dashboard...",
+    "dashboard": "Laster dashbord...",
     "spinner": "Laster..."
   },
   "errors": {
@@ -83,6 +84,42 @@
     "failed_punch_out": "Kunne ikke punche ut",
     "failed_start_break": "Kunne ikke starte pause",
     "failed_end_break": "Kunne ikke avslutte pause"
+  },
+  "schedule": {
+    "title": "Min Timeplan",
+    "loading": "Laster timeplan...",
+    "no_shifts": "Ingen skift planlagt for denne måneden",
+    "previous_month": "Forrige måned",
+    "next_month": "Neste måned",
+    "shift_details": "Skiftdetaljer",
+    "start_time": "Starttid",
+    "end_time": "Sluttid",
+    "department": "Avdeling",
+    "location": "Sted",
+    "today": "I dag",
+    "days": {
+      "sunday": "Søn",
+      "monday": "Man", 
+      "tuesday": "Tir",
+      "wednesday": "Ons",
+      "thursday": "Tor",
+      "friday": "Fre",
+      "saturday": "Lør"
+    },
+    "months": {
+      "january": "Januar",
+      "february": "Februar",
+      "march": "Mars",
+      "april": "April",
+      "may": "Mai",
+      "june": "Juni",
+      "july": "Juli",
+      "august": "August",
+      "september": "September",
+      "october": "Oktober",
+      "november": "November",
+      "december": "Desember"
+    }
   },
   "common": {
     "general": "Generell",
