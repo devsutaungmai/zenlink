@@ -4,23 +4,26 @@ import React, { useState } from 'react'
 import { 
   MapPinIcon, 
   ExclamationTriangleIcon,
-  CheckCircleIcon,
-  XMarkIcon
+  CheckCircleIcon
 } from '@heroicons/react/24/outline'
 import { LocationValidationResult, validatePunchLocation } from '@/lib/locationValidation'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 
 interface LocationValidationModalProps {
   isOpen: boolean
   onClose: () => void
   onValidationSuccess: () => void
   onValidationFailed: (result: LocationValidationResult) => void
+  employeeId?: string // Optional employee ID for validation
 }
 
 export default function LocationValidationModal({
   isOpen,
   onClose,
   onValidationSuccess,
-  onValidationFailed
+  onValidationFailed,
+  employeeId
 }: LocationValidationModalProps) {
   const [isValidating, setIsValidating] = useState(false)
   const [validationResult, setValidationResult] = useState<LocationValidationResult | null>(null)
@@ -30,7 +33,7 @@ export default function LocationValidationModal({
     setValidationResult(null)
 
     try {
-      const result = await validatePunchLocation()
+      const result = await validatePunchLocation(employeeId)
       setValidationResult(result)
 
       if (result.isAllowed) {
@@ -51,34 +54,30 @@ export default function LocationValidationModal({
     }
   }
 
-  if (!isOpen) return null
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      onClose()
+      setValidationResult(null)
+    }
+  }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 border-b border-gray-200 rounded-t-2xl">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                <MapPinIcon className="w-5 h-5 text-blue-600" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Location Verification</h3>
-                <p className="text-sm text-gray-600">Verify you're at your workplace</p>
-              </div>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+              <MapPinIcon className="w-5 h-5 text-blue-600" />
             </div>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors p-1"
-            >
-              <XMarkIcon className="w-6 h-6" />
-            </button>
-          </div>
-        </div>
+            <div>
+              <div className="text-lg font-semibold text-gray-900">Location Verification</div>
+              <p className="text-sm text-gray-600 font-normal">Verify you're at your workplace</p>
+            </div>
+          </DialogTitle>
+        </DialogHeader>
 
         {/* Content */}
-        <div className="p-6">
+        <div className="space-y-4">
           {!validationResult ? (
             <div className="text-center">
               <div className="mb-4">
@@ -93,23 +92,23 @@ export default function LocationValidationModal({
                 To punch in/out, we need to verify you're at an authorized workplace location. 
                 This helps ensure accurate time tracking.
               </p>
-              <button
+              <Button
                 onClick={handleValidateLocation}
                 disabled={isValidating}
-                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-[#31BCFF] hover:bg-[#2ba3e4] text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full"
               >
                 {isValidating ? (
                   <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
                     Checking Location...
                   </>
                 ) : (
                   <>
-                    <MapPinIcon className="w-5 h-5" />
+                    <MapPinIcon className="w-5 h-5 mr-2" />
                     Check My Location
                   </>
                 )}
-              </button>
+              </Button>
               <p className="text-xs text-gray-500 mt-3">
                 You may be prompted to allow location access
               </p>
@@ -155,25 +154,26 @@ export default function LocationValidationModal({
 
               <div className="flex gap-3">
                 {!validationResult.isAllowed && (
-                  <button
+                  <Button
                     onClick={handleValidateLocation}
                     disabled={isValidating}
-                    className="flex-1 px-4 py-2 bg-[#31BCFF] hover:bg-[#2ba3e4] text-white font-medium rounded-lg transition-colors disabled:opacity-50"
+                    className="flex-1"
                   >
                     Try Again
-                  </button>
+                  </Button>
                 )}
-                <button
-                  onClick={onClose}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                <Button
+                  variant="outline"
+                  onClick={() => handleOpenChange(false)}
+                  className="flex-1"
                 >
                   Close
-                </button>
+                </Button>
               </div>
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }

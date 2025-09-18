@@ -5,9 +5,19 @@ import {
   MapPinIcon, 
   PlusIcon, 
   TrashIcon,
-  ExclamationTriangleIcon 
+  ExclamationTriangleIcon,
+  BuildingOffice2Icon
 } from '@heroicons/react/24/outline'
 import GoogleMapsLocationPicker from './GoogleMapsLocationPicker'
+
+interface Department {
+  id: string
+  name: string
+  address: string
+  _count?: {
+    employees: number
+  }
+}
 
 interface Location {
   id: string
@@ -16,18 +26,24 @@ interface Location {
   latitude?: number
   longitude?: number
   radius?: number // in meters
+  departmentIds?: string[] // Added for department filtering
 }
 
 interface PunchClockAccessSettings {
   allowPunchFromAnywhere: boolean
   specificLocations: Location[]
+  restrictByDepartment: boolean
+  allowedDepartments: string[]
 }
 
 export default function PunchClockAccessSettings() {
   const [settings, setSettings] = useState<PunchClockAccessSettings>({
     allowPunchFromAnywhere: true,
-    specificLocations: []
+    specificLocations: [],
+    restrictByDepartment: false,
+    allowedDepartments: []
   })
+  const [departments, setDepartments] = useState<Department[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [showAddLocation, setShowAddLocation] = useState(false)
@@ -35,12 +51,30 @@ export default function PunchClockAccessSettings() {
   const [newLocation, setNewLocation] = useState({
     name: '',
     address: '',
-    radius: 100
+    radius: 100,
+    departmentIds: [] as string[]
   })
 
   useEffect(() => {
-    fetchSettings()
+    Promise.all([
+      fetchSettings(),
+      fetchDepartments()
+    ])
   }, [])
+
+  const fetchDepartments = async () => {
+    try {
+      const res = await fetch('/api/departments')
+      if (res.ok) {
+        const data = await res.json()
+        setDepartments(data)
+      } else {
+        console.error('Failed to fetch departments')
+      }
+    } catch (error) {
+      console.error('Error fetching departments:', error)
+    }
+  }
 
   const fetchSettings = async () => {
     try {
@@ -95,7 +129,8 @@ export default function PunchClockAccessSettings() {
       id: Date.now().toString(),
       name: newLocation.name.trim(),
       address: newLocation.address.trim(),
-      radius: newLocation.radius
+      radius: newLocation.radius,
+      departmentIds: newLocation.departmentIds
     }
 
     setSettings(prev => ({
@@ -103,7 +138,7 @@ export default function PunchClockAccessSettings() {
       specificLocations: [...prev.specificLocations, location]
     }))
 
-    setNewLocation({ name: '', address: '', radius: 100 })
+    setNewLocation({ name: '', address: '', radius: 100, departmentIds: [] })
     setShowAddLocation(false)
   }
 
@@ -120,7 +155,8 @@ export default function PunchClockAccessSettings() {
       address: mapLocation.address,
       latitude: mapLocation.lat,
       longitude: mapLocation.lng,
-      radius: mapLocation.radius
+      radius: mapLocation.radius,
+      departmentIds: [] // Initialize with empty array for department selection
     }
 
     setSettings(prev => ({
@@ -203,6 +239,103 @@ export default function PunchClockAccessSettings() {
           </div>
         </div>
 
+        {/* Department Restrictions */}
+        <div className="border-t border-gray-200 pt-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-3">Department Access</h3>
+          <p className="text-sm text-gray-600 mb-4">
+            Control which departments can use the punch clock system
+          </p>
+
+          <div className="space-y-3">
+            <label className="flex items-start space-x-3 cursor-pointer">
+              <input
+                type="radio"
+                name="departmentMode"
+                checked={!settings.restrictByDepartment}
+                onChange={() => setSettings(prev => ({ ...prev, restrictByDepartment: false, allowedDepartments: [] }))}
+                className="mt-1 h-4 w-4 text-[#31BCFF] border-gray-300 focus:ring-[#31BCFF]"
+              />
+              <div className="flex-1">
+                <div className="text-sm font-medium text-gray-900">All departments</div>
+                <div className="text-sm text-gray-500">
+                  Allow all departments to use punch clock
+                </div>
+              </div>
+            </label>
+
+            <label className="flex items-start space-x-3 cursor-pointer">
+              <input
+                type="radio"
+                name="departmentMode"
+                checked={settings.restrictByDepartment}
+                onChange={() => setSettings(prev => ({ ...prev, restrictByDepartment: true }))}
+                className="mt-1 h-4 w-4 text-[#31BCFF] border-gray-300 focus:ring-[#31BCFF]"
+              />
+              <div className="flex-1">
+                <div className="text-sm font-medium text-gray-900">Specific departments</div>
+                <div className="text-sm text-gray-500">
+                  Restrict punch clock access to selected departments
+                </div>
+              </div>
+            </label>
+          </div>
+
+          {/* Department Selection */}
+          {settings.restrictByDepartment && (
+            <div className="mt-4 p-4 border border-gray-200 rounded-lg bg-gray-50">
+              <h5 className="text-sm font-medium text-gray-900 mb-3">Allowed Departments</h5>
+              <div className="space-y-2 max-h-40 overflow-y-auto">
+                {departments.map((dept) => (
+                  <label key={dept.id} className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={settings.allowedDepartments.includes(dept.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSettings(prev => ({ 
+                            ...prev, 
+                            allowedDepartments: [...prev.allowedDepartments, dept.id] 
+                          }))
+                        } else {
+                          setSettings(prev => ({ 
+                            ...prev, 
+                            allowedDepartments: prev.allowedDepartments.filter(id => id !== dept.id) 
+                          }))
+                        }
+                      }}
+                      className="h-4 w-4 text-[#31BCFF] border-gray-300 rounded focus:ring-[#31BCFF]"
+                    />
+                    <span className="text-sm text-gray-700">
+                      {dept.name}
+                      {dept._count && (
+                        <span className="text-xs text-gray-500 ml-1">
+                          ({dept._count.employees} employees)
+                        </span>
+                      )}
+                    </span>
+                  </label>
+                ))}
+                {departments.length === 0 && (
+                  <p className="text-sm text-gray-500">No departments available</p>
+                )}
+              </div>
+              
+              {settings.restrictByDepartment && settings.allowedDepartments.length === 0 && (
+                <div className="mt-3 p-3 border border-yellow-200 rounded-lg bg-yellow-50">
+                  <div className="flex">
+                    <ExclamationTriangleIcon className="h-4 w-4 text-yellow-400 mt-0.5" />
+                    <div className="ml-2">
+                      <p className="text-sm text-yellow-700">
+                        No departments selected. Employees won't be able to access punch clock.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
         {/* Specific Locations Management */}
         {!settings.allowPunchFromAnywhere && (
           <div className="border-t border-gray-200 pt-6">
@@ -252,6 +385,24 @@ export default function PunchClockAccessSettings() {
                             </span>
                           )}
                         </div>
+                        {/* Department restrictions display */}
+                        {location.departmentIds && location.departmentIds.length > 0 && (
+                          <div className="flex items-center gap-1 mt-1">
+                            <BuildingOffice2Icon className="h-3 w-3 text-gray-400" />
+                            <span className="text-xs text-gray-500">
+                              Departments: {location.departmentIds.map(deptId => {
+                                const dept = departments.find(d => d.id === deptId)
+                                return dept?.name || 'Unknown'
+                              }).join(', ')}
+                            </span>
+                          </div>
+                        )}
+                        {(!location.departmentIds || location.departmentIds.length === 0) && (
+                          <div className="flex items-center gap-1 mt-1">
+                            <BuildingOffice2Icon className="h-3 w-3 text-gray-400" />
+                            <span className="text-xs text-gray-500">All departments allowed</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <button
@@ -318,6 +469,49 @@ export default function PunchClockAccessSettings() {
                       Employees must be within this distance to punch in/out
                     </p>
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Departments (Optional)
+                    </label>
+                    <p className="text-xs text-gray-500 mb-2">
+                      Select which departments can punch in from this location. Leave empty for all departments.
+                    </p>
+                    <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-200 rounded-md p-2">
+                      {departments.map((dept) => (
+                        <label key={dept.id} className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            checked={newLocation.departmentIds.includes(dept.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setNewLocation(prev => ({ 
+                                  ...prev, 
+                                  departmentIds: [...prev.departmentIds, dept.id] 
+                                }))
+                              } else {
+                                setNewLocation(prev => ({ 
+                                  ...prev, 
+                                  departmentIds: prev.departmentIds.filter(id => id !== dept.id) 
+                                }))
+                              }
+                            }}
+                            className="h-4 w-4 text-[#31BCFF] border-gray-300 rounded focus:ring-[#31BCFF]"
+                          />
+                          <span className="text-sm text-gray-700">
+                            {dept.name}
+                            {dept._count && (
+                              <span className="text-xs text-gray-500 ml-1">
+                                ({dept._count.employees} employees)
+                              </span>
+                            )}
+                          </span>
+                        </label>
+                      ))}
+                      {departments.length === 0 && (
+                        <p className="text-sm text-gray-500">No departments available</p>
+                      )}
+                    </div>
+                  </div>
                   <div className="flex space-x-3">
                     <button
                       onClick={addLocation}
@@ -329,7 +523,7 @@ export default function PunchClockAccessSettings() {
                     <button
                       onClick={() => {
                         setShowAddLocation(false)
-                        setNewLocation({ name: '', address: '', radius: 100 })
+                        setNewLocation({ name: '', address: '', radius: 100, departmentIds: [] })
                       }}
                       className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#31BCFF] transition-colors"
                     >

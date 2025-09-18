@@ -44,9 +44,34 @@ export async function GET(req: NextRequest) {
       })
     }
 
+    // Filter locations based on department restrictions
+    let filteredLocations = settings.allowedLocations
+
+    // If department restrictions are enabled, filter locations
+    if (settings.restrictByDepartment && settings.allowedDepartments.length > 0) {
+      // Check if employee's department is in allowed departments
+      if (!settings.allowedDepartments.includes(employee.departmentId)) {
+        // Employee's department is not allowed to punch
+        return NextResponse.json({
+          allowPunchFromAnywhere: false,
+          specificLocations: []
+        })
+      }
+    }
+
+    // Further filter locations by departmentIds if specified on individual locations
+    filteredLocations = settings.allowedLocations.filter(location => {
+      // If location has no department restrictions, it's available to all
+      if (!location.departmentIds || location.departmentIds.length === 0) {
+        return true
+      }
+      // If location has department restrictions, check if employee's department is allowed
+      return location.departmentIds.includes(employee.departmentId)
+    })
+
     return NextResponse.json({
       allowPunchFromAnywhere: settings.allowPunchFromAnywhere,
-      specificLocations: settings.allowedLocations.map(location => ({
+      specificLocations: filteredLocations.map(location => ({
         id: location.id,
         name: location.name,
         address: location.address,

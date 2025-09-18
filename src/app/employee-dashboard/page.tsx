@@ -5,6 +5,10 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useCurrency } from '@/hooks/useCurrency'
 import { LocationValidationResult, validatePunchLocation } from '@/lib/locationValidation'
 import LocationValidationModal from '@/components/LocationValidationModal'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { 
   ClockIcon, 
   PlayIcon,
@@ -15,7 +19,6 @@ import {
   CheckCircleIcon,
   ArrowLeftIcon,
   PlusIcon,
-  XMarkIcon,
   MapPinIcon
 } from '@heroicons/react/24/outline'
 
@@ -155,7 +158,7 @@ function EmployeeDashboardContent() {
   }
 
   const executePunchAction = async () => {
-    if (!pendingPunchAction) return
+    if (!pendingPunchAction || !pendingPunchAction.shift) return
 
     const { action, shift } = pendingPunchAction
     setSelectedShift(shift)
@@ -251,6 +254,13 @@ function EmployeeDashboardContent() {
     })
   }
 
+  const handleDialogOpenChange = (open: boolean) => {
+    if (!open) {
+      handleClosePunchForm()
+    }
+    setShowPunchForm(open)
+  }
+
   const handlePunchFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
@@ -259,7 +269,7 @@ function EmployeeDashboardContent() {
     try {
       if (isNewShift) {
         // For new shifts, validate location first
-        const locationValidation = await validatePunchLocation()
+        const locationValidation = await validatePunchLocation(employee.id)
         
         if (!locationValidation.isAllowed) {
           alert(locationValidation.message)
@@ -552,160 +562,144 @@ function EmployeeDashboardContent() {
         </div>
 
         {/* Punch In Form Modal */}
-        {showPunchForm && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            {/* Backdrop */}
-            <div 
-              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-              onClick={handleClosePunchForm}
-            />
-            
-            {/* Modal */}
-            <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-              {/* Header */}
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                      <PlayIcon className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">
-                        {isNewShift ? 'Punch In - New Shift' : 'Punch In - Scheduled Shift'}
-                      </h3>
-                      <p className="text-sm text-gray-600">
-                        {isNewShift ? 'Create and start a new shift' : 'Start your scheduled shift'}
-                      </p>
-                    </div>
+        <Dialog open={showPunchForm} onOpenChange={handleDialogOpenChange}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                  <PlayIcon className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <div className="text-lg font-semibold text-gray-900">
+                    {isNewShift ? 'Punch In - New Shift' : 'Punch In - Scheduled Shift'}
                   </div>
-                  <button
-                    onClick={handleClosePunchForm}
-                    className="text-gray-400 hover:text-gray-600 transition-colors p-1"
-                  >
-                    <XMarkIcon className="w-6 h-6" />
-                  </button>
+                  <p className="text-sm text-gray-600 font-normal">
+                    {isNewShift ? 'Create and start a new shift' : 'Start your scheduled shift'}
+                  </p>
+                </div>
+              </DialogTitle>
+            </DialogHeader>
+
+            {/* Form */}
+            <form onSubmit={handlePunchFormSubmit} className="space-y-4">
+              {/* Shift Type */}
+              <div>
+                <Label htmlFor="shiftType" className="text-sm font-medium text-gray-700">
+                  Shift Type
+                </Label>
+                <Input
+                  id="shiftType"
+                  type="text"
+                  value={punchFormData.shiftType}
+                  onChange={(e) => setPunchFormData(prev => ({ ...prev, shiftType: e.target.value }))}
+                  placeholder="e.g., Morning Shift, Evening Shift"
+                  required
+                  disabled={!isNewShift}
+                  className="mt-1"
+                />
+              </div>
+
+              {/* Start Time */}
+              <div>
+                <Label htmlFor="startTime" className="text-sm font-medium text-gray-700">
+                  Start Time
+                </Label>
+                <Input
+                  id="startTime"
+                  type="time"
+                  value={punchFormData.startTime}
+                  onChange={(e) => setPunchFormData(prev => ({ ...prev, startTime: e.target.value }))}
+                  required
+                  className="mt-1"
+                />
+              </div>
+
+              {/* Wage (only for new shifts) */}
+              {isNewShift && (
+                <div>
+                  <Label className="text-sm font-medium text-gray-700">
+                    Wage
+                  </Label>
+                  <div className="flex gap-2 mt-1">
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={punchFormData.wage}
+                      onChange={(e) => setPunchFormData(prev => ({ ...prev, wage: e.target.value }))}
+                      placeholder="0.00"
+                      required
+                      className="flex-1"
+                    />
+                    <select
+                      value={punchFormData.wageType}
+                      onChange={(e) => setPunchFormData(prev => ({ ...prev, wageType: e.target.value }))}
+                      className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="hourly">Hourly</option>
+                      <option value="fixed">Fixed</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {/* Note */}
+              <div>
+                <Label htmlFor="note" className="text-sm font-medium text-gray-700">
+                  Note (Optional)
+                </Label>
+                <textarea
+                  id="note"
+                  value={punchFormData.note}
+                  onChange={(e) => setPunchFormData(prev => ({ ...prev, note: e.target.value }))}
+                  placeholder="Add any notes about this shift..."
+                  rows={3}
+                  className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                />
+              </div>
+
+              {/* Current Time Display */}
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <div className="text-center">
+                  <p className="text-sm text-gray-600 mb-1">Current Time</p>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {currentTime.toLocaleTimeString('en-US', { 
+                      hour: '2-digit', 
+                      minute: '2-digit',
+                      second: '2-digit',
+                      hour12: true
+                    })}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {currentTime.toLocaleDateString('en-US', { 
+                      weekday: 'long', 
+                      month: 'short', 
+                      day: 'numeric'
+                    })}
+                  </p>
                 </div>
               </div>
 
-              {/* Form */}
-              <form onSubmit={handlePunchFormSubmit} className="p-6 space-y-4">
-                {/* Shift Type */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Shift Type
-                  </label>
-                  <input
-                    type="text"
-                    value={punchFormData.shiftType}
-                    onChange={(e) => setPunchFormData(prev => ({ ...prev, shiftType: e.target.value }))}
-                    placeholder="e.g., Morning Shift, Evening Shift"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    required
-                    disabled={!isNewShift}
-                  />
-                </div>
-
-                {/* Start Time */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Start Time
-                  </label>
-                  <input
-                    type="time"
-                    value={punchFormData.startTime}
-                    onChange={(e) => setPunchFormData(prev => ({ ...prev, startTime: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    required
-                  />
-                </div>
-
-                {/* Wage (only for new shifts) */}
-                {isNewShift && (
-                  <>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Wage
-                      </label>
-                      <div className="flex gap-2">
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={punchFormData.wage}
-                          onChange={(e) => setPunchFormData(prev => ({ ...prev, wage: e.target.value }))}
-                          placeholder="0.00"
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          required
-                        />
-                        <select
-                          value={punchFormData.wageType}
-                          onChange={(e) => setPunchFormData(prev => ({ ...prev, wageType: e.target.value }))}
-                          className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        >
-                          <option value="hourly">Hourly</option>
-                          <option value="fixed">Fixed</option>
-                        </select>
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                {/* Note */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Note (Optional)
-                  </label>
-                  <textarea
-                    value={punchFormData.note}
-                    onChange={(e) => setPunchFormData(prev => ({ ...prev, note: e.target.value }))}
-                    placeholder="Add any notes about this shift..."
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-                  />
-                </div>
-
-                {/* Current Time Display */}
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <div className="text-center">
-                    <p className="text-sm text-gray-600 mb-1">Current Time</p>
-                    <p className="text-2xl font-bold text-blue-600">
-                      {currentTime.toLocaleTimeString('en-US', { 
-                        hour: '2-digit', 
-                        minute: '2-digit',
-                        second: '2-digit',
-                        hour12: true
-                      })}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {currentTime.toLocaleDateString('en-US', { 
-                        weekday: 'long', 
-                        month: 'short', 
-                        day: 'numeric'
-                      })}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Form Actions */}
-                <div className="flex gap-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={handleClosePunchForm}
-                    className="flex-1 py-3 px-4 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 py-3 px-4 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium flex items-center justify-center gap-2"
-                  >
-                    <PlayIcon className="w-5 h-5" />
-                    Punch In
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
+              {/* Form Actions */}
+              <div className="flex gap-3 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleClosePunchForm}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  className="flex-1 bg-green-600 hover:bg-green-700"
+                >
+                  <PlayIcon className="w-4 h-4 mr-2" />
+                  Punch In
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
 
         {/* Location Validation Modal */}
         <LocationValidationModal
@@ -716,6 +710,7 @@ function EmployeeDashboardContent() {
           }}
           onValidationSuccess={handleLocationValidationSuccess}
           onValidationFailed={handleLocationValidationFailed}
+          employeeId={employee?.id}
         />
       </div>
     </div>

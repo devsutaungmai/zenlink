@@ -374,6 +374,8 @@ model PunchClockAccessSettings {
   id                     String            @id @default(cuid())
   businessId             String            @unique
   allowPunchFromAnywhere Boolean           @default(true)
+  restrictByDepartment   Boolean           @default(false)
+  allowedDepartments     String[]          @default([])
   createdAt              DateTime          @default(now())
   updatedAt              DateTime          @default(now())
   allowedLocations       AllowedLocation[]
@@ -381,16 +383,17 @@ model PunchClockAccessSettings {
 }
 
 model AllowedLocation {
-  id         String                   @id @default(cuid())
-  settingsId String
-  name       String
-  address    String
-  latitude   Float?
-  longitude  Float?
-  radius     Int                      @default(100)
-  createdAt  DateTime                 @default(now())
-  updatedAt  DateTime                 @default(now())
-  settings   PunchClockAccessSettings @relation(fields: [settingsId], references: [id], onDelete: Cascade)
+  id            String                   @id @default(cuid())
+  settingsId    String
+  name          String
+  address       String
+  latitude      Float?
+  longitude     Float?
+  radius        Int                      @default(100)
+  departmentIds String[]                 @default([])
+  createdAt     DateTime                 @default(now())
+  updatedAt     DateTime                 @default(now())
+  settings      PunchClockAccessSettings @relation(fields: [settingsId], references: [id], onDelete: Cascade)
 }
 
 model ContractTemplate {

@@ -31,19 +31,24 @@ export async function GET(req: NextRequest) {
       // Return default settings
       return NextResponse.json({
         allowPunchFromAnywhere: true,
+        restrictByDepartment: false,
+        allowedDepartments: [],
         specificLocations: []
       })
     }
 
     return NextResponse.json({
       allowPunchFromAnywhere: settings.allowPunchFromAnywhere,
+      restrictByDepartment: settings.restrictByDepartment,
+      allowedDepartments: settings.allowedDepartments,
       specificLocations: settings.allowedLocations.map(location => ({
         id: location.id,
         name: location.name,
         address: location.address,
         latitude: location.latitude,
         longitude: location.longitude,
-        radius: location.radius
+        radius: location.radius,
+        departmentIds: location.departmentIds || []
       }))
     })
   } catch (error) {
@@ -60,7 +65,7 @@ export async function POST(req: NextRequest) {
     }
 
     const data = await req.json()
-    const { allowPunchFromAnywhere, specificLocations } = data
+    const { allowPunchFromAnywhere, specificLocations, restrictByDepartment, allowedDepartments } = data
 
     // Get business from user
     const userWithBusiness = await prisma.user.findUnique({
@@ -78,18 +83,23 @@ export async function POST(req: NextRequest) {
       create: {
         businessId: userWithBusiness.businessId,
         allowPunchFromAnywhere,
+        restrictByDepartment: restrictByDepartment || false,
+        allowedDepartments: allowedDepartments || [],
         allowedLocations: {
           create: specificLocations.map((location: any) => ({
             name: location.name,
             address: location.address,
             latitude: location.latitude,
             longitude: location.longitude,
-            radius: location.radius
+            radius: location.radius,
+            departmentIds: location.departmentIds || []
           }))
         }
       },
       update: {
         allowPunchFromAnywhere,
+        restrictByDepartment: restrictByDepartment || false,
+        allowedDepartments: allowedDepartments || [],
         allowedLocations: {
           deleteMany: {},
           create: specificLocations.map((location: any) => ({
@@ -97,7 +107,8 @@ export async function POST(req: NextRequest) {
             address: location.address,
             latitude: location.latitude,
             longitude: location.longitude,
-            radius: location.radius
+            radius: location.radius,
+            departmentIds: location.departmentIds || []
           }))
         }
       },
@@ -108,13 +119,16 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       allowPunchFromAnywhere: settings.allowPunchFromAnywhere,
+      restrictByDepartment: settings.restrictByDepartment || false,
+      allowedDepartments: settings.allowedDepartments || [],
       specificLocations: settings.allowedLocations.map(location => ({
         id: location.id,
         name: location.name,
         address: location.address,
         latitude: location.latitude,
         longitude: location.longitude,
-        radius: location.radius
+        radius: location.radius,
+        departmentIds: location.departmentIds || []
       }))
     })
   } catch (error) {

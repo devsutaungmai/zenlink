@@ -5,6 +5,9 @@ import { CalendarIcon, UserGroupIcon, ClockIcon, ChartBarIcon, PlayIcon, CheckCi
 import { useUser } from '@/app/lib/useUser'
 import PunchClockModal from '@/components/PunchClockModal'
 import ActiveShiftTimer from '@/components/ActiveShiftTimer'
+import { LocationValidationResult, validatePunchLocation } from '@/lib/locationValidation'
+import LocationValidationModal from '@/components/LocationValidationModal'
+import DepartmentSelectionModal from '@/components/DepartmentSelectionModal'
 
 interface Employee {
   id: string
@@ -98,6 +101,10 @@ export default function DashboardPage() {
   const [clockingOut, setClockingOut] = useState(false)
   const [isOnBreak, setIsOnBreak] = useState(false)
   const [breakLoading, setBreakLoading] = useState(false)
+  const [showLocationModal, setShowLocationModal] = useState(false)
+  const [showDepartmentModal, setShowDepartmentModal] = useState(false)
+  const [pendingPunchAction, setPendingPunchAction] = useState<'in' | 'out' | null>(null)
+  const [pendingUnscheduledWork, setPendingUnscheduledWork] = useState(false)
 
   // Fetch data needed for the shift form and check for active shifts
   useEffect(() => {
@@ -292,44 +299,23 @@ export default function DashboardPage() {
     const currentEmployee = employees.find(emp => emp.userId === user?.id)
     if (!currentEmployee) return
 
-    setClockingIn(true)
-    try {
-      const now = new Date()
-      const punchInData = {
-        employeeId: currentEmployee.id,
-        businessId: currentEmployee.businessId || currentEmployee.department?.businessId,
-        shiftId: todayShift?.id || null,
-        punchInTime: now.toISOString()
-      }
-
-      const res = await fetch('/api/attendance', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(punchInData),
-      })
-
-      if (!res.ok) {
-        const errorData = await res.json()
-        throw new Error(errorData.error || 'Failed to punch in')
-      }
-
-      const result = await res.json()
-      setCurrentAttendance(result.attendance)
-      
-      // Refresh today's shift and attendance data
-      await fetchTodayShift()
-      await fetchCurrentAttendance()
-    } catch (error: any) {
-      console.error('Error punching in:', error)
-      alert(error.message || 'Failed to punch in')
-    } finally {
-      setClockingIn(false)
+    // Check if this is for unscheduled work (no todayShift)
+    if (!todayShift) {
+      // For unscheduled work, validate location first, then show department selection
+      setPendingUnscheduledWork(true)
+      setPendingPunchAction('in')
+      setShowLocationModal(true)
+    } else {
+      // For scheduled shifts, just validate location and punch in
+      setPendingPunchAction('in')
+      setShowLocationModal(true)
     }
   }
 
   const handlePunchOut = async () => {
     if (!currentAttendance) return
 
+    // Punch out directly without location validation
     setClockingOut(true)
     try {
       const now = new Date()
@@ -356,6 +342,129 @@ export default function DashboardPage() {
       alert(error.message || 'Failed to punch out')
     } finally {
       setClockingOut(false)
+    }
+  }
+
+  const executePunchAction = async () => {
+    if (!pendingPunchAction) return
+
+    const currentEmployee = employees.find(emp => emp.userId === user?.id)
+    if (!currentEmployee) return
+
+    if (pendingPunchAction === 'in') {
+      setClockingIn(true)
+      try {
+        const now = new Date()
+        const punchInData = {
+          employeeId: currentEmployee.id,
+          businessId: currentEmployee.businessId || currentEmployee.department?.businessId,
+          shiftId: todayShift?.id || null,
+          punchInTime: now.toISOString()
+        }
+
+        const res = await fetch('/api/attendance', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(punchInData),
+        })
+
+        if (!res.ok) {
+          const errorData = await res.json()
+          throw new Error(errorData.error || 'Failed to punch in')
+        }
+
+        const result = await res.json()
+        setCurrentAttendance(result.attendance)
+        
+        // Refresh today's shift and attendance data
+        await fetchTodayShift()
+        await fetchCurrentAttendance()
+      } catch (error: any) {
+        console.error('Error punching in:', error)
+        alert(error.message || 'Failed to punch in')
+      } finally {
+        setClockingIn(false)
+      }
+    }
+
+    // Reset state
+    setPendingPunchAction(null)
+    setShowLocationModal(false)
+  }
+
+  const handleLocationValidationSuccess = () => {
+    // Location validation passed
+    setShowLocationModal(false)
+    
+    // If this is for unscheduled work, show department selection
+    if (pendingUnscheduledWork && pendingPunchAction === 'in') {
+      setShowDepartmentModal(true)
+    } else {
+      // For scheduled shifts, execute punch action directly
+      executePunchAction()
+    }
+  }
+
+  const handleLocationValidationFailed = (result: LocationValidationResult) => {
+    // Location validation failed, show error and reset state
+    setPendingPunchAction(null)
+    setPendingUnscheduledWork(false)
+    setShowLocationModal(false)
+    alert(result.message)
+  }
+
+  const handleDepartmentSelected = async (departmentId: string) => {
+    // Department selected for validation, now execute punch in for unscheduled work
+    setShowDepartmentModal(false)
+    
+    const currentEmployee = employees.find(emp => emp.userId === user?.id)
+    if (!currentEmployee) return
+
+    // Validate that the selected department is allowed at this location
+    // This would typically involve checking location access settings
+    // For now, we'll proceed with the punch in
+    
+    await executePunchActionWithDepartment()
+    setPendingUnscheduledWork(false)
+    setPendingPunchAction(null)
+  }
+
+  const executePunchActionWithDepartment = async () => {
+    const currentEmployee = employees.find(emp => emp.userId === user?.id)
+    if (!currentEmployee) return
+
+    setClockingIn(true)
+    try {
+      const now = new Date()
+      const punchInData = {
+        employeeId: currentEmployee.id,
+        businessId: currentEmployee.businessId || currentEmployee.department?.businessId,
+        shiftId: null, // No shift for unscheduled work
+        punchInTime: now.toISOString()
+      }
+
+      const res = await fetch('/api/attendance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(punchInData),
+      })
+
+      if (!res.ok) {
+        const errorData = await res.json()
+        throw new Error(errorData.error || 'Failed to punch in')
+      }
+
+      const result = await res.json()
+      setCurrentAttendance(result.attendance)
+      
+      // Refresh today's shift and attendance data
+      await fetchTodayShift()
+      await fetchCurrentAttendance()
+    } catch (error: any) {
+      console.error('Error punching in:', error)
+      alert(error.message || 'Failed to punch in')
+    } finally {
+      setClockingIn(false)
     }
   }
 
@@ -798,6 +907,33 @@ export default function DashboardPage() {
           loading={submittingShift}
         />
       )}
+
+      {/* Location Validation Modal */}
+      <LocationValidationModal
+        isOpen={showLocationModal}
+        onClose={() => {
+          setShowLocationModal(false)
+          setPendingPunchAction(null)
+          setPendingUnscheduledWork(false)
+        }}
+        onValidationSuccess={handleLocationValidationSuccess}
+        onValidationFailed={handleLocationValidationFailed}
+        employeeId={currentEmployee?.id}
+      />
+
+      {/* Department Selection Modal */}
+      <DepartmentSelectionModal
+        isOpen={showDepartmentModal}
+        onClose={() => {
+          setShowDepartmentModal(false)
+          setPendingPunchAction(null)
+          setPendingUnscheduledWork(false)
+        }}
+        onDepartmentSelected={handleDepartmentSelected}
+        employeeId={currentEmployee?.id || ''}
+        title="Select Department"
+        description="Please select the department for this unscheduled work session."
+      />
     </div>
   )
 }

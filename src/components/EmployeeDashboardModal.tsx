@@ -397,6 +397,7 @@ export default function EmployeeDashboardModal({ isOpen, onClose, employee }: Em
         }}
         onValidationSuccess={handleLocationValidationSuccess}
         onValidationFailed={handleLocationValidationFailed}
+        employeeId={employee?.id}
       />
     </div>
   )
