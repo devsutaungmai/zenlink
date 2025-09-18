@@ -21,7 +21,8 @@
     "profile": "Profil",
     "logout": "Abmelden",
     "edit_profile": "Profil bearbeiten",
-    "time_tracking_portal": "Zeiterfassungsportal"
+    "time_tracking_portal": "Zeiterfassungsportal",
+    "your_hours": "Ihre Stunden"
   },
   "dashboard": {
     "title": "Dashboard",

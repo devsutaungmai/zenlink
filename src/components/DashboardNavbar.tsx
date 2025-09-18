@@ -14,7 +14,8 @@ import {
   Bars3Icon,
   XMarkIcon,
   ClockIcon,
-  CurrencyDollarIcon
+  CurrencyDollarIcon,
+  CalendarIcon
 } from '@heroicons/react/24/outline'
 import { useRouter } from 'next/navigation'
 import { useUser } from '@/app/lib/useUser'
@@ -83,7 +84,8 @@ export default function DashboardNavbar({ setMobileMenuOpen }: DashboardNavbarPr
 
   const employeeNavigation: NavigationItem[] = [
     { name: t('navigation.home'), href: '/dashboard', icon: HomeIcon },
-    { name: t('navigation.schedule'), href: '/dashboard/schedule', icon: ClockIcon },
+    { name: t('navigation.your_hours'), href: '/dashboard/hours', icon: ClockIcon },
+    { name: t('navigation.schedule'), href: '/dashboard/schedule', icon: CalendarIcon },
     { name: t('navigation.availability'), href: '/employee/availability', icon: ClockIcon },
     { name: t('navigation.sick_leaves'), href: '/employee/sick-leaves', icon: UserIcon },
   ]
