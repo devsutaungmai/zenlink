@@ -44,7 +44,6 @@ export default function DashboardNavbar({ setMobileMenuOpen }: DashboardNavbarPr
   const { user, loading } = useUser()
   const { t } = useTranslation()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  console.log('User:', user);
   
   const adminNavigation: NavigationItem[] = [
     { name: t('navigation.home'), href: '/dashboard', icon: HomeIcon },

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 
 interface User {
   id: string
@@ -21,6 +21,14 @@ export function useUser() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
 
+  const refreshSession = useCallback(async () => {
+    try {
+      await fetch('/api/auth/refresh', { method: 'POST' })
+    } catch (err) {
+      console.warn('Session refresh failed:', err)
+    }
+  }, [])
+
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -37,6 +45,8 @@ export function useUser() {
         
         const userData = await response.json()
         setUser(userData)
+
+        refreshSession()
       } catch (err) {
         console.error('Error fetching user:', err)
         setError(err instanceof Error ? err : new Error('Unknown error'))
@@ -46,7 +56,18 @@ export function useUser() {
     }
 
     fetchUser()
-  }, [])
+  }, [refreshSession])
 
-  return { user, loading, error }
+  // Set up periodic session refresh in a separate effect
+  useEffect(() => {
+    if (!user) return
+
+    const sessionRefreshInterval = setInterval(() => {
+      refreshSession()
+    }, 24 * 60 * 60 * 1000) // 24 hours
+
+    return () => clearInterval(sessionRefreshInterval)
+  }, [user, refreshSession])
+
+  return { user, loading, error, refreshSession }
 }

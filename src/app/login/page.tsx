@@ -13,10 +13,11 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [companyId, setCompanyId] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [rememberMe, setRememberMe] = useState(true)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    await login(email, password)
+    await login(email, password, rememberMe)
   }
 
   return (
@@ -78,6 +79,20 @@ export default function LoginPage() {
                 )}
               </button>
             </div>
+          </div>
+
+          <div className="mb-6">
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="rounded border-gray-300 text-[#31BCFF] shadow-sm focus:border-[#31BCFF] focus:ring focus:ring-[#31BCFF] focus:ring-opacity-50"
+              />
+              <span className="ml-2 text-sm text-gray-700">
+                Keep me signed in
+              </span>
+            </label>
           </div>
 
           <button
