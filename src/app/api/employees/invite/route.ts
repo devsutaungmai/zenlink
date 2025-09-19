@@ -10,22 +10,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
 
-    // Update employee email if employeeId is provided
     if (employeeId) {
       try {
         await prisma.employee.update({
           where: { id: employeeId },
           data: { email },
         });
-        
-        console.log(`Updated email for employee ${employeeId} to ${email}`);
       } catch (error) {
         console.error('Error updating employee email:', error);
-        // Continue with sending email even if update fails
       }
     }
 
-    // Create a Nodemailer transporter using Gmail with improved configuration
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       host: 'smtp.gmail.com',
@@ -42,7 +37,6 @@ export async function POST(req: Request) {
 
     const registrationLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/employee/make-password?email=${encodeURIComponent(email)}${employeeId ? `&employeeId=${employeeId}` : ''}`;
 
-    // Verify SMTP connection before attempting to send
     try {
       await transporter.verify();
       console.log('SMTP connection verified successfully');
