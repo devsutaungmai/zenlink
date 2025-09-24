@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
+import { payRulesEngine } from '@/lib/pay-rules-engine'
+import { attendanceCalculator } from '@/lib/attendance-calculator'
 
 export async function POST(req: NextRequest) {
   try {
@@ -61,132 +63,200 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const shifts = await prisma.shift.findMany({
-      where: {
-        employeeId: employeeId,
-        date: {
-          gte: new Date(payrollPeriod.startDate),
-          lte: new Date(payrollPeriod.endDate),
-        },
-        approved: true,
-      },
-      orderBy: {
-        date: 'asc',
-      },
-    })
+    try {
+      const attendanceCalculation = await attendanceCalculator.calculateAttendanceHours({
+        employeeId,
+        payrollPeriodId
+      })
 
-    let totalHours = 0
-    let totalShifts = 0
-    const shiftDetails: Array<{
-      date: string
-      startTime: string
-      endTime: string | null
-      hours: number
-      breakStart: string | null
-      breakEnd: string | null
-      breakPaid: boolean
-      breakDuration: number
-    }> = []
+      if (attendanceCalculation.approvedHours > 0) {
+        const shiftDetails = attendanceCalculation.attendanceDetails
+          .filter(att => att.isApproved && att.punchOutTime)
+          .map(att => ({
+            date: att.date,
+            startTime: new Date(att.punchInTime).toTimeString().substring(0, 5),
+            endTime: att.punchOutTime ? new Date(att.punchOutTime).toTimeString().substring(0, 5) : '',
+            hours: att.duration,
+            breakDuration: 0,
+            breakPaid: false
+          }))
 
-    for (const shift of shifts) {
-      if (shift.endTime) {
-        const hours = calculateShiftHours(shift.startTime, shift.endTime, shift.breakStart, shift.breakEnd, shift.breakPaid || false)
-        totalHours += hours
-        totalShifts += 1
-        
-        let breakDuration = 0
-        if (shift.breakStart && shift.breakEnd) {
-          breakDuration = (shift.breakEnd.getTime() - shift.breakStart.getTime()) / (1000 * 60) // Convert to minutes
-        }
-        
-        shiftDetails.push({
-          date: shift.date.toISOString().split('T')[0],
-          startTime: shift.startTime,
-          endTime: shift.endTime,
-          hours: hours,
-          breakStart: shift.breakStart ? shift.breakStart.toTimeString().substring(0, 5) : null,
-          breakEnd: shift.breakEnd ? shift.breakEnd.toTimeString().substring(0, 5) : null,
-          breakPaid: shift.breakPaid || false,
-          breakDuration: Math.round(breakDuration),
+        const payCalculation = await payRulesEngine.calculatePay({
+          employeeId,
+          payrollPeriodId,
+          totalHours: attendanceCalculation.approvedHours,
+          regularHours: attendanceCalculation.regularHours,
+          shiftDetails
+        })
+
+        const attendanceSummary = await attendanceCalculator.getAttendanceSummary(
+          employeeId,
+          payrollPeriodId
+        )
+
+        return NextResponse.json({
+          totalHours: attendanceCalculation.totalHours,
+          totalShifts: attendanceCalculation.totalShifts,
+          regularHours: payCalculation.regularHours,
+          overtimeHours: payCalculation.overtimeHours,
+          regularRate: payCalculation.regularRate,
+          overtimeRate: payCalculation.overtimeRate,
+          attendanceDetails: attendanceCalculation.attendanceDetails,
+          wageCalculationMethod: 'attendance_with_pay_rules',
+          approvedHours: attendanceCalculation.approvedHours,
+          unapprovedHours: attendanceCalculation.unapprovedHours,
+          attendanceSummary,
+          appliedRules: payCalculation.appliedRules,
+          overtimeCalculations: payCalculation.overtimeCalculations,
+          grossPay: payCalculation.grossPay,
+          netPay: payCalculation.netPay,
+          employee: {
+            firstName: employee.firstName,
+            lastName: employee.lastName,
+            employeeNo: employee.employeeNo,
+          },
+          payrollPeriod: {
+            name: payrollPeriod.name,
+            startDate: payrollPeriod.startDate,
+            endDate: payrollPeriod.endDate,
+          },
+        })
+      } else {
+        const attendanceSummary = await attendanceCalculator.getAttendanceSummary(
+          employeeId,
+          payrollPeriodId
+        )
+
+        return NextResponse.json({
+          totalHours: attendanceCalculation.totalHours,
+          totalShifts: attendanceCalculation.totalShifts,
+          regularHours: attendanceCalculation.regularHours,
+          overtimeHours: attendanceCalculation.overtimeHours,
+          regularRate: attendanceCalculation.regularRate,
+          overtimeRate: attendanceCalculation.overtimeRate,
+          attendanceDetails: attendanceCalculation.attendanceDetails,
+          wageCalculationMethod: 'attendance_only',
+          approvedHours: attendanceCalculation.approvedHours,
+          unapprovedHours: attendanceCalculation.unapprovedHours,
+          attendanceSummary,
+          grossPay: 0,
+          netPay: 0,
+          appliedRules: [],
+          overtimeCalculations: [],
+          employee: {
+            firstName: employee.firstName,
+            lastName: employee.lastName,
+            employeeNo: employee.employeeNo,
+          },
+          payrollPeriod: {
+            name: payrollPeriod.name,
+            startDate: payrollPeriod.startDate,
+            endDate: payrollPeriod.endDate,
+          },
         })
       }
-    }
+    } catch (attendanceError) {
+      console.warn('Attendance calculation failed, falling back to shift-based calculation:', attendanceError)
 
-    // Calculate regular and overtime hours (assuming 8 hours per day is regular, rest is overtime)
-    const regularHoursPerShift = 8
-    let regularHours = 0
-    let overtimeHours = 0
+      const shifts = await prisma.shift.findMany({
+        where: {
+          employeeId: employeeId,
+          date: {
+            gte: new Date(payrollPeriod.startDate),
+            lte: new Date(payrollPeriod.endDate),
+          },
+          approved: true,
+        },
+        orderBy: {
+          date: 'asc',
+        },
+      })
 
-    for (const detail of shiftDetails) {
-      if (detail.hours <= regularHoursPerShift) {
-        regularHours += detail.hours
-      } else {
-        regularHours += regularHoursPerShift
-        overtimeHours += (detail.hours - regularHoursPerShift)
-      }
-    }
+      let totalHours = 0
+      let totalShifts = 0
+      const shiftDetails: Array<{
+        date: string
+        startTime: string
+        endTime: string | null
+        hours: number
+        breakStart: string | null
+        breakEnd: string | null
+        breakPaid: boolean
+        breakDuration: number
+      }> = []
 
-    // Determine wage rates from employee group or default values
-    let regularRate = 0
-    let overtimeRate = 0
-
-    // Calculate average regular rate from shifts if they have wage values, otherwise use employee group
-    let totalWageFromShifts = 0
-    let shiftsWithWage = 0
-    
-    for (const shift of shifts) {
-      if (shift.wage && shift.wage > 0) {
-        if (shift.wageType === 'HOURLY') {
-          totalWageFromShifts += shift.wage
-          shiftsWithWage++
-        } else if (shift.wageType === 'PER_SHIFT') {
-          // Convert per-shift wage to hourly rate
-          const shiftHours = shiftDetails.find(detail => 
-            detail.date === shift.date.toISOString().split('T')[0]
-          )?.hours || regularHoursPerShift
-          const hourlyRate = shift.wage / (shiftHours > 0 ? shiftHours : regularHoursPerShift)
-          totalWageFromShifts += hourlyRate
-          shiftsWithWage++
+      for (const shift of shifts) {
+        if (shift.endTime) {
+          const hours = calculateShiftHours(shift.startTime, shift.endTime, shift.breakStart, shift.breakEnd, shift.breakPaid || false)
+          totalHours += hours
+          totalShifts += 1
+          
+          let breakDuration = 0
+          if (shift.breakStart && shift.breakEnd) {
+            breakDuration = (shift.breakEnd.getTime() - shift.breakStart.getTime()) / (1000 * 60) // Convert to minutes
+          }
+          
+          shiftDetails.push({
+            date: shift.date.toISOString().split('T')[0],
+            startTime: shift.startTime,
+            endTime: shift.endTime,
+            hours: hours,
+            breakStart: shift.breakStart ? shift.breakStart.toTimeString().substring(0, 5) : null,
+            breakEnd: shift.breakEnd ? shift.breakEnd.toTimeString().substring(0, 5) : null,
+            breakPaid: shift.breakPaid || false,
+            breakDuration: Math.round(breakDuration),
+          })
         }
       }
-    }
 
-    if (shiftsWithWage > 0) {
-      // Use average rate from shifts that have wage values
-      regularRate = totalWageFromShifts / shiftsWithWage
-      overtimeRate = regularRate * 1.5 // 1.5x for overtime
-    } else if (employee.employeeGroup) {
-      // Fall back to employee group rates if no shift wages are available
-      if (employee.employeeGroup.defaultWageType === 'HOURLY') {
-        regularRate = employee.employeeGroup.hourlyWage
-        overtimeRate = employee.employeeGroup.hourlyWage * 1.5 // 1.5x for overtime
-      } else {
-        regularRate = employee.employeeGroup.wagePerShift / regularHoursPerShift
-        overtimeRate = regularRate * 1.5
+      const regularHoursPerShift = 8
+      let regularHours = 0
+      let overtimeHours = 0
+
+      for (const detail of shiftDetails) {
+        if (detail.hours <= regularHoursPerShift) {
+          regularHours += detail.hours
+        } else {
+          regularHours += regularHoursPerShift
+          overtimeHours += (detail.hours - regularHoursPerShift)
+        }
       }
-    }
 
-    return NextResponse.json({
-      totalHours,
-      totalShifts,
-      regularHours: Math.round(regularHours * 100) / 100,
-      overtimeHours: Math.round(overtimeHours * 100) / 100,
-      regularRate,
-      overtimeRate,
-      shiftDetails,
-      wageCalculationMethod: shiftsWithWage > 0 ? 'shifts' : 'employeeGroup',
-      shiftsWithWage,
-      employee: {
-        firstName: employee.firstName,
-        lastName: employee.lastName,
-        employeeNo: employee.employeeNo,
-      },
-      payrollPeriod: {
-        name: payrollPeriod.name,
-        startDate: payrollPeriod.startDate,
-        endDate: payrollPeriod.endDate,
-      },
-    })
+      let regularRate = 0
+      let overtimeRate = 0
+
+      if (employee.employeeGroup) {
+        if (employee.employeeGroup.defaultWageType === 'HOURLY') {
+          regularRate = employee.employeeGroup.hourlyWage
+          overtimeRate = employee.employeeGroup.hourlyWage * 1.5
+        } else {
+          regularRate = employee.employeeGroup.wagePerShift / regularHoursPerShift
+          overtimeRate = regularRate * 1.5
+        }
+      }
+
+      return NextResponse.json({
+        totalHours,
+        totalShifts,
+        regularHours: Math.round(regularHours * 100) / 100,
+        overtimeHours: Math.round(overtimeHours * 100) / 100,
+        regularRate,
+        overtimeRate,
+        shiftDetails,
+        wageCalculationMethod: 'shifts_fallback',
+        shiftsWithWage: 0,
+        employee: {
+          firstName: employee.firstName,
+          lastName: employee.lastName,
+          employeeNo: employee.employeeNo,
+        },
+        payrollPeriod: {
+          name: payrollPeriod.name,
+          startDate: payrollPeriod.startDate,
+          endDate: payrollPeriod.endDate,
+        },
+      })
+    }
 
   } catch (error) {
     console.error('Error calculating hours:', error)

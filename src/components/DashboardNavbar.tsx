@@ -76,6 +76,9 @@ export default function DashboardNavbar({ setMobileMenuOpen }: DashboardNavbarPr
       children: [
         { name: t('navigation.payroll_periods'), href: '/dashboard/payroll-periods' },
         { name: t('navigation.payroll_entries'), href: '/dashboard/payroll-entries' },
+        { name: 'Salary Codes', href: '/dashboard/salary-codes' },
+        { name: 'Pay Rules', href: '/dashboard/pay-rules' },
+        { name: 'Overtime Rules', href: '/dashboard/overtime-rules' },
       ],
     },
     { name: t('navigation.settings'), href: '/dashboard/settings', icon: Cog6ToothIcon },

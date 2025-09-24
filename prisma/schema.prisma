@@ -41,6 +41,8 @@ model Business {
   punchClockAccessSettings PunchClockAccessSettings? @relation("PunchClockAccessSettings")
   punchClockProfiles       PunchClockProfile[]
   users                    User[]
+  salaryCodes              SalaryCode[]
+  payRules                 PayRule[]
 }
 
 model Employee {
@@ -78,6 +80,8 @@ model Employee {
   sickLeaves         SickLeave[]
   timeEntries        TimeEntry[]
   workPlans          WorkPlan[]
+  employeePayRules   EmployeePayRule[]
+  sickPayCalculations SickPayCalculation[]
 }
 
 model EmployeeGroup {
@@ -88,13 +92,14 @@ model EmployeeGroup {
   defaultWageType   WageType           @default(HOURLY)
   salaryCode        String?
   createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
+  updatedAt         DateTime           @default(now())
   businessId        String
   contracts         Contract[]
   contractTemplates ContractTemplate[]
   employees         Employee[]         @relation("EmployeeToGroup")
   business          Business           @relation(fields: [businessId], references: [id])
   shifts            Shift[]
+  employeeGroupPayRules EmployeeGroupPayRule[]
 
   @@unique([name, businessId])
 }
@@ -412,6 +417,103 @@ model ContractTemplate {
   employeeGroup   EmployeeGroup @relation(fields: [employeeGroupId], references: [id])
 
   @@unique([name, businessId])
+}
+
+model SalaryCode {
+  id          String     @id @default(cuid())
+  code        String     // e.g., "120", "1203", "1201"
+  name        String     // e.g., "Hourly Wages", "Sick Pay"
+  description String?
+  category    String     // "HOURLY", "SICK_PAY", "OVERTIME", "BONUS", "DEDUCTION"
+  isActive    Boolean    @default(true)
+  businessId  String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  business    Business   @relation(fields: [businessId], references: [id])
+  payRules    PayRule[]
+
+  @@unique([code, businessId])
+}
+
+model PayRule {
+  id                    String                  @id @default(cuid())
+  name                  String                  // e.g., "Standard Overtime", "Sick Pay Rule"
+  description           String?
+  ruleType              String                  // "OVERTIME", "SICK_PAY", "REGULAR"
+  salaryCodeId          String
+  isActive              Boolean                 @default(true)
+  businessId            String
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+  business              Business                @relation(fields: [businessId], references: [id])
+  salaryCode            SalaryCode              @relation(fields: [salaryCodeId], references: [id])
+  overtimeRule          OvertimeRule?
+  employeeGroupPayRules EmployeeGroupPayRule[]
+  employeePayRules      EmployeePayRule[]
+
+  @@unique([name, businessId])
+}
+
+model OvertimeRule {
+  id                String   @id @default(cuid())
+  payRuleId         String   @unique
+  triggerAfterHours Decimal  @db.Decimal(5, 2) // Hours after which overtime kicks in
+  rateMultiplier    Decimal  @default(1.5) @db.Decimal(5, 2) // Overtime rate multiplier
+  isDaily           Boolean  @default(true) // Daily vs weekly overtime
+  maxHoursPerDay    Decimal? @db.Decimal(5, 2)
+  maxHoursPerWeek   Decimal? @db.Decimal(5, 2)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  payRule           PayRule  @relation(fields: [payRuleId], references: [id], onDelete: Cascade)
+}
+
+model EmployeeGroupPayRule {
+  id              String        @id @default(cuid())
+  employeeGroupId String
+  payRuleId       String
+  baseRate        Decimal       @db.Decimal(10, 2) // Base hourly rate
+  isDefault       Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  employeeGroup   EmployeeGroup @relation(fields: [employeeGroupId], references: [id], onDelete: Cascade)
+  payRule         PayRule       @relation(fields: [payRuleId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeGroupId, payRuleId])
+}
+
+model EmployeePayRule {
+  id            String    @id @default(cuid())
+  employeeId    String
+  payRuleId     String
+  customRate    Decimal   @db.Decimal(10, 2) // Custom rate for this employee
+  effectiveFrom DateTime
+  effectiveTo   DateTime?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  employee      Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  payRule       PayRule   @relation(fields: [payRuleId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId, isActive])
+}
+
+model SickPayCalculation {
+  id                 String   @id @default(cuid())
+  employeeId         String
+  calculationDate    DateTime
+  threeMonthAverage  Decimal  @db.Decimal(10, 2) // Average daily/hourly rate
+  basePeriodStart    DateTime // Start of 3-month calculation period
+  basePeriodEnd      DateTime // End of 3-month calculation period
+  totalHours         Decimal  @db.Decimal(10, 2)
+  totalPay           Decimal  @db.Decimal(10, 2)
+  dailyRate          Decimal  @db.Decimal(10, 2)
+  hourlyRate         Decimal  @db.Decimal(10, 2)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  employee           Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, calculationDate])
+  @@index([employeeId, calculationDate])
 }
 
 enum WageType {

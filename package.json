@@ -46,6 +46,7 @@
     "react-i18next": "^15.6.0",
     "sweetalert2": "^11.17.2",
     "tailwind-merge": "^3.3.0",
+    "tsx": "^4.20.5",
     "zod": "^4.0.17"
   },
   "devDependencies": {

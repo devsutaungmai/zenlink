@@ -219,8 +219,8 @@ export default function PayrollEntryForm({
           <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-sm font-semibold text-blue-900">Auto-Calculate from Shifts</h3>
-                <p className="text-sm text-blue-700">Automatically calculate hours and wages from approved shifts</p>
+                <h3 className="text-sm font-semibold text-blue-900">Auto-Calculate from Attendance</h3>
+                <p className="text-sm text-blue-700">Calculate hours and wages from approved attendance records (punch in/out times)</p>
               </div>
               <button
                 type="button"
@@ -234,18 +234,22 @@ export default function PayrollEntryForm({
                     Calculating...
                   </div>
                 ) : (
-                  'Calculate Hours'
+                  'Calculate from Attendance'
                 )}
               </button>
             </div>
 
-            {/* Shift Summary */}
+            {/* Summary */}
             {shiftData && (
               <div className="bg-white rounded-lg p-4 border border-blue-200">
-                <h4 className="text-sm font-semibold text-gray-900 mb-3">Shift Summary</h4>
+                <h4 className="text-sm font-semibold text-gray-900 mb-3">
+                  {shiftData.wageCalculationMethod?.includes('attendance') ? 'Attendance Summary' : 'Shift Summary'}
+                </h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                   <div>
-                    <p className="text-gray-500">Total Shifts</p>
+                    <p className="text-gray-500">
+                      {shiftData.wageCalculationMethod?.includes('attendance') ? 'Attendance Records' : 'Total Shifts'}
+                    </p>
                     <p className="font-semibold text-gray-900">{shiftData.totalShifts}</p>
                   </div>
                   <div>
@@ -262,64 +266,56 @@ export default function PayrollEntryForm({
                   </div>
                 </div>
 
-                {/* Break Summary */}
-                {shiftData.shiftDetails.some((shift: any) => shift.breakDuration > 0) && (
+                {/* Attendance Details */}
+                {shiftData.attendanceDetails && shiftData.attendanceDetails.length > 0 && (
                   <div className="mt-4 pt-4 border-t border-gray-200">
-                    <h5 className="text-sm font-medium text-gray-700 mb-2">Break Summary</h5>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                      <div>
-                        <p className="text-gray-500">Total Break Time</p>
-                        <p className="font-semibold text-gray-900">
-                          {Math.round(shiftData.shiftDetails.reduce((total: number, shift: any) => total + (shift.breakDuration || 0), 0))} min
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-gray-500">Paid Breaks</p>
-                        <p className="font-semibold text-green-700">
-                          {Math.round(shiftData.shiftDetails.reduce((total: number, shift: any) => 
-                            total + (shift.breakPaid ? (shift.breakDuration || 0) : 0), 0))} min
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-gray-500">Unpaid Breaks</p>
-                        <p className="font-semibold text-yellow-700">
-                          {Math.round(shiftData.shiftDetails.reduce((total: number, shift: any) => 
-                            total + (!shift.breakPaid ? (shift.breakDuration || 0) : 0), 0))} min
-                        </p>
+                    <h5 className="text-sm font-medium text-gray-700 mb-2">Attendance Records</h5>
+                    <div className="max-h-40 overflow-y-auto">
+                      <div className="space-y-2">
+                        {shiftData.attendanceDetails.map((attendance: any, index: number) => (
+                          <div key={index} className={`rounded p-2 text-xs ${
+                            attendance.isApproved ? 'bg-green-50 border border-green-200' : 'bg-yellow-50 border border-yellow-200'
+                          }`}>
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <div className="font-medium text-gray-700">
+                                  {new Date(attendance.date).toLocaleDateString()}
+                                </div>
+                                <div className="text-gray-600">
+                                  {new Date(attendance.punchInTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - 
+                                  {attendance.punchOutTime 
+                                    ? new Date(attendance.punchOutTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+                                    : 'Still clocked in'
+                                  }
+                                </div>
+                                {attendance.shift && (
+                                  <div className="text-gray-500 mt-1">
+                                    Scheduled: {attendance.shift.startTime} - {attendance.shift.endTime || 'Open'}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="text-right">
+                                <div className="font-medium text-gray-900">
+                                  {attendance.duration.toFixed(2)}h
+                                </div>
+                                <span className={`px-1 py-0.5 rounded text-xs ${
+                                  attendance.isApproved 
+                                    ? 'bg-green-100 text-green-700' 
+                                    : 'bg-yellow-100 text-yellow-700'
+                                }`}>
+                                  {attendance.isApproved ? 'Approved' : 'Pending'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
                 )}
 
-                {/* Wage Calculation Info */}
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <h5 className="text-sm font-medium text-gray-700 mb-2">Wage Calculation</h5>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-gray-500">Calculation Method</p>
-                      <p className="font-semibold text-gray-900">
-                        {shiftData.wageCalculationMethod === 'shifts' ? 'Individual Shift Wages' : 'Employee Group Rate'}
-                      </p>
-                    </div>
-                    {shiftData.wageCalculationMethod === 'shifts' && (
-                      <div>
-                        <p className="text-gray-500">Shifts with Wage Data</p>
-                        <p className="font-semibold text-gray-900">
-                          {shiftData.shiftsWithWage} of {shiftData.totalShifts}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                  <div className="mt-2 text-xs text-gray-600">
-                    {shiftData.wageCalculationMethod === 'shifts' 
-                      ? 'Using average hourly rate from shifts with wage data' 
-                      : 'Using default rate from employee group settings'
-                    }
-                  </div>
-                </div>
-
-                {/* Shift Details */}
-                {shiftData.shiftDetails.length > 0 && (
+                {/* Shift Details (legacy fallback) */}
+                {shiftData.shiftDetails && shiftData.shiftDetails.length > 0 && !shiftData.attendanceDetails && (
                   <div className="mt-4">
                     <h5 className="text-sm font-medium text-gray-700 mb-2">Individual Shifts</h5>
                     <div className="max-h-40 overflow-y-auto">

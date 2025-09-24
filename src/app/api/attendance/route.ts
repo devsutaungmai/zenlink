@@ -162,3 +162,48 @@ export async function GET(request: NextRequest) {
     }, { status: 500 })
   }
 }
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const { attendanceIds, approved, approvalNote } = body
+
+    if (!attendanceIds || !Array.isArray(attendanceIds)) {
+      return NextResponse.json(
+        { error: 'Attendance IDs are required' },
+        { status: 400 }
+      )
+    }
+
+    if (typeof approved !== 'boolean') {
+      return NextResponse.json(
+        { error: 'Approval status must be a boolean' },
+        { status: 400 }
+      )
+    }
+
+    const updateData: any = {
+      approved,
+      approvedAt: approved ? new Date() : null,
+      approvedBy: approved ? 'admin' : null
+    }
+
+    const updatedAttendances = await prisma.attendance.updateMany({
+      where: {
+        id: { in: attendanceIds }
+      },
+      data: updateData
+    })
+
+    return NextResponse.json({
+      message: `${updatedAttendances.count} attendance records ${approved ? 'approved' : 'unapproved'}`,
+      updatedCount: updatedAttendances.count
+    })
+  } catch (error) {
+    console.error('Error updating attendance approval:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
