@@ -28,8 +28,10 @@
     "view_entry": "Eintrag Anzeigen",
     "edit_entry": "Eintrag Bearbeiten",
     "download_payslip": "PDF Lohnzettel Herunterladen",
-    "delete_entry": "Eintrag Löschen"
+    "delete_entry": "Eintrag Löschen",
+    "export_excel": "Nach Excel Exportieren"
   },
+  "export_excel": "Nach Excel Exportieren",
   "pagination": {
     "previous": "Zurück",
     "next": "Weiter",
@@ -49,7 +51,8 @@
   },
   "success": {
     "deleted": "Lohneintrag wurde gelöscht.",
-    "payslip_downloaded": "Lohnzettel PDF wurde erfolgreich heruntergeladen."
+    "payslip_downloaded": "Lohnzettel PDF wurde erfolgreich heruntergeladen.",
+    "excel_exported": "Lohneinträge wurden erfolgreich nach Excel exportiert."
   },
   "errors": {
     "delete_failed": "Lohneintrag konnte nicht gelöscht werden.",

@@ -10,7 +10,8 @@ import {
   PencilIcon,
   TrashIcon,
   EyeIcon,
-  DocumentArrowDownIcon
+  DocumentArrowDownIcon,
+  TableCellsIcon
 } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
 
@@ -187,6 +188,74 @@ export default function PayrollEntriesPage() {
     }
   }
 
+  const exportToExcel = () => {
+    const approvedEntries = filteredEntries.filter(entry => entry.status === 'APPROVED' || entry.status === 'PAID' )
+    
+    if (approvedEntries.length === 0) {
+      Swal.fire({
+        title: 'No Approved Entries',
+        text: 'There are no approved payroll entries to export.',
+        icon: 'info',
+        confirmButtonColor: '#31BCFF',
+      })
+      return
+    }
+
+    const headers = [
+      'Employee Name',
+      'Employee No',
+      'Payroll Period',
+      'Period Start Date',
+      'Period End Date',
+      'Regular Hours',
+      'Overtime Hours',
+      'Gross Pay',
+      'Deductions',
+      'Net Pay',
+      'Status',
+      'Created Date'
+    ]
+    
+    const excelData = approvedEntries.map(entry => [
+      `${entry.employee.firstName} ${entry.employee.lastName}`,
+      entry.employee.employeeNo || '',
+      entry.payrollPeriod.name,
+      new Date(entry.payrollPeriod.startDate).toLocaleDateString(),
+      new Date(entry.payrollPeriod.endDate).toLocaleDateString(),
+      entry.regularHours.toString(),
+      entry.overtimeHours.toString(),
+      `$${entry.grossPay.toFixed(2)}`,
+      `$${entry.deductions.toFixed(2)}`,
+      `$${entry.netPay.toFixed(2)}`,
+      entry.status,
+      new Date(entry.createdAt).toLocaleDateString()
+    ])
+
+    // Create CSV content (Excel can open CSV files)
+    const csvContent = [headers, ...excelData]
+      .map(row => row.map(field => `"${field}"`).join(','))
+      .join('\n')
+
+    // Create and download the file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `payroll-entries-${new Date().toISOString().split('T')[0]}.csv`
+    document.body.appendChild(a)
+    a.click()
+    window.URL.revokeObjectURL(url)
+    document.body.removeChild(a)
+
+    // Show success message
+    Swal.fire({
+      title: 'Success!',
+      text: t('success.excel_exported'),
+      icon: 'success',
+      confirmButtonColor: '#31BCFF',
+    })
+  }
+
   const getStatusBadge = (status: string) => {
     const styles = {
       DRAFT: 'bg-yellow-100 text-yellow-800 border-yellow-200',
@@ -235,13 +304,24 @@ export default function PayrollEntriesPage() {
               {t('subtitle')}
             </p>
           </div>
-          <Link
-            href="/dashboard/payroll-entries/create"
-            className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 group"
-          >
-            <PlusIcon className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
-            {t('create_entry')}
-          </Link>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={exportToExcel}
+              disabled={filteredEntries.filter(entry => entry.status === 'APPROVED').length === 0}
+              className="inline-flex items-center justify-center px-4 py-3 rounded-2xl bg-white border border-gray-200 text-gray-700 font-medium shadow-sm hover:shadow-md transition-all duration-200 hover:scale-105 group disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              title={t('actions.export_excel')}
+            >
+              <TableCellsIcon className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
+              {t('export_excel')}
+            </button>
+            <Link
+              href="/dashboard/payroll-entries/create"
+              className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 group"
+            >
+              <PlusIcon className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
+              {t('create_entry')}
+            </Link>
+          </div>
         </div>
       </div>
 

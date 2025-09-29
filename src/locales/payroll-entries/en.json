@@ -28,8 +28,10 @@
     "view_entry": "View Entry",
     "edit_entry": "Edit Entry",
     "download_payslip": "Download PDF Payslip",
-    "delete_entry": "Delete Entry"
+    "delete_entry": "Delete Entry",
+    "export_excel": "Export to Excel"
   },
+  "export_excel": "Export to Excel",
   "pagination": {
     "previous": "Previous",
     "next": "Next",
@@ -49,7 +51,8 @@
   },
   "success": {
     "deleted": "Payroll entry has been deleted.",
-    "payslip_downloaded": "Payslip PDF has been downloaded successfully."
+    "payslip_downloaded": "Payslip PDF has been downloaded successfully.",
+    "excel_exported": "Payroll entries have been exported to Excel successfully."
   },
   "errors": {
     "delete_failed": "Failed to delete payroll entry.",

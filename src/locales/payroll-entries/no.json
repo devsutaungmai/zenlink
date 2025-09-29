@@ -28,8 +28,10 @@
     "view_entry": "Vis Oppføring",
     "edit_entry": "Rediger Oppføring",
     "download_payslip": "Last ned PDF Lønnslipp",
-    "delete_entry": "Slett Oppføring"
+    "delete_entry": "Slett Oppføring",
+    "export_excel": "Eksporter til Excel"
   },
+  "export_excel": "Eksporter til Excel",
   "pagination": {
     "previous": "Forrige",
     "next": "Neste",
@@ -49,7 +51,8 @@
   },
   "success": {
     "deleted": "Lønnsoppføring har blitt slettet.",
-    "payslip_downloaded": "Lønnslipp PDF har blitt lastet ned."
+    "payslip_downloaded": "Lønnslipp PDF har blitt lastet ned.",
+    "excel_exported": "Lønnsoppføringer har blitt eksportert til Excel."
   },
   "errors": {
     "delete_failed": "Kunne ikke slette lønnsoppføring.",
