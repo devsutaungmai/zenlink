@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/app/lib/prisma';
-import puppeteer from 'puppeteer';
+import { launchBrowser } from '@/lib/puppeteer-config';
 
 function generatePayslipHTML(payrollEntry: any, business: any) {
   const periodStartDate = new Date(payrollEntry.payrollPeriod.startDate).toLocaleDateString();
@@ -473,10 +473,7 @@ export async function GET(
     const htmlContent = generatePayslipHTML(payrollEntry, business);
 
     // Launch puppeteer and generate PDF
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
+    const browser = await launchBrowser();
     
     const page = await browser.newPage();
     await page.setContent(htmlContent, { waitUntil: 'networkidle0' });

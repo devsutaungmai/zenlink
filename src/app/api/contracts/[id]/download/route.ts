@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import { prisma } from '@/app/lib/prisma'
-import puppeteer from 'puppeteer'
+import { launchBrowser } from '@/lib/puppeteer-config'
 
 export async function GET(
   request: NextRequest,
@@ -254,10 +254,7 @@ export async function GET(
     `
 
     // Launch Puppeteer and generate PDF
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    })
+    const browser = await launchBrowser()
     
     try {
       const page = await browser.newPage()

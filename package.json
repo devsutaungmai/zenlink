@@ -26,6 +26,7 @@
     "@radix-ui/react-separator": "^1.1.7",
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-tabs": "^1.1.12",
+    "@sparticuz/chromium": "^138.0.2",
     "@types/nodemailer": "^6.4.17",
     "@types/puppeteer": "^5.4.7",
     "bcryptjs": "^3.0.2",
