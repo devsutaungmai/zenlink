@@ -52,7 +52,6 @@ export async function launchBrowser() {
       }
     }
     
-    // Local/other cloud providers
     const config = getPuppeteerConfig();
     return await puppeteer.launch(config);
   } catch (error) {
