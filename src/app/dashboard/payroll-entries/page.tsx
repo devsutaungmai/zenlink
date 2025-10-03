@@ -11,7 +11,8 @@ import {
   TrashIcon,
   EyeIcon,
   DocumentArrowDownIcon,
-  TableCellsIcon
+  TableCellsIcon,
+  DocumentTextIcon
 } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
 
@@ -315,6 +316,14 @@ export default function PayrollEntriesPage() {
               {t('export_excel')}
             </button>
             <Link
+              href="/dashboard/payroll-entries/generate"
+              className="inline-flex items-center justify-center px-4 py-3 rounded-2xl bg-gradient-to-r from-green-500 to-green-600 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 group"
+              title="Generate payroll entries from attendance data"
+            >
+              <DocumentTextIcon className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
+              Generate Entries
+            </Link>
+            <Link
               href="/dashboard/payroll-entries/create"
               className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 group"
             >
@@ -525,6 +534,7 @@ export default function PayrollEntriesPage() {
           )}
         </div>
       )}
+
     </div>
   )
 }
