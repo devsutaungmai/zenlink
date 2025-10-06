@@ -15,6 +15,14 @@ import {
   DocumentTextIcon
 } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"
 
 export default function PayrollEntriesPage() {
   const { t } = useTranslation('payroll-entries')
@@ -26,6 +34,9 @@ export default function PayrollEntriesPage() {
   const [periodFilter, setPeriodFilter] = useState<string>('all')
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+  const [selectedEntries, setSelectedEntries] = useState<string[]>([])
+  const [showStatusModal, setShowStatusModal] = useState(false)
+  const [bulkStatus, setBulkStatus] = useState<string>('APPROVED')
 
   const fetchEntries = async (page = 1, status = '', periodId = '') => {
     try {
@@ -145,6 +156,149 @@ export default function PayrollEntriesPage() {
         text: error instanceof Error ? error.message : t('errors.delete_failed'),
         icon: 'error',
         confirmButtonColor: '#31BCFF',
+      })
+    }
+  }
+
+  const toggleSelection = (entryId: string) => {
+    setSelectedEntries(prev =>
+      prev.includes(entryId)
+        ? prev.filter(id => id !== entryId)
+        : [...prev, entryId]
+    )
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedEntries.length === filteredEntries.length && filteredEntries.length > 0) {
+      setSelectedEntries([])
+    } else {
+      setSelectedEntries(filteredEntries.map(e => e.id))
+    }
+  }
+
+  const handleBulkApprove = async () => {
+    if (selectedEntries.length === 0) {
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        icon: 'warning',
+        title: 'Please select payroll entries to approve',
+      })
+      return
+    }
+
+    try {
+      const result = await Swal.fire({
+        title: 'Approve Selected Entries',
+        text: `Are you sure you want to approve ${selectedEntries.length} payroll ${selectedEntries.length === 1 ? 'entry' : 'entries'}?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#31BCFF',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, Approve',
+        cancelButtonText: 'Cancel'
+      })
+
+      if (result.isConfirmed) {
+        const response = await fetch('/api/payroll-entries/bulk-update', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            entryIds: selectedEntries,
+            status: 'APPROVED'
+          })
+        })
+
+        const data = await response.json()
+
+        if (response.ok) {
+          Swal.fire({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+            icon: 'success',
+            title: data.message || 'Entries approved successfully!',
+          })
+          setSelectedEntries([])
+          fetchEntries(currentPage, statusFilter, periodFilter)
+        } else {
+          throw new Error(data.error)
+        }
+      }
+    } catch (error) {
+      console.error('Error approving entries:', error)
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        icon: 'error',
+        title: error instanceof Error ? error.message : 'Failed to approve entries',
+      })
+    }
+  }
+
+  const handleBulkStatusChange = async () => {
+    if (selectedEntries.length === 0) {
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        icon: 'warning',
+        title: 'Please select payroll entries to update',
+      })
+      return
+    }
+    setShowStatusModal(true)
+  }
+
+  const confirmBulkStatusChange = async () => {
+    try {
+      const response = await fetch('/api/payroll-entries/bulk-update', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          entryIds: selectedEntries,
+          status: bulkStatus
+        })
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
+          icon: 'success',
+          title: data.message || 'Entries updated successfully!',
+        })
+        setSelectedEntries([])
+        setShowStatusModal(false)
+        fetchEntries(currentPage, statusFilter, periodFilter)
+      } else {
+        throw new Error(data.error)
+      }
+    } catch (error) {
+      console.error('Error updating entries:', error)
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        icon: 'error',
+        title: error instanceof Error ? error.message : 'Failed to update entries',
       })
     }
   }
@@ -375,6 +529,37 @@ export default function PayrollEntriesPage() {
         <div className="flex items-center justify-between mt-4 text-sm text-gray-500">
           <span>{t('showing', { count: filteredEntries.length, total: entries.length })}</span>
         </div>
+
+        {/* Bulk Actions Bar */}
+        {selectedEntries.length > 0 && (
+          <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-blue-900">
+                {selectedEntries.length} {selectedEntries.length === 1 ? 'entry' : 'entries'} selected
+              </span>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleBulkApprove}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium transition-colors"
+                >
+                  Approve Selected
+                </button>
+                <button
+                  onClick={handleBulkStatusChange}
+                  className="px-4 py-2 bg-[#31BCFF] text-white rounded-lg hover:bg-[#31BCFF]/90 text-sm font-medium transition-colors"
+                >
+                  Change Status
+                </button>
+                <button
+                  onClick={() => setSelectedEntries([])}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-sm font-medium transition-colors"
+                >
+                  Clear Selection
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Entries List */}
@@ -403,6 +588,14 @@ export default function PayrollEntriesPage() {
             <table className="w-full">
               <thead className="bg-gray-50/80">
                 <tr>
+                  <th className="px-6 py-4 text-left">
+                    <input
+                      type="checkbox"
+                      checked={selectedEntries.length === filteredEntries.length && filteredEntries.length > 0}
+                      onChange={toggleSelectAll}
+                      className="rounded border-gray-300 text-[#31BCFF] focus:ring-[#31BCFF] h-4 w-4"
+                    />
+                  </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     {t('table.employee')}
                   </th>
@@ -429,6 +622,14 @@ export default function PayrollEntriesPage() {
               <tbody className="divide-y divide-gray-200/50">
                 {filteredEntries.map((entry) => (
                   <tr key={entry.id} className="hover:bg-blue-50/30 transition-colors duration-200">
+                    <td className="px-6 py-4">
+                      <input
+                        type="checkbox"
+                        checked={selectedEntries.includes(entry.id)}
+                        onChange={() => toggleSelection(entry.id)}
+                        className="rounded border-gray-300 text-[#31BCFF] focus:ring-[#31BCFF] h-4 w-4"
+                      />
+                    </td>
                     <td className="px-6 py-4">
                       <div>
                         <div className="text-sm font-medium text-gray-900">
@@ -534,6 +735,76 @@ export default function PayrollEntriesPage() {
           )}
         </div>
       )}
+
+      {/* Status Change Modal */}
+      <Dialog open={showStatusModal} onOpenChange={setShowStatusModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Change Status</DialogTitle>
+            <DialogDescription>
+              Select the new status for {selectedEntries.length} selected {selectedEntries.length === 1 ? 'entry' : 'entries'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-4">
+            <label className="flex items-start space-x-3 p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+              <input
+                type="radio"
+                name="bulkStatus"
+                value="DRAFT"
+                checked={bulkStatus === 'DRAFT'}
+                onChange={(e) => setBulkStatus(e.target.value)}
+                className="mt-1 text-[#31BCFF] focus:ring-[#31BCFF]"
+              />
+              <span className="flex-1">
+                <span className="block font-medium text-gray-900">Draft</span>
+                <p className="text-xs text-gray-500 mt-1">Mark as draft for further editing</p>
+              </span>
+            </label>
+            <label className="flex items-start space-x-3 p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+              <input
+                type="radio"
+                name="bulkStatus"
+                value="APPROVED"
+                checked={bulkStatus === 'APPROVED'}
+                onChange={(e) => setBulkStatus(e.target.value)}
+                className="mt-1 text-[#31BCFF] focus:ring-[#31BCFF]"
+              />
+              <span className="flex-1">
+                <span className="block font-medium text-gray-900">Approved</span>
+                <p className="text-xs text-gray-500 mt-1">Approve for payment processing</p>
+              </span>
+            </label>
+            <label className="flex items-start space-x-3 p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+              <input
+                type="radio"
+                name="bulkStatus"
+                value="PAID"
+                checked={bulkStatus === 'PAID'}
+                onChange={(e) => setBulkStatus(e.target.value)}
+                className="mt-1 text-[#31BCFF] focus:ring-[#31BCFF]"
+              />
+              <span className="flex-1">
+                <span className="block font-medium text-gray-900">Paid</span>
+                <p className="text-xs text-gray-500 mt-1">Mark as paid/completed</p>
+              </span>
+            </label>
+          </div>
+          <DialogFooter className="flex gap-3 sm:gap-3">
+            <button
+              onClick={() => setShowStatusModal(false)}
+              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={confirmBulkStatusChange}
+              className="flex-1 px-4 py-2 bg-[#31BCFF] text-white rounded-lg hover:bg-[#31BCFF]/90 font-medium transition-colors"
+            >
+              Update Status
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
     </div>
   )

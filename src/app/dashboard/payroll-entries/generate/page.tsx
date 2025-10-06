@@ -57,35 +57,27 @@ export default function GeneratePayrollEntriesPage() {
     try {
       setLoading(true)
       
-      // Fetch departments
       const deptResponse = await fetch('/api/departments')
       if (deptResponse.ok) {
         const deptData = await deptResponse.json()
-        console.log('Departments data:', deptData)
         setDepartments(deptData || [])
       }
 
-      // Fetch employee groups
       const groupResponse = await fetch('/api/employee-groups')
       if (groupResponse.ok) {
         const groupData = await groupResponse.json()
-        console.log('Employee groups data:', groupData)
         setEmployeeGroups(groupData || [])
       }
 
-      // Fetch employees
       const empResponse = await fetch('/api/employees')
       if (empResponse.ok) {
         const empData = await empResponse.json()
-        console.log('Employees data:', empData)
         setEmployees(empData || [])
       }
 
-      // Fetch payroll periods
       const periodResponse = await fetch('/api/payroll-periods')
       if (periodResponse.ok) {
         const periodData = await periodResponse.json()
-        console.log('Payroll periods data:', periodData)
         setPayrollPeriods(periodData.payrollPeriods || [])
       }
       
@@ -116,7 +108,6 @@ export default function GeneratePayrollEntriesPage() {
     try {
       setGenerating(true)
 
-      // Get the selected payroll period to use its date range
       const selectedPeriod = payrollPeriods.find(p => p.id === selectedPayrollPeriod)
       if (!selectedPeriod) {
         throw new Error('Selected payroll period not found')

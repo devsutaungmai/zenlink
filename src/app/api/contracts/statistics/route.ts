@@ -145,7 +145,6 @@ export async function GET() {
       })),
       contractsExpiring: contractsExpiringThisMonth,
       contractsExpired: expiredContracts,
-      // Debug info - remove in production
       debug: {
         allEmployeesCount: allEmployees.length,
         employeesWithAnyContract: employeesWithContracts.length,

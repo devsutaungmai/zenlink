@@ -80,7 +80,6 @@ export async function POST(req: NextRequest) {
       'bottom-right': 'BOTTOM_RIGHT'
     }
 
-    // Create contract template
     const contractTemplate = await prisma.contractTemplate.create({
       data: {
         name,

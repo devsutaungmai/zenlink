@@ -71,7 +71,6 @@ export async function GET(
 
     const formattedBody = formatContractBody(contract.contractTemplate.body)
 
-    // Create HTML template for PDF
     const logoHtml = contract.contractTemplate.logoPath ? 
       `<img src="${contract.contractTemplate.logoPath}" alt="Company Logo" style="height: 64px; width: auto; margin-bottom: 16px;" />` : ''
     

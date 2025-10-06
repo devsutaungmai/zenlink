@@ -81,7 +81,6 @@ export async function GET() {
       )
     }
 
-    // Remove sensitive information for security
     const { user, ...employee } = employeeProfile
     const safeProfile = {
       ...employee,

@@ -21,7 +21,6 @@ export async function getCurrentUser() {
     })
     return user
   } catch (error) {
-    console.log('Auth debug - error:', error)
     return null
   }
 }

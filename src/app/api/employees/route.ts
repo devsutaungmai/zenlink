@@ -181,7 +181,6 @@ export async function POST(request: Request) {
     let userEmail = `employee.${employeeNo}@company.local`
     let emailSuffix = 0
     
-    // Ensure the user email is unique
     while (true) {
       const existingUser = await prisma.user.findUnique({
         where: { email: userEmail }
@@ -195,8 +194,8 @@ export async function POST(request: Request) {
 
     const employeeUser = await prisma.user.create({
       data: {
-        email: userEmail, // Use the guaranteed unique email
-        password: '', // Temporary empty password, will be set when employee registers
+        email: userEmail,
+        password: '',
         firstName: data.firstName,
         lastName: data.lastName,
         role: 'EMPLOYEE',

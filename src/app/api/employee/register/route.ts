@@ -5,11 +5,7 @@ import bcrypt from 'bcryptjs';
 export async function POST(req: Request) {
   try {
     const { email, firstName, lastName, password, employeeId } = await req.json();
-
-    // Note: Client-side validation handles input validation to prevent UI issues
-    // Server-side focuses on database operations and business logic
     
-    // Check if a user with this email already exists
     const existingUser = await prisma.user.findUnique({
       where: { email },
     });
@@ -18,17 +14,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'User with this email already exists' }, { status: 400 });
     }
 
-    // Find a business to associate the user with
     const business = await prisma.business.findFirst();
     
     if (!business) {
       return NextResponse.json({ error: 'No business found' }, { status: 400 });
     }
 
-    // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create the user with EMPLOYEE role
     const user = await prisma.user.create({
       data: {
         email,
