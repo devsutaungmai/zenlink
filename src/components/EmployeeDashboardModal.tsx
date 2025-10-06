@@ -11,7 +11,7 @@ import {
   ExclamationTriangleIcon,
   CheckCircleIcon
 } from '@heroicons/react/24/outline'
-import { LocationValidationResult, validatePunchLocation } from '@/lib/locationValidation'
+import { LocationValidationResult, validatePunchLocation } from '@/shared/lib/locationValidation'
 import LocationValidationModal from '@/components/LocationValidationModal'
 
 interface Employee {

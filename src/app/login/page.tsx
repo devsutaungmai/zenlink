@@ -1,11 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import { useAuth } from '@/app/lib/useAuth'
+import { useAuth } from '@/shared/lib/useAuth'
 import Link from 'next/link'
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
 import { User } from 'lucide-react'
-import { APP_NAME } from '@/app/constants'
+import { APP_NAME } from '@/app/constants/constants'
 
 export default function LoginPage() {
   const { login, error, loading } = useAuth()

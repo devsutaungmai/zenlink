@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
-import { useUser } from '@/app/lib/useUser'
+import { useUser } from '@/shared/lib/useUser'
 import Swal from 'sweetalert2'
 import { 
   ClockIcon, 

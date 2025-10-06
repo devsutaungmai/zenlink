@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { User, Delete } from 'lucide-react'
-import { APP_NAME } from '@/app/constants'
+import { APP_NAME } from '@/app/constants/constants'
 
 function EmployeeLoginContent() {
   const router = useRouter()

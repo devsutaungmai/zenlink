@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@/app/lib/prisma'
-import { requireAuth } from '@/lib/auth'
-import { ShiftExchangeNotifications } from '@/lib/notifications'
+import { prisma } from '@/shared/lib/prisma'
+import { requireAuth } from '@/shared/lib/auth'
+import { ShiftExchangeNotifications } from '@/shared/lib/notifications'
 
 export async function PATCH(
   request: Request,

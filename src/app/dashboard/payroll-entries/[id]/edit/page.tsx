@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import PayrollEntryForm from '@/components/PayrollEntryForm'
-import { PayrollEntry, PayrollEntryFormData } from '@/types'
+import { PayrollEntry, PayrollEntryFormData } from '@/shared/types'
 
 export default function EditPayrollEntryPage() {
   const router = useRouter()

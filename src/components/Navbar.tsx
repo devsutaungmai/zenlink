@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { useState } from 'react'
-import { APP_NAME } from '@/app/constants'
+import { APP_NAME } from '@/app/constants/constants'
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)

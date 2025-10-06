@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useCurrency } from '@/hooks/useCurrency'
-import { LocationValidationResult, validatePunchLocation } from '@/lib/locationValidation'
+import { useCurrency } from '@/shared/hooks/useCurrency'
+import { LocationValidationResult, validatePunchLocation } from '@/shared/lib/locationValidation'
 import LocationValidationModal from '@/components/LocationValidationModal'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'

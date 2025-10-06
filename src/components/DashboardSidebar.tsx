@@ -8,7 +8,7 @@ import {
   UsersIcon,
   UserGroupIcon,
 } from '@heroicons/react/24/outline'
-import { APP_NAME } from '@/app/constants'
+import { APP_NAME } from '@/app/constants/constants'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },

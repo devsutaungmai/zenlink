@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { getCurrencySymbol } from '@/lib/currency'
+import { getCurrencySymbol } from '@/shared/lib/currency'
 
 interface Business {
   id: string

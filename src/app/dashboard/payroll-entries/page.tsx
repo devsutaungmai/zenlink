@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useTranslation } from 'react-i18next'
-import { PayrollEntry, PayrollPeriod } from '@/types'
+import { PayrollEntry, PayrollPeriod } from '@/shared/types'
 import { 
   PlusIcon,
   MagnifyingGlassIcon,

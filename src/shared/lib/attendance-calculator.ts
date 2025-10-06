@@ -1,4 +1,4 @@
-import { prisma } from '@/app/lib/prisma'
+import { prisma } from '@/shared/lib/prisma'
 
 interface AttendanceCalculationInput {
   employeeId: string

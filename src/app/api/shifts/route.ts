@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@/app/lib/prisma'
-import { getCurrentUser } from '@/lib/auth'
-import { SMSService, NotificationService } from '@/lib/notifications'
+import { prisma } from '@/shared/lib/prisma'
+import { getCurrentUser } from '@/shared/lib/auth'
+import { SMSService, NotificationService } from '@/shared/lib/notifications'
 import jwt from 'jsonwebtoken'
 import { cookies } from 'next/headers'
 

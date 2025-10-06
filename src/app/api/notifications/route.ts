@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { NotificationService } from '@/lib/notifications'
-import { getCurrentUserOrEmployee } from '@/lib/auth'
-import { prisma } from '@/app/lib/prisma'
+import { NotificationService } from '@/shared/lib/notifications'
+import { getCurrentUserOrEmployee } from '@/shared/lib/auth'
+import { prisma } from '@/shared/lib/prisma'
 
 // GET /api/notifications - Get notifications for current user/employee
 export async function GET(request: NextRequest) {

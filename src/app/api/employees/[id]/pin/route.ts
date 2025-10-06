@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@/app/lib/prisma'
-import { requireAuth } from '@/lib/auth'
+import { prisma } from '@/shared/lib/prisma'
+import { requireAuth } from '@/shared/lib/auth'
 import bcrypt from 'bcryptjs'
 import nodemailer from 'nodemailer'
 

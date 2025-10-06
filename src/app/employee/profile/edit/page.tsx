@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import EmployeeProfileForm from '@/components/EmployeeProfileForm'
-import { useUser } from '@/app/lib/useUser'
+import { useUser } from '@/shared/lib/useUser'
 import Swal from 'sweetalert2'
 
 interface EmployeeProfile {

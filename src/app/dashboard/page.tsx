@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { CalendarIcon, UserGroupIcon, ClockIcon, ChartBarIcon, PlayIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
-import { useUser } from '@/app/lib/useUser'
+import { useUser } from '@/shared/lib/useUser'
 import PunchClockModal from '@/components/PunchClockModal'
 import ActiveShiftTimer from '@/components/ActiveShiftTimer'
-import { LocationValidationResult, validatePunchLocation } from '@/lib/locationValidation'
+import { LocationValidationResult, validatePunchLocation } from '@/shared/lib/locationValidation'
 import LocationValidationModal from '@/components/LocationValidationModal'
 import DepartmentSelectionModal from '@/components/DepartmentSelectionModal'
 

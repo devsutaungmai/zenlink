@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Swal from 'sweetalert2'
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
 import Link from 'next/link'
-import { APP_NAME } from '@/app/constants'
+import { APP_NAME } from '@/app/constants/constants'
 
 function PasswordForm() {
   const router = useRouter()

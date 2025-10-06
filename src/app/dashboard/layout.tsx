@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import DashboardNavbar from '@/components/DashboardNavbar'
-import { useUser } from '@/app/lib/useUser'
+import { useUser } from '@/shared/lib/useUser'
 
 export default function DashboardLayout({
   children,

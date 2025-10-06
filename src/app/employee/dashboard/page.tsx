@@ -13,7 +13,7 @@ import ShiftDetailsModal from "@/components/ShiftDetailsModal"
 import PendingRequestsModal from "@/components/PendingRequestsModal"
 import NotificationCenter from "@/components/NotificationCenter"
 import LanguageSwitcher from "@/components/LanguageSwitcher"
-import { validatePunchLocation, LocationValidationResult } from "@/lib/locationValidation"
+import { validatePunchLocation, LocationValidationResult } from "@/shared/lib/locationValidation"
 import {
   Building2,
   Clock,

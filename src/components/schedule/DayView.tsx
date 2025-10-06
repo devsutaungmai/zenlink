@@ -3,7 +3,7 @@ import { format } from 'date-fns'
 import { useTranslation } from 'react-i18next'
 import SpanningShiftCard from './SpanningShiftCard'
 import HourColumn from './HourColumn'
-import { useUser } from '@/app/lib/useUser'
+import { useUser } from '@/shared/lib/useUser'
 import { Shift, Employee } from '@prisma/client'
 interface DayViewProps {
   selectedDate: Date

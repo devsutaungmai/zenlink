@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react'
 import { ShiftType, WageType } from '@prisma/client'
-import { useUser } from '@/app/lib/useUser'
-import { ShiftExchange } from '@/types'
+import { useUser } from '@/shared/lib/useUser'
+import { ShiftExchange } from '@/shared/types'
 import Swal from 'sweetalert2'
 
 const formatDateForDisplay = (dateStr: string): string => {

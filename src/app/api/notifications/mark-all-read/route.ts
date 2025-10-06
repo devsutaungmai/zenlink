@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { NotificationService } from '@/lib/notifications'
-import { getCurrentUserOrEmployee } from '@/lib/auth'
-import { prisma } from '@/app/lib/prisma'
+import { NotificationService } from '@/shared/lib/notifications'
+import { getCurrentUserOrEmployee } from '@/shared/lib/auth'
+import { prisma } from '@/shared/lib/prisma'
 
 // POST /api/notifications/mark-all-read - Mark all notifications as read
 export async function POST() {

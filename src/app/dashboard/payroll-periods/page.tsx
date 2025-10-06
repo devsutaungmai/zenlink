@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useTranslation } from 'react-i18next'
 import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon, CalendarIcon, ClockIcon } from '@heroicons/react/24/outline'
-import { PayrollPeriod } from '@/types'
+import { PayrollPeriod } from '@/shared/types'
 import Swal from 'sweetalert2'
 
 export default function PayrollPeriodsPage() {

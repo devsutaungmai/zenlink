@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
-import { prisma } from '@/app/lib/prisma';
-import { launchBrowser } from '@/lib/puppeteer-config';
+import { getCurrentUser } from '@/shared/lib/auth';
+import { prisma } from '@/shared/lib/prisma';
+import { launchBrowser } from '@/shared/lib/puppeteer-config';
 
 function generatePayslipHTML(payrollEntry: any, business: any) {
   const periodStartDate = new Date(payrollEntry.payrollPeriod.startDate).toLocaleDateString();

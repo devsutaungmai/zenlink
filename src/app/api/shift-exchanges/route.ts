@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/app/lib/prisma'
-import { ShiftExchangeNotifications } from '@/lib/notifications'
+import { prisma } from '@/shared/lib/prisma'
+import { ShiftExchangeNotifications } from '@/shared/lib/notifications'
 
 export async function POST(request: NextRequest) {
   try {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/app/lib/prisma'
-import { getCurrentUser } from '@/lib/auth'
-import { launchBrowser } from '@/lib/puppeteer-config'
+import { prisma } from '@/shared/lib/prisma'
+import { getCurrentUser } from '@/shared/lib/auth'
+import { launchBrowser } from '@/shared/lib/puppeteer-config'
 
 export async function GET(request: NextRequest) {
   try {

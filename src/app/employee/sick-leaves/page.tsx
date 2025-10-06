@@ -5,7 +5,7 @@ import { PlusIcon, EyeIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/ou
 import { FileText, Calendar, Clock, CheckCircle2, XCircle, AlertCircle } from 'lucide-react'
 import Swal from 'sweetalert2'
 import SickLeaveModal from '@/components/SickLeaveModal'
-import { useUser } from '@/app/lib/useUser'
+import { useUser } from '@/shared/lib/useUser'
 import { useTranslation } from 'react-i18next'
 
 interface SickLeave {

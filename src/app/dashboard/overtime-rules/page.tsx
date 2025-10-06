@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useUser } from '@/app/lib/useUser'
+import { useUser } from '@/shared/lib/useUser'
 import { useRouter } from 'next/navigation'
 import OvertimeRuleManagement from '@/components/OvertimeRuleManagement'
 

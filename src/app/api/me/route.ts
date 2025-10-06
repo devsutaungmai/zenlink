@@ -1,8 +1,8 @@
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUser } from '@/shared/lib/auth'
 import { NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
 import { cookies } from 'next/headers'
-import { prisma } from '@/app/lib/prisma'
+import { prisma } from '@/shared/lib/prisma'
 
 export async function GET() {
   try {

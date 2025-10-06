@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUser } from '@/shared/lib/auth'
 import jwt from 'jsonwebtoken'
 
 export async function POST(req: NextRequest) {

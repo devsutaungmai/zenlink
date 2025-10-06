@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/app/lib/prisma'
-import { getCurrentUser } from '@/lib/auth'
-import { payRulesEngine } from '@/lib/pay-rules-engine'
-import { attendanceCalculator } from '@/lib/attendance-calculator'
+import { prisma } from '@/shared/lib/prisma'
+import { getCurrentUser } from '@/shared/lib/auth'
+import { payRulesEngine } from '@/shared/lib/pay-rules-engine'
+import { attendanceCalculator } from '@/shared/lib/attendance-calculator'
 
 export async function POST(req: NextRequest) {
   try {

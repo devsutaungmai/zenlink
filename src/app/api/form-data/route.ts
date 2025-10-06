@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@/app/lib/prisma'
-import { getCurrentUserOrEmployee } from '@/lib/auth'
+import { prisma } from '@/shared/lib/prisma'
+import { getCurrentUserOrEmployee } from '@/shared/lib/auth'
 
 // Create a combined endpoint for form data to reduce multiple API calls
 export async function GET() {

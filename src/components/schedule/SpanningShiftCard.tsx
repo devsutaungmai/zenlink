@@ -1,7 +1,7 @@
 import { format } from 'date-fns'
 import { Shift, Employee } from '@prisma/client'
 import ShiftExchangeInfo from '@/components/ShiftExchangeInfo'
-import { useCurrency } from '@/hooks/useCurrency'
+import { useCurrency } from '@/shared/hooks/useCurrency'
 
 // Extended Shift type to include relations
 type ShiftWithRelations = Shift & {

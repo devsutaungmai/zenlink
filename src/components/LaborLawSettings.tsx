@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { AlertTriangle, Clock, Calendar, Shield, Save, RotateCcw } from 'lucide-react'
-import { LaborLawRules, COUNTRY_RULES, DEFAULT_LABOR_RULES } from '@/lib/laborLawValidation'
+import { LaborLawRules, COUNTRY_RULES, DEFAULT_LABOR_RULES } from '@/shared/lib/laborLawValidation'
 import Swal from 'sweetalert2'
 
 interface LaborLawSettingsProps {

@@ -6,7 +6,7 @@ import {
   ExclamationTriangleIcon,
   CheckCircleIcon
 } from '@heroicons/react/24/outline'
-import { LocationValidationResult, validatePunchLocation } from '@/lib/locationValidation'
+import { LocationValidationResult, validatePunchLocation } from '@/shared/lib/locationValidation'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 

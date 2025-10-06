@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/app/lib/prisma'
-import { getCurrentUserOrEmployee } from '@/lib/auth'
+import { prisma } from '@/shared/lib/prisma'
+import { getCurrentUserOrEmployee } from '@/shared/lib/auth'
 
 export async function PATCH(request: NextRequest) {
   try {

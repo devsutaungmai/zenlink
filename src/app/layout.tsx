@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { APP_NAME } from "./constants";
+import { APP_NAME } from "./constants/constants";
 import DevRibbon from "@/components/DevRibbon";
 import I18nProvider from "@/components/I18nProvider";
 

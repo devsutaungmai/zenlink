@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { PayrollPeriodFormData } from '@/types'
+import { PayrollPeriodFormData } from '@/shared/types'
 
 interface PayrollPeriodFormProps {
   initialData?: Partial<PayrollPeriodFormData>

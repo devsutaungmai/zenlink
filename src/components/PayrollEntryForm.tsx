@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { PayrollEntryFormData, Employee } from '@/types'
-import { useCurrency } from '@/hooks/useCurrency'
+import { PayrollEntryFormData, Employee } from '@/shared/types'
+import { useCurrency } from '@/shared/hooks/useCurrency'
 
 interface PayrollEntryFormProps {
   initialData?: Partial<PayrollEntryFormData>

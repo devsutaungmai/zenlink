@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { PlusIcon, DocumentTextIcon, MagnifyingGlassIcon, PencilIcon, TrashIcon, ArrowDownTrayIcon, PencilSquareIcon } from '@heroicons/react/24/outline'
 import { useTranslation } from 'react-i18next'
 import ContractForm from '@/components/ContractForm'
-import { useUser } from '@/app/lib/useUser'
+import { useUser } from '@/shared/lib/useUser'
 import Swal from 'sweetalert2'
 import {
   Dialog,

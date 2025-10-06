@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { Fragment, useState } from 'react'
 import { Menu, Transition, Disclosure } from '@headlessui/react'
-import { APP_NAME } from '@/app/constants'
+import { APP_NAME } from '@/app/constants/constants'
 import { 
   BellIcon, 
   UserCircleIcon, 
@@ -18,7 +18,7 @@ import {
   CalendarIcon
 } from '@heroicons/react/24/outline'
 import { useRouter } from 'next/navigation'
-import { useUser } from '@/app/lib/useUser'
+import { useUser } from '@/shared/lib/useUser'
 import { useTranslation } from 'react-i18next'
 import LanguageSwitcher from './LanguageSwitcher'
 import NotificationCenter from './NotificationCenter'

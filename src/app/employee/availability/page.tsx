@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 import { Calendar as CalendarIcon, Check, X, Clock } from 'lucide-react'
 import Swal from 'sweetalert2'
-import { useUser } from '@/app/lib/useUser'
+import { useUser } from '@/shared/lib/useUser'
 
 interface Availability {
   id: string

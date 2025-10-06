@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { writeFile } from 'fs/promises'
 import { join } from 'path'
-import { requireAuth } from '@/lib/auth'
+import { requireAuth } from '@/shared/lib/auth'
 
 export async function POST(request: NextRequest) {
   try {

@@ -1,6 +1,6 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { useCurrency } from '@/hooks/useCurrency'
+import { useCurrency } from '@/shared/hooks/useCurrency'
 
 export enum WageType {
   HOURLY = 'HOURLY',

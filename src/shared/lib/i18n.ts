@@ -3,54 +3,54 @@ import { initReactI18next } from 'react-i18next'
 import LanguageDetector from 'i18next-browser-languagedetector'
 
 // Import main translation files
-import en from '../locales/en.json'
-import no from '../locales/no.json'
-import de from '../locales/de.json'
+import en from '../../locales/en.json'
+import no from '../../locales/no.json'
+import de from '../../locales/de.json'
 
 // Import schedule-specific translations
-import scheduleEn from '../locales/schedule/en.json'
-import scheduleNo from '../locales/schedule/no.json'
-import scheduleDe from '../locales/schedule/de.json'
+import scheduleEn from '../../locales/schedule/en.json'
+import scheduleNo from '../../locales/schedule/no.json'
+import scheduleDe from '../../locales/schedule/de.json'
 
 // Import punch-clock-specific translations
-import punchClockEn from '../locales/punch-clock/en.json'
-import punchClockNo from '../locales/punch-clock/no.json'
-import punchClockDe from '../locales/punch-clock/de.json'
+import punchClockEn from '../../locales/punch-clock/en.json'
+import punchClockNo from '../../locales/punch-clock/no.json'
+import punchClockDe from '../../locales/punch-clock/de.json'
 
 // Import availability-specific translations
-import availabilityEn from '../locales/availability/en.json'
-import availabilityNo from '../locales/availability/no.json'
-import availabilityDe from '../locales/availability/de.json'
+import availabilityEn from '../../locales/availability/en.json'
+import availabilityNo from '../../locales/availability/no.json'
+import availabilityDe from '../../locales/availability/de.json'
 
 // Import sick-leave-specific translations
-import sickLeaveEn from '../locales/sick-leave/en.json'
-import sickLeaveNo from '../locales/sick-leave/no.json'
-import sickLeaveDe from '../locales/sick-leave/de.json'
+import sickLeaveEn from '../../locales/sick-leave/en.json'
+import sickLeaveNo from '../../locales/sick-leave/no.json'
+import sickLeaveDe from '../../locales/sick-leave/de.json'
 
 // Import pending-requests-specific translations
-import pendingRequestsEn from '../locales/pending-requests/en.json'
-import pendingRequestsNo from '../locales/pending-requests/no.json'
-import pendingRequestsDe from '../locales/pending-requests/de.json'
+import pendingRequestsEn from '../../locales/pending-requests/en.json'
+import pendingRequestsNo from '../../locales/pending-requests/no.json'
+import pendingRequestsDe from '../../locales/pending-requests/de.json'
 
 // Import payroll-entries-specific translations
-import payrollEntriesEn from '../locales/payroll-entries/en.json'
-import payrollEntriesNo from '../locales/payroll-entries/no.json'
-import payrollEntriesDe from '../locales/payroll-entries/de.json'
+import payrollEntriesEn from '../../locales/payroll-entries/en.json'
+import payrollEntriesNo from '../../locales/payroll-entries/no.json'
+import payrollEntriesDe from '../../locales/payroll-entries/de.json'
 
 // Import payroll-periods-specific translations
-import payrollPeriodsEn from '../locales/payroll-periods/en.json'
-import payrollPeriodsNo from '../locales/payroll-periods/no.json'
-import payrollPeriodsDe from '../locales/payroll-periods/de.json'
+import payrollPeriodsEn from '../../locales/payroll-periods/en.json'
+import payrollPeriodsNo from '../../locales/payroll-periods/no.json'
+import payrollPeriodsDe from '../../locales/payroll-periods/de.json'
 
 // Import payroll-reports-specific translations
-import payrollReportsEn from '../locales/payroll-reports/en.json'
-import payrollReportsNo from '../locales/payroll-reports/no.json'
-import payrollReportsDe from '../locales/payroll-reports/de.json'
+import payrollReportsEn from '../../locales/payroll-reports/en.json'
+import payrollReportsNo from '../../locales/payroll-reports/no.json'
+import payrollReportsDe from '../../locales/payroll-reports/de.json'
 
 // Import employee-dashboard-specific translations
-import employeeDashboardEn from '../locales/employee-dashboard/en.json'
-import employeeDashboardNo from '../locales/employee-dashboard/no.json'
-import employeeDashboardDe from '../locales/employee-dashboard/de.json'
+import employeeDashboardEn from '../../locales/employee-dashboard/en.json'
+import employeeDashboardNo from '../../locales/employee-dashboard/no.json'
+import employeeDashboardDe from '../../locales/employee-dashboard/de.json'
 
 const resources = {
   en: { 
@@ -101,7 +101,7 @@ i18n
     debug: process.env.NODE_ENV === 'development',
     
     interpolation: {
-      escapeValue: false, // not needed for react as it escapes by default
+      escapeValue: false,
     },
     
     detection: {

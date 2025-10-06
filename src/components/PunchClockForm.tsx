@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { useUser } from '@/app/lib/useUser'
+import { useUser } from '@/shared/lib/useUser'
 
 interface PunchClockFormData {
   note?: string

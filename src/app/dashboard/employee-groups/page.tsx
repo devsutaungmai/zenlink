@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 import { useTranslation } from 'react-i18next'
 import Swal from 'sweetalert2'
-import { useCurrency } from '@/hooks/useCurrency'
+import { useCurrency } from '@/shared/hooks/useCurrency'
 import {
   Pagination,
   PaginationContent,

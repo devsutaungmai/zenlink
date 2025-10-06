@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { SMSService } from '@/lib/notifications'
-import { prisma } from '@/app/lib/prisma'
+import { SMSService } from '@/shared/lib/notifications'
+import { prisma } from '@/shared/lib/prisma'
 
 export async function POST(request: NextRequest) {
   try {

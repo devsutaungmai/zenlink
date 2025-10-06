@@ -1,4 +1,4 @@
-import { prisma } from '@/app/lib/prisma'
+import { prisma } from '@/shared/lib/prisma'
 import { NotificationType } from '@prisma/client'
 import nodemailer from 'nodemailer'
 import { SNSClient, PublishCommand } from '@aws-sdk/client-sns'

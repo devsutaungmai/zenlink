@@ -8,7 +8,7 @@ import {
   TagIcon,
   CheckIcon
 } from '@heroicons/react/24/outline'
-import { CURRENCY_INFO, getCurrencySymbol } from '@/lib/currency'
+import { CURRENCY_INFO, getCurrencySymbol } from '@/shared/lib/currency'
 
 interface Business {
   id: string

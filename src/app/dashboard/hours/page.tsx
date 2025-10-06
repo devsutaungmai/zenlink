@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { ClockIcon, CalendarIcon, ChartBarIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
-import { useUser } from '@/app/lib/useUser'
+import { useUser } from '@/shared/lib/useUser'
 
 interface HoursData {
   dateRange: {

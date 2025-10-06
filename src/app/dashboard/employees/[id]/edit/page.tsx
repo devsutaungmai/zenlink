@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import EmployeeForm from '@/components/EmployeeForm'
 import { Department, EmployeeGroup } from '@prisma/client'
-import { useCurrency } from '@/hooks/useCurrency'
+import { useCurrency } from '@/shared/hooks/useCurrency'
 import { 
   UserIcon, 
   ClockIcon, 

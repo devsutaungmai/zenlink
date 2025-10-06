@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import PayrollPeriodForm from '@/components/PayrollPeriodForm'
-import { PayrollPeriodFormData } from '@/types'
+import { PayrollPeriodFormData } from '@/shared/types'
 
 export default function CreatePayrollPeriodPage() {
   const router = useRouter()

@@ -4,7 +4,7 @@ import { Suspense, useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import PayrollEntryForm from '@/components/PayrollEntryForm'
-import { PayrollEntryFormData, PayrollPeriod } from '@/types'
+import { PayrollEntryFormData, PayrollPeriod } from '@/shared/types'
 
 function CreatePayrollEntryContent() {
   const router = useRouter()

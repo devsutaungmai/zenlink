@@ -9,7 +9,7 @@ import ScheduleHeader from '@/components/schedule/ScheduleHeader'
 import WeekView from '@/components/schedule/WeekView'
 import DayView from '@/components/schedule/DayView'
 import ShiftFormModal from '@/components/schedule/ShiftFormModel'
-import { laborLawValidator, formatValidationMessage, separateViolations, type LaborLawViolation } from '@/lib/laborLawValidation'
+import { laborLawValidator, formatValidationMessage, separateViolations, type LaborLawViolation } from '@/shared/lib/laborLawValidation'
 
 export default function SchedulePage() {
   const [showShiftModal, setShowShiftModal] = useState(false)
