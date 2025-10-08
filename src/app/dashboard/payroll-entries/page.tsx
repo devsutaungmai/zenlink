@@ -37,6 +37,7 @@ export default function PayrollEntriesPage() {
   const [selectedEntries, setSelectedEntries] = useState<string[]>([])
   const [showStatusModal, setShowStatusModal] = useState(false)
   const [bulkStatus, setBulkStatus] = useState<string>('APPROVED')
+  const [showExportModal, setShowExportModal] = useState(false)
 
   const fetchEntries = async (page = 1, status = '', periodId = '') => {
     try {
@@ -356,6 +357,13 @@ export default function PayrollEntriesPage() {
       return
     }
 
+    // Show export format selection modal
+    setShowExportModal(true)
+  }
+
+  const exportNormalFormat = () => {
+    const approvedEntries = filteredEntries.filter(entry => entry.status === 'APPROVED' || entry.status === 'PAID' )
+    
     const headers = [
       'Employee Name',
       'Employee No',
@@ -379,14 +387,14 @@ export default function PayrollEntriesPage() {
       new Date(entry.payrollPeriod.endDate).toLocaleDateString(),
       entry.regularHours.toString(),
       entry.overtimeHours.toString(),
-      `$${entry.grossPay.toFixed(2)}`,
-      `$${entry.deductions.toFixed(2)}`,
-      `$${entry.netPay.toFixed(2)}`,
+      entry.grossPay.toFixed(2),
+      entry.deductions.toFixed(2),
+      entry.netPay.toFixed(2),
       entry.status,
       new Date(entry.createdAt).toLocaleDateString()
     ])
 
-    // Create CSV content (Excel can open CSV files)
+    // Create CSV content
     const csvContent = [headers, ...excelData]
       .map(row => row.map(field => `"${field}"`).join(','))
       .join('\n')
@@ -396,16 +404,71 @@ export default function PayrollEntriesPage() {
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `payroll-entries-${new Date().toISOString().split('T')[0]}.csv`
+    a.download = `payroll-entries-normal-${new Date().toISOString().split('T')[0]}.csv`
     document.body.appendChild(a)
     a.click()
     window.URL.revokeObjectURL(url)
     document.body.removeChild(a)
 
+    setShowExportModal(false)
+
     // Show success message
     Swal.fire({
+      toast: true,
+      position: 'top-end',
       title: 'Success!',
-      text: t('success.excel_exported'),
+      text: 'Normal format exported successfully!',
+      icon: 'success',
+      confirmButtonColor: '#31BCFF',
+    })
+  }
+
+  const exportPowerOfficeGoFormat = () => {
+    const approvedEntries = filteredEntries.filter(entry => entry.status === 'APPROVED' || entry.status === 'PAID' )
+    
+    // Power Office Go format headers
+    const headers = [
+      'EmployeeNo',
+      'PayItemCode',
+      'Rate',
+      'Amount',
+      'Quantity'
+    ]
+    
+    const excelData = approvedEntries.map(entry => {
+      const totalHours = entry.regularHours + entry.overtimeHours
+      const rate = totalHours > 0 ? entry.grossPay / totalHours : 0
+      
+      return [
+        entry.employee.employeeNo || '',
+        'SALARY',
+        rate.toFixed(2),
+        entry.grossPay.toFixed(2),
+        totalHours.toFixed(2)
+      ]
+    })
+
+    const csvContent = [headers, ...excelData]
+      .map(row => row.map(field => `"${field}"`).join(','))
+      .join('\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `payroll-entries-poweroffice-${new Date().toISOString().split('T')[0]}.csv`
+    document.body.appendChild(a)
+    a.click()
+    window.URL.revokeObjectURL(url)
+    document.body.removeChild(a)
+
+    setShowExportModal(false)
+
+    Swal.fire({
+      toast: true,
+      position: 'top-end',
+      title: 'Success!',
+      text: 'Power Office Go format exported successfully!',
       icon: 'success',
       confirmButtonColor: '#31BCFF',
     })
@@ -801,6 +864,67 @@ export default function PayrollEntriesPage() {
               className="flex-1 px-4 py-2 bg-[#31BCFF] text-white rounded-lg hover:bg-[#31BCFF]/90 font-medium transition-colors"
             >
               Update Status
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Export Format Selection Modal */}
+      <Dialog open={showExportModal} onOpenChange={setShowExportModal}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">Export Payroll Entries</DialogTitle>
+            <DialogDescription>
+              Choose the export format for your payroll data
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-6">
+            <button
+              onClick={exportNormalFormat}
+              className="w-full p-4 border-2 border-gray-300 rounded-xl hover:border-[#31BCFF] hover:bg-blue-50 transition-all duration-200 text-left group"
+            >
+              <div className="flex items-start space-x-4">
+                <div className="p-3 bg-blue-100 rounded-lg group-hover:bg-[#31BCFF] transition-colors">
+                  <TableCellsIcon className="w-6 h-6 text-[#31BCFF] group-hover:text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-gray-900 mb-1">Normal Format</h3>
+                  <p className="text-sm text-gray-600 mb-2">
+                    Standard CSV export with complete payroll information
+                  </p>
+                  <div className="text-xs text-gray-500">
+                    <strong>Includes:</strong> Employee Name, Employee No, Period, Hours, Gross Pay, Deductions, Net Pay, Status, and more
+                  </div>
+                </div>
+              </div>
+            </button>
+
+            <button
+              onClick={exportPowerOfficeGoFormat}
+              className="w-full p-4 border-2 border-gray-300 rounded-xl hover:border-green-500 hover:bg-green-50 transition-all duration-200 text-left group"
+            >
+              <div className="flex items-start space-x-4">
+                <div className="p-3 bg-green-100 rounded-lg group-hover:bg-green-500 transition-colors">
+                  <DocumentTextIcon className="w-6 h-6 text-green-600 group-hover:text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-gray-900 mb-1">Power Office Go Format</h3>
+                  <p className="text-sm text-gray-600 mb-2">
+                    Specialized format for Power Office Go import
+                  </p>
+                  <div className="text-xs text-gray-500">
+                    <strong>Includes:</strong> EmployeeNo, PayItemCode, Rate, Amount, Quantity (Total Hours)
+                  </div>
+                </div>
+              </div>
+            </button>
+          </div>
+          <DialogFooter>
+            <button
+              onClick={() => setShowExportModal(false)}
+              className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
+            >
+              Cancel
             </button>
           </DialogFooter>
         </DialogContent>
