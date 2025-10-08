@@ -1,0 +1,60 @@
+{
+  "title": "Schichttypen",
+  "subtitle": "Verwalten Sie Schichttypen und deren Lohnberechnungsregeln",
+  "add_button": "Schichttyp hinzufügen",
+  "no_shift_types": "Keine Schichttypen gefunden. Erstellen Sie Ihren ersten Schichttyp, um zu beginnen.",
+  
+  "form": {
+    "create_title": "Neuen Schichttyp erstellen",
+    "edit_title": "Schichttyp bearbeiten",
+    "name": "Name",
+    "name_placeholder": "z.B. Nachtschicht, Überstunden, Schulung",
+    "salary_code": "Gehaltscode",
+    "select_salary_code": "Wählen Sie einen Gehaltscode",
+    "pay_calculation_type": "Lohn berechnen als",
+    "percentage_value": "Prozentwert",
+    "amount_value": "Betragswert",
+    "description": "Beschreibung",
+    "description_placeholder": "Optionale Hinweise zu diesem Schichttyp",
+    "create_button": "Schichttyp erstellen",
+    "update_button": "Schichttyp aktualisieren",
+    "cancel_button": "Abbrechen"
+  },
+  
+  "pay_calculation": {
+    "hourly_plus_fixed": "Stundenlohn + Fester Betrag",
+    "fixed_amount": "Fester Betrag (ersetzt Stundenlohn)",
+    "percentage": "Prozentsatz des Stundenlohns",
+    "unpaid": "Unbezahlt"
+  },
+  
+  "list": {
+    "salary_code": "Gehaltscode",
+    "calculation": "Lohnberechnung"
+  },
+  
+  "actions": {
+    "edit": "Schichttyp bearbeiten",
+    "delete": "Schichttyp löschen"
+  },
+  
+  "delete": {
+    "confirm_title": "Schichttyp löschen?",
+    "confirm_text": "Sind Sie sicher, dass Sie \"{{name}}\" löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.",
+    "confirm_button": "Ja, löschen",
+    "cancel_button": "Abbrechen"
+  },
+  
+  "success": {
+    "created": "Schichttyp erfolgreich erstellt!",
+    "updated": "Schichttyp erfolgreich aktualisiert!",
+    "deleted": "Schichttyp erfolgreich gelöscht!"
+  },
+  
+  "errors": {
+    "fetch_failed": "Fehler beim Laden der Schichttypen",
+    "create_failed": "Fehler beim Erstellen des Schichttyps",
+    "update_failed": "Fehler beim Aktualisieren des Schichttyps",
+    "delete_failed": "Fehler beim Löschen des Schichttyps"
+  }
+}

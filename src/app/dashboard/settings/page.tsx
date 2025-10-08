@@ -12,13 +12,15 @@ import {
   KeyIcon,
   BuildingOfficeIcon,
   ClockIcon,
-  UsersIcon
+  UsersIcon,
+  RectangleGroupIcon
 } from '@heroicons/react/24/outline'
 import LaborLawSettings from '@/components/LaborLawSettings'
 import PunchClockProfiles from '@/components/PunchClockProfiles'
 import PunchClockAccessSettings from '@/components/PunchClockAccessSettings'
 import BusinessInfoSettings from '@/components/BusinessInfoSettings'
 import ContractTemplateForm from '@/components/ContractTemplateForm'
+import ShiftTypeSettings from '@/components/ShiftTypeSettings'
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -116,6 +118,13 @@ export default function SettingsPage() {
       description: 'Manage business information and currency',
       icon: BuildingOfficeIcon,
       component: BusinessInfoSettings
+    },
+    {
+      id: 'shift-types',
+      name: 'Shift Types',
+      description: 'Configure shift types and pay calculations',
+      icon: RectangleGroupIcon,
+      component: ShiftTypeSettings
     }
   ]
 

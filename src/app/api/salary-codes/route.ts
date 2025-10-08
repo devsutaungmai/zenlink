@@ -27,35 +27,20 @@ export async function GET(request: NextRequest) {
 
     const salaryCodes = await prisma.salaryCode.findMany({
       where,
-      include: {
-        payRules: {
-          where: { isActive: true },
-          include: {
-            overtimeRule: true,
-            employeeGroupPayRules: {
-              include: {
-                employeeGroup: {
-                  select: {
-                    id: true,
-                    name: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-        _count: {
-          select: {
-            payRules: true,
-          },
-        },
+      select: {
+        id: true,
+        code: true,
+        name: true,
+        description: true,
+        category: true,
+        isActive: true,
       },
       orderBy: {
         code: 'asc',
       },
     })
 
-    return NextResponse.json(salaryCodes)
+    return NextResponse.json({ salaryCodes })
   } catch (error) {
     console.error('Error fetching salary codes:', error)
     return NextResponse.json(

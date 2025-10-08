@@ -37,69 +37,70 @@ model Business {
   departments              Department[]
   employeeGroups           EmployeeGroup[]
   invitations              Invitation[]
+  payRules                 PayRule[]
   payrollPeriods           PayrollPeriod[]
   punchClockAccessSettings PunchClockAccessSettings? @relation("PunchClockAccessSettings")
   punchClockProfiles       PunchClockProfile[]
-  users                    User[]
   salaryCodes              SalaryCode[]
-  payRules                 PayRule[]
+  shiftTypes               ShiftTypeConfig[]
+  users                    User[]
 }
 
 model Employee {
-  id                 String          @id @default(cuid())
-  userId             String
-  firstName          String
-  lastName           String
-  birthday           DateTime
-  sex                Sex
-  socialSecurityNo   String?         @unique
-  address            String
-  mobile             String
-  employeeNo         String?         @unique
-  bankAccount        String
-  hoursPerMonth      Float?
-  dateOfHire         DateTime
-  isTeamLeader       Boolean         @default(false)
-  departmentId       String
-  createdAt          DateTime        @default(now())
-  updatedAt          DateTime        @updatedAt
-  employeeGroupId    String?
-  email              String?         @unique
-  attendances        Attendance[]
-  availabilities     Availability[]
-  contractsAsPerson  Contract[]      @relation("ContractPerson")
-  contracts          Contract[]
-  department         Department      @relation(fields: [departmentId], references: [id])
-  employeeGroup      EmployeeGroup?  @relation("EmployeeToGroup", fields: [employeeGroupId], references: [id])
-  user               User            @relation(fields: [userId], references: [id])
-  notifications      Notification[]  @relation("NotificationRecipient")
-  payrollEntries     PayrollEntry[]
-  shifts             Shift[]
-  fromShiftExchanges ShiftExchange[] @relation("FromEmployee")
-  toShiftExchanges   ShiftExchange[] @relation("ToEmployee")
-  sickLeaves         SickLeave[]
-  timeEntries        TimeEntry[]
-  workPlans          WorkPlan[]
-  employeePayRules   EmployeePayRule[]
+  id                  String               @id @default(cuid())
+  userId              String
+  firstName           String
+  lastName            String
+  birthday            DateTime
+  sex                 Sex
+  socialSecurityNo    String?              @unique
+  address             String
+  mobile              String
+  employeeNo          String?              @unique
+  bankAccount         String
+  hoursPerMonth       Float?
+  dateOfHire          DateTime
+  isTeamLeader        Boolean              @default(false)
+  departmentId        String
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  employeeGroupId     String?
+  email               String?              @unique
+  attendances         Attendance[]
+  availabilities      Availability[]
+  contractsAsPerson   Contract[]           @relation("ContractPerson")
+  contracts           Contract[]
+  department          Department           @relation(fields: [departmentId], references: [id])
+  employeeGroup       EmployeeGroup?       @relation("EmployeeToGroup", fields: [employeeGroupId], references: [id])
+  user                User                 @relation(fields: [userId], references: [id])
+  employeePayRules    EmployeePayRule[]
+  notifications       Notification[]       @relation("NotificationRecipient")
+  payrollEntries      PayrollEntry[]
+  shifts              Shift[]
+  fromShiftExchanges  ShiftExchange[]      @relation("FromEmployee")
+  toShiftExchanges    ShiftExchange[]      @relation("ToEmployee")
+  sickLeaves          SickLeave[]
   sickPayCalculations SickPayCalculation[]
+  timeEntries         TimeEntry[]
+  workPlans           WorkPlan[]
 }
 
 model EmployeeGroup {
-  id                String             @id @default(cuid())
-  name              String
-  hourlyWage        Float
-  wagePerShift      Float
-  defaultWageType   WageType           @default(HOURLY)
-  salaryCode        String?
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @default(now())
-  businessId        String
-  contracts         Contract[]
-  contractTemplates ContractTemplate[]
-  employees         Employee[]         @relation("EmployeeToGroup")
-  business          Business           @relation(fields: [businessId], references: [id])
-  shifts            Shift[]
+  id                    String                 @id @default(cuid())
+  name                  String
+  hourlyWage            Float
+  wagePerShift          Float
+  defaultWageType       WageType               @default(HOURLY)
+  salaryCode            String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @default(now())
+  businessId            String
+  contracts             Contract[]
+  contractTemplates     ContractTemplate[]
+  employees             Employee[]             @relation("EmployeeToGroup")
+  business              Business               @relation(fields: [businessId], references: [id])
   employeeGroupPayRules EmployeeGroupPayRule[]
+  shifts                Shift[]
 
   @@unique([name, businessId])
 }
@@ -111,14 +112,14 @@ model Contract {
   contractTemplateId String
   startDate          DateTime
   endDate            DateTime?
-  businessId         String
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
   contractPersonId   String
+  businessId         String
+  signedStatus       String?          @default("UNSIGNED")
   signatureData      String?
   signedAt           DateTime?
   signedBy           String?
-  signedStatus       String?          @default("UNSIGNED")
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
   business           Business         @relation(fields: [businessId], references: [id])
   contractPerson     Employee         @relation("ContractPerson", fields: [contractPersonId], references: [id])
   contractTemplate   ContractTemplate @relation(fields: [contractTemplateId], references: [id])
@@ -131,7 +132,7 @@ model Department {
   name               String
   address            String
   createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
+  updatedAt          DateTime            @default(now())
   address2           String?
   city               String
   country            String
@@ -338,11 +339,11 @@ model Attendance {
   shiftId      String?
   punchInTime  DateTime
   punchOutTime DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @default(now())
   approved     Boolean   @default(true)
   approvedAt   DateTime?
   approvedBy   String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @default(now())
   business     Business  @relation(fields: [businessId], references: [id])
   employee     Employee  @relation(fields: [employeeId], references: [id])
   shift        Shift?    @relation(fields: [shiftId], references: [id])
@@ -379,10 +380,10 @@ model PunchClockAccessSettings {
   id                     String            @id @default(cuid())
   businessId             String            @unique
   allowPunchFromAnywhere Boolean           @default(true)
-  restrictByDepartment   Boolean           @default(false)
-  allowedDepartments     String[]          @default([])
   createdAt              DateTime          @default(now())
   updatedAt              DateTime          @default(now())
+  allowedDepartments     String[]          @default([])
+  restrictByDepartment   Boolean           @default(false)
   allowedLocations       AllowedLocation[]
   business               Business          @relation("PunchClockAccessSettings", fields: [businessId], references: [id])
 }
@@ -395,9 +396,9 @@ model AllowedLocation {
   latitude      Float?
   longitude     Float?
   radius        Int                      @default(100)
-  departmentIds String[]                 @default([])
   createdAt     DateTime                 @default(now())
   updatedAt     DateTime                 @default(now())
+  departmentIds String[]                 @default([])
   settings      PunchClockAccessSettings @relation(fields: [settingsId], references: [id], onDelete: Cascade)
 }
 
@@ -420,36 +421,36 @@ model ContractTemplate {
 }
 
 model SalaryCode {
-  id          String     @id @default(cuid())
-  code        String     // e.g., "120", "1203", "1201"
-  name        String     // e.g., "Hourly Wages", "Sick Pay"
+  id          String    @id @default(cuid())
+  code        String
+  name        String
   description String?
-  category    String     // "HOURLY", "SICK_PAY", "OVERTIME", "BONUS", "DEDUCTION"
-  isActive    Boolean    @default(true)
+  category    String
+  isActive    Boolean   @default(true)
   businessId  String
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  business    Business   @relation(fields: [businessId], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   payRules    PayRule[]
+  business    Business  @relation(fields: [businessId], references: [id])
 
   @@unique([code, businessId])
 }
 
 model PayRule {
-  id                    String                  @id @default(cuid())
-  name                  String                  // e.g., "Standard Overtime", "Sick Pay Rule"
+  id                    String                 @id @default(cuid())
+  name                  String
   description           String?
-  ruleType              String                  // "OVERTIME", "SICK_PAY", "REGULAR"
+  ruleType              String
   salaryCodeId          String
-  isActive              Boolean                 @default(true)
+  isActive              Boolean                @default(true)
   businessId            String
-  createdAt             DateTime                @default(now())
-  updatedAt             DateTime                @updatedAt
-  business              Business                @relation(fields: [businessId], references: [id])
-  salaryCode            SalaryCode              @relation(fields: [salaryCodeId], references: [id])
-  overtimeRule          OvertimeRule?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @default(now())
   employeeGroupPayRules EmployeeGroupPayRule[]
   employeePayRules      EmployeePayRule[]
+  overtimeRule          OvertimeRule?
+  business              Business               @relation(fields: [businessId], references: [id])
+  salaryCode            SalaryCode             @relation(fields: [salaryCodeId], references: [id])
 
   @@unique([name, businessId])
 }
@@ -457,9 +458,9 @@ model PayRule {
 model OvertimeRule {
   id                String   @id @default(cuid())
   payRuleId         String   @unique
-  triggerAfterHours Decimal  @db.Decimal(5, 2) // Hours after which overtime kicks in
-  rateMultiplier    Decimal  @default(1.5) @db.Decimal(5, 2) // Overtime rate multiplier
-  isDaily           Boolean  @default(true) // Daily vs weekly overtime
+  triggerAfterHours Decimal  @db.Decimal(5, 2)
+  rateMultiplier    Decimal  @default(1.5) @db.Decimal(5, 2)
+  isDaily           Boolean  @default(true)
   maxHoursPerDay    Decimal? @db.Decimal(5, 2)
   maxHoursPerWeek   Decimal? @db.Decimal(5, 2)
   createdAt         DateTime @default(now())
@@ -471,10 +472,10 @@ model EmployeeGroupPayRule {
   id              String        @id @default(cuid())
   employeeGroupId String
   payRuleId       String
-  baseRate        Decimal       @db.Decimal(10, 2) // Base hourly rate
+  baseRate        Decimal       @db.Decimal(10, 2)
   isDefault       Boolean       @default(true)
   createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  updatedAt       DateTime      @default(now())
   employeeGroup   EmployeeGroup @relation(fields: [employeeGroupId], references: [id], onDelete: Cascade)
   payRule         PayRule       @relation(fields: [payRuleId], references: [id], onDelete: Cascade)
 
@@ -485,7 +486,7 @@ model EmployeePayRule {
   id            String    @id @default(cuid())
   employeeId    String
   payRuleId     String
-  customRate    Decimal   @db.Decimal(10, 2) // Custom rate for this employee
+  customRate    Decimal   @db.Decimal(10, 2)
   effectiveFrom DateTime
   effectiveTo   DateTime?
   isActive      Boolean   @default(true)
@@ -498,22 +499,39 @@ model EmployeePayRule {
 }
 
 model SickPayCalculation {
-  id                 String   @id @default(cuid())
-  employeeId         String
-  calculationDate    DateTime
-  threeMonthAverage  Decimal  @db.Decimal(10, 2) // Average daily/hourly rate
-  basePeriodStart    DateTime // Start of 3-month calculation period
-  basePeriodEnd      DateTime // End of 3-month calculation period
-  totalHours         Decimal  @db.Decimal(10, 2)
-  totalPay           Decimal  @db.Decimal(10, 2)
-  dailyRate          Decimal  @db.Decimal(10, 2)
-  hourlyRate         Decimal  @db.Decimal(10, 2)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-  employee           Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  id                String   @id @default(cuid())
+  employeeId        String
+  calculationDate   DateTime
+  threeMonthAverage Decimal  @db.Decimal(10, 2)
+  basePeriodStart   DateTime
+  basePeriodEnd     DateTime
+  totalHours        Decimal  @db.Decimal(10, 2)
+  totalPay          Decimal  @db.Decimal(10, 2)
+  dailyRate         Decimal  @db.Decimal(10, 2)
+  hourlyRate        Decimal  @db.Decimal(10, 2)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  employee          Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 
   @@unique([employeeId, calculationDate])
   @@index([employeeId, calculationDate])
+}
+
+model ShiftTypeConfig {
+  id                  String             @id @default(cuid())
+  name                String
+  salaryCode          String
+  payCalculationType  PayCalculationType
+  payCalculationValue Decimal?           @db.Decimal(10, 2)
+  description         String?
+  businessId          String
+  isActive            Boolean            @default(true)
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @default(now())
+  business            Business           @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([name, businessId])
+  @@index([businessId, isActive])
 }
 
 enum WageType {
@@ -582,4 +600,11 @@ enum LogoPosition {
   BOTTOM_LEFT
   BOTTOM_CENTER
   BOTTOM_RIGHT
+}
+
+enum PayCalculationType {
+  HOURLY_PLUS_FIXED
+  FIXED_AMOUNT
+  PERCENTAGE
+  UNPAID
 }

@@ -1,0 +1,59 @@
+{
+  "title": "Shift Types",
+  "subtitle": "Configure shift types and pay calculations",
+  "add_button": "Add Shift Type",
+  "no_shift_types": "No shift types found. Click 'Add Shift Type' to create one.",
+  
+  "form": {
+    "create_title": "Create New Shift Type",
+    "edit_title": "Edit Shift Type",
+    "name": "Shift Type Name",
+    "name_placeholder": "e.g., Night Shift, Overtime, Training",
+    "salary_code": "Salary Code",
+    "select_salary_code": "Select a salary code",
+    "pay_calculation_type": "Calculate Pay As",
+    "percentage_value": "Percentage Value",
+    "amount_value": "Amount Value",
+    "description": "Description",
+    "description_placeholder": "Optional description for this shift type",
+    "create_button": "Create Shift Type",
+    "update_button": "Update Shift Type",
+    "cancel_button": "Cancel"
+  },
+  
+  "pay_calculation": {
+    "hourly_plus_fixed": "Hourly Wage + Fixed Amount per Hour",
+    "fixed_amount": "Fixed Amount per Hour (replaces hourly wage)",
+    "percentage": "Percentage of Hourly Wage",
+    "unpaid": "Unpaid"
+  },
+  
+  "list": {
+    "salary_code": "Salary Code",
+    "calculation": "Pay Calculation"
+  },
+  
+  "actions": {
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  
+  "delete": {
+    "confirm_title": "Delete Shift Type?",
+    "confirm_text": "Are you sure you want to delete '{{name}}'? This action cannot be undone.",
+    "confirm_button": "Yes, Delete",
+    "cancel_button": "Cancel"
+  },
+  
+  "success": {
+    "created": "Shift type created successfully!",
+    "updated": "Shift type updated successfully!",
+    "deleted": "Shift type deleted successfully!"
+  },
+  
+  "errors": {
+    "fetch_failed": "Failed to load shift types",
+    "save_failed": "Failed to save shift type",
+    "delete_failed": "Failed to delete shift type"
+  }
+}

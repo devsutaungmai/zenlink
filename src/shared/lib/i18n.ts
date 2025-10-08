@@ -52,6 +52,11 @@ import employeeDashboardEn from '../../locales/employee-dashboard/en.json'
 import employeeDashboardNo from '../../locales/employee-dashboard/no.json'
 import employeeDashboardDe from '../../locales/employee-dashboard/de.json'
 
+// Import shift-types-specific translations
+import shiftTypesEn from '../../locales/en/shift-types.json'
+import shiftTypesNo from '../../locales/no/shift-types.json'
+import shiftTypesDe from '../../locales/de/shift-types.json'
+
 const resources = {
   en: { 
     translation: en,
@@ -63,7 +68,8 @@ const resources = {
     'payroll-entries': payrollEntriesEn,
     'payroll-periods': payrollPeriodsEn,
     'payroll-reports': payrollReportsEn,
-    'employee-dashboard': employeeDashboardEn
+    'employee-dashboard': employeeDashboardEn,
+    'shift-types': shiftTypesEn
   },
   no: { 
     translation: no,
@@ -75,7 +81,8 @@ const resources = {
     'payroll-entries': payrollEntriesNo,
     'payroll-periods': payrollPeriodsNo,
     'payroll-reports': payrollReportsNo,
-    'employee-dashboard': employeeDashboardNo
+    'employee-dashboard': employeeDashboardNo,
+    'shift-types': shiftTypesNo
   },
   de: { 
     translation: de,
@@ -87,7 +94,8 @@ const resources = {
     'payroll-entries': payrollEntriesDe,
     'payroll-periods': payrollPeriodsDe,
     'payroll-reports': payrollReportsDe,
-    'employee-dashboard': employeeDashboardDe
+    'employee-dashboard': employeeDashboardDe,
+    'shift-types': shiftTypesDe
   }
 }
 

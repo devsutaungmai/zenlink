@@ -1,0 +1,59 @@
+{
+  "title": "Schichttypen",
+  "subtitle": "Schichttypen und Lohnberechnungen konfigurieren",
+  "add_button": "Schichttyp hinzufügen",
+  "no_shift_types": "Keine Schichttypen gefunden. Klicken Sie auf 'Schichttyp hinzufügen', um einen zu erstellen.",
+  
+  "form": {
+    "create_title": "Neuen Schichttyp erstellen",
+    "edit_title": "Schichttyp bearbeiten",
+    "name": "Schichttypname",
+    "name_placeholder": "z.B., Nachtschicht, Überstunden, Schulung",
+    "salary_code": "Gehaltscode",
+    "select_salary_code": "Wählen Sie einen Gehaltscode",
+    "pay_calculation_type": "Lohn berechnen als",
+    "percentage_value": "Prozentwert",
+    "amount_value": "Betragswert",
+    "description": "Beschreibung",
+    "description_placeholder": "Optionale Beschreibung für diesen Schichttyp",
+    "create_button": "Schichttyp erstellen",
+    "update_button": "Schichttyp aktualisieren",
+    "cancel_button": "Abbrechen"
+  },
+  
+  "pay_calculation": {
+    "hourly_plus_fixed": "Stundenlohn + Fester Betrag pro Stunde",
+    "fixed_amount": "Fester Betrag pro Stunde (ersetzt Stundenlohn)",
+    "percentage": "Prozentsatz des Stundenlohns",
+    "unpaid": "Unbezahlt"
+  },
+  
+  "list": {
+    "salary_code": "Gehaltscode",
+    "calculation": "Lohnberechnung"
+  },
+  
+  "actions": {
+    "edit": "Bearbeiten",
+    "delete": "Löschen"
+  },
+  
+  "delete": {
+    "confirm_title": "Schichttyp löschen?",
+    "confirm_text": "Möchten Sie '{{name}}' wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+    "confirm_button": "Ja, löschen",
+    "cancel_button": "Abbrechen"
+  },
+  
+  "success": {
+    "created": "Schichttyp erfolgreich erstellt!",
+    "updated": "Schichttyp erfolgreich aktualisiert!",
+    "deleted": "Schichttyp erfolgreich gelöscht!"
+  },
+  
+  "errors": {
+    "fetch_failed": "Fehler beim Laden der Schichttypen",
+    "save_failed": "Fehler beim Speichern des Schichttyps",
+    "delete_failed": "Fehler beim Löschen des Schichttyps"
+  }
+}

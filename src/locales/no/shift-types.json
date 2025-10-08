@@ -1,0 +1,60 @@
+{
+  "title": "Skifttyper",
+  "subtitle": "Administrer skifttyper og deres lønnsberegningsregler",
+  "add_button": "Legg til skifttype",
+  "no_shift_types": "Ingen skifttyper funnet. Opprett din første skifttype for å komme i gang.",
+  
+  "form": {
+    "create_title": "Opprett ny skifttype",
+    "edit_title": "Rediger skifttype",
+    "name": "Navn",
+    "name_placeholder": "f.eks. Nattskift, Overtid, Opplæring",
+    "salary_code": "Lønnskode",
+    "select_salary_code": "Velg en lønnskode",
+    "pay_calculation_type": "Beregn lønn som",
+    "percentage_value": "Prosentverdi",
+    "amount_value": "Beløpsverdi",
+    "description": "Beskrivelse",
+    "description_placeholder": "Valgfrie notater om denne skifttypen",
+    "create_button": "Opprett skifttype",
+    "update_button": "Oppdater skifttype",
+    "cancel_button": "Avbryt"
+  },
+  
+  "pay_calculation": {
+    "hourly_plus_fixed": "Timelønn + Fast beløp",
+    "fixed_amount": "Fast beløp (erstatter timelønn)",
+    "percentage": "Prosent av timelønn",
+    "unpaid": "Ubetalt"
+  },
+  
+  "list": {
+    "salary_code": "Lønnskode",
+    "calculation": "Lønnsberegning"
+  },
+  
+  "actions": {
+    "edit": "Rediger skifttype",
+    "delete": "Slett skifttype"
+  },
+  
+  "delete": {
+    "confirm_title": "Slett skifttype?",
+    "confirm_text": "Er du sikker på at du vil slette \"{{name}}\"? Denne handlingen kan ikke angres.",
+    "confirm_button": "Ja, slett",
+    "cancel_button": "Avbryt"
+  },
+  
+  "success": {
+    "created": "Skifttype opprettet!",
+    "updated": "Skifttype oppdatert!",
+    "deleted": "Skifttype slettet!"
+  },
+  
+  "errors": {
+    "fetch_failed": "Kunne ikke laste skifttyper",
+    "create_failed": "Kunne ikke opprette skifttype",
+    "update_failed": "Kunne ikke oppdatere skifttype",
+    "delete_failed": "Kunne ikke slette skifttype"
+  }
+}
