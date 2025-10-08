@@ -6,6 +6,12 @@ import { useUser } from '@/shared/lib/useUser'
 import { ShiftExchange } from '@/shared/types'
 import Swal from 'sweetalert2'
 
+interface ShiftTypeOption {
+  id: string
+  name: string
+  isCustom: boolean
+}
+
 const formatDateForDisplay = (dateStr: string): string => {
   try {
     const date = new Date(dateStr);
@@ -98,6 +104,10 @@ export default function ShiftForm({
   const todayString = today.toISOString().split('T')[0]
 
   const [displayDate, setDisplayDate] = useState<string>('')
+  const [shiftTypeOptions, setShiftTypeOptions] = useState<ShiftTypeOption[]>([
+    { id: 'NORMAL', name: 'Normal', isCustom: false }
+  ])
+  const [loadingShiftTypes, setLoadingShiftTypes] = useState(false)
 
   const [formData, setFormData] = useState<ShiftFormData>(() => {
     const convertDateTimeToTimeString = (dateTime: any): string | undefined => {
@@ -151,6 +161,45 @@ export default function ShiftForm({
       fetchShiftExchanges()
     }
   }, [initialData?.id, activeTab])
+
+  useEffect(() => {
+    fetchShiftTypes()
+  }, [])
+
+  const fetchShiftTypes = async () => {
+    setLoadingShiftTypes(true)
+    try {
+      const response = await fetch('/api/shift-types')
+      if (response.ok) {
+        const data = await response.json()
+
+        if (data.shiftTypes && Array.isArray(data.shiftTypes)) {
+          const customOptions: ShiftTypeOption[] = data.shiftTypes.map((st: any) => ({
+            id: st.id,
+            name: st.name,
+            isCustom: true
+          }))
+          
+          setShiftTypeOptions([
+            { id: 'NORMAL', name: 'Normal', isCustom: false },
+            ...customOptions
+          ])
+        } else {
+          console.warn('No shift types returned from API or invalid format')
+          setShiftTypeOptions([
+            { id: 'NORMAL', name: 'Normal', isCustom: false }
+          ])
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching shift types:', error)
+      setShiftTypeOptions([
+        { id: 'NORMAL', name: 'Normal', isCustom: false }
+      ])
+    } finally {
+      setLoadingShiftTypes(false)
+    }
+  }
 
   const fetchShiftExchanges = async () => {
     if (!initialData?.id) return
@@ -398,16 +447,19 @@ export default function ShiftForm({
             <select
               value={formData.shiftType}
               onChange={(e) => setFormData({ ...formData, shiftType: e.target.value as ShiftType })}
-              disabled={isEmployee}
-              className={`mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+              disabled={isEmployee || loadingShiftTypes}
+              className={`mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee || loadingShiftTypes ? 'bg-gray-100 cursor-not-allowed' : ''}`}
               required
             >
-              {Object.values(ShiftType).map((type) => (
-                <option key={type} value={type}>
-                  {type.replace('_', ' ')}
+              {shiftTypeOptions.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.name}
                 </option>
               ))}
             </select>
+            {loadingShiftTypes && (
+              <p className="mt-1 text-xs text-gray-500">Loading shift types...</p>
+            )}
           </div>
 
           {/* Start Time */}
