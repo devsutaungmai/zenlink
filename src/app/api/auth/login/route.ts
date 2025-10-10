@@ -40,6 +40,7 @@ export async function POST(req: Request) {
 
   const res = NextResponse.json({
     success: true,
+    token,
     user: {
       id: user.id,
       email: user.email,
@@ -49,6 +50,7 @@ export async function POST(req: Request) {
     }
   })
 
+  // Still set cookie for web app (browser)
   res.cookies.set(
     'token', token, {
     httpOnly: true,
