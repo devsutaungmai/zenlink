@@ -37,6 +37,8 @@ export async function GET() {
         isTeamLeader: true,
         dateOfHire: true,
         createdAt: true,
+        profilePhoto: true,
+        salaryRate: true,
         department: {
           select: {
             id: true,
@@ -222,6 +224,8 @@ export async function POST(request: Request) {
         departmentId: data.departmentId,
         employeeGroupId: data.employeeGroupId || null,
         email: (!data.email || data.email === '') ? null : data.email, // Convert empty emails to null
+        profilePhoto: data.profilePhoto || null,
+        salaryRate: data.salaryRate ? parseFloat(data.salaryRate) : null,
       },
       include: {
         department: true,

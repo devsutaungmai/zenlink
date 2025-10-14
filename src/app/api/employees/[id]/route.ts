@@ -89,6 +89,8 @@ export async function PUT(
           isTeamLeader: Boolean(data.isTeamLeader),
           departmentId: data.departmentId,
           employeeGroupId: data.employeeGroupId || null,
+          profilePhoto: data.profilePhoto !== undefined ? data.profilePhoto : currentEmployee.profilePhoto,
+          salaryRate: data.salaryRate !== undefined ? (data.salaryRate ? parseFloat(data.salaryRate) : null) : currentEmployee.salaryRate,
         },
         include: {
           department: true,

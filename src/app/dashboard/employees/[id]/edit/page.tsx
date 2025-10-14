@@ -7,19 +7,23 @@ import EmployeeForm from '@/components/EmployeeForm'
 import { Department, EmployeeGroup } from '@prisma/client'
 import { useCurrency } from '@/shared/hooks/useCurrency'
 import { 
-  UserIcon, 
-  ClockIcon, 
-  DocumentTextIcon, 
-  HeartIcon,
+  EmployeeFormTabs, 
+  defaultEmployeeTabs, 
+  contractTab,
+  EmployeeTabType 
+} from '@/components/employee-form/EmployeeFormTabs'
+import { ContractsTabContent } from '@/components/employee-form/ContractsTabContent'
+import { 
   CalendarIcon,
   ArrowDownTrayIcon,
   EyeIcon,
   ChevronLeftIcon,
   FunnelIcon,
-  MagnifyingGlassIcon
+  MagnifyingGlassIcon,
+  ClockIcon,
+  DocumentTextIcon,
+  HeartIcon
 } from '@heroicons/react/24/outline'
-
-type TabType = 'details' | 'shifts' | 'payslips' | 'sickleave'
 
 interface Shift {
   id: string
@@ -47,7 +51,7 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
   const [error, setError] = useState<string | null>(null)
   const [departments, setDepartments] = useState<Department[]>([])
   const [employeeGroups, setEmployeeGroups] = useState<EmployeeGroup[]>([])
-  const [activeTab, setActiveTab] = useState<TabType>('details')
+  const [activeTab, setActiveTab] = useState<EmployeeTabType>('details')
   
   // Shifts related state
   const [shifts, setShifts] = useState<Shift[]>([])
@@ -56,6 +60,9 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
   const [selectedMonth, setSelectedMonth] = useState('')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
+  const [contracts, setContracts] = useState<any[]>([])
+  const [contractsLoading, setContractsLoading] = useState(false)
+  const [availableTabs, setAvailableTabs] = useState(defaultEmployeeTabs)
 
   useEffect(() => {
     if (!employeeId) return
@@ -75,6 +82,8 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
         setEmployee(await employeeRes.json())
         setDepartments(await deptsRes.json())
         setEmployeeGroups(await groupsRes.json())
+        
+        fetchContracts()
       } catch (error) {
         setError(error instanceof Error ? error.message : 'Failed to load form data')
       } finally {
@@ -113,10 +122,34 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
     }
   }
 
+  const fetchContracts = async () => {
+    if (!employeeId) return
+    
+    setContractsLoading(true)
+    try {
+      const response = await fetch(`/api/contracts?employeeId=${employeeId}`)
+      if (response.ok) {
+        const data = await response.json()
+        setContracts(data)
+        
+        if (data && data.length > 0) {
+          setAvailableTabs([...defaultEmployeeTabs, contractTab])
+        } else {
+          setAvailableTabs(defaultEmployeeTabs)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching contracts:', error)
+    } finally {
+      setContractsLoading(false)
+    }
+  }
+
   useEffect(() => {
     if (activeTab === 'shifts') {
       fetchShifts()
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, employeeId, selectedMonth, startDate, endDate])
 
   const handleSubmit = async (formData: any) => {
@@ -212,29 +245,6 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
     { value: '12', label: 'December' }
   ]
 
-  const tabs = [
-    {
-      id: 'details' as TabType,
-      name: t('employees.edit_page.tabs.details'),
-      icon: UserIcon,
-    },
-    {
-      id: 'shifts' as TabType,
-      name: t('employees.edit_page.tabs.shifts'),
-      icon: ClockIcon,
-    },
-    {
-      id: 'payslips' as TabType,
-      name: t('employees.edit_page.tabs.payslips'),
-      icon: DocumentTextIcon,
-    },
-    {
-      id: 'sickleave' as TabType,
-      name: t('employees.edit_page.tabs.sick_leave'),
-      icon: HeartIcon,
-    }
-  ]
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -297,39 +307,22 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
       )}
 
       {/* Tabs Navigation */}
-      <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg">
-        <div className="border-b border-gray-200/50">
-          <nav className="flex space-x-8 px-6" aria-label="Tabs">
-            {tabs.map((tab) => {
-              const Icon = tab.icon
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`${
-                    activeTab === tab.id
-                      ? 'border-[#31BCFF] text-[#31BCFF]'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors duration-200`}
-                >
-                  <Icon className="w-5 h-5" />
-                  {tab.name}
-                </button>
-              )
-            })}
-          </nav>
-        </div>
+      <EmployeeFormTabs 
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        tabs={availableTabs}
+      />
 
-        {/* Tab Content */}
-        <div className="p-6">
-          {activeTab === 'details' && (
-            <div>
-              {employee ? (
-                <EmployeeForm 
-                  initialData={employee}
-                  onSubmit={handleSubmit} 
-                  loading={saving}
-                  departments={departments}
+      {/* Tab Content */}
+      <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg p-6">
+        {activeTab === 'details' && (
+          <div>
+            {employee ? (
+              <EmployeeForm 
+                initialData={employee}
+                onSubmit={handleSubmit} 
+                loading={saving}
+                departments={departments}
                   employeeGroups={employeeGroups}
                 />
               ) : (
@@ -614,8 +607,15 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
               </div>
             </div>
           )}
+
+          {activeTab === 'contracts' && (
+            <ContractsTabContent
+              contracts={contracts}
+              employeeName={employee ? `${employee.firstName} ${employee.lastName}` : undefined}
+              loading={contractsLoading}
+            />
+          )}
         </div>
       </div>
-    </div>
   )
 }

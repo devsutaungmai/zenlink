@@ -51,7 +51,15 @@ export async function GET(request: Request) {
           businessId: business.id
         }
       },
-      include: {
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        employeeNo: true,
+        email: true,
+        mobile: true,
+        isTeamLeader: true,
+        profilePhoto: true,
         department: {
           select: {
             name: true
@@ -61,7 +69,8 @@ export async function GET(request: Request) {
           select: {
             name: true
           }
-        }
+        },
+        createdAt: true
       },
       orderBy: {
         createdAt: 'desc'

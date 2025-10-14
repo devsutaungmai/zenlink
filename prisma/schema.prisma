@@ -80,6 +80,8 @@ model Employee {
   updatedAt           DateTime             @updatedAt
   employeeGroupId     String?
   email               String?              @unique
+  profilePhoto        String?
+  salaryRate          Float?
   attendances         Attendance[]
   availabilities      Availability[]
   contractsAsPerson   Contract[]           @relation("ContractPerson")

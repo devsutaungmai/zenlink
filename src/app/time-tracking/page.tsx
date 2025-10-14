@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { 
   MagnifyingGlassIcon, 
   ClockIcon, 
@@ -37,6 +38,7 @@ interface Employee {
   email: string
   mobile: string
   isTeamLeader: boolean
+  profilePhoto?: string | null
 }
 
 interface Shift {
@@ -607,17 +609,39 @@ export default function TimeTrackingPage() {
                       className="p-3 hover:bg-blue-50/70 transition-colors duration-200 touch-manipulation cursor-pointer border-2 border-transparent hover:border-blue-200 rounded-lg"
                       onClick={() => handleEmployeeClick(employee)}
                     >
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="font-medium text-gray-900 text-sm hover:text-blue-600 transition-colors">
-                          {employee.firstName} {employee.lastName} ({employee.employeeNo})
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {employee.isTeamLeader && (
-                            <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded font-medium">
-                              LEADER
+                      <div className="flex items-center gap-3 mb-1">
+                        {/* Profile Photo */}
+                        {employee.profilePhoto ? (
+                          <Image
+                            src={employee.profilePhoto}
+                            alt={`${employee.firstName} ${employee.lastName}`}
+                            width={40}
+                            height={40}
+                            className="rounded-full object-cover flex-shrink-0"
+                          />
+                        ) : (
+                          <div className="h-10 w-10 rounded-full bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] flex items-center justify-center flex-shrink-0">
+                            <span className="text-sm font-medium text-white">
+                              {employee.firstName.charAt(0)}{employee.lastName.charAt(0)}
                             </span>
-                          )}
-                          <div className={`w-2 h-2 rounded-full ${isWorking ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                          </div>
+                        )}
+                        
+                        {/* Employee Info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <div className="font-medium text-gray-900 text-sm hover:text-blue-600 transition-colors truncate">
+                              {employee.firstName} {employee.lastName} ({employee.employeeNo})
+                            </div>
+                            <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                              {employee.isTeamLeader && (
+                                <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded font-medium">
+                                  LEADER
+                                </span>
+                              )}
+                              <div className={`w-2 h-2 rounded-full ${isWorking ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                            </div>
+                          </div>
                         </div>
                       </div>
                       {/* <div className="text-xs text-gray-600 space-y-1">

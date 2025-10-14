@@ -125,6 +125,7 @@ export async function GET(request: NextRequest) {
             firstName: true,
             lastName: true,
             employeeNo: true,
+            profilePhoto: true,
             department: {
               select: {
                 name: true

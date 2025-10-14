@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import { useUser } from '@/shared/lib/useUser'
+import Image from 'next/image'
 import Swal from 'sweetalert2'
 import { 
   ClockIcon, 
@@ -43,6 +44,7 @@ interface Employee {
   firstName: string
   lastName: string
   employeeNo: string
+  profilePhoto?: string | null
   department: {
     name: string
   }
@@ -73,6 +75,7 @@ interface Attendance {
     firstName: string
     lastName: string
     employeeNo: string
+    profilePhoto?: string | null
     department: {
       name: string
     }
@@ -860,7 +863,24 @@ export default function PunchClockPage() {
                   <tr key={record.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div>
+                        <div className="flex-shrink-0 h-10 w-10">
+                          {record.employee.profilePhoto ? (
+                            <Image
+                              src={record.employee.profilePhoto}
+                              alt={`${record.employee.firstName} ${record.employee.lastName}`}
+                              width={40}
+                              height={40}
+                              className="rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="h-10 w-10 rounded-full bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] flex items-center justify-center">
+                              <span className="text-sm font-medium text-white">
+                                {record.employee.firstName.charAt(0)}{record.employee.lastName.charAt(0)}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">
                             {record.employee.firstName} {record.employee.lastName}
                           </div>
