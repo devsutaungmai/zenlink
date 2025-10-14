@@ -8,18 +8,32 @@ datasource db {
 }
 
 model User {
-  id         String     @id @default(cuid())
-  email      String     @unique
-  password   String
-  firstName  String
-  lastName   String
-  role       String     @default("USER")
-  businessId String
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
-  pin        String?
-  employees  Employee[]
-  business   Business   @relation(fields: [businessId], references: [id])
+  id                 String              @id @default(cuid())
+  email              String              @unique
+  password           String
+  firstName          String
+  lastName           String
+  role               String              @default("USER")
+  businessId         String
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  pin                String?
+  employees          Employee[]
+  business           Business            @relation(fields: [businessId], references: [id])
+  passwordResetTokens PasswordResetToken[]
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
 }
 
 model Business {
