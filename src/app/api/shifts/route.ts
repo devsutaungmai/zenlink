@@ -201,20 +201,49 @@ export async function POST(req: Request) {
       return date;
     };
 
+    // Prepare data for Prisma - extract relational fields
+    const { employeeId, employeeGroupId, shiftTypeId, ...shiftData } = rawData;
+
     const data = {
-      ...rawData,
-      breakStart: rawData.breakStart ? convertTimeToDateTime(rawData.breakStart, rawData.date) : null,
-      breakEnd: rawData.breakEnd ? convertTimeToDateTime(rawData.breakEnd, rawData.date) : null,
+      ...shiftData,
+      breakStart: shiftData.breakStart ? convertTimeToDateTime(shiftData.breakStart, shiftData.date) : null,
+      breakEnd: shiftData.breakEnd ? convertTimeToDateTime(shiftData.breakEnd, shiftData.date) : null,
     };
+
+    // If shiftTypeId is provided (custom shift type), use NORMAL as the enum value
+    // The actual custom shift type reference is stored in shiftTypeId
+    if (shiftTypeId) {
+      data.shiftType = 'NORMAL';
+    }
+
+    // Build the Prisma create input with proper relation syntax
+    const createData: any = {
+      ...data,
+      date: new Date(data.date),
+    };
+
+    if (employeeId) {
+      createData.employee = {
+        connect: { id: employeeId }
+      };
+    }
+
+    if (employeeGroupId) {
+      createData.employeeGroup = {
+        connect: { id: employeeGroupId }
+      };
+    }
+
+    if (shiftTypeId) {
+      createData.shiftTypeConfig = {
+        connect: { id: shiftTypeId }
+      };
+    }
 
     if (!data.endTime) {
       console.log('Creating active shift without endTime');
       const shift = await prisma.shift.create({
-        data: {
-          ...data,
-          date: new Date(data.date),
-          endTime: null,
-        },
+        data: createData,
         include: {
           employee: {
             select: {
@@ -242,25 +271,41 @@ export async function POST(req: Request) {
       const nextDay = new Date(data.date);
       nextDay.setDate(nextDay.getDate() + 1);
 
-      const firstPart = {
+      // Create first part data
+      const firstPartData: any = {
         ...data,
-        date: new Date(data.date), // Convert to Date object
-        endTime: '23:59', // First part ends at midnight
-        breakStart: data.breakStart ? convertTimeToDateTime(rawData.breakStart, rawData.date) : null,
-        breakEnd: data.breakEnd ? convertTimeToDateTime(rawData.breakEnd, rawData.date) : null,
+        date: new Date(data.date),
+        endTime: '23:59',
+        breakStart: data.breakStart,
+        breakEnd: data.breakEnd,
       };
 
-      const secondPart = {
+      if (employeeId) {
+        firstPartData.employee = { connect: { id: employeeId } };
+      }
+      if (employeeGroupId) {
+        firstPartData.employeeGroup = { connect: { id: employeeGroupId } };
+      }
+
+      // Create second part data
+      const secondPartData: any = {
         ...data,
-        date: nextDay, // Use Date object for the next day
-        startTime: '01:00', // Start at midnight
-        breakStart: data.breakStart ? convertTimeToDateTime(rawData.breakStart, nextDay.toISOString().split('T')[0]) : null,
-        breakEnd: data.breakEnd ? convertTimeToDateTime(rawData.breakEnd, nextDay.toISOString().split('T')[0]) : null,
+        date: nextDay,
+        startTime: '01:00',
+        breakStart: shiftData.breakStart ? convertTimeToDateTime(shiftData.breakStart, nextDay.toISOString().split('T')[0]) : null,
+        breakEnd: shiftData.breakEnd ? convertTimeToDateTime(shiftData.breakEnd, nextDay.toISOString().split('T')[0]) : null,
       };
+
+      if (employeeId) {
+        secondPartData.employee = { connect: { id: employeeId } };
+      }
+      if (employeeGroupId) {
+        secondPartData.employeeGroup = { connect: { id: employeeGroupId } };
+      }
 
       const [firstShift, secondShift] = await Promise.all([
-        prisma.shift.create({ data: firstPart }),
-        prisma.shift.create({ data: secondPart }),
+        prisma.shift.create({ data: firstPartData }),
+        prisma.shift.create({ data: secondPartData }),
       ]);
 
       return NextResponse.json([firstShift, secondShift]);
@@ -268,10 +313,7 @@ export async function POST(req: Request) {
 
     // If the shift does not span across two days, create it as a single shift
     const shift = await prisma.shift.create({
-      data: {
-        ...data,
-        date: new Date(data.date), // Convert to Date object
-      },
+      data: createData,
     });
 
     return NextResponse.json(shift);

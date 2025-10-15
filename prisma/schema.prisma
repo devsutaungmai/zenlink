@@ -253,28 +253,32 @@ model Break {
 }
 
 model Shift {
-  id              String          @id @default(cuid())
+  id              String           @id @default(cuid())
   date            DateTime
   startTime       String
   endTime         String?
   employeeId      String?
   employeeGroupId String?
   shiftType       ShiftType
+  shiftTypeId     String?
   breakStart      DateTime?
   breakEnd        DateTime?
   wage            Float
-  wageType        WageType        @default(HOURLY)
+  wageType        WageType         @default(HOURLY)
   note            String?
-  approved        Boolean         @default(false)
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @default(now())
-  breakPaid       Boolean         @default(false)
-  status          ShiftStatus     @default(SCHEDULED)
+  approved        Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @default(now())
+  breakPaid       Boolean          @default(false)
+  status          ShiftStatus      @default(SCHEDULED)
   attendances     Attendance[]
   notifications   Notification[]
-  employeeGroup   EmployeeGroup?  @relation(fields: [employeeGroupId], references: [id])
-  employee        Employee?       @relation(fields: [employeeId], references: [id])
+  employeeGroup   EmployeeGroup?   @relation(fields: [employeeGroupId], references: [id])
+  employee        Employee?        @relation(fields: [employeeId], references: [id])
+  shiftTypeConfig ShiftTypeConfig? @relation(fields: [shiftTypeId], references: [id])
   shiftExchanges  ShiftExchange[]
+
+  @@index([shiftTypeId])
 }
 
 model ShiftExchange {
@@ -545,6 +549,7 @@ model ShiftTypeConfig {
   createdAt           DateTime           @default(now())
   updatedAt           DateTime           @default(now())
   business            Business           @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  shifts              Shift[]
 
   @@unique([name, businessId])
   @@index([businessId, isActive])

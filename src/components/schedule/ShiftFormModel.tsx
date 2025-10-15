@@ -41,12 +41,7 @@ export default function ShiftFormModal({
         </DialogHeader>
         <ShiftForm
           initialData={initialData}
-          employees={employees.map(({ id, firstName, lastName, employeeNo }) => ({
-            id,
-            firstName,
-            lastName,
-            employeeNo: employeeNo === null ? undefined : employeeNo,
-          }))}
+          employees={employees}
           employeeGroups={employeeGroups}
           onSubmit={onSubmit}
           onCancel={onClose}

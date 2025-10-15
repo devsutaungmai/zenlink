@@ -61,6 +61,7 @@ interface ShiftFormData {
   employeeId?: string
   employeeGroupId?: string
   shiftType: ShiftType
+  shiftTypeId?: string
   breakStart?: string
   breakEnd?: string
   breakPaid?: boolean
@@ -72,13 +73,22 @@ interface ShiftFormData {
   exchangeReason?: string
 }
 
+interface EmployeeForForm {
+  id: string;
+  firstName: string;
+  lastName: string;
+  employeeNo?: string | null;
+  salaryRate?: number | null;
+  employeeGroupId?: string | null;
+}
+
 interface ShiftFormProps {
   initialData?: ShiftFormData & { id?: string }
   onSubmit: (data: ShiftFormData) => void
   onCancel: () => void
   loading: boolean
-  employees: { id: string; firstName: string; lastName: string; employeeNo?: string }[]
-  employeeGroups: { id: string; name: string }[]
+  employees: EmployeeForForm[]
+  employeeGroups: { id: string; name: string; wage?: number | null }[]
   showEmployee?: boolean
   showStartTime?: boolean
   showDate?: boolean
@@ -122,18 +132,20 @@ export default function ShiftForm({
       }
     };
 
-    return initialData ? {
+    const baseData = initialData ? {
       ...initialData,
       breakStart: convertDateTimeToTimeString(initialData.breakStart),
       breakEnd: convertDateTimeToTimeString(initialData.breakEnd),
       breakPaid: initialData.breakPaid || false,
+      shiftTypeId: initialData.shiftTypeId || undefined,
     } : {
       date: todayString,
       startTime: '09:00',
       endTime: '17:00',
-      shiftType: 'NORMAL',
+      shiftType: 'NORMAL' as ShiftType,
+      shiftTypeId: undefined,
       wage: 0,
-      wageType: 'HOURLY',
+      wageType: 'HOURLY' as WageType,
       approved: false,
       employeeId: undefined,
       employeeGroupId: undefined,
@@ -141,8 +153,57 @@ export default function ShiftForm({
       breakEnd: undefined,
       breakPaid: false,
       note: undefined,
+    };
+
+    // If there's an employeeId, calculate the wage
+    if (baseData.employeeId) {
+        const selectedEmployee = employees.find(emp => emp.id === baseData.employeeId);
+        if (selectedEmployee) {
+            if (selectedEmployee.salaryRate) {
+                baseData.wage = selectedEmployee.salaryRate;
+                baseData.wageType = 'HOURLY';
+            } else if (selectedEmployee.employeeGroupId) {
+                const group = employeeGroups.find(g => g.id === selectedEmployee.employeeGroupId);
+                if (group && group.wage) {
+                    baseData.wage = group.wage;
+                    baseData.wageType = 'HOURLY';
+                }
+            }
+        }
     }
+    
+    return baseData as ShiftFormData;
   })
+
+  useEffect(() => {
+    if (formData.employeeId) {
+      const selectedEmployee = employees.find(emp => emp.id === formData.employeeId);
+      if (selectedEmployee) {
+        const updates: Partial<ShiftFormData> = {};
+        if (selectedEmployee.salaryRate) {
+          updates.wage = selectedEmployee.salaryRate;
+          updates.wageType = 'HOURLY';
+        } else if (selectedEmployee.employeeGroupId) {
+          const group = employeeGroups.find(g => g.id === selectedEmployee.employeeGroupId);
+          if (group && group.wage) {
+            updates.wage = group.wage;
+            updates.wageType = 'HOURLY';
+          } else {
+            updates.wage = 0;
+          }
+        } else {
+          updates.wage = 0;
+        }
+
+        if (selectedEmployee.employeeGroupId && !formData.employeeGroupId) {
+          updates.employeeGroupId = selectedEmployee.employeeGroupId;
+        }
+        
+        setFormData(prev => ({ ...prev, ...updates }));
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.employeeId, employees, employeeGroups]);
 
   const [activeTab, setActiveTab] = useState<'basic' | 'break' | 'exchange'>('basic')
   const [shiftExchanges, setShiftExchanges] = useState<ShiftExchange[]>([])
@@ -307,11 +368,14 @@ export default function ShiftForm({
 
   const getExchangeStatusColor = (status: string) => {
     switch (status) {
-      case 'PENDING':
+      case 'EMPLOYEE_PENDING':
+      case 'ADMIN_PENDING':
         return 'bg-yellow-100 text-yellow-800'
       case 'APPROVED':
+      case 'EMPLOYEE_ACCEPTED':
         return 'bg-green-100 text-green-800'
       case 'REJECTED':
+      case 'EMPLOYEE_REJECTED':
         return 'bg-red-100 text-red-800'
       default:
         return 'bg-gray-100 text-gray-800'
@@ -325,11 +389,24 @@ export default function ShiftForm({
       return
     }
     
-    const submissionData = {
+    const submissionData: Partial<ShiftFormData> & { date: string } = {
       ...formData,
-      date: parseDateForSubmission(displayDate)
+      date: parseDateForSubmission(displayDate),
+    };
+
+    const selectedOption = shiftTypeOptions.find(opt => opt.id === (formData.shiftTypeId || formData.shiftType));
+
+    if (selectedOption) {
+      if (selectedOption.isCustom) {
+        submissionData.shiftType = 'CUSTOM' as ShiftType;
+        submissionData.shiftTypeId = selectedOption.id;
+      } else {
+        submissionData.shiftType = selectedOption.id as ShiftType;
+        delete submissionData.shiftTypeId;
+      }
     }
-    onSubmit(submissionData)
+    
+    onSubmit(submissionData as ShiftFormData)
   }
 
   const toggleBreakFields = () => {
@@ -445,8 +522,17 @@ export default function ShiftForm({
               Shift Type <span className="text-red-500">*</span>
             </label>
             <select
-              value={formData.shiftType}
-              onChange={(e) => setFormData({ ...formData, shiftType: e.target.value as ShiftType })}
+              value={formData.shiftTypeId || formData.shiftType}
+              onChange={(e) => {
+                const selectedOption = shiftTypeOptions.find(opt => opt.id === e.target.value);
+                if (selectedOption) {
+                  if (selectedOption.isCustom) {
+                    setFormData({ ...formData, shiftType: 'CUSTOM' as ShiftType, shiftTypeId: selectedOption.id });
+                  } else {
+                    setFormData({ ...formData, shiftType: selectedOption.id as ShiftType, shiftTypeId: undefined });
+                  }
+                }
+              }}
               disabled={isEmployee || loadingShiftTypes}
               className={`mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee || loadingShiftTypes ? 'bg-gray-100 cursor-not-allowed' : ''}`}
               required
@@ -802,7 +888,7 @@ export default function ShiftForm({
                         </div>
 
                         {/* Action Buttons */}
-                        {exchange.status === 'PENDING' && !isEmployee && (
+                        {exchange.status === 'ADMIN_PENDING' && !isEmployee && (
                           <div className="flex gap-2 ml-4">
                             <button
                               type="button"
