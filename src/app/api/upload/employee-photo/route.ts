@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { writeFile, unlink } from 'fs/promises'
-import { join } from 'path'
+import { put, del } from '@vercel/blob'
 import { getCurrentUser } from '@/shared/lib/auth'
-import fs from 'fs'
 
 export const runtime = 'nodejs'
 
 // Maximum file size: 5MB
 const MAX_FILE_SIZE = 5 * 1024 * 1024
-const UPLOAD_DIR = join(process.cwd(), 'public', 'uploads', 'employee-photos')
 
 export async function POST(request: NextRequest) {
   try {
@@ -50,11 +47,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Delete old photo if exists (from local storage)
-    if (oldPhotoUrl && oldPhotoUrl.startsWith('/uploads/employee-photos/')) {
+    // Delete old photo if exists (from Vercel Blob storage)
+    if (oldPhotoUrl && oldPhotoUrl.startsWith('https://')) {
       try {
-        const oldFilePath = join(process.cwd(), 'public', oldPhotoUrl)
-        await unlink(oldFilePath)
+        await del(oldPhotoUrl)
       } catch (error) {
         console.error('Error deleting old photo:', error)
         // Continue even if deletion fails
@@ -65,44 +61,29 @@ export async function POST(request: NextRequest) {
     const timestamp = Date.now()
     const randomString = Math.random().toString(36).substring(2, 15)
     const extension = file.name.split('.').pop()
-    const filename = `${timestamp}-${randomString}.${extension}`
+    const filename = `employee-photos/${timestamp}-${randomString}.${extension}`
 
-    // Convert File to Buffer
-    const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
-
-    // Ensure upload directory exists
-    if (!fs.existsSync(UPLOAD_DIR)) {
-      fs.mkdirSync(UPLOAD_DIR, { recursive: true })
-    }
-
-    // Save file to public/uploads/employee-photos/
-    const filepath = join(UPLOAD_DIR, filename)
-    await writeFile(filepath, buffer)
+    // Upload to Vercel Blob storage
+    const blob = await put(filename, file, {
+      access: 'public',
+      addRandomSuffix: false,
+    })
 
     // Return public URL
-    const url = `/uploads/employee-photos/${filename}`
-
     return NextResponse.json({
       success: true,
-      url,
-      filename,
-    })
-    return NextResponse.json({
-      success: true,
-      url,
-      filename,
+      url: blob.url,
+      filename: blob.pathname,
     })
   } catch (error) {
     console.error('Error uploading photo:', error)
     return NextResponse.json(
-      { error: 'Failed to upload photo' },
+      { error: 'Failed to upload photo', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }
 }
 
-// Delete photo endpoint
 export async function DELETE(request: NextRequest) {
   try {
     // Check authentication
@@ -124,10 +105,9 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    // Delete from local storage
-    if (photoUrl.startsWith('/uploads/employee-photos/')) {
-      const filepath = join(process.cwd(), 'public', photoUrl)
-      await unlink(filepath)
+    // Delete from Vercel Blob storage
+    if (photoUrl.startsWith('https://')) {
+      await del(photoUrl)
     }
 
     return NextResponse.json({
@@ -137,7 +117,7 @@ export async function DELETE(request: NextRequest) {
   } catch (error) {
     console.error('Error deleting photo:', error)
     return NextResponse.json(
-      { error: 'Failed to delete photo' },
+      { error: 'Failed to delete photo', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }
