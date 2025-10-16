@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/shared/lib/prisma'
-import { sendPasswordResetEmail } from '@/shared/lib/email'
-import crypto from 'crypto'
+import { sendPasswordResetOTP } from '@/shared/lib/email'
+
+// Generate 6-digit OTP
+function generateOTP(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString()
+}
 
 export async function POST(req: Request) {
   try {
@@ -20,17 +24,19 @@ export async function POST(req: Request) {
     })
 
     if (!user) {
+      // Security: Don't reveal if email exists
       await new Promise(resolve => setTimeout(resolve, 1000))
       return NextResponse.json({
         success: true,
-        message: 'If an account exists with this email, you will receive a password reset link.',
+        message: 'If an account exists with this email, you will receive a verification code.',
       })
     }
 
-    // Generate reset token
-    const resetToken = crypto.randomBytes(32).toString('hex')
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000) // 1 hour from now
+    // Generate 6-digit OTP
+    const otp = generateOTP()
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000) // 10 minutes from now
 
+    // Invalidate all previous unused tokens for this user
     await prisma.passwordResetToken.updateMany({
       where: {
         userId: user.id,
@@ -41,33 +47,35 @@ export async function POST(req: Request) {
       },
     })
 
-    // Create new reset token
+    // Create new OTP token
     await prisma.passwordResetToken.create({
       data: {
-        token: resetToken,
+        token: otp,
         userId: user.id,
         expiresAt,
+        verified: false,
+        used: false,
       },
     })
 
-    // Send reset email
+    // Send OTP email
     try {
-      await sendPasswordResetEmail(
+      await sendPasswordResetOTP(
         user.email,
         `${user.firstName} ${user.lastName}`,
-        resetToken
+        otp
       )
     } catch (emailError) {
-      console.error('Error sending reset email:', emailError)
+      console.error('Error sending OTP email:', emailError)
       return NextResponse.json(
-        { error: 'Failed to send reset email. Please try again later.' },
+        { error: 'Failed to send verification code. Please try again later.' },
         { status: 500 }
       )
     }
 
     return NextResponse.json({
       success: true,
-      message: 'If an account exists with this email, you will receive a password reset link.',
+      message: 'If an account exists with this email, you will receive a verification code.',
     })
   } catch (error) {
     console.error('Error in forgot password:', error)

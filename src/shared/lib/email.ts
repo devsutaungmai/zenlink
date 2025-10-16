@@ -139,6 +139,124 @@ The Zenlink Team
   }
 }
 
+export const sendPasswordResetOTP = async (
+  to: string,
+  name: string,
+  otp: string
+) => {
+  const transporter = createTransporter()
+  
+  const mailOptions = {
+    from: `"Zen Link" <${process.env.FROM_EMAIL || process.env.GMAIL_USER || 'zenlinkdev@gmail.com'}>`,
+    to,
+    subject: 'Password Reset Verification Code - Zenlink',
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Password Reset - Verification Code</title>
+        </head>
+        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 40px 0;">
+            <tr>
+              <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                  <!-- Header -->
+                  <tr>
+                    <td style="background: linear-gradient(135deg, #31BCFF 0%, #0EA5E9 100%); padding: 40px 30px; text-align: center;">
+                      <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">Zenlink</h1>
+                    </td>
+                  </tr>
+                  
+                  <!-- Content -->
+                  <tr>
+                    <td style="padding: 40px 30px;">
+                      <h2 style="margin: 0 0 20px 0; color: #1f2937; font-size: 24px; font-weight: 600;">
+                        Password Reset Request
+                      </h2>
+                      
+                      <p style="margin: 0 0 15px 0; color: #4b5563; font-size: 16px; line-height: 1.6;">
+                        Hi ${name},
+                      </p>
+                      
+                      <p style="margin: 0 0 15px 0; color: #4b5563; font-size: 16px; line-height: 1.6;">
+                        We received a request to reset your password for your Zenlink account. Use the verification code below to proceed:
+                      </p>
+                      
+                      <!-- OTP Code -->
+                      <table width="100%" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
+                        <tr>
+                          <td align="center">
+                            <div style="display: inline-block; padding: 20px 40px; background: linear-gradient(135deg, #31BCFF 0%, #0EA5E9 100%); border-radius: 8px; box-shadow: 0 4px 6px rgba(49, 188, 255, 0.3);">
+                              <p style="margin: 0; color: #ffffff; font-size: 14px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase;">
+                                Verification Code
+                              </p>
+                              <p style="margin: 10px 0 0 0; color: #ffffff; font-size: 36px; font-weight: bold; letter-spacing: 8px; font-family: 'Courier New', monospace;">
+                                ${otp}
+                              </p>
+                            </div>
+                          </td>
+                        </tr>
+                      </table>
+                      
+                      <div style="margin: 30px 0; padding: 15px; background-color: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px;">
+                        <p style="margin: 0; color: #92400e; font-size: 14px; line-height: 1.6;">
+                          <strong>⚠️ Security Notice:</strong> This code will expire in 10 minutes. If you didn't request this password reset, please ignore this email or contact support if you have concerns.
+                        </p>
+                      </div>
+                      
+                      <p style="margin: 0; color: #6b7280; font-size: 14px; line-height: 1.6;">
+                        Best regards,<br>
+                        The Zenlink Team
+                      </p>
+                    </td>
+                  </tr>
+                  
+                  <!-- Footer -->
+                  <tr>
+                    <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+                      <p style="margin: 0 0 10px 0; color: #9ca3af; font-size: 12px;">
+                        This is an automated email. Please do not reply.
+                      </p>
+                      <p style="margin: 0; color: #9ca3af; font-size: 12px;">
+                        © ${new Date().getFullYear()} Zenlink. All rights reserved.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+      </html>
+    `,
+    text: `
+Hi ${name},
+
+We received a request to reset your password for your Zenlink account.
+
+Your verification code is: ${otp}
+
+This code will expire in 10 minutes.
+
+If you didn't request this password reset, please ignore this email or contact support if you have concerns.
+
+Best regards,
+The Zenlink Team
+    `,
+  }
+
+  try {
+    await transporter.sendMail(mailOptions)
+    return { success: true }
+  } catch (error) {
+    console.error('Error sending OTP email:', error)
+    throw new Error('Failed to send OTP email')
+  }
+}
+
 export const createTestAccount = async () => {
   try {
     const testAccount = await nodemailer.createTestAccount()

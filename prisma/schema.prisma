@@ -25,10 +25,11 @@ model User {
 
 model PasswordResetToken {
   id        String   @id @default(cuid())
-  token     String   @unique
+  token     String   @unique // OTP code (6 digits)
   userId    String
   expiresAt DateTime
   used      Boolean  @default(false)
+  verified  Boolean  @default(false) // New: Track if OTP was verified
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 

@@ -4,11 +4,11 @@ import bcrypt from 'bcryptjs'
 
 export async function POST(req: Request) {
   try {
-    const { token, password } = await req.json()
+    const { email, token, password } = await req.json()
 
-    if (!token || !password) {
+    if (!email || !token || !password) {
       return NextResponse.json(
-        { error: 'Token and password are required' },
+        { error: 'Email, verification code, and password are required' },
         { status: 400 }
       )
     }
@@ -20,43 +20,57 @@ export async function POST(req: Request) {
       )
     }
 
-    const resetToken = await prisma.passwordResetToken.findUnique({
-      where: { token },
-      include: { user: true },
+    // Find user by email
+    const user = await prisma.user.findUnique({
+      where: { email: email.toLowerCase() },
+    })
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Invalid verification code or email' },
+        { status: 400 }
+      )
+    }
+
+    // Find the verified OTP token
+    const resetToken = await prisma.passwordResetToken.findFirst({
+      where: {
+        token,
+        userId: user.id,
+        verified: true, // Must be verified
+        used: false,    // Must not be used
+      },
     })
 
     if (!resetToken) {
       return NextResponse.json(
-        { error: 'Invalid or expired reset token' },
+        { error: 'Invalid or unverified code. Please verify your code first.' },
         { status: 400 }
       )
     }
 
-    if (resetToken.used) {
-      return NextResponse.json(
-        { error: 'This reset link has already been used' },
-        { status: 400 }
-      )
-    }
-
+    // Check if OTP has expired
     if (new Date() > resetToken.expiresAt) {
       return NextResponse.json(
-        { error: 'This reset link has expired. Please request a new one.' },
+        { error: 'Verification code has expired. Please request a new one.' },
         { status: 400 }
       )
     }
 
+    // Hash the new password
     const hashedPassword = await bcrypt.hash(password, 10)
 
-    await prisma.user.update({
-      where: { id: resetToken.userId },
-      data: { password: hashedPassword },
-    })
-
-    await prisma.passwordResetToken.update({
-      where: { id: resetToken.id },
-      data: { used: true },
-    })
+    // Update user password and mark token as used
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: user.id },
+        data: { password: hashedPassword },
+      }),
+      prisma.passwordResetToken.update({
+        where: { id: resetToken.id },
+        data: { used: true },
+      }),
+    ])
 
     return NextResponse.json({
       success: true,
