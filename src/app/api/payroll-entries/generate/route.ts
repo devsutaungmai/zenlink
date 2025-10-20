@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/shared/lib/auth'
 import { prisma } from '@/shared/lib/prisma'
+import { calculatePayroll } from '@/shared/lib/salary-calculator'
 
 export async function POST(request: NextRequest) {
   try {
@@ -61,6 +62,21 @@ export async function POST(request: NextRequest) {
       }
     })
 
+    const shiftIds = employees
+      .flatMap(emp => emp.attendances.map(att => att.shiftId))
+      .filter((id): id is string => id !== null)
+
+    const shiftsData = await prisma.shift.findMany({
+      where: {
+        id: { in: shiftIds }
+      },
+      include: {
+        shiftTypeConfig: true
+      }
+    })
+
+    const shiftsMap = new Map(shiftsData.map(shift => [shift.id, shift]))
+
     const payrollPeriod = await prisma.payrollPeriod.findFirst({
       where: {
         id: payrollPeriodId,
@@ -92,26 +108,14 @@ export async function POST(request: NextRequest) {
         continue
       }
 
-      let totalRegularHours = 0
-      let totalOvertimeHours = 0
+      const payrollCalc = calculatePayroll({
+        employee,
+        shifts: shiftsMap,
+        regularHoursPerDay: 8,
+        overtimeMultiplier: 1.5
+      })
 
-      for (const attendance of employee.attendances) {
-        if (attendance.punchInTime && attendance.punchOutTime) {
-          const punchIn = new Date(attendance.punchInTime)
-          const punchOut = new Date(attendance.punchOutTime)
-          const workDuration = (punchOut.getTime() - punchIn.getTime()) / (1000 * 60 * 60)
-
-          const netWorkHours = workDuration
-
-          const regularHours = Math.min(netWorkHours, 8)
-          const overtimeHours = Math.max(0, netWorkHours - 8)
-
-          totalRegularHours += regularHours
-          totalOvertimeHours += overtimeHours
-        }
-      }
-
-      if (totalRegularHours === 0 && totalOvertimeHours === 0) {
+      if (payrollCalc.regularHours === 0 && payrollCalc.overtimeHours === 0) {
         skippedEmployees.push({
           id: employee.id,
           name: `${employee.firstName} ${employee.lastName}`,
@@ -120,29 +124,31 @@ export async function POST(request: NextRequest) {
         continue
       }
 
-      const regularRate = employee.employeeGroup?.hourlyWage || 15.00
-      const overtimeRate = regularRate * 1.5
-
-      const regularPay = totalRegularHours * regularRate
-      const overtimePay = totalOvertimeHours * overtimeRate
-      const grossPay = regularPay + overtimePay
-
       const deductions = 0
-      const netPay = grossPay - deductions
+      const netPay = payrollCalc.grossPay - deductions
+
+      let notes = ''
+      if (payrollCalc.adjustments.length > 0) {
+        notes = 'Shift Type Adjustments:\n' + 
+          payrollCalc.adjustments.map(adj => 
+            `- ${adj.shiftTypeName}: ${adj.adjustment >= 0 ? '+' : ''}${adj.adjustment.toFixed(2)}`
+          ).join('\n')
+      }
 
       const payrollEntry = await prisma.payrollEntry.create({
         data: {
           employeeId: employee.id,
           payrollPeriodId: payrollPeriodId,
-          regularHours: Math.round(totalRegularHours * 100) / 100,
-          overtimeHours: Math.round(totalOvertimeHours * 100) / 100,
-          regularRate: regularRate,
-          overtimeRate: overtimeRate,
-          grossPay: Math.round(grossPay * 100) / 100,
-          deductions: Math.round(deductions * 100) / 100,
-          netPay: Math.round(netPay * 100) / 100,
+          regularHours: payrollCalc.regularHours,
+          overtimeHours: payrollCalc.overtimeHours,
+          regularRate: payrollCalc.regularRate,
+          overtimeRate: payrollCalc.overtimeRate,
+          grossPay: payrollCalc.grossPay,
+          deductions: deductions,
+          netPay: netPay,
           bonuses: 0,
-          status: 'DRAFT'
+          status: 'DRAFT',
+          notes: notes || undefined
         },
         include: {
           employee: {

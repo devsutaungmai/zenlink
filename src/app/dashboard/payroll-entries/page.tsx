@@ -423,55 +423,94 @@ export default function PayrollEntriesPage() {
     })
   }
 
-  const exportPowerOfficeGoFormat = () => {
-    const approvedEntries = filteredEntries.filter(entry => entry.status === 'APPROVED' || entry.status === 'PAID' )
-    
-    // Power Office Go format headers
-    const headers = [
-      'EmployeeNo',
-      'PayItemCode',
-      'Rate',
-      'Amount',
-      'Quantity'
-    ]
-    
-    const excelData = approvedEntries.map(entry => {
-      const totalHours = entry.regularHours + entry.overtimeHours
-      const rate = totalHours > 0 ? entry.grossPay / totalHours : 0
-      
-      return [
-        entry.employee.employeeNo || '',
-        'SALARY',
-        rate.toFixed(2),
-        entry.grossPay.toFixed(2),
-        totalHours.toFixed(2)
+  const exportPowerOfficeGoFormat = async () => {
+    try {
+      let payrollPeriodId = periodFilter
+
+      if (periodFilter === 'all') {
+        const approvedEntries = filteredEntries.filter(entry => entry.status === 'APPROVED' || entry.status === 'PAID')
+        
+        if (approvedEntries.length === 0) {
+          await Swal.fire({
+            title: 'No Approved Entries',
+            text: 'There are no approved payroll entries to export.',
+            icon: 'warning',
+            confirmButtonColor: '#31BCFF',
+          })
+          return
+        }
+
+        const uniquePeriods = new Set(approvedEntries.map(e => e.payrollPeriod.id))
+        
+        if (uniquePeriods.size > 1) {
+          await Swal.fire({
+            title: 'Multiple Periods Found',
+            text: 'Your selection contains entries from multiple payroll periods. Please filter by a specific period before exporting.',
+            icon: 'warning',
+            confirmButtonColor: '#31BCFF',
+          })
+          return
+        }
+
+        payrollPeriodId = Array.from(uniquePeriods)[0]
+      }
+
+      const response = await fetch(`/api/payroll-entries/export-poweroffice?payrollPeriodId=${payrollPeriodId}&status=${statusFilter !== 'all' ? statusFilter : 'APPROVED'}`)
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to generate export')
+      }
+
+      const headers = [
+        'EmployeeNo',
+        'PayItemCode',
+        'Rate',
+        'Amount',
+        'Quantity'
       ]
-    })
+      
+      const excelData = result.data.map((row: any) => [
+        row.employeeNo,
+        row.payItemCode,
+        row.rate.toFixed(2),
+        row.amount.toFixed(2),
+        row.quantity.toFixed(2)
+      ])
 
-    const csvContent = [headers, ...excelData]
-      .map(row => row.map(field => `"${field}"`).join(','))
-      .join('\n')
+      const csvContent = [headers, ...excelData]
+        .map(row => row.map((field: string | number) => `"${field}"`).join(','))
+        .join('\n')
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `payroll-entries-poweroffice-${new Date().toISOString().split('T')[0]}.csv`
-    document.body.appendChild(a)
-    a.click()
-    window.URL.revokeObjectURL(url)
-    document.body.removeChild(a)
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `payroll-entries-poweroffice-${new Date().toISOString().split('T')[0]}.csv`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
 
-    setShowExportModal(false)
+      setShowExportModal(false)
 
-    Swal.fire({
-      toast: true,
-      position: 'top-end',
-      title: 'Success!',
-      text: 'Power Office Go format exported successfully!',
-      icon: 'success',
-      confirmButtonColor: '#31BCFF',
-    })
+      await Swal.fire({
+        toast: true,
+        position: 'top-end',
+        title: 'Success!',
+        text: 'Power Office Go format exported successfully!',
+        icon: 'success',
+        confirmButtonColor: '#31BCFF',
+      })
+    } catch (error) {
+      console.error('Error exporting Power Office format:', error)
+      await Swal.fire({
+        title: 'Error!',
+        text: error instanceof Error ? error.message : 'Failed to export Power Office format',
+        icon: 'error',
+        confirmButtonColor: '#31BCFF',
+      })
+    }
   }
 
   const getStatusBadge = (status: string) => {
