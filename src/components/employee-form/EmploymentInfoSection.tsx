@@ -134,7 +134,7 @@ export function EmploymentInfoSection({
         <input
           type="number"
           name="hoursPerMonth"
-          value={formData.hoursPerMonth}
+          value={formData.hoursPerMonth || 0}
           onChange={onChange}
           className={getFieldStyle('hoursPerMonth')}
           required

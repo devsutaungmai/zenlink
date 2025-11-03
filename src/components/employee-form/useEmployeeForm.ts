@@ -129,7 +129,7 @@ export function useEmployeeForm({ initialData }: UseEmployeeFormProps) {
     setValidatingSSN(true)
     
     try {
-      const response = await fetch('/api/employees/check-ssn', {
+      const response = await fetch('/api/employees/check-social-security', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
