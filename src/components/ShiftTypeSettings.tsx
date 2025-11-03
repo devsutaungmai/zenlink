@@ -359,9 +359,26 @@ export default function ShiftTypeSettings() {
                       type="number"
                       required
                       step="0.01"
-                      min="0"
+                      min={formData.payCalculationType === 'PERCENTAGE' ? 0 : undefined}
                       value={formData.payCalculationValue}
-                      onChange={(e) => setFormData({ ...formData, payCalculationValue: e.target.value })}
+                      onChange={(e) => {
+                        let raw = e.target.value
+                        // treat any form of negative zero ("-0", "-0.0", "-00.00", etc.) as "0"
+                        const isNegativeZero = /^-0+(\.0+)?$/.test(raw)
+
+                        if (isNegativeZero) {
+                          raw = '0'
+                        }
+
+                        // for PERCENTAGE, enforce non-negative values
+                        if (formData.payCalculationType === 'PERCENTAGE' && raw !== '') {
+                          if (parseFloat(raw) < 0) {
+                            raw = raw.replace(/-/g, '')
+                          }
+                        }
+
+                        setFormData({ ...formData, payCalculationValue: raw })
+                      }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF]"
                       placeholder={formData.payCalculationType === 'PERCENTAGE' ? '0.00' : '0.00'}
                     />
