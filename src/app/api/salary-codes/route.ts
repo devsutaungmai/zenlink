@@ -34,6 +34,11 @@ export async function GET(request: NextRequest) {
         description: true,
         category: true,
         isActive: true,
+        _count: {
+          select: {
+            payRules: true,
+          },
+        },
       },
       orderBy: {
         code: 'asc',
