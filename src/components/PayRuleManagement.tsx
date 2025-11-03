@@ -148,7 +148,7 @@ export default function PayRuleManagement() {
       const data = await response.json()
       
       if (response.ok) {
-        setSalaryCodes(data)
+        setSalaryCodes(data.salaryCodes || [])
       }
     } catch (error) {
       console.error('Error fetching salary codes:', error)

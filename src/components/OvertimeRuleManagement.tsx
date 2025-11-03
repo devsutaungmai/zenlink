@@ -91,7 +91,8 @@ export default function OvertimeRuleManagement() {
       
       if (response.ok) {
         // Filter to show only OVERTIME category salary codes
-        const overtimeCodes = data.filter((code: SalaryCode) => 
+        const codes = data.salaryCodes || []
+        const overtimeCodes = codes.filter((code: SalaryCode) => 
           code.category === 'OVERTIME' || code.category === 'HOURLY'
         )
         setSalaryCodes(overtimeCodes)

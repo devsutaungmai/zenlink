@@ -65,7 +65,7 @@ export default function SalaryCodeManagement() {
       const data = await response.json()
       
       if (response.ok) {
-        setSalaryCodes(data)
+        setSalaryCodes(data.salaryCodes || [])
       } else {
         console.error('Error fetching salary codes:', data.error)
       }
