@@ -55,7 +55,7 @@ export const employeeValidationSchema = z.object({
     .min(8, 'Bank account must be at least 8 characters')
     .max(30, 'Bank account must be less than 30 characters'),
   
-  hoursPerMonth: z.number()
+  hoursPerMonth: z.coerce.number()
     .min(1, 'Hours per month must be at least 1')
     .max(744, 'Hours per month cannot exceed 744 (31 days × 24 hours)'),
   
