@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useTransition } from 'react'
 import { CalendarIcon, UserGroupIcon, ClockIcon, ChartBarIcon, PlayIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
 import { useUser } from '@/shared/lib/useUser'
 import PunchClockModal from '@/components/PunchClockModal'
@@ -8,6 +8,7 @@ import ActiveShiftTimer from '@/components/ActiveShiftTimer'
 import { LocationValidationResult, validatePunchLocation } from '@/shared/lib/locationValidation'
 import LocationValidationModal from '@/components/LocationValidationModal'
 import DepartmentSelectionModal from '@/components/DepartmentSelectionModal'
+import { useTranslation } from 'react-i18next'
 
 interface Employee {
   id: string
@@ -77,13 +78,6 @@ interface Attendance {
   shift?: TodayShift | null
 }
 
-const stats = [
-  { name: 'Total Employees', value: '25', icon: UserGroupIcon },
-  { name: 'Hours Scheduled', value: '156', icon: ClockIcon },
-  { name: 'Shifts Today', value: '12', icon: CalendarIcon },
-  { name: 'Weekly Hours', value: '480', icon: ChartBarIcon },
-]
-
 export default function DashboardPage() {
   const { user, loading } = useUser()
   const [showShiftModal, setShowShiftModal] = useState(false)
@@ -105,7 +99,14 @@ export default function DashboardPage() {
   const [showDepartmentModal, setShowDepartmentModal] = useState(false)
   const [pendingPunchAction, setPendingPunchAction] = useState<'in' | 'out' | null>(null)
   const [pendingUnscheduledWork, setPendingUnscheduledWork] = useState(false)
+  const {t} = useTranslation();
 
+  const stats = [
+    { name: t('dashboard.stats.total_employees'), value: '25', icon: UserGroupIcon },
+    { name: t('dashboard.stats.hours_scheduled'), value: '156', icon: ClockIcon },
+    { name: t('dashboard.stats.shifts_today'), value: '12', icon: CalendarIcon },
+    { name: t('dashboard.stats.weekly_hours'), value: '480', icon: ChartBarIcon },
+  ]
   // Fetch data needed for the shift form and check for active shifts
   useEffect(() => {
     if (user?.role === 'EMPLOYEE') {
@@ -644,7 +645,7 @@ export default function DashboardPage() {
   return (
     <div className="py-8 px-4 sm:px-6 lg:px-8">
       <div className="sm:flex sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
+        <h1 className="text-2xl font-semibold text-gray-900">{t('dashboard.title')}</h1>
       </div>
 
       {/* Today's Shift Section - Only for Employees */}
@@ -883,11 +884,11 @@ export default function DashboardPage() {
         <div className="bg-white shadow rounded-lg">
           <div className="px-4 py-5 sm:p-6">
             <h3 className="text-lg leading-6 font-medium text-gray-900">
-              Recent Activity
+              {t('dashboard.recent_activity')}
             </h3>
             <div className="mt-4">
               <div className="border-t border-gray-200">
-                <p className="py-4 text-sm text-gray-500">No recent activity</p>
+                <p className="py-4 text-sm text-gray-500">{t('dashboard.no_recent_activity')}</p>
               </div>
             </div>
           </div>
