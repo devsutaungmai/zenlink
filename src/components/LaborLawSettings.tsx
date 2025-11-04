@@ -115,6 +115,7 @@ export default function LaborLawSettings({ onRulesChange }: LaborLawSettingsProp
   const getCountryName = (code: string): string => {
     const countryNames: Record<string, string> = {
       'DEFAULT': 'Default Rules',
+      'NO': 'Norway',
       'TH': 'Thailand',
       'US': 'United States',
       'GB': 'United Kingdom',
@@ -159,6 +160,7 @@ export default function LaborLawSettings({ onRulesChange }: LaborLawSettingsProp
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="DEFAULT">Default Rules</SelectItem>
+                  <SelectItem value="NO">🇳🇴 Norway</SelectItem>
                   <SelectItem value="TH">🇹🇭 Thailand</SelectItem>
                   <SelectItem value="US">🇺🇸 United States</SelectItem>
                   <SelectItem value="GB">🇬🇧 United Kingdom</SelectItem>

@@ -61,6 +61,17 @@ export const DEFAULT_LABOR_RULES: LaborLawRules = {
 
 // Country-specific rules
 export const COUNTRY_RULES: Record<string, LaborLawRules> = {
+  'NO': { // Norway
+    maxHoursPerDay: 9,
+    minRestHoursBetweenShifts: 11,
+    maxConsecutiveDays: 6,             // approximate/default
+    maxHoursPerWeek: 40,
+    minBreakForLongShifts: 30,         // total break at least 30 min if ≥8h
+    longShiftThreshold: 8,             // define “long shift” as ≥8h
+    overtimeThreshold: 8,              // hours beyond threshold per day count as overtime
+    maxOvertimePerDay: 2,              // reasonable default (law uses averages, so pick a value)
+    maxOvertimePerWeek: 10             // reasonable default approximate
+  },
   'TH': { // Thailand
     maxHoursPerDay: 8,
     minRestHoursBetweenShifts: 11,
