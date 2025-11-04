@@ -5,7 +5,9 @@
     "records_today": "Records Today",
     "currently_working": "Currently Working",
     "completed": "Completed",
-    "select_date": "Select Date"
+    "select_date": "Select Date",
+    "select_start_date": "Select Start Date",
+    "select_end_date": "Select End Date"
   },
   "search": {
     "placeholder": "Search employees or departments...",

@@ -102,6 +102,7 @@ export default function PunchClockPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedFilter, setSelectedFilter] = useState('all')
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
+  const [selectedEndDate, setSelectedEndDate] = useState(new Date().toISOString().split('T')[0])
   const [dateRangeType, setDateRangeType] = useState<'single' | 'week' | 'month'>('single')
   const [weekStartDate, setWeekStartDate] = useState('')
   const [monthYear, setMonthYear] = useState('')
@@ -127,7 +128,7 @@ export default function PunchClockPage() {
     }, 1000)
 
     return () => clearInterval(timeInterval)
-  }, [selectedDate, weekStartDate, monthYear, dateRangeType])
+  }, [selectedDate,selectedEndDate, weekStartDate, monthYear, dateRangeType])
 
   const getDateRange = () => {
     switch (dateRangeType) {
@@ -152,7 +153,7 @@ export default function PunchClockPage() {
       default:
         return {
           startDate: selectedDate,
-          endDate: selectedDate
+          endDate: selectedEndDate
         }
     }
   }
@@ -584,7 +585,7 @@ export default function PunchClockPage() {
       const dateRange = getDateRange()
       const params = new URLSearchParams({
         startDate: dateRange?.startDate || selectedDate,
-        endDate: dateRange?.endDate || selectedDate,
+        endDate: dateRange?.endDate || selectedEndDate,
         ...(selectedEmployee && { employeeId: selectedEmployee })
       })
 
@@ -668,8 +669,8 @@ export default function PunchClockPage() {
               </div>
             </div>
           </div>
-          <div className="text-right">
-            <div className="mb-4">
+          <div className="flex items-center gap-6">
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Date Range Type
               </label>
@@ -683,11 +684,11 @@ export default function PunchClockPage() {
                 <option value="month">Month</option>
               </select>
             </div>
-            
             {dateRangeType === 'single' && (
+            <div className="flex items-center gap-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('header.select_date')}
+                  {t('header.select_start_date')}
                 </label>
                 <input
                   type="date"
@@ -696,6 +697,19 @@ export default function PunchClockPage() {
                   className="block px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF]"
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {t('header.select_end_date')}
+                </label>
+                <input
+                  type="date"
+                  value={selectedEndDate}
+                  onChange={(e) => setSelectedEndDate(e.target.value)}
+                  className="block px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF]"
+                />
+              </div>
+          </div>
+
             )}
             
             {dateRangeType === 'week' && (
