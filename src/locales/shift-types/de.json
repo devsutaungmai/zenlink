@@ -18,7 +18,9 @@
     "description_placeholder": "Optionale Beschreibung für diesen Schichttyp",
     "create_button": "Schichttyp erstellen",
     "update_button": "Schichttyp aktualisieren",
-    "cancel_button": "Abbrechen"
+    "cancel_button": "Abbrechen",
+    "auto_break_setting": "Automatische Pauseneinstellung",
+    "minutes": "Minuten"
   },
   
   "pay_calculation": {
@@ -26,6 +28,11 @@
     "fixed_amount": "Fester Betrag pro Stunde (ersetzt Stundenlohn)",
     "percentage": "Prozentsatz des Stundenlohns",
     "unpaid": "Unbezahlt"
+  },
+
+  "auto_break_options": {
+    "auto_break": "Automatische Pause",
+    "manual_break": "Manuelle Pause"
   },
   
   "list": {

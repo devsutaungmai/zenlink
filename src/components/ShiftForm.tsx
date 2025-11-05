@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { ShiftType, WageType } from '@prisma/client'
+import { AutoBreakType, ShiftType, ShiftTypeConfig, WageType } from '@prisma/client'
 import { useUser } from '@/shared/lib/useUser'
 import { ShiftExchange } from '@/shared/types'
 import Swal from 'sweetalert2'
@@ -10,6 +10,8 @@ interface ShiftTypeOption {
   id: string
   name: string
   isCustom: boolean
+  autoBreakType?: AutoBreakType
+  autoBreakValue?: number
 }
 
 const formatDateForDisplay = (dateStr: string): string => {
@@ -38,12 +40,12 @@ const calculateBreakDuration = (breakStart: string, breakEnd: string): string =>
     const start = new Date(`2000-01-01T${breakStart}:00`);
     const end = new Date(`2000-01-01T${breakEnd}:00`);
     const diff = end.getTime() - start.getTime();
-    
+
     if (diff <= 0) return '0 minutes';
-    
+
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    
+
     if (hours > 0) {
       return `${hours}h ${minutes}m`;
     } else {
@@ -106,7 +108,7 @@ export default function ShiftForm({
   showDate = true,
 }: ShiftFormProps) {
   const { user } = useUser()
-  
+
   const safeEmployees = Array.isArray(employees) ? employees : []
   const isEmployee = user?.role === 'EMPLOYEE'
 
@@ -157,21 +159,21 @@ export default function ShiftForm({
 
     // If there's an employeeId, calculate the wage
     if (baseData.employeeId) {
-        const selectedEmployee = employees.find(emp => emp.id === baseData.employeeId);
-        if (selectedEmployee) {
-            if (selectedEmployee.salaryRate) {
-                baseData.wage = selectedEmployee.salaryRate;
-                baseData.wageType = 'HOURLY';
-            } else if (selectedEmployee.employeeGroupId) {
-                const group = employeeGroups.find(g => g.id === selectedEmployee.employeeGroupId);
-                if (group && group.wage) {
-                    baseData.wage = group.wage;
-                    baseData.wageType = 'HOURLY';
-                }
-            }
+      const selectedEmployee = employees.find(emp => emp.id === baseData.employeeId);
+      if (selectedEmployee) {
+        if (selectedEmployee.salaryRate) {
+          baseData.wage = selectedEmployee.salaryRate;
+          baseData.wageType = 'HOURLY';
+        } else if (selectedEmployee.employeeGroupId) {
+          const group = employeeGroups.find(g => g.id === selectedEmployee.employeeGroupId);
+          if (group && group.wage) {
+            baseData.wage = group.wage;
+            baseData.wageType = 'HOURLY';
+          }
         }
+      }
     }
-    
+
     return baseData as ShiftFormData;
   })
 
@@ -198,11 +200,11 @@ export default function ShiftForm({
         if (selectedEmployee.employeeGroupId && !formData.employeeGroupId) {
           updates.employeeGroupId = selectedEmployee.employeeGroupId;
         }
-        
+
         setFormData(prev => ({ ...prev, ...updates }));
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.employeeId, employees, employeeGroups]);
 
   const [activeTab, setActiveTab] = useState<'basic' | 'break' | 'exchange'>('basic')
@@ -212,6 +214,38 @@ export default function ShiftForm({
   const [showBreakFields, setShowBreakFields] = useState<boolean>(() => {
     return initialData ? !!initialData.breakStart || !!initialData.breakEnd : false
   })
+
+  useEffect(() => {
+    if (!initialData) return
+
+    const selectedOption = shiftTypeOptions.find(opt =>
+      opt.isCustom
+        ? opt.id === initialData.shiftTypeId
+        : opt.id === initialData.shiftType
+    )
+
+    if (selectedOption?.isCustom && selectedOption.autoBreakType && selectedOption.autoBreakValue) {
+      // Calculate the auto break
+      const now = new Date()
+      const breakStart = new Date(now)
+      const breakEnd = new Date(now)
+
+      if (selectedOption.autoBreakType === 'AUTO_BREAK') {
+        breakEnd.setMinutes(breakStart.getMinutes() + Number(selectedOption.autoBreakValue))
+      }
+      setFormData(prev => ({
+        ...prev,
+        shiftType: 'CUSTOM' as ShiftType,
+        shiftTypeId: selectedOption.id,
+        breakStart: breakStart.toISOString(),
+        breakEnd: breakEnd.toISOString(),
+      }))
+      setShowBreakFields(true)
+    } else {
+      setShowBreakFields(!!initialData.breakStart || !!initialData.breakEnd)
+    }
+  }, [initialData, shiftTypeOptions])
+
 
   useEffect(() => {
     setDisplayDate(formatDateForDisplay(formData.date))
@@ -238,9 +272,11 @@ export default function ShiftForm({
           const customOptions: ShiftTypeOption[] = data.shiftTypes.map((st: any) => ({
             id: st.id,
             name: st.name,
-            isCustom: true
+            isCustom: true,
+            autoBreakType: st.autoBreakType,
+            autoBreakValue: st.autoBreakValue,
           }))
-          
+
           setShiftTypeOptions([
             { id: 'NORMAL', name: 'Normal', isCustom: false },
             ...customOptions
@@ -264,7 +300,7 @@ export default function ShiftForm({
 
   const fetchShiftExchanges = async () => {
     if (!initialData?.id) return
-    
+
     setExchangeLoading(true)
     try {
       const response = await fetch(`/api/shifts/${initialData.id}/exchanges`)
@@ -281,7 +317,7 @@ export default function ShiftForm({
 
   const handleShiftExchange = async (toEmployeeId: string, reason: string) => {
     if (!initialData?.id) return
-    
+
     try {
       const response = await fetch(`/api/shifts/${initialData.id}/exchanges`, {
         method: 'POST',
@@ -293,7 +329,7 @@ export default function ShiftForm({
           reason,
         }),
       })
-      
+
       if (response.ok) {
         await fetchShiftExchanges()
         setFormData({
@@ -336,9 +372,9 @@ export default function ShiftForm({
         },
         body: JSON.stringify({ status }),
       })
-      
+
       if (response.ok) {
-        await fetchShiftExchanges() 
+        await fetchShiftExchanges()
         Swal.fire({
           toast: true,
           position: 'top-end',
@@ -384,11 +420,11 @@ export default function ShiftForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (isEmployee) {
       return
     }
-    
+
     const submissionData: Partial<ShiftFormData> & { date: string } = {
       ...formData,
       date: parseDateForSubmission(displayDate),
@@ -405,7 +441,7 @@ export default function ShiftForm({
         delete submissionData.shiftTypeId;
       }
     }
-    
+
     onSubmit(submissionData as ShiftFormData)
   }
 
@@ -431,7 +467,7 @@ export default function ShiftForm({
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newDisplayDate = e.target.value;
     setDisplayDate(newDisplayDate);
-    
+
     try {
       const [day, month, year] = newDisplayDate.split('/');
       if (day && month && year && year.length === 4) {
@@ -459,22 +495,20 @@ export default function ShiftForm({
           <button
             type="button"
             onClick={() => setActiveTab('basic')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-              activeTab === 'basic'
+            className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${activeTab === 'basic'
                 ? 'border-[#31BCFF] text-[#31BCFF]'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
+              }`}
           >
             Basic Information
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('break')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-              activeTab === 'break'
+            className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${activeTab === 'break'
                 ? 'border-[#31BCFF] text-[#31BCFF]'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
+              }`}
           >
             Break Time
           </button>
@@ -483,11 +517,10 @@ export default function ShiftForm({
             <button
               type="button"
               onClick={() => setActiveTab('exchange')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                activeTab === 'exchange'
+              className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${activeTab === 'exchange'
                   ? 'border-[#31BCFF] text-[#31BCFF]'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
+                }`}
             >
               Shift Exchange
             </button>
@@ -527,9 +560,37 @@ export default function ShiftForm({
                 const selectedOption = shiftTypeOptions.find(opt => opt.id === e.target.value);
                 if (selectedOption) {
                   if (selectedOption.isCustom) {
-                    setFormData({ ...formData, shiftType: 'CUSTOM' as ShiftType, shiftTypeId: selectedOption.id });
+                    // setFormData(prev => ({ ...prev, shiftType: 'CUSTOM' as ShiftType, shiftTypeId: selectedOption.id }));
+                    // console.log('Selected autoBreakType:', selectedOption.autoBreakType)
+                    setFormData(prev => {
+                      let updated = {
+                        ...prev,
+                        shiftType: 'CUSTOM' as ShiftType,
+                        shiftTypeId: selectedOption.id,
+                      }
+
+                      // Auto-break calculation
+                      if (selectedOption.autoBreakType === "AUTO_BREAK" && selectedOption.autoBreakValue && prev.startTime) {
+                        const [hour, minute] = prev.startTime.split(':').map(Number)
+                        const start = new Date(0, 0, 0, hour, minute)
+                        const breakStart = new Date(start.getTime() + 4 * 60 * 60 * 1000) // Example: 4 hrs after start
+                        const breakEnd = new Date(breakStart.getTime() + selectedOption.autoBreakValue * 60 * 1000)
+
+                        const fmt = (d: Date) =>
+                          d.toTimeString().slice(0, 5) // "HH:MM" format
+
+                        updated.breakStart = fmt(breakStart)
+                        updated.breakEnd = fmt(breakEnd)
+                      }
+
+                      return updated
+                    })
+                    if (selectedOption.autoBreakType === "AUTO_BREAK" && selectedOption.autoBreakValue) {
+                      setShowBreakFields(true);
+                    }
                   } else {
-                    setFormData({ ...formData, shiftType: selectedOption.id as ShiftType, shiftTypeId: undefined });
+                    setFormData(prev => ({ ...prev, shiftType: selectedOption.id as ShiftType, shiftTypeId: undefined }));
+                    setShowBreakFields(false);
                   }
                 }
               }}
@@ -765,7 +826,7 @@ export default function ShiftForm({
           {initialData?.id && !isEmployee && !shiftExchanges.some(exchange => exchange.status === 'APPROVED') && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
               <h3 className="text-lg font-medium text-blue-900 mb-4">Request Shift Exchange</h3>
-              
+
               <div className="grid grid-cols-1 gap-4">
                 {/* Employee Selection */}
                 <div>
@@ -846,7 +907,7 @@ export default function ShiftForm({
               <div className="px-6 py-4 border-b border-gray-200">
                 <h3 className="text-lg font-medium text-gray-900">Shift Exchange History</h3>
               </div>
-              
+
               <div className="px-6 py-4">
                 {exchangeLoading ? (
                   <div className="flex items-center justify-center py-8">
@@ -854,62 +915,62 @@ export default function ShiftForm({
                   </div>
                 ) : (
                   <div className="space-y-4">
-                  {shiftExchanges.map((exchange) => (
-                    <div key={exchange.id} className="border border-gray-200 rounded-lg p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="font-medium text-gray-900">
-                              {exchange.fromEmployee.firstName} {exchange.fromEmployee.lastName}
-                            </span>
-                            <span className="text-gray-500">→</span>
-                            <span className="font-medium text-gray-900">
-                              {exchange.toEmployee.firstName} {exchange.toEmployee.lastName}
-                            </span>
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getExchangeStatusColor(exchange.status)}`}>
-                              {exchange.status}
-                            </span>
-                          </div>
-                          
-                          <div className="text-sm text-gray-600 mb-2">
-                            <p><strong>From:</strong> {exchange.fromEmployee.employeeNo || 'N/A'}</p>
-                            <p><strong>To:</strong> {exchange.toEmployee.employeeNo || 'N/A'}</p>
-                            <p><strong>Requested:</strong> {new Date(exchange.requestedAt).toLocaleDateString()}</p>
-                            {exchange.approvedAt && (
-                              <p><strong>Processed:</strong> {new Date(exchange.approvedAt).toLocaleDateString()}</p>
+                    {shiftExchanges.map((exchange) => (
+                      <div key={exchange.id} className="border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="font-medium text-gray-900">
+                                {exchange.fromEmployee.firstName} {exchange.fromEmployee.lastName}
+                              </span>
+                              <span className="text-gray-500">→</span>
+                              <span className="font-medium text-gray-900">
+                                {exchange.toEmployee.firstName} {exchange.toEmployee.lastName}
+                              </span>
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getExchangeStatusColor(exchange.status)}`}>
+                                {exchange.status}
+                              </span>
+                            </div>
+
+                            <div className="text-sm text-gray-600 mb-2">
+                              <p><strong>From:</strong> {exchange.fromEmployee.employeeNo || 'N/A'}</p>
+                              <p><strong>To:</strong> {exchange.toEmployee.employeeNo || 'N/A'}</p>
+                              <p><strong>Requested:</strong> {new Date(exchange.requestedAt).toLocaleDateString()}</p>
+                              {exchange.approvedAt && (
+                                <p><strong>Processed:</strong> {new Date(exchange.approvedAt).toLocaleDateString()}</p>
+                              )}
+                            </div>
+
+                            {exchange.reason && (
+                              <div className="text-sm text-gray-600">
+                                <p><strong>Reason:</strong> {exchange.reason}</p>
+                              </div>
                             )}
                           </div>
 
-                          {exchange.reason && (
-                            <div className="text-sm text-gray-600">
-                              <p><strong>Reason:</strong> {exchange.reason}</p>
+                          {/* Action Buttons */}
+                          {exchange.status === 'ADMIN_PENDING' && !isEmployee && (
+                            <div className="flex gap-2 ml-4">
+                              <button
+                                type="button"
+                                onClick={() => handleExchangeStatusUpdate(exchange.id, 'APPROVED')}
+                                className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                              >
+                                Approve
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleExchangeStatusUpdate(exchange.id, 'REJECTED')}
+                                className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                              >
+                                Reject
+                              </button>
                             </div>
                           )}
                         </div>
-
-                        {/* Action Buttons */}
-                        {exchange.status === 'ADMIN_PENDING' && !isEmployee && (
-                          <div className="flex gap-2 ml-4">
-                            <button
-                              type="button"
-                              onClick={() => handleExchangeStatusUpdate(exchange.id, 'APPROVED')}
-                              className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                            >
-                              Approve
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleExchangeStatusUpdate(exchange.id, 'REJECTED')}
-                              className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                            >
-                              Reject
-                            </button>
-                          </div>
-                        )}
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
                 )}
               </div>
             </div>
@@ -929,9 +990,8 @@ export default function ShiftForm({
         <button
           type="submit"
           disabled={loading || isEmployee}
-          className={`px-4 py-2 text-sm font-medium text-white border border-transparent rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#31BCFF] disabled:opacity-50 ${
-            isEmployee ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#31BCFF] hover:bg-[#31BCFF]/90'
-          }`}
+          className={`px-4 py-2 text-sm font-medium text-white border border-transparent rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#31BCFF] disabled:opacity-50 ${isEmployee ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#31BCFF] hover:bg-[#31BCFF]/90'
+            }`}
           title={isEmployee ? "Employees cannot create or edit shifts" : ""}
         >
           {loading ? 'Saving...' : isEmployee ? 'Not Authorized' : 'Save'}

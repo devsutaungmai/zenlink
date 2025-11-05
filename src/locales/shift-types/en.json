@@ -18,7 +18,9 @@
     "description_placeholder": "Optional description for this shift type",
     "create_button": "Create Shift Type",
     "update_button": "Update Shift Type",
-    "cancel_button": "Cancel"
+    "cancel_button": "Cancel",
+    "auto_break_setting": "Auto Break Setting",
+    "minutes": "minutes"
   },
   
   "pay_calculation": {
@@ -26,6 +28,11 @@
     "fixed_amount": "Fixed Amount per Hour (replaces hourly wage)",
     "percentage": "Percentage of Hourly Wage",
     "unpaid": "Unpaid"
+  },
+
+  "auto_break_options": {
+    "auto_break": "Auto Break",
+    "manual_break": "Manual Break"
   },
   
   "list": {

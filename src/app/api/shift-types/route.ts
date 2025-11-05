@@ -53,9 +53,9 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, salaryCode, payCalculationType, payCalculationValue, description } = body
+    const { name, salaryCode, payCalculationType, payCalculationValue,autoBreakType,autoBreakValue,description } = body
 
-    if (!name || !salaryCode || !payCalculationType) {
+    if (!name || !salaryCode || !payCalculationType || !autoBreakType) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -66,6 +66,14 @@ export async function POST(request: NextRequest) {
     if (payCalculationType !== 'UNPAID' && !payCalculationValue && payCalculationValue !== 0) {
       return NextResponse.json(
         { error: 'Calculation value is required for this type' },
+        { status: 400 }
+      )
+    }
+
+    //Validate the autoBreakValue when required
+    if (autoBreakType !=='MANUAL_BREAK' && !autoBreakValue && autoBreakValue !==0){
+      return NextResponse.json(
+        { error: 'Auto break value is required for this type' },
         { status: 400 }
       )
     }
@@ -91,6 +99,8 @@ export async function POST(request: NextRequest) {
         salaryCode,
         payCalculationType,
         payCalculationValue: payCalculationValue ? parseFloat(payCalculationValue) : null,
+        autoBreakType,
+        autoBreakValue: autoBreakValue ? parseFloat(autoBreakValue) : null,
         description: description || null,
         businessId: user.businessId,
       },

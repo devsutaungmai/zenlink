@@ -544,6 +544,8 @@ model ShiftTypeConfig {
   salaryCode          String
   payCalculationType  PayCalculationType
   payCalculationValue Decimal?           @db.Decimal(10, 2)
+  autoBreakType      AutoBreakType
+  autoBreakValue     Decimal?           @db.Decimal(10, 2)
   description         String?
   businessId          String
   isActive            Boolean            @default(true)
@@ -629,4 +631,9 @@ enum PayCalculationType {
   FIXED_AMOUNT
   PERCENTAGE
   UNPAID
+}
+
+enum AutoBreakType {
+  AUTO_BREAK
+  MANUAL_BREAK
 }

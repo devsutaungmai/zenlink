@@ -16,6 +16,8 @@ interface ShiftType {
   salaryCode: string
   payCalculationType: 'HOURLY_PLUS_FIXED' | 'FIXED_AMOUNT' | 'PERCENTAGE' | 'UNPAID'
   payCalculationValue: number | null
+  autoBreakType: 'AUTO_BREAK' | 'MANUAL_BREAK'
+  autoBreakValue: number | null
   description: string | null
   isActive: boolean
 }
@@ -37,8 +39,10 @@ export default function ShiftTypeSettings() {
   const [formData, setFormData] = useState({
     name: '',
     salaryCode: '',
-    payCalculationType: 'UNPAID' as ShiftType['payCalculationType'],
+    payCalculationType:'UNPAID' as ShiftType['payCalculationType'],
     payCalculationValue: '',
+    autoBreakType: 'MANUAL_BREAK' as ShiftType['autoBreakType'],
+    autoBreakValue: '',
     description: '',
   })
 
@@ -105,6 +109,10 @@ export default function ShiftTypeSettings() {
         payCalculationValue: formData.payCalculationValue 
           ? parseFloat(formData.payCalculationValue)
           : null,
+        autoBreakType: formData.autoBreakType,
+        autoBreakValue: formData.autoBreakValue 
+          ? parseFloat(formData.autoBreakValue)
+          : null,
         description: formData.description || null,
       }
 
@@ -158,6 +166,8 @@ export default function ShiftTypeSettings() {
       salaryCode: shiftType.salaryCode,
       payCalculationType: shiftType.payCalculationType,
       payCalculationValue: shiftType.payCalculationValue?.toString() || '',
+      autoBreakType: shiftType.autoBreakType,
+      autoBreakValue: shiftType.autoBreakValue?.toString() || '',
       description: shiftType.description || '',
     })
     setShowForm(true)
@@ -216,6 +226,8 @@ export default function ShiftTypeSettings() {
       salaryCode: '',
       payCalculationType: 'UNPAID',
       payCalculationValue: '',
+      autoBreakType: 'MANUAL_BREAK',
+      autoBreakValue: '',
       description: '',
     })
     setEditingId(null)
@@ -232,8 +244,18 @@ export default function ShiftTypeSettings() {
     return labels[type]
   }
 
-  const needsValueInput = (type: ShiftType['payCalculationType']) => {
-    return type !== 'UNPAID'
+  const getAutoBreakLabel = (type: ShiftType['autoBreakType']) => {
+    const labels = {
+      AUTO_BREAK: t('auto_break_options.auto_break'),
+      MANUAL_BREAK: t('auto_break_options.manual_break'),
+    }
+    return labels[type]
+  }
+
+  const needsValueInput = (payType?: ShiftType['payCalculationType'] | null,
+    breakType?: ShiftType['autoBreakType'] | null
+  ) => {
+    return !(payType === 'UNPAID' || breakType === 'MANUAL_BREAK')
   }
 
   if (loading) {
@@ -346,7 +368,7 @@ export default function ShiftTypeSettings() {
               </div>
 
               {/* Calculation Value */}
-              {needsValueInput(formData.payCalculationType) && (
+              {needsValueInput(formData.payCalculationType,null) && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     {formData.payCalculationType === 'PERCENTAGE' 
@@ -389,7 +411,62 @@ export default function ShiftTypeSettings() {
                 </div>
               )}
             </div>
+            <div className='grid md:grid-cols-2 gap-4'>
+             {/* Auto Break Value */}
+            <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('form.auto_break_setting')} <span className="text-red-500">*</span>
+                </label>
+                <select
+                  required
+                  value={formData.autoBreakType}
+                  onChange={(e) => {
+                    setFormData({ 
+                      ...formData, 
+                      autoBreakType: e.target.value as ShiftType['autoBreakType'],
+                      autoBreakValue: e.target.value === 'MANUAL_BREAK' ? '' : formData.autoBreakValue
+                    })
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF]"
+                >
+                  <option value="MANUAL_BREAK">{t('auto_break_options.manual_break')}</option>
+                  <option value="AUTO_BREAK">{t('auto_break_options.auto_break')}</option>
+                </select>
+              </div>
+                  {/* Calculation Value */}
+              {needsValueInput(null,formData.autoBreakType) && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {t('form.amount_value')} <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      required
+                      step="0.01"
+                      min="0"
+                      value={formData.autoBreakValue}
+                      onChange={(e) => {
+                        let raw = e.target.value
+                        // treat any form of negative zero ("-0", "-0.0", "-00.00", etc.) as "0"
+                        const isNegativeZero = /^-0+(\.0+)?$/.test(raw)
 
+                        if (isNegativeZero) {
+                          raw = '0'
+                        }
+
+                        setFormData({ ...formData, autoBreakValue: raw })
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF]"
+                      placeholder='15'
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
+                      {t('form.minutes')}
+                    </span>
+                  </div>
+                </div>
+              )}
+              </div>
             {/* Description */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -451,6 +528,16 @@ export default function ShiftTypeSettings() {
                           {' '}({shiftType.payCalculationType === 'PERCENTAGE' 
                             ? `${shiftType.payCalculationValue}%` 
                             : `$${shiftType.payCalculationValue}`})
+                        </span>
+                      )}
+                    </p>
+                    
+                    <p className="text-sm text-gray-600">
+                      <span className="font-medium">{t('list.calculation')}:</span>
+                      {getAutoBreakLabel(shiftType.autoBreakType)}{''}
+                      {shiftType.autoBreakValue && (
+                        <span>
+                         ({shiftType.autoBreakValue} {t('form.minutes')})
                         </span>
                       )}
                     </p>

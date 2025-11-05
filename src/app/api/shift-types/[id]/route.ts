@@ -18,7 +18,7 @@ export async function PATCH(
     }
 
     const body = await request.json()
-    const { name, salaryCode, payCalculationType, payCalculationValue, description } = body
+    const { name, salaryCode, payCalculationType, payCalculationValue,autoBreakType,autoBreakValue,description } = body
 
     // Verify the shift type belongs to the user's business
     const shiftType = await prisma.shiftTypeConfig.findUnique({
@@ -60,6 +60,12 @@ export async function PATCH(
         payCalculationValue: payCalculationValue !== undefined 
           ? (payCalculationValue ? parseFloat(payCalculationValue) : null)
           : shiftType.payCalculationValue,
+        autoBreakType: autoBreakType || shiftType.autoBreakType,
+        autoBreakValue:
+        autoBreakType === 'MANUAL_BREAK' ? null
+        : autoBreakValue !== undefined && autoBreakValue !== null
+        ? parseFloat(autoBreakValue)
+        : shiftType.autoBreakValue,
         description: description !== undefined ? (description || null) : shiftType.description,
       },
     })
