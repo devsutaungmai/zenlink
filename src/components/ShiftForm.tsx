@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { AutoBreakType, ShiftType, ShiftTypeConfig, WageType } from '@prisma/client'
+import { AutoBreakType, ShiftType, WageType } from '@prisma/client'
 import { useUser } from '@/shared/lib/useUser'
 import { ShiftExchange } from '@/shared/types'
 import Swal from 'sweetalert2'
@@ -73,6 +73,8 @@ interface ShiftFormData {
   approved: boolean
   exchangeToEmployeeId?: string
   exchangeReason?: string
+  autoBreakType?: AutoBreakType
+  autoBreakValue?: number | null
 }
 
 interface EmployeeForForm {
@@ -140,6 +142,8 @@ export default function ShiftForm({
       breakEnd: convertDateTimeToTimeString(initialData.breakEnd),
       breakPaid: initialData.breakPaid || false,
       shiftTypeId: initialData.shiftTypeId || undefined,
+      autoBreakType: initialData.autoBreakType || 'MANUAL_BREAK',
+      autoBreakValue: initialData.autoBreakValue || null,
     } : {
       date: todayString,
       startTime: '09:00',
@@ -155,6 +159,8 @@ export default function ShiftForm({
       breakEnd: undefined,
       breakPaid: false,
       note: undefined,
+      autoBreakType: 'MANUAL_BREAK' as AutoBreakType,
+      autoBreakValue: null,
     };
 
     // If there's an employeeId, calculate the wage
@@ -215,37 +221,25 @@ export default function ShiftForm({
     return initialData ? !!initialData.breakStart || !!initialData.breakEnd : false
   })
 
-  useEffect(() => {
-    if (!initialData) return
+  const recalcAutoBreak = (type:AutoBreakType,value: number) => {
+  if (!formData.startTime || !formData.endTime) return
 
-    const selectedOption = shiftTypeOptions.find(opt =>
-      opt.isCustom
-        ? opt.id === initialData.shiftTypeId
-        : opt.id === initialData.shiftType
-    )
+  const start = new Date(`2000-01-01T${formData.startTime}:00`)
+  const end = new Date(`2000-01-01T${formData.endTime}:00`)
+  const duration = end.getTime() - start.getTime()
+  const mid = new Date(start.getTime() + duration / 2)
 
-    if (selectedOption?.isCustom && selectedOption.autoBreakType && selectedOption.autoBreakValue) {
-      // Calculate the auto break
-      const now = new Date()
-      const breakStart = new Date(now)
-      const breakEnd = new Date(now)
+  const breakStart = new Date(mid)
+  const breakEnd = new Date(mid.getTime() + value * 60 * 1000)
 
-      if (selectedOption.autoBreakType === 'AUTO_BREAK') {
-        breakEnd.setMinutes(breakStart.getMinutes() + Number(selectedOption.autoBreakValue))
-      }
-      setFormData(prev => ({
-        ...prev,
-        shiftType: 'CUSTOM' as ShiftType,
-        shiftTypeId: selectedOption.id,
-        breakStart: breakStart.toISOString(),
-        breakEnd: breakEnd.toISOString(),
-      }))
-      setShowBreakFields(true)
-    } else {
-      setShowBreakFields(!!initialData.breakStart || !!initialData.breakEnd)
-    }
-  }, [initialData, shiftTypeOptions])
-
+  setFormData(prev => ({
+    ...prev,
+    autoBreakType: type,
+    autoBreakValue: value,
+    breakStart: breakStart.toISOString().slice(11, 16),
+    breakEnd: breakEnd.toISOString().slice(11, 16),
+  }))
+}
 
   useEffect(() => {
     setDisplayDate(formatDateForDisplay(formData.date))
@@ -260,6 +254,55 @@ export default function ShiftForm({
   useEffect(() => {
     fetchShiftTypes()
   }, [])
+
+  useEffect(() => {
+  if (!initialData || shiftTypeOptions.length === 0) return
+
+  // console.log('Initial data:', initialData)
+  // console.log('Available shift types:', shiftTypeOptions)
+
+  const matchingType = shiftTypeOptions.find(
+    st => st.id === initialData.shiftTypeId
+  )
+
+  if (!matchingType) return
+
+  const hasConfigChanged =
+    matchingType.autoBreakType === 'AUTO_BREAK' &&
+    matchingType.autoBreakValue !== undefined &&
+    matchingType.autoBreakValue !== null &&
+    (matchingType.autoBreakValue !== initialData.autoBreakValue)
+
+  if (hasConfigChanged) {
+
+    if (matchingType.autoBreakType === 'AUTO_BREAK') {
+      // change state of auto-break checkbox
+      setShowBreakFields(true)
+      //calculate new break times
+      recalcAutoBreak(matchingType.autoBreakType,matchingType.autoBreakValue!)
+    } else if (matchingType.autoBreakType === 'MANUAL_BREAK') {
+      // If changed to manual, toglle off auto-break and clear the times
+      setShowBreakFields(false)
+      setFormData(prev => ({
+        ...prev,
+        autoBreakType: 'MANUAL_BREAK',
+        autoBreakValue: null,
+        breakStart: '',
+        breakEnd: '',
+      }))
+    }
+  }else{
+    // If changed to manual, clear auto-break settings
+      setShowBreakFields(false)
+      setFormData(prev => ({
+        ...prev,
+        autoBreakType: 'MANUAL_BREAK',
+        autoBreakValue: null,
+        breakStart: '',
+        breakEnd: '',
+      }))
+  }
+}, [initialData, shiftTypeOptions])
 
   const fetchShiftTypes = async () => {
     setLoadingShiftTypes(true)
@@ -567,6 +610,8 @@ export default function ShiftForm({
                         ...prev,
                         shiftType: 'CUSTOM' as ShiftType,
                         shiftTypeId: selectedOption.id,
+                        autoBreakType: selectedOption.autoBreakType,
+                        autoBreakValue: selectedOption.autoBreakValue,
                       }
 
                       // Auto-break calculation
@@ -587,6 +632,8 @@ export default function ShiftForm({
                     })
                     if (selectedOption.autoBreakType === "AUTO_BREAK" && selectedOption.autoBreakValue) {
                       setShowBreakFields(true);
+                    }else if (selectedOption.autoBreakType === "MANUAL_BREAK") {
+                      setShowBreakFields(false);
                     }
                   } else {
                     setFormData(prev => ({ ...prev, shiftType: selectedOption.id as ShiftType, shiftTypeId: undefined }));
