@@ -54,7 +54,12 @@ export async function PUT(
 ) {
   try {
     const { id } = await context.params
-    const rawData = await request.json()
+    const extraRawData = await request.json()
+    const {
+      autoBreakType,
+      autoBreakValue,
+      ...rawData
+    } = extraRawData
 
     const convertTimeToDateTime = (timeStr: string, baseDate: string): Date => {
       const [hours, minutes] = timeStr.split(':').map(Number);
@@ -70,6 +75,7 @@ export async function PUT(
       employeeId: rawData.employeeId || null,
       employeeGroupId: rawData.employeeGroupId || null,
       shiftType: rawData.shiftType as ShiftType,
+      shiftTypeId: rawData.shiftTypeId || null,
       breakStart: rawData.breakStart ? convertTimeToDateTime(rawData.breakStart, rawData.date) : null,
       breakEnd: rawData.breakEnd ? convertTimeToDateTime(rawData.breakEnd, rawData.date) : null,
       wage: rawData.wage !== undefined ? parseFloat(rawData.wage) : undefined,
@@ -88,10 +94,12 @@ export async function PUT(
     })
     
     return NextResponse.json(shift)
-  } catch (error) {
-    console.error('Update error:', error)
+  } catch (error:any) {
+     console.error('Update error:', error.message)
+    if (error.code) console.error('Prisma code:', error.code)
+    if (error.meta) console.error('Prisma meta:', error.meta)
     return NextResponse.json(
-      { error: 'Failed to update shift' }, 
+      { error: error.message || 'Failed to update shift' },
       { status: 500 }
     )
   }

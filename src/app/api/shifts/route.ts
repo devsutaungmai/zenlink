@@ -174,6 +174,7 @@ export async function POST(req: Request) {
     }
 
     const rawData = await req.json();
+    
     console.log('Received shift data:', JSON.stringify(rawData, null, 2));
 
     if (currentUser && rawData.employeeId) {
@@ -202,7 +203,7 @@ export async function POST(req: Request) {
     };
 
     // Prepare data for Prisma - extract relational fields
-    const { employeeId, employeeGroupId, shiftTypeId, ...shiftData } = rawData;
+    const { autoBreakType,autoBreakValue,employeeId, employeeGroupId, shiftTypeId, ...shiftData } = rawData;
 
     const data = {
       ...shiftData,

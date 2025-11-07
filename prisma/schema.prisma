@@ -278,7 +278,6 @@ model Shift {
   employee        Employee?        @relation(fields: [employeeId], references: [id])
   shiftTypeConfig ShiftTypeConfig? @relation(fields: [shiftTypeId], references: [id])
   shiftExchanges  ShiftExchange[]
-
   @@index([shiftTypeId])
 }
 
@@ -543,7 +542,9 @@ model ShiftTypeConfig {
   name                String
   salaryCode          String
   payCalculationType  PayCalculationType
-  payCalculationValue Decimal?           @db.Decimal(10, 2)
+  payCalculationValue Decimal?            @db.Decimal(10, 2)
+  autoBreakType       AutoBreakType       @default(MANUAL_BREAK)
+  autoBreakValue      Decimal?            @db.Decimal(10, 2)
   description         String?
   businessId          String
   isActive            Boolean            @default(true)
@@ -583,6 +584,7 @@ enum ShiftType {
   SICK
   TIME_OFF
   TRAINING
+  CUSTOM
 }
 
 enum PayrollPeriodStatus {
@@ -629,4 +631,9 @@ enum PayCalculationType {
   FIXED_AMOUNT
   PERCENTAGE
   UNPAID
+}
+
+enum AutoBreakType {
+  AUTO_BREAK
+  MANUAL_BREAK
 }

@@ -18,7 +18,9 @@
     "description_placeholder": "Valgfri beskrivelse for denne skifttypen",
     "create_button": "Opprett skifttype",
     "update_button": "Oppdater skifttype",
-    "cancel_button": "Avbryt"
+    "cancel_button": "Avbryt",
+    "auto_break_setting": "Innstilling for automatisk pause",
+    "minutes": "minutter"
   },
   
   "pay_calculation": {
@@ -26,6 +28,11 @@
     "fixed_amount": "Fast beløp per time (erstatter timelønn)",
     "percentage": "Prosent av timelønn",
     "unpaid": "Ubetalt"
+  },
+
+  "auto_break_options": {
+    "auto_break": "Automatisk pause",
+    "manual_break": "Manuell pause"
   },
   
   "list": {
