@@ -92,6 +92,10 @@ export default function CreateShiftPage() {
     }
   }
 
+  const handleCancel = () => {
+    router.push('/dashboard/shifts')
+  }
+
   if (dataLoading) {
     return (
       <div className="py-6">
@@ -135,7 +139,8 @@ export default function CreateShiftPage() {
 
         <div className="mt-6">
           <ShiftForm 
-            onSubmit={handleSubmit} 
+            onSubmit={handleSubmit}
+            onCancel={handleCancel}
             loading={loading}
             employees={employees}
             employeeGroups={employeeGroups}

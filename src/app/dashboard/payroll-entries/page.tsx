@@ -549,41 +549,43 @@ export default function PayrollEntriesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 py-4 sm:py-6">
       {/* Header Section */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-100">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between">
-          <div className="mb-4 sm:mb-0">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-blue-100">
+        <div className="flex flex-col space-y-4">
+          <div>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
               {t('title')}
             </h1>
-            <p className="mt-2 text-gray-600">
+            <p className="mt-1 sm:mt-2 text-sm sm:text-base text-gray-600">
               {t('subtitle')}
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
             <button
               onClick={exportToExcel}
               disabled={filteredEntries.filter(entry => entry.status === 'APPROVED').length === 0}
-              className="inline-flex items-center justify-center px-4 py-3 rounded-2xl bg-white border border-gray-200 text-gray-700 font-medium shadow-sm hover:shadow-md transition-all duration-200 hover:scale-105 group disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              className="inline-flex items-center justify-center px-4 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-white border border-gray-200 text-gray-700 text-sm sm:text-base font-medium shadow-sm hover:shadow-md transition-all duration-200 sm:hover:scale-105 group disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               title={t('actions.export_excel')}
             >
-              <TableCellsIcon className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
-              {t('export_excel')}
+              <TableCellsIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
+              <span className="hidden sm:inline">{t('export_excel')}</span>
+              <span className="sm:hidden">Export</span>
             </button>
             <Link
               href="/dashboard/payroll-entries/generate"
-              className="inline-flex items-center justify-center px-4 py-3 rounded-2xl bg-gradient-to-r from-green-500 to-green-600 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 group"
+              className="inline-flex items-center justify-center px-4 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-gradient-to-r from-green-500 to-green-600 text-white text-sm sm:text-base font-medium shadow-lg hover:shadow-xl transition-all duration-200 sm:hover:scale-105 group"
               title="Generate payroll entries from attendance data"
             >
-              <DocumentTextIcon className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
-              Generate Entries
+              <DocumentTextIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
+              <span className="hidden sm:inline">Generate Entries</span>
+              <span className="sm:hidden">Generate</span>
             </Link>
             <Link
               href="/dashboard/payroll-entries/create"
-              className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 group"
+              className="inline-flex items-center justify-center px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white text-sm sm:text-base font-medium shadow-lg hover:shadow-xl transition-all duration-200 sm:hover:scale-105 group"
             >
-              <PlusIcon className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
+              <PlusIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
               {t('create_entry')}
             </Link>
           </div>
@@ -591,23 +593,23 @@ export default function PayrollEntriesPage() {
       </div>
 
       {/* Search and Filters */}
-      <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 border border-gray-200/50 shadow-lg">
-        <div className="flex flex-col lg:flex-row gap-4">
+      <div className="bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-200/50 shadow-lg">
+        <div className="flex flex-col gap-3 sm:gap-4">
           <div className="relative flex-1">
-            <MagnifyingGlassIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <MagnifyingGlassIcon className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder={t('search_placeholder')}
-              className="block w-full pl-12 pr-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+              className="block w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 text-sm sm:text-base rounded-lg sm:rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
             />
           </div>
-          <div className="flex gap-4">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+              className="w-full sm:w-auto px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base rounded-lg sm:rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
             >
               <option value="all">{t('filters.all_status')}</option>
               <option value="DRAFT">{t('status.draft')}</option>
@@ -617,7 +619,7 @@ export default function PayrollEntriesPage() {
             <select
               value={periodFilter}
               onChange={(e) => setPeriodFilter(e.target.value)}
-              className="px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+              className="w-full sm:w-auto px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base rounded-lg sm:rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
             >
               <option value="all">{t('filters.all_periods')}</option>
               {periods.map((period) => (
@@ -628,35 +630,37 @@ export default function PayrollEntriesPage() {
             </select>
           </div>
         </div>
-        <div className="flex items-center justify-between mt-4 text-sm text-gray-500">
+        <div className="flex items-center justify-between mt-3 sm:mt-4 text-xs sm:text-sm text-gray-500">
           <span>{t('showing', { count: filteredEntries.length, total: entries.length })}</span>
         </div>
 
         {/* Bulk Actions Bar */}
         {selectedEntries.length > 0 && (
-          <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-blue-900">
+          <div className="mt-3 sm:mt-4 p-3 sm:p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <span className="text-xs sm:text-sm font-medium text-blue-900">
                 {selectedEntries.length} {selectedEntries.length === 1 ? 'entry' : 'entries'} selected
               </span>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <button
                   onClick={handleBulkApprove}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium transition-colors"
+                  className="px-3 sm:px-4 py-2 bg-green-600 text-white text-xs sm:text-sm rounded-lg hover:bg-green-700 font-medium transition-colors"
                 >
-                  Approve Selected
+                  <span className="hidden sm:inline">Approve Selected</span>
+                  <span className="sm:hidden">Approve</span>
                 </button>
                 <button
                   onClick={handleBulkStatusChange}
-                  className="px-4 py-2 bg-[#31BCFF] text-white rounded-lg hover:bg-[#31BCFF]/90 text-sm font-medium transition-colors"
+                  className="px-3 sm:px-4 py-2 bg-[#31BCFF] text-white text-xs sm:text-sm rounded-lg hover:bg-[#31BCFF]/90 font-medium transition-colors"
                 >
                   Change Status
                 </button>
                 <button
                   onClick={() => setSelectedEntries([])}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-sm font-medium transition-colors"
+                  className="px-3 sm:px-4 py-2 bg-gray-200 text-gray-700 text-xs sm:text-sm rounded-lg hover:bg-gray-300 font-medium transition-colors"
                 >
-                  Clear Selection
+                  <span className="hidden sm:inline">Clear Selection</span>
+                  <span className="sm:hidden">Clear</span>
                 </button>
               </div>
             </div>
@@ -666,176 +670,296 @@ export default function PayrollEntriesPage() {
 
       {/* Entries List */}
       {filteredEntries.length === 0 ? (
-        <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-12 border border-gray-200/50 shadow-lg text-center">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <MagnifyingGlassIcon className="w-8 h-8 text-gray-400" />
+        <div className="bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl p-8 sm:p-12 border border-gray-200/50 shadow-lg text-center">
+          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+            <MagnifyingGlassIcon className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">{t('no_entries.title')}</h3>
-          <p className="text-gray-500 mb-6">
+          <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">{t('no_entries.title')}</h3>
+          <p className="text-sm sm:text-base text-gray-500 mb-4 sm:mb-6">
             {searchTerm ? t('no_entries.search_message') : t('no_entries.empty_message')}
           </p>
           {!searchTerm && (
             <Link
               href="/dashboard/payroll-entries/create"
-              className="inline-flex items-center px-6 py-3 rounded-xl bg-[#31BCFF] text-white font-medium hover:bg-[#31BCFF]/90 transition-colors duration-200"
+              className="inline-flex items-center px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base rounded-lg sm:rounded-xl bg-[#31BCFF] text-white font-medium hover:bg-[#31BCFF]/90 transition-colors duration-200"
             >
-              <PlusIcon className="w-5 h-5 mr-2" />
+              <PlusIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
               {t('create_first_entry')}
             </Link>
           )}
         </div>
       ) : (
-        <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50/80">
-                <tr>
-                  <th className="px-6 py-4 text-left">
-                    <input
-                      type="checkbox"
-                      checked={selectedEntries.length === filteredEntries.length && filteredEntries.length > 0}
-                      onChange={toggleSelectAll}
-                      className="rounded border-gray-300 text-[#31BCFF] focus:ring-[#31BCFF] h-4 w-4"
-                    />
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('table.employee')}
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('table.period')}
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('table.hours')}
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('table.gross_pay')}
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('table.net_pay')}
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('table.status')}
-                  </th>
-                  <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('table.actions')}
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200/50">
-                {filteredEntries.map((entry) => (
-                  <tr key={entry.id} className="hover:bg-blue-50/30 transition-colors duration-200">
-                    <td className="px-6 py-4">
+        <>
+          {/* Desktop Table View */}
+          <div className="hidden lg:block bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50/80">
+                  <tr>
+                    <th className="px-6 py-4 text-left">
+                      <input
+                        type="checkbox"
+                        checked={selectedEntries.length === filteredEntries.length && filteredEntries.length > 0}
+                        onChange={toggleSelectAll}
+                        className="rounded border-gray-300 text-[#31BCFF] focus:ring-[#31BCFF] h-4 w-4"
+                      />
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t('table.employee')}
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t('table.period')}
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t('table.hours')}
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t('table.gross_pay')}
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t('table.net_pay')}
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t('table.status')}
+                    </th>
+                    <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t('table.actions')}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200/50">
+                  {filteredEntries.map((entry) => (
+                    <tr key={entry.id} className="hover:bg-blue-50/30 transition-colors duration-200">
+                      <td className="px-6 py-4">
+                        <input
+                          type="checkbox"
+                          checked={selectedEntries.includes(entry.id)}
+                          onChange={() => toggleSelection(entry.id)}
+                          className="rounded border-gray-300 text-[#31BCFF] focus:ring-[#31BCFF] h-4 w-4"
+                        />
+                      </td>
+                      <td className="px-6 py-4">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {entry.employee.firstName} {entry.employee.lastName}
+                          </div>
+                          {entry.employee.employeeNo && (
+                            <div className="text-sm text-gray-500">
+                              #{entry.employee.employeeNo}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-900">{entry.payrollPeriod.name}</div>
+                        <div className="text-sm text-gray-500">
+                          {new Date(entry.payrollPeriod.startDate).toLocaleDateString()} - {new Date(entry.payrollPeriod.endDate).toLocaleDateString()}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-900">
+                          {t('table.regular')}: {entry.regularHours}h
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {t('table.overtime')}: {entry.overtimeHours}h
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-medium text-gray-900">
+                          ${entry.grossPay.toFixed(2)}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-medium text-green-600">
+                          ${entry.netPay.toFixed(2)}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        {getStatusBadge(entry.status)}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end space-x-2">
+                          <Link
+                            href={`/dashboard/payroll-entries/${entry.id}`}
+                            className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
+                            title={t('actions.view_entry')}
+                          >
+                            <EyeIcon className="h-4 w-4" />
+                          </Link>
+                          <Link
+                            href={`/dashboard/payroll-entries/${entry.id}/edit`}
+                            className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
+                            title={t('actions.edit_entry')}
+                          >
+                            <PencilIcon className="h-4 w-4" />
+                          </Link>
+                          <button
+                            onClick={() => handleExportPayslip(entry.id, `${entry.employee.firstName} ${entry.employee.lastName}`)}
+                            className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200"
+                            title={t('actions.download_payslip')}
+                          >
+                            <DocumentArrowDownIcon className="h-4 w-4" />
+                          </button>
+                          {entry.status === 'DRAFT' && (
+                            <button
+                              onClick={() => handleDelete(entry.id)}
+                              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                              title={t('actions.delete_entry')}
+                            >
+                              <TrashIcon className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="px-6 py-4 border-t border-gray-200/50">
+                <div className="flex items-center justify-between">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white/50 border border-gray-300 rounded-lg hover:bg-white/70 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                  >
+                    {t('pagination.previous')}
+                  </button>
+                  <span className="text-sm text-gray-600">
+                    {t('pagination.page_of', { current: currentPage, total: totalPages })}
+                  </span>
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white/50 border border-gray-300 rounded-lg hover:bg-white/70 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                  >
+                    {t('pagination.next')}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="lg:hidden space-y-3 sm:space-y-4">
+            {filteredEntries.map((entry) => (
+              <div key={entry.id} className="bg-white/80 backdrop-blur-xl rounded-xl border border-gray-200/50 shadow-lg overflow-hidden">
+                <div className="p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-start gap-3 flex-1">
                       <input
                         type="checkbox"
                         checked={selectedEntries.includes(entry.id)}
                         onChange={() => toggleSelection(entry.id)}
-                        className="rounded border-gray-300 text-[#31BCFF] focus:ring-[#31BCFF] h-4 w-4"
+                        className="mt-1 rounded border-gray-300 text-[#31BCFF] focus:ring-[#31BCFF] h-4 w-4"
                       />
-                    </td>
-                    <td className="px-6 py-4">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-semibold text-gray-900 truncate">
                           {entry.employee.firstName} {entry.employee.lastName}
                         </div>
                         {entry.employee.employeeNo && (
-                          <div className="text-sm text-gray-500">
+                          <div className="text-xs text-gray-500">
                             #{entry.employee.employeeNo}
                           </div>
                         )}
                       </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">{entry.payrollPeriod.name}</div>
-                      <div className="text-sm text-gray-500">
-                        {new Date(entry.payrollPeriod.startDate).toLocaleDateString()} - {new Date(entry.payrollPeriod.endDate).toLocaleDateString()}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">
-                        {t('table.regular')}: {entry.regularHours}h
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {t('table.overtime')}: {entry.overtimeHours}h
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-gray-900">
-                        ${entry.grossPay.toFixed(2)}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-green-600">
-                        ${entry.netPay.toFixed(2)}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {getStatusBadge(entry.status)}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end space-x-2">
-                        <Link
-                          href={`/dashboard/payroll-entries/${entry.id}`}
-                          className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
-                          title={t('actions.view_entry')}
-                        >
-                          <EyeIcon className="h-4 w-4" />
-                        </Link>
-                        <Link
-                          href={`/dashboard/payroll-entries/${entry.id}/edit`}
-                          className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
-                          title={t('actions.edit_entry')}
-                        >
-                          <PencilIcon className="h-4 w-4" />
-                        </Link>
-                        <button
-                          onClick={() => handleExportPayslip(entry.id, `${entry.employee.firstName} ${entry.employee.lastName}`)}
-                          className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200"
-                          title={t('actions.download_payslip')}
-                        >
-                          <DocumentArrowDownIcon className="h-4 w-4" />
-                        </button>
-                        {entry.status === 'DRAFT' && (
-                          <button
-                            onClick={() => handleDelete(entry.id)}
-                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                            title={t('actions.delete_entry')}
-                          >
-                            <TrashIcon className="h-4 w-4" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    </div>
+                    {getStatusBadge(entry.status)}
+                  </div>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="px-6 py-4 border-t border-gray-200/50">
-              <div className="flex items-center justify-between">
-                <button
-                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                  disabled={currentPage === 1}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white/50 border border-gray-300 rounded-lg hover:bg-white/70 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                >
-                  {t('pagination.previous')}
-                </button>
-                <span className="text-sm text-gray-600">
-                  {t('pagination.page_of', { current: currentPage, total: totalPages })}
-                </span>
-                <button
-                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                  disabled={currentPage === totalPages}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white/50 border border-gray-300 rounded-lg hover:bg-white/70 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                >
-                  {t('pagination.next')}
-                </button>
+                  <div className="space-y-2 mb-3">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-500">{t('table.period')}</span>
+                      <span className="text-gray-900 font-medium text-right">{entry.payrollPeriod.name}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-500">Date Range</span>
+                      <span className="text-gray-900 text-right text-[10px]">
+                        {new Date(entry.payrollPeriod.startDate).toLocaleDateString()} - {new Date(entry.payrollPeriod.endDate).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-500">{t('table.regular')}</span>
+                      <span className="text-gray-900 font-medium">{entry.regularHours}h</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-500">{t('table.overtime')}</span>
+                      <span className="text-gray-900 font-medium">{entry.overtimeHours}h</span>
+                    </div>
+                    <div className="flex justify-between text-xs pt-2 border-t border-gray-200">
+                      <span className="text-gray-500">{t('table.gross_pay')}</span>
+                      <span className="text-gray-900 font-semibold">${entry.grossPay.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-500">{t('table.net_pay')}</span>
+                      <span className="text-green-600 font-semibold">${entry.netPay.toFixed(2)}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-3 border-t border-gray-200">
+                    <Link
+                      href={`/dashboard/payroll-entries/${entry.id}`}
+                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                    >
+                      <EyeIcon className="h-3.5 w-3.5" />
+                      View
+                    </Link>
+                    <Link
+                      href={`/dashboard/payroll-entries/${entry.id}/edit`}
+                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium text-[#31BCFF] bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                    >
+                      <PencilIcon className="h-3.5 w-3.5" />
+                      Edit
+                    </Link>
+                    <button
+                      onClick={() => handleExportPayslip(entry.id, `${entry.employee.firstName} ${entry.employee.lastName}`)}
+                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium text-green-600 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
+                    >
+                      <DocumentArrowDownIcon className="h-3.5 w-3.5" />
+                      PDF
+                    </button>
+                    {entry.status === 'DRAFT' && (
+                      <button
+                        onClick={() => handleDelete(entry.id)}
+                        className="p-2 text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+                      >
+                        <TrashIcon className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            ))}
+
+            {/* Mobile Pagination */}
+            {totalPages > 1 && (
+              <div className="bg-white/80 backdrop-blur-xl rounded-xl border border-gray-200/50 shadow-lg p-4">
+                <div className="flex items-center justify-between">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-gray-700 bg-white/50 border border-gray-300 rounded-lg hover:bg-white/70 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                  >
+                    {t('pagination.previous')}
+                  </button>
+                  <span className="text-xs sm:text-sm text-gray-600">
+                    {t('pagination.page_of', { current: currentPage, total: totalPages })}
+                  </span>
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-gray-700 bg-white/50 border border-gray-300 rounded-lg hover:bg-white/70 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                  >
+                    {t('pagination.next')}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </>
       )}
 
       {/* Status Change Modal */}
@@ -912,26 +1036,26 @@ export default function PayrollEntriesPage() {
       <Dialog open={showExportModal} onOpenChange={setShowExportModal}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold">Export Payroll Entries</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-lg sm:text-xl font-bold">Export Payroll Entries</DialogTitle>
+            <DialogDescription className="text-sm">
               Choose the export format for your payroll data
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-6">
+          <div className="space-y-3 sm:space-y-4 py-4 sm:py-6">
             <button
               onClick={exportNormalFormat}
-              className="w-full p-4 border-2 border-gray-300 rounded-xl hover:border-[#31BCFF] hover:bg-blue-50 transition-all duration-200 text-left group"
+              className="w-full p-3 sm:p-4 border-2 border-gray-300 rounded-lg sm:rounded-xl hover:border-[#31BCFF] hover:bg-blue-50 transition-all duration-200 text-left group"
             >
-              <div className="flex items-start space-x-4">
-                <div className="p-3 bg-blue-100 rounded-lg group-hover:bg-[#31BCFF] transition-colors">
-                  <TableCellsIcon className="w-6 h-6 text-[#31BCFF] group-hover:text-white" />
+              <div className="flex items-start space-x-3 sm:space-x-4">
+                <div className="p-2 sm:p-3 bg-blue-100 rounded-lg group-hover:bg-[#31BCFF] transition-colors flex-shrink-0">
+                  <TableCellsIcon className="w-5 h-5 sm:w-6 sm:h-6 text-[#31BCFF] group-hover:text-white" />
                 </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900 mb-1">Normal Format</h3>
-                  <p className="text-sm text-gray-600 mb-2">
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-1">Normal Format</h3>
+                  <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">
                     Standard CSV export with complete payroll information
                   </p>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-[10px] sm:text-xs text-gray-500">
                     <strong>Includes:</strong> Employee Name, Employee No, Period, Hours, Gross Pay, Deductions, Net Pay, Status, and more
                   </div>
                 </div>
@@ -940,18 +1064,18 @@ export default function PayrollEntriesPage() {
 
             <button
               onClick={exportPowerOfficeGoFormat}
-              className="w-full p-4 border-2 border-gray-300 rounded-xl hover:border-green-500 hover:bg-green-50 transition-all duration-200 text-left group"
+              className="w-full p-3 sm:p-4 border-2 border-gray-300 rounded-lg sm:rounded-xl hover:border-green-500 hover:bg-green-50 transition-all duration-200 text-left group"
             >
-              <div className="flex items-start space-x-4">
-                <div className="p-3 bg-green-100 rounded-lg group-hover:bg-green-500 transition-colors">
-                  <DocumentTextIcon className="w-6 h-6 text-green-600 group-hover:text-white" />
+              <div className="flex items-start space-x-3 sm:space-x-4">
+                <div className="p-2 sm:p-3 bg-green-100 rounded-lg group-hover:bg-green-500 transition-colors flex-shrink-0">
+                  <DocumentTextIcon className="w-5 h-5 sm:w-6 sm:h-6 text-green-600 group-hover:text-white" />
                 </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900 mb-1">Power Office Go Format</h3>
-                  <p className="text-sm text-gray-600 mb-2">
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-1">Power Office Go Format</h3>
+                  <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">
                     Specialized format for Power Office Go import
                   </p>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-[10px] sm:text-xs text-gray-500">
                     <strong>Includes:</strong> EmployeeNo, PayItemCode, Rate, Amount, Quantity (Total Hours)
                   </div>
                 </div>
@@ -961,7 +1085,7 @@ export default function PayrollEntriesPage() {
           <DialogFooter>
             <button
               onClick={() => setShowExportModal(false)}
-              className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
+              className="w-full px-4 py-2 text-sm sm:text-base border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
             >
               Cancel
             </button>

@@ -82,29 +82,45 @@ export default function EditShiftPage({ params }: { params: Promise<{ id: string
     fetchData()
   }, [shiftId])
 
-  const handleSubmit = async (formData: Shift) => {
-    setSaving(true)
-    setError(null)
-
+  const handleSubmit = async (formData: any) => {
     try {
+      setSaving(true)
+      setError(null)
+
       const res = await fetch(`/api/shifts/${shiftId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          id: shiftId
+        })
       })
 
       if (!res.ok) {
-        throw new Error('Failed to update shift')
+        const errorData = await res.json()
+        throw new Error(errorData.error || 'Failed to update shift')
       }
 
       router.push('/dashboard/shifts')
-      router.refresh()
     } catch (error) {
       setError(error instanceof Error ? error.message : 'An error occurred')
-    } finally {
       setSaving(false)
     }
   }
+
+  const handleCancel = () => {
+    router.push('/dashboard/shifts')
+  }
+
+  // Transform shift data to match ShiftFormData type
+  const transformedShift = shift ? {
+    ...shift,
+    employeeId: shift.employeeId ?? undefined,
+    employeeGroupId: shift.employeeGroupId ?? undefined,
+    breakStart: shift.breakStart ?? undefined,
+    breakEnd: shift.breakEnd ?? undefined,
+    note: shift.note ?? undefined
+  } : null
 
   if (loading) {
     return (
@@ -123,21 +139,30 @@ export default function EditShiftPage({ params }: { params: Promise<{ id: string
   }
 
   return (
-    <div className="py-6">
+    <div className="py-4 sm:py-6">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-2xl font-semibold text-gray-900">Edit Shift</h1>
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-blue-100 mb-4 sm:mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+            Edit Shift
+          </h1>
+          <p className="mt-1 sm:mt-2 text-sm sm:text-base text-gray-600">
+            Update shift information
+          </p>
+        </div>
         
         {error && (
-          <div className="mt-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-md">
+          <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg sm:rounded-xl text-sm sm:text-base">
             {error}
           </div>
         )}
 
-        <div className="mt-6">
-          {shift && (
+        <div className="bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl border border-gray-200/50 shadow-lg p-4 sm:p-6">
+          {transformedShift && (
             <ShiftForm 
-              initialData={shift}
+              initialData={transformedShift}
               onSubmit={handleSubmit} 
+              onCancel={handleCancel}
               loading={saving}
               employees={employees}
               employeeGroups={employeeGroups}

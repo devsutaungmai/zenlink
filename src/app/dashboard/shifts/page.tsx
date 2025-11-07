@@ -361,46 +361,46 @@ export default function ShiftsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header Section */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-100">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between">
-          <div className="mb-4 sm:mb-0">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-blue-100">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
               {t('shifts.title')}
             </h1>
-            <p className="mt-2 text-gray-600">
+            <p className="mt-1 sm:mt-2 text-sm sm:text-base text-gray-600">
               {t('shifts.description')}
             </p>
           </div>
           <Link
             href="/dashboard/shifts/create"
-            className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 group"
+            className="inline-flex items-center justify-center px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white text-sm sm:text-base font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 group"
           >
-            <PlusIcon className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
-            {t('shifts.create_shift')}
+            <PlusIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-2 group-hover:scale-110 transition-transform duration-200 flex-shrink-0" />
+            <span className="whitespace-nowrap">{t('shifts.create_shift')}</span>
           </Link>
         </div>
       </div>
 
       {/* Search and Filters */}
-      <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 border border-gray-200/50 shadow-lg">
-        <div className="flex flex-col lg:flex-row gap-4">
+      <div className="bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-200/50 shadow-lg">
+        <div className="flex flex-col gap-3 sm:gap-4">
           <div className="relative flex-1">
-            <MagnifyingGlassIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <MagnifyingGlassIcon className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder={t('shifts.search_placeholder')}
-              className="block w-full pl-12 pr-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+              className="block w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 text-sm sm:text-base rounded-lg sm:rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
             />
           </div>
-          <div className="flex gap-4">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <select
               value={selectedDepartment}
               onChange={(e) => setSelectedDepartment(e.target.value)}
-              className="px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+              className="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base rounded-lg sm:rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
             >
               <option value="">{t('shifts.filters.all_departments')}</option>
               {departments.map((dept) => (
@@ -412,7 +412,7 @@ export default function ShiftsPage() {
             <select
               value={selectedGroup}
               onChange={(e) => setSelectedGroup(e.target.value)}
-              className="px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+              className="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base rounded-lg sm:rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
             >
               <option value="">{t('shifts.filters.all_groups')}</option>
               {employeeGroups.map((group) => (
@@ -423,7 +423,7 @@ export default function ShiftsPage() {
             </select>
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 hover:bg-white transition-all duration-200"
+              className="px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base rounded-lg sm:rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 hover:bg-white transition-all duration-200 whitespace-nowrap"
             >
               {showFilters ? t('common.hide') : t('common.show')} {t('common.filters')}
             </button>
@@ -432,9 +432,9 @@ export default function ShiftsPage() {
 
         {/* Advanced Employee Filters */}
         {showFilters && (
-          <div className="mt-4 p-4 bg-gray-50/50 rounded-xl border border-gray-200">
+          <div className="mt-3 sm:mt-4 p-3 sm:p-4 bg-gray-50/50 rounded-lg sm:rounded-xl border border-gray-200">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                 {t('shifts.filters.select_employees')}
               </label>
               <div className="max-h-32 overflow-y-auto border border-gray-300 rounded-lg bg-white">
@@ -446,9 +446,9 @@ export default function ShiftsPage() {
                         type="checkbox"
                         checked={selectedEmployees.includes(employeeName)}
                         onChange={() => handleEmployeeToggle(employeeName)}
-                        className="h-4 w-4 text-[#31BCFF] focus:ring-[#31BCFF] border-gray-300 rounded"
+                        className="h-4 w-4 text-[#31BCFF] focus:ring-[#31BCFF] border-gray-300 rounded flex-shrink-0"
                       />
-                      <span className="ml-2 text-sm text-gray-700">
+                      <span className="ml-2 text-xs sm:text-sm text-gray-700">
                         {employeeName}
                         {employee.department && (
                           <span className="text-gray-500"> ({employee.department.name})</span>
@@ -459,19 +459,20 @@ export default function ShiftsPage() {
                 })}
               </div>
             </div>
-            <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-200">
-              <div className="text-sm text-gray-600">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-0 mt-3 pt-3 border-t border-gray-200">
+              <div className="text-xs sm:text-sm text-gray-600">
                 {t('shifts.showing', { current: filteredShifts.length, total: shifts.length })}
               </div>
               <button
                 onClick={clearFilters}
-                className="text-sm text-[#31BCFF] hover:text-[#31BCFF]/80 font-medium"
+                className="text-xs sm:text-sm text-[#31BCFF] hover:text-[#31BCFF]/80 font-medium text-left sm:text-right"
               >
                 {t('shifts.filters.clear_filters')}
               </button>
             </div>
           </div>
-        )}            <div className="flex items-center justify-between mt-4 text-sm text-gray-500">
+        )}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mt-3 sm:mt-4 text-xs sm:text-sm text-gray-500">
               <span>
                 {t('shifts.showing_paginated', { 
                   start: filteredShifts.length === 0 ? 0 : startIndex + 1,
@@ -490,12 +491,12 @@ export default function ShiftsPage() {
 
       {/* Shifts List */}
       {filteredShifts.length === 0 ? (
-        <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-12 border border-gray-200/50 shadow-lg text-center">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <MagnifyingGlassIcon className="w-8 h-8 text-gray-400" />
+        <div className="bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl p-8 sm:p-12 border border-gray-200/50 shadow-lg text-center">
+          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+            <MagnifyingGlassIcon className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">{t('shifts.no_shifts_found')}</h3>
-          <p className="text-gray-500 mb-6">
+          <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">{t('shifts.no_shifts_found')}</h3>
+          <p className="text-sm sm:text-base text-gray-500 mb-4 sm:mb-6">
             {searchTerm || selectedDepartment || selectedGroup || selectedEmployees.length > 0 
               ? t('shifts.adjust_search') 
               : t('shifts.get_started')}
@@ -503,212 +504,354 @@ export default function ShiftsPage() {
           {!searchTerm && !selectedDepartment && !selectedGroup && selectedEmployees.length === 0 && (
             <Link
               href="/dashboard/shifts/create"
-              className="inline-flex items-center px-6 py-3 rounded-xl bg-[#31BCFF] text-white font-medium hover:bg-[#31BCFF]/90 transition-colors duration-200"
+              className="inline-flex items-center px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base rounded-lg sm:rounded-xl bg-[#31BCFF] text-white font-medium hover:bg-[#31BCFF]/90 transition-colors duration-200"
             >
-              <PlusIcon className="w-5 h-5 mr-2" />
+              <PlusIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />
               {t('shifts.create_first_shift')}
             </Link>
           )}
         </div>
       ) : (
-        <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50/80">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('shifts.table.employee')}
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('shifts.table.date')}
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('shifts.table.time')}
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('shifts.table.type')}
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('common.employee_group')}
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('shifts.table.status')}
-                  </th>
-                  <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('shifts.table.actions')}
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200/50">
-                {paginatedShifts.map((shift) => (
-                  <React.Fragment key={shift.id}>
-                    <tr className="hover:bg-blue-50/30 transition-colors duration-200">
-                      <td className="px-6 py-4">
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">
-                            {shift.employee ? `${shift.employee.firstName} ${shift.employee.lastName}` : '-'}
-                          </div>
-                          {shift.employee?.department && (
-                            <div className="text-sm text-gray-500">
-                              {shift.employee.department.name}
+        <>
+          {/* Desktop Table View */}
+          <div className="hidden lg:block bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50/80">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t('shifts.table.employee')}
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t('shifts.table.date')}
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t('shifts.table.time')}
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t('shifts.table.type')}
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t('common.employee_group')}
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t('shifts.table.status')}
+                    </th>
+                    <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t('shifts.table.actions')}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200/50">
+                  {paginatedShifts.map((shift) => (
+                    <React.Fragment key={shift.id}>
+                      <tr className="hover:bg-blue-50/30 transition-colors duration-200">
+                        <td className="px-6 py-4">
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {shift.employee ? `${shift.employee.firstName} ${shift.employee.lastName}` : '-'}
                             </div>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900">
-                          {new Date(shift.date).toLocaleDateString()}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900">
-                          {shift.startTime} - {shift.endTime}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          {shift.shiftType}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900">
-                          {shift.employeeGroup?.name || '-'}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          shift.approved 
-                            ? 'bg-green-100 text-green-800 border-green-200' 
-                            : 'bg-blue-100 text-blue-800 border-blue-200'
-                        } border`}>
-                          {shift.approved ? t('shifts.status.approved') : 'In Progress'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end space-x-2">
-                          <Link
-                            href={`/dashboard/shifts/${shift.id}/edit`}
-                            className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
-                            title={t('shifts.edit_shift')}
-                          >
-                            <PencilIcon className="h-4 w-4" />
-                          </Link>
-                          <button
-                            onClick={() => handleExchange(shift)}
-                            className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all duration-200"
-                            title={t('shifts.exchange_shift')}
-                          >
-                            <ArrowsRightLeftIcon className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => handleViewHistory(shift.id)}
-                            className="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all duration-200"
-                            title={t('shifts.view_exchanges')}
-                          >
-                            <ClockIcon className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(shift.id)}
-                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                            title={t('shifts.delete_shift')}
-                          >
-                            <TrashIcon className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                    {/* Show exchange information in a separate row if shift is approved and has exchanges */}
-                    {shift.approved && shift.shiftExchanges && shift.shiftExchanges.some(exchange => exchange.status === 'APPROVED') && (
-                      <tr className="bg-blue-50">
-                        <td colSpan={7} className="px-6 py-2">
-                          <ShiftExchangeInfo shift={shift} />
+                            {shift.employee?.department && (
+                              <div className="text-sm text-gray-500">
+                                {shift.employee.department.name}
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-900">
+                            {new Date(shift.date).toLocaleDateString()}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-900">
+                            {shift.startTime} - {shift.endTime}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            {shift.shiftType}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-900">
+                            {shift.employeeGroup?.name || '-'}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            shift.approved 
+                              ? 'bg-green-100 text-green-800 border-green-200' 
+                              : 'bg-blue-100 text-blue-800 border-blue-200'
+                          } border`}>
+                            {shift.approved ? t('shifts.status.approved') : 'In Progress'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex items-center justify-end space-x-2">
+                            <Link
+                              href={`/dashboard/shifts/${shift.id}/edit`}
+                              className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
+                              title={t('shifts.edit_shift')}
+                            >
+                              <PencilIcon className="h-4 w-4" />
+                            </Link>
+                            <button
+                              onClick={() => handleExchange(shift)}
+                              className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all duration-200"
+                              title={t('shifts.exchange_shift')}
+                            >
+                              <ArrowsRightLeftIcon className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleViewHistory(shift.id)}
+                              className="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all duration-200"
+                              title={t('shifts.view_exchanges')}
+                            >
+                              <ClockIcon className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(shift.id)}
+                              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                              title={t('shifts.delete_shift')}
+                            >
+                              <TrashIcon className="h-4 w-4" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
-                    )}
-                  </React.Fragment>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center px-6 py-4 border-t border-gray-200/50">
-              <Pagination>
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious 
-                      onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-                      className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                    />
-                  </PaginationItem>
-                  
-                  {/* First page */}
-                  {currentPage > 2 && (
-                    <>
-                      <PaginationItem>
-                        <PaginationLink onClick={() => handlePageChange(1)} className="cursor-pointer">
-                          1
-                        </PaginationLink>
-                      </PaginationItem>
-                      {currentPage > 3 && <PaginationEllipsis />}
-                    </>
-                  )}
-                  
-                  {/* Previous page */}
-                  {currentPage > 1 && (
-                    <PaginationItem>
-                      <PaginationLink 
-                        onClick={() => handlePageChange(currentPage - 1)} 
-                        className="cursor-pointer"
-                      >
-                        {currentPage - 1}
-                      </PaginationLink>
-                    </PaginationItem>
-                  )}
-                  
-                  {/* Current page */}
-                  <PaginationItem>
-                    <PaginationLink isActive className="cursor-default">
-                      {currentPage}
-                    </PaginationLink>
-                  </PaginationItem>
-                  
-                  {/* Next page */}
-                  {currentPage < totalPages && (
-                    <PaginationItem>
-                      <PaginationLink 
-                        onClick={() => handlePageChange(currentPage + 1)} 
-                        className="cursor-pointer"
-                      >
-                        {currentPage + 1}
-                      </PaginationLink>
-                    </PaginationItem>
-                  )}
-                  
-                  {/* Last page */}
-                  {currentPage < totalPages - 1 && (
-                    <>
-                      {currentPage < totalPages - 2 && <PaginationEllipsis />}
-                      <PaginationItem>
-                        <PaginationLink onClick={() => handlePageChange(totalPages)} className="cursor-pointer">
-                          {totalPages}
-                        </PaginationLink>
-                      </PaginationItem>
-                    </>
-                  )}
-                  
-                  <PaginationItem>
-                    <PaginationNext 
-                      onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
-                      className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
+                      {/* Show exchange information in a separate row if shift is approved and has exchanges */}
+                      {shift.approved && shift.shiftExchanges && shift.shiftExchanges.some(exchange => exchange.status === 'APPROVED') && (
+                        <tr className="bg-blue-50">
+                          <td colSpan={7} className="px-6 py-2">
+                            <ShiftExchangeInfo shift={shift} />
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          )}
-        </div>
+            
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center px-6 py-4 border-t border-gray-200/50">
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious 
+                        onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                        className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                      />
+                    </PaginationItem>
+                    
+                    {/* First page */}
+                    {currentPage > 2 && (
+                      <>
+                        <PaginationItem>
+                          <PaginationLink onClick={() => handlePageChange(1)} className="cursor-pointer">
+                            1
+                          </PaginationLink>
+                        </PaginationItem>
+                        {currentPage > 3 && <PaginationEllipsis />}
+                      </>
+                    )}
+                    
+                    {/* Previous page */}
+                    {currentPage > 1 && (
+                      <PaginationItem>
+                        <PaginationLink 
+                          onClick={() => handlePageChange(currentPage - 1)} 
+                          className="cursor-pointer"
+                        >
+                          {currentPage - 1}
+                        </PaginationLink>
+                      </PaginationItem>
+                    )}
+                    
+                    {/* Current page */}
+                    <PaginationItem>
+                      <PaginationLink isActive className="cursor-default">
+                        {currentPage}
+                      </PaginationLink>
+                    </PaginationItem>
+                    
+                    {/* Next page */}
+                    {currentPage < totalPages && (
+                      <PaginationItem>
+                        <PaginationLink 
+                          onClick={() => handlePageChange(currentPage + 1)} 
+                          className="cursor-pointer"
+                        >
+                          {currentPage + 1}
+                        </PaginationLink>
+                      </PaginationItem>
+                    )}
+                    
+                    {/* Last page */}
+                    {currentPage < totalPages - 1 && (
+                      <>
+                        {currentPage < totalPages - 2 && <PaginationEllipsis />}
+                        <PaginationItem>
+                          <PaginationLink onClick={() => handlePageChange(totalPages)} className="cursor-pointer">
+                            {totalPages}
+                          </PaginationLink>
+                        </PaginationItem>
+                      </>
+                    )}
+                    
+                    <PaginationItem>
+                      <PaginationNext 
+                        onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                        className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </div>
+            )}
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="lg:hidden space-y-3">
+            {paginatedShifts.map((shift) => (
+              <div key={shift.id} className="bg-white/80 backdrop-blur-xl rounded-xl border border-gray-200/50 shadow-lg p-4 space-y-3">
+                {/* Header with Employee and Status */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-semibold text-gray-900">
+                      {shift.employee ? `${shift.employee.firstName} ${shift.employee.lastName}` : '-'}
+                    </div>
+                    {shift.employee?.department && (
+                      <div className="text-xs text-gray-500 mt-0.5">
+                        {shift.employee.department.name}
+                      </div>
+                    )}
+                  </div>
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ${
+                    shift.approved 
+                      ? 'bg-green-100 text-green-800 border-green-200' 
+                      : 'bg-blue-100 text-blue-800 border-blue-200'
+                  } border`}>
+                    {shift.approved ? t('shifts.status.approved') : 'In Progress'}
+                  </span>
+                </div>
+
+                {/* Date and Time */}
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <div className="text-xs text-gray-500 mb-0.5">{t('shifts.table.date')}</div>
+                    <div className="font-medium text-gray-900">
+                      {new Date(shift.date).toLocaleDateString()}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500 mb-0.5">{t('shifts.table.time')}</div>
+                    <div className="font-medium text-gray-900">
+                      {shift.startTime} - {shift.endTime}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Type and Group */}
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <div className="text-xs text-gray-500 mb-0.5">{t('shifts.table.type')}</div>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      {shift.shiftType}
+                    </span>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500 mb-0.5">{t('common.employee_group')}</div>
+                    <div className="text-sm text-gray-900">
+                      {shift.employeeGroup?.name || '-'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Exchange Info */}
+                {shift.approved && shift.shiftExchanges && shift.shiftExchanges.some(exchange => exchange.status === 'APPROVED') && (
+                  <div className="pt-2 border-t border-gray-200">
+                    <ShiftExchangeInfo shift={shift} />
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-200">
+                  <Link
+                    href={`/dashboard/shifts/${shift.id}/edit`}
+                    className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
+                    title={t('shifts.edit_shift')}
+                  >
+                    <PencilIcon className="h-5 w-5" />
+                  </Link>
+                  <button
+                    onClick={() => handleExchange(shift)}
+                    className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all duration-200"
+                    title={t('shifts.exchange_shift')}
+                  >
+                    <ArrowsRightLeftIcon className="h-5 w-5" />
+                  </button>
+                  <button
+                    onClick={() => handleViewHistory(shift.id)}
+                    className="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all duration-200"
+                    title={t('shifts.view_exchanges')}
+                  >
+                    <ClockIcon className="h-5 w-5" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(shift.id)}
+                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                    title={t('shifts.delete_shift')}
+                  >
+                    <TrashIcon className="h-5 w-5" />
+                  </button>
+                </div>
+              </div>
+            ))}
+
+            {/* Mobile Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center px-4 py-4">
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious 
+                        onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                        className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                      />
+                    </PaginationItem>
+                    
+                    <PaginationItem>
+                      <PaginationLink isActive className="cursor-default">
+                        {currentPage}
+                      </PaginationLink>
+                    </PaginationItem>
+                    
+                    {currentPage < totalPages && (
+                      <PaginationItem>
+                        <PaginationLink 
+                          onClick={() => handlePageChange(currentPage + 1)} 
+                          className="cursor-pointer"
+                        >
+                          {currentPage + 1}
+                        </PaginationLink>
+                      </PaginationItem>
+                    )}
+                    
+                    <PaginationItem>
+                      <PaginationNext 
+                        onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                        className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </div>
+            )}
+          </div>
+        </>
       )}
     </div>
   )

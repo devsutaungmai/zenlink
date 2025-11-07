@@ -127,26 +127,32 @@ export default function DayView({
   }
 
   return (
-    <div className="mt-4 overflow-hidden">
-      <div className="min-w-full">
-        <div className="grid grid-cols-[200px_1fr] border-b">
-          <HourColumn />
-          
-          <div className="relative day-column">
-            <div className={`p-3 font-medium text-center border-r h-[72px] ${isToday ? 'bg-blue-50' : ''}`}>
-              <div className={`text-gray-950 font-bold ${isToday ? 'text-blue-700' : ''}`}>
-                {isToday ? <span className="text-blue-700">{t('day_view.today')}</span> : format(selectedDate, 'EEEE, MMMM d, yyyy')}
-              </div>
-              <div className="text-sm text-gray-900">
-                <span className="ml-2">{shifts.length} {t('day_view.shifts')}</span>
-              </div>
-            </div>
+    <div className="mt-4 overflow-hidden -mx-4 sm:mx-0">
+      <div className="sm:overflow-x-auto sm:touch-pan-x">
+        <div className="sm:min-w-[600px]">
+          <div className="grid grid-cols-[60px_1fr] sm:grid-cols-[150px_1fr] md:grid-cols-[200px_1fr] border-b">
+            <HourColumn />
             
-            <div className="relative">
+            <div className="relative day-column">
+              <div className={`p-1 sm:p-2 md:p-3 font-medium text-center border-r h-[60px] sm:h-[72px] flex flex-col justify-center ${isToday ? 'bg-blue-50' : ''}`}>
+                <div className={`text-[10px] sm:text-sm md:text-base text-gray-950 font-bold ${isToday ? 'text-blue-700' : ''}`}>
+                  {isToday ? <span className="text-blue-700">{t('day_view.today')}</span> : (
+                    <>
+                      <span className="hidden md:inline">{format(selectedDate, 'EEEE, MMMM d, yyyy')}</span>
+                      <span className="md:hidden">{format(selectedDate, 'EEE, MMM d, yyyy')}</span>
+                    </>
+                  )}
+                </div>
+                <div className="text-[10px] sm:text-xs md:text-sm text-gray-900">
+                  <span className="ml-1 sm:ml-2">{shifts.length} {t('day_view.shifts')}</span>
+                </div>
+              </div>
+              
+              <div className="relative">
               {Array.from({ length: 23 }, (_, hour) => hour + 1).map(hour => (
                 <div
                   key={hour}
-                  className={`border-b border-r p-3 h-[60px] relative ${!isEmployee ? 'hover:bg-gray-50' : ''}`}
+                  className={`border-b border-r p-1 sm:p-3 h-[50px] sm:h-[60px] relative ${!isEmployee ? 'hover:bg-gray-50' : ''}`}
                   onMouseDown={() => handleDragStartToCreate(hour)}
                   onMouseOver={() => handleDragOverToCreate(hour)}
                   onMouseUp={() => handleDragEndToCreate()}
@@ -177,6 +183,7 @@ export default function DayView({
                   ))}
                 </React.Fragment>
               ))}
+              </div>
             </div>
           </div>
         </div>

@@ -156,17 +156,17 @@ export default function WeekView({
   };
 
   return (
-    <div className="overflow-hidden">
+    <div className="overflow-hidden -mx-4 sm:mx-0">
       <div 
         ref={weekScrollableRef}
-        className="min-w-full cursor-grab active:cursor-grabbing"
+        className="sm:overflow-x-auto sm:cursor-grab sm:active:cursor-grabbing sm:touch-pan-x"
         onMouseDown={handleMouseDown}
         onMouseUp={handleMouseUp}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseUp}
       >
-        <div className="min-w-full">
-          <div className="grid grid-cols-[200px_repeat(7,1fr)] border-b">
+        <div className="sm:min-w-[1200px]">
+          <div className="grid grid-cols-[60px_repeat(7,1fr)] sm:grid-cols-[150px_repeat(7,1fr)] md:grid-cols-[200px_repeat(7,1fr)] border-b">
             <HourColumn />
             
             {weekDates.map((date, i) => {
@@ -182,13 +182,19 @@ export default function WeekView({
               
               return (
                 <div key={i} className="relative">
-                  <div className={`p-3 font-medium text-center border-r h-[72px] ${isToday ? 'bg-blue-50' : ''}`}>
-                    <div className={`text-gray-950 font-bold ${isToday ? 'text-blue-700' : ''}`}>
-                      {isToday ? <span className="text-blue-700">{t('week_view.today')}</span> : format(date, 'EEE, MMM d')}
+                  <div className={`p-1 sm:p-2 md:p-3 font-medium text-center border-r h-[60px] sm:h-[72px] flex flex-col justify-center ${isToday ? 'bg-blue-50' : ''}`}>
+                    <div className={`text-[10px] sm:text-sm md:text-base text-gray-950 font-bold ${isToday ? 'text-blue-700' : ''}`}>
+                      {isToday ? <span className="text-blue-700">{t('week_view.today')}</span> : (
+                        <>
+                          <span className="hidden md:inline">{format(date, 'EEE, MMM d')}</span>
+                          <span className="md:hidden">{format(date, 'EEE d')}</span>
+                        </>
+                      )}
                     </div>
-                    <div className="text-sm text-gray-900">
-                      <PlusIcon className="inline h-4 w-4 mr-1" />
-                      {dayShifts.length} {t('week_view.shifts')}
+                    <div className="text-[10px] sm:text-xs md:text-sm text-gray-900">
+                      <PlusIcon className="inline h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" />
+                      <span className="hidden sm:inline">{dayShifts.length} {t('week_view.shifts')}</span>
+                      <span className="sm:hidden">{dayShifts.length}</span>
                     </div>
                   </div>
                   
@@ -197,7 +203,7 @@ export default function WeekView({
                     {Array.from({ length: 23 }, (_, hour) => hour + 1).map(hour => (
                       <div
                         key={hour}
-                        className="border-b border-r p-3 h-[60px] relative hover:bg-gray-50"
+                        className="border-b border-r p-1 sm:p-3 h-[50px] sm:h-[60px] relative hover:bg-gray-50"
                         onMouseDown={() => handleDragStartToCreate(hour, date)}
                         onMouseOver={() => handleDragOverToCreate(hour)}
                         onMouseUp={() => handleDragEndToCreate()}

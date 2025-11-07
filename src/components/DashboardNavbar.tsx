@@ -301,13 +301,13 @@ export default function DashboardNavbar({ setMobileMenuOpen }: DashboardNavbarPr
                 <Disclosure key={item.name} as="div">
                   {({ open }) => (
                     <>
-                      <Disclosure.Button className="flex items-center w-full px-4 py-3 text-base font-medium text-gray-700 rounded-xl hover:text-[#31BCFF] hover:bg-blue-50/50 transition-all duration-200 group">
-                        <item.icon className="h-5 w-5 mr-3 group-hover:scale-110 transition-transform duration-200" />
-                        <span className="flex-1">{item.name}</span>
+                      <Disclosure.Button className="flex items-center w-full px-4 py-3 text-left text-base font-medium text-gray-700 rounded-xl hover:text-[#31BCFF] hover:bg-blue-50/50 transition-all duration-200 group">
+                        <item.icon className="h-5 w-5 mr-3 flex-shrink-0 group-hover:scale-110 transition-transform duration-200" />
+                        <span className="flex-1 text-left">{item.name}</span>
                         <ChevronDownIcon
                           className={`${
                             open ? 'rotate-180' : ''
-                          } w-5 h-5 transition-transform duration-200`}
+                          } w-5 h-5 flex-shrink-0 transition-transform duration-200`}
                         />
                       </Disclosure.Button>
                       <Disclosure.Panel className="px-4 pt-2 pb-2 space-y-1">

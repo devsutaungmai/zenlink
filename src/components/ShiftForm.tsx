@@ -497,10 +497,10 @@ export default function ShiftForm({
 
       {/* Tab Content */}
       {activeTab === 'basic' && (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2">
           {showDate && (
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Date <span className="text-red-500">*</span>
               </label>
               <input
@@ -509,7 +509,7 @@ export default function ShiftForm({
                 onChange={handleDateChange}
                 disabled={isEmployee}
                 placeholder="DD/MM/YYYY"
-                className={`mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                 required
               />
               <p className="mt-1 text-xs text-gray-500">Format: DD/MM/YYYY</p>
@@ -518,7 +518,7 @@ export default function ShiftForm({
 
           {/* Shift Type */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Shift Type <span className="text-red-500">*</span>
             </label>
             <select
@@ -534,7 +534,7 @@ export default function ShiftForm({
                 }
               }}
               disabled={isEmployee || loadingShiftTypes}
-              className={`mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee || loadingShiftTypes ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+              className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee || loadingShiftTypes ? 'bg-gray-100 cursor-not-allowed' : ''}`}
               required
             >
               {shiftTypeOptions.map((option) => (
@@ -551,7 +551,7 @@ export default function ShiftForm({
           {/* Start Time */}
           {showStartTime && (
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Start Time <span className="text-red-500">*</span>
               </label>
               <input
@@ -559,7 +559,7 @@ export default function ShiftForm({
                 value={formData.startTime}
                 onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
                 disabled={isEmployee}
-                className={`mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                 required
               />
             </div>
@@ -567,7 +567,7 @@ export default function ShiftForm({
 
           {/* End Time */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               End Time <span className="text-red-500">*</span>
             </label>
             <input
@@ -575,7 +575,7 @@ export default function ShiftForm({
               value={formData.endTime}
               onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
               disabled={isEmployee}
-              className={`mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+              className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee ? 'bg-gray-100 cursor-not-allowed' : ''}`}
               required
             />
           </div>
@@ -583,12 +583,12 @@ export default function ShiftForm({
           {/* Employee */}
           {showEmployee && (
             <div>
-              <label className="block text-sm font-medium text-gray-700">Employee</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Employee</label>
               <select
                 value={formData.employeeId || ''}
                 onChange={(e) => setFormData({ ...formData, employeeId: e.target.value || undefined })}
                 disabled={isEmployee}
-                className={`mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee ? 'bg-gray-100 cursor-not-allowed' : ''}`}
               >
                 <option value="">Select an employee</option>
                 {safeEmployees.map((employee) => (
@@ -602,12 +602,12 @@ export default function ShiftForm({
 
           {/* Employee Group */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Employee Group</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Employee Group</label>
             <select
               value={formData.employeeGroupId || ''}
               onChange={(e) => setFormData({ ...formData, employeeGroupId: e.target.value || undefined })}
               disabled={isEmployee}
-              className={`mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+              className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee ? 'bg-gray-100 cursor-not-allowed' : ''}`}
             >
               <option value="">Select a group</option>
               {employeeGroups.map((group) => (
@@ -620,7 +620,7 @@ export default function ShiftForm({
 
           {/* Wage */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Wage ($) <span className="text-red-500">*</span>
             </label>
             <input
@@ -633,34 +633,34 @@ export default function ShiftForm({
                 setFormData({ ...formData, wage: isNaN(value) ? 0 : value })
               }}
               disabled={isEmployee}
-              className={`mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+              className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee ? 'bg-gray-100 cursor-not-allowed' : ''}`}
               required
             />
           </div>
 
           {/* Notes */}
           <div className="sm:col-span-2">
-            <label className="block text-sm font-medium text-gray-700">Notes</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
             <textarea
               value={formData.note || ''}
               onChange={(e) => setFormData({ ...formData, note: e.target.value || undefined })}
-              rows={1}
+              rows={2}
               disabled={isEmployee}
-              className={`mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+              className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee ? 'bg-gray-100 cursor-not-allowed' : ''}`}
             />
           </div>
 
           {/* Approved */}
           <div>
-            <label className="flex items-center space-x-2">
+            <label className="flex items-center space-x-2 cursor-pointer">
               <input
                 type="checkbox"
                 checked={formData.approved}
                 onChange={(e) => setFormData({ ...formData, approved: e.target.checked })}
                 disabled={isEmployee}
-                className={`rounded border-gray-300 text-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee ? 'cursor-not-allowed' : ''}`}
+                className={`rounded border-gray-300 text-[#31BCFF] focus:ring-[#31BCFF] h-4 w-4 ${isEmployee ? 'cursor-not-allowed' : ''}`}
               />
-              <span className="text-sm text-gray-700">Approved</span>
+              <span className="text-sm font-medium text-gray-700">Approved</span>
             </label>
           </div>
         </div>
@@ -668,29 +668,29 @@ export default function ShiftForm({
 
       {/* Break Tab */}
       {activeTab === 'break' && (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Break Toggle */}
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-            <div>
+          <div className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg">
+            <div className="flex-1 mr-3">
               <h3 className="text-sm font-medium text-gray-900">Enable Break Time</h3>
-              <p className="text-sm text-gray-500">Add break periods to this shift</p>
+              <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Add break periods to this shift</p>
             </div>
-            <label className="flex items-center">
+            <label className="flex items-center flex-shrink-0">
               <input
                 type="checkbox"
                 checked={showBreakFields}
                 onChange={toggleBreakFields}
                 disabled={isEmployee}
-                className={`rounded border-gray-300 text-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee ? 'cursor-not-allowed' : ''}`}
+                className={`rounded border-gray-300 text-[#31BCFF] focus:ring-[#31BCFF] h-4 w-4 ${isEmployee ? 'cursor-not-allowed' : ''}`}
               />
             </label>
           </div>
 
           {/* Break Fields */}
           {showBreakFields && (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2">
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Break Start Time
                 </label>
                 <input
@@ -698,13 +698,13 @@ export default function ShiftForm({
                   value={formData.breakStart || ''}
                   onChange={(e) => setFormData({ ...formData, breakStart: e.target.value || undefined })}
                   disabled={isEmployee}
-                  className={`mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                  className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                 />
                 <p className="mt-1 text-xs text-gray-500">Time when break period starts</p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Break End Time
                 </label>
                 <input
@@ -712,22 +712,22 @@ export default function ShiftForm({
                   value={formData.breakEnd || ''}
                   onChange={(e) => setFormData({ ...formData, breakEnd: e.target.value || undefined })}
                   disabled={isEmployee}
-                  className={`mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                  className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                 />
                 <p className="mt-1 text-xs text-gray-500">Time when break period ends</p>
               </div>
 
               {/* Paid Break */}
               <div className="sm:col-span-2">
-                <label className="flex items-center space-x-2">
+                <label className="flex items-center space-x-2 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={formData.breakPaid || false}
                     onChange={(e) => setFormData({ ...formData, breakPaid: e.target.checked })}
                     disabled={isEmployee}
-                    className={`rounded border-gray-300 text-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee ? 'cursor-not-allowed' : ''}`}
+                    className={`rounded border-gray-300 text-[#31BCFF] focus:ring-[#31BCFF] h-4 w-4 ${isEmployee ? 'cursor-not-allowed' : ''}`}
                   />
-                  <span className="text-sm text-gray-700">Paid Break</span>
+                  <span className="text-sm font-medium text-gray-700">Paid Break</span>
                 </label>
                 <p className="mt-1 text-xs text-gray-500">Check if this break time should be included in payroll calculations</p>
               </div>
@@ -736,7 +736,7 @@ export default function ShiftForm({
               {formData.breakStart && formData.breakEnd && (
                 <div className="sm:col-span-2">
                   <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
-                    <p className="text-sm text-blue-700">
+                    <p className="text-xs sm:text-sm text-blue-700">
                       <strong>Break Duration:</strong> {calculateBreakDuration(formData.breakStart, formData.breakEnd)}
                     </p>
                   </div>
@@ -745,10 +745,10 @@ export default function ShiftForm({
             </div>
           )}
 
-          {/* Break Guidelines */}
-          <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-            <h4 className="text-sm font-medium text-amber-800 mb-2">Break Time Guidelines</h4>
-            <ul className="text-sm text-amber-700 space-y-1">
+          {/* Break Time Guidelines */}
+          <div className="p-3 sm:p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <h4 className="text-xs sm:text-sm font-medium text-amber-800 mb-2">Break Time Guidelines</h4>
+            <ul className="text-xs sm:text-sm text-amber-700 space-y-1">
               <li>• Unpaid breaks are automatically deducted from total worked hours</li>
               <li>• Paid breaks are included in payroll calculations and not deducted from hours</li>
               <li>• Ensure break start time is after shift start time</li>
@@ -761,21 +761,21 @@ export default function ShiftForm({
 
       {/* Shift Exchange Tab */}
       {activeTab === 'exchange' && (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {initialData?.id && !isEmployee && !shiftExchanges.some(exchange => exchange.status === 'APPROVED') && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-              <h3 className="text-lg font-medium text-blue-900 mb-4">Request Shift Exchange</h3>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-medium text-blue-900 mb-3 sm:mb-4">Request Shift Exchange</h3>
               
               <div className="grid grid-cols-1 gap-4">
                 {/* Employee Selection */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Exchange with Employee <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={formData.exchangeToEmployeeId || ''}
                     onChange={(e) => setFormData({ ...formData, exchangeToEmployeeId: e.target.value })}
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF]"
+                    className="block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF]"
                   >
                     <option value="">Select an employee...</option>
                     {safeEmployees
@@ -790,14 +790,14 @@ export default function ShiftForm({
 
                 {/* Exchange Reason */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Reason for Exchange
                   </label>
                   <textarea
                     value={formData.exchangeReason || ''}
                     onChange={(e) => setFormData({ ...formData, exchangeReason: e.target.value })}
                     rows={3}
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF]"
+                    className="block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF]"
                     placeholder="Explain why you want to exchange this shift..."
                   />
                 </div>
@@ -812,7 +812,7 @@ export default function ShiftForm({
                       }
                     }}
                     disabled={!formData.exchangeToEmployeeId || !formData.exchangeReason}
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Request Exchange
                   </button>
@@ -822,7 +822,7 @@ export default function ShiftForm({
           )}
 
           {shiftExchanges.some(exchange => exchange.status === 'APPROVED') && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4">
               <div className="flex">
                 <div className="flex-shrink-0">
                   <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
@@ -833,7 +833,7 @@ export default function ShiftForm({
                   <h3 className="text-sm font-medium text-green-800">
                     Shift Exchange Approved
                   </h3>
-                  <div className="mt-2 text-sm text-green-700">
+                  <div className="mt-1 text-xs sm:text-sm text-green-700">
                     <p>This shift has an approved exchange request. No new exchange requests can be created.</p>
                   </div>
                 </div>
@@ -842,38 +842,38 @@ export default function ShiftForm({
           )}
 
           {shiftExchanges.length > 0 && (
-            <div className="bg-white border border-gray-200 rounded-lg">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-medium text-gray-900">Shift Exchange History</h3>
+            <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+              <div className="px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-200">
+                <h3 className="text-base sm:text-lg font-medium text-gray-900">Shift Exchange History</h3>
               </div>
               
-              <div className="px-6 py-4">
+              <div className="px-4 py-3 sm:px-6 sm:py-4 max-h-[500px] overflow-y-auto">
                 {exchangeLoading ? (
                   <div className="flex items-center justify-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#31BCFF]"></div>
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-3 sm:space-y-4">
                   {shiftExchanges.map((exchange) => (
-                    <div key={exchange.id} className="border border-gray-200 rounded-lg p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="font-medium text-gray-900">
+                    <div key={exchange.id} className="border border-gray-200 rounded-lg p-3 sm:p-4">
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-2 mb-2">
+                            <span className="text-sm sm:text-base font-medium text-gray-900 truncate">
                               {exchange.fromEmployee.firstName} {exchange.fromEmployee.lastName}
                             </span>
-                            <span className="text-gray-500">→</span>
-                            <span className="font-medium text-gray-900">
+                            <span className="text-gray-500 text-sm flex-shrink-0">→</span>
+                            <span className="text-sm sm:text-base font-medium text-gray-900 truncate">
                               {exchange.toEmployee.firstName} {exchange.toEmployee.lastName}
                             </span>
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getExchangeStatusColor(exchange.status)}`}>
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ${getExchangeStatusColor(exchange.status)}`}>
                               {exchange.status}
                             </span>
                           </div>
                           
-                          <div className="text-sm text-gray-600 mb-2">
-                            <p><strong>From:</strong> {exchange.fromEmployee.employeeNo || 'N/A'}</p>
-                            <p><strong>To:</strong> {exchange.toEmployee.employeeNo || 'N/A'}</p>
+                          <div className="text-xs sm:text-sm text-gray-600 mb-2 space-y-0.5">
+                            <p className="truncate"><strong>From:</strong> {exchange.fromEmployee.employeeNo || 'N/A'}</p>
+                            <p className="truncate"><strong>To:</strong> {exchange.toEmployee.employeeNo || 'N/A'}</p>
                             <p><strong>Requested:</strong> {new Date(exchange.requestedAt).toLocaleDateString()}</p>
                             {exchange.approvedAt && (
                               <p><strong>Processed:</strong> {new Date(exchange.approvedAt).toLocaleDateString()}</p>
@@ -881,26 +881,26 @@ export default function ShiftForm({
                           </div>
 
                           {exchange.reason && (
-                            <div className="text-sm text-gray-600">
-                              <p><strong>Reason:</strong> {exchange.reason}</p>
+                            <div className="text-xs sm:text-sm text-gray-600">
+                              <p className="break-words"><strong>Reason:</strong> {exchange.reason}</p>
                             </div>
                           )}
                         </div>
 
                         {/* Action Buttons */}
                         {exchange.status === 'ADMIN_PENDING' && !isEmployee && (
-                          <div className="flex gap-2 ml-4">
+                          <div className="flex gap-2 sm:ml-4 flex-shrink-0">
                             <button
                               type="button"
                               onClick={() => handleExchangeStatusUpdate(exchange.id, 'APPROVED')}
-                              className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                              className="flex-1 sm:flex-none inline-flex items-center justify-center px-3 py-2 border border-transparent text-xs font-medium rounded text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                             >
                               Approve
                             </button>
                             <button
                               type="button"
                               onClick={() => handleExchangeStatusUpdate(exchange.id, 'REJECTED')}
-                              className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                              className="flex-1 sm:flex-none inline-flex items-center justify-center px-3 py-2 border border-transparent text-xs font-medium rounded text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                             >
                               Reject
                             </button>
@@ -918,18 +918,18 @@ export default function ShiftForm({
       )}
 
       {/* Action Buttons */}
-      <div className="flex justify-end gap-3 pt-4">
+      <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-4 border-t">
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#31BCFF]"
+          className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#31BCFF]"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={loading || isEmployee}
-          className={`px-4 py-2 text-sm font-medium text-white border border-transparent rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#31BCFF] disabled:opacity-50 ${
+          className={`w-full sm:w-auto px-4 py-2 text-sm font-medium text-white border border-transparent rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#31BCFF] disabled:opacity-50 ${
             isEmployee ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#31BCFF] hover:bg-[#31BCFF]/90'
           }`}
           title={isEmployee ? "Employees cannot create or edit shifts" : ""}

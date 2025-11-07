@@ -82,7 +82,7 @@ export default function SpanningShiftCard({
   
   return (
     <div
-      className="absolute shift-card pointer-events-auto z-20"
+      className="absolute shift-card pointer-events-auto z-20 p-1 sm:p-2"
       style={{
         top: `${top}px`,
         height: `${height}px`,
@@ -95,7 +95,6 @@ export default function SpanningShiftCard({
         borderWidth: '1px',
         borderRadius: '0.375rem',
         boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-        padding: '0.5rem',
         cursor: 'pointer',
         overflow: 'hidden',
         // Add a subtle shadow to help distinguish overlapping cards
@@ -109,23 +108,23 @@ export default function SpanningShiftCard({
       title={`${shift.startTime.substring(0, 5)} - ${endTimeDisplay} | ${currentEmployee ? `${currentEmployee.firstName} ${currentEmployee.lastName}` : 'Unassigned'}`}
       draggable={false}
     >
-      <div className="font-medium text-sm truncate">
+      <div className="font-medium text-xs sm:text-sm truncate">
         {shift.startTime.substring(0, 5)} - {endTimeDisplay}
       </div>
       {height > 40 && (
-        <div className="text-xs mt-1 truncate">
+        <div className="text-[10px] sm:text-xs mt-1 truncate">
           {currentEmployee ? `${currentEmployee.firstName} ${currentEmployee.lastName}` : 'Unassigned'}
         </div>
       )}
       {height > 60 && shift.employeeGroup && (
-        <div className="text-xs mt-1 opacity-75 truncate">
+        <div className="text-[10px] sm:text-xs mt-1 opacity-75 truncate">
           {shift.employeeGroup.name}
         </div>
       )}
       
       {/* Show wage information if height allows */}
       {height > 60 && shift.wage && (
-        <div className="text-xs mt-1 font-semibold truncate">
+        <div className="text-[10px] sm:text-xs mt-1 font-semibold truncate">
           {currencySymbol}{shift.wage}/{shift.wageType === 'HOURLY' ? 'hr' : 'day'}
         </div>
       )}
@@ -175,12 +174,15 @@ const getShiftPosition = (startTime: string, endTime: string | null) => {
     endOffset += 24 * 60; // Add 24 hours
   }
 
-  // Height calculation: 1 hour = 60px
-  const height = ((endOffset - startOffset) / 60) * 60;
+  // Height calculation: Mobile: 50px/hour, Desktop: 60px/hour
+  // Use 50px for mobile (matches h-[50px] in WeekView/DayView)
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+  const pixelsPerHour = isMobile ? 50 : 60;
+  const height = ((endOffset - startOffset) / 60) * pixelsPerHour;
   
   // Top position: offset from the top of the schedule grid
   // Assuming the grid starts at hour 1 (not 0)
-  const top = ((startOffset - 60) / 60) * 60; // Subtract 60 minutes to adjust for grid starting at hour 1
+  const top = ((startOffset - 60) / 60) * pixelsPerHour; // Subtract 60 minutes to adjust for grid starting at hour 1
   
   return { top, height };
 };

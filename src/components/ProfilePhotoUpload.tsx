@@ -104,10 +104,10 @@ export default function ProfilePhotoUpload({
         Profile Photo
       </label>
 
-      <div className="flex items-start space-x-6">
+      <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
         {/* Photo Preview */}
         <div className="flex-shrink-0">
-          <div className="relative h-32 w-32 rounded-full overflow-hidden bg-gray-100 border-2 border-gray-200">
+          <div className="relative h-24 w-24 sm:h-32 sm:w-32 rounded-full overflow-hidden bg-gray-100 border-2 border-gray-200">
             {photoUrl ? (
               <Image
                 src={photoUrl}
@@ -116,26 +116,26 @@ export default function ProfilePhotoUpload({
                 className="object-cover"
               />
             ) : (
-              <UserCircleIcon className="h-full w-full text-gray-400 p-4" />
+              <UserCircleIcon className="h-full w-full text-gray-400 p-3 sm:p-4" />
             )}
             {uploading && (
               <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-white"></div>
               </div>
             )}
           </div>
         </div>
 
         {/* Upload Controls */}
-        <div className="flex-1 space-y-3">
-          <div className="flex space-x-3">
+        <div className="flex-1 w-full space-y-3">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={disabled || uploading}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#31BCFF] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#31BCFF] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <CameraIcon className="h-5 w-5 mr-2" />
+              <CameraIcon className="h-5 w-5 mr-2 flex-shrink-0" />
               {photoUrl ? 'Change Photo' : 'Upload Photo'}
             </button>
 
@@ -144,9 +144,9 @@ export default function ProfilePhotoUpload({
                 type="button"
                 onClick={handleRemovePhoto}
                 disabled={disabled || uploading}
-                className="inline-flex items-center px-4 py-2 border border-red-300 rounded-md shadow-sm text-sm font-medium text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-red-300 rounded-md shadow-sm text-sm font-medium text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <TrashIcon className="h-5 w-5 mr-2" />
+                <TrashIcon className="h-5 w-5 mr-2 flex-shrink-0" />
                 Remove
               </button>
             )}
@@ -161,12 +161,12 @@ export default function ProfilePhotoUpload({
             disabled={disabled || uploading}
           />
 
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-gray-500 text-center sm:text-left">
             JPG, PNG or WebP. Max size 5MB.
           </p>
 
           {error && (
-            <p className="text-sm text-red-600">{error}</p>
+            <p className="text-sm text-red-600 text-center sm:text-left">{error}</p>
           )}
         </div>
       </div>

@@ -634,32 +634,32 @@ export default function PunchClockPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100 mb-6">
-        <div className="flex items-center justify-between">
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-blue-100 mb-4 sm:mb-6">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-2">
+            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-2">
               {t('title')}
             </h1>
-            <p className="text-gray-600 text-base mb-4">
+            <p className="text-gray-600 text-sm sm:text-base mb-3 sm:mb-4">
               {t('subtitle')}
             </p>
-            <div className="flex items-center gap-8 text-sm text-gray-500">
+            <div className="grid grid-cols-2 sm:flex sm:items-center gap-3 sm:gap-8 text-xs sm:text-sm text-gray-500">
               <div className="flex items-center gap-2">
-                <UserGroupIcon className="w-4 h-4" />
-                <span>{attendanceRecords.length} {t('header.records_today')}</span>
+                <UserGroupIcon className="w-4 h-4 flex-shrink-0" />
+                <span className="truncate">{attendanceRecords.length} {t('header.records_today')}</span>
               </div>
               <div className="flex items-center gap-2">
-                <PlayIcon className="w-4 h-4" />
-                <span>{activeCount} {t('header.currently_working')}</span>
+                <PlayIcon className="w-4 h-4 flex-shrink-0" />
+                <span className="truncate">{activeCount} {t('header.currently_working')}</span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircleIcon className="w-4 h-4" />
-                <span>{completedCount} {t('header.completed')}</span>
+                <CheckCircleIcon className="w-4 h-4 flex-shrink-0" />
+                <span className="truncate">{completedCount} {t('header.completed')}</span>
               </div>
               <div className="flex items-center gap-2 text-blue-600 font-medium">
-                <ClockIcon className="w-4 h-4" />
+                <ClockIcon className="w-4 h-4 flex-shrink-0" />
                 <span>{currentTime.toLocaleTimeString('en-US', { 
                   hour: '2-digit', 
                   minute: '2-digit',
@@ -669,15 +669,15 @@ export default function PunchClockPage() {
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-6">
+            <div className="w-full sm:w-auto">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                 Date Range Type
               </label>
               <select
                 value={dateRangeType}
                 onChange={(e) => setDateRangeType(e.target.value as 'single' | 'week' | 'month')}
-                className="block px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] mr-2"
+                className="block w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] text-sm"
               >
                 <option value="single">Single Day</option>
                 <option value="week">Week</option>
@@ -685,27 +685,27 @@ export default function PunchClockPage() {
               </select>
             </div>
             {dateRangeType === 'single' && (
-            <div className="flex items-center gap-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <div className="flex-1">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                   {t('header.select_start_date')}
                 </label>
                 <input
                   type="date"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  className="block px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF]"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] text-sm"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+              <div className="flex-1">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                   {t('header.select_end_date')}
                 </label>
                 <input
                   type="date"
                   value={selectedEndDate}
                   onChange={(e) => setSelectedEndDate(e.target.value)}
-                  className="block px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF]"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] text-sm"
                 />
               </div>
           </div>
@@ -713,29 +713,29 @@ export default function PunchClockPage() {
             )}
             
             {dateRangeType === 'week' && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+              <div className="w-full sm:w-auto">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                   Week Starting
                 </label>
                 <input
                   type="date"
                   value={weekStartDate}
                   onChange={(e) => setWeekStartDate(e.target.value)}
-                  className="block px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF]"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] text-sm"
                 />
               </div>
             )}
             
             {dateRangeType === 'month' && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+              <div className="w-full sm:w-auto">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                   Month
                 </label>
                 <input
                   type="month"
                   value={monthYear}
                   onChange={(e) => setMonthYear(e.target.value)}
-                  className="block px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF]"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] text-sm"
                 />
               </div>
             )}
@@ -744,10 +744,11 @@ export default function PunchClockPage() {
       </div>
 
       {/* Search and Filter */}
-      <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm mb-6">
-        <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
-          <div className="flex flex-col md:flex-row gap-4 items-center flex-1">
-            <div className="relative flex-1 max-w-md">
+      <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm mb-4 sm:mb-6">
+        <div className="flex flex-col gap-4">
+          {/* Search and Employee Filter */}
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+            <div className="relative flex-1">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
               </div>
@@ -756,15 +757,15 @@ export default function PunchClockPage() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder={t('search.placeholder')}
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF]"
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] text-sm"
               />
             </div>
             
-            <div className="flex items-center gap-3">
+            <div className="w-full sm:w-auto sm:min-w-[200px]">
               <select
                 value={selectedEmployee}
                 onChange={(e) => setSelectedEmployee(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF]"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] text-sm"
               >
                 <option value="">All Employees</option>
                 {employees.map((employee) => (
@@ -774,11 +775,14 @@ export default function PunchClockPage() {
                 ))}
               </select>
             </div>
+          </div>
 
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                <FunnelIcon className="w-4 h-4 text-gray-500" />
-                <span className="text-sm text-gray-500">{t('search.filter_label')}</span>
+          {/* Filter Buttons */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
+                <FunnelIcon className="w-4 h-4 flex-shrink-0" />
+                <span>{t('search.filter_label')}</span>
               </div>
               {[
                 { value: 'all', label: t('filters.all') },
@@ -788,7 +792,7 @@ export default function PunchClockPage() {
                 <button
                   key={filter.value}
                   onClick={() => setSelectedFilter(filter.value)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 min-w-[80px] ${
+                  className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${
                     selectedFilter === filter.value
                       ? 'bg-[#31BCFF] text-white shadow-md'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -798,35 +802,37 @@ export default function PunchClockPage() {
                 </button>
               ))}
             </div>
-          </div>
 
-          {/* Export Options - Admin Only */}
-          {isAdmin && (
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                onClick={exportToCSV}
-                className="inline-flex items-center"
-              >
-                <TableCellsIcon className="w-4 h-4 mr-2" />
-                Export CSV
-              </Button>
-              <Button
-                onClick={exportToPDF}
-                className="inline-flex items-center bg-red-600 hover:bg-red-700 text-white"
-              >
-                <DocumentTextIcon className="w-4 h-4 mr-2" />
-                Export PDF
-              </Button>
-            </div>
-          )}
+            {/* Export Options - Admin Only */}
+            {isAdmin && (
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={exportToCSV}
+                  className="inline-flex items-center text-xs sm:text-sm flex-1 sm:flex-none"
+                  size="sm"
+                >
+                  <TableCellsIcon className="w-4 h-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Export </span>CSV
+                </Button>
+                <Button
+                  onClick={exportToPDF}
+                  className="inline-flex items-center bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm flex-1 sm:flex-none"
+                  size="sm"
+                >
+                  <DocumentTextIcon className="w-4 h-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Export </span>PDF
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Attendance Records Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900">
             {t('table.title')} ({filteredAttendance.length})
           </h3>
         </div>
@@ -834,70 +840,72 @@ export default function PunchClockPage() {
         {filteredAttendance.length === 0 ? (
           <div className="text-center py-12">
             <ClockIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">{t('empty_state.title')}</h3>
-            <p className="text-gray-500">
+            <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">{t('empty_state.title')}</h3>
+            <p className="text-sm sm:text-base text-gray-500">
               {searchTerm ? t('empty_state.subtitle_search') : t('empty_state.subtitle_no_data')}
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('table.columns.employee')}
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('table.columns.department')}
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('table.columns.punch_in')}
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('table.columns.punch_out')}
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('table.columns.duration')}
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('table.columns.status')}
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('table.columns.shift_info')}
-                  </th>
-                  {isAdmin && (
+          <>
+            {/* Desktop Table View */}
+            <div className="hidden lg:block overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
+                      {t('table.columns.employee')}
                     </th>
-                  )}
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredAttendance.map((record) => (
-                  <tr key={record.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10">
-                          {record.employee.profilePhoto ? (
-                            <Image
-                              src={record.employee.profilePhoto}
-                              alt={`${record.employee.firstName} ${record.employee.lastName}`}
-                              width={40}
-                              height={40}
-                              className="rounded-full object-cover"
-                            />
-                          ) : (
-                            <div className="h-10 w-10 rounded-full bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] flex items-center justify-center">
-                              <span className="text-sm font-medium text-white">
-                                {record.employee.firstName.charAt(0)}{record.employee.lastName.charAt(0)}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
-                            {record.employee.firstName} {record.employee.lastName}
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t('table.columns.department')}
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t('table.columns.punch_in')}
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t('table.columns.punch_out')}
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t('table.columns.duration')}
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t('table.columns.status')}
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t('table.columns.shift_info')}
+                    </th>
+                    {isAdmin && (
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    )}
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredAttendance.map((record) => (
+                    <tr key={record.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-10 w-10">
+                            {record.employee.profilePhoto ? (
+                              <Image
+                                src={record.employee.profilePhoto}
+                                alt={`${record.employee.firstName} ${record.employee.lastName}`}
+                                width={40}
+                                height={40}
+                                className="rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="h-10 w-10 rounded-full bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] flex items-center justify-center">
+                                <span className="text-sm font-medium text-white">
+                                  {record.employee.firstName.charAt(0)}{record.employee.lastName.charAt(0)}
+                                </span>
+                              </div>
+                            )}
                           </div>
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900">
+                              {record.employee.firstName} {record.employee.lastName}
+                            </div>
                           <div className="text-sm text-gray-500">
                             #{record.employee.employeeNo}
                           </div>
@@ -1013,6 +1021,157 @@ export default function PunchClockPage() {
               </tbody>
             </table>
           </div>
+
+          {/* Mobile Card View */}
+          <div className="lg:hidden divide-y divide-gray-200">
+            {filteredAttendance.map((record) => (
+              <div key={record.id} className="p-4 hover:bg-gray-50">
+                {/* Employee Info */}
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="flex-shrink-0">
+                    {record.employee.profilePhoto ? (
+                      <Image
+                        src={record.employee.profilePhoto}
+                        alt={`${record.employee.firstName} ${record.employee.lastName}`}
+                        width={48}
+                        height={48}
+                        className="rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="h-12 w-12 rounded-full bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] flex items-center justify-center">
+                        <span className="text-sm font-medium text-white">
+                          {record.employee.firstName.charAt(0)}{record.employee.lastName.charAt(0)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-gray-900 truncate">
+                      {record.employee.firstName} {record.employee.lastName}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      #{record.employee.employeeNo}
+                    </div>
+                    <div className="text-xs text-gray-600 mt-0.5">
+                      {record.employee.department.name}
+                      {record.employee.employeeGroup && (
+                        <span className="ml-1">• {record.employee.employeeGroup.name}</span>
+                      )}
+                    </div>
+                  </div>
+                  {getStatusBadge(record)}
+                </div>
+
+                {/* Time Info */}
+                <div className="grid grid-cols-2 gap-3 mb-3">
+                  <div>
+                    <div className="text-xs text-gray-500 mb-1">{t('table.columns.punch_in')}</div>
+                    <div className={`text-sm font-medium ${getPunchInTimeStyle(record)}`}>
+                      {formatTime(record.punchInTime)}
+                    </div>
+                    <div className="text-xs text-gray-500">{formatDate(record.punchInTime)}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500 mb-1">{t('table.columns.punch_out')}</div>
+                    {record.punchOutTime ? (
+                      <>
+                        <div className="text-sm font-medium text-gray-900">
+                          {formatTime(record.punchOutTime)}
+                        </div>
+                        <div className="text-xs text-gray-500">{formatDate(record.punchOutTime)}</div>
+                      </>
+                    ) : (
+                      <span className="text-sm text-gray-500">{t('status.still_working')}</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Duration and Status */}
+                <div className="mb-3">
+                  <div className="text-xs text-gray-500 mb-1">{t('table.columns.duration')}</div>
+                  <div className="text-sm font-medium text-gray-900">
+                    {calculateWorkDuration(record.punchInTime, record.punchOutTime)}
+                  </div>
+                  {getEarlyLateStatus(record)?.map((status, index) => (
+                    <span key={index} className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1 mr-1 ${status.color}`}>
+                      {status.text}
+                    </span>
+                  ))}
+                </div>
+
+                {/* Shift Info */}
+                <div className="mb-3">
+                  <div className="text-xs text-gray-500 mb-1">{t('table.columns.shift_info')}</div>
+                  {record.shift ? (
+                    <div>
+                      <div className="text-sm text-gray-900">
+                        {formatShiftTime(record.shift.startTime)} - {record.shift.endTime ? formatShiftTime(record.shift.endTime) : 'Active'}
+                      </div>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1 ${
+                        record.shift.status === 'WORKING' ? 'bg-green-100 text-green-800' :
+                        record.shift.status === 'COMPLETED' ? 'bg-blue-100 text-blue-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {record.shift.status}
+                      </span>
+                    </div>
+                  ) : (
+                    <div>
+                      <span className="text-sm text-gray-500">{t('status.no_shift')}</span>
+                      {!record.approved && (
+                        <div className="mt-1">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                            Pending Approval
+                          </span>
+                        </div>
+                      )}
+                      {record.approved && !record.shift && (
+                        <div className="mt-1">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            <CheckCircleIcon className="w-3 h-3 mr-1" />
+                            Approved
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Admin Actions */}
+                {isAdmin && (
+                  <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-100">
+                    <button
+                      onClick={() => handleEditRecord(record)}
+                      className="flex-1 sm:flex-none inline-flex items-center justify-center px-3 py-2 text-xs font-medium rounded-lg text-blue-600 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <PencilIcon className="w-4 h-4 mr-1" />
+                      Edit
+                    </button>
+                    
+                    {!record.shift && !record.approved && (
+                      <>
+                        <button
+                          onClick={() => handleAttendanceApproval(record.id, true)}
+                          className="flex-1 sm:flex-none inline-flex items-center justify-center px-3 py-2 text-xs font-medium rounded-lg text-green-600 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-green-500"
+                        >
+                          <CheckCircleIcon className="w-4 h-4 mr-1" />
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => handleAttendanceApproval(record.id, false)}
+                          className="flex-1 sm:flex-none inline-flex items-center justify-center px-3 py-2 text-xs font-medium rounded-lg text-red-600 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500"
+                        >
+                          <XCircleIcon className="w-4 h-4 mr-1" />
+                          Reject
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+          </>
         )}
       </div>
 

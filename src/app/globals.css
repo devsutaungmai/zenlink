@@ -191,3 +191,13 @@ input, select {
   font-weight: 600 !important;
   color: #dc2626 !important;
 }
+
+/* Hide scrollbar for horizontal scroll on mobile */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}

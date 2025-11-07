@@ -441,8 +441,8 @@ export default function SchedulePage() {
   }
 
   return (
-    <div className="py-6">
-      <div className="mx-auto">
+    <div className="py-4 sm:py-6">
+      <div className="mx-auto px-4 sm:px-6 lg:px-8">
         <ScheduleHeader
           startDate={startDate}
           endDate={endDate}
