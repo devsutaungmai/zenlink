@@ -38,7 +38,6 @@ export default function EmployeeForm({
     validateSocialSecurityNumber,
     validateEmailUniqueness,
     validateEmployeeNumberUniqueness,
-    handleEmployeeNumberModeChange,
   } = useEmployeeForm({ initialData })
 
   const getFieldStyle = (fieldName: string) => {
@@ -89,7 +88,7 @@ export default function EmployeeForm({
       }, 1000)
     }
 
-    if (name === 'employeeNo' && employeeNumberMode === 'manual') {
+    if (name === 'employeeNo') {
       if (employeeNoValidationTimeoutRef.current) {
         clearTimeout(employeeNoValidationTimeoutRef.current)
       }
@@ -167,7 +166,6 @@ export default function EmployeeForm({
             employeeGroups={employeeGroups}
             employeeNumberMode={employeeNumberMode}
             fetchingNextNumber={fetchingNextNumber}
-            onEmployeeNumberModeChange={handleEmployeeNumberModeChange}
             onSSNChange={(e) => {
               handleChange(e)
               validateSocialSecurityNumber(e.target.value)

@@ -14,7 +14,6 @@ interface EmploymentInfoSectionProps {
   employeeGroups: Array<{ id: string; name: string }>
   employeeNumberMode: 'manual' | 'automatic'
   fetchingNextNumber: boolean
-  onEmployeeNumberModeChange: (mode: 'manual' | 'automatic') => void
   onSSNChange: (e: React.ChangeEvent<HTMLInputElement>) => void
 }
 
@@ -28,7 +27,6 @@ export function EmploymentInfoSection({
   employeeGroups,
   employeeNumberMode,
   fetchingNextNumber,
-  onEmployeeNumberModeChange,
   onSSNChange
 }: EmploymentInfoSectionProps) {
   const { t } = useTranslation()
@@ -52,65 +50,29 @@ export function EmploymentInfoSection({
         )}
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-3">
+    <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
           {t('employees.form.employee_number')} <span className="text-red-500">*</span>
         </label>
         
-        <div className="flex gap-6 mb-3">
-          <label className="flex items-center">
-            <input
-              type="radio"
-              name="employeeNumberMode"
-              value="automatic"
-              checked={employeeNumberMode === 'automatic'}
-              onChange={() => onEmployeeNumberModeChange('automatic')}
-              className="mr-2 text-[#31BCFF] focus:ring-[#31BCFF]"
-            />
-            <span className="text-sm text-gray-700">Automatic Generation</span>
-          </label>
-          <label className="flex items-center">
-            <input
-              type="radio"
-              name="employeeNumberMode"
-              value="manual"
-              checked={employeeNumberMode === 'manual'}
-              onChange={() => onEmployeeNumberModeChange('manual')}
-              className="mr-2 text-[#31BCFF] focus:ring-[#31BCFF]"
-            />
-            <span className="text-sm text-gray-700">Manual Entry</span>
-          </label>
-        </div>
-
-        {employeeNumberMode === 'manual' ? (
-          <input
-            type="text"
-            name="employeeNo"
-            value={formData.employeeNo}
-            onChange={onChange}
-            placeholder="Enter employee number"
-            className={getFieldStyle('employeeNo')}
-            required
-          />
-        ) : (
-          <div className="flex items-center gap-2">
+        <div className="items-center gap-2">
             <input
               type="text"
               name="employeeNo"
               value={formData.employeeNo}
-              readOnly
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 bg-gray-50 text-gray-500 cursor-not-allowed"
+              onChange={onChange}
+              className="block w-full rounded-md border border-gray-300 px-3 py-2 bg-gray-50 text-gray-500"
               required
             />
             {fetchingNextNumber && (
               <div className="text-sm text-gray-500">Generating...</div>
             )}
-          </div>
-        )}
+        </div>
+
         {validationErrors.employeeNo && (
           <p className="mt-1 text-sm text-red-500">{validationErrors.employeeNo}</p>
         )}
-      </div>
+    </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-700">

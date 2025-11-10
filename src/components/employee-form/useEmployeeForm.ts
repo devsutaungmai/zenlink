@@ -255,14 +255,14 @@ export function useEmployeeForm({ initialData }: UseEmployeeFormProps) {
     }
   }
 
-  const handleEmployeeNumberModeChange = (mode: 'manual' | 'automatic') => {
-    setEmployeeNumberMode(mode)
-    if (mode === 'manual') {
-      setFormData(prev => ({ ...prev, employeeNo: '' }))
-    } else {
-      fetchNextEmployeeNumber()
-    }
-  }
+  // const handleEmployeeNumberModeChange = (mode: 'manual' | 'automatic') => {
+  //   setEmployeeNumberMode(mode)
+  //   if (mode === 'manual') {
+  //     setFormData(prev => ({ ...prev, employeeNo: '' }))
+  //   } else {
+  //     fetchNextEmployeeNumber()
+  //   }
+  // }
 
   useEffect(() => {
     if (employeeNumberMode === 'automatic' && !initialData?.employeeNo) {
@@ -306,6 +306,5 @@ export function useEmployeeForm({ initialData }: UseEmployeeFormProps) {
     validateSocialSecurityNumber,
     validateEmailUniqueness,
     validateEmployeeNumberUniqueness,
-    handleEmployeeNumberModeChange,
   }
 }
