@@ -137,8 +137,7 @@ export default function SettingsPage() {
     }
     return false
   })
-  
-  // If we're in a submenu, find the submenu details
+
   const activeSubmenu = activeSettingSection?.hasSubmenus && activeSettingSection.submenus
     ? activeSettingSection.submenus.find(submenu => submenu.id === activeSection)
     : null
@@ -156,87 +155,87 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="">
+    <div className="min-h-screen bg-gray-50 py-4 sm:py-8">
+      <div className="px-4 sm:px-0">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <nav className="flex" aria-label="Breadcrumb">
-            <ol className="flex items-center space-x-4">
+            <ol className="flex items-center space-x-2 sm:space-x-4">
               <li>
                 <Link
                   href="/dashboard"
-                  className="text-gray-400 hover:text-gray-500 transition-colors"
+                  className="text-gray-400 hover:text-gray-500 transition-colors text-xs sm:text-sm"
                 >
                   Dashboard
                 </Link>
               </li>
               <li>
                 <div className="flex items-center">
-                  <ChevronRightIcon className="flex-shrink-0 h-5 w-5 text-gray-300" />
-                  <span className="ml-4 text-sm font-medium text-gray-500">Settings</span>
+                  <ChevronRightIcon className="flex-shrink-0 h-4 w-4 sm:h-5 sm:w-5 text-gray-300" />
+                  <span className="ml-2 sm:ml-4 text-xs sm:text-sm font-medium text-gray-500">Settings</span>
                 </div>
               </li>
             </ol>
           </nav>
           
-          <div className="mt-4">
-            <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
-            <p className="mt-2 text-gray-600">
+          <div className="mt-3 sm:mt-4">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Settings</h1>
+            <p className="mt-1.5 sm:mt-2 text-sm sm:text-base text-gray-600">
               Manage your application settings and preferences.
             </p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-8">
           {/* Settings Navigation */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Settings</h2>
-              <nav className="space-y-2">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4">
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Settings</h2>
+              <nav className="space-y-1.5 sm:space-y-2">
                 {settingSections.map((section) => (
                   <div key={section.id}>
                     {section.href ? (
                       <Link
                         href={section.href}
-                        className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:text-[#31BCFF] hover:bg-blue-50/50 rounded-lg transition-all group"
+                        className="flex items-center px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium text-gray-700 hover:text-[#31BCFF] hover:bg-blue-50/50 rounded-lg transition-all group"
                       >
-                        <section.icon className="h-5 w-5 mr-3 text-gray-400 group-hover:text-[#31BCFF]" />
-                        <div className="flex-1">
-                          <p className="font-medium">{section.name}</p>
-                          <p className="text-xs text-gray-500">{section.description}</p>
+                        <section.icon className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3 flex-shrink-0 text-gray-400 group-hover:text-[#31BCFF]" />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{section.name}</p>
+                          <p className="text-xs text-gray-500 truncate">{section.description}</p>
                         </div>
-                        <ChevronRightIcon className="h-4 w-4 text-gray-400 group-hover:text-[#31BCFF]" />
+                        <ChevronRightIcon className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0 text-gray-400 group-hover:text-[#31BCFF]" />
                       </Link>
                     ) : section.hasSubmenus ? (
                       <>
                         <button
                           onClick={() => toggleMenuExpansion(section.id)}
-                          className="w-full flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:text-[#31BCFF] hover:bg-blue-50/50 rounded-lg transition-all group"
+                          className="w-full flex items-center px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium text-gray-700 hover:text-[#31BCFF] hover:bg-blue-50/50 rounded-lg transition-all group"
                         >
-                          <section.icon className="h-5 w-5 mr-3 text-gray-400 group-hover:text-[#31BCFF]" />
-                          <div className="flex-1 text-left">
-                            <p className="font-medium">{section.name}</p>
-                            <p className="text-xs text-gray-500">{section.description}</p>
+                          <section.icon className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3 flex-shrink-0 text-gray-400 group-hover:text-[#31BCFF]" />
+                          <div className="flex-1 text-left min-w-0">
+                            <p className="font-medium truncate">{section.name}</p>
+                            <p className="text-xs text-gray-500 truncate">{section.description}</p>
                           </div>
-                          <ChevronRightIcon className={`h-4 w-4 text-gray-400 group-hover:text-[#31BCFF] transition-transform ${
+                          <ChevronRightIcon className={`h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0 text-gray-400 group-hover:text-[#31BCFF] transition-transform ${
                             expandedMenus.has(section.id) ? 'rotate-90' : ''
                           }`} />
                         </button>
                         {expandedMenus.has(section.id) && section.submenus && (
-                          <div className="ml-8 mt-2 space-y-1">
+                          <div className="ml-6 sm:ml-8 mt-1 sm:mt-2 space-y-1">
                             {section.submenus.map((submenu) => (
                               <button
                                 key={submenu.id}
                                 onClick={() => setActiveSection(submenu.id)}
-                                className={`w-full flex items-start px-3 py-2 text-sm rounded-lg transition-all ${
+                                className={`w-full flex items-start px-2 sm:px-3 py-2 text-xs sm:text-sm rounded-lg transition-all ${
                                   activeSection === submenu.id
                                     ? 'bg-[#31BCFF] text-white'
                                     : 'text-gray-600 hover:text-[#31BCFF] hover:bg-blue-50/50'
                                 }`}
                               >
-                                <div className="flex-1 text-left">
-                                  <p className="font-medium">{submenu.name}</p>
-                                  <p className={`text-xs ${
+                                <div className="flex-1 text-left min-w-0">
+                                  <p className="font-medium truncate">{submenu.name}</p>
+                                  <p className={`text-xs truncate ${
                                     activeSection === submenu.id ? 'text-blue-100' : 'text-gray-500'
                                   }`}>
                                     {submenu.description}
@@ -251,7 +250,7 @@ export default function SettingsPage() {
                       <button
                         onClick={() => !section.disabled && setActiveSection(section.id)}
                         disabled={section.disabled}
-                        className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all group ${
+                        className={`w-full flex items-center px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium rounded-lg transition-all group ${
                           activeSection === section.id
                             ? 'bg-[#31BCFF] text-white'
                             : section.disabled
@@ -259,16 +258,16 @@ export default function SettingsPage() {
                             : 'text-gray-700 hover:text-[#31BCFF] hover:bg-blue-50/50'
                         }`}
                       >
-                        <section.icon className={`h-5 w-5 mr-3 ${
+                        <section.icon className={`h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3 flex-shrink-0 ${
                           activeSection === section.id
                             ? 'text-white'
                             : section.disabled
                             ? 'text-gray-300'
                             : 'text-gray-400 group-hover:text-[#31BCFF]'
                         }`} />
-                        <div className="flex-1 text-left">
-                          <p className="font-medium">{section.name}</p>
-                          <p className={`text-xs ${
+                        <div className="flex-1 text-left min-w-0">
+                          <p className="font-medium truncate">{section.name}</p>
+                          <p className={`text-xs truncate ${
                             activeSection === section.id
                               ? 'text-blue-100'
                               : section.disabled
@@ -279,7 +278,7 @@ export default function SettingsPage() {
                           </p>
                         </div>
                         {section.disabled && (
-                          <span className="text-xs bg-gray-100 text-gray-500 px-2 py-1 rounded-full">
+                          <span className="text-xs bg-gray-100 text-gray-500 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full flex-shrink-0">
                             Soon
                           </span>
                         )}
@@ -296,28 +295,28 @@ export default function SettingsPage() {
             {ActiveComponent ? (
               <ActiveComponent />
             ) : (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
-                <div className="flex items-center justify-center mb-4">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sm:p-8 text-center">
+                <div className="flex items-center justify-center mb-3 sm:mb-4">
                   {activeSettingSection?.icon && (
-                    <activeSettingSection.icon className="h-12 w-12 text-gray-400 mr-3" />
+                    <activeSettingSection.icon className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mr-2 sm:mr-3 flex-shrink-0" />
                   )}
                   {activeSubmenu && (
-                    <ClockIcon className="h-6 w-6 text-gray-400" />
+                    <ClockIcon className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400 flex-shrink-0" />
                   )}
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2 break-words">
                   {activeSubmenu 
                     ? `${activeSettingSection?.name} - ${activeSubmenu.name}`
                     : activeSettingSection?.name || 'Settings Section'
                   }
                 </h3>
-                <p className="text-gray-600 mb-4">
+                <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4 break-words px-4">
                   {activeSubmenu 
                     ? activeSubmenu.description 
                     : activeSettingSection?.description || 'This settings section is coming soon.'
                   }
                 </p>
-                <p className="text-sm text-gray-500">
+                <p className="text-xs sm:text-sm text-gray-500">
                   {activeSubmenu 
                     ? 'This punch clock feature is coming soon.'
                     : 'We\'re working on bringing you more configuration options.'
