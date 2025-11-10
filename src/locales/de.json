@@ -108,6 +108,7 @@
       "pin_description": "Geben Sie eine 6-stellige PIN für die Zeiterfassung ein",
       "set_button": "PIN setzen",
       "set_pin": "PIN setzen",
+      "setting": "PIN wird gesetzt...",
       "invalid_pin": "PIN muss genau 6 Ziffern haben",
       "success": "PIN wurde erfolgreich gesetzt!",
       "error": "PIN konnte nicht gesetzt werden. Bitte versuchen Sie es erneut."
@@ -181,6 +182,7 @@
       "department": "Abteilung",
       "select_department": "Abteilung auswählen",
       "employee_group": "Mitarbeitergruppe",
+      "select_employee_group": "Mitarbeitergruppe auswählen",
       "no_group": "Keine Gruppe",
       "address": "Adresse",
       "mobile": "Mobil",

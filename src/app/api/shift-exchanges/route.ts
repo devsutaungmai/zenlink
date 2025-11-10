@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/shared/lib/prisma'
 import { ShiftExchangeNotifications } from '@/shared/lib/notifications'
+import { getCurrentUser } from '@/shared/lib/auth'
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await getCurrentUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const body = await request.json()
     const { fromShiftId, toEmployeeId, type, requestReason } = body
 
@@ -23,10 +29,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if the shift exists
     const shift = await prisma.shift.findUnique({
       where: { id: fromShiftId },
-      include: { employee: true }
+      include: { 
+        employee: true
+      }
     })
 
     if (!shift) {
@@ -36,14 +43,36 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if employee exists
-    const toEmployee = await prisma.employee.findUnique({ 
-      where: { id: toEmployeeId } 
+    if (!shift.employee) {
+      return NextResponse.json(
+        { error: 'Shift employee not found' },
+        { status: 404 }
+      )
+    }
+
+    const shiftEmployeeDept = await prisma.department.findUnique({
+      where: { id: shift.employee.departmentId }
+    })
+
+    if (!shiftEmployeeDept || shiftEmployeeDept.businessId !== user.businessId) {
+      return NextResponse.json(
+        { error: 'Shift not found or access denied' },
+        { status: 404 }
+      )
+    }
+
+    const toEmployee = await prisma.employee.findFirst({ 
+      where: { 
+        id: toEmployeeId,
+        department: {
+          businessId: user.businessId
+        }
+      }
     })
 
     if (!toEmployee) {
       return NextResponse.json(
-        { error: 'Target employee not found' },
+        { error: 'Target employee not found or access denied' },
         { status: 404 }
       )
     }
@@ -105,11 +134,34 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
+    const user = await getCurrentUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const { searchParams } = new URL(request.url)
     const employeeId = searchParams.get('employeeId')
     const status = searchParams.get('status')
 
-    let whereClause: any = {}
+    let whereClause: any = {
+      // Filter by business ID - both fromEmployee and toEmployee must belong to the same business through department
+      AND: [
+        {
+          fromEmployee: {
+            department: {
+              businessId: user.businessId
+            }
+          }
+        },
+        {
+          toEmployee: {
+            department: {
+              businessId: user.businessId
+            }
+          }
+        }
+      ]
+    }
 
     if (employeeId) {
       whereClause.OR = [

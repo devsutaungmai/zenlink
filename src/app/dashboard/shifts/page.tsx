@@ -596,7 +596,7 @@ export default function ShiftsPage() {
                             >
                               <PencilIcon className="h-4 w-4" />
                             </Link>
-                            <button
+                            {/* <button
                               onClick={() => handleExchange(shift)}
                               className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all duration-200"
                               title={t('shifts.exchange_shift')}
@@ -609,7 +609,7 @@ export default function ShiftsPage() {
                               title={t('shifts.view_exchanges')}
                             >
                               <ClockIcon className="h-4 w-4" />
-                            </button>
+                            </button> */}
                             <button
                               onClick={() => handleDelete(shift.id)}
                               className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
@@ -786,7 +786,7 @@ export default function ShiftsPage() {
                   >
                     <PencilIcon className="h-5 w-5" />
                   </Link>
-                  <button
+                  {/* <button
                     onClick={() => handleExchange(shift)}
                     className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all duration-200"
                     title={t('shifts.exchange_shift')}
@@ -799,7 +799,7 @@ export default function ShiftsPage() {
                     title={t('shifts.view_exchanges')}
                   >
                     <ClockIcon className="h-5 w-5" />
-                  </button>
+                  </button> */}
                   <button
                     onClick={() => handleDelete(shift.id)}
                     className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"

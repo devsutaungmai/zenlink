@@ -1,7 +1,6 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import DatePicker from 'react-datepicker'
-import 'react-datepicker/dist/react-datepicker.css'
+import { DatePicker } from '@/components/ui/date-picker'
 import { EmployeeFormData } from './types'
 
 interface EmploymentInfoSectionProps {
@@ -117,10 +116,15 @@ export function EmploymentInfoSection({
           {t('employees.form.date_of_hire')} <span className="text-red-500">*</span>
         </label>
         <DatePicker
-          selected={formData.dateOfHire}
-          onChange={(date) => onDateChange(date, 'dateOfHire')}
+          date={formData.dateOfHire}
+          onDateChange={(date) => onDateChange(date || null, 'dateOfHire')}
           className={getFieldStyle('dateOfHire')}
-          required
+          placeholder="Select date of hire"
+          dateFormat="dd/MM/yyyy"
+          yearRange={{
+            from: new Date().getFullYear() - 10,
+            to: new Date().getFullYear() + 1
+          }}
         />
         {validationErrors.dateOfHire && (
           <p className="mt-1 text-sm text-red-500">{validationErrors.dateOfHire}</p>

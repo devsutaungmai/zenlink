@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/shared/lib/prisma'
 import { getCurrentUserOrEmployee, getCurrentUser } from '@/shared/lib/auth'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const auth = await getCurrentUserOrEmployee()
     if (!auth) {
@@ -12,6 +12,9 @@ export async function GET() {
       )
     }
 
+    const { searchParams } = new URL(request.url)
+    const userId = searchParams.get('userId')
+
     let businessId: string
     if (auth.type === 'user') {
       businessId = (auth.data as any).businessId
@@ -19,12 +22,18 @@ export async function GET() {
       businessId = (auth.data as any).user.businessId
     }
 
+    const whereClause: any = {
+      user: {
+        businessId: businessId
+      }
+    }
+
+    if (userId) {
+      whereClause.userId = userId
+    }
+
     const employees = await prisma.employee.findMany({
-      where: {
-        user: {
-          businessId: businessId
-        }
-      },
+      where: whereClause,
       select: {
         id: true,
         userId: true,

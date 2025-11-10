@@ -19,14 +19,35 @@ export async function PATCH(
       )
     }
 
-    // Get the exchange to check current status
     const existingExchange = await prisma.shiftExchange.findUnique({
-      where: { id: params.id }
+      where: { id: params.id },
+      include: {
+        fromEmployee: {
+          include: {
+            department: true
+          }
+        },
+        toEmployee: {
+          include: {
+            department: true
+          }
+        }
+      }
     })
 
     if (!existingExchange) {
       return NextResponse.json(
         { error: 'Exchange request not found' },
+        { status: 404 }
+      )
+    }
+
+    if (!existingExchange.fromEmployee?.department?.businessId || 
+        !existingExchange.toEmployee?.department?.businessId ||
+        existingExchange.fromEmployee.department.businessId !== user.businessId ||
+        existingExchange.toEmployee.department.businessId !== user.businessId) {
+      return NextResponse.json(
+        { error: 'Exchange request not found or access denied' },
         { status: 404 }
       )
     }
@@ -91,16 +112,38 @@ export async function DELETE(
 ) {
   try {
     const params = await context.params
+    const user = await requireAuth()
 
     // Check if the exchange exists and is pending
     const exchange = await prisma.shiftExchange.findUnique({
       where: { id: params.id },
-      include: { fromEmployee: true }
+      include: { 
+        fromEmployee: {
+          include: {
+            department: true
+          }
+        },
+        toEmployee: {
+          include: {
+            department: true
+          }
+        }
+      }
     })
 
     if (!exchange) {
       return NextResponse.json(
         { error: 'Exchange request not found' },
+        { status: 404 }
+      )
+    }
+
+    if (!exchange.fromEmployee?.department?.businessId || 
+        !exchange.toEmployee?.department?.businessId ||
+        exchange.fromEmployee.department.businessId !== user.businessId ||
+        exchange.toEmployee.department.businessId !== user.businessId) {
+      return NextResponse.json(
+        { error: 'Exchange request not found or access denied' },
         { status: 404 }
       )
     }

@@ -14,9 +14,9 @@ export async function GET() {
 
     let businessId: string
     if (auth.type === 'user') {
-      businessId = auth.data.businessId
+      businessId = (auth.data as any).businessId
     } else {
-      businessId = auth.data.user.bussinessId
+      businessId = (auth.data as any).department.businessId
     }
     
     const departments = await prisma.department.findMany({
