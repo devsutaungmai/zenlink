@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, use } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { AlertTriangle, Clock, Calendar, Shield, Save, RotateCcw } from 'lucide-react'
 import { LaborLawRules, COUNTRY_RULES, DEFAULT_LABOR_RULES } from '@/shared/lib/laborLawValidation'
 import Swal from 'sweetalert2'
+import { useTranslation } from 'react-i18next'
 
 interface LaborLawSettingsProps {
   onRulesChange?: (rules: LaborLawRules) => void
@@ -19,12 +20,13 @@ export default function LaborLawSettings({ onRulesChange }: LaborLawSettingsProp
   const [rules, setRules] = useState<LaborLawRules>(DEFAULT_LABOR_RULES)
   const [selectedCountry, setSelectedCountry] = useState<string>('DEFAULT')
   const [hasChanges, setHasChanges] = useState(false)
+  const { t } = useTranslation('settings')
 
   useEffect(() => {
     // Load saved rules from localStorage or use defaults
     const savedRules = localStorage.getItem('laborLawRules')
     const savedCountry = localStorage.getItem('laborLawCountry')
-    
+
     if (savedRules) {
       try {
         setRules(JSON.parse(savedRules))
@@ -32,7 +34,7 @@ export default function LaborLawSettings({ onRulesChange }: LaborLawSettingsProp
         console.error('Error loading saved labor law rules:', error)
       }
     }
-    
+
     if (savedCountry) {
       setSelectedCountry(savedCountry)
     }
@@ -40,13 +42,13 @@ export default function LaborLawSettings({ onRulesChange }: LaborLawSettingsProp
 
   const handleCountryChange = (countryCode: string) => {
     setSelectedCountry(countryCode)
-    
+
     if (countryCode === 'DEFAULT') {
       setRules(DEFAULT_LABOR_RULES)
     } else if (COUNTRY_RULES[countryCode]) {
       setRules(COUNTRY_RULES[countryCode])
     }
-    
+
     setHasChanges(true)
   }
 
@@ -62,13 +64,13 @@ export default function LaborLawSettings({ onRulesChange }: LaborLawSettingsProp
     try {
       localStorage.setItem('laborLawRules', JSON.stringify(rules))
       localStorage.setItem('laborLawCountry', selectedCountry)
-      
+
       if (onRulesChange) {
         onRulesChange(rules)
       }
-      
+
       setHasChanges(false)
-      
+
       Swal.fire({
         text: 'Settings Saved: Labor law rules have been updated successfully.',
         toast: true,
@@ -99,7 +101,7 @@ export default function LaborLawSettings({ onRulesChange }: LaborLawSettingsProp
     setRules(DEFAULT_LABOR_RULES)
     setSelectedCountry('DEFAULT')
     setHasChanges(true)
-    
+
     Swal.fire({
       text: 'Reset Complete: Labor law rules have been reset to defaults.',
       toast: true,
@@ -129,8 +131,8 @@ export default function LaborLawSettings({ onRulesChange }: LaborLawSettingsProp
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Labor Law Settings</h2>
-          <p className="text-gray-600 mt-1">Configure work hour limits and rest period requirements</p>
+          <h2 className="text-2xl font-bold text-gray-900">{t('title')}</h2>
+          <p className="text-gray-600 mt-1">{t('labor.description')}</p>
         </div>
         <div className="flex items-center gap-2">
           {hasChanges && (
@@ -147,13 +149,15 @@ export default function LaborLawSettings({ onRulesChange }: LaborLawSettingsProp
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Shield className="w-5 h-5" />
-            Country/Region
+            {t('labor.setting.country_region.title')}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="country">Select Country/Region</Label>
+              <Label htmlFor="country">
+                {t('labor.setting.country_region.label1')}
+              </Label>
               <Select value={selectedCountry} onValueChange={handleCountryChange}>
                 <SelectTrigger className="mt-1">
                   <SelectValue placeholder="Select country" />
@@ -170,9 +174,11 @@ export default function LaborLawSettings({ onRulesChange }: LaborLawSettingsProp
             </div>
             <div className="flex items-end">
               <div className="text-sm text-gray-600">
-                <strong>Current:</strong> {getCountryName(selectedCountry)}
+                <strong>{t('labor.setting.country_region.label2')}:</strong> {getCountryName(selectedCountry)}
                 <br />
-                <span className="text-xs">Rules will be applied to all shift validations</span>
+                <span className="text-xs">
+                  {t('labor.setting.country_region.info2')}
+                </span>
               </div>
             </div>
           </div>
@@ -186,13 +192,13 @@ export default function LaborLawSettings({ onRulesChange }: LaborLawSettingsProp
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Clock className="w-5 h-5" />
-              Daily Work Limits
+              {t('labor.setting.daily_work_limits.title')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="maxHoursPerDay">Maximum Hours Per Day</Label>
+                <Label htmlFor="maxHoursPerDay">{t('labor.setting.daily_work_limits.max_hours_per_day.label')}</Label>
                 <Input
                   id="maxHoursPerDay"
                   type="number"
@@ -203,11 +209,11 @@ export default function LaborLawSettings({ onRulesChange }: LaborLawSettingsProp
                   onChange={(e) => handleRuleChange('maxHoursPerDay', parseFloat(e.target.value))}
                   className="mt-1"
                 />
-                <p className="text-xs text-gray-500 mt-1">Maximum work hours allowed per day</p>
+                <p className="text-xs text-gray-500 mt-1">{t('labor.setting.daily_work_limits.max_hours_per_day.description')}</p>
               </div>
 
               <div>
-                <Label htmlFor="overtimeThreshold">Regular Hours Threshold</Label>
+                <Label htmlFor="overtimeThreshold">{t('labor.setting.daily_work_limits.regular_hours_threshold.label')}</Label>
                 <Input
                   id="overtimeThreshold"
                   type="number"
@@ -218,11 +224,11 @@ export default function LaborLawSettings({ onRulesChange }: LaborLawSettingsProp
                   onChange={(e) => handleRuleChange('overtimeThreshold', parseFloat(e.target.value))}
                   className="mt-1"
                 />
-                <p className="text-xs text-gray-500 mt-1">Hours before overtime rules apply</p>
+                <p className="text-xs text-gray-500 mt-1">{t('labor.setting.daily_work_limits.regular_hours_threshold.description')}</p>
               </div>
 
               <div>
-                <Label htmlFor="maxOvertimePerDay">Maximum Overtime Per Day</Label>
+                <Label htmlFor="maxOvertimePerDay">{t('labor.setting.daily_work_limits.max_overtime_per_day.label')}</Label>
                 <Input
                   id="maxOvertimePerDay"
                   type="number"
@@ -233,7 +239,7 @@ export default function LaborLawSettings({ onRulesChange }: LaborLawSettingsProp
                   onChange={(e) => handleRuleChange('maxOvertimePerDay', parseFloat(e.target.value))}
                   className="mt-1"
                 />
-                <p className="text-xs text-gray-500 mt-1">Maximum overtime hours per day</p>
+                <p className="text-xs text-gray-500 mt-1">{t('labor.setting.daily_work_limits.max_overtime_per_day.description')}</p>
               </div>
             </div>
           </CardContent>
@@ -244,13 +250,15 @@ export default function LaborLawSettings({ onRulesChange }: LaborLawSettingsProp
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Calendar className="w-5 h-5" />
-              Weekly Work Limits
+              {t('labor.setting.weekly_work_limits.title')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="maxHoursPerWeek">Maximum Hours Per Week</Label>
+                <Label htmlFor="maxHoursPerWeek">
+                  {t('labor.setting.weekly_work_limits.max_hours_per_week.label')}
+                </Label>
                 <Input
                   id="maxHoursPerWeek"
                   type="number"
@@ -261,11 +269,15 @@ export default function LaborLawSettings({ onRulesChange }: LaborLawSettingsProp
                   onChange={(e) => handleRuleChange('maxHoursPerWeek', parseFloat(e.target.value))}
                   className="mt-1"
                 />
-                <p className="text-xs text-gray-500 mt-1">Maximum work hours per week</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {t('labor.setting.weekly_work_limits.max_hours_per_week.description')}
+                </p>
               </div>
 
               <div>
-                <Label htmlFor="maxOvertimePerWeek">Maximum Overtime Per Week</Label>
+                <Label htmlFor="maxOvertimePerWeek">
+                  {t('labor.setting.weekly_work_limits.max_overtime_per_week.label')}
+                </Label>
                 <Input
                   id="maxOvertimePerWeek"
                   type="number"
@@ -276,11 +288,15 @@ export default function LaborLawSettings({ onRulesChange }: LaborLawSettingsProp
                   onChange={(e) => handleRuleChange('maxOvertimePerWeek', parseFloat(e.target.value))}
                   className="mt-1"
                 />
-                <p className="text-xs text-gray-500 mt-1">Maximum overtime hours per week</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {t('labor.setting.weekly_work_limits.max_overtime_per_week.description')}
+                </p>
               </div>
 
               <div>
-                <Label htmlFor="maxConsecutiveDays">Maximum Consecutive Days</Label>
+                <Label htmlFor="maxConsecutiveDays">
+                  {t('labor.setting.weekly_work_limits.max_consecutive_days.label')}
+                </Label>
                 <Input
                   id="maxConsecutiveDays"
                   type="number"
@@ -291,7 +307,9 @@ export default function LaborLawSettings({ onRulesChange }: LaborLawSettingsProp
                   onChange={(e) => handleRuleChange('maxConsecutiveDays', parseInt(e.target.value))}
                   className="mt-1"
                 />
-                <p className="text-xs text-gray-500 mt-1">Maximum consecutive working days</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {t('labor.setting.weekly_work_limits.max_consecutive_days.description')}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -302,13 +320,15 @@ export default function LaborLawSettings({ onRulesChange }: LaborLawSettingsProp
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Clock className="w-5 h-5" />
-              Breaks & Rest Periods
+              {t('labor.setting.breaks_rest_periods.title')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="minRestHoursBetweenShifts">Minimum Rest Between Shifts (hours)</Label>
+                <Label htmlFor="minRestHoursBetweenShifts">
+                  {t('labor.setting.breaks_rest_periods.min_rest_between_shifts.label')}
+                </Label>
                 <Input
                   id="minRestHoursBetweenShifts"
                   type="number"
@@ -319,11 +339,15 @@ export default function LaborLawSettings({ onRulesChange }: LaborLawSettingsProp
                   onChange={(e) => handleRuleChange('minRestHoursBetweenShifts', parseFloat(e.target.value))}
                   className="mt-1"
                 />
-                <p className="text-xs text-gray-500 mt-1">Minimum rest time required between shifts</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {t('labor.setting.breaks_rest_periods.min_rest_between_shifts.description')}
+                </p>
               </div>
 
               <div>
-                <Label htmlFor="longShiftThreshold">Long Shift Threshold (hours)</Label>
+                <Label htmlFor="longShiftThreshold">
+                  {t('labor.setting.breaks_rest_periods.min_break_duration.label')}
+                </Label>
                 <Input
                   id="longShiftThreshold"
                   type="number"
@@ -334,11 +358,15 @@ export default function LaborLawSettings({ onRulesChange }: LaborLawSettingsProp
                   onChange={(e) => handleRuleChange('longShiftThreshold', parseFloat(e.target.value))}
                   className="mt-1"
                 />
-                <p className="text-xs text-gray-500 mt-1">Hours that trigger mandatory break requirement</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {t('labor.setting.breaks_rest_periods.min_break_duration.description')}
+                </p>
               </div>
 
               <div>
-                <Label htmlFor="minBreakForLongShifts">Minimum Break Duration (minutes)</Label>
+                <Label htmlFor="minBreakForLongShifts">
+                  {t('labor.setting.breaks_rest_periods.long_shift_threshold.label')}
+                </Label>
                 <Input
                   id="minBreakForLongShifts"
                   type="number"
@@ -349,7 +377,9 @@ export default function LaborLawSettings({ onRulesChange }: LaborLawSettingsProp
                   onChange={(e) => handleRuleChange('minBreakForLongShifts', parseInt(e.target.value))}
                   className="mt-1"
                 />
-                <p className="text-xs text-gray-500 mt-1">Required break duration for long shifts</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {t('labor.setting.breaks_rest_periods.long_shift_threshold.description')}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -358,43 +388,47 @@ export default function LaborLawSettings({ onRulesChange }: LaborLawSettingsProp
 
       {/* Action Buttons */}
       <div className="flex items-center justify-between">
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           onClick={handleReset}
           className="flex items-center gap-2"
         >
           <RotateCcw className="w-4 h-4" />
-          Reset to Defaults
+          {t('labor.setting.buttons.reset')}
         </Button>
-        
-        <Button 
-          onClick={handleSave} 
+
+        <Button
+          onClick={handleSave}
           disabled={!hasChanges}
           className="flex items-center gap-2 bg-[#31BCFF] hover:bg-[#31BCFF]/90"
         >
           <Save className="w-4 h-4" />
-          Save Settings
+          {t('labor.setting.buttons.save')}
         </Button>
       </div>
 
       {/* Current Rules Summary */}
       <Card className="bg-gray-50">
         <CardHeader>
-          <CardTitle className="text-lg">Current Rules Summary</CardTitle>
+          <CardTitle className="text-lg">{t('labor.setting.current_rules_summary.title')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
             <div>
-              <span className="font-medium">Max Daily:</span> {rules.maxHoursPerDay}h
+              <span className="font-medium">
+                {t('labor.setting.current_rules_summary.max_daily')}:</span> {rules.maxHoursPerDay}h
             </div>
             <div>
-              <span className="font-medium">Max Weekly:</span> {rules.maxHoursPerWeek}h
+              <span className="font-medium">
+                {t('labor.setting.current_rules_summary.max_weekly')}:</span> {rules.maxHoursPerWeek}h
             </div>
             <div>
-              <span className="font-medium">Min Rest:</span> {rules.minRestHoursBetweenShifts}h
+              <span className="font-medium">
+                {t('labor.setting.current_rules_summary.min_rest')}:</span> {rules.minRestHoursBetweenShifts}h
             </div>
             <div>
-              <span className="font-medium">Max Consecutive:</span> {rules.maxConsecutiveDays} days
+              <span className="font-medium">
+                {t('labor.setting.current_rules_summary.max_consecutive')}:</span> {rules.maxConsecutiveDays} days
             </div>
           </div>
         </CardContent>

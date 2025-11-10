@@ -1,0 +1,210 @@
+{
+ "title": "Indstillinger",
+  "description": "Administrer dine applikationsindstillinger og præferencer.",
+    "labor": {
+        "title": "Arbejdsretsregler",
+        "description": "Konfigurer arbejdstidsbegrænsninger og krav til pauser",
+        "setting": {
+            "title": "Arbejdsretsindstillinger",
+            "country_region": {
+                "title": "Land/Region",
+                "label1": "Vælg land og region",
+                "label2": "Nuværende",
+                "info2": "Regler vil blive anvendt på alle vagtvalideringer"
+            },
+            "daily_work_limits": {
+                "title": "Daglige arbejdstidsbegrænsninger",
+                "max_hours_per_day": {
+                    "label": "Maksimale timer pr. dag",
+                    "description": "Maksimale arbejdstimer pr. dag"
+                },
+                "regular_hours_threshold": {
+                    "label": "Grænse for normale arbejdstimer",
+                    "description": "Timer før overarbejdsregler træder i kraft"
+                },
+                "max_overtime_per_day": {
+                    "label": "Maksimalt overarbejde pr. dag",
+                    "description": "Maksimale overarbejdstimer pr. dag"
+                }
+            },
+            "weekly_work_limits": {
+                "title": "Ugentlige arbejdstidsbegrænsninger",
+                "max_hours_per_week": {
+                    "label": "Maksimale timer pr. uge",
+                    "description": "Maksimale arbejdstimer pr. uge"
+                },
+                "max_overtime_per_week": {
+                    "label": "Maksimalt overarbejde pr. uge",
+                    "description": "Maksimale overarbejdstimer pr. uge"
+                },
+                "max_consecutive_days": {
+                    "label": "Maksimale sammenhængende dage",
+                    "description": "Maksimalt antal sammenhængende arbejdsdage"
+                }
+            },
+            "breaks_rest_periods": {
+                "title": "Pauser og hvileperioder",
+                "min_rest_between_shifts": {
+                    "label": "Minimum hvile mellem vagter (timer)",
+                    "description": "Minimum hviletid krævet mellem vagter"
+                },
+                "min_break_duration": {
+                    "label": "Minimum pauselængde (minutter)",
+                    "description": "Påkrævet pauselængde for lange vagter"
+                },
+                "long_shift_threshold": {
+                    "label": "Grænse for lange vagter (timer)",
+                    "description": "Timer der udløser krav om obligatorisk pause"
+                }
+            },
+            "buttons": {
+                "reset": "Gendan standardindstillinger",
+                "save": "Gem indstillinger"
+            },
+            "current_rules_summary": {
+                "title": "Oversigt over gældende regler",
+                "max_daily": "Maks. dagligt",
+                "max_weekly": "Maks. ugentligt",
+                "min_rest": "Min. hvile",
+                "max_consecutive": "Maks. sammenhængende"
+            }
+        }
+    },
+    "punch_clock": {
+    "title": "Stempelur",
+    "description": "Tidsregistrering og indstemplingsindstillinger.",
+    "menu": {
+      "access": {
+        "title": "Adgang",
+        "description": "Konfigurer adgangstilladelser og begrænsninger"
+      },
+      "general": {
+        "title": "Generelt",
+        "description": "Generelle indstillinger for stempeluret"
+      },
+      "profiles": {
+        "title": "Profiler",
+        "description": "Administrer tidsregistreringsprofiler"
+      },
+      "advance": {
+        "title": "Avanceret",
+        "description": "Avancerede konfigurationer for stempeluret"
+      }
+    },
+    "access_setting": {
+      "title": "Adgang til stempelur",
+      "description": "Konfigurer hvor medarbejdere kan stemple ind og ud.",
+      "access_restrictions": {
+      "title": "Adgangsbegrænsninger",
+      "description": "Tillad medarbejdere at stemple ind og ud af en vagt fra enheden.",
+      "options": {
+        "anywhere": {
+        "label": "Overalt",
+        "description": "Medarbejdere kan stemple ind/ud fra enhver placering"
+        },
+        "specific_locations": {
+        "label": "Specifikke placeringer",
+        "description": "Begræns stempling til foruddefinerede placeringer"
+        }
+      }
+      },
+      "department_access": {
+      "title": "Afdelingsadgang",
+      "description": "Kontrollér hvilke afdelinger der kan bruge stempelursystemet.",
+      "options": {
+        "all_departments": {
+        "label": "Alle afdelinger",
+        "description": "Tillad alle afdelinger at bruge stempelur"
+        },
+        "specific_departments": {
+        "label": "Specifikke afdelinger",
+        "description": "Begræns adgang til valgte afdelinger"
+        }
+      },
+      "specific_departments": {
+        "title": "Tilladte afdelinger",
+        "empty_message": "Ingen afdelinger valgt. Medarbejdere vil ikke kunne få adgang til stempeluret.",
+        "tooltip": "Vælg afdelinger, der må bruge stempelursystemet.",
+        "example": "f.eks. IT-afdelingen (3 medarbejdere)"
+      }
+      },
+       "allowed_locations": {
+      "title": "Tilladte placeringer",
+      "description": "Tilføj placeringer, hvor medarbejdere kan stemple ind/ud.",
+      "empty_message": "Ingen placeringer konfigureret. Medarbejdere vil ikke kunne stemple ind/ud, før du tilføjer mindst én placering.",
+      "no_location_text": "Ingen placeringer tilføjet",
+      "radius_label": "Radius",
+      "gps_enabled": "GPS aktiveret",
+      "departments_label": "Afdelinger",
+      "unknown_department": "Ukendt",
+      "all_departments_allowed": "Alle afdelinger tilladt",
+      "warning_title": "Ingen placeringer konfigureret",
+      "buttons": {
+        "add_with_map": "Tilføj med kort",
+        "add_manually": "Tilføj manuelt"
+      },
+      "add_form": {
+        "title": "Tilføj ny placering",
+        "location_name": "Navn på placering",
+        "location_name_placeholder": "f.eks. Hovedkontor, Lager",
+        "address": "Adresse",
+        "address_placeholder": "Indtast fuld adresse",
+        "radius": "Radius (meter)",
+        "radius_hint": "Medarbejdere skal være inden for denne afstand for at stemple ind/ud",
+        "departments": "Afdelinger (valgfrit)",
+        "departments_hint": "Vælg hvilke afdelinger der kan stemple fra denne placering. Lad være tomt for alle afdelinger.",
+        "employees_count": "medarbejdere",
+        "no_departments": "Ingen afdelinger tilgængelige",
+        "add_button": "Tilføj placering",
+        "cancel_button": "Annuller"
+      }
+      },
+      "buttons": {
+      "save": "Gem ændringer"
+      },
+      "toast": {
+      "saved_success": "Stempelursadgangsindstillinger gemt.",
+      "error_save": "Kunne ikke gemme indstillinger. Prøv igen."
+      }
+    },
+    "general_setting": {
+      "title": "Stempelur – Generelt",
+      "description": "Generelle indstillinger for stempeluret",
+      "coming_soon": "Denne stempelur-funktion kommer snart."
+    },
+    "profile_setting": {
+      "title": "Stempelur-profiler",
+      "description": "Administrer tidsregistreringsprofiler for forskellige afdelinger og arbejdsplaner.",
+      "create_new_profile": "Opret ny profil",
+      "fields": {
+        "profile_name": "Profilnavn",
+        "department": "Afdeling",
+        "active_profile": "Aktiv profil",
+        "active_profile_hint": "Profilen vil være tilgængelig, når den er aktiv"
+      },
+      "buttons": {
+        "create_profile": "Opret profil",
+        "cancel": "Annuller",
+        "generate_code": "Generer kode"
+      },
+      "table": {
+        "profile_name": "Profilnavn",
+        "department": "Afdeling",
+        "status": "Status",
+        "activation_code": "Aktiveringskode",
+        "created": "Oprettet",
+        "actions": "Handlinger"
+      },
+      "status": {
+        "active": "Aktiv",
+        "inactive": "Inaktiv"
+      },
+      "empty_message": "Ingen profiler fundet. Opret din første stempelur-profil for at komme i gang."
+    },
+    "advance_setting": {
+      "title": "Stempelur – Avanceret",
+      "description": "Avancerede konfigurationer for stempeluret",
+      "coming_soon": "Denne stempelur-funktion kommer snart."
+    }
+  }
+}

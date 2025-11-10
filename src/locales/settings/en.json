@@ -1,0 +1,210 @@
+{
+  "title": "Settings",
+  "description": "Manage your application settings and preferences.",
+  "labor": {
+    "title": "Labor Law Rules",
+    "description": "Configure work hour limits and break requirements",
+    "setting": {
+      "title": "Labor Law Settings",
+      "country_region": {
+        "title": "Country/Region",
+        "label1": "Select Country & Region",
+        "label2": "Current",
+        "info2": "Rules will be applied to all shift validations"
+      },
+      "daily_work_limits": {
+        "title": "Daily Work Limits",
+        "max_hours_per_day": {
+          "label": "Maximum Hours Per Day",
+          "description": "Maximum work hours allowed per day"
+        },
+        "regular_hours_threshold": {
+          "label": "Regular Hours Threshold",
+          "description": "Hours before overtime rules apply"
+        },
+        "max_overtime_per_day": {
+          "label": "Maximum Overtime Per Day",
+          "description": "Maximum overtime hours per day"
+        }
+      },
+      "weekly_work_limits": {
+        "title": "Weekly Work Limits",
+        "max_hours_per_week": {
+          "label": "Maximum Hours Per Week",
+          "description": "Maximum work hours per week"
+        },
+        "max_overtime_per_week": {
+          "label": "Maximum Overtime Per Week",
+          "description": "Maximum overtime hours per week"
+        },
+        "max_consecutive_days": {
+          "label": "Maximum Consecutive Days",
+          "description": "Maximum consecutive working days"
+        }
+      },
+      "breaks_rest_periods": {
+        "title": "Breaks & Rest Periods",
+        "min_rest_between_shifts": {
+          "label": "Minimum Rest Between Shifts (hours)",
+          "description": "Minimum rest time required between shifts"
+        },
+        "min_break_duration": {
+          "label": "Minimum Break Duration (minutes)",
+          "description": "Required break duration for long shifts"
+        },
+        "long_shift_threshold": {
+          "label": "Long Shift Threshold (hours)",
+          "description": "Hours that trigger mandatory break requirement"
+        }
+      },
+      "buttons": {
+        "reset": "Reset to Defaults",
+        "save": "Save Settings"
+      },
+      "current_rules_summary": {
+        "title": "Current Rules Summary",
+        "max_daily": "Max Daily",
+        "max_weekly": "Max Weekly",
+        "min_rest": "Min Rest",
+        "max_consecutive": "Max Consecutive"
+      }
+    }
+  },
+   "punch_clock": {
+    "title": "Punch Clock",
+    "description": "Time tracking and clock-in settings.",
+    "menu": {
+      "access": {
+        "title": "Access",
+        "description": "Configure access permissions and restrictions"
+      },
+      "general": {
+        "title": "General",
+        "description": "General punch clock settings"
+      },
+      "profiles": {
+        "title": "Profiles",
+        "description": "Manage time tracking profiles"
+      },
+      "advance": {
+        "title": "Advance",
+        "description": "Advanced punch clock configurations"
+      }
+    },
+    "access_setting": {
+      "title": "Punch Clock Access",
+      "description": "Configure where employees can punch in and out.",
+      "access_restrictions": {
+        "title": "Access Restrictions",
+        "description": "Enable employees to punch-in and out of a shift from the device.",
+        "options": {
+          "anywhere": {
+            "label": "Anywhere",
+            "description": "Employees can punch in/out from any location"
+          },
+          "specific_locations": {
+            "label": "Specific locations",
+            "description": "Restrict punch in/out to predefined locations"
+          }
+        }
+      },
+      "department_access": {
+        "title": "Department Access",
+        "description": "Control which departments can use the punch clock system.",
+        "options": {
+          "all_departments": {
+            "label": "All departments",
+            "description": "Allow all departments to use punch clock"
+          },
+          "specific_departments": {
+            "label": "Specific departments",
+            "description": "Restrict punch clock access to selected departments"
+          }
+        },
+        "specific_departments": {
+          "title": "Allowed Departments",
+          "empty_message": "No departments selected. Employees won’t be able to access punch clock.",
+          "tooltip": "Select departments allowed to use the punch clock system.",
+          "example": "e.g., IT Department (3 employees)"
+        }
+      },
+       "allowed_locations": {
+        "title": "Allowed Locations",
+        "description": "Add locations where employees can punch in/out.",
+        "empty_message": "No locations configured. Employees won't be able to punch in/out until you add at least one location.",
+        "no_location_text": "No locations added",
+        "radius_label": "Radius",
+        "gps_enabled": "GPS Enabled",
+        "departments_label": "Departments",
+        "unknown_department": "Unknown",
+        "all_departments_allowed": "All departments allowed",
+        "warning_title": "No locations configured",
+        "buttons": {
+          "add_with_map": "Add with Map",
+          "add_manually": "Add Manually"
+        },
+        "add_form": {
+          "title": "Add New Location",
+          "location_name": "Location Name",
+          "location_name_placeholder": "e.g., Main Office, Warehouse",
+          "address": "Address",
+          "address_placeholder": "Enter full address",
+          "radius": "Radius (meters)",
+          "radius_hint": "Employees must be within this distance to punch in/out",
+          "departments": "Departments (Optional)",
+          "departments_hint": "Select which departments can punch in from this location. Leave empty for all departments.",
+          "employees_count": "employees",
+          "no_departments": "No departments available",
+          "add_button": "Add Location",
+          "cancel_button": "Cancel"
+        }
+      },
+      "buttons": {
+        "save": "Save Changes"
+      },
+      "toast": {
+        "saved_success": "Punch clock access settings saved successfully.",
+        "error_save": "Failed to save settings. Please try again."
+      }
+    },
+    "general_setting": {
+      "title": "Punch Clock - General",
+      "description": "General punch clock settings",
+      "coming_soon": "This punch clock feature is coming soon."
+    },
+    "profile_setting": {
+      "title": "Punch Clock Profiles",
+      "description": "Manage time tracking profiles for different departments and work schedules.",
+      "create_new_profile": "Create New Profile",
+      "fields": {
+        "profile_name": "Profile Name",
+        "department": "Department",
+        "active_profile": "Active Profile",
+        "active_profile_hint": "Profile will be available for use when active"
+      },
+      "buttons": {
+        "create_profile": "Create Profile",
+        "cancel": "Cancel",
+        "generate_code": "Generate Code"
+      },
+      "table": {
+        "profile_name": "Profile Name",
+        "department": "Department",
+        "status": "Status",
+        "activation_code": "Activation Code",
+        "created": "Created",
+        "actions": "Actions"
+      },
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive"
+      },
+      "empty_message": "No profiles found. Create your first punch clock profile to get started."
+    },
+    "advance_setting": {
+      "title": "Punch Clock - Advance",
+      "description": "Advanced punch clock configurations",
+      "coming_soon": "This punch clock feature is coming soon."
+    }
+  }
+}

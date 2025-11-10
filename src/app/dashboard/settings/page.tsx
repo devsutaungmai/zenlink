@@ -21,17 +21,19 @@ import PunchClockAccessSettings from '@/components/PunchClockAccessSettings'
 import BusinessInfoSettings from '@/components/BusinessInfoSettings'
 import ContractTemplateForm from '@/components/ContractTemplateForm'
 import ShiftTypeSettings from '@/components/ShiftTypeSettings'
+import { useTranslation } from 'react-i18next'
 
 export default function SettingsPage() {
   const router = useRouter()
   const [activeSection, setActiveSection] = useState<string>('people-contract-setup')
   const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set(['people']))
-
+  const { t } = useTranslation('settings')
+  
   const settingSections = [
     {
       id: 'labor-laws',
-      name: 'Labor Law Rules',
-      description: 'Configure work hour limits and break requirements',
+      name: t('labor.title'),
+      description: t('labor.description'),
       icon: ShieldCheckIcon,
       component: LaborLawSettings
     },
