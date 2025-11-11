@@ -33,6 +33,9 @@ CREATE TABLE "EmployeeFunction" (
     CONSTRAINT "EmployeeFunction_pkey" PRIMARY KEY ("id")
 );
 
+-- AlterTable
+ALTER TABLE "Shift" ADD COLUMN IF NOT EXISTS "functionId" TEXT;
+
 -- CreateIndex
 CREATE INDEX "DepartmentCategory_departmentId_idx" ON "DepartmentCategory"("departmentId");
 
@@ -55,7 +58,7 @@ CREATE INDEX "EmployeeFunction_functionId_idx" ON "EmployeeFunction"("functionId
 CREATE UNIQUE INDEX "EmployeeFunction_employeeId_functionId_key" ON "EmployeeFunction"("employeeId", "functionId");
 
 -- CreateIndex
-CREATE INDEX "Shift_functionId_idx" ON "Shift"("functionId");
+CREATE INDEX IF NOT EXISTS "Shift_functionId_idx" ON "Shift"("functionId");
 
 -- AddForeignKey
 ALTER TABLE "DepartmentCategory" ADD CONSTRAINT "DepartmentCategory_departmentId_fkey" FOREIGN KEY ("departmentId") REFERENCES "Department"("id") ON DELETE CASCADE ON UPDATE CASCADE;
