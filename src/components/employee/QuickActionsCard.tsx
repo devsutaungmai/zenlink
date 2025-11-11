@@ -66,7 +66,7 @@ export default function QuickActionsCard({
           <Button 
             variant="outline" 
             className="border-sky-300 text-sky-700 hover:bg-sky-50 py-3"
-            onClick={() => router.push('/employee/sick-leaves')}
+            onClick={() => router.push('/dashboard/sick-leaves')}
           >
             <Bell className="w-4 h-4 mr-2" />
             {t('quick_actions.sick_leave')}

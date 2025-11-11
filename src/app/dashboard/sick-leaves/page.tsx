@@ -1,11 +1,12 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
-import { PlusIcon, CheckIcon, XMarkIcon, EyeIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline'
+import React, { useCallback, useEffect, useState } from 'react'
+import { PlusIcon, CheckIcon, XMarkIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { FileText, Calendar, User, Clock } from 'lucide-react'
 import Swal from 'sweetalert2'
 import SickLeaveModal from '@/components/SickLeaveModal'
 import { useTranslation } from 'react-i18next'
+import { useUser } from '@/shared/lib/useUser'
 
 interface SickLeave {
   id: string
@@ -40,6 +41,8 @@ interface SickLeaveFormData {
 
 export default function SickLeavesPage() {
   const { t } = useTranslation('sick-leave')
+  const { user, loading: userLoading } = useUser()
+  const isEmployeeUser = user?.role === 'EMPLOYEE' || !!user?.employee
   const [sickLeaves, setSickLeaves] = useState<SickLeave[]>([])
   const [employees, setEmployees] = useState<Employee[]>([])
   const [loading, setLoading] = useState(true)
@@ -49,6 +52,53 @@ export default function SickLeavesPage() {
   const [submitting, setSubmitting] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved'>('all')
+  const [currentEmployeeId, setCurrentEmployeeId] = useState<string | null>(null)
+
+  const resolveEmployeeId = useCallback(async (): Promise<string | null> => {
+    if (!isEmployeeUser) {
+      return null
+    }
+
+    // Prefer the employee id already cached in the user object
+    const directId = user?.employee?.id
+    if (directId) {
+      setCurrentEmployeeId(directId)
+      return directId
+    }
+
+    // Try the dedicated employee endpoint (PIN-based logins)
+    try {
+      const response = await fetch('/api/employee/me')
+      if (response.ok) {
+        const employeeData = await response.json()
+        if (employeeData?.id) {
+          setCurrentEmployeeId(employeeData.id)
+          return employeeData.id
+        }
+      }
+    } catch (error) {
+      console.error('Failed to resolve employee via /api/employee/me:', error)
+    }
+
+    // Final fallback: targeted search by user id
+    if (user?.id) {
+      try {
+        const targetedResponse = await fetch(`/api/employees?userId=${user.id}`)
+        if (targetedResponse.ok) {
+          const employeesData = await targetedResponse.json()
+          const match = Array.isArray(employeesData) ? employeesData[0] : null
+          if (match?.id) {
+            setCurrentEmployeeId(match.id)
+            return match.id
+          }
+        }
+      } catch (error) {
+        console.error('Failed to resolve employee via /api/employees lookup:', error)
+      }
+    }
+
+    return null
+  }, [isEmployeeUser, user?.employee?.id, user?.id])
 
   const fetchSickLeaves = async () => {
     try {
@@ -88,22 +138,58 @@ export default function SickLeavesPage() {
   }
 
   useEffect(() => {
+    if (userLoading) {
+      return
+    }
+
     fetchSickLeaves()
-    fetchEmployees()
-  }, [])
+    if (!isEmployeeUser) {
+      fetchEmployees()
+    } else {
+      setEmployees([])
+      resolveEmployeeId()
+    }
+  }, [userLoading, isEmployeeUser, resolveEmployeeId])
 
   const handleSubmit = async (formData: SickLeaveFormData) => {
+    let employeeIdForSubmission: string | null = null
+
+    if (isEmployeeUser) {
+      employeeIdForSubmission = currentEmployeeId || user?.employee?.id || null
+
+      if (!employeeIdForSubmission) {
+        employeeIdForSubmission = await resolveEmployeeId()
+      }
+
+      if (!employeeIdForSubmission) {
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
+          icon: 'error',
+          title: t('errors.employee_not_found')
+        })
+        return
+      }
+    }
+
     setSubmitting(true)
     try {
       const url = editingData ? `/api/sick-leaves/${editingData.id}` : '/api/sick-leaves'
       const method = editingData ? 'PUT' : 'POST'
+
+      const submissionData = isEmployeeUser
+        ? { ...formData, employeeId: employeeIdForSubmission }
+        : formData
       
       const response = await fetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(submissionData),
       })
 
       if (!response.ok) {
@@ -259,7 +345,7 @@ export default function SickLeavesPage() {
   const filteredSickLeaves = sickLeaves.filter(sl => {
     const matchesSearch = searchTerm === '' || 
       `${sl.employee.firstName} ${sl.employee.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      sl.employee.employeeNo?.toLowerCase().includes(searchTerm.toLowerCase())
+      (!!sl.employee.employeeNo && sl.employee.employeeNo.toLowerCase().includes(searchTerm.toLowerCase()))
     
     const matchesStatus = statusFilter === 'all' || 
       (statusFilter === 'approved' && sl.approved) ||
@@ -268,7 +354,7 @@ export default function SickLeavesPage() {
     return matchesSearch && matchesStatus
   })
 
-  if (loading) {
+  if (loading || userLoading) {
     return (
       <div className="p-6">
         <div className="text-center">{t('loading')}</div>
@@ -296,9 +382,9 @@ export default function SickLeavesPage() {
     <>
       <div className="sm:flex sm:items-center">
         <div className="sm:flex-auto">
-          <h1 className="text-xl font-semibold text-gray-900">{t('title')}</h1>
+          <h1 className="text-xl font-semibold text-gray-900">{isEmployeeUser ? t('employee.title') : t('title')}</h1>
           <p className="mt-2 text-sm text-gray-700">
-            {t('subtitle')}
+            {isEmployeeUser ? t('employee.subtitle') : t('subtitle')}
           </p>
         </div>
         <div className="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
@@ -310,7 +396,7 @@ export default function SickLeavesPage() {
             className="inline-flex items-center justify-center rounded-md border border-transparent bg-[#31BCFF] px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-[#31BCFF]/90"
           >
             <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
-            {t('form.submit')}
+            {isEmployeeUser ? t('employee.request_button') : t('form.submit')}
           </button>
         </div>
       </div>
@@ -437,7 +523,7 @@ export default function SickLeavesPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end space-x-2">
-                      {!sickLeave.approved && (
+                      {!isEmployeeUser && !sickLeave.approved && (
                         <>
                           <button
                             onClick={() => handleApprove(sickLeave.id, true)}
@@ -504,8 +590,9 @@ export default function SickLeavesPage() {
         } : undefined}
         onSubmit={handleSubmit}
         loading={submitting}
-        employees={employees}
-        showEmployeeSelection={true}
+        employees={isEmployeeUser ? [] : employees}
+        showEmployeeSelection={!isEmployeeUser}
+        isEmployee={isEmployeeUser}
       />
     </>
   )

@@ -90,7 +90,7 @@ export default function DashboardNavbar({ setMobileMenuOpen }: DashboardNavbarPr
     { name: t('navigation.your_hours'), href: '/dashboard/hours', icon: ClockIcon },
     { name: t('navigation.schedule'), href: '/dashboard/schedule', icon: CalendarIcon },
     { name: t('navigation.availability'), href: '/dashboard/availability', icon: ClockIcon },
-    { name: t('navigation.sick_leaves'), href: '/employee/sick-leaves', icon: UserIcon },
+    { name: t('navigation.sick_leaves'), href: '/dashboard/sick-leaves', icon: UserIcon },
   ]
 
   const navigation = (user?.role === 'EMPLOYEE' || user?.employee) ? employeeNavigation : adminNavigation
