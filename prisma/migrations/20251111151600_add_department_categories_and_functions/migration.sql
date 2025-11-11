@@ -35,6 +35,7 @@ CREATE TABLE "EmployeeFunction" (
 
 -- AlterTable
 ALTER TABLE "Shift" ADD COLUMN IF NOT EXISTS "functionId" TEXT;
+ALTER TABLE "Shift" ADD COLUMN IF NOT EXISTS "departmentId" TEXT;
 
 -- CreateIndex
 CREATE INDEX "DepartmentCategory_departmentId_idx" ON "DepartmentCategory"("departmentId");
@@ -60,6 +61,9 @@ CREATE UNIQUE INDEX "EmployeeFunction_employeeId_functionId_key" ON "EmployeeFun
 -- CreateIndex
 CREATE INDEX IF NOT EXISTS "Shift_functionId_idx" ON "Shift"("functionId");
 
+-- CreateIndex
+CREATE INDEX IF NOT EXISTS "Shift_departmentId_idx" ON "Shift"("departmentId");
+
 -- AddForeignKey
 ALTER TABLE "DepartmentCategory" ADD CONSTRAINT "DepartmentCategory_departmentId_fkey" FOREIGN KEY ("departmentId") REFERENCES "Department"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -74,3 +78,19 @@ ALTER TABLE "EmployeeFunction" ADD CONSTRAINT "EmployeeFunction_functionId_fkey"
 
 -- AddForeignKey
 ALTER TABLE "Shift" ADD CONSTRAINT "Shift_functionId_fkey" FOREIGN KEY ("functionId") REFERENCES "DepartmentFunction"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint 
+    WHERE conname = 'Shift_departmentId_fkey'
+  ) THEN
+    ALTER TABLE "Shift" 
+    ADD CONSTRAINT "Shift_departmentId_fkey" 
+    FOREIGN KEY ("departmentId") 
+    REFERENCES "Department"("id") 
+    ON DELETE SET NULL 
+    ON UPDATE CASCADE;
+  END IF;
+END $$;
