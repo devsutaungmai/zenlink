@@ -70,7 +70,7 @@
       }
     }
   },
-   "punch_clock": {
+  "punch_clock": {
     "title": "Punch Clock",
     "description": "Time tracking and clock-in settings.",
     "menu": {
@@ -128,7 +128,7 @@
           "example": "e.g., IT Department (3 employees)"
         }
       },
-       "allowed_locations": {
+      "allowed_locations": {
         "title": "Allowed Locations",
         "description": "Add locations where employees can punch in/out.",
         "empty_message": "No locations configured. Employees won't be able to punch in/out until you add at least one location.",
@@ -139,6 +139,9 @@
         "unknown_department": "Unknown",
         "all_departments_allowed": "All departments allowed",
         "warning_title": "No locations configured",
+        "no_departments_warning": "No departments selected. Employees won't be able to access punch clock.",
+        "employees": "employees",
+        "employee": "employee",
         "buttons": {
           "add_with_map": "Add with Map",
           "add_manually": "Add Manually"
@@ -175,7 +178,24 @@
     "profile_setting": {
       "title": "Punch Clock Profiles",
       "description": "Manage time tracking profiles for different departments and work schedules.",
-      "create_new_profile": "Create New Profile",
+      "create_profile": "Create Profile",
+      "no_profiles_title": "No profiles found",
+      "no_profiles_description": "Create your first punch clock profile to get started",
+      "modal": {
+        "title_create": "Create New Profile",
+        "title_edit": "Edit Profile",
+        "profile_name_label": "Profile Name",
+        "profile_name_placeholder": "Enter profile name",
+        "department_label": "Department",
+        "department_placeholder": "Select a department",
+        "active_profile_label": "Active Profile",
+        "active_profile_hint": "Profile will be available for use when active",
+        "required": "*",
+        "button_cancel": "Cancel",
+        "button_create": "Create Profile",
+        "button_update": "Update Profile",
+        "button_saving": "Saving..."
+      },
       "fields": {
         "profile_name": "Profile Name",
         "department": "Department",
@@ -185,7 +205,8 @@
       "buttons": {
         "create_profile": "Create Profile",
         "cancel": "Cancel",
-        "generate_code": "Generate Code"
+        "generate_code": "Generate Code",
+        "generate_new_code": "Generate new activation code"
       },
       "table": {
         "profile_name": "Profile Name",
@@ -198,13 +219,209 @@
       "status": {
         "active": "Active",
         "inactive": "Inactive"
-      },
-      "empty_message": "No profiles found. Create your first punch clock profile to get started."
+      }
     },
     "advance_setting": {
       "title": "Punch Clock - Advance",
       "description": "Advanced punch clock configurations",
       "coming_soon": "This punch clock feature is coming soon."
+    }
+  },
+  "people": {
+    "title": "People",
+    "description": "Manage employee contracts and rules",
+    "menu": {
+      "general": {
+        "title": "General",
+        "description": "General people management settings"
+      },
+      "contract_rules": {
+        "title": "Contract Rules",
+        "description": "Define contract rules and policies"
+      },
+      "contract_setup": {
+        "title": "Contract Setup",
+        "description": "Configure contract templates and setup"
+      },
+      "notifications": {
+        "title": "Notifications",
+        "description": "Manage notification preferences",
+        "badge": "Soon"
+      }
+    },
+    "general_setting": {
+      "title": "People - General",
+      "description": "General people management settings",
+      "coming_soon": "This punch clock feature is coming soon."
+    },
+    "contract_rules_setting": {
+      "title": "People - Contract Rules",
+      "description": "Define contract rules and policies",
+      "coming_soon": "This punch clock feature is coming soon."
+    },
+    "contract_setup_setting": {
+      "title": "Create Contract Template",
+      "description": "Create reusable contract templates for different employee groups",
+      "employee_group_label": "Employee Group",
+      "employee_group_placeholder": "Select an employee group",
+      "template_name_label": "Template Name",
+      "template_name_placeholder": "e.g., Standard Employment Contract",
+      "company_logo_label": "Company Logo",
+      "company_logo_optional": "(Optional)",
+      "upload_logo_text": "Upload company logo",
+      "logo_format": "PNG, JPG up to 5MB",
+      "logo_position_label": "Logo Position",
+      "logo_positions": {
+        "top_left": "Top Left",
+        "top_center": "Top Center",
+        "top_right": "Top Right",
+        "bottom_left": "Bottom Left",
+        "bottom_center": "Bottom Center",
+        "bottom_right": "Bottom Right"
+      },
+      "contract_body_label": "Contract Body",
+      "contract_body_placeholder": "Enter the contract content here. You can use variables like {{employee_name}}, {{start_date}}, {{salary}}, etc.",
+      "variables_hint": "Use variables in double curly braces like {{employee_name}}, {{start_date}}, {{department}} to automatically fill employee data",
+      "required": "*",
+      "remove": "Remove",
+      "loading": "Creating...",
+      "buttons": {
+        "choose_file": "Choose File",
+        "create_template": "Create Template"
+      },
+      "existing_templates": {
+        "title": "Existing Contract Templates",
+        "description": "Manage your contract templates",
+        "employee_group": "Employee Group",
+        "created": "Created",
+        "logo": "Logo",
+        "buttons": {
+          "view": "View",
+          "delete": "Delete"
+        }
+      }
+    }
+  },
+  "profile": {
+    "not_found": "Profile not found",
+    "unabled_load": "Unable to load profile information.",
+    "menu": {
+      "title": "Profile Settings",
+      "description": "Update personal information"
+    },
+    "page": {
+      "dashboard": "Dashboard",
+      "breadcrumb": "Profile",
+      "title": "My Profile",
+      "description": "Manage your personal information and account settings.",
+      "edit_profile_button": "Edit Profile"
+    },
+    "profile_card": {
+      "administrator": "Administrator"
+    },
+    "personal_information": {
+      "title": "Personal Information",
+      "full_name": "Full Name",
+      "email_address": "Email Address",
+      "role": "Role"
+    },
+    "business_information": {
+      "title": "Business Information",
+      "business_name": "Business Name",
+      "business_address": "Business Address",
+      "business_type": "Business Type"
+    },
+    "account_details": {
+      "title": "Account Details",
+      "member_since": "Member Since",
+      "password": "Password"
+    },
+    "actions": {
+      "edit_profile": {
+        "title": "Edit Profile",
+        "description": "Update your personal information"
+      },
+      "account_settings": {
+        "title": "Account Settings",
+        "description": "Manage your account preferences"
+      }
+    },
+    "edit_profile_page": {
+      "breadcrumb": "Edit Profile",
+      "title": "Edit Profile",
+      "description": "Update your personal information and account settings.",
+      "section_title": "Edit Profile",
+      "first_name": "First Name",
+      "last_name": "Last Name",
+      "email_address": "Email Address",
+      "change_password": {
+        "title": "Change Password",
+        "button": "Change Password",
+        "cancel_button": "Cancel Password Change",
+        "current_password": "Current Password",
+        "new_password": "New Password",
+        "confirm_password": "Confirm New Password"
+      },
+      "required": "*",
+      "buttons": {
+        "update_profile": "Update Profile",
+        "updating": "Updating..."
+      }
+    }
+  },
+  "security": {
+    "title": "Security",
+    "description": "Password and security settings",
+    "badge": "Soon"
+  },
+  "business_setting": {
+    "menu": {
+      "title": "Business Settings",
+      "description": "Manage company information and currency"
+    },
+    "page": {
+      "title": "Business Information",
+      "description": "Manage your company details and currency preferences"
+    },
+    "form": {
+      "business_name": "Business Name",
+      "business_name_placeholder": "Enter your business name",
+      "business_address": "Business Address",
+      "business_address_placeholder": "Enter your business address",
+      "business_type": "Business Type",
+      "business_type_placeholder": "Select business type",
+      "default_currency": "Default Currency",
+      "currency_hint": "This currency will be used for all payroll, salary, and financial calculations."
+    },
+    "messages": {
+      "success": "Business information updated successfully!",
+      "error": "An error occurred while updating the business information.",
+      "saving": "Saving...",
+      "save_changes": "Save Changes"
+    },
+    "validation": {
+      "required": "This field is required.",
+      "invalid_email": "Enter a valid email address.",
+      "min_length": "This field must have at least {{min}} characters.",
+      "max_length": "This field cannot exceed {{max}} characters.",
+      "select_option": "Please select a valid option.",
+      "invalid_format": "Invalid format.",
+      "address_required": "Business address is required.",
+      "name_required": "Business name is required."
+    },
+    "statistics": {
+      "title": "Business Statistics",
+      "total_employees": "Total Employees",
+      "current_currency": "Current Currency"
+    },
+    "buttons": {
+      "save_changes": "Save Changes"
+    }
+  },
+  "shift_types": {
+    "menu": {
+      "title": "Shift Types",
+      "description": "Configure shift types and pay calculations"
     }
   }
 }

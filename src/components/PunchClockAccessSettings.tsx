@@ -334,14 +334,16 @@ export default function PunchClockAccessSettings() {
                       {dept.name}
                       {dept._count?.employees ? (
                         <span className="text-xs text-gray-500 ml-1">
-                          ({dept._count.employees} {dept._count.employees === 1 ? 'employee' : 'employees'})
+                          ({dept._count.employees} {dept._count.employees === 1 ? t('punch_clock.access_setting.allowed_locations.employee') : t('punch_clock.access_setting.allowed_locations.employees')})
                         </span>
                       ) : null}
                     </span>
                   </label>
                 ))}
                 {departments.length === 0 && (
-                  <p className="text-xs sm:text-sm text-gray-500 p-2">No departments available</p>
+                  <p className="text-xs sm:text-sm text-gray-500 p-2">
+                    {t('punch_clock.access_setting.allowed_locations.add_form.no_departments')}
+                  </p>
                 )}
               </div>
               
@@ -351,7 +353,7 @@ export default function PunchClockAccessSettings() {
                     <ExclamationTriangleIcon className="h-4 w-4 flex-shrink-0 text-yellow-400 mt-0.5" />
                     <div className="ml-2 min-w-0">
                       <p className="text-xs sm:text-sm text-yellow-700">
-                        No departments selected. Employees won't be able to access punch clock.
+                        {t('punch_clock.access_setting.allowed_locations.no_departments_warning')}
                       </p>
                     </div>
                   </div>

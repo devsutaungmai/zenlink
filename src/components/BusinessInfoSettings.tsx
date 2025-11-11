@@ -9,6 +9,7 @@ import {
   CheckIcon
 } from '@heroicons/react/24/outline'
 import { CURRENCY_INFO, getCurrencySymbol } from '@/shared/lib/currency'
+import { useTranslation } from 'react-i18next'
 
 interface Business {
   id: string
@@ -47,6 +48,7 @@ export default function BusinessInfoSettings() {
     type: '',
     currency: 'USD'
   })
+  const {t} = useTranslation('settings');
 
   useEffect(() => {
     fetchBusiness()
@@ -144,8 +146,8 @@ export default function BusinessInfoSettings() {
             <BuildingOfficeIcon className="w-5 h-5 text-blue-600" />
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">Business Information</h2>
-            <p className="text-gray-600 text-sm">Manage your business details and currency settings</p>
+            <h2 className="text-xl font-semibold text-gray-900">{t('business_setting.page.title')}</h2>
+            <p className="text-gray-600 text-sm">{t('business_setting.page.description')}</p>
           </div>
         </div>
       </div>
@@ -160,7 +162,7 @@ export default function BusinessInfoSettings() {
         {success && (
           <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-lg text-sm flex items-center gap-2">
             <CheckIcon className="w-4 h-4" />
-            Business information updated successfully!
+            {t('business_setting.messages.success')}
           </div>
         )}
 
@@ -168,7 +170,7 @@ export default function BusinessInfoSettings() {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             <BuildingOfficeIcon className="w-4 h-4 inline mr-2" />
-            Business Name
+            {t('business_setting.form.business_name')}
           </label>
           <input
             type="text"
@@ -184,7 +186,7 @@ export default function BusinessInfoSettings() {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             <MapPinIcon className="w-4 h-4 inline mr-2" />
-            Business Address
+            {t('business_setting.form.business_address')}
           </label>
           <textarea
             value={formData.address}
@@ -199,14 +201,14 @@ export default function BusinessInfoSettings() {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             <TagIcon className="w-4 h-4 inline mr-2" />
-            Business Type
+            {t('business_setting.form.business_type')}
           </label>
           <select
             value={formData.type}
             onChange={(e) => handleInputChange('type', e.target.value)}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
           >
-            <option value="">Select business type</option>
+                      <option value="">{t('business_setting.form.business_type_placeholder')}</option>
             {BUSINESS_TYPES.map((type) => (
               <option key={type} value={type}>
                 {type}
@@ -219,7 +221,7 @@ export default function BusinessInfoSettings() {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             <CurrencyDollarIcon className="w-4 h-4 inline mr-2" />
-            Default Currency
+            {t('business_setting.form.default_currency')}
           </label>
           <select
             value={formData.currency}
@@ -233,21 +235,23 @@ export default function BusinessInfoSettings() {
             ))}
           </select>
           <p className="text-xs text-gray-500 mt-1">
-            This currency will be used for all wages, payroll, and financial calculations.
+            {t('business_setting.form.currency_hint')}
           </p>
         </div>
 
         {/* Business Stats */}
         {business && (
           <div className="bg-gray-50 rounded-lg p-4">
-            <h3 className="text-sm font-medium text-gray-700 mb-3">Business Statistics</h3>
+            <h3 className="text-sm font-medium text-gray-700 mb-3">
+            {t('business_setting.statistics.title')}
+          </h3>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <span className="text-gray-500">Total Employees:</span>
+                <span className="text-gray-500">{t('business_setting.statistics.total_employees')}:</span>
                 <span className="font-medium text-gray-900 ml-2">{business.employeesCount}</span>
               </div>
               <div>
-                <span className="text-gray-500">Current Currency:</span>
+                <span className="text-gray-500">{t('business_setting.statistics.current_currency')}:</span>
                 <span className="font-medium text-gray-900 ml-2">
                   {selectedCurrency?.symbol} {selectedCurrency?.code}
                 </span>
@@ -263,7 +267,7 @@ export default function BusinessInfoSettings() {
             disabled={saving}
             className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {saving ? 'Saving...' : 'Save Changes'}
+            {saving ? t('business_setting.messages.saving') : t('business_setting.buttons.save_changes')}
           </button>
         </div>
       </form>

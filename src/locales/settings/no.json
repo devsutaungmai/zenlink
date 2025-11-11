@@ -1,76 +1,76 @@
 {
-    "title": "Innstillinger",
-    "description": "Administrer applikasjonens innstillinger og preferanser.",
-    "labor": {
-        "title": "Arbeidsrettsregler",
-        "description": "Konfigurer grenser for arbeidstimer og krav til pauser",
-        "setting": {
-            "title": "Arbeidsrettsinnstillinger",
-            "country_region": {
-                "title": "Land/Region",
-                "label1": "Velg land og region",
-                "label2": "Gjeldende",
-                "info2": "Reglene vil bli brukt ved validering av alle vakter"
-            },
-            "daily_work_limits": {
-              "title": "Daglige arbeidsgrenser",
-              "max_hours_per_day": {
-                "label": "Maksimalt antall timer per dag",
-                "description": "Maksimalt antall arbeidstimer per dag"
-              },
-              "regular_hours_threshold": {
-                "label": "Grense for ordinære timer",
-                "description": "Antall timer før overtidsregler gjelder"
-              },
-              "max_overtime_per_day": {
-                "label": "Maksimum overtid per dag",
-                "description": "Maksimalt antall overtidstimer per dag"
-              }
-            },
-            "weekly_work_limits": {
-                "title": "Ukentlige arbeidsgrenser",
-                "max_hours_per_week": {
-                    "label": "Maksimalt antall timer per uke",
-                    "description": "Maksimalt antall arbeidstimer per uke"
-                },
-                "max_overtime_per_week": {
-                    "label": "Maksimum overtid per uke",
-                    "description": "Maksimalt antall overtidstimer per uke"
-                },
-                "max_consecutive_days": {
-                    "label": "Maksimalt antall påfølgende arbeidsdager",
-                    "description": "Maksimalt antall påfølgende arbeidsdager"
-                }
-            },
-            "breaks_rest_periods": {
-                "title": "Pauser og hvileperioder",
-                "min_rest_between_shifts": {
-                    "label": "Minimum hvile mellom vakter (timer)",
-                    "description": "Minimum hviletid som kreves mellom vakter"
-                },
-                "min_break_duration": {
-                    "label": "Minimum varighet på pause (minutter)",
-                    "description": "Påkrevd pauselengde for lange vakter"
-                },
-                "long_shift_threshold": {
-                    "label": "Grense for lange vakter (timer)",
-                    "description": "Antall timer som utløser krav om obligatorisk pause"
-                }
-            },
-            "buttons": {
-                "reset": "Tilbakestill til standard",
-                "save": "Lagre innstillinger"
-            },
-            "current_rules_summary": {
-                "title": "Sammendrag av gjeldende regler",
-                "max_daily": "Maks daglig",
-                "max_weekly": "Maks ukentlig",
-                "min_rest": "Min hvile",
-                "max_consecutive": "Maks påfølgende"
-            }
+  "title": "Innstillinger",
+  "description": "Administrer applikasjonens innstillinger og preferanser.",
+  "labor": {
+    "title": "Arbeidsrettsregler",
+    "description": "Konfigurer grenser for arbeidstimer og krav til pauser",
+    "setting": {
+      "title": "Arbeidsrettsinnstillinger",
+      "country_region": {
+        "title": "Land/Region",
+        "label1": "Velg land og region",
+        "label2": "Gjeldende",
+        "info2": "Reglene vil bli brukt ved validering av alle vakter"
+      },
+      "daily_work_limits": {
+        "title": "Daglige arbeidsgrenser",
+        "max_hours_per_day": {
+          "label": "Maksimalt antall timer per dag",
+          "description": "Maksimalt antall arbeidstimer per dag"
+        },
+        "regular_hours_threshold": {
+          "label": "Grense for ordinære timer",
+          "description": "Antall timer før overtidsregler gjelder"
+        },
+        "max_overtime_per_day": {
+          "label": "Maksimum overtid per dag",
+          "description": "Maksimalt antall overtidstimer per dag"
         }
-    },
-    "punch_clock": {
+      },
+      "weekly_work_limits": {
+        "title": "Ukentlige arbeidsgrenser",
+        "max_hours_per_week": {
+          "label": "Maksimalt antall timer per uke",
+          "description": "Maksimalt antall arbeidstimer per uke"
+        },
+        "max_overtime_per_week": {
+          "label": "Maksimum overtid per uke",
+          "description": "Maksimalt antall overtidstimer per uke"
+        },
+        "max_consecutive_days": {
+          "label": "Maksimalt antall påfølgende arbeidsdager",
+          "description": "Maksimalt antall påfølgende arbeidsdager"
+        }
+      },
+      "breaks_rest_periods": {
+        "title": "Pauser og hvileperioder",
+        "min_rest_between_shifts": {
+          "label": "Minimum hvile mellom vakter (timer)",
+          "description": "Minimum hviletid som kreves mellom vakter"
+        },
+        "min_break_duration": {
+          "label": "Minimum varighet på pause (minutter)",
+          "description": "Påkrevd pauselengde for lange vakter"
+        },
+        "long_shift_threshold": {
+          "label": "Grense for lange vakter (timer)",
+          "description": "Antall timer som utløser krav om obligatorisk pause"
+        }
+      },
+      "buttons": {
+        "reset": "Tilbakestill til standard",
+        "save": "Lagre innstillinger"
+      },
+      "current_rules_summary": {
+        "title": "Sammendrag av gjeldende regler",
+        "max_daily": "Maks daglig",
+        "max_weekly": "Maks ukentlig",
+        "min_rest": "Min hvile",
+        "max_consecutive": "Maks påfølgende"
+      }
+    }
+  },
+  "punch_clock": {
     "title": "Stemplingsur",
     "description": "Tidsregistrering og innstemplingsinnstillinger.",
     "menu": {
@@ -95,76 +95,79 @@
       "title": "Stemplingsur – Tilgang",
       "description": "Konfigurer hvor ansatte kan registrere inn- og utstempling.",
       "access_restrictions": {
-      "title": "Tilgangsbegrensninger",
-      "description": "Aktiver at ansatte kan stemplere inn og ut fra enheten.",
-      "options": {
-        "anywhere": {
-        "label": "Hvor som helst",
-        "description": "Ansatte kan stemplere inn/ut fra hvilken som helst lokasjon"
-        },
-        "specific_locations": {
-        "label": "Bestemte lokasjoner",
-        "description": "Begrens stempling til forhåndsdefinerte lokasjoner"
+        "title": "Tilgangsbegrensninger",
+        "description": "Aktiver at ansatte kan stemplere inn og ut fra enheten.",
+        "options": {
+          "anywhere": {
+            "label": "Hvor som helst",
+            "description": "Ansatte kan stemplere inn/ut fra hvilken som helst lokasjon"
+          },
+          "specific_locations": {
+            "label": "Bestemte lokasjoner",
+            "description": "Begrens stempling til forhåndsdefinerte lokasjoner"
+          }
         }
-      }
       },
       "department_access": {
-      "title": "Avdelingstilgang",
-      "description": "Kontroller hvilke avdelinger som kan bruke stemplingsursystemet.",
-      "options": {
-        "all_departments": {
-        "label": "Alle avdelinger",
-        "description": "Tillat alle avdelinger å bruke stemplingsuret"
+        "title": "Avdelingstilgang",
+        "description": "Kontroller hvilke avdelinger som kan bruke stemplingsursystemet.",
+        "options": {
+          "all_departments": {
+            "label": "Alle avdelinger",
+            "description": "Tillat alle avdelinger å bruke stemplingsuret"
+          },
+          "specific_departments": {
+            "label": "Utvalgte avdelinger",
+            "description": "Begrens stemplingstilgang til valgte avdelinger"
+          }
         },
         "specific_departments": {
-        "label": "Utvalgte avdelinger",
-        "description": "Begrens stemplingstilgang til valgte avdelinger"
+          "title": "Tillatte avdelinger",
+          "empty_message": "Ingen avdelinger valgt. Ansatte vil ikke kunne bruke stemplingsuret.",
+          "tooltip": "Velg avdelinger som får bruke stemplingsursystemet.",
+          "example": "f.eks. IT-avdeling (3 ansatte)"
         }
       },
-      "specific_departments": {
-        "title": "Tillatte avdelinger",
-        "empty_message": "Ingen avdelinger valgt. Ansatte vil ikke kunne bruke stemplingsuret.",
-        "tooltip": "Velg avdelinger som får bruke stemplingsursystemet.",
-        "example": "f.eks. IT-avdeling (3 ansatte)"
-      }
-      },
-       "allowed_locations": {
-      "title": "Tillatte lokasjoner",
-      "description": "Legg til lokasjoner der ansatte kan stemplere inn/ut.",
-      "empty_message": "Ingen lokasjoner konfigurert. Ansatte kan ikke stemplere inn/ut før du legger til minst én lokasjon.",
-      "no_location_text": "Ingen lokasjoner lagt til",
-      "radius_label": "Radius",
-      "gps_enabled": "GPS aktivert",
-      "departments_label": "Avdelinger",
-      "unknown_department": "Ukjent",
-      "all_departments_allowed": "Alle avdelinger tillatt",
-      "warning_title": "Ingen lokasjoner konfigurert",
-      "buttons": {
-        "add_with_map": "Legg til med kart",
-        "add_manually": "Legg til manuelt"
-      },
-      "add_form": {
-        "title": "Legg til ny lokasjon",
-        "location_name": "Lokasjonsnavn",
-        "location_name_placeholder": "f.eks. Hovedkontor, Lager",
-        "address": "Adresse",
-        "address_placeholder": "Skriv inn full adresse",
-        "radius": "Radius (meter)",
-        "radius_hint": "Ansatte må være innenfor denne avstanden for å kunne stemplere inn/ut",
-        "departments": "Avdelinger (valgfritt)",
-        "departments_hint": "Velg hvilke avdelinger som kan stemplere fra denne lokasjonen. La stå tomt for alle avdelinger.",
-        "employees_count": "ansatte",
-        "no_departments": "Ingen avdelinger tilgjengelig",
-        "add_button": "Legg til lokasjon",
-        "cancel_button": "Avbryt"
-      }
+      "allowed_locations": {
+        "title": "Tillatte lokasjoner",
+        "description": "Legg til lokasjoner der ansatte kan stemplere inn/ut.",
+        "empty_message": "Ingen lokasjoner konfigurert. Ansatte kan ikke stemplere inn/ut før du legger til minst én lokasjon.",
+        "no_location_text": "Ingen lokasjoner lagt til",
+        "radius_label": "Radius",
+        "gps_enabled": "GPS aktivert",
+        "departments_label": "Avdelinger",
+        "unknown_department": "Ukjent",
+        "all_departments_allowed": "Alle avdelinger tillatt",
+        "warning_title": "Ingen lokasjoner konfigurert",
+        "no_departments_warning": "Ingen avdelinger valgt. Ansatte vil ikke kunne bruke stemplingsuret.",
+        "employees": "ansatte",
+        "employee": "ansatt",
+        "buttons": {
+          "add_with_map": "Legg til med kart",
+          "add_manually": "Legg til manuelt"
+        },
+        "add_form": {
+          "title": "Legg til ny lokasjon",
+          "location_name": "Lokasjonsnavn",
+          "location_name_placeholder": "f.eks. Hovedkontor, Lager",
+          "address": "Adresse",
+          "address_placeholder": "Skriv inn full adresse",
+          "radius": "Radius (meter)",
+          "radius_hint": "Ansatte må være innenfor denne avstanden for å kunne stemplere inn/ut",
+          "departments": "Avdelinger (valgfritt)",
+          "departments_hint": "Velg hvilke avdelinger som kan stemplere fra denne lokasjonen. La stå tomt for alle avdelinger.",
+          "employees_count": "ansatte",
+          "no_departments": "Ingen avdelinger tilgjengelig",
+          "add_button": "Legg til lokasjon",
+          "cancel_button": "Avbryt"
+        }
       },
       "buttons": {
-      "save": "Lagre endringer"
+        "save": "Lagre endringer"
       },
       "toast": {
-      "saved_success": "Innstillinger for stemplingsur-tilgang er lagret.",
-      "error_save": "Kunne ikke lagre innstillingene. Vennligst prøv igjen."
+        "saved_success": "Innstillinger for stemplingsur-tilgang er lagret.",
+        "error_save": "Kunne ikke lagre innstillingene. Vennligst prøv igjen."
       }
     },
     "general_setting": {
@@ -173,19 +176,37 @@
       "coming_soon": "Denne stemplingsur-funksjonen kommer snart."
     },
     "profile_setting": {
-      "title": "Stemplingsur-profiler",
-      "description": "Administrer tidsregistreringsprofiler for forskjellige avdelinger og arbeidsplaner.",
-      "create_new_profile": "Opprett ny profil",
+      "title": "Stemplingsurprofiler",
+      "description": "Administrer tidsregistreringsprofiler for ulike avdelinger og arbeidstidsplaner.",
+      "create_profile": "Opprett profil",
+      "no_profiles_title": "Ingen profiler funnet",
+      "no_profiles_description": "Opprett din første stemplingsurprofil for å komme i gang",
+      "modal": {
+        "title_create": "Opprett ny profil",
+        "title_edit": "Rediger profil",
+        "profile_name_label": "Profilnavn",
+        "profile_name_placeholder": "Skriv inn profilnavn",
+        "department_label": "Avdeling",
+        "department_placeholder": "Velg en avdeling",
+        "active_profile_label": "Aktiv profil",
+        "active_profile_hint": "Profilen vil være tilgjengelig for bruk når den er aktiv",
+        "required": "*",
+        "button_cancel": "Avbryt",
+        "button_create": "Opprett profil",
+        "button_update": "Oppdater profil",
+        "button_saving": "Lagrer..."
+      },
       "fields": {
         "profile_name": "Profilnavn",
         "department": "Avdeling",
         "active_profile": "Aktiv profil",
-        "active_profile_hint": "Profilen vil være tilgjengelig når den er aktiv"
+        "active_profile_hint": "Profilen vil være tilgjengelig for bruk når den er aktiv"
       },
       "buttons": {
         "create_profile": "Opprett profil",
         "cancel": "Avbryt",
-        "generate_code": "Generer kode"
+        "generate_code": "Generer kode",
+        "generate_new_code": "Generer ny aktiveringskode"
       },
       "table": {
         "profile_name": "Profilnavn",
@@ -198,13 +219,209 @@
       "status": {
         "active": "Aktiv",
         "inactive": "Inaktiv"
-      },
-      "empty_message": "Ingen profiler funnet. Opprett din første stemplingsur-profil for å komme i gang."
+      }
     },
     "advance_setting": {
       "title": "Stemplingsur – Avansert",
       "description": "Avanserte konfigurasjoner for stemplingsuret",
       "coming_soon": "Denne stemplingsur-funksjonen kommer snart."
     }
+  },
+  "people": {
+    "title": "Personell",
+    "description": "Administrer ansattkontrakter og regler",
+    "menu": {
+      "general": {
+        "title": "Generelt",
+        "description": "Generelle innstillinger for personaladministrasjon"
+      },
+      "contract_rules": {
+        "title": "Kontraktsregler",
+        "description": "Definer kontraktsregler og retningslinjer"
+      },
+      "contract_setup": {
+        "title": "Kontraktoppsett",
+        "description": "Konfigurer kontraktsmaler og oppsett"
+      },
+      "notifications": {
+        "title": "Varsler",
+        "description": "Administrer varselinnstillinger",
+        "badge": "Kommer snart"
+      }
+    },
+    "general_setting": {
+      "title": "Personell – Generelt",
+      "description": "Generelle innstillinger for personaladministrasjon",
+      "coming_soon": "Denne funksjonen kommer snart."
+    },
+    "contract_rules_setting": {
+      "title": "Personell – Kontraktsregler",
+      "description": "Definer kontraktsregler og retningslinjer",
+      "coming_soon": "Denne funksjonen kommer snart."
+    },
+    "contract_setup_setting": {
+      "title": "Opprett kontraktsmal",
+      "description": "Opprett gjenbrukbare kontraktsmaler for ulike ansattgrupper",
+      "employee_group_label": "Ansattgruppe",
+      "employee_group_placeholder": "Velg en ansattgruppe",
+      "template_name_label": "Malnavn",
+      "template_name_placeholder": "f.eks. Standard arbeidskontrakt",
+      "company_logo_label": "Firma-logo",
+      "company_logo_optional": "(Valgfritt)",
+      "upload_logo_text": "Last opp firma-logo",
+      "logo_format": "PNG, JPG opptil 5MB",
+      "logo_position_label": "Logoposisjon",
+      "logo_positions": {
+        "top_left": "Øverst til venstre",
+        "top_center": "Øverst midt",
+        "top_right": "Øverst til høyre",
+        "bottom_left": "Nederst til venstre",
+        "bottom_center": "Nederst midt",
+        "bottom_right": "Nederst til høyre"
+      },
+      "contract_body_label": "Kontraktsinnhold",
+      "contract_body_placeholder": "Skriv inn kontraktsteksten her. Du kan bruke variabler som {{employee_name}}, {{start_date}}, {{salary}}, osv.",
+      "variables_hint": "Bruk variabler i doble krøllparenteser som {{employee_name}}, {{start_date}}, {{department}} for automatisk utfylling av ansattdata",
+      "required": "*",
+      "remove": "Fjern",
+      "loading": "Oppretter...",
+      "buttons": {
+        "choose_file": "Velg fil",
+        "create_template": "Opprett mal"
+      },
+      "existing_templates": {
+        "title": "Eksisterende kontraktsmaler",
+        "description": "Administrer kontraktsmalene dine",
+        "employee_group": "Ansattgruppe",
+        "created": "Opprettet",
+        "logo": "Logo",
+        "buttons": {
+          "view": "Vis",
+          "delete": "Slett"
+        }
+      }
+    }
+  },
+  "profile": {
+    "not_found": "Profil ikke funnet",
+    "unabled_load": "Kan ikke laste profilinformasjon.",
+    "menu": {
+      "title": "Profilinnstillinger",
+      "description": "Oppdater personlig informasjon"
+    },
+    "page": {
+      "dashboard": "Dashboard",
+      "breadcrumb": "Profil",
+      "title": "Min Profil",
+      "description": "Administrer din personlige informasjon og kontoinnstillinger.",
+      "edit_profile_button": "Rediger Profil"
+    },
+    "profile_card": {
+      "administrator": "Administrator"
+    },
+    "personal_information": {
+      "title": "Personlig Informasjon",
+      "full_name": "Fullt Navn",
+      "email_address": "E-postadresse",
+      "role": "Rolle"
+    },
+    "business_information": {
+      "title": "Bedriftsinformasjon",
+      "business_name": "Bedriftsnavn",
+      "business_address": "Bedriftsadresse",
+      "business_type": "Bedriftstype"
+    },
+    "account_details": {
+      "title": "Kontodetaljer",
+      "member_since": "Medlem Siden",
+      "password": "Passord"
+    },
+    "actions": {
+      "edit_profile": {
+        "title": "Rediger Profil",
+        "description": "Oppdater din personlige informasjon"
+      },
+      "account_settings": {
+        "title": "Kontoinnstillinger",
+        "description": "Administrer dine kontopreferanser"
+      }
+    },
+    "edit_profile_page": {
+      "breadcrumb": "Rediger Profil",
+      "title": "Rediger Profil",
+      "description": "Oppdater din personlige informasjon og kontoinnstillinger.",
+      "section_title": "Rediger Profil",
+      "first_name": "Fornavn",
+      "last_name": "Etternavn",
+      "email_address": "E-postadresse",
+      "change_password": {
+        "title": "Endre Passord",
+        "button": "Endre Passord",
+        "cancel_button": "Avbryt Passordendring",
+        "current_password": "Nåværende Passord",
+        "new_password": "Nytt Passord",
+        "confirm_password": "Bekreft Nytt Passord"
+      },
+      "required": "*",
+      "buttons": {
+        "update_profile": "Oppdater Profil",
+        "updating": "Oppdaterer..."
+      }
+    }
+  },
+  "security": {
+    "title": "Sikkerhet",
+    "description": "Passord- og sikkerhetsinnstillinger",
+    "badge": "Snart"
+  },
+  "business_setting": {
+  "menu": {
+    "title": "Bedriftsinnstillinger",
+    "description": "Administrer bedriftsinformasjon og valuta"
+  },
+  "page": {
+    "title": "Bedriftsinformasjon",
+    "description": "Administrer bedriftens detaljer og valutainnstillinger"
+  },
+  "form": {
+    "business_name": "Bedriftsnavn",
+    "business_name_placeholder": "Skriv inn bedriftsnavnet ditt",
+    "business_address": "Bedriftsadresse",
+    "business_address_placeholder": "Skriv inn bedriftens adresse",
+    "business_type": "Bedriftstype",
+    "business_type_placeholder": "Velg bedriftstype",
+    "default_currency": "Standardvaluta",
+    "currency_hint": "Denne valutaen vil bli brukt for alle lønninger, lønnsutbetalinger og økonomiske beregninger."
+  },
+  "messages": {
+    "success": "Bedriftsinformasjonen ble oppdatert!",
+    "error": "Det oppstod en feil under oppdatering av bedriftsinformasjonen.",
+    "saving": "Lagrer...",
+    "save_changes": "Lagre endringer"
+  },
+  "validation": {
+    "required": "Dette feltet er påkrevd.",
+    "invalid_email": "Skriv inn en gyldig e-postadresse.",
+    "min_length": "Dette feltet må inneholde minst {{min}} tegn.",
+    "max_length": "Dette feltet kan ikke inneholde mer enn {{max}} tegn.",
+    "select_option": "Velg et gyldig alternativ.",
+    "invalid_format": "Ugyldig format.",
+    "address_required": "Bedriftsadressen er påkrevd.",
+    "name_required": "Bedriftsnavnet er påkrevd."
+  },
+  "statistics": {
+    "title": "Bedriftsstatistikk",
+    "total_employees": "Totalt antall ansatte",
+    "current_currency": "Gjeldende valuta"
+  },
+  "buttons": {
+    "save_changes": "Lagre endringer"
   }
+},
+"shift_types": {
+  "menu": {
+    "title": "Vakttyper",
+    "description": "Konfigurer vakt typer og lønnsberegninger"
+  }
+}
 }

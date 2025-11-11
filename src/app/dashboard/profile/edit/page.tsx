@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import UserProfileForm from '@/components/UserProfileForm'
 import { useUser } from '@/shared/lib/useUser'
 import Swal from 'sweetalert2'
+import { useTranslation } from 'react-i18next'
 
 interface UserProfile {
   id: string
@@ -27,7 +28,7 @@ export default function ProfileEditPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-
+  const {t} = useTranslation('settings');
   useEffect(() => {
     fetchProfile()
   }, [])
@@ -153,8 +154,8 @@ export default function ProfileEditPage() {
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900">Profile not found</h1>
-            <p className="mt-2 text-gray-600">Unable to load profile information.</p>
+            <h1 className="text-2xl font-bold text-gray-900">{t('profile.not_found')}</h1>
+            <p className="mt-2 text-gray-600">{t('profile.unabled_load')}</p>
           </div>
         </div>
       </div>
@@ -173,7 +174,7 @@ export default function ProfileEditPage() {
                   onClick={() => router.push('/dashboard')}
                   className="text-gray-400 hover:text-gray-500"
                 >
-                  Dashboard
+                  {t('profile.page.dashboard')}
                 </button>
               </li>
               <li>
@@ -185,7 +186,7 @@ export default function ProfileEditPage() {
                     onClick={() => router.push('/dashboard/profile')}
                     className="ml-4 text-gray-400 hover:text-gray-500"
                   >
-                    Profile
+                    {t('profile.page.breadcrumb')}
                   </button>
                 </div>
               </li>
@@ -194,18 +195,18 @@ export default function ProfileEditPage() {
                   <svg className="flex-shrink-0 h-5 w-5 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
                   </svg>
-                  <span className="ml-4 text-sm font-medium text-gray-500">Edit Profile</span>
+                   <span className="ml-4 text-sm font-medium text-gray-500">{t('profile.edit_profile_page.breadcrumb')}</span>
                 </div>
               </li>
             </ol>
           </nav>
           
           <div className="mt-4">
-            <h1 className="text-3xl font-bold text-gray-900">Edit Profile</h1>
-            <p className="mt-2 text-gray-600">
-              Update your personal information and account settings.
-            </p>
-          </div>
+          <h1 className="text-3xl font-bold text-gray-900">{t('profile.edit_profile_page.title')}</h1>
+          <p className="mt-2 text-gray-600">
+            {t('profile.edit_profile_page.description')}
+          </p>
+        </div>
         </div>
 
         {/* Profile Info Card */}

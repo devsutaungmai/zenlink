@@ -17,6 +17,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+import { useTranslation } from 'react-i18next'
 
 interface Department {
   id: string
@@ -56,6 +57,7 @@ export default function ProfileFormModal({
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const { t } = useTranslation('settings')
 
   // Update form data when profile changes
   useEffect(() => {
@@ -136,14 +138,15 @@ export default function ProfileFormModal({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {profile ? 'Edit Profile' : 'Create New Profile'}
+            {profile ? t('punch_clock.profile_setting.modal.title_edit') : t('punch_clock.profile_setting.modal.title_create')}
+
           </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="name">
-              Profile Name <span className="text-red-500">*</span>
+              {t('punch_clock.profile_setting.modal.profile_name_label')} <span className="text-red-500">*</span>
             </Label>
             <Input
               id="name"
@@ -160,7 +163,7 @@ export default function ProfileFormModal({
 
           <div className="space-y-2">
             <Label htmlFor="department">
-              Department <span className="text-red-500">*</span>
+              {t('punch_clock.profile_setting.modal.department_label')}  <span className="text-red-500">*</span>
             </Label>
             <Select
               value={formData.departmentId}
@@ -168,7 +171,7 @@ export default function ProfileFormModal({
               disabled={isSubmitting}
             >
               <SelectTrigger className={errors.departmentId ? 'border-red-500 focus:border-red-500' : ''}>
-                <SelectValue placeholder="Select a department" />
+                <SelectValue placeholder={t('punch_clock.profile_setting.modal.department_placeholder')} />
               </SelectTrigger>
               <SelectContent>
                 {departments.map((department) => (
@@ -194,10 +197,10 @@ export default function ProfileFormModal({
             />
             <div className="space-y-1">
               <Label htmlFor="isActive" className="cursor-pointer">
-                Active Profile
+                {t('punch_clock.profile_setting.modal.active_profile_label')}
               </Label>
               <p className="text-sm text-gray-500">
-                Profile will be available for use when active
+                {t('punch_clock.profile_setting.modal.active_profile_hint')}
               </p>
             </div>
           </div>
@@ -209,14 +212,14 @@ export default function ProfileFormModal({
               onClick={handleClose}
               disabled={isSubmitting}
             >
-              Cancel
+              {t('punch_clock.profile_setting.modal.button_cancel')}
             </Button>
             <Button
               type="submit"
               disabled={isSubmitting}
               className="bg-[#31BCFF] hover:bg-[#31BCFF]/90"
             >
-              {isSubmitting ? 'Saving...' : profile ? 'Update Profile' : 'Create Profile'}
+              {isSubmitting ? t('punch_clock.profile_setting.modal.button_saving') : profile ? t('punch_clock.profile_setting.modal.button_update') : t('punch_clock.profile_setting.modal.button_create')}
             </Button>
           </div>
         </form>

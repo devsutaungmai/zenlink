@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useTransition } from 'react'
 import { useUser } from '@/shared/lib/useUser'
 import { 
   PlusIcon, 
@@ -12,6 +12,7 @@ import {
   EyeIcon
 } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
+import { useTranslation } from 'react-i18next'
 
 interface EmployeeGroup {
   id: string
@@ -51,7 +52,8 @@ export default function ContractTemplateForm() {
     logoPosition: 'top-right'
   })
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
-
+   const { t } = useTranslation('settings')
+ 
   useEffect(() => {
     fetchEmployeeGroups()
     fetchContractTemplates()
@@ -302,10 +304,12 @@ export default function ContractTemplateForm() {
         <div className="px-6 py-4 border-b border-gray-200">
           <div className="flex items-center gap-2">
             <DocumentTextIcon className="w-5 h-5 text-[#31BCFF]" />
-            <h2 className="text-lg font-semibold text-gray-900">Create Contract Template</h2>
+            <h2 className="text-lg font-semibold text-gray-900">
+              {t('people.contract_setup_setting.title')}
+            </h2>
           </div>
           <p className="text-sm text-gray-600 mt-1">
-            Create reusable contract templates for different employee groups
+            {t('people.contract_setup_setting.description')}
           </p>
         </div>
 
@@ -313,7 +317,7 @@ export default function ContractTemplateForm() {
         {/* Employee Group Selection */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Employee Group <span className="text-red-500">*</span>
+            {t('people.contract_setup_setting.employee_group_label')}  <span className="text-red-500">*</span>
           </label>
           <select
             value={formData.employeeGroupId}
@@ -321,7 +325,8 @@ export default function ContractTemplateForm() {
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] outline-none"
             required
           >
-            <option value="">Select an employee group</option>
+                        <option value="">{t('people.contract_setup_setting.employee_group_placeholder')}</option>
+
             {employeeGroups.map((group) => (
               <option key={group.id} value={group.id}>
                 {group.name}
@@ -333,13 +338,13 @@ export default function ContractTemplateForm() {
         {/* Template Name */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Template Name <span className="text-red-500">*</span>
+            {t('people.contract_setup_setting.template_name_label')} <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
             value={formData.name}
             onChange={(e) => handleInputChange('name', e.target.value)}
-            placeholder="e.g., Standard Employment Contract"
+            placeholder={t('people.contract_setup_setting.template_name_placeholder')}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] outline-none"
             required
           />
@@ -348,17 +353,18 @@ export default function ContractTemplateForm() {
         {/* Logo Upload */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Company Logo <span className="text-gray-500">(Optional)</span>
+            {t('people.contract_setup_setting.company_logo_label')}<span className="text-gray-500">{t('people.contract_setup_setting.company_logo_optional')}</span>
           </label>
           
           {!logoPreview ? (
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-[#31BCFF] transition-colors">
               <PhotoIcon className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-              <p className="text-sm text-gray-600 mb-2">Upload company logo</p>
-              <p className="text-xs text-gray-500 mb-4">PNG, JPG up to 5MB</p>
+             <p className="text-sm text-gray-600 mb-2">{t('people.contract_setup_setting.upload_logo_text')}</p>
+              <p className="text-xs text-gray-500 mb-4">{t('people.contract_setup_setting.logo_format')}</p>
               <label className="inline-flex items-center gap-2 px-4 py-2 bg-[#31BCFF] text-white rounded-lg hover:bg-[#2ba3e4] cursor-pointer transition-colors">
                 <PlusIcon className="w-4 h-4" />
-                Choose File
+                                {t('people.contract_setup_setting.buttons.choose_file')}
+
                 <input
                   type="file"
                   accept="image/*"
@@ -386,7 +392,7 @@ export default function ContractTemplateForm() {
                     className="mt-2 inline-flex items-center gap-1 text-xs text-red-600 hover:text-red-700"
                   >
                     <XMarkIcon className="w-3 h-3" />
-                    Remove
+                    {t('people.contract_setup_setting.remove')}
                   </button>
                 </div>
               </div>
@@ -398,19 +404,19 @@ export default function ContractTemplateForm() {
         {logoPreview && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Logo Position
+              {t('people.contract_setup_setting.logo_position_label')}
             </label>
             <select
               value={formData.logoPosition}
               onChange={(e) => handleInputChange('logoPosition', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] outline-none"
             >
-              <option value="top-left">Top Left</option>
-              <option value="top-center">Top Center</option>
-              <option value="top-right">Top Right</option>
-              <option value="bottom-left">Bottom Left</option>
-              <option value="bottom-center">Bottom Center</option>
-              <option value="bottom-right">Bottom Right</option>
+              <option value="top-left">{t('people.contract_setup_setting.logo_positions.top_left')}</option>
+              <option value="top-center">{t('people.contract_setup_setting.logo_positions.top_center')}</option>
+              <option value="top-right">{t('people.contract_setup_setting.logo_positions.top_right')}</option>
+              <option value="bottom-left">{t('people.contract_setup_setting.logo_positions.bottom_left')}</option>
+              <option value="bottom-center">{t('people.contract_setup_setting.logo_positions.bottom_center')}</option>
+              <option value="bottom-right">{t('people.contract_setup_setting.logo_positions.bottom_right')}</option>
             </select>
           </div>
         )}
@@ -418,20 +424,21 @@ export default function ContractTemplateForm() {
         {/* Contract Body */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Contract Body <span className="text-red-500">*</span>
+            {t('people.contract_setup_setting.contract_body_label')}<span className="text-red-500">*</span>
           </label>
           <div className="border border-gray-300 rounded-lg overflow-hidden">
             <textarea
               value={formData.body}
               onChange={(e) => handleInputChange('body', e.target.value)}
-              placeholder="Enter the contract content here. You can use variables like {{employee_name}}, {{start_date}}, {{salary}}, etc."
+              placeholder={t('people.contract_setup_setting.contract_body_placeholder')}
               rows={12}
               className="w-full px-3 py-2 resize-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] outline-none"
               required
             />
           </div>
           <p className="text-xs text-gray-500 mt-1">
-            Use variables in double curly braces like {`{{employee_name}}, {{start_date}}, {{department}}`} to automatically fill employee data
+            {/* Use variables in double curly braces like {`{{employee_name}}, {{start_date}}, {{department}}`} to automatically fill employee data */}
+            {t('people.contract_setup_setting.variables_hint')}
           </p>
         </div>
 
@@ -445,12 +452,12 @@ export default function ContractTemplateForm() {
             {loading ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                Creating...
+                {t('people.contract_setup_setting.loading')}
               </>
             ) : (
               <>
                 <PlusIcon className="w-4 h-4" />
-                Create Template
+                {t('people.contract_setup_setting.buttons.create_template')}
               </>
             )}
           </button>
@@ -464,10 +471,12 @@ export default function ContractTemplateForm() {
         <div className="px-6 py-4 border-b border-gray-200">
           <div className="flex items-center gap-2">
             <DocumentTextIcon className="w-5 h-5 text-[#31BCFF]" />
-            <h2 className="text-lg font-semibold text-gray-900">Existing Contract Templates</h2>
+          <h2 className="text-lg font-semibold text-gray-900">
+              {t('people.contract_setup_setting.existing_templates.title')}
+            </h2>
           </div>
           <p className="text-sm text-gray-600 mt-1">
-            Manage your contract templates
+            {t('people.contract_setup_setting.existing_templates.description')}
           </p>
         </div>
 
@@ -481,14 +490,14 @@ export default function ContractTemplateForm() {
                       {template.name}
                     </h3>
                     <p className="text-sm text-gray-600 mb-2">
-                      Employee Group: <span className="font-medium">{template.employeeGroup.name}</span>
+                      {t('people.contract_setup_setting.existing_templates.employee_group')}: <span className="font-medium">{template.employeeGroup.name}</span>
                     </p>
                     <p className="text-xs text-gray-500">
-                      Created: {new Date(template.createdAt).toLocaleDateString()}
+                      {t('people.contract_setup_setting.existing_templates.created')}: {new Date(template.createdAt).toLocaleDateString()}
                     </p>
                     {template.logoPath && (
                       <p className="text-xs text-gray-500 mt-1">
-                        Logo: {template.logoPosition.replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())}
+                        {t('people.contract_setup_setting.existing_templates.logo')}:  {template.logoPosition.replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())}
                       </p>
                     )}
                   </div>
@@ -499,14 +508,14 @@ export default function ContractTemplateForm() {
                       className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
                     >
                       <EyeIcon className="w-4 h-4" />
-                      View
+                      {t('people.contract_setup_setting.existing_templates.buttons.view')}
                     </button>
                     <button
                       onClick={() => handleDeleteTemplate(template.id, template.name)}
                       className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-red-700 bg-red-100 hover:bg-red-200 rounded-md transition-colors"
                     >
                       <TrashIcon className="w-4 h-4" />
-                      Delete
+                      {t('people.contract_setup_setting.existing_templates.buttons.delete')}
                     </button>
                   </div>
                 </div>

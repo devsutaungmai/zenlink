@@ -39,92 +39,92 @@ export default function SettingsPage() {
     },
     {
       id: 'punch-clock',
-      name: 'Punch Clock',
-      description: 'Time tracking and clock-in settings',
+      name: t('punch_clock.title'),
+      description: t('punch_clock.description'),
       icon: ClockIcon,
       hasSubmenus: true,
       submenus: [
         {
           id: 'punch-clock-access',
-          name: 'Access',
-          description: 'Configure access permissions and restrictions',
+          name: t('punch_clock.menu.access.title'),
+          description: t('punch_clock.menu.access.description'),
           component: PunchClockAccessSettings
         },
         {
           id: 'punch-clock-general',
-          name: 'General',
-          description: 'General punch clock settings'
+          name: t('punch_clock.menu.general.title'),
+          description: t('punch_clock.menu.general.description')
         },
         {
           id: 'punch-clock-profiles',
-          name: 'Profiles',
-          description: 'Manage time tracking profiles',
+          name: t('punch_clock.menu.profiles.title'),
+          description: t('punch_clock.menu.profiles.description'),
           component: PunchClockProfiles
         },
         {
           id: 'punch-clock-advance',
-          name: 'Advance',
-          description: 'Advanced punch clock configurations'
+          name: t('punch_clock.menu.advance.title'),
+          description: t('punch_clock.menu.advance.description')
         }
       ]
     },
     {
       id: 'people',
-      name: 'People',
-      description: 'Manage employee contracts and rules',
+      name: t('people.title'),
+      description: t('people.description'),
       icon: UsersIcon,
       hasSubmenus: true,
       submenus: [
         {
           id: 'people-general',
-          name: 'General',
-          description: 'General people management settings'
+          name: t('people.menu.general.title'),
+          description: t('people.menu.general.description')
         },
         {
           id: 'people-contract-rules',
-          name: 'Contract Rules',
-          description: 'Define contract rules and policies'
+          name: t('people.menu.contract_rules.title'),
+          description: t('people.menu.contract_rules.description')
         },
         {
           id: 'people-contract-setup',
-          name: 'Contract Setup',
-          description: 'Configure contract templates and setup',
+          name: t('people.menu.contract_setup.title'),
+          description: t('people.menu.contract_setup.description'),
           component: ContractTemplateForm
         }
       ]
     },
     {
       id: 'notifications',
-      name: 'Notifications',
-      description: 'Manage notification preferences',
+      name: t('people.menu.notifications.title'),
+      description:  t('people.menu.notifications.description'),
       icon: BellIcon,
       disabled: true
     },
     {
       id: 'profile',
-      name: 'Profile Settings',
-      description: 'Update personal information',
+      name: t('profile.menu.title'),
+      description: t('profile.menu.description'),
       icon: UserCircleIcon,
       href: '/dashboard/profile'
     },
     {
       id: 'security',
-      name: 'Security',
-      description: 'Password and security settings',
+      name: t('security.title'),
+      description: t('security.description'),
       icon: KeyIcon,
       disabled: true
     },
     {
       id: 'business',
-      name: 'Business Settings',
-      description: 'Manage business information and currency',
+      name: t('business_setting.menu.title'),
+      description: t('business_setting.menu.description'),
       icon: BuildingOfficeIcon,
       component: BusinessInfoSettings
     },
     {
       id: 'shift-types',
-      name: 'Shift Types',
-      description: 'Configure shift types and pay calculations',
+      name: t('shift_types.menu.title'),
+      description: t('shift_types.menu.description'),
       icon: RectangleGroupIcon,
       component: ShiftTypeSettings
     }
@@ -320,7 +320,7 @@ export default function SettingsPage() {
                 </p>
                 <p className="text-xs sm:text-sm text-gray-500">
                   {activeSubmenu 
-                    ? 'This punch clock feature is coming soon.'
+                    ? t('punch_clock.general_setting.coming_soon')
                     : 'We\'re working on bringing you more configuration options.'
                   }
                 </p>
