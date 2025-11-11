@@ -12,6 +12,8 @@ interface Shift {
   endTime: string
   employeeId?: string | null
   employeeGroupId?: string | null
+  departmentId?: string | null
+  functionId?: string | null
   shiftType: ShiftType
   breakStart?: string | null
   breakEnd?: string | null
@@ -28,6 +30,20 @@ interface Shift {
     id: string
     name: string
   } | null
+  department?: {
+    id: string
+    name: string
+  } | null
+  function?: {
+    id: string
+    name: string
+    categoryId: string
+    category: {
+      id: string
+      name: string
+      departmentId: string
+    }
+  } | null
 }
 
 export default function EditShiftPage({ params }: { params: Promise<{ id: string }> }) {
@@ -37,7 +53,7 @@ export default function EditShiftPage({ params }: { params: Promise<{ id: string
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [employees, setEmployees] = useState<{ id: string; firstName: string; lastName: string }[]>([])
+  const [employees, setEmployees] = useState<any[]>([])
   const [employeeGroups, setEmployeeGroups] = useState<{ id: string; name: string }[]>([])
 
   useEffect(() => {
@@ -64,7 +80,12 @@ export default function EditShiftPage({ params }: { params: Promise<{ id: string
         
         if (employeesRes.ok) {
           const employeesData = await employeesRes.json()
-          setEmployees(employeesData)
+
+          const mappedEmployees = employeesData.map((emp: any) => ({
+            ...emp,
+            departmentId: emp.department?.id || ''
+          }))
+          setEmployees(mappedEmployees)
         }
         
         if (groupsRes.ok) {
@@ -117,6 +138,9 @@ export default function EditShiftPage({ params }: { params: Promise<{ id: string
     ...shift,
     employeeId: shift.employeeId ?? undefined,
     employeeGroupId: shift.employeeGroupId ?? undefined,
+    departmentId: shift.departmentId ?? shift.function?.category?.departmentId ?? undefined,
+    functionId: shift.functionId ?? undefined,
+    categoryId: shift.function?.categoryId ?? shift.function?.category?.id ?? undefined,
     breakStart: shift.breakStart ?? undefined,
     breakEnd: shift.breakEnd ?? undefined,
     note: shift.note ?? undefined

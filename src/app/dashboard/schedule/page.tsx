@@ -2,14 +2,18 @@
 
 import React, { useState, useEffect } from 'react'
 import { format, addDays, addWeeks, subWeeks, startOfWeek, endOfWeek } from 'date-fns'
-import { Employee, EmployeeGroup, Shift } from '@prisma/client'
+import { Employee, EmployeeGroup } from '@prisma/client'
 
 import Swal from 'sweetalert2'
 import ScheduleHeader from '@/components/schedule/ScheduleHeader'
 import WeekView from '@/components/schedule/WeekView'
 import DayView from '@/components/schedule/DayView'
+import EmployeeGroupedView from '@/components/schedule/EmployeeGroupedView'
+import GroupGroupedView from '@/components/schedule/GroupGroupedView'
+import FunctionGroupedView from '@/components/schedule/FunctionGroupedView'
 import ShiftFormModal from '@/components/schedule/ShiftFormModel'
 import { laborLawValidator, formatValidationMessage, separateViolations, type LaborLawViolation } from '@/shared/lib/laborLawValidation'
+import { ShiftWithRelations } from '@/types/schedule'
 
 export default function SchedulePage() {
   const [showShiftModal, setShowShiftModal] = useState(false)
@@ -19,12 +23,68 @@ export default function SchedulePage() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [employees, setEmployees] = useState<Employee[]>([])
   const [employeeGroups, setEmployeeGroups] = useState<EmployeeGroup[]>([])
-  const [shifts, setShifts] = useState<Shift[]>([])
+  const [shifts, setShifts] = useState<ShiftWithRelations[]>([])
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<'week' | 'day'>('week')
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
+  const [scheduleViewType, setScheduleViewType] = useState<'time' | 'employees' | 'groups' | 'functions'>('employees')
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
 
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState<string | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [selectedFunctionId, setSelectedFunctionId] = useState<string | null>(null);
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [departments, setDepartments] = useState<any[]>([])
+  const [categories, setCategories] = useState<any[]>([])
+  const [functions, setFunctions] = useState<any[]>([])
+  const [shiftTypes, setShiftTypes] = useState<any[]>([])
+  const [filters, setFilters] = useState({
+    employeeIds: [] as string[],
+    employeeGroupIds: [] as string[],
+    shiftTypeIds: [] as string[],
+    statuses: [] as string[],
+    timeFrom: '',
+    timeTo: ''
+  })
+
+  // Filter shifts based on selected department, category, function, and filters
+  const filteredShifts = shifts.filter((shift: any) => {
+    if (selectedDepartmentId && shift.departmentId !== selectedDepartmentId) {
+      return false
+    }
+    if (selectedCategoryId && shift.function?.categoryId !== selectedCategoryId) {
+      return false
+    }
+    if (selectedFunctionId && shift.functionId !== selectedFunctionId) {
+      return false
+    }
+    if (selectedGroupId && shift.employeeGroupId !== selectedGroupId) {
+      return false
+    }
+    
+    // Apply advanced filters
+    if (filters.employeeIds.length > 0 && shift.employeeId && !filters.employeeIds.includes(shift.employeeId)) {
+      return false
+    }
+    if (filters.employeeGroupIds.length > 0 && shift.employeeGroupId && !filters.employeeGroupIds.includes(shift.employeeGroupId)) {
+      return false
+    }
+    if (filters.shiftTypeIds.length > 0 && shift.shiftTypeId && !filters.shiftTypeIds.includes(shift.shiftTypeId)) {
+      return false
+    }
+    if (filters.statuses.length > 0 && !filters.statuses.includes(shift.status)) {
+      return false
+    }
+    if (filters.timeFrom && shift.startTime < filters.timeFrom) {
+      return false
+    }
+    if (filters.timeTo && shift.startTime > filters.timeTo) {
+      return false
+    }
+    
+    return true
+  })
 
   const startDate = startOfWeek(currentDate, { weekStartsOn: 0 })
   const endDate = endOfWeek(currentDate, { weekStartsOn: 0 })
@@ -35,6 +95,10 @@ export default function SchedulePage() {
     fetchEmployees()
     fetchEmployeeGroups()
     fetchShifts()
+    fetchDepartments()
+    fetchCategories()
+    fetchFunctions()
+    fetchShiftTypes()
   }, [currentDate, selectedEmployeeId])
 
   const fetchEmployees = async () => {
@@ -55,6 +119,48 @@ export default function SchedulePage() {
       setEmployeeGroups(data)
     } catch (error) {
       console.error('Error fetching employee groups:', error)
+    }
+  }
+
+  const fetchDepartments = async () => {
+    try {
+      const res = await fetch('/api/departments')
+      const data = await res.json()
+      setDepartments(data)
+    } catch (error) {
+      console.error('Error fetching departments:', error)
+      setDepartments([])
+    }
+  }
+
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch('/api/categories')
+      const data = await res.json()
+      setCategories(data)
+    } catch (error) {
+      console.error('Error fetching categories:', error)
+    }
+  }
+
+  const fetchFunctions = async () => {
+    try {
+      const res = await fetch('/api/functions')
+      const data = await res.json()
+      setFunctions(data)
+    } catch (error) {
+      console.error('Error fetching functions:', error)
+    }
+  }
+
+  const fetchShiftTypes = async () => {
+    try {
+      const res = await fetch('/api/shift-types')
+      const data = await res.json()
+      setShiftTypes(data)
+    } catch (error) {
+      console.error('Error fetching shift types:', error)
+      setShiftTypes([])
     }
   }
 
@@ -370,8 +476,7 @@ export default function SchedulePage() {
     return minutesWorked / 60
   }
 
-  const handleEditShift = (shift: Shift) => {
-    console.log("Edit shift called with:", shift);
+  const handleEditShift = (shift: ShiftWithRelations) => {
     setModalViewType('week');
     
     const shiftData = {
@@ -387,17 +492,16 @@ export default function SchedulePage() {
       approved: shift.approved || false,
       employeeId: shift.employeeId || undefined,
       employeeGroupId: shift.employeeGroupId || undefined,
+      departmentId: shift.departmentId || shift.function?.category?.departmentId || undefined,
+      categoryId: shift.function?.categoryId || shift.function?.category?.id || undefined,
+      functionId: shift.functionId || undefined,
       breakStart: shift.breakStart || undefined,
       breakEnd: shift.breakEnd || undefined,
       note: shift.note || '',
     };
     
-    console.log("Setting initial data:", shiftData);
     setShiftInitialData(shiftData);
-    
-    console.log("Setting showShiftModal to true");
     setShowShiftModal(true);
-    console.log("showShiftModal should now be:", true);
   };
 
   const getShiftPosition = (startTime: string, endTime: string) => {
@@ -433,7 +537,6 @@ export default function SchedulePage() {
     const today = new Date()
     setCurrentDate(today)
     setSelectedDate(today)
-    setViewMode('day')
   }
 
   const handleEmployeeChange = (employeeId: string | null) => {
@@ -441,8 +544,9 @@ export default function SchedulePage() {
   }
 
   return (
-    <div className="py-4 sm:py-6">
-      <div className="mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="flex flex-col h-screen bg-gray-50">
+      {/* Header with navigation and filters */}
+      <div className="bg-white border-b px-4 sm:px-6 lg:px-8 py-4">
         <ScheduleHeader
           startDate={startDate}
           endDate={endDate}
@@ -454,81 +558,214 @@ export default function SchedulePage() {
           employees={employees}
           selectedEmployeeId={selectedEmployeeId}
           onEmployeeChange={handleEmployeeChange}
+          departments={departments}
+          employeeGroups={employeeGroups}
+          shiftTypes={shiftTypes}
+          categories={categories}
+          functions={functions}
+          selectedDepartmentId={selectedDepartmentId}
+          selectedCategoryId={selectedCategoryId}
+          selectedFunctionId={selectedFunctionId}
+          onDepartmentChange={setSelectedDepartmentId}
+          onCategoryChange={setSelectedCategoryId}
+          onFunctionChange={setSelectedFunctionId}
+          filters={filters}
+          onFiltersChange={setFilters}
+          scheduleViewType={scheduleViewType}
+          onScheduleViewTypeChange={setScheduleViewType}
         />
-
-        {viewMode === 'week' ? (
-          <WeekView
-            weekDates={weekDates}
-            shifts={shifts}
-            employees={employees}
-            onEditShift={handleEditShift}
-            onAddShift={(formData) => {
-              if (formData) {
-                setModalViewType('week');
-                if (selectedEmployeeId) {
-                  formData.employeeId = selectedEmployeeId;
-                }
-                setShiftInitialData(formData);
-              } else {
-                setModalViewType('week');
-                if (selectedEmployeeId) {
-                  setShiftInitialData({
-                    employeeId: selectedEmployeeId,
-                  });
-                } else {
-                  setShiftInitialData(null);
-                }
-              }
-              setShowShiftModal(true);
-            }}
-          />
-        ) : (
-         <DayView
-            selectedDate={selectedDate}
-            shifts={shifts.filter(shift => 
-              format(
-                typeof shift.date === 'string' ? new Date(shift.date) : shift.date, 
-                'yyyy-MM-dd'
-              ) === format(selectedDate, 'yyyy-MM-dd')
-            )}
-            employees={employees}
-            onEditShift={handleEditShift}
-            onAddShift={(formData) => {
-              setModalViewType('day');
-              
-              if (formData) {
-                if (selectedEmployeeId) {
-                  formData.employeeId = selectedEmployeeId;
-                }
-                setShiftInitialData(formData);
-              } else {
-                if (selectedEmployeeId) {
-                  setShiftInitialData({
-                    date: format(selectedDate, 'yyyy-MM-dd'),
-                    employeeId: selectedEmployeeId,
-                  });
-                } else {
-                  setShiftInitialData({
-                    date: format(selectedDate, 'yyyy-MM-dd'),
-                  });
-                }
-              }
-              setShowShiftModal(true);
-            }}
-          />
-        )}
       </div>
 
-     <ShiftFormModal
-        isOpen={showShiftModal}
-        onClose={() => setShowShiftModal(false)}
-        initialData={shiftInitialData}
-        employees={employees}
-        employeeGroups={employeeGroups}
-        onSubmit={handleShiftFormSubmit}
-        viewType={modalViewType}
-        loading={loading}
-      />
-    </div>
+      {/* View Type Tabs */}
+      <div className="bg-white border-b px-4 sm:px-6 lg:px-8">
+        <div className="flex gap-1">
+          <button
+            onClick={() => setScheduleViewType('time')}
+            className={`px-4 py-3 text-sm font-medium transition-colors ${
+              scheduleViewType === 'time'
+                ? 'text-[#31BCFF] border-b-2 border-[#31BCFF]'
+                : 'text-gray-600 hover:text-gray-800'
+            }`}
+          >
+            Time
+          </button>
+          <button
+            onClick={() => setScheduleViewType('employees')}
+            className={`px-4 py-3 text-sm font-medium transition-colors ${
+              scheduleViewType === 'employees'
+                ? 'text-[#31BCFF] border-b-2 border-[#31BCFF]'
+                : 'text-gray-600 hover:text-gray-800'
+            }`}
+          >
+            Employees
+          </button>
+          <button
+            onClick={() => setScheduleViewType('groups')}
+            className={`px-4 py-3 text-sm font-medium transition-colors ${
+              scheduleViewType === 'groups'
+                ? 'text-[#31BCFF] border-b-2 border-[#31BCFF]'
+                : 'text-gray-600 hover:text-gray-800'
+            }`}
+          >
+            Groups
+          </button>
+          <button
+            onClick={() => setScheduleViewType('functions')}
+            className={`px-4 py-3 text-sm font-medium transition-colors ${
+              scheduleViewType === 'functions'
+                ? 'text-[#31BCFF] border-b-2 border-[#31BCFF]'
+                : 'text-gray-600 hover:text-gray-800'
+            }`}
+          >
+            Functions
+          </button>
+        </div>
+      </div>
+
+      {/* Main content area */}
+      <main className="flex-1 overflow-auto">
+            {viewMode === 'week' ? (
+              scheduleViewType === 'time' ? (
+                <WeekView
+                  weekDates={weekDates}
+                  shifts={filteredShifts}
+                  employees={employees}
+                  employeeGroups={employeeGroups}
+                  functions={functions}
+                  categories={categories}
+                  scheduleViewType={scheduleViewType}
+                  onEditShift={handleEditShift}
+                  onAddShift={(formData) => {
+                    if (formData) {
+                      setModalViewType('week');
+                      if (selectedEmployeeId) {
+                        formData.employeeId = selectedEmployeeId;
+                      }
+                      setShiftInitialData(formData);
+                    } else {
+                      setModalViewType('week');
+                      if (selectedEmployeeId) {
+                        setShiftInitialData({
+                          employeeId: selectedEmployeeId,
+                        });
+                      } else {
+                        setShiftInitialData(null);
+                      }
+                    }
+                    setShowShiftModal(true);
+                  }}
+                />
+              ) : scheduleViewType === 'employees' ? (
+                <EmployeeGroupedView
+                  weekDates={weekDates}
+                  shifts={filteredShifts}
+                  employees={employees}
+                  expandedGroups={expandedGroups}
+                  onToggleGroup={(groupId) => {
+                    const newExpanded = new Set(expandedGroups);
+                    if (newExpanded.has(groupId)) {
+                      newExpanded.delete(groupId);
+                    } else {
+                      newExpanded.add(groupId);
+                    }
+                    setExpandedGroups(newExpanded);
+                  }}
+                  onEditShift={handleEditShift}
+                />
+              ) : scheduleViewType === 'groups' ? (
+                <GroupGroupedView
+                  weekDates={weekDates}
+                  shifts={filteredShifts}
+                  employees={employees}
+                  employeeGroups={employeeGroups}
+                  onEditShift={handleEditShift}
+                />
+              ) : scheduleViewType === 'functions' ? (
+                <FunctionGroupedView
+                  weekDates={weekDates}
+                  shifts={filteredShifts}
+                  employees={employees}
+                  functions={functions}
+                  onEditShift={handleEditShift}
+                />
+              ) : (
+                <WeekView
+                  weekDates={weekDates}
+                  shifts={filteredShifts}
+                  employees={employees}
+                  employeeGroups={employeeGroups}
+                  functions={functions}
+                  categories={categories}
+                  scheduleViewType={scheduleViewType}
+                  onEditShift={handleEditShift}
+                  onAddShift={(formData) => {
+                    if (formData) {
+                      setModalViewType('week');
+                      if (selectedEmployeeId) {
+                        formData.employeeId = selectedEmployeeId;
+                      }
+                      setShiftInitialData(formData);
+                    } else {
+                      setModalViewType('week');
+                      if (selectedEmployeeId) {
+                        setShiftInitialData({
+                          employeeId: selectedEmployeeId,
+                        });
+                      } else {
+                        setShiftInitialData(null);
+                      }
+                    }
+                    setShowShiftModal(true);
+                  }}
+                />
+              )
+            ) : (
+             <DayView
+                selectedDate={selectedDate}
+                shifts={filteredShifts.filter((shift: any) => 
+                  format(
+                    typeof shift.date === 'string' ? new Date(shift.date) : shift.date, 
+                    'yyyy-MM-dd'
+                  ) === format(selectedDate, 'yyyy-MM-dd')
+                )}
+                employees={employees}
+                onEditShift={handleEditShift}
+                onAddShift={(formData) => {
+                  setModalViewType('day');
+                  
+                  if (formData) {
+                    if (selectedEmployeeId) {
+                      formData.employeeId = selectedEmployeeId;
+                    }
+                    setShiftInitialData(formData);
+                  } else {
+                    if (selectedEmployeeId) {
+                      setShiftInitialData({
+                        date: format(selectedDate, 'yyyy-MM-dd'),
+                        employeeId: selectedEmployeeId,
+                      });
+                    } else {
+                      setShiftInitialData({
+                        date: format(selectedDate, 'yyyy-MM-dd'),
+                      });
+                    }
+                  }
+                  setShowShiftModal(true);
+                }}
+              />
+            )}
+          </main>
+
+        <ShiftFormModal
+          isOpen={showShiftModal}
+          onClose={() => setShowShiftModal(false)}
+          initialData={shiftInitialData}
+          employees={employees}
+          employeeGroups={employeeGroups}
+          onSubmit={handleShiftFormSubmit}
+          viewType={modalViewType}
+          loading={loading}
+        />
+      </div>
   )
 }

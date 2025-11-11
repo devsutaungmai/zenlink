@@ -91,6 +91,27 @@ export async function GET(request: Request) {
             name: true
           }
         },
+        department: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        function: {
+          select: {
+            id: true,
+            name: true,
+            color: true,
+            categoryId: true,
+            category: {
+              select: {
+                id: true,
+                name: true,
+                departmentId: true
+              }
+            }
+          }
+        },
         shiftExchanges: {
           where: {
             status: 'APPROVED'
@@ -203,7 +224,7 @@ export async function POST(req: Request) {
     };
 
     // Prepare data for Prisma - extract relational fields
-    const { autoBreakType,autoBreakValue,employeeId, employeeGroupId, shiftTypeId, ...shiftData } = rawData;
+    const { autoBreakType, autoBreakValue, employeeId, employeeGroupId, shiftTypeId, departmentId, functionId, categoryId, ...shiftData } = rawData;
 
     const data = {
       ...shiftData,
@@ -232,6 +253,18 @@ export async function POST(req: Request) {
     if (employeeGroupId) {
       createData.employeeGroup = {
         connect: { id: employeeGroupId }
+      };
+    }
+
+    if (departmentId) {
+      createData.department = {
+        connect: { id: departmentId }
+      };
+    }
+
+    if (functionId) {
+      createData.function = {
+        connect: { id: functionId }
       };
     }
 
@@ -287,6 +320,12 @@ export async function POST(req: Request) {
       if (employeeGroupId) {
         firstPartData.employeeGroup = { connect: { id: employeeGroupId } };
       }
+      if (departmentId) {
+        firstPartData.department = { connect: { id: departmentId } };
+      }
+      if (functionId) {
+        firstPartData.function = { connect: { id: functionId } };
+      }
 
       // Create second part data
       const secondPartData: any = {
@@ -302,6 +341,12 @@ export async function POST(req: Request) {
       }
       if (employeeGroupId) {
         secondPartData.employeeGroup = { connect: { id: employeeGroupId } };
+      }
+      if (departmentId) {
+        secondPartData.department = { connect: { id: departmentId } };
+      }
+      if (functionId) {
+        secondPartData.function = { connect: { id: functionId } };
       }
 
       const [firstShift, secondShift] = await Promise.all([

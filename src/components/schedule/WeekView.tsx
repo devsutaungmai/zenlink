@@ -4,12 +4,20 @@ import { PlusIcon } from '@heroicons/react/24/outline'
 import { useTranslation } from 'react-i18next'
 import SpanningShiftCard from './SpanningShiftCard'
 import HourColumn from './HourColumn'
-import { Shift, Employee } from '@prisma/client'
+import { Shift as PrismaShift, Employee } from '@prisma/client'
+
+type Shift = PrismaShift & {
+  functionId?: string | null;
+};
 
 interface WeekViewProps {
   weekDates: Date[]
   shifts: Shift[]
   employees: Employee[]
+  employeeGroups?: any[]
+  functions?: any[]
+  categories?: any[]
+  scheduleViewType?: 'time' | 'employees' | 'groups' | 'functions'
   onEditShift: (shift: Shift) => void
   onAddShift: (formData?: any) => void
 }
@@ -18,6 +26,10 @@ export default function WeekView({
   weekDates,
   shifts,
   employees,
+  employeeGroups = [],
+  functions = [],
+  categories = [],
+  scheduleViewType = 'time',
   onEditShift,
   onAddShift
 }: WeekViewProps) {
@@ -155,18 +167,79 @@ export default function WeekView({
     return groups;
   };
 
+  // Group shifts based on schedule view type
+  const getGroupedData = () => {
+    if (scheduleViewType === 'employees') {
+      // Group by employee
+      const employeeMap = new Map();
+      employees.forEach(emp => {
+        employeeMap.set(emp.id, {
+          id: emp.id,
+          name: `${emp.firstName} ${emp.lastName}`,
+          shifts: []
+        });
+      });
+      
+      shifts.forEach(shift => {
+        if (shift.employeeId && employeeMap.has(shift.employeeId)) {
+          employeeMap.get(shift.employeeId).shifts.push(shift);
+        }
+      });
+      
+      return Array.from(employeeMap.values());
+    } else if (scheduleViewType === 'groups') {
+      // Group by employee group
+      const groupMap = new Map();
+      employeeGroups.forEach(group => {
+        groupMap.set(group.id, {
+          id: group.id,
+          name: group.name,
+          shifts: []
+        });
+      });
+      
+      shifts.forEach(shift => {
+        if (shift.employeeGroupId && groupMap.has(shift.employeeGroupId)) {
+          groupMap.get(shift.employeeGroupId).shifts.push(shift);
+        }
+      });
+      
+      return Array.from(groupMap.values());
+    } else if (scheduleViewType === 'functions') {
+      // Group by function/position
+      const functionMap = new Map();
+      functions.forEach(func => {
+        functionMap.set(func.id, {
+          id: func.id,
+          name: func.name,
+          shifts: []
+        });
+      });
+      
+      shifts.forEach(shift => {
+        if (shift.functionId && functionMap.has(shift.functionId)) {
+          functionMap.get(shift.functionId).shifts.push(shift);
+        }
+      });
+      
+      return Array.from(functionMap.values());
+    }
+    
+    return [];
+  };
+
   return (
-    <div className="overflow-hidden -mx-4 sm:mx-0">
+    <div className="overflow-hidden">
       <div 
         ref={weekScrollableRef}
-        className="sm:overflow-x-auto sm:cursor-grab sm:active:cursor-grabbing sm:touch-pan-x"
+        className="overflow-x-auto"
         onMouseDown={handleMouseDown}
         onMouseUp={handleMouseUp}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseUp}
       >
-        <div className="sm:min-w-[1200px]">
-          <div className="grid grid-cols-[60px_repeat(7,1fr)] sm:grid-cols-[150px_repeat(7,1fr)] md:grid-cols-[200px_repeat(7,1fr)] border-b">
+        <div>
+          <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b min-w-full">
             <HourColumn />
             
             {weekDates.map((date, i) => {
@@ -182,8 +255,8 @@ export default function WeekView({
               
               return (
                 <div key={i} className="relative">
-                  <div className={`p-1 sm:p-2 md:p-3 font-medium text-center border-r h-[60px] sm:h-[72px] flex flex-col justify-center ${isToday ? 'bg-blue-50' : ''}`}>
-                    <div className={`text-[10px] sm:text-sm md:text-base text-gray-950 font-bold ${isToday ? 'text-blue-700' : ''}`}>
+                  <div className={`p-1 font-medium text-center border-r h-[40px] flex flex-col justify-center ${isToday ? 'bg-blue-50' : ''}`}>
+                    <div className={`text-xs text-gray-950 font-bold ${isToday ? 'text-blue-700' : ''}`}>
                       {isToday ? <span className="text-blue-700">{t('week_view.today')}</span> : (
                         <>
                           <span className="hidden md:inline">{format(date, 'EEE, MMM d')}</span>
@@ -191,8 +264,8 @@ export default function WeekView({
                         </>
                       )}
                     </div>
-                    <div className="text-[10px] sm:text-xs md:text-sm text-gray-900">
-                      <PlusIcon className="inline h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" />
+                    <div className="text-[10px] text-gray-900">
+                      <PlusIcon className="inline h-3 w-3 mr-0.5" />
                       <span className="hidden sm:inline">{dayShifts.length} {t('week_view.shifts')}</span>
                       <span className="sm:hidden">{dayShifts.length}</span>
                     </div>
@@ -203,7 +276,7 @@ export default function WeekView({
                     {Array.from({ length: 23 }, (_, hour) => hour + 1).map(hour => (
                       <div
                         key={hour}
-                        className="border-b border-r p-1 sm:p-3 h-[50px] sm:h-[60px] relative hover:bg-gray-50"
+                        className="border-b border-r p-1 h-[24px] relative hover:bg-gray-50"
                         onMouseDown={() => handleDragStartToCreate(hour, date)}
                         onMouseOver={() => handleDragOverToCreate(hour)}
                         onMouseUp={() => handleDragEndToCreate()}

@@ -75,6 +75,9 @@ interface ShiftFormData {
   exchangeReason?: string
   autoBreakType?: AutoBreakType
   autoBreakValue?: number | null
+  departmentId?: string
+  categoryId?: string
+  functionId?: string
 }
 
 interface EmployeeForForm {
@@ -84,6 +87,26 @@ interface EmployeeForForm {
   employeeNo?: string | null;
   salaryRate?: number | null;
   employeeGroupId?: string | null;
+  departmentId: string;
+}
+
+interface Department {
+  id: string;
+  name: string;
+}
+
+interface Category {
+  id: string;
+  name: string;
+  color?: string | null;
+  departmentId: string;
+}
+
+interface FunctionItem {
+  id: string;
+  name: string;
+  color?: string | null;
+  categoryId: string;
 }
 
 interface ShiftFormProps {
@@ -188,6 +211,8 @@ export default function ShiftForm({
       const selectedEmployee = employees.find(emp => emp.id === formData.employeeId);
       if (selectedEmployee) {
         const updates: Partial<ShiftFormData> = {};
+        
+        // Auto-populate wage
         if (selectedEmployee.salaryRate) {
           updates.wage = selectedEmployee.salaryRate;
           updates.wageType = 'HOURLY';
@@ -203,8 +228,14 @@ export default function ShiftForm({
           updates.wage = 0;
         }
 
+        // Auto-populate employeeGroupId (editable)
         if (selectedEmployee.employeeGroupId && !formData.employeeGroupId) {
           updates.employeeGroupId = selectedEmployee.employeeGroupId;
+        }
+
+        // Auto-populate departmentId (editable)
+        if (selectedEmployee.departmentId && !formData.departmentId) {
+          updates.departmentId = selectedEmployee.departmentId;
         }
 
         setFormData(prev => ({ ...prev, ...updates }));
@@ -220,6 +251,13 @@ export default function ShiftForm({
   const [showBreakFields, setShowBreakFields] = useState<boolean>(() => {
     return initialData ? !!initialData.breakStart || !!initialData.breakEnd : false
   })
+
+  const [departments, setDepartments] = useState<Department[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
+  const [functions, setFunctions] = useState<FunctionItem[]>([])
+  const [loadingDepartments, setLoadingDepartments] = useState(false)
+  const [loadingCategories, setLoadingCategories] = useState(false)
+  const [loadingFunctions, setLoadingFunctions] = useState(false)
 
   const recalcAutoBreak = (type:AutoBreakType,value: number) => {
   if (!formData.startTime || !formData.endTime) return
@@ -244,6 +282,109 @@ export default function ShiftForm({
   useEffect(() => {
     setDisplayDate(formatDateForDisplay(formData.date))
   }, [formData.date])
+
+  useEffect(() => {
+    fetchDepartments()
+  }, [])
+
+  useEffect(() => {
+    const initializeCascadingData = async () => {
+      if (initialData?.departmentId) {
+        await fetchCategories(initialData.departmentId)
+      }
+      if (initialData?.categoryId) {
+        await fetchFunctions(initialData.categoryId)
+      }
+    }
+    initializeCascadingData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Only run once on mount
+
+  // Fetch categories when department changes (but not on initial mount if we have initialData)
+  useEffect(() => {
+    if (formData.departmentId) {
+      // Only fetch if we don't have the right categories loaded already
+      const hasCorrectCategories = categories.some(cat => cat.departmentId === formData.departmentId)
+      if (!hasCorrectCategories) {
+        fetchCategories(formData.departmentId)
+      }
+    } else {
+      setCategories([])
+      setFunctions([])
+      // Only clear if we're not initializing with data
+      if (!initialData?.departmentId) {
+        setFormData(prev => ({ ...prev, categoryId: undefined, functionId: undefined }))
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.departmentId])
+
+  // Fetch functions when category changes (but not on initial mount if we have initialData)
+  useEffect(() => {
+    if (formData.categoryId) {
+      const hasCorrectFunctions = functions.some(func => func.categoryId === formData.categoryId)
+      if (!hasCorrectFunctions) {
+        fetchFunctions(formData.categoryId)
+      }
+    } else {
+      setFunctions([])
+      if (!initialData?.categoryId) {
+        setFormData(prev => ({ ...prev, functionId: undefined }))
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.categoryId])
+
+  const fetchDepartments = async () => {
+    setLoadingDepartments(true)
+    try {
+      const response = await fetch('/api/departments')
+      if (response.ok) {
+        const data = await response.json()
+        setDepartments(data)
+      }
+    } catch (error) {
+      console.error('Error fetching departments:', error)
+    } finally {
+      setLoadingDepartments(false)
+    }
+  }
+
+  const fetchCategories = async (departmentId: string) => {
+    setLoadingCategories(true)
+    try {
+      const response = await fetch('/api/categories')
+      if (response.ok) {
+        const data = await response.json()
+        const filtered = data.filter((cat: Category) => cat.departmentId === departmentId)
+        setCategories(filtered)
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error)
+    } finally {
+      setLoadingCategories(false)
+    }
+  }
+
+  const fetchFunctions = async (categoryId: string) => {
+    setLoadingFunctions(true)
+    try {
+      const response = await fetch('/api/functions')
+      if (response.ok) {
+        const data = await response.json()
+        const filtered = data.filter((func: any) => func.categoryId === categoryId)
+        setFunctions(filtered)
+      }
+    } catch (error) {
+      console.error('Error fetching functions:', error)
+    } finally {
+      setLoadingFunctions(false)
+    }
+  }
+
+  // Don't filter employees - show all employees in the business
+  const filteredEmployees = safeEmployees
+
 
   useEffect(() => {
     if (initialData?.id && activeTab === 'exchange') {
@@ -276,12 +417,10 @@ export default function ShiftForm({
   if (hasConfigChanged) {
 
     if (matchingType.autoBreakType === 'AUTO_BREAK') {
-      // change state of auto-break checkbox
       setShowBreakFields(true)
-      //calculate new break times
       recalcAutoBreak(matchingType.autoBreakType,matchingType.autoBreakValue!)
     } else if (matchingType.autoBreakType === 'MANUAL_BREAK') {
-      // If changed to manual, toglle off auto-break and clear the times
+      setShowBreakFields(false)
       setShowBreakFields(false)
       setFormData(prev => ({
         ...prev,
@@ -555,6 +694,23 @@ export default function ShiftForm({
           >
             Break Time
           </button>
+          {initialData?.id && (
+            <button
+              type="button"
+              onClick={() => setActiveTab('exchange')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${activeTab === 'exchange'
+                  ? 'border-[#31BCFF] text-[#31BCFF]'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+            >
+              Exchange History
+              {shiftExchanges.length > 0 && (
+                <span className="ml-1.5 inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-white bg-blue-600 rounded-full">
+                  {shiftExchanges.length}
+                </span>
+              )}
+            </button>
+          )}
         </nav>
       </div>
 
@@ -675,23 +831,96 @@ export default function ShiftForm({
             />
           </div>
 
+          {/* Department */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Department <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={formData.departmentId || ''}
+              onChange={(e) => setFormData({ ...formData, departmentId: e.target.value || undefined, categoryId: undefined, functionId: undefined })}
+              disabled={isEmployee || loadingDepartments}
+              className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+              required
+            >
+              <option value="">Select department</option>
+              {departments.map((dept) => (
+                <option key={dept.id} value={dept.id}>
+                  {dept.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Category */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Category {formData.departmentId && <span className="text-red-500">*</span>}
+            </label>
+            <select
+              value={formData.categoryId || ''}
+              onChange={(e) => setFormData({ ...formData, categoryId: e.target.value || undefined, functionId: undefined })}
+              disabled={isEmployee || !formData.departmentId || loadingCategories}
+              className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee || !formData.departmentId ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+              required={!!formData.departmentId}
+            >
+              <option value="">
+                {!formData.departmentId ? 'Select department first' : loadingCategories ? 'Loading...' : 'Select category'}
+              </option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Function */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Function {formData.categoryId && <span className="text-red-500">*</span>}
+            </label>
+            <select
+              value={formData.functionId || ''}
+              onChange={(e) => setFormData({ ...formData, functionId: e.target.value || undefined })}
+              disabled={isEmployee || !formData.categoryId || loadingFunctions}
+              className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee || !formData.categoryId ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+              required={!!formData.categoryId}
+            >
+              <option value="">
+                {!formData.categoryId ? 'Select category first' : loadingFunctions ? 'Loading...' : 'Select function'}
+              </option>
+              {functions.map((func) => (
+                <option key={func.id} value={func.id}>
+                  {func.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Employee */}
           {showEmployee && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Employee</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Employee {formData.functionId && <span className="text-red-500">*</span>}
+              </label>
               <select
                 value={formData.employeeId || ''}
                 onChange={(e) => setFormData({ ...formData, employeeId: e.target.value || undefined })}
                 disabled={isEmployee}
                 className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                required={!!formData.functionId}
               >
-                <option value="">Select an employee</option>
-                {safeEmployees.map((employee) => (
+                <option value="">Select an employee (optional)</option>
+                {filteredEmployees.map((employee) => (
                   <option key={employee.id} value={employee.id}>
-                    {employee.firstName} {employee.lastName}
+                    {employee.firstName} {employee.lastName} {employee.employeeNo && `(${employee.employeeNo})`}
                   </option>
                 ))}
               </select>
+              <p className="mt-1 text-xs text-gray-500">
+                All employees in the business are shown
+              </p>
             </div>
           )}
 
@@ -855,6 +1084,111 @@ export default function ShiftForm({
       )}
 
       {/* Shift Exchange Tab */}
+      {activeTab === 'exchange' && initialData?.id && (
+        <div className="space-y-4">
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <h3 className="text-sm font-medium text-blue-900 mb-1">Shift Exchange History</h3>
+            <p className="text-xs text-blue-700">
+              View all exchange requests and their current status for this shift
+            </p>
+          </div>
+
+          {exchangeLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+          ) : shiftExchanges.length === 0 ? (
+            <div className="text-center py-8 bg-gray-50 rounded-lg border border-gray-200">
+              <p className="text-sm text-gray-500">No exchange history for this shift</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {shiftExchanges.map((exchange, index) => (
+                <div
+                  key={exchange.id}
+                  className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getExchangeStatusColor(exchange.status)}`}>
+                          {exchange.status.replace(/_/g, ' ')}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {new Date(exchange.requestedAt).toLocaleDateString('en-GB', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </span>
+                      </div>
+                      <div className="text-sm space-y-1">
+                        <p className="text-gray-900">
+                          <strong>From:</strong> {exchange.fromEmployee.firstName} {exchange.fromEmployee.lastName}
+                          {exchange.fromEmployee.employeeNo && (
+                            <span className="text-gray-500 ml-1">(#{exchange.fromEmployee.employeeNo})</span>
+                          )}
+                        </p>
+                        <p className="text-gray-900">
+                          <strong>To:</strong> {exchange.toEmployee.firstName} {exchange.toEmployee.lastName}
+                          {exchange.toEmployee.employeeNo && (
+                            <span className="text-gray-500 ml-1">(#{exchange.toEmployee.employeeNo})</span>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {exchange.reason && (
+                    <div className="mt-2 p-2 bg-gray-50 rounded text-xs text-gray-600">
+                      <strong>Reason:</strong> {exchange.reason}
+                    </div>
+                  )}
+
+                  {(exchange.status === 'ADMIN_PENDING' || exchange.status === 'EMPLOYEE_ACCEPTED') && !isEmployee && (
+                    <div className="mt-3 flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleExchangeStatusUpdate(exchange.id, 'APPROVED')}
+                        disabled={exchangeLoading}
+                        className="flex-1 px-3 py-1.5 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700 disabled:opacity-50"
+                      >
+                        Approve
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleExchangeStatusUpdate(exchange.id, 'REJECTED')}
+                        disabled={exchangeLoading}
+                        className="flex-1 px-3 py-1.5 text-xs font-medium text-white bg-red-600 rounded hover:bg-red-700 disabled:opacity-50"
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  )}
+
+                  {exchange.status === 'APPROVED' && (
+                    <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded">
+                      <p className="text-xs text-green-700">
+                        ✓ This exchange has been approved. The shift is now assigned to {exchange.toEmployee.firstName} {exchange.toEmployee.lastName}.
+                      </p>
+                    </div>
+                  )}
+
+                  {exchange.status === 'REJECTED' && (
+                    <div className="mt-3 p-2 bg-red-50 border border-red-200 rounded">
+                      <p className="text-xs text-red-700">
+                        ✗ This exchange request was rejected.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Action Buttons */}
       <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-4 border-t">
