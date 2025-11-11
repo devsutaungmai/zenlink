@@ -46,7 +46,7 @@ interface SalaryCode {
 }
 
 export default function OvertimeRuleManagement() {
-  const { t } = useTranslation()
+  const { t } = useTranslation('overtime-rules')
   const [overtimeRules, setOvertimeRules] = useState<OvertimeRule[]>([])
   const [salaryCodes, setSalaryCodes] = useState<SalaryCode[]>([])
   const [loading, setLoading] = useState(true)
@@ -71,7 +71,7 @@ export default function OvertimeRuleManagement() {
       setLoading(true)
       const response = await fetch('/api/overtime-rules')
       const data = await response.json()
-      
+
       if (response.ok) {
         setOvertimeRules(data)
       } else {
@@ -88,11 +88,11 @@ export default function OvertimeRuleManagement() {
     try {
       const response = await fetch('/api/salary-codes')
       const data = await response.json()
-      
+
       if (response.ok) {
         // Filter to show only OVERTIME category salary codes
         const codes = data.salaryCodes || []
-        const overtimeCodes = codes.filter((code: SalaryCode) => 
+        const overtimeCodes = codes.filter((code: SalaryCode) =>
           code.category === 'OVERTIME' || code.category === 'HOURLY'
         )
         setSalaryCodes(overtimeCodes)
@@ -216,10 +216,10 @@ export default function OvertimeRuleManagement() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-              Overtime Rules Management
+              {t('title')}
             </h1>
             <p className="mt-2 text-gray-600">
-              Configure overtime rules and multipliers for different scenarios
+              {t('subtitle')}
             </p>
           </div>
           <button
@@ -238,7 +238,7 @@ export default function OvertimeRuleManagement() {
             className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-medium rounded-xl hover:from-orange-600 hover:to-amber-600 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transform hover:scale-105 transition-all duration-200 shadow-lg"
           >
             <PlusIcon className="w-5 h-5 mr-2" />
-            Add Overtime Rule
+            {t('addOvertimeRule')}
           </button>
         </div>
       </div>
@@ -248,27 +248,27 @@ export default function OvertimeRuleManagement() {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold text-gray-900 mb-4">
-              {editingRule ? 'Edit Overtime Rule' : 'Add New Overtime Rule'}
+              {editingRule ? t('form.editOvertimeRule') : t('form.addNewOvertimeRule')}
             </h2>
-            
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Rule Name <span className="text-red-500">*</span>
+                  {t('form.ruleName')} <span className="text-red-500">{t('form.required')}</span>
                 </label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                   className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:outline-none"
-                  placeholder="e.g., Standard Overtime"
+                  placeholder={t('form.ruleNamePlaceholder')}
                   required
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Hours Threshold <span className="text-red-500">*</span>
+                  {t('form.hoursThreshold')} <span className="text-red-500">{t('form.required')}</span>
                 </label>
                 <input
                   type="number"
@@ -280,12 +280,12 @@ export default function OvertimeRuleManagement() {
                   placeholder="40"
                   required
                 />
-                <p className="text-xs text-gray-500 mt-1">Overtime kicks in after this many hours</p>
+                <p className="text-xs text-gray-500 mt-1">{t('form.hoursThresholdHelp')}</p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Overtime Multiplier <span className="text-red-500">*</span>
+                  {t('form.overtimeMultiplier')} <span className="text-red-500">{t('form.required')}</span>
                 </label>
                 <input
                   type="number"
@@ -297,31 +297,31 @@ export default function OvertimeRuleManagement() {
                   placeholder="1.5"
                   required
                 />
-                <p className="text-xs text-gray-500 mt-1">Rate multiplier (e.g., 1.5 = time and a half)</p>
+                <p className="text-xs text-gray-500 mt-1">{t('form.multiplierHelp')}</p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Max Overtime Hours
+                  {t('form.maxOvertimeHours')}
                 </label>
                 <input
                   type="number"
                   min="0"
                   step="0.5"
                   value={formData.maxOvertimeHours || ''}
-                  onChange={(e) => setFormData(prev => ({ 
-                    ...prev, 
-                    maxOvertimeHours: e.target.value ? parseFloat(e.target.value) : null 
+                  onChange={(e) => setFormData(prev => ({
+                    ...prev,
+                    maxOvertimeHours: e.target.value ? parseFloat(e.target.value) : null
                   }))}
                   className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:outline-none"
-                  placeholder="Leave empty for unlimited"
+                  placeholder={t('form.maxHoursPlaceholder')}
                 />
-                <p className="text-xs text-gray-500 mt-1">Maximum overtime hours allowed (optional)</p>
+                <p className="text-xs text-gray-500 mt-1">{t('form.maxHoursHelp')}</p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Salary Code <span className="text-red-500">*</span>
+                  {t('form.salaryCode')} <span className="text-red-500">{t('form.required')}</span>
                 </label>
                 <select
                   value={formData.salaryCodeId}
@@ -329,7 +329,7 @@ export default function OvertimeRuleManagement() {
                   className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:outline-none"
                   required
                 >
-                  <option value="">Select a salary code</option>
+                  <option value="">{t('form.selectSalaryCode')}</option>
                   {salaryCodes.map((code) => (
                     <option key={code.id} value={code.id}>
                       {code.code} - {code.name}
@@ -340,14 +340,14 @@ export default function OvertimeRuleManagement() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Description
+                  {t('form.description')}
                 </label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                   rows={3}
                   className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:outline-none"
-                  placeholder="Optional description"
+                  placeholder={t('form.descriptionPlaceholder')}
                 />
               </div>
 
@@ -360,13 +360,13 @@ export default function OvertimeRuleManagement() {
                   }}
                   className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 font-medium"
                 >
-                  Cancel
+                  {t('buttons.cancel')}
                 </button>
                 <button
                   type="submit"
                   className="flex-1 px-4 py-3 bg-orange-500 text-white rounded-xl hover:bg-orange-600 font-medium"
                 >
-                  {editingRule ? 'Update' : 'Create'}
+                  {editingRule ? t('buttons.update') : t('buttons.create')}
                 </button>
               </div>
             </form>
@@ -379,14 +379,14 @@ export default function OvertimeRuleManagement() {
         {overtimeRules.length === 0 ? (
           <div className="p-12 text-center">
             <ClockIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Overtime Rules</h3>
-            <p className="text-gray-500 mb-6">Get started by creating your first overtime rule</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">{t('emptyState.title')}</h3>
+            <p className="text-gray-500 mb-6">{t('emptyState.description')}</p>
             <button
               onClick={() => setShowForm(true)}
               className="inline-flex items-center px-6 py-3 bg-orange-500 text-white font-medium rounded-xl hover:bg-orange-600"
             >
               <PlusIcon className="w-5 h-5 mr-2" />
-              Add First Overtime Rule
+              {t('emptyState.addFirstOvertimeRule')}
             </button>
           </div>
         ) : (
@@ -395,25 +395,25 @@ export default function OvertimeRuleManagement() {
               <thead className="bg-gray-50/80">
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Rule Name
+                    {t('table.ruleName')}
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Threshold
+                    {t('table.threshold')}
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Multiplier
+                    {t('table.multiplier')}
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Max Hours
+                    {t('table.maxHours')}
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Salary Code
+                    {t('table.salaryCode')}
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
+                    {t('table.status')}
                   </th>
                   <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
+                    {t('table.actions')}
                   </th>
                 </tr>
               </thead>
@@ -429,7 +429,7 @@ export default function OvertimeRuleManagement() {
                     <td className="px-6 py-4">
                       <div className="flex items-center">
                         <ClockIcon className="w-4 h-4 text-gray-400 mr-2" />
-                        <span className="text-sm text-gray-900">{rule.triggerAfterHours}h</span>
+                        <span className="text-sm text-gray-900">{rule.triggerAfterHours}{t('table.hours')}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -440,7 +440,7 @@ export default function OvertimeRuleManagement() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-900">
-                        {rule.maxHoursPerDay ? `${rule.maxHoursPerDay}h` : 'Unlimited'}
+                        {rule.maxHoursPerDay ? `${rule.maxHoursPerDay}${t('table.hours')}` : t('table.unlimited')}
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -451,13 +451,12 @@ export default function OvertimeRuleManagement() {
                     <td className="px-6 py-4">
                       <button
                         onClick={() => toggleActive(rule.id, rule.payRule.isActive)}
-                        className={`inline-flex px-2 py-1 rounded-full text-xs font-medium transition-colors duration-200 ${
-                          rule.payRule.isActive 
-                            ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                        className={`inline-flex px-2 py-1 rounded-full text-xs font-medium transition-colors duration-200 ${rule.payRule.isActive
+                            ? 'bg-green-100 text-green-800 hover:bg-green-200'
                             : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
-                        }`}
+                          }`}
                       >
-                        {rule.payRule.isActive ? 'Active' : 'Inactive'}
+                        {rule.payRule.isActive ? t('status.active') : t('status.inactive')}
                       </button>
                     </td>
                     <td className="px-6 py-4 text-right">
@@ -465,14 +464,14 @@ export default function OvertimeRuleManagement() {
                         <button
                           onClick={() => handleEdit(rule)}
                           className="p-2 text-gray-400 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-all duration-200"
-                          title="Edit"
+                          title={t('actions.edit')}
                         >
                           <PencilIcon className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => handleDelete(rule.id)}
                           className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                          title="Delete"
+                          title={t('actions.delete')}
                         >
                           <TrashIcon className="h-4 w-4" />
                         </button>

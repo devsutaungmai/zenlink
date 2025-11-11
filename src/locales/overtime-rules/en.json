@@ -1,0 +1,54 @@
+{
+  "title": "Overtime Rules Management",
+  "subtitle": "Configure overtime rules and multipliers for different scenarios",
+  "addOvertimeRule": "Add Overtime Rule",
+  "form": {
+    "editOvertimeRule": "Edit Overtime Rule",
+    "addNewOvertimeRule": "Add New Overtime Rule",
+    "ruleName": "Rule Name",
+    "hoursThreshold": "Hours Threshold",
+    "overtimeMultiplier": "Overtime Multiplier",
+    "maxOvertimeHours": "Max Overtime Hours",
+    "salaryCode": "Salary Code",
+    "description": "Description",
+    "required": "*",
+    "ruleNamePlaceholder": "e.g., Standard Overtime",
+    "hoursThresholdPlaceholder": "40",
+    "hoursThresholdHelp": "Overtime kicks in after this many hours",
+    "multiplierPlaceholder": "1.5",
+    "multiplierHelp": "Rate multiplier (e.g., 1.5 = time and a half)",
+    "maxHoursPlaceholder": "Leave empty for unlimited",
+    "maxHoursHelp": "Maximum overtime hours allowed (optional)",
+    "selectSalaryCode": "Select a salary code",
+    "descriptionPlaceholder": "Optional description"
+  },
+  "buttons": {
+    "cancel": "Cancel",
+    "create": "Create",
+    "update": "Update"
+  },
+  "emptyState": {
+    "title": "No Overtime Rules",
+    "description": "Get started by creating your first overtime rule",
+    "addFirstOvertimeRule": "Add First Overtime Rule"
+  },
+  "table": {
+    "ruleName": "Rule Name",
+    "threshold": "Threshold",
+    "multiplier": "Multiplier",
+    "maxHours": "Max Hours",
+    "salaryCode": "Salary Code",
+    "status": "Status",
+    "actions": "Actions",
+    "unlimited": "Unlimited",
+    "hours": "h"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "actions": {
+    "edit": "Edit",
+    "delete": "Delete"
+  }
+}

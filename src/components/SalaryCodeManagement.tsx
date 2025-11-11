@@ -34,7 +34,7 @@ interface SalaryCodeFormData {
 }
 
 export default function SalaryCodeManagement() {
-  const { t } = useTranslation()
+  const { t } = useTranslation('salary-codes')
   const [salaryCodes, setSalaryCodes] = useState<SalaryCode[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
@@ -63,7 +63,7 @@ export default function SalaryCodeManagement() {
       setLoading(true)
       const response = await fetch('/api/salary-codes')
       const data = await response.json()
-      
+
       if (response.ok) {
         setSalaryCodes(data.salaryCodes || [])
       } else {
@@ -180,10 +180,11 @@ export default function SalaryCodeManagement() {
         <div className="flex flex-col space-y-4">
           <div>
             <h1 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-              Salary Code Management
+              {t('title')}
+
             </h1>
             <p className="mt-1 sm:mt-2 text-sm sm:text-base text-gray-600">
-              Manage salary codes for different types of pay and accounting integration
+              {t('subtitle')}
             </p>
           </div>
           <button
@@ -200,8 +201,8 @@ export default function SalaryCodeManagement() {
             className="inline-flex items-center justify-center px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium rounded-lg sm:rounded-xl hover:from-[#31BCFF]/90 hover:to-[#0EA5E9]/90 focus:outline-none focus:ring-2 focus:ring-[#31BCFF]/50 sm:transform sm:hover:scale-105 transition-all duration-200 shadow-lg"
           >
             <PlusIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-            <span className="hidden sm:inline">Add Salary Code</span>
-            <span className="sm:hidden">Add Code</span>
+            <span className="hidden sm:inline">{t('addSalaryCode')}</span>
+            <span className="sm:hidden">{t('addCode')}</span>
           </button>
         </div>
       </div>
@@ -213,11 +214,11 @@ export default function SalaryCodeManagement() {
             <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">
               {editingCode ? 'Edit Salary Code' : 'Add New Salary Code'}
             </h2>
-            
+
             <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
               <div>
                 <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-                  Code <span className="text-red-500">*</span>
+                  {t('code')}  <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -232,7 +233,7 @@ export default function SalaryCodeManagement() {
 
               <div>
                 <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-                  Name <span className="text-red-500">*</span>
+                  {t('name')}  <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -246,7 +247,7 @@ export default function SalaryCodeManagement() {
 
               <div>
                 <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-                  Category <span className="text-red-500">*</span>
+                  {t('category')}  <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={formData.category}
@@ -264,7 +265,7 @@ export default function SalaryCodeManagement() {
 
               <div>
                 <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-                  Description
+                  {t('description')}
                 </label>
                 <textarea
                   value={formData.description}
@@ -284,13 +285,13 @@ export default function SalaryCodeManagement() {
                   }}
                   className="flex-1 px-4 py-2.5 sm:py-3 text-sm sm:text-base bg-gray-100 text-gray-700 rounded-lg sm:rounded-xl hover:bg-gray-200 font-medium"
                 >
-                  Cancel
+                  {t('cancel')}
                 </button>
                 <button
                   type="submit"
                   className="flex-1 px-4 py-2.5 sm:py-3 text-sm sm:text-base bg-[#31BCFF] text-white rounded-lg sm:rounded-xl hover:bg-[#31BCFF]/90 font-medium"
                 >
-                  {editingCode ? 'Update' : 'Create'}
+                  {editingCode ? t('update') : t('create')}
                 </button>
               </div>
             </form>
@@ -303,14 +304,14 @@ export default function SalaryCodeManagement() {
         {salaryCodes.length === 0 ? (
           <div className="p-8 sm:p-12 text-center">
             <CurrencyDollarIcon className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
-            <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">No Salary Codes</h3>
-            <p className="text-sm sm:text-base text-gray-500 mb-4 sm:mb-6">Get started by creating your first salary code</p>
+            <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">{t('noSalaryCodes')}</h3>
+            <p className="text-sm sm:text-base text-gray-500 mb-4 sm:mb-6">{t('noSalaryCodesDescription')}</p>
             <button
               onClick={() => setShowForm(true)}
               className="inline-flex items-center px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base bg-[#31BCFF] text-white font-medium rounded-lg sm:rounded-xl hover:bg-[#31BCFF]/90"
             >
               <PlusIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-              Add First Salary Code
+              {t('addFirstSalaryCode')}
             </button>
           </div>
         ) : (
@@ -321,22 +322,22 @@ export default function SalaryCodeManagement() {
                 <thead className="bg-gray-50/80">
                   <tr>
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Code
+                      {t('code')}
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Name
+                      {t('name')}
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Category
+                      {t('category')}
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Pay Rules
+                      {t('payRules')}
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
+                      {t('status')}
                     </th>
                     <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
+                      {t('actions')}
                     </th>
                   </tr>
                 </thead>
@@ -366,12 +367,11 @@ export default function SalaryCodeManagement() {
                           <div className="text-sm text-gray-900">{code._count?.payRules || 0} rules</div>
                         </td>
                         <td className="px-6 py-4">
-                          <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                            code.isActive 
-                              ? 'bg-green-100 text-green-800' 
+                          <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${code.isActive
+                              ? 'bg-green-100 text-green-800'
                               : 'bg-gray-100 text-gray-800'
-                          }`}>
-                            {code.isActive ? 'Active' : 'Inactive'}
+                            }`}>
+                            {code.isActive ? t('active') : t('inactive')}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
@@ -379,14 +379,14 @@ export default function SalaryCodeManagement() {
                             <button
                               onClick={() => handleEdit(code)}
                               className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
-                              title="Edit"
+                              title={t('edit')}
                             >
                               <PencilIcon className="h-4 w-4" />
                             </button>
                             <button
                               onClick={() => handleDelete(code.id)}
                               className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                              title="Delete"
+                              title={t('delete')}
                               disabled={code._count.payRules > 0}
                             >
                               <TrashIcon className="h-4 w-4" />
@@ -410,12 +410,11 @@ export default function SalaryCodeManagement() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-sm font-bold text-gray-900">{code.code}</span>
-                          <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                            code.isActive 
-                              ? 'bg-green-100 text-green-800' 
+                          <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium ${code.isActive
+                              ? 'bg-green-100 text-green-800'
                               : 'bg-gray-100 text-gray-800'
-                          }`}>
-                            {code.isActive ? 'Active' : 'Inactive'}
+                            }`}>
+                            {code.isActive ? t('active') : t('inactive')}
                           </span>
                         </div>
                         <h3 className="text-sm font-semibold text-gray-900 truncate">{code.name}</h3>
@@ -433,7 +432,7 @@ export default function SalaryCodeManagement() {
                         </span>
                       </div>
                       <div className="text-xs text-gray-600">
-                        <span className="font-medium">{code._count?.payRules || 0}</span> pay rules
+                        <span className="font-medium">{code._count?.payRules || 0}</span> {t('rules')}
                       </div>
                     </div>
 
@@ -443,7 +442,7 @@ export default function SalaryCodeManagement() {
                         className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium text-[#31BCFF] bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
                       >
                         <PencilIcon className="h-3.5 w-3.5" />
-                        Edit
+                        {t('edit')}
                       </button>
                       <button
                         onClick={() => handleDelete(code.id)}
@@ -451,7 +450,7 @@ export default function SalaryCodeManagement() {
                         className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <TrashIcon className="h-3.5 w-3.5" />
-                        Delete
+                        {t('delete')}
                       </button>
                     </div>
                   </div>

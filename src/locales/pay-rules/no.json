@@ -1,0 +1,80 @@
+{
+  "title": "Pay Rules & Overtime Management",
+  "titleMobile": "Pay Rules",
+  "overtimeManagementSuffix": "& Overtime Management",
+  "subtitle": "Configure pay rules, overtime rates, and wage calculations",
+  "addPayRule": "Add Pay Rule",
+  "addRule": "Add Rule",
+  "tabs": {
+    "payRules": "Pay Rules",
+    "overtimeRules": "Overtime Rules"
+  },
+  "form": {
+    "editPayRule": "Edit Pay Rule",
+    "addNewPayRule": "Add New Pay Rule",
+    "ruleName": "Rule Name",
+    "ruleType": "Rule Type",
+    "salaryCode": "Salary Code",
+    "description": "Description",
+    "required": "*",
+    "ruleNamePlaceholder": "e.g., Standard Overtime",
+    "selectSalaryCode": "Select a salary code",
+    "descriptionPlaceholder": "Optional description"
+  },
+  "overtimeConfig": {
+    "title": "Overtime Configuration",
+    "triggerAfterHours": "Trigger After Hours",
+    "rateMultiplier": "Rate Multiplier",
+    "calculateDaily": "Calculate overtime daily (unchecked = weekly)"
+  },
+  "employeeGroupRates": {
+    "title": "Employee Group Rates",
+    "addGroup": "Add Group",
+    "noGroups": "No employee groups configured. Add groups to set default rates.",
+    "selectEmployeeGroup": "Select employee group",
+    "baseRatePlaceholder": "Base rate"
+  },
+  "buttons": {
+    "cancel": "Cancel",
+    "create": "Create",
+    "update": "Update",
+    "createPayRule": "Create Pay Rule",
+    "updatePayRule": "Update Pay Rule"
+  },
+  "emptyState": {
+    "title": "No Pay Rules",
+    "description": "Create pay rules to manage wages and overtime calculations",
+    "addFirstPayRule": "Add First Pay Rule"
+  },
+  "table": {
+    "ruleName": "Rule Name",
+    "type": "Type",
+    "salaryCode": "Salary Code",
+    "groups": "Groups",
+    "status": "Status",
+    "actions": "Actions",
+    "groupsCount": "groups",
+    "customRates": "custom rates",
+    "overtimeAfter": "Overtime after",
+    "atRate": "@ {multiplier}x rate"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "actions": {
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "ruleTypes": {
+    "regularPay": "Regular Pay",
+    "overtime": "Overtime Pay",
+    "bonus": "Bonus",
+    "commission": "Commission",
+    "allowance": "Allowance"
+  },
+  "mobile": {
+    "type": "Type",
+    "salaryCode": "Salary Code"
+  }
+}

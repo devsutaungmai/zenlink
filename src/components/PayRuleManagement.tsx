@@ -89,7 +89,7 @@ interface PayRuleFormData {
 }
 
 export default function PayRuleManagement() {
-  const { t } = useTranslation()
+  const { t } = useTranslation('pay-rules')
   const [activeTab, setActiveTab] = useState<'pay-rules' | 'overtime-rules'>('pay-rules')
   const [payRules, setPayRules] = useState<PayRule[]>([])
   const [salaryCodes, setSalaryCodes] = useState<SalaryCode[]>([])
@@ -129,7 +129,7 @@ export default function PayRuleManagement() {
       setLoading(true)
       const response = await fetch('/api/pay-rules')
       const data = await response.json()
-      
+
       if (response.ok) {
         setPayRules(data)
       } else {
@@ -146,7 +146,7 @@ export default function PayRuleManagement() {
     try {
       const response = await fetch('/api/salary-codes?isActive=true')
       const data = await response.json()
-      
+
       if (response.ok) {
         setSalaryCodes(data.salaryCodes || [])
       }
@@ -159,7 +159,7 @@ export default function PayRuleManagement() {
     try {
       const response = await fetch('/api/employee-groups')
       const data = await response.json()
-      
+
       if (response.ok) {
         setEmployeeGroups(data)
       }
@@ -267,7 +267,7 @@ export default function PayRuleManagement() {
   const updateEmployeeGroupRule = (index: number, field: string, value: any) => {
     setFormData(prev => ({
       ...prev,
-      employeeGroupRules: prev.employeeGroupRules.map((rule, i) => 
+      employeeGroupRules: prev.employeeGroupRules.map((rule, i) =>
         i === index ? { ...rule, [field]: value } : rule
       ),
     }))
@@ -297,10 +297,11 @@ export default function PayRuleManagement() {
         <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
           <div>
             <h1 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-              Pay Rules <span className="hidden sm:inline">& Overtime Management</span>
+              {t('title')} <span className="hidden sm:inline">{t('overtimeManagementSuffix')}</span>
+
             </h1>
             <p className="mt-2 text-sm sm:text-base text-gray-600">
-              Configure pay rules, overtime rates, and wage calculations
+              {t('subtitle')}
             </p>
           </div>
           {activeTab === 'pay-rules' && (
@@ -313,12 +314,12 @@ export default function PayRuleManagement() {
               className="w-full lg:w-auto inline-flex items-center justify-center px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white text-sm sm:text-base font-medium rounded-xl hover:from-[#31BCFF]/90 hover:to-[#0EA5E9]/90 focus:outline-none focus:ring-2 focus:ring-[#31BCFF]/50 transform hover:scale-105 transition-all duration-200 shadow-lg"
             >
               <PlusIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-              <span className="sm:hidden">Add Rule</span>
-              <span className="hidden sm:inline">Add Pay Rule</span>
+              <span className="sm:hidden">{t('addRule')}</span>
+              <span className="hidden sm:inline">{t('addPayRule')}</span>
             </button>
           )}
         </div>
-        
+
         {/* Tabs */}
         <div className="mt-4 sm:mt-6 border-b border-gray-200">
           <nav className="-mb-px flex space-x-4 sm:space-x-8 overflow-x-auto">
@@ -328,11 +329,10 @@ export default function PayRuleManagement() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as 'pay-rules' | 'overtime-rules')}
-                  className={`flex items-center py-2 px-1 border-b-2 font-medium text-xs sm:text-sm transition-colors duration-200 whitespace-nowrap ${
-                    activeTab === tab.id
+                  className={`flex items-center py-2 px-1 border-b-2 font-medium text-xs sm:text-sm transition-colors duration-200 whitespace-nowrap ${activeTab === tab.id
                       ? 'border-[#31BCFF] text-[#31BCFF]'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
+                    }`}
                 >
                   <IconComponent className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
                   {tab.name}
@@ -352,29 +352,29 @@ export default function PayRuleManagement() {
             <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
               <div className="bg-white rounded-2xl p-4 sm:p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
                 <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">
-                  {editingRule ? 'Edit Pay Rule' : 'Add New Pay Rule'}
+                  {editingRule ? t('form.editPayRule') : t('form.addNewPayRule')}
                 </h2>
-                
+
                 <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
                   {/* Basic Information */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                     <div>
                       <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-                        Rule Name <span className="text-red-500">*</span>
+                        {t('form.ruleName')} <span className="text-red-500">{t('form.required')}</span>
                       </label>
                       <input
                         type="text"
                         value={formData.name}
                         onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                         className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base rounded-xl border-2 border-gray-200 focus:border-[#31BCFF] focus:outline-none"
-                        placeholder="e.g., Standard Overtime"
+                        placeholder={t('form.ruleNamePlaceholder')}
                         required
                       />
                     </div>
 
                     <div>
                       <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-                        Rule Type <span className="text-red-500">*</span>
+                        {t('form.ruleType')} <span className="text-red-500">{t('form.required')}</span>
                       </label>
                       <select
                         value={formData.ruleType}
@@ -393,7 +393,7 @@ export default function PayRuleManagement() {
 
                   <div>
                     <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-                      Salary Code <span className="text-red-500">*</span>
+                      {t('form.salaryCode')} <span className="text-red-500">{t('form.required')}</span>
                     </label>
                     <select
                       value={formData.salaryCodeId}
@@ -401,7 +401,7 @@ export default function PayRuleManagement() {
                       className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base rounded-xl border-2 border-gray-200 focus:border-[#31BCFF] focus:outline-none"
                       required
                     >
-                      <option value="">Select a salary code</option>
+                      <option value="">{t('form.selectSalaryCode')}</option>
                       {salaryCodes.map((code) => (
                         <option key={code.id} value={code.id}>
                           {code.code} - {code.name}
@@ -412,26 +412,27 @@ export default function PayRuleManagement() {
 
                   <div>
                     <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-                      Description
+                      {t('form.description')}
                     </label>
                     <textarea
                       value={formData.description}
                       onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                       rows={2}
                       className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base rounded-xl border-2 border-gray-200 focus:border-[#31BCFF] focus:outline-none"
-                      placeholder="Optional description"
+                      placeholder={t('form.descriptionPlaceholder')}
                     />
                   </div>
 
                   {/* Overtime Rule Configuration */}
                   {formData.ruleType === 'OVERTIME' && (
                     <div className="bg-orange-50 rounded-xl p-3 sm:p-4 border border-orange-200">
-                      <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">Overtime Configuration</h3>
-                      
+                      <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">{t('overtimeConfig.title')}</h3>
+
+
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                         <div>
                           <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-                            Trigger After Hours <span className="text-red-500">*</span>
+                            {t('overtimeConfig.triggerAfterHours')} <span className="text-red-500">{t('form.required')}</span>
                           </label>
                           <input
                             type="number"
@@ -453,7 +454,7 @@ export default function PayRuleManagement() {
 
                         <div>
                           <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-                            Rate Multiplier <span className="text-red-500">*</span>
+                            {t('overtimeConfig.rateMultiplier')} <span className="text-red-500">{t('form.required')}</span>
                           </label>
                           <input
                             type="number"
@@ -491,7 +492,7 @@ export default function PayRuleManagement() {
                             className="rounded border-gray-300 text-[#31BCFF] focus:ring-[#31BCFF]"
                           />
                           <span className="ml-2 text-xs sm:text-sm text-gray-700">
-                            Calculate overtime daily (unchecked = weekly)
+                            {t('overtimeConfig.calculateDaily')}
                           </span>
                         </label>
                       </div>
@@ -501,20 +502,20 @@ export default function PayRuleManagement() {
                   {/* Employee Group Rules */}
                   <div className="bg-blue-50 rounded-xl p-3 sm:p-4 border border-blue-200">
                     <div className="flex items-center justify-between mb-3 sm:mb-4">
-                      <h3 className="text-base sm:text-lg font-medium text-gray-900">Employee Group Rates</h3>
+                      <h3 className="text-base sm:text-lg font-medium text-gray-900">{t('employeeGroupRates.title')}</h3>
                       <button
                         type="button"
                         onClick={addEmployeeGroupRule}
                         className="inline-flex items-center px-2.5 sm:px-3 py-1.5 sm:py-2 bg-[#31BCFF] text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-[#31BCFF]/90"
                       >
                         <PlusIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1" />
-                        Add Group
+                        {t('employeeGroupRates.addGroup')}
                       </button>
                     </div>
 
                     {formData.employeeGroupRules.length === 0 ? (
                       <p className="text-gray-600 text-xs sm:text-sm">
-                        No employee groups configured. Add groups to set default rates.
+                        {t('employeeGroupRates.noGroups')}
                       </p>
                     ) : (
                       <div className="space-y-3">
@@ -526,14 +527,14 @@ export default function PayRuleManagement() {
                               className="w-full sm:flex-1 px-3 py-2 text-sm rounded-lg border-2 border-gray-200 focus:border-[#31BCFF] focus:outline-none"
                               required
                             >
-                              <option value="">Select employee group</option>
+                              <option value="">{t('employeeGroupRates.selectEmployeeGroup')}</option>
                               {employeeGroups.map((group) => (
                                 <option key={group.id} value={group.id}>
                                   {group.name}
                                 </option>
                               ))}
                             </select>
-                            
+
                             <div className="flex items-center space-x-2 w-full sm:w-auto">
                               <input
                                 type="number"
@@ -541,11 +542,11 @@ export default function PayRuleManagement() {
                                 min="0"
                                 value={rule.baseRate}
                                 onChange={(e) => updateEmployeeGroupRule(index, 'baseRate', parseFloat(e.target.value) || 0)}
-                                placeholder="Base rate"
+                                placeholder={t('employeeGroupRates.baseRatePlaceholder')}
                                 className="flex-1 sm:w-32 px-3 py-2 text-sm rounded-lg border-2 border-gray-200 focus:border-[#31BCFF] focus:outline-none"
                                 required
                               />
-                              
+
                               <button
                                 type="button"
                                 onClick={() => removeEmployeeGroupRule(index)}
@@ -569,13 +570,13 @@ export default function PayRuleManagement() {
                       }}
                       className="w-full sm:flex-1 px-4 py-2.5 sm:py-3 bg-gray-100 text-gray-700 text-sm sm:text-base rounded-xl hover:bg-gray-200 font-medium"
                     >
-                      Cancel
+                      {t('buttons.cancel')}
                     </button>
                     <button
                       type="submit"
                       className="w-full sm:flex-1 px-4 py-2.5 sm:py-3 bg-[#31BCFF] text-white text-sm sm:text-base rounded-xl hover:bg-[#31BCFF]/90 font-medium"
                     >
-                      {editingRule ? 'Update' : 'Create'} Pay Rule
+                      {editingRule ? t('buttons.update') : t('buttons.create')} {t('addPayRule')}
                     </button>
                   </div>
                 </form>
@@ -588,14 +589,15 @@ export default function PayRuleManagement() {
             {payRules.length === 0 ? (
               <div className="p-8 sm:p-12 text-center">
                 <CogIcon className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">No Pay Rules</h3>
-                <p className="text-sm sm:text-base text-gray-500 mb-6">Create pay rules to manage wages and overtime calculations</p>
+                <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">{t('emptyState.title')}</h3>
+                <p className="text-sm sm:text-base text-gray-500 mb-6">{t('emptyState.description')}</p>
                 <button
                   onClick={() => setShowForm(true)}
                   className="inline-flex items-center px-4 sm:px-6 py-2.5 sm:py-3 bg-[#31BCFF] text-white text-sm sm:text-base font-medium rounded-xl hover:bg-[#31BCFF]/90"
                 >
                   <PlusIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                  Add First Pay Rule
+                  {t('emptyState.addFirstPayRule')}
+
                 </button>
               </div>
             ) : (
@@ -606,22 +608,22 @@ export default function PayRuleManagement() {
                     <thead className="bg-gray-50/80">
                       <tr>
                         <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Rule Name
+                          {t('table.ruleName')}
                         </th>
                         <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Type
+                          {t('table.type')}
                         </th>
                         <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Salary Code
+                          {t('table.salaryCode')}
                         </th>
                         <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Groups
+                          {t('table.groups')}
                         </th>
                         <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Status
+                          {t('table.status')}
                         </th>
                         <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Actions
+                          {t('table.actions')}
                         </th>
                       </tr>
                     </thead>
@@ -637,7 +639,8 @@ export default function PayRuleManagement() {
                               )}
                               {rule.overtimeRule && (
                                 <div className="text-xs text-orange-600 mt-1">
-                                  Overtime after {rule.overtimeRule.triggerAfterHours}h @ {rule.overtimeRule.rateMultiplier}x rate
+                                  {/* Overtime after {rule.overtimeRule.triggerAfterHours}h @ {rule.overtimeRule.rateMultiplier}x rate */}
+                                  {t('table.overtimeAfter')} {rule.overtimeRule.triggerAfterHours}{t('table.hours')} {t('table.atRate', { multiplier: rule.overtimeRule.rateMultiplier })}
                                 </div>
                               )}
                             </td>
@@ -662,12 +665,11 @@ export default function PayRuleManagement() {
                               )}
                             </td>
                             <td className="px-6 py-4">
-                              <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                                rule.isActive 
-                                  ? 'bg-green-100 text-green-800' 
+                              <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${rule.isActive
+                                  ? 'bg-green-100 text-green-800'
                                   : 'bg-gray-100 text-gray-800'
-                              }`}>
-                                {rule.isActive ? 'Active' : 'Inactive'}
+                                }`}>
+                                {rule.isActive ? t('status.active') : t('status.inactive')}
                               </span>
                             </td>
                             <td className="px-6 py-4 text-right">
@@ -675,14 +677,14 @@ export default function PayRuleManagement() {
                                 <button
                                   onClick={() => handleEdit(rule)}
                                   className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
-                                  title="Edit"
+                                  title={t('actions.edit')}
                                 >
                                   <PencilIcon className="h-4 w-4" />
                                 </button>
                                 <button
                                   onClick={() => handleDelete(rule.id)}
                                   className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                                  title="Delete"
+                                  title={t('actions.delete')}
                                   disabled={rule._count.employeePayRules > 0}
                                 >
                                   <TrashIcon className="h-4 w-4" />
@@ -710,26 +712,25 @@ export default function PayRuleManagement() {
                               <p className="text-xs text-gray-500 mt-1 line-clamp-2">{rule.description}</p>
                             )}
                           </div>
-                          <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium ml-2 ${
-                            rule.isActive 
-                              ? 'bg-green-100 text-green-800' 
+                          <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium ml-2 ${rule.isActive
+                              ? 'bg-green-100 text-green-800'
                               : 'bg-gray-100 text-gray-800'
-                          }`}>
-                            {rule.isActive ? 'Active' : 'Inactive'}
+                            }`}>
+                            {rule.isActive ? t('status.active') : t('status.inactive')}
                           </span>
                         </div>
 
                         {/* Type and Salary Code */}
                         <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <div className="text-[10px] text-gray-500 uppercase mb-1">Type</div>
+                            <div className="text-[10px] text-gray-500 uppercase mb-1">{t('mobile.type')}</div>
                             <div className="flex items-center">
                               <IconComponent className="w-3.5 h-3.5 text-gray-400 mr-1.5" />
                               <span className="text-xs text-gray-900">{getRuleTypeLabel(rule.ruleType)}</span>
                             </div>
                           </div>
                           <div>
-                            <div className="text-[10px] text-gray-500 uppercase mb-1">Salary Code</div>
+                            <div className="text-[10px] text-gray-500 uppercase mb-1">{t('mobile.salaryCode')}</div>
                             <div className="text-xs text-gray-900 font-medium">{rule.salaryCode.code}</div>
                             <div className="text-[10px] text-gray-500 truncate">{rule.salaryCode.name}</div>
                           </div>
@@ -739,7 +740,8 @@ export default function PayRuleManagement() {
                         {rule.overtimeRule && (
                           <div className="bg-orange-50 rounded-lg p-2 border border-orange-200">
                             <div className="text-[10px] text-orange-600 font-medium">
-                              Overtime after {rule.overtimeRule.triggerAfterHours}h @ {rule.overtimeRule.rateMultiplier}x rate
+                              {/* Overtime after {rule.overtimeRule.triggerAfterHours}h @ {rule.overtimeRule.rateMultiplier}x rate */}
+                              {t('table.overtimeAfter')} {rule.overtimeRule.triggerAfterHours}{t('table.hours')} {t('table.atRate', { multiplier: rule.overtimeRule.rateMultiplier })}
                             </div>
                           </div>
                         )}
@@ -748,7 +750,7 @@ export default function PayRuleManagement() {
                         <div className="flex items-center justify-between text-xs">
                           <div className="flex items-center text-gray-600">
                             <UserGroupIcon className="w-3.5 h-3.5 mr-1" />
-                            <span>{rule._count.employeeGroupPayRules} groups</span>
+                            <span>{rule._count.employeeGroupPayRules} {t('table.groupsCount')}</span>
                             {rule._count.employeePayRules > 0 && (
                               <span className="ml-2 text-gray-500">• {rule._count.employeePayRules} custom</span>
                             )}
@@ -762,7 +764,7 @@ export default function PayRuleManagement() {
                             className="flex-1 inline-flex items-center justify-center px-3 py-2 bg-[#31BCFF] text-white text-xs font-medium rounded-lg hover:bg-[#31BCFF]/90"
                           >
                             <PencilIcon className="w-3.5 h-3.5 mr-1.5" />
-                            Edit
+                            {t('actions.edit')}
                           </button>
                           <button
                             onClick={() => handleDelete(rule.id)}
@@ -770,7 +772,7 @@ export default function PayRuleManagement() {
                             disabled={rule._count.employeePayRules > 0}
                           >
                             <TrashIcon className="w-3.5 h-3.5 mr-1.5" />
-                            Delete
+                            {t('actions.delete')}
                           </button>
                         </div>
                       </div>

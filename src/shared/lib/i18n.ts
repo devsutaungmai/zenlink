@@ -62,6 +62,11 @@ import settingsEn from '../../locales/settings/en.json'
 import settingsNo from '../../locales/settings/no.json'
 import settingsDe from '../../locales/settings/de.json'
 
+// Import settings translations
+import salaryCodeEn from '../../locales/salary-codes/en.json'
+import salaryCodeNo from '../../locales/salary-codes/no.json'
+import salaryCodeDe from '../../locales/salary-codes/de.json'
+
 const resources = {
   en: { 
     translation: en,
@@ -75,7 +80,8 @@ const resources = {
     'payroll-reports': payrollReportsEn,
     'employee-dashboard': employeeDashboardEn,
     'shift-types': shiftTypesEn,
-    settings: settingsEn
+    settings: settingsEn,
+    'salary-codes':salaryCodeEn
 
   },
   no: { 
@@ -90,7 +96,8 @@ const resources = {
     'payroll-reports': payrollReportsNo,
     'employee-dashboard': employeeDashboardNo,
     'shift-types': shiftTypesNo,
-    settings: settingsNo
+    settings: settingsNo,
+    'salary-codes': salaryCodeNo
   },
   de: { 
     translation: de,
@@ -104,7 +111,9 @@ const resources = {
     'payroll-reports': payrollReportsDe,
     'employee-dashboard': employeeDashboardDe,
     'shift-types': shiftTypesDe,
-    settings: settingsDe
+    settings: settingsDe,
+    'salary-codes': salaryCodeDe
+
   }
 }
 
@@ -127,7 +136,7 @@ i18n
     },
 
     // Support for namespaces
-    ns: ['translation', 'schedule', 'punch-clock', 'availability', 'sick-leave', 'pending-requests', 'payroll-entries', 'payroll-periods', 'payroll-reports', 'employee-dashboard','settings'],
+    ns: ['translation', 'schedule', 'punch-clock', 'availability', 'sick-leave', 'pending-requests', 'payroll-entries', 'payroll-periods', 'payroll-reports', 'employee-dashboard','settings','salary-codes'],
     defaultNS: 'translation',
   })
 
