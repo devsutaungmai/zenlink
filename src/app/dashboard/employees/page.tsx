@@ -55,6 +55,7 @@ export default function EmployeesPage() {
   const [pinEmployeeName, setPinEmployeeName] = useState('');
   const [newPin, setNewPin] = useState('');
   const [inviteLoading, setInviteLoading] = useState(false);
+  const [pinLoading, setPinLoading] = useState(false);
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1)
@@ -169,6 +170,7 @@ export default function EmployeesPage() {
       return;
     }
 
+    setPinLoading(true);
     try {
       const res = await fetch(`/api/employees/${pinEmployeeId}/pin`, {
         method: 'PATCH',
@@ -212,6 +214,8 @@ export default function EmployeesPage() {
         timer: 3000,
         timerProgressBar: true
       });
+    } finally {
+      setPinLoading(false);
     }
   };
 
@@ -617,7 +621,7 @@ export default function EmployeesPage() {
       </Dialog>
 
       {/* PIN Modal */}
-      <Dialog open={showPinModal} onOpenChange={(open) => !open && setShowPinModal(false)}>
+      <Dialog open={showPinModal} onOpenChange={(open) => !open && !pinLoading && setShowPinModal(false)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>{t('employees.pin_modal.title', { name: pinEmployeeName })}</DialogTitle>
@@ -638,6 +642,7 @@ export default function EmployeesPage() {
                 placeholder="123456"
                 maxLength={6}
                 className="text-center text-lg font-mono tracking-wider"
+                disabled={pinLoading}
                 required
               />
               <p className="mt-1 text-xs text-gray-500">
@@ -649,14 +654,16 @@ export default function EmployeesPage() {
                 type="button"
                 variant="outline"
                 onClick={() => setShowPinModal(false)}
+                disabled={pinLoading}
               >
                 {t('common.cancel')}
               </Button>
               <Button
                 type="submit"
-                disabled={newPin.length !== 6}
+                disabled={newPin.length !== 6 || pinLoading}
+                className="bg-[#31BCFF] hover:bg-[#31BCFF]/90 text-white"
               >
-                {t('employees.pin_modal.set_pin')}
+                {pinLoading ? t('employees.pin_modal.setting') : t('employees.pin_modal.set_pin')}
               </Button>
             </div>
           </form>

@@ -63,6 +63,11 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
   const [contracts, setContracts] = useState<any[]>([])
   const [contractsLoading, setContractsLoading] = useState(false)
   const [availableTabs, setAvailableTabs] = useState(defaultEmployeeTabs)
+  const [payslips, setPayslips] = useState<any[]>([])
+  const [payslipsLoading, setPayslipsLoading] = useState(false)
+
+  const [sickLeaves, setSickLeaves] = useState<any[]>([])
+  const [sickLeavesLoading, setSickLeavesLoading] = useState(false)
 
   useEffect(() => {
     if (!employeeId) return
@@ -145,9 +150,50 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
     }
   }
 
+  const fetchPayslips = async () => {
+    if (!employeeId) return
+    
+    setPayslipsLoading(true)
+    try {
+      const response = await fetch(`/api/payroll-entries?employeeId=${employeeId}`)
+      if (response.ok) {
+        const data = await response.json()
+        // Handle the API response structure properly
+        setPayslips(data.payrollEntries || [])
+      }
+    } catch (error) {
+      console.error('Error fetching payslips:', error)
+      setPayslips([])
+    } finally {
+      setPayslipsLoading(false)
+    }
+  }
+
+  const fetchSickLeaves = async () => {
+    if (!employeeId) return
+    
+    setSickLeavesLoading(true)
+    try {
+      const response = await fetch(`/api/sick-leaves?employeeId=${employeeId}`)
+      if (response.ok) {
+        const data = await response.json()
+        setSickLeaves(Array.isArray(data) ? data : [])
+      }
+    } catch (error) {
+      console.error('Error fetching sick leaves:', error)
+      setSickLeaves([])
+    } finally {
+      setSickLeavesLoading(false)
+    }
+  }
+
   useEffect(() => {
     if (activeTab === 'shifts') {
       fetchShifts()
+    } else if (activeTab === 'payslips') {
+      fetchPayslips()
+    } else if (activeTab === 'sickleave') {
+      fetchSickLeaves()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, employeeId, selectedMonth, startDate, endDate])
@@ -578,40 +624,65 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
                 </div>
               </div>
               
-              {/* Payslips List - UI Only for now */}
-              <div className="bg-gray-50 rounded-xl p-8 text-center">
-                <DocumentTextIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h4 className="text-lg font-medium text-gray-900 mb-2">Payslips Archive</h4>
-                <p className="text-gray-500 mb-6">
-                  Access and download payslips for this employee
-                </p>
-                <div className="space-y-3">
-                  {/* Sample payslip entries - will be replaced with real data */}
-                  {[1, 2, 3, 4].map((item) => (
-                    <div key={item} className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <DocumentTextIcon className="w-8 h-8 text-[#31BCFF]" />
-                        <div className="text-left">
-                          <div className="font-medium text-gray-900">
-                            Payslip - June {item * 7}, 2025
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            Period: June {item * 7 - 6} - June {item * 7}, 2025
+              {payslipsLoading ? (
+                <div className="bg-gray-50 rounded-xl p-8 text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#31BCFF] mx-auto mb-4"></div>
+                  <p className="text-gray-500">Loading payslips...</p>
+                </div>
+              ) : (Array.isArray(payslips) ? payslips : []).length === 0 ? (
+                <div className="bg-gray-50 rounded-xl p-8 text-center">
+                  <DocumentTextIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <h4 className="text-lg font-medium text-gray-900 mb-2">No Payslips Found</h4>
+                  <p className="text-gray-500">
+                    This employee has no payslips generated yet.
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-gray-50 rounded-xl p-8">
+                  <h4 className="text-lg font-medium text-gray-900 mb-6 text-center">Payslips Archive</h4>
+                  <div className="space-y-3">
+                    {(Array.isArray(payslips) ? payslips : []).map((payslip) => (
+                      <div key={payslip.id} className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <DocumentTextIcon className="w-8 h-8 text-[#31BCFF]" />
+                          <div className="text-left">
+                            <div className="font-medium text-gray-900">
+                              Payslip - {payslip.payrollPeriod?.name || 'Unknown Period'}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              Period: {payslip.payrollPeriod?.startDate ? new Date(payslip.payrollPeriod.startDate).toLocaleDateString() : 'N/A'} - {payslip.payrollPeriod?.endDate ? new Date(payslip.payrollPeriod.endDate).toLocaleDateString() : 'N/A'}
+                            </div>
+                            <div className="text-xs text-gray-400">
+                              Status: {payslip.status || 'N/A'} | Total: {currencySymbol}{payslip.totalGrossPay || 0}
+                            </div>
                           </div>
                         </div>
+                        <div className="flex items-center gap-2">
+                          <button 
+                            onClick={() => window.open(`/api/payroll-entries/${payslip.id}/payslip`, '_blank')}
+                            className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
+                            title="View Payslip"
+                          >
+                            <EyeIcon className="w-4 h-4" />
+                          </button>
+                          <button 
+                            onClick={() => {
+                              const link = document.createElement('a')
+                              link.href = `/api/payroll-entries/${payslip.id}/payslip`
+                              link.download = `payslip-${payslip.payrollPeriod?.name || payslip.id}.pdf`
+                              link.click()
+                            }}
+                            className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200"
+                            title="Download Payslip"
+                          >
+                            <ArrowDownTrayIcon className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <button className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200">
-                          <EyeIcon className="w-4 h-4" />
-                        </button>
-                        <button className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200">
-                          <ArrowDownTrayIcon className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
 
@@ -624,44 +695,58 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
                 </div>
               </div>
               
-              {/* Sick Leave List - UI Only for now */}
-              <div className="bg-gray-50 rounded-xl p-8 text-center">
-                <HeartIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h4 className="text-lg font-medium text-gray-900 mb-2">Sick Leave Management</h4>
-                <p className="text-gray-500 mb-6">
-                  View and manage sick leave requests for this employee
-                </p>
-                <div className="space-y-3">
-                  {/* Sample sick leave entries - will be replaced with real data */}
-                  {[1, 2, 3].map((item) => (
-                    <div key={item} className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-3">
-                          <HeartIcon className="w-6 h-6 text-red-400" />
-                          <div className="text-left">
-                            <div className="font-medium text-gray-900">
-                              Sick Leave Request #{item}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              June {item * 5}, 2025 - June {item * 5 + 2}, 2025
+              {sickLeavesLoading ? (
+                <div className="bg-gray-50 rounded-xl p-8 text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#31BCFF] mx-auto mb-4"></div>
+                  <p className="text-gray-500">Loading sick leave records...</p>
+                </div>
+              ) : (Array.isArray(sickLeaves) ? sickLeaves : []).length === 0 ? (
+                <div className="bg-gray-50 rounded-xl p-8 text-center">
+                  <HeartIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <h4 className="text-lg font-medium text-gray-900 mb-2">No Sick Leave Records</h4>
+                  <p className="text-gray-500">
+                    This employee has no sick leave records yet.
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-gray-50 rounded-xl p-8">
+                  <h4 className="text-lg font-medium text-gray-900 mb-6 text-center">Sick Leave History</h4>
+                  <div className="space-y-3">
+                    {(Array.isArray(sickLeaves) ? sickLeaves : []).map((sickLeave) => (
+                      <div key={sickLeave.id} className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-3">
+                            <HeartIcon className="w-6 h-6 text-red-400" />
+                            <div className="text-left">
+                              <div className="font-medium text-gray-900">
+                                Sick Leave Request
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {new Date(sickLeave.startDate).toLocaleDateString()} - {new Date(sickLeave.endDate).toLocaleDateString()}
+                              </div>
                             </div>
                           </div>
+                          <span className={`text-xs px-2 py-1 rounded-full ${
+                            sickLeave.approved === true ? 'bg-green-100 text-green-800' : 
+                            sickLeave.approved === false ? 'bg-red-100 text-red-800' :
+                            'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {sickLeave.approved === true ? 'Approved' : sickLeave.approved === false ? 'Rejected' : 'Pending'}
+                          </span>
                         </div>
-                        <span className={`text-xs px-2 py-1 rounded-full ${
-                          item === 1 ? 'bg-green-100 text-green-800' : 
-                          item === 2 ? 'bg-yellow-100 text-yellow-800' : 
-                          'bg-gray-100 text-gray-800'
-                        }`}>
-                          {item === 1 ? 'Approved' : item === 2 ? 'Pending' : 'Completed'}
-                        </span>
+                        {sickLeave.reason && (
+                          <div className="text-sm text-gray-500">
+                            Reason: {sickLeave.reason}
+                          </div>
+                        )}
+                        <div className="text-xs text-gray-400 mt-2">
+                          Submitted: {new Date(sickLeave.createdAt).toLocaleDateString()}
+                        </div>
                       </div>
-                      <div className="text-sm text-gray-500">
-                        Reason: {item === 1 ? 'Flu symptoms' : item === 2 ? 'Medical appointment' : 'Recovery'}
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
 

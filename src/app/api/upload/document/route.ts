@@ -1,11 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { writeFile } from 'fs/promises'
-import { join } from 'path'
-import { requireAuth } from '@/shared/lib/auth'
+import { put } from '@vercel/blob'
+import { getCurrentUserOrEmployee } from '@/shared/lib/auth'
+
+export const runtime = 'nodejs'
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024
+
+const ALLOWED_TYPES = [
+  'application/pdf',
+  'image/jpeg',
+  'image/png',
+  'image/jpg',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+]
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await requireAuth()
+    const auth = await getCurrentUserOrEmployee()
+    if (!auth) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const formData = await request.formData()
     const file = formData.get('file') as File
 
@@ -13,52 +29,35 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 })
     }
 
-    const allowedTypes = [
-      'application/pdf',
-      'image/jpeg',
-      'image/png',
-      'image/jpg',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-    ]
-
-    if (!allowedTypes.includes(file.type)) {
+    if (!ALLOWED_TYPES.includes(file.type)) {
       return NextResponse.json(
         { error: 'Invalid file type. Please upload PDF, DOC, DOCX, or image files.' },
         { status: 400 }
       )
     }
 
-    if (file.size > 5 * 1024 * 1024) {
+    if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
         { error: 'File size too large. Maximum size is 5MB.' },
         { status: 400 }
       )
     }
 
-    const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
-
     const timestamp = Date.now()
-    const originalName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
-    const filename = `${timestamp}_${user.id}_${originalName}`
+    const randomString = Math.random().toString(36).slice(2, 10)
+    const extension = file.name.includes('.') ? file.name.split('.').pop() : 'dat'
+    const filename = `sick-leave-documents/${timestamp}-${randomString}.${extension}`
 
-    const uploadDir = join(process.cwd(), 'public', 'uploads', 'documents')
-    
-    try {
-      await writeFile(join(uploadDir, filename), buffer)
-    } catch (error) {
-      const { mkdir } = require('fs/promises')
-      await mkdir(uploadDir, { recursive: true })
-      await writeFile(join(uploadDir, filename), buffer)
-    }
-
-    const fileUrl = `/uploads/documents/${filename}`
+    const blob = await put(filename, file, {
+      access: 'public',
+      addRandomSuffix: false,
+      contentType: file.type
+    })
 
     return NextResponse.json({
       success: true,
-      url: fileUrl,
-      filename: filename,
+      url: blob.url,
+      filename: blob.pathname,
       originalName: file.name,
       size: file.size
     })

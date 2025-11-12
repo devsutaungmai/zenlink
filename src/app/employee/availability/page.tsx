@@ -25,12 +25,13 @@ export default function EmployeeAvailabilityPage() {
   const currentYear = currentDate.getFullYear()
 
   const fetchAvailabilities = async () => {
-    if (!user?.employee?.id) return
+    const employeeId = user?.employee?.id || (user?.role === 'EMPLOYEE' ? user.id : null)
+    if (!employeeId) return
 
     try {
       setAvailabilityLoading(true)
       const response = await fetch(
-        `/api/availability?employeeId=${user.employee.id}&month=${currentMonth + 1}&year=${currentYear}`
+        `/api/availability?employeeId=${employeeId}&month=${currentMonth + 1}&year=${currentYear}`
       )
       
       if (!response.ok) {
@@ -134,7 +135,7 @@ export default function EmployeeAvailabilityPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          employeeId: user.employee.id,
+          employeeId: user?.employee?.id || (user?.role === 'EMPLOYEE' ? user.id : null),
           dates: Array.from(selectedDates),
           isAvailable
         }),
@@ -209,8 +210,7 @@ export default function EmployeeAvailabilityPage() {
     )
   }
 
-  // Show error if user doesn't have employee data
-  if (!user.employee) {
+  if (!user.employee && user.role !== 'EMPLOYEE') {
     return (
       <div className="min-h-screen bg-[#E5F1FF]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -222,7 +222,6 @@ export default function EmployeeAvailabilityPage() {
     )
   }
 
-  // Show loading for availability data
   if (availabilityLoading) {
     return (
       <div className="min-h-screen bg-[#E5F1FF]">

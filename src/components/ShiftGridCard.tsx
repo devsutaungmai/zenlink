@@ -1,6 +1,5 @@
 import React from "react"
 import { Shift } from '@prisma/client'
-import ShiftExchangeInfo from '@/components/ShiftExchangeInfo'
 
 // Extended Shift type to include relations
 type ShiftWithRelations = Shift & {
@@ -115,9 +114,6 @@ export default function ShiftGridCard({
           </span>
         )}
       </div>
-
-      {/* Show exchange information for approved shifts */}
-      <ShiftExchangeInfo shift={shift} />
 
       {/* Mini Actions - vertical stack */}
       <div className="absolute top-1 right-1 flex flex-col items-center space-y-1 opacity-0 group-hover:opacity-100 transition">

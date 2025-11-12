@@ -1,7 +1,6 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import DatePicker from 'react-datepicker'
-import 'react-datepicker/dist/react-datepicker.css'
+import { DatePicker } from '@/components/ui/date-picker'
 import { Sex } from '@prisma/client'
 import { EmployeeFormData } from './types'
 
@@ -63,10 +62,15 @@ export function PersonalInfoSection({
           {t('employees.form.birthday')} <span className="text-red-500">*</span>
         </label>
         <DatePicker
-          selected={formData.birthday}
-          onChange={(date) => onDateChange(date, 'birthday')}
+          date={formData.birthday}
+          onDateChange={(date) => onDateChange(date || null, 'birthday')}
           className={getFieldStyle('birthday')}
-          required
+          placeholder="Select date of birth"
+          dateFormat="dd/MM/yyyy"
+          yearRange={{ 
+            from: new Date().getFullYear() - 100, 
+            to: new Date().getFullYear() 
+          }}
         />
         {validationErrors.birthday && (
           <p className="mt-1 text-sm text-red-500">{validationErrors.birthday}</p>

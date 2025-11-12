@@ -28,7 +28,27 @@ export async function GET(
       },
       include: {
         employee: true,
-        employeeGroup: true
+        employeeGroup: true,
+        department: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        function: {
+          select: {
+            id: true,
+            name: true,
+            categoryId: true,
+            category: {
+              select: {
+                id: true,
+                name: true,
+                departmentId: true
+              }
+            }
+          }
+        }
       }
     })
     
@@ -58,6 +78,7 @@ export async function PUT(
     const {
       autoBreakType,
       autoBreakValue,
+      categoryId,
       ...rawData
     } = extraRawData
 
@@ -74,6 +95,8 @@ export async function PUT(
       endTime: rawData.endTime,
       employeeId: rawData.employeeId || null,
       employeeGroupId: rawData.employeeGroupId || null,
+      departmentId: rawData.departmentId || null,
+      functionId: rawData.functionId || null,
       shiftType: rawData.shiftType as ShiftType,
       shiftTypeId: rawData.shiftTypeId || null,
       breakStart: rawData.breakStart ? convertTimeToDateTime(rawData.breakStart, rawData.date) : null,
@@ -81,7 +104,8 @@ export async function PUT(
       wage: rawData.wage !== undefined ? parseFloat(rawData.wage) : undefined,
       wageType: rawData.wageType as WageType,
       note: rawData.note !== undefined ? rawData.note : null,
-      approved: rawData.approved !== undefined ? Boolean(rawData.approved) : undefined
+      approved: rawData.approved !== undefined ? Boolean(rawData.approved) : undefined,
+      breakPaid: rawData.breakPaid !== undefined ? Boolean(rawData.breakPaid) : undefined
     }
     
     const shift = await prisma.shift.update({

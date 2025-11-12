@@ -52,10 +52,12 @@ export default function DashboardNavbar({ setMobileMenuOpen }: DashboardNavbarPr
       icon: UserGroupIcon,
       children: [
         { name: t('navigation.departments'), href: '/dashboard/departments' },
+        { name: 'Categories', href: '/dashboard/categories' },
+        { name: 'Functions', href: '/dashboard/functions' },
         { name: t('navigation.employees'), href: '/dashboard/employees' },
         { name: t('navigation.employee_groups'), href: '/dashboard/employee-groups' },
         { name: t('navigation.contracts'), href: '/dashboard/contracts' },
-        { name: t('navigation.documents'), href: '/dashboard/documents' },
+        // { name: t('navigation.documents'), href: '/dashboard/documents' },
       ],
     },
     {
@@ -89,11 +91,11 @@ export default function DashboardNavbar({ setMobileMenuOpen }: DashboardNavbarPr
     { name: t('navigation.home'), href: '/dashboard', icon: HomeIcon },
     { name: t('navigation.your_hours'), href: '/dashboard/hours', icon: ClockIcon },
     { name: t('navigation.schedule'), href: '/dashboard/schedule', icon: CalendarIcon },
-    { name: t('navigation.availability'), href: '/employee/availability', icon: ClockIcon },
-    { name: t('navigation.sick_leaves'), href: '/employee/sick-leaves', icon: UserIcon },
+    { name: t('navigation.availability'), href: '/dashboard/availability', icon: ClockIcon },
+    { name: t('navigation.sick_leaves'), href: '/dashboard/sick-leaves', icon: UserIcon },
   ]
 
-  const navigation = user?.role === 'EMPLOYEE' ? employeeNavigation : adminNavigation
+  const navigation = (user?.role === 'EMPLOYEE' || user?.employee) ? employeeNavigation : adminNavigation
 
   const handleLogout = async () => {
     try {

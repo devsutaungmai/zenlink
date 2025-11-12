@@ -3,8 +3,7 @@
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { User, Mail, Phone, MapPin, Calendar, UserCheck } from 'lucide-react'
-import DatePicker from 'react-datepicker'
-import 'react-datepicker/dist/react-datepicker.css'
+import { DatePicker } from '@/components/ui/date-picker'
 
 interface EmployeeProfileFormData {
   firstName: string
@@ -40,8 +39,8 @@ export default function EmployeeProfileForm({
     }
   }
 
-  const handleDateChange = (date: Date | null) => {
-    setFormData(prev => ({ ...prev, birthday: date || undefined }))
+  const handleDateChange = (date: Date | undefined) => {
+    setFormData(prev => ({ ...prev, birthday: date }))
     
     if (errors.birthday) {
       setErrors(prev => ({ ...prev, birthday: '' }))
@@ -211,19 +210,19 @@ export default function EmployeeProfileForm({
             </label>
             <div className="relative">
               <DatePicker
-                selected={formData.birthday}
-                onChange={handleDateChange}
-                className={`block w-full px-4 py-3 rounded-xl border-2 bg-white/70 backdrop-blur-sm text-gray-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#31BCFF]/50 ${
+                date={formData.birthday}
+                onDateChange={handleDateChange}
+                className={`${
                   errors.birthday 
                     ? 'border-red-300 focus:border-red-500' 
                     : 'border-gray-200 focus:border-[#31BCFF] hover:border-gray-300'
                 }`}
-                placeholderText="Select your date of birth"
+                placeholder="Select your date of birth"
                 dateFormat="dd/MM/yyyy"
-                showYearDropdown
-                showMonthDropdown
-                dropdownMode="select"
-                maxDate={new Date()}
+                yearRange={{
+                  from: new Date().getFullYear() - 100,
+                  to: new Date().getFullYear()
+                }}
                 disabled={loading}
               />
             </div>

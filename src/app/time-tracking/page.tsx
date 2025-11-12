@@ -338,7 +338,7 @@ export default function TimeTrackingPage() {
   }
 
   return (
-    <div className="h-full flex flex-col space-y-4">
+    <div className="h-screen flex flex-col space-y-4 p-4">
       {/* Welcome Header - Enhanced with Business Info */}
       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100 flex-shrink-0">
         <div className="text-center">
@@ -459,9 +459,9 @@ export default function TimeTrackingPage() {
       </div>
 
       {/* Three Column Layout - iPad Optimized */}
-      <div className="grid grid-cols-3 gap-4 flex-1 min-h-0">
+      <div className="grid grid-cols-3 gap-4 flex-1 min-h-0 overflow-hidden">
         {/* Left Column - All Employee Shifts */}
-        <div className="bg-white/90 backdrop-blur-xl rounded-xl border border-gray-200/50 shadow-lg flex flex-col">
+        <div className="bg-white/90 backdrop-blur-xl rounded-xl border border-gray-200/50 shadow-lg flex flex-col overflow-hidden">
           <div className="p-4 border-b border-gray-200/50 flex-shrink-0">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -474,7 +474,7 @@ export default function TimeTrackingPage() {
             </div>
           </div>
           
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden">
             {filteredShifts.length === 0 ? (
               <div className="p-4 text-center">
                 <ClockIcon className="w-8 h-8 text-gray-400 mx-auto mb-2" />
@@ -521,7 +521,7 @@ export default function TimeTrackingPage() {
         </div>
 
         {/* Center Column - Working Shifts */}
-        <div className="bg-white/90 backdrop-blur-xl rounded-xl border border-gray-200/50 shadow-lg flex flex-col">
+        <div className="bg-white/90 backdrop-blur-xl rounded-xl border border-gray-200/50 shadow-lg flex flex-col overflow-hidden">
           <div className="p-4 border-b border-gray-200/50 flex-shrink-0">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
@@ -534,7 +534,7 @@ export default function TimeTrackingPage() {
             </div>
           </div>
           
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden">
             {workingShifts.length === 0 ? (
               <div className="p-4 text-center">
                 <PauseIcon className="w-8 h-8 text-gray-400 mx-auto mb-2" />
@@ -580,7 +580,7 @@ export default function TimeTrackingPage() {
         </div>
 
         {/* Right Column - Employee List */}
-        <div className="bg-white/90 backdrop-blur-xl rounded-xl border border-gray-200/50 shadow-lg flex flex-col">
+        <div className="bg-white/90 backdrop-blur-xl rounded-xl border border-gray-200/50 shadow-lg flex flex-col overflow-hidden">
           <div className="p-4 border-b border-gray-200/50 flex-shrink-0">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
@@ -593,7 +593,7 @@ export default function TimeTrackingPage() {
             </div>
           </div>
           
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden">
             {filteredEmployees.length === 0 ? (
               <div className="p-4 text-center">
                 <UserGroupIcon className="w-8 h-8 text-gray-400 mx-auto mb-2" />

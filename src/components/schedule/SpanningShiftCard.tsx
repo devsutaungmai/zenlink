@@ -1,41 +1,7 @@
 import { format } from 'date-fns'
-import { Shift, Employee } from '@prisma/client'
-import ShiftExchangeInfo from '@/components/ShiftExchangeInfo'
+import { Employee } from '@prisma/client'
 import { useCurrency } from '@/shared/hooks/useCurrency'
-
-// Extended Shift type to include relations
-type ShiftWithRelations = Shift & {
-  employee?: {
-    firstName: string
-    lastName: string
-    department?: {
-      name: string
-    }
-  }
-  employeeGroup?: {
-    name: string
-  }
-  shiftExchanges?: Array<{
-    id: string
-    status: string
-    fromEmployee: {
-      id: string
-      firstName: string
-      lastName: string
-      department: {
-        name: string
-      }
-    }
-    toEmployee: {
-      id: string
-      firstName: string
-      lastName: string
-      department: {
-        name: string
-      }
-    }
-  }>
-}
+import { ShiftWithRelations } from '@/types/schedule'
 
 interface SpanningShiftCardProps {
   shift: ShiftWithRelations
@@ -105,33 +71,39 @@ export default function SpanningShiftCard({
         e.preventDefault()
         onEdit(shift)
       }}
-      title={`${shift.startTime.substring(0, 5)} - ${endTimeDisplay} | ${currentEmployee ? `${currentEmployee.firstName} ${currentEmployee.lastName}` : 'Unassigned'}`}
+      title={`${shift.function?.name || 'No function'} | ${shift.startTime.substring(0, 5)} - ${endTimeDisplay} | ${currentEmployee ? `${currentEmployee.firstName} ${currentEmployee.lastName}` : 'Unassigned'}`}
       draggable={false}
     >
-      <div className="font-medium text-xs sm:text-sm truncate">
-        {shift.startTime.substring(0, 5)} - {endTimeDisplay}
-      </div>
-      {height > 40 && (
-        <div className="text-[10px] sm:text-xs mt-1 truncate">
-          {currentEmployee ? `${currentEmployee.firstName} ${currentEmployee.lastName}` : 'Unassigned'}
+      {/* Function name - most prominent */}
+      {shift.function && (
+        <div className="font-bold text-xs truncate mb-0.5">
+          {shift.function.name}
         </div>
       )}
-      {height > 60 && shift.employeeGroup && (
-        <div className="text-[10px] sm:text-xs mt-1 opacity-75 truncate">
+      
+      {/* Time range */}
+      <div className={`${shift.function ? 'font-medium text-[10px]' : 'font-medium text-xs'} truncate`}>
+        {shift.startTime.substring(0, 5)} - {endTimeDisplay}
+      </div>
+      
+      {/* Employee name */}
+      {height > 24 && (
+        <div className="text-[10px] mt-0.5 truncate">
+          {currentEmployee ? `${currentEmployee.firstName.split(' ')[0]} ${currentEmployee.lastName.charAt(0)}.` : 'Unassigned'}
+        </div>
+      )}
+      
+      {height > 36 && shift.employeeGroup && (
+        <div className="text-[10px] mt-0.5 opacity-75 truncate">
           {shift.employeeGroup.name}
         </div>
       )}
       
       {/* Show wage information if height allows */}
-      {height > 60 && shift.wage && (
-        <div className="text-[10px] sm:text-xs mt-1 font-semibold truncate">
+      {height > 36 && shift.wage && (
+        <div className="text-[10px] mt-0.5 font-semibold truncate">
           {currencySymbol}{shift.wage}/{shift.wageType === 'HOURLY' ? 'hr' : 'day'}
         </div>
-      )}
-      
-      {/* Show exchange information if height allows */}
-      {height > 100 && (
-        <ShiftExchangeInfo shift={shift} />
       )}
     </div>
   )
@@ -174,10 +146,8 @@ const getShiftPosition = (startTime: string, endTime: string | null) => {
     endOffset += 24 * 60; // Add 24 hours
   }
 
-  // Height calculation: Mobile: 50px/hour, Desktop: 60px/hour
-  // Use 50px for mobile (matches h-[50px] in WeekView/DayView)
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
-  const pixelsPerHour = isMobile ? 50 : 60;
+  // Height calculation: 24px per hour for compact view
+  const pixelsPerHour = 24;
   const height = ((endOffset - startOffset) / 60) * pixelsPerHour;
   
   // Top position: offset from the top of the schedule grid

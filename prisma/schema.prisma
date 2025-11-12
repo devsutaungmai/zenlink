@@ -100,6 +100,7 @@ model Employee {
   sickPayCalculations SickPayCalculation[]
   timeEntries         TimeEntry[]
   workPlans           WorkPlan[]
+  functions           EmployeeFunction[]
 }
 
 model EmployeeGroup {
@@ -161,6 +162,51 @@ model Department {
   employees          Employee[]
   projects           Project[]
   punchClockProfiles PunchClockProfile[]
+  categories         DepartmentCategory[]
+  shifts             Shift[]
+}
+
+model DepartmentCategory {
+  id           String               @id @default(cuid())
+  name         String
+  description  String?
+  color        String?
+  departmentId String
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  department   Department           @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  functions    DepartmentFunction[]
+
+  @@unique([name, departmentId])
+  @@index([departmentId])
+}
+
+model DepartmentFunction {
+  id         String               @id @default(cuid())
+  name       String
+  categoryId String
+  color      String?
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @updatedAt
+  category   DepartmentCategory   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  shifts     Shift[]
+  employees  EmployeeFunction[]
+
+  @@unique([name, categoryId])
+  @@index([categoryId])
+}
+
+model EmployeeFunction {
+  id         String             @id @default(cuid())
+  employeeId String
+  functionId String
+  createdAt  DateTime           @default(now())
+  employee   Employee           @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  function   DepartmentFunction @relation(fields: [functionId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, functionId])
+  @@index([employeeId])
+  @@index([functionId])
 }
 
 model PunchClockProfile {
@@ -254,31 +300,40 @@ model Break {
 }
 
 model Shift {
-  id              String           @id @default(cuid())
+  id              String              @id @default(cuid())
   date            DateTime
   startTime       String
   endTime         String?
   employeeId      String?
   employeeGroupId String?
+  departmentId    String?
   shiftType       ShiftType
   shiftTypeId     String?
   breakStart      DateTime?
   breakEnd        DateTime?
   wage            Float
-  wageType        WageType         @default(HOURLY)
+  wageType        WageType            @default(HOURLY)
   note            String?
-  approved        Boolean          @default(false)
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @default(now())
-  breakPaid       Boolean          @default(false)
-  status          ShiftStatus      @default(SCHEDULED)
+  approved        Boolean             @default(false)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @default(now())
+  breakPaid       Boolean             @default(false)
+  status          ShiftStatus         @default(SCHEDULED)
+  functionId      String?
   attendances     Attendance[]
   notifications   Notification[]
-  employeeGroup   EmployeeGroup?   @relation(fields: [employeeGroupId], references: [id])
-  employee        Employee?        @relation(fields: [employeeId], references: [id])
-  shiftTypeConfig ShiftTypeConfig? @relation(fields: [shiftTypeId], references: [id])
+  department      Department?         @relation(fields: [departmentId], references: [id])
+  employeeGroup   EmployeeGroup?      @relation(fields: [employeeGroupId], references: [id])
+  employee        Employee?           @relation(fields: [employeeId], references: [id])
+  shiftTypeConfig ShiftTypeConfig?    @relation(fields: [shiftTypeId], references: [id])
+  function        DepartmentFunction? @relation(fields: [functionId], references: [id])
   shiftExchanges  ShiftExchange[]
+  
   @@index([shiftTypeId])
+  @@index([functionId])
+  @@index([departmentId])
+  @@index([date])
+  @@index([employeeId])
 }
 
 model ShiftExchange {

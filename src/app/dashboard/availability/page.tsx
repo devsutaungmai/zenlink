@@ -1,8 +1,9 @@
 'use client'
 
 import React, { useEffect, useState, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
+import { useUser } from '@/shared/lib/useUser'
+import Swal from 'sweetalert2'
 import { 
   CalendarIcon,
   ChevronLeftIcon,
@@ -31,6 +32,7 @@ import {
 
 interface Employee {
   id: string
+  userId?: string
   firstName: string
   lastName: string
   employeeNo: string
@@ -65,8 +67,8 @@ interface AvailabilityStats {
 }
 
 export default function AdminAvailabilityPage() {
-  const router = useRouter()
   const { t } = useTranslation('availability')
+  const { user, loading: userLoading } = useUser()
   const [currentDate, setCurrentDate] = useState(new Date())
   const [employees, setEmployees] = useState<Employee[]>([])
   const [availabilities, setAvailabilities] = useState<Availability[]>([])
@@ -84,22 +86,274 @@ export default function AdminAvailabilityPage() {
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar') // Add view mode toggle
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  
+  // Interactive functionality for employees
+  const [selectedDates, setSelectedDates] = useState<Set<string>>(new Set())
+  const [submitting, setSubmitting] = useState(false)
+  const [employeeRecordId, setEmployeeRecordId] = useState<string | null>(null)
+
+  // Simple cache to prevent redundant API calls
+  const [dataCache, setDataCache] = useState<{
+    employees?: any[]
+    availabilities?: any[]
+    lastFetch?: string
+    cacheKey?: string
+  }>({})
 
   const currentMonth = currentDate.getMonth()
   const currentYear = currentDate.getFullYear()
 
+  // Check if user is authenticated (admin or employee)
+  const isEmployee = user?.role === 'EMPLOYEE' || !!user?.employee
+  const isAuthenticated = !userLoading && user
+  
+  // Get current employee ID for filtering and interactions
+  // Priority: user.employee.id (if exists), then user.id (if user is employee role)
+  const currentEmployeeUserId = user?.id ?? null
+
+  // Helper functions for employee interaction
+  const formatDateKey = (date: Date) => {
+    return date.toISOString().split('T')[0]
+  }
+
+  const isDateSelected = (date: Date) => {
+    return selectedDates.has(formatDateKey(date))
+  }
+
+  const toggleDateSelection = (date: Date) => {
+    const dateKey = formatDateKey(date)
+    const newSelected = new Set(selectedDates)
+    
+    if (newSelected.has(dateKey)) {
+      newSelected.delete(dateKey)
+    } else {
+      newSelected.add(dateKey)
+    }
+    
+    setSelectedDates(newSelected)
+  }
+
+  const submitAvailability = async (isAvailable: boolean) => {
+    if (selectedDates.size === 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'No dates selected',
+        text: 'Please select at least one date to update availability.',
+      })
+      return
+    }
+
+    const employeeRecord = isEmployee
+      ? employees[0]
+      : employees.find((emp: Employee) => emp.userId === currentEmployeeUserId)
+
+    const employeeId = isEmployee
+      ? (employeeRecordId || employeeRecord?.id)
+      : employeeRecord?.id
+    
+    if (!employeeId) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Unable to identify employee. Please try logging in again.',
+      })
+      return
+    }
+
+    setSubmitting(true)
+    try {
+      const response = await fetch('/api/availability', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          employeeId: employeeId,
+          dates: Array.from(selectedDates),
+          isAvailable
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to update availability')
+      }
+
+      await fetchAvailabilities()
+      setSelectedDates(new Set())
+
+      Swal.fire({
+        icon: 'success',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        title: `Marked ${selectedDates.size} day(s) as ${isAvailable ? 'available' : 'unavailable'}`
+      })
+
+    } catch (error) {
+      console.error('Error updating availability:', error)
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Failed to update availability. Please try again.',
+      })
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const clearSelection = () => {
+    setSelectedDates(new Set()) 
+  }
+
+  const selectAllDaysInMonth = () => {
+    setSelectedDates(new Set())
+    const days = getDaysInMonth(currentDate)
+    const dateKeys = days
+      .filter(day => day !== null)
+      .map(day => formatDateKey(day as Date))
+    setSelectedDates(new Set(dateKeys))
+  }
+
   useEffect(() => {
-    fetchData()
-  }, [currentMonth, currentYear])
+    if (isAuthenticated) {
+      fetchData()
+    }
+  }, [currentMonth, currentYear, isAuthenticated, isEmployee, currentEmployeeUserId])
 
   const fetchData = async () => {
     try {
       setLoading(true)
-      await Promise.all([
-        fetchEmployees(),
-        fetchAvailabilities(),
-        fetchStats()
-      ])
+
+  const employeeCacheKey = isEmployee ? (employeeRecordId || currentEmployeeUserId || 'unknown') : 'all'
+  const cacheKey = `${isEmployee ? 'employee' : 'admin'}-${employeeCacheKey}-${currentMonth}-${currentYear}`
+      const now = Date.now().toString()
+      
+      // Check if we have cached data for the last 30 seconds
+      const cacheExpiry = 30000 // 30 seconds
+      if (dataCache.cacheKey === cacheKey &&
+          dataCache.lastFetch &&
+          (Date.now() - parseInt(dataCache.lastFetch)) < cacheExpiry &&
+          dataCache.employees &&
+          dataCache.availabilities) {
+
+        // Use cached data
+        setEmployees(dataCache.employees)
+        setAvailabilities(dataCache.availabilities)
+        return
+      }
+
+      if (isEmployee && (employeeRecordId || currentEmployeeUserId)) {
+        try {
+          const employeeRes = await fetch('/api/employee/me')
+          let resolvedEmployee: Employee | null = null
+
+          if (employeeRes.ok) {
+            const employeeData = await employeeRes.json()
+            resolvedEmployee = {
+              id: employeeData.id,
+              userId: currentEmployeeUserId || undefined,
+              firstName: employeeData.firstName || 'Employee',
+              lastName: employeeData.lastName || '',
+              employeeNo: employeeData.employeeNo || '',
+              department: {
+                id: employeeData.department?.id || '',
+                name: employeeData.department?.name || 'Unknown'
+              },
+              employeeGroup: employeeData.employeeGroup
+                ? { id: employeeData.employeeGroupId || '', name: employeeData.employeeGroup }
+                : undefined
+            }
+            setEmployeeRecordId(employeeData.id)
+          } else {
+            const fallbackEmployeeId = user?.employee?.id || employeeRecordId || null
+
+            resolvedEmployee = {
+              id: fallbackEmployeeId || '',
+              userId: currentEmployeeUserId || undefined,
+              firstName: user?.firstName || 'Employee',
+              lastName: user?.lastName || '',
+              employeeNo: user?.employee?.employeeNo || '',
+              department: { id: user?.employee?.departmentId || '', name: 'Unknown' }
+            }
+
+            if (fallbackEmployeeId) {
+              setEmployeeRecordId(fallbackEmployeeId)
+            }
+          }
+
+          if ((!resolvedEmployee || !resolvedEmployee.id) && currentEmployeeUserId) {
+            // Attempt targeted lookup as final fallback
+            try {
+              const targetedRes = await fetch(`/api/employees?userId=${currentEmployeeUserId}`)
+              if (targetedRes.ok) {
+                const targetedData = await targetedRes.json()
+                const match = Array.isArray(targetedData) ? targetedData[0] : null
+                if (match) {
+                  resolvedEmployee = {
+                    id: match.id,
+                    userId: match.userId,
+                    firstName: match.firstName,
+                    lastName: match.lastName,
+                    employeeNo: match.employeeNo,
+                    department: match.department,
+                    employeeGroup: match.employeeGroup
+                  }
+                  setEmployeeRecordId(match.id)
+                }
+              }
+            } catch (fallbackError) {
+              console.error('Fallback employee lookup failed:', fallbackError)
+            }
+          }
+
+          if (!resolvedEmployee || !resolvedEmployee.id) {
+            setError(t('error.failed_to_load'))
+            return
+          }
+
+          setEmployees([resolvedEmployee])
+
+          await fetchAvailabilities([resolvedEmployee])
+
+          setDataCache(prev => ({
+            ...prev,
+            employees: [resolvedEmployee],
+            lastFetch: now,
+            cacheKey
+          }))
+
+          setStats({
+            totalEmployees: 1,
+            availableToday: 0,
+            unavailableToday: 0,
+            pendingRequests: 0
+          })
+        } catch (error) {
+          console.error('Error fetching employee data:', error)
+          setError(t('error.failed_to_load'))
+        }
+      } else {
+        // For admins, fetch all employees and full data
+        const employeesRes = await fetch('/api/employees')
+        let employeesData: any[] = []
+        
+        if (employeesRes.ok) {
+          employeesData = await employeesRes.json()
+          setEmployees(employeesData)
+        }
+
+        await fetchAvailabilities(employeesData)
+        await fetchStats()
+
+        setDataCache(prev => ({
+          ...prev,
+          employees: employeesData,
+          lastFetch: now,
+          cacheKey
+        }))
+      }
     } catch (error) {
       console.error('Error fetching data:', error)
       setError(t('error.failed_to_load'))
@@ -108,24 +362,52 @@ export default function AdminAvailabilityPage() {
     }
   }
 
-  const fetchEmployees = async () => {
-    try {
-      const res = await fetch('/api/employees')
-      if (res.ok) {
-        const employeesData = await res.json()
-        setEmployees(employeesData)
-      }
-    } catch (error) {
-      console.error('Error fetching employees:', error)
-    }
-  }
 
-  const fetchAvailabilities = async () => {
+
+  const fetchAvailabilities = async (employeesData?: any[]) => {
     try {
-      const res = await fetch(`/api/availability?month=${currentMonth + 1}&year=${currentYear}`)
+      let url = `/api/availability?month=${currentMonth + 1}&year=${currentYear}`
+      
+      // If user is an employee, add employeeId parameter to filter their data
+      if (isEmployee) {
+        let employeeId = employeeRecordId
+
+        if (!employeeId && employeesData && employeesData.length > 0) {
+          const employeeRecord = employeesData.find((emp: any) => {
+            return emp.id === employeeRecordId || emp.userId === currentEmployeeUserId
+          })
+          employeeId = employeeRecord?.id || employeeId
+        }
+
+        if (!employeeId && currentEmployeeUserId) {
+          try {
+            const empRes = await fetch(`/api/employees?userId=${currentEmployeeUserId}`)
+            if (empRes.ok) {
+              const empData = await empRes.json()
+              employeeId = empData.length > 0 ? empData[0].id : null
+              if (employeeId) {
+                setEmployeeRecordId(employeeId)
+              }
+            }
+          } catch (error) {
+            console.error('Error fetching employee ID:', error)
+          }
+        }
+
+        if (employeeId) {
+          url += `&employeeId=${employeeId}`
+        }
+      }
+      const res = await fetch(url)
       if (res.ok) {
         const availabilitiesData = await res.json()
         setAvailabilities(availabilitiesData)
+        
+        // Update cache with availability data
+        setDataCache(prev => ({
+          ...prev,
+          availabilities: availabilitiesData
+        }))
       }
     } catch (error) {
       console.error('Error fetching availabilities:', error)
@@ -159,13 +441,11 @@ export default function AdminAvailabilityPage() {
     const startingDayOfWeek = firstDay.getDay()
 
     const days = []
-    
-    // Add empty cells for days before the first day of the month
+ 
     for (let i = 0; i < startingDayOfWeek; i++) {
       days.push(null)
     }
-    
-    // Add all days of the month
+
     for (let day = 1; day <= daysInMonth; day++) {
       days.push(new Date(year, month, day))
     }
@@ -174,7 +454,6 @@ export default function AdminAvailabilityPage() {
   }
 
   const getAvailabilityForDate = useMemo(() => {
-    // Create a lookup map for better performance with many employees
     const availabilityMap = new Map<string, Availability>()
     availabilities.forEach(availability => {
       const key = `${availability.employee.id}-${availability.date.split('T')[0]}`
@@ -256,11 +535,55 @@ export default function AdminAvailabilityPage() {
   const weekDays = t('calendar.week_days', { returnObjects: true }) as string[]
   const days = getDaysInMonth(currentDate)
 
-  if (loading) {
+  if (userLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#31BCFF]"></div>
-        <div className="ml-4 text-gray-600">{t('loading')}</div>
+        <div className="ml-4 text-gray-600">Checking permissions...</div>
+      </div>
+    )
+  }
+
+  if (loading && isAuthenticated) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">{t('availability.title')}</h1>
+            <p className="text-gray-600 mt-1">
+              {isEmployee ? t('availability.employee_subtitle') : t('availability.subtitle')}
+            </p>
+          </div>
+        </div>
+
+        {/* Loading skeleton */}
+        <div className="grid gap-6">
+          <div className="animate-pulse space-y-4">
+            <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+            <div className="grid grid-cols-7 gap-2">
+              {Array.from({ length: 35 }).map((_, i) => (
+                <div key={i} className="h-12 bg-gray-200 rounded"></div>
+              ))}
+            </div>
+          </div>
+        </div>
+        
+        <div className="text-center text-gray-500">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#31BCFF] mx-auto mb-2"></div>
+          Loading availability data...
+        </div>
+      </div>
+    )
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="p-6">
+        <div className="text-center text-red-600">
+          <ExclamationTriangleIcon className="w-12 h-12 mx-auto mb-4" />
+          <p className="text-lg font-semibold">Access Denied</p>
+          <p className="mt-2">Please log in to access this page.</p>
+        </div>
       </div>
     )
   }
@@ -286,10 +609,10 @@ export default function AdminAvailabilityPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
           <div className="flex-1">
             <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-              {t('title')}
+              {isEmployee ? 'My Availability' : t('title')}
             </h1>
             <p className="text-sm sm:text-base text-gray-600 mt-2">
-              {t('subtitle')}
+              {isEmployee ? 'View and manage your availability calendar' : t('subtitle')}
             </p>
           </div>
           <CalendarIcon className="w-10 h-10 sm:w-12 sm:h-12 text-[#31BCFF] self-start sm:self-auto" />
@@ -357,7 +680,7 @@ export default function AdminAvailabilityPage() {
                   <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <Input
                     type="text"
-                    placeholder="Search employees..."
+                    placeholder={isEmployee ? "Search availability..." : "Search employees..."}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10 text-sm"
@@ -375,18 +698,20 @@ export default function AdminAvailabilityPage() {
                 <option value="unavailable">Unavailable Today</option>
               </select>
               
-              <select 
-                value={selectedDepartment} 
-                onChange={(e) => setSelectedDepartment(e.target.value)}
-                className="w-full sm:w-48 h-10 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF]"
-              >
-                <option key="all-depts" value="all">All Departments</option>
-                {uniqueDepartments.map(dept => dept && (
-                  <option key={`dept-${dept.id}`} value={dept.id}>
-                    {dept.name}
-                  </option>
-                ))}
-              </select>
+              {!isEmployee && (
+                <select 
+                  value={selectedDepartment} 
+                  onChange={(e) => setSelectedDepartment(e.target.value)}
+                  className="w-full sm:w-48 h-10 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF]"
+                >
+                  <option key="all-depts" value="all">All Departments</option>
+                  {uniqueDepartments.map(dept => dept && (
+                    <option key={`dept-${dept.id}`} value={dept.id}>
+                      {dept.name}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
           
             {/* Results summary and view toggle */}
@@ -394,12 +719,18 @@ export default function AdminAvailabilityPage() {
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                 <span className="truncate">
                   {currentEmployees.length > 0 
-                    ? t('showing_paginated', { 
-                        start: (currentPage - 1) * employeesPerPage + 1, 
-                        end: Math.min(currentPage * employeesPerPage, filteredEmployees.length), 
-                        total: filteredEmployees.length 
-                      })
-                    : `Showing 0 of ${filteredEmployees.length} employees`
+                    ? (isEmployee 
+                        ? `Showing your availability calendar`
+                        : t('showing_paginated', { 
+                            start: (currentPage - 1) * employeesPerPage + 1, 
+                            end: Math.min(currentPage * employeesPerPage, filteredEmployees.length), 
+                            total: filteredEmployees.length 
+                          })
+                      )
+                    : (isEmployee 
+                        ? `No availability data found`
+                        : `Showing 0 of ${filteredEmployees.length} employees`
+                      )
                   }
                 </span>
                 
@@ -493,15 +824,36 @@ export default function AdminAvailabilityPage() {
                       const availability = getAvailabilityForDate(employee.id, day)
                       const isToday = day.toDateString() === new Date().toDateString()
                       
+                      // Only employees can interact with their own calendar
+                      const isSelected = isEmployee && isDateSelected(day)
+                      // For employees, check if this is their own employee record (by userId)
+                      const isClickable = isEmployee && (!!employeeRecordId && employee.id === employeeRecordId)
+                      
+
+                      
                       return (
                         <div
                           key={dayIndex}
-                          className={`p-2 text-center text-xs border rounded ${
-                            isToday ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
+                          onClick={() => isClickable && toggleDateSelection(day)}
+                          className={`p-2 text-center text-xs border rounded transition-all ${
+                            isToday 
+                              ? 'border-blue-500 bg-blue-50' 
+                              : isSelected 
+                                ? 'border-purple-500 bg-purple-100' 
+                                : 'border-gray-200'
+                          } ${
+                            isClickable 
+                              ? 'cursor-pointer hover:bg-gray-50' 
+                              : ''
                           }`}
                         >
                           <div className="font-semibold text-gray-700">{day.getDate()}</div>
-                          {availability && (
+                          {isSelected && (
+                            <div className="mt-1 p-1 rounded bg-purple-500 text-white text-xs">
+                              ●
+                            </div>
+                          )}
+                          {!isSelected && availability && (
                             <div className={`mt-1 p-1 rounded text-white text-xs ${
                               availability.isAvailable 
                                 ? 'bg-green-500' 
@@ -643,6 +995,61 @@ export default function AdminAvailabilityPage() {
         </div>
       )}
 
+      {/* Employee Action Buttons */}
+      {isEmployee && (
+        <Card>
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex flex-col gap-4">
+              {/* Selection Info */}
+              <div className="text-center">
+                {selectedDates.size > 0 ? (
+                  <span className="text-sm font-medium text-gray-700">{selectedDates.size} day(s) selected</span>
+                ) : (
+                  <span className="text-sm text-gray-500">Click on calendar days to select them</span>
+                )}
+              </div>
+              
+              {/* Action Buttons */}
+              {selectedDates.size > 0 && (
+                <div className="flex flex-wrap gap-3 justify-center">
+                  <Button
+                    onClick={() => submitAvailability(true)}
+                    disabled={selectedDates.size === 0 || submitting}
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    {submitting ? 'Updating...' : 'Mark Available'}
+                  </Button>
+                  <Button
+                    onClick={() => submitAvailability(false)}
+                    disabled={selectedDates.size === 0 || submitting}
+                    variant="destructive"
+                  >
+                    {submitting ? 'Updating...' : 'Mark Unavailable'}
+                  </Button>
+                  <Button
+                    onClick={clearSelection}
+                    variant="outline"
+                  >
+                    Clear Selection
+                  </Button>
+                </div>
+              )}
+              
+              {/* Quick Actions */}
+              <div className="flex flex-wrap gap-3 justify-center">
+                <Button
+                  onClick={selectAllDaysInMonth}
+                  variant="outline"
+                  size="sm"
+                >
+                  Select All Days
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Legend */}
       <Card>
         <CardContent className="p-3 sm:p-4">
@@ -659,10 +1066,21 @@ export default function AdminAvailabilityPage() {
               <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-blue-500 rounded flex-shrink-0"></div>
               <span>Today</span>
             </div>
+            {isEmployee && (
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 sm:w-4 sm:h-4 bg-purple-500 rounded flex-shrink-0"></div>
+                <span>Selected</span>
+              </div>
+            )}
             <div className="flex items-center gap-2">
               <span className="flex-shrink-0">📝</span>
               <span>Has Note</span>
             </div>
+            {isEmployee && (
+              <div className="flex items-center gap-2 text-xs text-gray-500 w-full mt-2">
+                <span>💡 Click on your calendar days to select, then mark as available/unavailable</span>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
