@@ -161,6 +161,13 @@ export default function ShiftForm({
 
     const baseData = initialData ? {
       ...initialData,
+      date: initialData.date || todayString,
+      startTime: initialData.startTime || '09:00',
+      endTime: initialData.endTime || '17:00',
+      shiftType: initialData.shiftType || 'NORMAL' as ShiftType,
+      wage: initialData.wage ?? 0,
+      wageType: initialData.wageType || 'HOURLY' as WageType,
+      approved: initialData.approved || false,
       breakStart: convertDateTimeToTimeString(initialData.breakStart),
       breakEnd: convertDateTimeToTimeString(initialData.breakEnd),
       breakPaid: initialData.breakPaid || false,
@@ -387,10 +394,10 @@ export default function ShiftForm({
 
 
   useEffect(() => {
-    if (initialData?.id && activeTab === 'exchange') {
+    if (initialData?.id) {
       fetchShiftExchanges()
     }
-  }, [initialData?.id, activeTab])
+  }, [initialData?.id])
 
   useEffect(() => {
     fetchShiftTypes()
@@ -694,7 +701,7 @@ export default function ShiftForm({
           >
             Break Time
           </button>
-          {initialData?.id && (
+          {initialData?.id && shiftExchanges.length > 0 && (
             <button
               type="button"
               onClick={() => setActiveTab('exchange')}
@@ -704,11 +711,9 @@ export default function ShiftForm({
                 }`}
             >
               Exchange History
-              {shiftExchanges.length > 0 && (
-                <span className="ml-1.5 inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-white bg-blue-600 rounded-full">
-                  {shiftExchanges.length}
-                </span>
-              )}
+              <span className="ml-1.5 inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-white bg-blue-600 rounded-full">
+                {shiftExchanges.length}
+              </span>
             </button>
           )}
         </nav>
@@ -741,7 +746,7 @@ export default function ShiftForm({
               Shift Type <span className="text-red-500">*</span>
             </label>
             <select
-              value={formData.shiftTypeId || formData.shiftType}
+              value={formData.shiftTypeId || formData.shiftType || ''}
               onChange={(e) => {
                 const selectedOption = shiftTypeOptions.find(opt => opt.id === e.target.value);
                 if (selectedOption) {
@@ -807,7 +812,7 @@ export default function ShiftForm({
               </label>
               <input
                 type="time"
-                value={formData.startTime}
+                value={formData.startTime || ''}
                 onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
                 disabled={isEmployee}
                 className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee ? 'bg-gray-100 cursor-not-allowed' : ''}`}
@@ -823,7 +828,7 @@ export default function ShiftForm({
             </label>
             <input
               type="time"
-              value={formData.endTime}
+              value={formData.endTime || ''}
               onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
               disabled={isEmployee}
               className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee ? 'bg-gray-100 cursor-not-allowed' : ''}`}

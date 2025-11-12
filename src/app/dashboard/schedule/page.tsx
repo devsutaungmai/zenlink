@@ -546,7 +546,7 @@ export default function SchedulePage() {
   return (
     <div className="flex flex-col h-screen bg-gray-50">
       {/* Header with navigation and filters */}
-      <div className="bg-white border-b px-4 sm:px-6 lg:px-8 py-4">
+      <div className="bg-white border-b px-4 sm:px-6 lg:px-8 py-3 md:py-4">
         <ScheduleHeader
           startDate={startDate}
           endDate={endDate}
@@ -578,12 +578,12 @@ export default function SchedulePage() {
 
       {/* View Type Tabs */}
       <div className="bg-white border-b px-4 sm:px-6 lg:px-8">
-        <div className="flex gap-1">
+        <div className="flex gap-0 md:gap-1 -mb-px overflow-x-auto scrollbar-hide">
           <button
             onClick={() => setScheduleViewType('time')}
-            className={`px-4 py-3 text-sm font-medium transition-colors ${
+            className={`px-3 md:px-4 py-2.5 md:py-3 text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
               scheduleViewType === 'time'
-                ? 'text-[#31BCFF] border-b-2 border-[#31BCFF]'
+                ? 'text-[#31BCFF] border-b-2 border-[#31BCFF] bg-blue-50 md:bg-transparent'
                 : 'text-gray-600 hover:text-gray-800'
             }`}
           >
@@ -591,9 +591,9 @@ export default function SchedulePage() {
           </button>
           <button
             onClick={() => setScheduleViewType('employees')}
-            className={`px-4 py-3 text-sm font-medium transition-colors ${
+            className={`px-3 md:px-4 py-2.5 md:py-3 text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
               scheduleViewType === 'employees'
-                ? 'text-[#31BCFF] border-b-2 border-[#31BCFF]'
+                ? 'text-[#31BCFF] border-b-2 border-[#31BCFF] bg-blue-50 md:bg-transparent'
                 : 'text-gray-600 hover:text-gray-800'
             }`}
           >
@@ -601,9 +601,9 @@ export default function SchedulePage() {
           </button>
           <button
             onClick={() => setScheduleViewType('groups')}
-            className={`px-4 py-3 text-sm font-medium transition-colors ${
+            className={`px-3 md:px-4 py-2.5 md:py-3 text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
               scheduleViewType === 'groups'
-                ? 'text-[#31BCFF] border-b-2 border-[#31BCFF]'
+                ? 'text-[#31BCFF] border-b-2 border-[#31BCFF] bg-blue-50 md:bg-transparent'
                 : 'text-gray-600 hover:text-gray-800'
             }`}
           >
@@ -611,9 +611,9 @@ export default function SchedulePage() {
           </button>
           <button
             onClick={() => setScheduleViewType('functions')}
-            className={`px-4 py-3 text-sm font-medium transition-colors ${
+            className={`px-3 md:px-4 py-2.5 md:py-3 text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
               scheduleViewType === 'functions'
-                ? 'text-[#31BCFF] border-b-2 border-[#31BCFF]'
+                ? 'text-[#31BCFF] border-b-2 border-[#31BCFF] bg-blue-50 md:bg-transparent'
                 : 'text-gray-600 hover:text-gray-800'
             }`}
           >
@@ -671,6 +671,15 @@ export default function SchedulePage() {
                     setExpandedGroups(newExpanded);
                   }}
                   onEditShift={handleEditShift}
+                  onAddShift={(data) => {
+                    setModalViewType('week');
+                    if (data) {
+                      setShiftInitialData(data);
+                    } else {
+                      setShiftInitialData(null);
+                    }
+                    setShowShiftModal(true);
+                  }}
                 />
               ) : scheduleViewType === 'groups' ? (
                 <GroupGroupedView
@@ -679,6 +688,15 @@ export default function SchedulePage() {
                   employees={employees}
                   employeeGroups={employeeGroups}
                   onEditShift={handleEditShift}
+                  onAddShift={(data) => {
+                    setModalViewType('week');
+                    if (data) {
+                      setShiftInitialData(data);
+                    } else {
+                      setShiftInitialData(null);
+                    }
+                    setShowShiftModal(true);
+                  }}
                 />
               ) : scheduleViewType === 'functions' ? (
                 <FunctionGroupedView
@@ -687,6 +705,15 @@ export default function SchedulePage() {
                   employees={employees}
                   functions={functions}
                   onEditShift={handleEditShift}
+                  onAddShift={(data) => {
+                    setModalViewType('week');
+                    if (data) {
+                      setShiftInitialData(data);
+                    } else {
+                      setShiftInitialData(null);
+                    }
+                    setShowShiftModal(true);
+                  }}
                 />
               ) : (
                 <WeekView

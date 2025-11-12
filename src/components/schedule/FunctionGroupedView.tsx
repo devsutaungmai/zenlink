@@ -1,6 +1,7 @@
 import React from 'react'
 import { format } from 'date-fns'
 import { Employee } from '@prisma/client'
+import { PlusIcon } from '@heroicons/react/24/outline'
 import { ShiftWithRelations } from '@/types/schedule'
 import { useCurrency } from '@/shared/hooks/useCurrency'
 
@@ -16,6 +17,7 @@ interface FunctionGroupedViewProps {
   employees: Employee[]
   functions: FunctionItem[]
   onEditShift: (shift: ShiftWithRelations) => void
+  onAddShift?: (data?: { date?: string; functionId?: string }) => void
 }
 
 export default function FunctionGroupedView({
@@ -23,7 +25,8 @@ export default function FunctionGroupedView({
   shifts,
   employees,
   functions,
-  onEditShift
+  onEditShift,
+  onAddShift = () => {}
 }: FunctionGroupedViewProps) {
   const { currencySymbol } = useCurrency()
   
@@ -98,7 +101,128 @@ export default function FunctionGroupedView({
   };
 
   return (
-    <div className="overflow-auto">
+    <div className="overflow-hidden">
+      {/* Mobile View - Grid Layout */}
+      <div className="md:hidden bg-gray-50">
+        {/* Week Days Header - Perfectly aligned with grid */}
+        <div className="bg-white sticky top-0 z-10 border-b shadow-sm">
+          <div className="grid grid-cols-7 gap-0">
+            {weekDates.map((date, i) => {
+              const isToday = new Date().toDateString() === date.toDateString()
+              return (
+                <div key={i} className="text-center py-3 border-r last:border-r-0">
+                  <div className={`text-xs font-medium mb-0.5 ${isToday ? 'text-[#31BCFF]' : 'text-gray-500'}`}>
+                    {format(date, 'EEE')}
+                  </div>
+                  <div className={`text-xl font-bold ${isToday ? 'text-[#31BCFF]' : 'text-gray-900'}`}>
+                    {format(date, 'd')}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Function Rows */}
+        <div className="p-3 space-y-3">
+          {functions.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <p className="text-sm">No functions found</p>
+            </div>
+          ) : (
+            functions.map((fn) => {
+              const functionShiftsAll = shifts.filter(s => s.functionId === fn.id)
+              const functionShiftsCount = functionShiftsAll.length
+              
+              return (
+                <div key={fn.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+                  {/* Function Header */}
+                  <div className="flex items-center justify-between px-3 py-2.5 border-b bg-gray-50">
+                    <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                      <div className="w-9 h-9 rounded-full bg-[#31BCFF] flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+                        {fn.name.substring(0, 2).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm text-gray-900 truncate">
+                          {fn.name}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {getFunctionTotalHours(fn.id)} / {currencySymbol}0.00 / {functionShiftsCount} Shift{functionShiftsCount !== 1 ? 's' : ''}
+                        </div>
+                      </div>
+                    </div>
+                    <button className="text-gray-400 hover:text-gray-600 p-1 text-xl leading-none">
+                      ×
+                    </button>
+                  </div>
+
+                  {/* Day Grid - Exactly 7 columns matching header */}
+                  <div className="grid grid-cols-7 gap-0 p-3">
+                    {weekDates.map((date, dayIndex) => {
+                      const formattedDate = format(date, 'yyyy-MM-dd')
+                      const dayShifts = getFunctionShifts(fn.id, date)
+                      const isToday = new Date().toDateString() === date.toDateString()
+
+                      return (
+                        <div key={dayIndex} className="px-1">
+                          <div className="aspect-square">
+                            {dayShifts.length === 0 ? (
+                              <button
+                                onClick={() => onAddShift({ 
+                                  date: formattedDate,
+                                  functionId: fn.id 
+                                })}
+                                className={`w-full h-full border-2 border-dashed rounded-xl flex items-center justify-center transition-all active:scale-95 ${
+                                  isToday 
+                                    ? 'border-[#31BCFF] bg-blue-50 hover:bg-blue-100' 
+                                    : 'border-gray-300 hover:border-[#31BCFF] hover:bg-blue-50'
+                                }`}
+                              >
+                                <PlusIcon className="w-6 h-6 text-[#31BCFF]" />
+                              </button>
+                            ) : (
+                              <div className="w-full h-full">
+                                {dayShifts.slice(0, 1).map(shift => (
+                                  <button
+                                    key={shift.id}
+                                    onClick={() => onEditShift(shift)}
+                                    className={`w-full h-full rounded-xl text-white font-medium flex flex-col items-center justify-center gap-0.5 transition-all active:scale-95 ${
+                                      shift.status === 'CANCELLED' ? 'bg-red-500' :
+                                      shift.status === 'WORKING' ? 'bg-blue-500' :
+                                      'bg-[#31BCFF]'
+                                    }`}
+                                  >
+                                    <span className="text-xs leading-tight">
+                                      {shift.startTime.substring(0, 5)}
+                                    </span>
+                                    {shift.endTime && (
+                                      <span className="text-xs leading-tight">
+                                        {shift.endTime.substring(0, 5)}
+                                      </span>
+                                    )}
+                                  </button>
+                                ))}
+                                {dayShifts.length > 1 && (
+                                  <div className="text-[9px] text-center text-gray-500 font-medium mt-0.5">
+                                    +{dayShifts.length - 1}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })
+          )}
+        </div>
+      </div>
+
+      {/* Desktop View - Original Grid Layout */}
+      <div className="hidden md:block overflow-auto">
       <div className="min-w-full">
         {/* Header Row */}
         <div className="grid grid-cols-[1fr_repeat(7,minmax(140px,1fr))] border-b bg-gray-50 sticky top-0">
@@ -174,6 +298,7 @@ export default function FunctionGroupedView({
             </div>
           );
         })}
+      </div>
       </div>
     </div>
   );
