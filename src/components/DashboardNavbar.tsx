@@ -84,6 +84,14 @@ export default function DashboardNavbar({ setMobileMenuOpen }: DashboardNavbarPr
         { name: t('navigation.overtime_rules'), href: '/dashboard/overtime-rules' },
       ],
     },
+    {
+      name: "Invoice Management",
+      icon: CurrencyDollarIcon,
+      children: [
+        { name:"Customer", href: '/dashboard/customers' },
+        { name: "Product", href: '/dashboard/products' },
+      ],
+    },
     { name: t('navigation.settings'), href: '/dashboard/settings', icon: Cog6ToothIcon },
   ]
 
