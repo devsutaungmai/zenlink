@@ -23,7 +23,10 @@
     "logout": "Abmelden",
     "edit_profile": "Profil bearbeiten",
     "time_tracking_portal": "Zeiterfassungsportal",
-    "your_hours": "Ihre Stunden"
+    "your_hours": "Ihre Stunden",
+    "salary_codes": "Lønkoder",
+    "pay_rules": "Lønregler",
+    "overtime_rules": "Overtidsregler"
   },
   "dashboard": {
     "title": "Dashboard",

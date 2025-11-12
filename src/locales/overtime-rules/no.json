@@ -1,54 +1,54 @@
 {
-  "title": "Overtime Rules Management",
-  "subtitle": "Configure overtime rules and multipliers for different scenarios",
-  "addOvertimeRule": "Add Overtime Rule",
+  "title": "Overtidsregler Administrasjon",
+  "subtitle": "Konfigurer overtidsregler og satser for ulike situasjoner",
+  "addOvertimeRule": "Legg til Overtidsregel",
   "form": {
-    "editOvertimeRule": "Edit Overtime Rule",
-    "addNewOvertimeRule": "Add New Overtime Rule",
-    "ruleName": "Rule Name",
-    "hoursThreshold": "Hours Threshold",
-    "overtimeMultiplier": "Overtime Multiplier",
-    "maxOvertimeHours": "Max Overtime Hours",
-    "salaryCode": "Salary Code",
-    "description": "Description",
+    "editOvertimeRule": "Rediger Overtidsregel",
+    "addNewOvertimeRule": "Legg til Ny Overtidsregel",
+    "ruleName": "Regelnavn",
+    "hoursThreshold": "Terskel (timer)",
+    "overtimeMultiplier": "Overtidssats",
+    "maxOvertimeHours": "Maksimalt Overtidstimer",
+    "salaryCode": "Lønnkode",
+    "description": "Beskrivelse",
     "required": "*",
-    "ruleNamePlaceholder": "e.g., Standard Overtime",
+    "ruleNamePlaceholder": "f.eks. Standard Overtid",
     "hoursThresholdPlaceholder": "40",
-    "hoursThresholdHelp": "Overtime kicks in after this many hours",
+    "hoursThresholdHelp": "Overtid starter etter dette antallet timer",
     "multiplierPlaceholder": "1.5",
-    "multiplierHelp": "Rate multiplier (e.g., 1.5 = time and a half)",
-    "maxHoursPlaceholder": "Leave empty for unlimited",
-    "maxHoursHelp": "Maximum overtime hours allowed (optional)",
-    "selectSalaryCode": "Select a salary code",
-    "descriptionPlaceholder": "Optional description"
+    "multiplierHelp": "Timesats (f.eks. 1.5 = tid og en halv)",
+    "maxHoursPlaceholder": "La stå tomt for ubegrenset",
+    "maxHoursHelp": "Maksimalt tillatte overtidstimer (valgfritt)",
+    "selectSalaryCode": "Velg en lønnkode",
+    "descriptionPlaceholder": "Valgfri beskrivelse"
   },
   "buttons": {
-    "cancel": "Cancel",
-    "create": "Create",
-    "update": "Update"
+    "cancel": "Avbryt",
+    "create": "Opprett",
+    "update": "Oppdater"
   },
   "emptyState": {
-    "title": "No Overtime Rules",
-    "description": "Get started by creating your first overtime rule",
-    "addFirstOvertimeRule": "Add First Overtime Rule"
+    "title": "Ingen Overtidsregler",
+    "description": "Begynn med å opprette din første overtidsregel",
+    "addFirstOvertimeRule": "Legg til Første Overtidsregel"
   },
   "table": {
-    "ruleName": "Rule Name",
-    "threshold": "Threshold",
-    "multiplier": "Multiplier",
-    "maxHours": "Max Hours",
-    "salaryCode": "Salary Code",
+    "ruleName": "Regelnavn",
+    "threshold": "Terskel",
+    "multiplier": "Sats",
+    "maxHours": "Maks Timer",
+    "salaryCode": "Lønnkode",
     "status": "Status",
-    "actions": "Actions",
-    "unlimited": "Unlimited",
-    "hours": "h"
+    "actions": "Handlinger",
+    "unlimited": "Ubegrenset",
+    "hours": "t"
   },
   "status": {
-    "active": "Active",
-    "inactive": "Inactive"
+    "active": "Aktiv",
+    "inactive": "Inaktiv"
   },
   "actions": {
-    "edit": "Edit",
-    "delete": "Delete"
+    "edit": "Rediger",
+    "delete": "Slett"
   }
 }

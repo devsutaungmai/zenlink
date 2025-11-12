@@ -23,7 +23,10 @@
     "logout": "Logg ut",
     "edit_profile": "Rediger profil",
     "time_tracking_portal": "Tidssporingsportal",
-    "your_hours": "Dine timer"
+    "your_hours": "Dine timer",
+    "salary_codes": "Lønnskoder",
+    "pay_rules": "Lønnsregler",
+    "overtime_rules": "Overtidsregler"
   },
   "dashboard": {
     "title": "Dashbord",

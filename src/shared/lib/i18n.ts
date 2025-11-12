@@ -62,10 +62,20 @@ import settingsEn from '../../locales/settings/en.json'
 import settingsNo from '../../locales/settings/no.json'
 import settingsDe from '../../locales/settings/de.json'
 
-// Import settings translations
+// Import salarycodes translations
 import salaryCodeEn from '../../locales/salary-codes/en.json'
 import salaryCodeNo from '../../locales/salary-codes/no.json'
 import salaryCodeDe from '../../locales/salary-codes/de.json'
+
+// Import payRules translations
+import payRulesEn from '../../locales/pay-rules/en.json'
+import payRulesNo from '../../locales/pay-rules/no.json'
+import payRulesDe from '../../locales/pay-rules/de.json'
+
+// Import overTimeRules translations
+import overTimeRulesEn from '../../locales/overtime-rules/en.json'
+import overTimeRulesNo from '../../locales/overtime-rules/no.json'
+import overTimeRulesDe from '../../locales/overtime-rules/de.json'
 
 const resources = {
   en: { 
@@ -81,7 +91,9 @@ const resources = {
     'employee-dashboard': employeeDashboardEn,
     'shift-types': shiftTypesEn,
     settings: settingsEn,
-    'salary-codes':salaryCodeEn
+    'salary-codes':salaryCodeEn,
+    'pay-rules': payRulesEn,
+    'overtime-rules': overTimeRulesEn
 
   },
   no: { 
@@ -97,7 +109,9 @@ const resources = {
     'employee-dashboard': employeeDashboardNo,
     'shift-types': shiftTypesNo,
     settings: settingsNo,
-    'salary-codes': salaryCodeNo
+    'salary-codes': salaryCodeNo,
+    'pay-rules': payRulesNo,
+    'overtime-rules': overTimeRulesNo
   },
   de: { 
     translation: de,
@@ -112,8 +126,9 @@ const resources = {
     'employee-dashboard': employeeDashboardDe,
     'shift-types': shiftTypesDe,
     settings: settingsDe,
-    'salary-codes': salaryCodeDe
-
+    'salary-codes': salaryCodeDe,
+    'pay-rules': payRulesDe,
+    'overtime-rules': overTimeRulesDe
   }
 }
 
@@ -136,7 +151,7 @@ i18n
     },
 
     // Support for namespaces
-    ns: ['translation', 'schedule', 'punch-clock', 'availability', 'sick-leave', 'pending-requests', 'payroll-entries', 'payroll-periods', 'payroll-reports', 'employee-dashboard','settings','salary-codes'],
+    ns: ['translation', 'schedule', 'punch-clock', 'availability', 'sick-leave', 'pending-requests', 'payroll-entries', 'payroll-periods', 'payroll-reports', 'employee-dashboard','settings','salary-codes','pay-rules','overtime-rules'],
     defaultNS: 'translation',
   })
 

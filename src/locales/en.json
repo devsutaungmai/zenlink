@@ -23,7 +23,10 @@
     "logout": "Logout",
     "edit_profile": "Edit Profile",
     "time_tracking_portal": "Time Tracking Portal",
-    "your_hours": "Your Hours"
+    "your_hours": "Your Hours",
+    "salary_codes": "Salary Codes",
+    "pay_rules": "Pay Rules",
+    "overtime_rules": "Overtime Rules"
   },
   "dashboard": {
     "title": "Dashboard",

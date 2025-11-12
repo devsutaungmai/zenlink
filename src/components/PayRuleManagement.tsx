@@ -106,8 +106,8 @@ export default function PayRuleManagement() {
   })
 
   const tabs = [
-    { id: 'pay-rules', name: 'Pay Rules', icon: CurrencyDollarIcon },
-    { id: 'overtime-rules', name: 'Overtime Rules', icon: ClockIcon },
+    { id: 'pay-rules', name: t('tabs.payRules'), icon: CurrencyDollarIcon },
+    { id: 'overtime-rules', name: t('tabs.overtimeRules'), icon: ClockIcon },
   ]
 
   const ruleTypes = [

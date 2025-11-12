@@ -1,80 +1,80 @@
 {
-  "title": "Pay Rules & Overtime Management",
-  "titleMobile": "Pay Rules",
-  "overtimeManagementSuffix": "& Overtime Management",
-  "subtitle": "Configure pay rules, overtime rates, and wage calculations",
-  "addPayRule": "Add Pay Rule",
-  "addRule": "Add Rule",
+  "title": "Lønnsregler",
+  "titleMobile": "Lønnsregler",
+  "overtimeManagementSuffix": "& Overtidsstyring",
+  "subtitle": "Konfigurer lønnsregler, overtidssatser og lønnsberegninger",
+  "addPayRule": "Legg til lønnsregel",
+  "addRule": "Legg til regel",
   "tabs": {
-    "payRules": "Pay Rules",
-    "overtimeRules": "Overtime Rules"
+    "payRules": "Lønnsregler",
+    "overtimeRules": "Overtidsregler"
   },
   "form": {
-    "editPayRule": "Edit Pay Rule",
-    "addNewPayRule": "Add New Pay Rule",
-    "ruleName": "Rule Name",
-    "ruleType": "Rule Type",
-    "salaryCode": "Salary Code",
-    "description": "Description",
+    "editPayRule": "Rediger lønnsregel",
+    "addNewPayRule": "Legg til ny lønnsregel",
+    "ruleName": "Regelnavn",
+    "ruleType": "Regeltype",
+    "salaryCode": "Lønnskode",
+    "description": "Beskrivelse",
     "required": "*",
-    "ruleNamePlaceholder": "e.g., Standard Overtime",
-    "selectSalaryCode": "Select a salary code",
-    "descriptionPlaceholder": "Optional description"
+    "ruleNamePlaceholder": "f.eks. Standard Overtid",
+    "selectSalaryCode": "Velg en lønnskode",
+    "descriptionPlaceholder": "Valgfri beskrivelse"
   },
   "overtimeConfig": {
-    "title": "Overtime Configuration",
-    "triggerAfterHours": "Trigger After Hours",
-    "rateMultiplier": "Rate Multiplier",
-    "calculateDaily": "Calculate overtime daily (unchecked = weekly)"
+    "title": "Overtidskonfigurasjon",
+    "triggerAfterHours": "Start etter timer",
+    "rateMultiplier": "Timesats-multiplikator",
+    "calculateDaily": "Beregn overtid daglig (ikke avkrysset = ukentlig)"
   },
   "employeeGroupRates": {
-    "title": "Employee Group Rates",
-    "addGroup": "Add Group",
-    "noGroups": "No employee groups configured. Add groups to set default rates.",
-    "selectEmployeeGroup": "Select employee group",
-    "baseRatePlaceholder": "Base rate"
+    "title": "Ansattegruppe-satser",
+    "addGroup": "Legg til gruppe",
+    "noGroups": "Ingen ansattegrupper konfigurert. Legg til grupper for å angi standardsatser.",
+    "selectEmployeeGroup": "Velg ansattegruppe",
+    "baseRatePlaceholder": "Grunnsats"
   },
   "buttons": {
-    "cancel": "Cancel",
-    "create": "Create",
-    "update": "Update",
-    "createPayRule": "Create Pay Rule",
-    "updatePayRule": "Update Pay Rule"
+    "cancel": "Avbryt",
+    "create": "Opprett",
+    "update": "Oppdater",
+    "createPayRule": "Opprett lønnsregel",
+    "updatePayRule": "Oppdater lønnsregel"
   },
   "emptyState": {
-    "title": "No Pay Rules",
-    "description": "Create pay rules to manage wages and overtime calculations",
-    "addFirstPayRule": "Add First Pay Rule"
+    "title": "Ingen lønnsregler",
+    "description": "Opprett lønnsregler for å administrere lønn og overtidsberegning",
+    "addFirstPayRule": "Legg til første lønnsregel"
   },
   "table": {
-    "ruleName": "Rule Name",
+    "ruleName": "Regelnavn",
     "type": "Type",
-    "salaryCode": "Salary Code",
-    "groups": "Groups",
+    "salaryCode": "Lønnskode",
+    "groups": "Grupper",
     "status": "Status",
-    "actions": "Actions",
-    "groupsCount": "groups",
-    "customRates": "custom rates",
-    "overtimeAfter": "Overtime after",
-    "atRate": "@ {multiplier}x rate"
+    "actions": "Handlinger",
+    "groupsCount": "grupper",
+    "customRates": "egendefinerte satser",
+    "overtimeAfter": "Overtid etter",
+    "atRate": "@ {multiplier}x sats"
   },
   "status": {
-    "active": "Active",
-    "inactive": "Inactive"
+    "active": "Aktiv",
+    "inactive": "Inaktiv"
   },
   "actions": {
-    "edit": "Edit",
-    "delete": "Delete"
+    "edit": "Rediger",
+    "delete": "Slett"
   },
   "ruleTypes": {
-    "regularPay": "Regular Pay",
-    "overtime": "Overtime Pay",
+    "regularPay": "Vanlig lønn",
+    "overtime": "Overtid",
     "bonus": "Bonus",
-    "commission": "Commission",
-    "allowance": "Allowance"
+    "commission": "Provisjon",
+    "allowance": "Godtgjørelse"
   },
   "mobile": {
     "type": "Type",
-    "salaryCode": "Salary Code"
+    "salaryCode": "Lønnskode"
   }
 }
