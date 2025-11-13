@@ -24,7 +24,7 @@ interface SalesAccount {
     accountName: string
 }
 
-export default function CreateCategoryPage() {
+export default function CreateProductPage() {
     const router = useRouter()
     const { t } = useTranslation()
     const [loading, setLoading] = useState(false)

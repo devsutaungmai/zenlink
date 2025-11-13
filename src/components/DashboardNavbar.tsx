@@ -47,6 +47,7 @@ export default function DashboardNavbar({ setMobileMenuOpen }: DashboardNavbarPr
   
   const adminNavigation: NavigationItem[] = [
     { name: t('navigation.home'), href: '/dashboard', icon: HomeIcon },
+    { name: 'Invoice', href: '/dashboard/invoices', icon: HomeIcon },
     {
       name: t('navigation.employees'),
       icon: UserGroupIcon,
@@ -85,7 +86,7 @@ export default function DashboardNavbar({ setMobileMenuOpen }: DashboardNavbarPr
       ],
     },
     {
-      name: "Invoice Management",
+      name: "Invoice Control",
       icon: CurrencyDollarIcon,
       children: [
         { name:"Customer", href: '/dashboard/customers' },

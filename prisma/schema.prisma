@@ -8,18 +8,18 @@ datasource db {
 }
 
 model User {
-  id                 String              @id @default(cuid())
-  email              String              @unique
-  password           String
-  firstName          String
-  lastName           String
-  role               String              @default("USER")
-  businessId         String
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
-  pin                String?
-  employees          Employee[]
-  business           Business            @relation(fields: [businessId], references: [id])
+  id                  String               @id @default(cuid())
+  email               String               @unique
+  password            String
+  firstName           String
+  lastName            String
+  role                String               @default("USER")
+  businessId          String
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  pin                 String?
+  employees           Employee[]
+  business            Business             @relation(fields: [businessId], references: [id])
   passwordResetTokens PasswordResetToken[]
 }
 
@@ -61,6 +61,7 @@ model Business {
   users                    User[]
   customers                Customer[]
   products                 Product[]
+  invoices                 Invoice[]
 }
 
 model Employee {
@@ -148,13 +149,13 @@ model Contract {
 }
 
 model Department {
-  id                 String              @id @default(cuid())
-  customerId         String?             @map("customer_id")
-  customer           Customer?           @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  id                 String               @id @default(cuid())
+  customerId         String?              @map("customer_id")
+  customer           Customer?            @relation(fields: [customerId], references: [id], onDelete: SetNull)
   name               String
   address            String
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @default(now())
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @default(now())
   address2           String?
   city               String
   country            String
@@ -162,7 +163,7 @@ model Department {
   phone              String
   postCode           String?
   businessId         String
-  business           Business            @relation(fields: [businessId], references: [id])
+  business           Business             @relation(fields: [businessId], references: [id])
   employees          Employee[]
   projects           Project[]
   punchClockProfiles PunchClockProfile[]
@@ -186,13 +187,13 @@ model DepartmentCategory {
 }
 
 model DepartmentFunction {
-  id         String               @id @default(cuid())
+  id         String             @id @default(cuid())
   name       String
   categoryId String
   color      String?
-  createdAt  DateTime             @default(now())
-  updatedAt  DateTime             @updatedAt
-  category   DepartmentCategory   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+  category   DepartmentCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   shifts     Shift[]
   employees  EmployeeFunction[]
 
@@ -334,7 +335,7 @@ model Shift {
   shiftTypeConfig ShiftTypeConfig?    @relation(fields: [shiftTypeId], references: [id])
   function        DepartmentFunction? @relation(fields: [functionId], references: [id])
   shiftExchanges  ShiftExchange[]
-  
+
   @@index([shiftTypeId])
   @@index([functionId])
   @@index([departmentId])
@@ -603,9 +604,9 @@ model ShiftTypeConfig {
   name                String
   salaryCode          String
   payCalculationType  PayCalculationType
-  payCalculationValue Decimal?            @db.Decimal(10, 2)
-  autoBreakType       AutoBreakType       @default(MANUAL_BREAK)
-  autoBreakValue      Decimal?            @db.Decimal(10, 2)
+  payCalculationValue Decimal?           @db.Decimal(10, 2)
+  autoBreakType       AutoBreakType      @default(MANUAL_BREAK)
+  autoBreakValue      Decimal?           @db.Decimal(10, 2)
   description         String?
   businessId          String
   isActive            Boolean            @default(true)
@@ -619,149 +620,224 @@ model ShiftTypeConfig {
 }
 
 model Customer {
-  id                           String             @id @default(cuid())
-  active                       Boolean            @default(true)
-  customerNumber               String             @unique @map("customer_number")
-  customerName                 String             @map("customer_name")
-  organizationNumber           String?            @map("organization_number")
+  id                           String   @id @default(cuid())
+  active                       Boolean  @default(true)
+  customerNumber               String   @unique @map("customer_number")
+  customerName                 String   @map("customer_name")
+  organizationNumber           String?  @map("organization_number")
   address                      String?
-  postalCode                   String?            @map("postal_code")
-  postalAddress                String?            @map("postal_address")
-  phoneNumber                  String?            @map("phone_number")
+  postalCode                   String?  @map("postal_code")
+  postalAddress                String?  @map("postal_address")
+  phoneNumber                  String?  @map("phone_number")
   email                        String?
-  discountPercentage           Decimal?           @map("discount_percentage") @db.Decimal(5, 2)
-  deliveryAddress              String?            @map("delivery_address")
-  deliveryAddressPostalCode    String?            @map("delivery_address_postal_code")
-  deliveryAddressPostalAddress String?            @map("delivery_address_postal_address")
-  businessId          String
-  
+  discountPercentage           Decimal? @map("discount_percentage") @db.Decimal(5, 2)
+  deliveryAddress              String?  @map("delivery_address")
+  deliveryAddressPostalCode    String?  @map("delivery_address_postal_code")
+  deliveryAddressPostalAddress String?  @map("delivery_address_postal_address")
+  businessId                   String
+
   // Relations to sub tables
-  business                     Business           @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  contactPersons               ContactPerson[]
-  customerGroups               CustomerGroup[]
-  projects                     Project[]
-  departments                  Department[]
-  paymentTerms                 PaymentTerms?
-  
-  createdAt                    DateTime           @default(now()) @map("created_at")
-  updatedAt                    DateTime           @updatedAt @map("updated_at")
+  business       Business        @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  contactPersons ContactPerson[]
+  customerGroups CustomerGroup[]
+  projects       Project[]
+  departments    Department[]
+  paymentTerms   PaymentTerms?
+  invoices       Invoice[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("customers")
 }
 
 model PaymentTerms {
-  id               String   @id @default(cuid())
-  customerId       String   @unique @map("customer_id")
-  customer         Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  
-  termName         String   @map("term_name")
-  daysUntilDue     Int      @map("days_until_due")
-  description      String?
-  
-  createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @updatedAt @map("updated_at")
+  id         String   @id @default(cuid())
+  customerId String   @unique @map("customer_id")
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  termName     String  @map("term_name")
+  daysUntilDue Int     @map("days_until_due")
+  description  String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("payment_terms")
 }
 
 model ContactPerson {
-  id          String   @id @default(cuid())
-  customerId  String   @map("customer_id")
-  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  
+  id         String   @id @default(cuid())
+  customerId String   @map("customer_id")
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
   name        String
   title       String?
-  phoneNumber String?  @map("phone_number")
+  phoneNumber String? @map("phone_number")
   email       String?
-  isPrimary   Boolean  @default(false) @map("is_primary")
-  
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  isPrimary   Boolean @default(false) @map("is_primary")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("contact_persons")
 }
 
 model CustomerGroup {
-  id          String   @id @default(cuid())
-  customerId  String   @map("customer_id")
-  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  
-  groupName   String   @map("group_name")
+  id         String   @id @default(cuid())
+  customerId String   @map("customer_id")
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  groupName   String  @map("group_name")
   description String?
-  
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("customer_groups")
 }
 
 model Product {
-  id                String         @id @default(cuid())
-  active            Boolean        @default(true)
-  productNumber     String         @unique @map("product_number")
-  productName       String         @map("product_name")
-  salesPrice        Decimal        @map("sales_price") @db.Decimal(10, 2)
-  costPrice         Decimal        @map("cost_price") @db.Decimal(10, 2)
+  id                 String        @id @default(cuid())
+  active             Boolean       @default(true)
+  productNumber      String        @unique @map("product_number")
+  productName        String        @map("product_name")
+  salesPrice         Decimal       @map("sales_price") @db.Decimal(10, 2)
+  costPrice          Decimal       @map("cost_price") @db.Decimal(10, 2)
   discountPercentage Decimal?      @map("discount_percentage") @db.Decimal(5, 2)
-  businessId          String
+  businessId         String
   // Foreign keys for sub tables
-  unitId            String?        @map("unit_id")
-  productGroupId    String?        @map("product_group_id")
-  salesAccountId    String?        @map("sales_account_id")
-  
+  unitId             String?       @map("unit_id")
+  productGroupId     String?       @map("product_group_id")
+  salesAccountId     String?       @map("sales_account_id")
+  invoiceLines       InvoiceLine[] 
+
   // Relations to sub tables
-  business          Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  unit              Unit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
-  productGroup      ProductGroup?  @relation(fields: [productGroupId], references: [id], onDelete: SetNull)
-  salesAccount      SalesAccount?  @relation(fields: [salesAccountId], references: [id], onDelete: SetNull)
-  
-  createdAt         DateTime       @default(now()) @map("created_at")
-  updatedAt         DateTime       @updatedAt @map("updated_at")
+  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  unit         Unit?         @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  productGroup ProductGroup? @relation(fields: [productGroupId], references: [id], onDelete: SetNull)
+  salesAccount SalesAccount? @relation(fields: [salesAccountId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("products")
 }
 
 model Unit {
-  id          String    @id @default(cuid())
-  name        String    @unique
-  symbol      String?   // e.g., "kg", "pcs", "m", "l"
+  id          String  @id @default(cuid())
+  name        String  @unique
+  symbol      String? // e.g., "kg", "pcs", "m", "l"
   description String?
-  
-  products    Product[]
-  
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  products Product[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("units")
 }
 
 model ProductGroup {
-  id          String    @id @default(cuid())
-  name        String    @unique
-  code        String?   @unique
+  id          String  @id @default(cuid())
+  name        String  @unique
+  code        String? @unique
   description String?
-  
-  products    Product[]
-  
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  products Product[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("product_groups")
 }
 
 model SalesAccount {
-  id             String    @id @default(cuid())
-  accountNumber  String    @unique @map("account_number")
-  accountName    String    @map("account_name")
-  description    String?
-  isActive       Boolean   @default(true) @map("is_active")
-  
-  products       Product[]
-  
-  createdAt      DateTime  @default(now()) @map("created_at")
-  updatedAt      DateTime  @updatedAt @map("updated_at")
+  id            String  @id @default(cuid())
+  accountNumber String  @unique @map("account_number")
+  accountName   String  @map("account_name")
+  description   String?
+  isActive      Boolean @default(true) @map("is_active")
+
+  products Product[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("sales_accounts")
+}
+
+model Invoice {
+  id            String        @id @default(cuid())
+  invoiceNumber String        @unique @map("invoice_number")
+  invoiceDate   DateTime      @default(now()) @map("invoice_date")
+  dueDate       DateTime?     @map("due_date")
+  status        InvoiceStatus @default(DRAFT)
+
+  // Customer relation
+  customerId String   @map("customer_id")
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Restrict)
+
+  // Summary calculations
+  totalExclVAT  Decimal @map("total_excl_vat") @db.Decimal(10, 2)
+  vatAmount     Decimal @map("vat_amount") @db.Decimal(10, 2)
+  vatPercentage Decimal @default(25) @map("vat_percentage") @db.Decimal(5, 2)
+  totalInclVAT  Decimal @map("total_incl_vat") @db.Decimal(10, 2)
+
+  // Additional fields
+  notes  String?
+  sentAt DateTime? @map("sent_at")
+  paidAt DateTime? @map("paid_at")
+
+  // Relations
+  invoiceLines InvoiceLine[]
+  businessId   String        @map("business_id")
+  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("invoices")
+}
+
+model InvoiceLine {
+  id        String  @id @default(cuid())
+  invoiceId String  @map("invoice_id")
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  // Product relation
+  productId String  @map("product_id")
+  product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  // Line item details
+  quantity           Int      @default(0)
+  pricePerUnit       Decimal  @map("price_per_unit") @db.Decimal(10, 2)
+  discountPercentage Decimal? @default(0) @map("discount_percentage") @db.Decimal(5, 2)
+
+  // Calculated fields (stored for history)
+  subtotal       Decimal @map("subtotal") @db.Decimal(10, 2) // quantity × pricePerUnit
+  discountAmount Decimal @map("discount_amount") @db.Decimal(10, 2)
+  lineTotal      Decimal @map("line_total") @db.Decimal(10, 2) // subtotal - discountAmount
+
+  // Product details snapshot (in case product changes later)
+  productName   String  @map("product_name")
+  productNumber String? @map("product_number")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("invoice_lines")
+}
+
+// Invoice Status Enum
+enum InvoiceStatus {
+  DRAFT // Not sent yet
+  SENT // Sent to customer
+  PAID // Payment received
+  OVERDUE // Past due date
+  CANCELLED // Cancelled
+
+  @@map("invoice_status")
 }
 
 enum WageType {

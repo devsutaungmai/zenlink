@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
 
-export default function CreateCategoryPage() {
+export default function CreateCustomersPage() {
     const router = useRouter()
     const { t } = useTranslation()
     const [loading, setLoading] = useState(false)

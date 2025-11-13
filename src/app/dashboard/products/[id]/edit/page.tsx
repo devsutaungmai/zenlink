@@ -24,7 +24,7 @@ interface SalesAccount {
     accountName: string
 }
 
-export default function EditCategoryPage({ params }: { params: Promise<{ id: string }> }) {
+export default function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
     const resolvedParams = use(params)
     const router = useRouter()
     const { t } = useTranslation()
