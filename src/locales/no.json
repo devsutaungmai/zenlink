@@ -5,6 +5,8 @@
     "users": "Brukere",
     "employees": "Ansatte",
     "departments": "Avdelinger",
+    "categories": "Kategorier",
+    "functions": "Funksjoner",
     "employee_groups": "Ansattgrupper",
     "contracts": "Kontrakter",
     "documents": "Dokumenter",

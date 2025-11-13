@@ -5,6 +5,8 @@
     "users": "Users",
     "employees": "Employees",
     "departments": "Departments",
+    "categories": "Categories",
+    "functions": "Functions",
     "employee_groups": "Employee Groups",
     "contracts": "Contracts",
     "documents": "Documents",

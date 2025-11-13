@@ -14,7 +14,7 @@ interface Department {
 
 export default function CreateCategoryPage() {
   const router = useRouter()
-  const { t } = useTranslation()
+  const { t } = useTranslation('categories')
   const [loading, setLoading] = useState(false)
   const [departments, setDepartments] = useState<Department[]>([])
   const [formData, setFormData] = useState({
@@ -57,8 +57,8 @@ export default function CreateCategoryPage() {
       }
 
       await Swal.fire({
-        title: 'Success!',
-        text: 'Category created successfully',
+        title: t('success'),
+        text: t('create_success'),
         icon: 'success',
         confirmButtonColor: '#31BCFF',
       })
@@ -67,8 +67,8 @@ export default function CreateCategoryPage() {
       router.refresh()
     } catch (error) {
       await Swal.fire({
-        title: 'Error',
-        text: error instanceof Error ? error.message : 'An error occurred',
+        title: t('error'),
+        text: error instanceof Error ? error.message : t('create_error'),
         icon: 'error',
         confirmButtonColor: '#31BCFF',
       })
@@ -91,11 +91,11 @@ export default function CreateCategoryPage() {
                 <ArrowLeftIcon className="w-5 h-5 text-gray-600" />
               </Link>
               <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                Create Category
+                {t('create_category')}
               </h1>
             </div>
             <p className="mt-2 text-gray-600 ml-14">
-              Add a new category to organize your functions 
+              {t('create_description')}
             </p>
           </div>
           <div className="hidden md:flex items-center space-x-2">
@@ -114,7 +114,7 @@ export default function CreateCategoryPage() {
           {/* Category Name */}
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-              Category Name *
+              {t('name')} *
             </label>
             <input
               type="text"
@@ -123,14 +123,14 @@ export default function CreateCategoryPage() {
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-              placeholder="e.g., Kitchen, Bar, Service"
+              placeholder={t('name_placeholder')}
             />
           </div>
 
           {/* Description */}
           <div>
             <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-              Description
+              {t('description')}
             </label>
             <textarea
               id="description"
@@ -138,18 +138,18 @@ export default function CreateCategoryPage() {
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-              placeholder="Brief description of this category"
+              placeholder={t('description_placeholder')}
             />
           </div>
 
           {/* Departments (Multi-select) */}
           <div>
             <label htmlFor="departments" className="block text-sm font-medium text-gray-700 mb-2">
-              Departments <span className="text-gray-500 text-xs">(Optional - leave empty for business-wide category)</span>
+              {t('departments')} <span className="text-gray-500 text-xs">({t('departments_optional')})</span>
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-60 overflow-y-auto border border-gray-300 rounded-xl p-4 bg-white/70 backdrop-blur-sm">
               {departments.length === 0 ? (
-                <p className="text-sm text-gray-500 col-span-full">No departments available</p>
+                <p className="text-sm text-gray-500 col-span-full">{t('no_departments')}</p>
               ) : (
                 <>
                   <label className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors">
@@ -163,7 +163,7 @@ export default function CreateCategoryPage() {
                       }}
                       className="h-4 w-4 text-[#31BCFF] border-gray-300 rounded focus:ring-[#31BCFF]"
                     />
-                    <span className="text-sm font-medium text-gray-700">Business-Wide (All Departments)</span>
+                    <span className="text-sm font-medium text-gray-700">{t('business_wide')}</span>
                   </label>
                   {departments.map((dept) => (
                     <label key={dept.id} className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors">
@@ -193,8 +193,8 @@ export default function CreateCategoryPage() {
             </div>
             <p className="mt-2 text-xs text-gray-500">
               {formData.departmentIds.length === 0 
-                ? 'Business-wide categories can be used by all departments.' 
-                : `Selected ${formData.departmentIds.length} department${formData.departmentIds.length > 1 ? 's' : ''}.`
+                ? t('helper_business_wide')
+                : t('selected_count', { count: formData.departmentIds.length })
               }
             </p>
           </div>
@@ -202,7 +202,7 @@ export default function CreateCategoryPage() {
           {/* Color */}
           <div>
             <label htmlFor="color" className="block text-sm font-medium text-gray-700 mb-2">
-              Color
+              {t('color')}
             </label>
             <div className="flex items-center gap-4">
               <input
@@ -221,7 +221,7 @@ export default function CreateCategoryPage() {
               </div>
             </div>
             <p className="mt-2 text-sm text-gray-500">
-              Choose a color to visually distinguish this category
+              {t('color_helper')}
             </p>
           </div>
 
@@ -231,14 +231,14 @@ export default function CreateCategoryPage() {
               href="/dashboard/categories"
               className="px-6 py-3 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium hover:bg-gray-50 transition-colors duration-200"
             >
-              Cancel
+              {t('cancel')}
             </Link>
             <button
               type="submit"
               disabled={loading}
               className="px-6 py-3 rounded-xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
-              {loading ? 'Creating...' : 'Create Category'}
+              {loading ? t('creating') : t('create_category')}
             </button>
           </div>
         </form>

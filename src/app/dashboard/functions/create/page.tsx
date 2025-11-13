@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
+import { useTranslation } from 'react-i18next'
 import Swal from 'sweetalert2'
 
 interface Category {
@@ -25,6 +26,7 @@ interface Category {
 
 export default function CreateFunctionPage() {
   const router = useRouter()
+  const { t } = useTranslation('functions')
   const [loading, setLoading] = useState(false)
   const [categories, setCategories] = useState<Category[]>([])
   const [formData, setFormData] = useState({
@@ -54,8 +56,8 @@ export default function CreateFunctionPage() {
 
     if (!formData.name.trim()) {
       await Swal.fire({
-        title: 'Error!',
-        text: 'Please enter a function name',
+        title: t('error'),
+        text: t('name_required'),
         icon: 'error',
         confirmButtonColor: '#EF4444'
       })
@@ -64,8 +66,8 @@ export default function CreateFunctionPage() {
 
     if (!formData.categoryId) {
       await Swal.fire({
-        title: 'Error!',
-        text: 'Please select a category',
+        title: t('error'),
+        text: t('category_required'),
         icon: 'error',
         confirmButtonColor: '#EF4444'
       })
@@ -85,8 +87,8 @@ export default function CreateFunctionPage() {
 
       if (response.ok) {
         await Swal.fire({
-          title: 'Success!',
-          text: 'Function created successfully',
+          title: t('success'),
+          text: t('create_success'),
           icon: 'success',
           confirmButtonColor: '#3B82F6'
         })
@@ -94,8 +96,8 @@ export default function CreateFunctionPage() {
       } else {
         const error = await response.json()
         await Swal.fire({
-          title: 'Error!',
-          text: error.error || 'Failed to create function',
+          title: t('error'),
+          text: error.error || t('create_error'),
           icon: 'error',
           confirmButtonColor: '#EF4444'
         })
@@ -114,63 +116,65 @@ export default function CreateFunctionPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-4 sm:py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-3xl mx-auto space-y-6">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 mb-8 shadow-sm">
-          <div className="flex items-center space-x-4">
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-4 sm:p-6 shadow-sm border border-blue-100">
+          <div className="flex items-center gap-3 sm:gap-4">
             <Link
               href="/dashboard/functions"
               className="p-2 hover:bg-white rounded-lg transition-colors duration-200"
             >
-              <ArrowLeftIcon className="h-6 w-6 text-gray-600" />
+              <ArrowLeftIcon className="h-5 w-5 sm:h-6 sm:w-6 text-gray-600" />
             </Link>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Create Function</h1>
-              <p className="mt-2 text-gray-600">Add a new function to a category</p>
+              <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                {t('create_function')}
+              </h1>
+              <p className="mt-1 sm:mt-2 text-sm sm:text-base text-gray-600">{t('create_description')}</p>
             </div>
           </div>
         </div>
 
         {/* Form */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-200/50">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Function Name */}
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                Function Name *
+                {t('function_name')} *
               </label>
               <input
                 type="text"
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="e.g., Hot Section, Hall 1, Prepping"
+                className="w-full px-4 py-2 sm:py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+                placeholder={t('name_placeholder')}
                 required
               />
-              <p className="mt-1 text-sm text-gray-500">
-                A specific role or task within the category
+              <p className="mt-1 text-xs sm:text-sm text-gray-500">
+                {t('name_helper')}
               </p>
             </div>
 
             {/* Category */}
             <div>
               <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700 mb-2">
-                Category *
+                {t('category')} *
               </label>
               <select
                 id="categoryId"
                 value={formData.categoryId}
                 onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 sm:py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                 required
               >
-                <option value="">Select a category</option>
+                <option value="">{t('select_category')}</option>
                 {categories.map((category) => {
                   const deptNames = category.departments && category.departments.length > 0
                     ? category.departments.map((cd: any) => cd.department.name).join(', ')
-                    : 'Business-Wide';
+                    : t('business_wide');
                   
                   return (
                     <option key={category.id} value={category.id}>
@@ -179,15 +183,15 @@ export default function CreateFunctionPage() {
                   );
                 })}
               </select>
-              <p className="mt-1 text-sm text-gray-500">
-                The category this function belongs to
+              <p className="mt-1 text-xs sm:text-sm text-gray-500">
+                {t('category_helper')}
               </p>
             </div>
 
             {/* Color */}
             <div>
               <label htmlFor="color" className="block text-sm font-medium text-gray-700 mb-2">
-                Color
+                {t('color')}
               </label>
               <div className="flex items-center space-x-4">
                 <input
@@ -195,35 +199,35 @@ export default function CreateFunctionPage() {
                   id="color"
                   value={formData.color}
                   onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                  className="h-12 w-20 rounded-lg border border-gray-300 cursor-pointer"
+                  className="h-12 w-20 rounded-xl border border-gray-300 cursor-pointer"
                 />
                 <input
                   type="text"
                   value={formData.color}
                   onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="flex-1 px-4 py-2 sm:py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                   placeholder="#3B82F6"
                 />
               </div>
-              <p className="mt-1 text-sm text-gray-500">
-                Optional color to distinguish this function
+              <p className="mt-1 text-xs sm:text-sm text-gray-500">
+                {t('color_helper')}
               </p>
             </div>
 
             {/* Submit Buttons */}
-            <div className="flex space-x-4 pt-4">
+            <div className="flex flex-col sm:flex-row gap-3 sm:space-x-4 pt-4">
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-2 sm:py-3 px-4 sm:px-6 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg text-sm sm:text-base"
               >
-                {loading ? 'Creating...' : 'Create Function'}
+                {loading ? t('creating') : t('create_function')}
               </button>
               <Link
                 href="/dashboard/functions"
-                className="flex-1 bg-gray-100 text-gray-700 py-3 px-6 rounded-lg hover:bg-gray-200 transition-colors duration-200 font-medium text-center"
+                className="flex-1 bg-gray-100 text-gray-700 py-2 sm:py-3 px-4 sm:px-6 rounded-xl hover:bg-gray-200 transition-colors duration-200 font-medium text-center text-sm sm:text-base"
               >
-                Cancel
+                {t('cancel')}
               </Link>
             </div>
           </form>

@@ -5,6 +5,8 @@
     "users": "Benutzer",
     "employees": "Mitarbeiter",
     "departments": "Abteilungen",
+    "categories": "Kategorien",
+    "functions": "Funktionen",
     "employee_groups": "Mitarbeitergruppen",
     "contracts": "Verträge",
     "documents": "Dokumente",

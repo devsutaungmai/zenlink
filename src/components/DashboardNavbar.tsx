@@ -52,8 +52,8 @@ export default function DashboardNavbar({ setMobileMenuOpen }: DashboardNavbarPr
       icon: UserGroupIcon,
       children: [
         { name: t('navigation.departments'), href: '/dashboard/departments' },
-        { name: 'Categories', href: '/dashboard/categories' },
-        { name: 'Functions', href: '/dashboard/functions' },
+        { name: t('navigation.categories'), href: '/dashboard/categories' },
+        { name: t('navigation.functions'), href: '/dashboard/functions' },
         { name: t('navigation.employees'), href: '/dashboard/employees' },
         { name: t('navigation.employee_groups'), href: '/dashboard/employee-groups' },
         { name: t('navigation.contracts'), href: '/dashboard/contracts' },

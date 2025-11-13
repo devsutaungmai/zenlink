@@ -4,6 +4,7 @@ import { use, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
+import { useTranslation } from 'react-i18next'
 import Swal from 'sweetalert2'
 
 interface Category {
@@ -38,6 +39,7 @@ export default function EditFunctionPage({
 }) {
   const resolvedParams = use(params)
   const router = useRouter()
+  const { t } = useTranslation('functions')
   const [loading, setLoading] = useState(false)
   const [categories, setCategories] = useState<Category[]>([])
   const [formData, setFormData] = useState({
@@ -75,8 +77,8 @@ export default function EditFunctionPage({
         })
       } else {
         await Swal.fire({
-          title: 'Error!',
-          text: 'Function not found',
+          title: t('error'),
+          text: t('function_not_found'),
           icon: 'error',
           confirmButtonColor: '#EF4444'
         })
@@ -92,8 +94,8 @@ export default function EditFunctionPage({
 
     if (!formData.name.trim()) {
       await Swal.fire({
-        title: 'Error!',
-        text: 'Please enter a function name',
+        title: t('error'),
+        text: t('name_required'),
         icon: 'error',
         confirmButtonColor: '#EF4444'
       })
@@ -102,8 +104,8 @@ export default function EditFunctionPage({
 
     if (!formData.categoryId) {
       await Swal.fire({
-        title: 'Error!',
-        text: 'Please select a category',
+        title: t('error'),
+        text: t('category_required'),
         icon: 'error',
         confirmButtonColor: '#EF4444'
       })
@@ -123,8 +125,8 @@ export default function EditFunctionPage({
 
       if (response.ok) {
         await Swal.fire({
-          title: 'Success!',
-          text: 'Function updated successfully',
+          title: t('success'),
+          text: t('update_success'),
           icon: 'success',
           confirmButtonColor: '#3B82F6'
         })
@@ -132,8 +134,8 @@ export default function EditFunctionPage({
       } else {
         const error = await response.json()
         await Swal.fire({
-          title: 'Error!',
-          text: error.error || 'Failed to update function',
+          title: t('error'),
+          text: error.error || t('update_error'),
           icon: 'error',
           confirmButtonColor: '#EF4444'
         })
@@ -141,8 +143,8 @@ export default function EditFunctionPage({
     } catch (error) {
       console.error('Error updating function:', error)
       await Swal.fire({
-        title: 'Error!',
-        text: 'An error occurred while updating the function',
+        title: t('error'),
+        text: t('update_error'),
         icon: 'error',
         confirmButtonColor: '#EF4444'
       })

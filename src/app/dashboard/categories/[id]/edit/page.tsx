@@ -15,7 +15,7 @@ interface Department {
 export default function EditCategoryPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params)
   const router = useRouter()
-  const { t } = useTranslation()
+  const { t } = useTranslation('categories')
   const [loading, setLoading] = useState(false)
   const [fetchingLoading, setFetchingLoading] = useState(true)
   const [departments, setDepartments] = useState<Department[]>([])
@@ -80,8 +80,8 @@ export default function EditCategoryPage({ params }: { params: Promise<{ id: str
       }
 
       await Swal.fire({
-        title: 'Success!',
-        text: 'Category updated successfully',
+        title: t('success'),
+        text: t('update_success'),
         icon: 'success',
         confirmButtonColor: '#31BCFF',
       })
@@ -90,8 +90,8 @@ export default function EditCategoryPage({ params }: { params: Promise<{ id: str
       router.refresh()
     } catch (error) {
       await Swal.fire({
-        title: 'Error',
-        text: error instanceof Error ? error.message : 'An error occurred',
+        title: t('error'),
+        text: error instanceof Error ? error.message : t('update_error'),
         icon: 'error',
         confirmButtonColor: '#31BCFF',
       })
