@@ -22,6 +22,10 @@ export function useEmployeeForm({ initialData }: UseEmployeeFormProps) {
   const emailValidationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const employeeNoValidationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const validationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  
+  // Add validation cache to reduce API calls
+  const validationCacheRef = useRef<Map<string, { result: boolean, timestamp: number }>>(new Map())
+  const CACHE_DURATION = 30000 // 30 seconds
 
   const [formData, setFormData] = useState<EmployeeFormData>(() => {
     const baseData: EmployeeFormData = {
@@ -200,9 +204,35 @@ export function useEmployeeForm({ initialData }: UseEmployeeFormProps) {
     }
   }
 
+  const checkValidationCache = (key: string): boolean | null => {
+    const cached = validationCacheRef.current.get(key)
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+      return cached.result
+    }
+    return null
+  }
+
+  const setValidationCache = (key: string, result: boolean) => {
+    validationCacheRef.current.set(key, { result, timestamp: Date.now() })
+  }
+
   const validateEmployeeNumberUniqueness = async (employeeNo: string) => {
     if (!employeeNo || employeeNo.trim() === '') {
       setValidationErrors(prev => ({ ...prev, employeeNo: '' }))
+      return
+    }
+
+    const trimmedEmployeeNo = employeeNo.trim()
+    const cacheKey = `employeeNo:${trimmedEmployeeNo}:${initialData?.id || 'new'}`
+    
+    // Check cache first
+    const cachedResult = checkValidationCache(cacheKey)
+    if (cachedResult !== null) {
+      if (!cachedResult) {
+        setValidationErrors(prev => ({ ...prev, employeeNo: 'Employee number already in use' }))
+      } else {
+        setValidationErrors(prev => ({ ...prev, employeeNo: '' }))
+      }
       return
     }
 
@@ -213,13 +243,17 @@ export function useEmployeeForm({ initialData }: UseEmployeeFormProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          employeeNo: employeeNo.trim(),
+          employeeNo: trimmedEmployeeNo,
           excludeEmployeeId: initialData?.id
         })
       })
 
       if (response.ok) {
         const data = await response.json()
+        
+        // Cache the result
+        setValidationCache(cacheKey, data.available)
+        
         if (!data.available) {
           setValidationErrors(prev => ({
             ...prev,

@@ -1,9 +1,10 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { format } from 'date-fns'
 import { Employee } from '@prisma/client'
 import { PlusIcon } from '@heroicons/react/24/outline'
 import { ShiftWithRelations } from '@/types/schedule'
 import { useCurrency } from '@/shared/hooks/useCurrency'
+import ShiftsModal from './ShiftsModal'
 
 interface FunctionItem {
   id: string
@@ -29,6 +30,17 @@ export default function FunctionGroupedView({
   onAddShift = () => {}
 }: FunctionGroupedViewProps) {
   const { currencySymbol } = useCurrency()
+  const [modalState, setModalState] = useState<{
+    isOpen: boolean
+    shifts: ShiftWithRelations[]
+    date: Date | null
+    title: string
+  }>({
+    isOpen: false,
+    shifts: [],
+    date: null,
+    title: ''
+  })
   
   const groupOverlappingShifts = (shifts: ShiftWithRelations[]) => {
     const sortedShifts = [...shifts].sort((a, b) => {
@@ -99,6 +111,24 @@ export default function FunctionGroupedView({
     const minutes = totalMinutes % 60;
     return `${hours}h ${minutes}m`;
   };
+
+  const handleShowMoreShifts = (shifts: ShiftWithRelations[], date: Date, functionName: string) => {
+    setModalState({
+      isOpen: true,
+      shifts,
+      date,
+      title: `${functionName} - All Shifts`
+    })
+  }
+
+  const handleCloseModal = () => {
+    setModalState({
+      isOpen: false,
+      shifts: [],
+      date: null,
+      title: ''
+    })
+  }
 
   return (
     <div className="overflow-hidden">
@@ -181,12 +211,12 @@ export default function FunctionGroupedView({
                                 <PlusIcon className="w-6 h-6 text-[#31BCFF]" />
                               </button>
                             ) : (
-                              <div className="w-full h-full">
+                              <div className="w-full h-full flex flex-col">
                                 {dayShifts.slice(0, 1).map(shift => (
                                   <button
                                     key={shift.id}
                                     onClick={() => onEditShift(shift)}
-                                    className={`w-full h-full rounded-xl text-white font-medium flex flex-col items-center justify-center gap-0.5 transition-all active:scale-95 ${
+                                    className={`w-full flex-1 rounded-xl text-white font-medium flex flex-col items-center justify-center gap-0.5 transition-all active:scale-95 ${
                                       shift.status === 'CANCELLED' ? 'bg-red-500' :
                                       shift.status === 'WORKING' ? 'bg-blue-500' :
                                       'bg-[#31BCFF]'
@@ -203,9 +233,12 @@ export default function FunctionGroupedView({
                                   </button>
                                 ))}
                                 {dayShifts.length > 1 && (
-                                  <div className="text-[9px] text-center text-gray-500 font-medium mt-0.5">
-                                    +{dayShifts.length - 1}
-                                  </div>
+                                  <button 
+                                    onClick={() => handleShowMoreShifts(dayShifts, date, fn.name)}
+                                    className="w-full text-xs text-center text-gray-600 hover:text-[#31BCFF] font-semibold mt-1 py-1 px-2 bg-gray-100 hover:bg-blue-50 rounded transition-all active:scale-95"
+                                  >
+                                    +{dayShifts.length - 1} more
+                                  </button>
                                 )}
                               </div>
                             )}
@@ -267,10 +300,20 @@ export default function FunctionGroupedView({
                 const shiftGroups = groupOverlappingShifts(dayShifts);
                 
                 return (
-                  <div key={dateIndex} className="border-r p-2 relative min-h-[80px]">
-                    {shiftGroups.map((group, groupIndex) => (
-                      <React.Fragment key={`group-${groupIndex}`}>
-                        {group.map((shift, shiftIndex) => {
+                  <div key={dateIndex} className="border-r p-2 relative min-h-[80px] group">
+                    {shiftGroups.length === 0 ? (
+                      <button
+                        onClick={() => onAddShift({ 
+                          date: format(date, 'yyyy-MM-dd'),
+                          functionId: fn.id 
+                        })}
+                        className="w-full h-full min-h-[76px] border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center transition-all hover:border-[#31BCFF] hover:bg-blue-50 opacity-0 group-hover:opacity-100"
+                      >
+                        <PlusIcon className="w-5 h-5 text-[#31BCFF]" />
+                      </button>
+                    ) : (
+                      <>
+                        {dayShifts.slice(0, 2).map((shift, shiftIndex) => {
                           const employee = employees.find(emp => emp.id === shift.employeeId);
                           
                           return (
@@ -290,8 +333,25 @@ export default function FunctionGroupedView({
                             </div>
                           );
                         })}
-                      </React.Fragment>
-                    ))}
+                        {dayShifts.length > 2 && (
+                          <button
+                            onClick={() => handleShowMoreShifts(dayShifts, date, fn.name)}
+                            className="text-xs text-gray-500 hover:text-[#31BCFF] font-medium transition-colors mb-1"
+                          >
+                            +{dayShifts.length - 2} more shifts
+                          </button>
+                        )}
+                        <button
+                          onClick={() => onAddShift({ 
+                            date: format(date, 'yyyy-MM-dd'),
+                            functionId: fn.id 
+                          })}
+                          className="absolute bottom-1 right-1 w-6 h-6 border border-[#31BCFF] bg-white rounded-full flex items-center justify-center transition-all hover:bg-[#31BCFF] hover:text-white opacity-0 group-hover:opacity-100 shadow-sm"
+                        >
+                          <PlusIcon className="w-3 h-3" />
+                        </button>
+                      </>
+                    )}
                   </div>
                 );
               })}
@@ -300,6 +360,17 @@ export default function FunctionGroupedView({
         })}
       </div>
       </div>
+
+      {/* Shifts Modal */}
+      <ShiftsModal
+        isOpen={modalState.isOpen}
+        onClose={handleCloseModal}
+        shifts={modalState.shifts}
+        date={modalState.date || new Date()}
+        title={modalState.title}
+        employees={employees}
+        onEditShift={onEditShift}
+      />
     </div>
   );
 }

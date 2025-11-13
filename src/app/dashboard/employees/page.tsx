@@ -75,11 +75,13 @@ export default function EmployeesPage() {
       
       const data = await response.json()
       
-      if (Array.isArray(data)) {
+      if (data.employees && Array.isArray(data.employees)) {
+        setEmployees(data.employees)
+      } else if (Array.isArray(data)) {
         setEmployees(data)
       } else {
-        console.error('Expected array but got:', data)
-        throw new Error('Invalid data format received from server')
+        console.error('Expected employees array but got:', data)
+        setError('Invalid data format received')
       }
     } catch (error) {
       console.error('Error fetching employees:', error)

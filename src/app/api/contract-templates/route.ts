@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/shared/lib/auth'
 import { prisma } from '@/shared/lib/prisma'
-import { writeFile, mkdir } from 'fs/promises'
-import { join } from 'path'
+import { put } from '@vercel/blob'
+
+export const runtime = 'nodejs'
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024
 
 export async function POST(req: NextRequest) {
   try {
@@ -49,24 +52,37 @@ export async function POST(req: NextRequest) {
     // Handle logo upload if provided
     if (logoFile) {
       try {
-        // Create uploads directory if it doesn't exist
-        const uploadsDir = join(process.cwd(), 'public', 'uploads', 'contract-logos')
-        await mkdir(uploadsDir, { recursive: true })
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/svg+xml']
+        if (!allowedTypes.includes(logoFile.type)) {
+          return NextResponse.json({ 
+            error: 'Invalid file type. Only JPEG, PNG, WebP, and SVG images are allowed.' 
+          }, { status: 400 })
+        }
+
+        if (logoFile.size > MAX_FILE_SIZE) {
+          return NextResponse.json({ 
+            error: 'File size too large. Maximum size is 5MB.' 
+          }, { status: 400 })
+        }
 
         // Generate unique filename
+        const timestamp = Date.now()
+        const randomString = Math.random().toString(36).substring(2, 15)
         const fileExtension = logoFile.name.split('.').pop()
-        const fileName = `${userWithBusiness.businessId}-${Date.now()}.${fileExtension}`
-        const filePath = join(uploadsDir, fileName)
+        const filename = `contract-logos/${userWithBusiness.businessId}-${timestamp}-${randomString}.${fileExtension}`
 
-        // Convert file to buffer and save
-        const bytes = await logoFile.arrayBuffer()
-        const buffer = Buffer.from(bytes)
-        await writeFile(filePath, buffer)
+        const blob = await put(filename, logoFile, {
+          access: 'public',
+          addRandomSuffix: false,
+        })
 
-        logoPath = `/uploads/contract-logos/${fileName}`
+        logoPath = blob.url
       } catch (error) {
         console.error('Error uploading logo:', error)
-        return NextResponse.json({ error: 'Failed to upload logo' }, { status: 500 })
+        return NextResponse.json({ 
+          error: 'Failed to upload logo',
+          details: error instanceof Error ? error.message : 'Unknown error'
+        }, { status: 500 })
       }
     }
 

@@ -105,7 +105,14 @@ export default function SchedulePage() {
     try {
       const res = await fetch('/api/employees')
       const data = await res.json()
-      setEmployees(data)
+      if (data.employees && Array.isArray(data.employees)) {
+        setEmployees(data.employees)
+      } else if (Array.isArray(data)) {
+        setEmployees(data)
+      } else {
+        console.error('Expected employees array but got:', data)
+        setEmployees([])
+      }
     } catch (error) {
       console.error('Error fetching employees:', error)
       setEmployees([])
@@ -157,7 +164,7 @@ export default function SchedulePage() {
     try {
       const res = await fetch('/api/shift-types')
       const data = await res.json()
-      setShiftTypes(data)
+      setShiftTypes(data.shiftTypes || [])
     } catch (error) {
       console.error('Error fetching shift types:', error)
       setShiftTypes([])

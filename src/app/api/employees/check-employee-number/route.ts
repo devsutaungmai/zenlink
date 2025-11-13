@@ -20,7 +20,7 @@ export async function POST(request: Request) {
       })
     }
 
-    // Check if employee number is already in use by another employee in the same business
+    // Optimized query: only check existence, don't fetch full employee data unless needed
     const existingEmployee = await prisma.employee.findFirst({
       where: {
         employeeNo: employeeNo.trim(),
@@ -37,9 +37,9 @@ export async function POST(request: Request) {
       }
     })
 
-    if (existingEmployee) {
-      return NextResponse.json({
-        available: false,
+    const response = {
+      available: !existingEmployee,
+      ...(existingEmployee && {
         existingEmployee: {
           name: `${existingEmployee.firstName} ${existingEmployee.lastName}`,
           employeeNo: existingEmployee.employeeNo
@@ -47,8 +47,11 @@ export async function POST(request: Request) {
       })
     }
 
-    return NextResponse.json({
-      available: true
+    // Add cache headers for better performance
+    return NextResponse.json(response, {
+      headers: {
+        'Cache-Control': 'public, max-age=30, stale-while-revalidate=60'
+      }
     })
 
   } catch (error) {

@@ -289,7 +289,8 @@ export default function AdminAvailabilityPage() {
               const targetedRes = await fetch(`/api/employees?userId=${currentEmployeeUserId}`)
               if (targetedRes.ok) {
                 const targetedData = await targetedRes.json()
-                const match = Array.isArray(targetedData) ? targetedData[0] : null
+                let employees = Array.isArray(targetedData) ? targetedData : (targetedData.employees || [])
+                const match = employees.length > 0 ? employees[0] : null
                 if (match) {
                   resolvedEmployee = {
                     id: match.id,
@@ -340,7 +341,13 @@ export default function AdminAvailabilityPage() {
         let employeesData: any[] = []
         
         if (employeesRes.ok) {
-          employeesData = await employeesRes.json()
+          const data = await employeesRes.json()
+          // Handle new paginated response structure
+          if (data.employees && Array.isArray(data.employees)) {
+            employeesData = data.employees
+          } else if (Array.isArray(data)) {
+            employeesData = data
+          }
           setEmployees(employeesData)
         }
 

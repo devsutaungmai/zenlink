@@ -104,7 +104,9 @@ export default function ScheduleHeader({
 }: ScheduleHeaderProps) {
   const { t } = useTranslation('schedule')
   const [showFilters, setShowFilters] = useState(false)
-  const filterRef = useRef<HTMLDivElement>(null)
+  const filterButtonRef = useRef<HTMLDivElement>(null)
+  const filterDropdownRef = useRef<HTMLDivElement>(null)
+  const mobileFilterRef = useRef<HTMLDivElement>(null)
   
   const safeEmployees = Array.isArray(employees) ? employees : []
   const safeDepartments = Array.isArray(departments) ? departments : []
@@ -116,9 +118,21 @@ export default function ScheduleHeader({
   // Close filter dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (filterRef.current && !filterRef.current.contains(event.target as Node)) {
-        setShowFilters(false)
+      const target = event.target as Node
+
+      if (filterButtonRef.current && filterButtonRef.current.contains(target)) {
+        return
       }
+
+      if (filterDropdownRef.current && filterDropdownRef.current.contains(target)) {
+        return
+      }
+
+      if (mobileFilterRef.current && mobileFilterRef.current.contains(target)) {
+        return
+      }
+
+      setShowFilters(false)
     }
     
     if (showFilters) {
@@ -206,7 +220,7 @@ export default function ScheduleHeader({
           </select>
 
           {/* Filters Button - Mobile */}
-          <div className="relative" ref={filterRef}>
+          <div className="relative" ref={filterButtonRef}>
             <button 
               onClick={() => setShowFilters(!showFilters)}
               className="px-3 py-2 rounded-md border border-gray-300 hover:bg-gray-50 bg-white flex items-center gap-2"
@@ -221,7 +235,10 @@ export default function ScheduleHeader({
 
             {/* Filter Dropdown - Mobile */}
             {showFilters && (
-              <div className="fixed inset-x-0 top-0 bottom-0 bg-white z-50 overflow-y-auto">
+              <div 
+                ref={mobileFilterRef}
+                className="fixed inset-x-0 top-0 bottom-0 bg-white z-50 overflow-y-auto"
+              >
                 <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between z-10">
                   <h3 className="font-semibold text-gray-900">Filters</h3>
                   <div className="flex items-center gap-3">
@@ -468,7 +485,10 @@ export default function ScheduleHeader({
 
             {/* Filter Dropdown - Desktop */}
             {showFilters && (
-              <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-[600px] overflow-y-auto">
+              <div 
+                ref={filterDropdownRef}
+                className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-[600px] overflow-y-auto"
+              >
                 <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between z-10">
                   <h3 className="font-semibold text-gray-900">Filters</h3>
                   <div className="flex items-center gap-2">
