@@ -43,7 +43,9 @@ export default function ContractForm({ onClose, onContractCreated }: ContractFor
         fetch('/api/employee-groups'),
         fetch('/api/contract-templates')
       ]);
+      
       setEmployees(await employeesRes.json())
+      
       setEmployeeGroups(await groupsRes.json())
       setContractTemplates(await templatesRes.json())
     }

@@ -82,17 +82,13 @@ export async function GET(request: Request) {
       take: limit
     })
 
-    return NextResponse.json({
-      employees,
-      pagination: {
-        page,
-        limit,
-        total: totalCount,
-        totalPages: Math.ceil(totalCount / limit)
-      }
-    }, {
+    return NextResponse.json(employees, {
       headers: {
-        'Cache-Control': 'public, max-age=60, stale-while-revalidate=120'
+        'Cache-Control': 'public, max-age=60, stale-while-revalidate=120',
+        'X-Total-Count': totalCount.toString(),
+        'X-Page': page.toString(),
+        'X-Per-Page': limit.toString(),
+        'X-Total-Pages': Math.ceil(totalCount / limit).toString()
       }
     })
   } catch (error) {

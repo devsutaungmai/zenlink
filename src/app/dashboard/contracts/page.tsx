@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { PlusIcon, DocumentTextIcon, MagnifyingGlassIcon, PencilIcon, TrashIcon, ArrowDownTrayIcon, PencilSquareIcon } from '@heroicons/react/24/outline'
 import { useTranslation } from 'react-i18next'
+import { TableSkeleton } from '@/components/skeletons/ScheduleSkeleton'
 import ContractForm from '@/components/ContractForm'
 import { useUser } from '@/shared/lib/useUser'
 import Swal from 'sweetalert2'
@@ -574,8 +575,8 @@ export default function ContractsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#31BCFF]"></div>
+      <div className="p-6">
+        <TableSkeleton rows={10} columns={7} />
       </div>
     )
   }

@@ -11,6 +11,7 @@ import {
   ClockIcon
 } from '@heroicons/react/24/outline'
 import { useTranslation } from 'react-i18next'
+import { TableSkeleton } from '@/components/skeletons/ScheduleSkeleton'
 import Swal from 'sweetalert2'
 import ShiftExchangeInfo from '@/components/ShiftExchangeInfo'
 import {
@@ -357,7 +358,11 @@ export default function ShiftsPage() {
   }
 
   if (loading) {
-    return <div className="flex items-center justify-center h-32">{t('loading')}...</div>
+    return (
+      <div className="p-6">
+        <TableSkeleton rows={8} columns={8} />
+      </div>
+    )
   }
 
   return (

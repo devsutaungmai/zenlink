@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { format, addDays, addWeeks, subWeeks, startOfWeek, endOfWeek } from 'date-fns'
 import { Employee, EmployeeGroup } from '@prisma/client'
 
@@ -14,6 +14,12 @@ import FunctionGroupedView from '@/components/schedule/FunctionGroupedView'
 import ShiftFormModal from '@/components/schedule/ShiftFormModel'
 import { laborLawValidator, formatValidationMessage, separateViolations, type LaborLawViolation } from '@/shared/lib/laborLawValidation'
 import { ShiftWithRelations } from '@/types/schedule'
+import { 
+  WeekViewSkeleton, 
+  EmployeeGroupedViewSkeleton, 
+  GroupGroupedViewSkeleton,
+  FunctionGroupedViewSkeleton 
+} from '@/components/skeletons/ScheduleSkeleton'
 
 export default function SchedulePage() {
   const [showShiftModal, setShowShiftModal] = useState(false)
@@ -49,70 +55,75 @@ export default function SchedulePage() {
   })
 
   // Filter shifts based on selected department, category, function, and filters
-  const filteredShifts = shifts.filter((shift: any) => {
-    if (selectedDepartmentId && shift.departmentId !== selectedDepartmentId) {
-      return false
-    }
-    if (selectedCategoryId && shift.function?.categoryId !== selectedCategoryId) {
-      return false
-    }
-    if (selectedFunctionId && shift.functionId !== selectedFunctionId) {
-      return false
-    }
-    if (selectedGroupId && shift.employeeGroupId !== selectedGroupId) {
-      return false
-    }
-    
-    // Apply advanced filters
-    if (filters.employeeIds.length > 0 && shift.employeeId && !filters.employeeIds.includes(shift.employeeId)) {
-      return false
-    }
-    if (filters.employeeGroupIds.length > 0 && shift.employeeGroupId && !filters.employeeGroupIds.includes(shift.employeeGroupId)) {
-      return false
-    }
-    if (filters.shiftTypeIds.length > 0 && shift.shiftTypeId && !filters.shiftTypeIds.includes(shift.shiftTypeId)) {
-      return false
-    }
-    if (filters.statuses.length > 0 && !filters.statuses.includes(shift.status)) {
-      return false
-    }
-    if (filters.timeFrom && shift.startTime < filters.timeFrom) {
-      return false
-    }
-    if (filters.timeTo && shift.startTime > filters.timeTo) {
-      return false
-    }
-    
-    return true
-  })
+  const filteredShifts = useMemo(() => {
+    return shifts.filter((shift: any) => {
+      if (selectedDepartmentId && shift.departmentId !== selectedDepartmentId) {
+        return false
+      }
+      if (selectedCategoryId && shift.function?.categoryId !== selectedCategoryId) {
+        return false
+      }
+      if (selectedFunctionId && shift.functionId !== selectedFunctionId) {
+        return false
+      }
+      if (filters.employeeIds.length > 0 && !filters.employeeIds.includes(shift.employeeId || '')) {
+        return false
+      }
+      if (filters.employeeGroupIds.length > 0) {
+        const employee = employees.find(emp => emp.id === shift.employeeId)
+        if (!employee || !employee.employeeGroupId || !filters.employeeGroupIds.includes(employee.employeeGroupId)) {
+          return false
+        }
+      }
+      if (filters.shiftTypeIds.length > 0 && !filters.shiftTypeIds.includes(shift.shiftTypeId || '')) {
+        return false
+      }
+      if (filters.statuses.length > 0 && !filters.statuses.includes(shift.status || '')) {
+        return false
+      }
+      if (filters.timeFrom && shift.startTime < filters.timeFrom) {
+        return false
+      }
+      if (filters.timeTo && shift.startTime > filters.timeTo) {
+        return false
+      }
+      
+      return true
+    })
+  }, [shifts, filters, employees, selectedDepartmentId, selectedCategoryId, selectedFunctionId])
 
-  const startDate = startOfWeek(currentDate, { weekStartsOn: 0 })
-  const endDate = endOfWeek(currentDate, { weekStartsOn: 0 })
+  const startDate = useMemo(() => startOfWeek(currentDate, { weekStartsOn: 0 }), [currentDate])
+  const endDate = useMemo(() => endOfWeek(currentDate, { weekStartsOn: 0 }), [currentDate])
   
-  const weekDates = Array(7).fill(0).map((_, i) => addDays(startDate, i))
+  const weekDates = useMemo(() => Array(7).fill(0).map((_, i) => addDays(startDate, i)), [startDate])
+
 
   useEffect(() => {
-    fetchEmployees()
-    fetchEmployeeGroups()
+    // Only fetch shifts when date or employee changes
     fetchShifts()
-    fetchDepartments()
-    fetchCategories()
-    fetchFunctions()
-    fetchShiftTypes()
-  }, [currentDate, selectedEmployeeId])
+  }, [currentDate, selectedEmployeeId, startDate, endDate])
+
+  useEffect(() => {
+    const fetchStaticData = async () => {
+      await Promise.all([
+        fetchEmployees(),
+        fetchEmployeeGroups(),
+        fetchDepartments(),
+        fetchCategories(),
+        fetchFunctions(),
+        fetchShiftTypes()
+      ])
+    }
+    fetchStaticData()
+  }, [])
 
   const fetchEmployees = async () => {
     try {
-      const res = await fetch('/api/employees')
+      const res = await fetch('/api/employees', {
+        headers: { 'Cache-Control': 'max-age=300' }
+      })
       const data = await res.json()
-      if (data.employees && Array.isArray(data.employees)) {
-        setEmployees(data.employees)
-      } else if (Array.isArray(data)) {
-        setEmployees(data)
-      } else {
-        console.error('Expected employees array but got:', data)
-        setEmployees([])
-      }
+      setEmployees(data)
     } catch (error) {
       console.error('Error fetching employees:', error)
       setEmployees([])
@@ -173,6 +184,7 @@ export default function SchedulePage() {
 
   const fetchShifts = async () => {
     try {
+      setLoading(true)
       const start = format(startDate, 'yyyy-MM-dd')
       const end = format(endDate, 'yyyy-MM-dd')
       
@@ -181,11 +193,19 @@ export default function SchedulePage() {
         url += `&employeeId=${selectedEmployeeId}`
       }
       
-      const res = await fetch(url)
+      const res = await fetch(url, {
+        headers: { 'Cache-Control': 'max-age=60' }
+      })
+      
+      if (!res.ok) {
+        throw new Error(`Failed to fetch shifts: ${res.statusText}`)
+      }
+      
       const data = await res.json()
-      setShifts(data)
+      setShifts(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error('Error fetching shifts:', error)
+      setShifts([])
     } finally {
       setLoading(false)
     }
@@ -630,7 +650,23 @@ export default function SchedulePage() {
       </div>
 
       {/* Main content area */}
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
+        {loading ? (
+          viewMode === 'week' ? (
+            scheduleViewType === 'employees' ? (
+              <EmployeeGroupedViewSkeleton />
+            ) : scheduleViewType === 'groups' ? (
+              <GroupGroupedViewSkeleton />
+            ) : scheduleViewType === 'functions' ? (
+              <FunctionGroupedViewSkeleton />
+            ) : (
+              <WeekViewSkeleton />
+            )
+          ) : (
+            <WeekViewSkeleton />
+          )
+        ) : (
+          <>
             {viewMode === 'week' ? (
               scheduleViewType === 'time' ? (
                 <WeekView
@@ -788,7 +824,9 @@ export default function SchedulePage() {
                 }}
               />
             )}
-          </main>
+          </>
+        )}
+      </main>
 
         <ShiftFormModal
           isOpen={showShiftModal}

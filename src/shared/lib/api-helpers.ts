@@ -1,21 +1,8 @@
 /**
- * Helper function to handle the transition from old employees API format to new paginated format
- * @param data - Response data from /api/employees
- * @returns Array of employees
+ * Fetch employees with automatic error handling
+ * @param params - Optional query parameters
+ * @returns Promise<any[]> - Array of employees
  */
-export function extractEmployeesFromResponse(data: any): any[] {
-  if (data.employees && Array.isArray(data.employees)) {
-    return data.employees
-  }
-
-  if (Array.isArray(data)) {
-    return data
-  }
-
-  console.error('Expected employees array but got:', data)
-  return []
-}
-
 export async function fetchEmployees(params?: Record<string, string>): Promise<any[]> {
   try {
     const queryString = params ? '?' + new URLSearchParams(params).toString() : ''
@@ -26,7 +13,7 @@ export async function fetchEmployees(params?: Record<string, string>): Promise<a
     }
     
     const data = await response.json()
-    return extractEmployeesFromResponse(data)
+    return Array.isArray(data) ? data : []
   } catch (error) {
     console.error('Error fetching employees:', error)
     return []

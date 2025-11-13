@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 import { useTranslation } from 'react-i18next'
+import { ListSkeleton } from '@/components/skeletons/CommonSkeletons'
 import Swal from 'sweetalert2'
 
 interface Department {
@@ -105,8 +106,8 @@ export default function DepartmentsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#31BCFF]"></div>
+      <div className="p-6">
+        <ListSkeleton count={8} />
       </div>
     )
   }

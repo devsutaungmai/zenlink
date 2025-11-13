@@ -9,6 +9,7 @@ import { LocationValidationResult, validatePunchLocation } from '@/shared/lib/lo
 import LocationValidationModal from '@/components/LocationValidationModal'
 import DepartmentSelectionModal from '@/components/DepartmentSelectionModal'
 import { useTranslation } from 'react-i18next'
+import { DashboardStatsSkeleton } from '@/components/skeletons/CommonSkeletons'
 
 interface Employee {
   id: string
@@ -630,14 +631,7 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="py-8 px-4 sm:px-6 lg:px-8">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/4 mb-8"></div>
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="bg-gray-200 h-24 rounded-lg"></div>
-            ))}
-          </div>
-        </div>
+        <DashboardStatsSkeleton />
       </div>
     )
   }

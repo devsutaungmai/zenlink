@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useTranslation } from 'react-i18next'
+import { TableSkeleton } from '@/components/skeletons/ScheduleSkeleton'
 import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon, CalendarIcon, ClockIcon } from '@heroicons/react/24/outline'
 import { PayrollPeriod } from '@/shared/types'
 import Swal from 'sweetalert2'
@@ -144,9 +145,8 @@ export default function PayrollPeriodsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#31BCFF]"></div>
-        <span className="ml-4 text-gray-600">{t('loading')}</span>
+      <div className="p-6">
+        <TableSkeleton rows={10} columns={6} />
       </div>
     )
   }

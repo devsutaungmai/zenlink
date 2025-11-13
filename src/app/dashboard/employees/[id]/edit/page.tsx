@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
+import { DetailPageSkeleton } from '@/components/skeletons/CommonSkeletons'
 import EmployeeForm from '@/components/EmployeeForm'
 import { Department, EmployeeGroup } from '@prisma/client'
 import { useCurrency } from '@/shared/hooks/useCurrency'
@@ -293,8 +294,8 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#31BCFF]"></div>
+      <div className="p-6">
+        <DetailPageSkeleton />
       </div>
     )
   }

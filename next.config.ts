@@ -17,15 +17,33 @@ const nextConfig: NextConfig = {
 
   webpack: (config, { dev, isServer }) => {
     if (dev && !isServer) {
+      // Optimize webpack for faster HMR
       config.watchOptions = {
-        poll: 1000,
-        aggregateTimeout: 300,
+        ignored: ['**/node_modules', '**/.git', '**/public/uploads/**', '**/.next/**'],
+      }
+
+      config.optimization = {
+        ...config.optimization,
+        removeAvailableModules: false,
+        removeEmptyChunks: false,
+        splitChunks: false,
       }
     }
     return config
   },
+
   experimental: {
-    optimizePackageImports: ['lucide-react', '@heroicons/react'],
+    optimizePackageImports: [
+      'lucide-react', 
+      '@heroicons/react',
+      '@tiptap/react',
+      '@tiptap/starter-kit',
+      '@radix-ui/react-dialog',
+      '@radix-ui/react-popover',
+      '@radix-ui/react-select',
+      '@radix-ui/react-tabs',
+      'date-fns',
+    ],
   },
 };
 

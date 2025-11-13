@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
+import { FormSkeleton } from '@/components/skeletons/CommonSkeletons'
 import EmployeeForm from '@/components/EmployeeForm'
 import { Department, EmployeeGroup } from '@prisma/client'
 import { 
@@ -92,8 +93,8 @@ export default function CreateEmployeePage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="p-4 text-gray-500">{t('employees.create_page.loading')}</div>
+      <div className="p-6">
+        <FormSkeleton rows={8} />
       </div>
     )
   }
