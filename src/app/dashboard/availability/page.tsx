@@ -29,6 +29,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
+import { AvailabilitySkeleton } from "@/components/skeletons/AvailabilitySkeleton"
 
 interface Employee {
   id: string
@@ -545,35 +546,7 @@ export default function AdminAvailabilityPage() {
   }
 
   if (loading && isAuthenticated) {
-    return (
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">{t('availability.title')}</h1>
-            <p className="text-gray-600 mt-1">
-              {isEmployee ? t('availability.employee_subtitle') : t('availability.subtitle')}
-            </p>
-          </div>
-        </div>
-
-        {/* Loading skeleton */}
-        <div className="grid gap-6">
-          <div className="animate-pulse space-y-4">
-            <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-            <div className="grid grid-cols-7 gap-2">
-              {Array.from({ length: 35 }).map((_, i) => (
-                <div key={i} className="h-12 bg-gray-200 rounded"></div>
-              ))}
-            </div>
-          </div>
-        </div>
-        
-        <div className="text-center text-gray-500">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#31BCFF] mx-auto mb-2"></div>
-          Loading availability data...
-        </div>
-      </div>
-    )
+    return <AvailabilitySkeleton />
   }
 
   if (!isAuthenticated) {

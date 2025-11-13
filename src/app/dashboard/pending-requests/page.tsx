@@ -16,7 +16,7 @@ import {
 } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
 import { useTranslation } from 'react-i18next'
-import { ListSkeleton } from '@/components/skeletons/CommonSkeletons'
+import { CardGridSkeleton } from '@/components/skeletons/ScheduleSkeleton'
 
 interface Employee {
   id: string
@@ -200,7 +200,7 @@ export default function PendingRequestsPage() {
   if (loading) {
     return (
       <div className="p-6">
-        <ListSkeleton count={8} />
+        <CardGridSkeleton count={8} />
       </div>
     )
   }

@@ -228,14 +228,14 @@ export default function CategoriesPage() {
                     )}
                   </div>
                 </div>
-                <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  <Link
+                <div className="flex items-center space-x-2">
+                  {/* <Link
                     href={`/dashboard/categories/${category.id}/edit`}
                     className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
                     title="Edit Category"
                   >
                     <PencilIcon className="h-4 w-4" />
-                  </Link>
+                  </Link> */}
                   <button
                     onClick={() => handleDelete(category.id, category.name)}
                     className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { PlusIcon, DocumentTextIcon, MagnifyingGlassIcon, PencilIcon, TrashIcon, ArrowDownTrayIcon, PencilSquareIcon } from '@heroicons/react/24/outline'
 import { useTranslation } from 'react-i18next'
-import { TableSkeleton } from '@/components/skeletons/ScheduleSkeleton'
+import { CardGridSkeleton } from '@/components/skeletons/ScheduleSkeleton'
 import ContractForm from '@/components/ContractForm'
 import { useUser } from '@/shared/lib/useUser'
 import Swal from 'sweetalert2'
@@ -23,6 +23,16 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
+import {
+  MobileCardList,
+  MobileCard,
+  MobileCardHeader,
+  MobileCardGrid,
+  MobileCardField,
+  MobileCardSection,
+  MobileCardActions,
+  Badge,
+} from "@/components/MobileCardList"
 
 interface Contract {
   id: string
@@ -576,7 +586,7 @@ export default function ContractsPage() {
   if (loading) {
     return (
       <div className="p-6">
-        <TableSkeleton rows={10} columns={7} />
+         <CardGridSkeleton count={8} />
       </div>
     )
   }
@@ -801,68 +811,119 @@ export default function ContractsPage() {
                 </button>
               </div>
             ) : (
-              <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50/80">
-                      <tr>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee No.</th>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Group</th>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                        <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200/50">
-                      {paginatedMissingEmployees.map((employee) => (
-                        <tr key={employee.id} className="hover:bg-orange-50/30 transition-colors duration-200">
-                          <td className="px-6 py-4">
-                            <div className="text-sm font-medium text-gray-900">
-                              {employee.firstName} {employee.lastName}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="text-sm text-gray-900">
-                              {employee.employeeNo || (
-                                <span className="text-gray-400 italic">No employee number</span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="text-sm text-gray-900">{employee.department.name}</div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="text-sm text-gray-900">
-                              {employee.employeeGroup?.name || (
-                                <span className="text-gray-400 italic">No group assigned</span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="text-sm text-gray-900">
-                              {employee.email || (
-                                <span className="text-gray-400 italic">No email</span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <div className="flex items-center justify-end gap-2">
-                              <button
-                                onClick={() => setShowCreateForm(true)}
-                                className="inline-flex items-center px-3 py-1.5 rounded-lg bg-orange-100 text-orange-800 text-sm font-medium hover:bg-orange-200 transition-colors duration-200"
-                                title="Create Contract"
-                              >
-                                <PlusIcon className="w-4 h-4 mr-1" />
-                                Create Contract
-                              </button>
-                            </div>
-                          </td>
+              <>
+                {/* Mobile Card View - Missing Employees */}
+                <MobileCardList>
+                  {paginatedMissingEmployees.map((employee) => (
+                    <MobileCard key={employee.id}>
+                      <MobileCardHeader
+                        title={`${employee.firstName} ${employee.lastName}`}
+                        subtitle={employee.employeeNo || 'No employee number'}
+                      />
+
+                      <MobileCardGrid columns={2}>
+                        <MobileCardField
+                          label="Department"
+                          value={employee.department.name}
+                        />
+                        <MobileCardField
+                          label="Group"
+                          value={
+                            employee.employeeGroup?.name || (
+                              <span className="text-gray-400 italic">No group assigned</span>
+                            )
+                          }
+                        />
+                      </MobileCardGrid>
+
+                      <MobileCardSection>
+                        <MobileCardField
+                          label="Email"
+                          value={
+                            employee.email || (
+                              <span className="text-gray-400 italic">No email</span>
+                            )
+                          }
+                        />
+                      </MobileCardSection>
+
+                      <MobileCardActions>
+                        <button
+                          onClick={() => setShowCreateForm(true)}
+                          className="inline-flex items-center px-3 py-1.5 rounded-lg bg-orange-100 text-orange-800 text-sm font-medium hover:bg-orange-200 transition-colors duration-200"
+                          title="Create Contract"
+                        >
+                          <PlusIcon className="w-4 h-4 mr-1" />
+                          Create Contract
+                        </button>
+                      </MobileCardActions>
+                    </MobileCard>
+                  ))}
+                </MobileCardList>
+
+                {/* Desktop Table View - Missing Employees */}
+                <div className="hidden lg:block bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50/80">
+                        <tr>
+                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
+                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee No.</th>
+                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
+                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Group</th>
+                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                          <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200/50">
+                        {paginatedMissingEmployees.map((employee) => (
+                          <tr key={employee.id} className="hover:bg-orange-50/30 transition-colors duration-200">
+                            <td className="px-6 py-4">
+                              <div className="text-sm font-medium text-gray-900">
+                                {employee.firstName} {employee.lastName}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="text-sm text-gray-900">
+                                {employee.employeeNo || (
+                                  <span className="text-gray-400 italic">No employee number</span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="text-sm text-gray-900">{employee.department.name}</div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="text-sm text-gray-900">
+                                {employee.employeeGroup?.name || (
+                                  <span className="text-gray-400 italic">No group assigned</span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="text-sm text-gray-900">
+                                {employee.email || (
+                                  <span className="text-gray-400 italic">No email</span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={() => setShowCreateForm(true)}
+                                  className="inline-flex items-center px-3 py-1.5 rounded-lg bg-orange-100 text-orange-800 text-sm font-medium hover:bg-orange-200 transition-colors duration-200"
+                                  title="Create Contract"
+                                >
+                                  <PlusIcon className="w-4 h-4 mr-1" />
+                                  Create Contract
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 
                 {/* Pagination for Missing Employees */}
                 {totalPages > 1 && (
@@ -917,6 +978,7 @@ export default function ContractsPage() {
                   </div>
                 )}
               </div>
+            </>
             )
           ) : (
             /* Regular Contracts Table */
@@ -945,91 +1007,166 @@ export default function ContractsPage() {
                 )}
               </div>
             ) : (
-              <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50/80">
-                      <tr>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Template</th>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Group</th>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start Date</th>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">End Date</th>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contract Person</th>
-                        <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200/50">
-                      {paginatedContracts.map((contract) => (
-                        <tr key={contract.id} className="hover:bg-blue-50/30 transition-colors duration-200">
-                          <td className="px-6 py-4">
-                            <div className="text-sm font-medium text-gray-900">
-                              {contract.employee.firstName} {contract.employee.lastName}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="text-sm text-gray-900">{contract.contractTemplate.name}</div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="text-sm text-gray-900">{contract.employeeGroup.name}</div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="text-sm text-gray-900">{formatDate(contract.startDate)}</div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="text-sm text-gray-900">
+              <>
+                {/* Mobile Card View - Contracts */}
+                <MobileCardList>
+                  {paginatedContracts.map((contract) => (
+                    <MobileCard key={contract.id}>
+                      <MobileCardHeader
+                        title={`${contract.employee.firstName} ${contract.employee.lastName}`}
+                        subtitle={contract.contractTemplate.name}
+                        badge={getSignedStatusBadge(contract.signedStatus)}
+                      />
+
+                      <MobileCardGrid columns={2}>
+                        <MobileCardField
+                          label="Group"
+                          value={contract.employeeGroup.name}
+                        />
+                        <MobileCardField
+                          label="Contract Person"
+                          value={`${contract.contractPerson.firstName} ${contract.contractPerson.lastName}`}
+                        />
+                      </MobileCardGrid>
+
+                      <MobileCardGrid columns={2}>
+                        <MobileCardField
+                          label="Start Date"
+                          value={formatDate(contract.startDate)}
+                        />
+                        <MobileCardField
+                          label="End Date"
+                          value={
+                            <>
                               {contract.endDate ? formatDate(contract.endDate) : (
                                 <span className="text-gray-400 italic">No end date</span>
                               )}
                               {getExpirationBadge(contract.endDate)}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            {getSignedStatusBadge(contract.signedStatus)}
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="text-sm text-gray-900">
-                              {contract.contractPerson.firstName} {contract.contractPerson.lastName}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <div className="flex items-center justify-end gap-2">
-                              <button
-                                onClick={() => setPreviewContract(contract)}
-                                className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
-                                title="Preview Contract"
-                              >
-                                <DocumentTextIcon className="h-4 w-4" />
-                              </button>
-                              <button
-                                onClick={() => handleDownload(contract.id, contract)}
-                                className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200"
-                                title="Download PDF"
-                              >
-                                <ArrowDownTrayIcon className="h-4 w-4" />
-                              </button>
-                              <button
-                                onClick={() => handleSign(contract)}
-                                className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all duration-200"
-                                title="Sign Contract"
-                              >
-                                <PencilSquareIcon className="h-4 w-4" />
-                              </button>
-                              <button
-                                onClick={() => handleDelete(contract.id)}
-                                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                                title="Delete Contract"
-                              >
-                                <TrashIcon className="h-4 w-4" />
-                              </button>
-                            </div>
-                          </td>
+                            </>
+                          }
+                        />
+                      </MobileCardGrid>
+
+                      <MobileCardActions>
+                        <button
+                          onClick={() => setPreviewContract(contract)}
+                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                          title="Preview Contract"
+                        >
+                          <DocumentTextIcon className="h-5 w-5" />
+                        </button>
+                        <button
+                          onClick={() => handleDownload(contract.id, contract)}
+                          className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200"
+                          title="Download PDF"
+                        >
+                          <ArrowDownTrayIcon className="h-5 w-5" />
+                        </button>
+                        <button
+                          onClick={() => handleSign(contract)}
+                          className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all duration-200"
+                          title="Sign Contract"
+                        >
+                          <PencilSquareIcon className="h-5 w-5" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(contract.id)}
+                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                          title="Delete Contract"
+                        >
+                          <TrashIcon className="h-5 w-5" />
+                        </button>
+                      </MobileCardActions>
+                    </MobileCard>
+                  ))}
+                </MobileCardList>
+
+                {/* Desktop Table View - Contracts */}
+                <div className="hidden lg:block bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50/80">
+                        <tr>
+                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
+                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Template</th>
+                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Group</th>
+                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start Date</th>
+                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">End Date</th>
+                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contract Person</th>
+                          <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200/50">
+                        {paginatedContracts.map((contract) => (
+                          <tr key={contract.id} className="hover:bg-blue-50/30 transition-colors duration-200">
+                            <td className="px-6 py-4">
+                              <div className="text-sm font-medium text-gray-900">
+                                {contract.employee.firstName} {contract.employee.lastName}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="text-sm text-gray-900">{contract.contractTemplate.name}</div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="text-sm text-gray-900">{contract.employeeGroup.name}</div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="text-sm text-gray-900">{formatDate(contract.startDate)}</div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="text-sm text-gray-900">
+                                {contract.endDate ? formatDate(contract.endDate) : (
+                                  <span className="text-gray-400 italic">No end date</span>
+                                )}
+                                {getExpirationBadge(contract.endDate)}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              {getSignedStatusBadge(contract.signedStatus)}
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="text-sm text-gray-900">
+                                {contract.contractPerson.firstName} {contract.contractPerson.lastName}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={() => setPreviewContract(contract)}
+                                  className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                                  title="Preview Contract"
+                                >
+                                  <DocumentTextIcon className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDownload(contract.id, contract)}
+                                  className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200"
+                                  title="Download PDF"
+                                >
+                                  <ArrowDownTrayIcon className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleSign(contract)}
+                                  className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all duration-200"
+                                  title="Sign Contract"
+                                >
+                                  <PencilSquareIcon className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(contract.id)}
+                                  className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                                  title="Delete Contract"
+                                >
+                                  <TrashIcon className="h-4 w-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 
                 {/* Pagination */}
                 {totalPages > 1 && (
@@ -1084,8 +1221,62 @@ export default function ContractsPage() {
                   </div>
                 )}
               </div>
-            )
-          )}
+
+              {/* Pagination for Mobile */}
+              {totalPages > 1 && (
+                <div className="lg:hidden flex items-center justify-center px-4 py-4">
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious 
+                          onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
+                          className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                        />
+                      </PaginationItem>
+                      
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                        if (
+                          page === 1 ||
+                          page === totalPages ||
+                          (page >= currentPage - 1 && page <= currentPage + 1)
+                        ) {
+                          return (
+                            <PaginationItem key={page}>
+                              <PaginationLink
+                                onClick={() => handlePageChange(page)}
+                                isActive={currentPage === page}
+                                className="cursor-pointer"
+                              >
+                                {page}
+                              </PaginationLink>
+                            </PaginationItem>
+                          )
+                        } else if (
+                          page === currentPage - 2 ||
+                          page === currentPage + 2
+                        ) {
+                          return (
+                            <PaginationItem key={page}>
+                              <PaginationEllipsis />
+                            </PaginationItem>
+                          )
+                        }
+                        return null
+                      })}
+                      
+                      <PaginationItem>
+                        <PaginationNext 
+                          onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
+                          className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                </div>
+              )}
+            </>
+          )
+        )}
         </>
       )}
 
