@@ -99,7 +99,14 @@ interface Category {
   id: string;
   name: string;
   color?: string | null;
-  departmentId: string;
+  departmentId?: string | null;
+  departments?: Array<{
+    id: string;
+    department: {
+      id: string;
+      name: string;
+    }
+  }>;
 }
 
 interface FunctionItem {
@@ -363,7 +370,17 @@ export default function ShiftForm({
       const response = await fetch('/api/categories')
       if (response.ok) {
         const data = await response.json()
-        const filtered = data.filter((cat: Category) => cat.departmentId === departmentId)
+        // Filter categories that either:
+        // 1. Are business-wide (no departments assigned), OR
+        // 2. Include the selected department in their departments array
+        const filtered = data.filter((cat: Category) => {
+          // Business-wide categories (no departments)
+          if (!cat.departments || cat.departments.length === 0) {
+            return true
+          }
+          // Categories assigned to this specific department
+          return cat.departments.some((cd: any) => cd.department.id === departmentId)
+        })
         setCategories(filtered)
       }
     } catch (error) {

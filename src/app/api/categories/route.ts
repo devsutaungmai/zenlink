@@ -28,15 +28,23 @@ export async function GET(request: NextRequest) {
 
     const categories = await prisma.departmentCategory.findMany({
       where: {
-        department: {
-          businessId: businessId
-        }
+        businessId: businessId
       },
       include: {
         department: {
           select: {
             id: true,
             name: true
+          }
+        },
+        departments: {
+          include: {
+            department: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
           }
         },
         functions: {
@@ -84,37 +92,52 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, description, color, departmentId } = body
+    const { name, description, color, departmentIds } = body
 
-    console.log('Creating category with data:', { name, description, color, departmentId, businessId })
+    console.log('Creating category with data:', { name, description, color, departmentIds, businessId })
 
-    if (!name || !departmentId) {
-      return NextResponse.json({ error: 'Name and department are required' }, { status: 400 })
+    if (!name) {
+      return NextResponse.json({ error: 'Name is required' }, { status: 400 })
     }
 
-    const department = await prisma.department.findFirst({
-      where: {
-        id: departmentId,
-        businessId: businessId
+    if (departmentIds && departmentIds.length > 0) {
+      const departments = await prisma.department.findMany({
+        where: {
+          id: { in: departmentIds },
+          businessId: businessId
+        }
+      })
+
+      if (departments.length !== departmentIds.length) {
+        return NextResponse.json({ error: 'One or more departments not found' }, { status: 404 })
       }
-    })
-
-    if (!department) {
-      return NextResponse.json({ error: 'Department not found' }, { status: 404 })
     }
 
+    // Create category with departments
     const category = await prisma.departmentCategory.create({
       data: {
         name,
         description,
         color,
-        departmentId
+        businessId,
+        departments: departmentIds && departmentIds.length > 0 ? {
+          create: departmentIds.map((deptId: string) => ({
+            department: {
+              connect: { id: deptId }
+            }
+          }))
+        } : undefined
       },
       include: {
-        department: {
-          select: {
-            id: true,
-            name: true
+        department: true,
+        departments: {
+          include: {
+            department: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
           }
         },
         functions: true
@@ -126,7 +149,7 @@ export async function POST(request: NextRequest) {
     console.error('Error creating category:', error)
     
     if (error.code === 'P2002') {
-      return NextResponse.json({ error: 'Category name already exists in this department' }, { status: 409 })
+      return NextResponse.json({ error: 'Category name already exists in this business' }, { status: 409 })
     }
     
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

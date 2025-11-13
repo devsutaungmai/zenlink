@@ -211,9 +211,21 @@ export default function CategoriesPage() {
                       {category.description}
                     </p>
                   )}
-                  <p className="text-xs text-gray-400 mt-1">
-                    {category.department.name}
-                  </p>
+                  <div className="flex flex-wrap items-center gap-2 mt-2">
+                    {category.departments && category.departments.length > 0 ? (
+                      <>
+                        {category.departments.map((cd: any) => (
+                          <span key={cd.id} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            {cd.department.name}
+                          </span>
+                        ))}
+                      </>
+                    ) : (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        Business-Wide
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                   <Link

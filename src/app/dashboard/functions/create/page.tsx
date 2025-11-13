@@ -10,10 +10,17 @@ interface Category {
   id: string
   name: string
   color?: string | null
-  department: {
+  department?: {
     id: string
     name: string
-  }
+  } | null
+  departments?: Array<{
+    id: string
+    department: {
+      id: string
+      name: string
+    }
+  }>
 }
 
 export default function CreateFunctionPage() {
@@ -160,11 +167,17 @@ export default function CreateFunctionPage() {
                 required
               >
                 <option value="">Select a category</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name} ({category.department.name})
-                  </option>
-                ))}
+                {categories.map((category) => {
+                  const deptNames = category.departments && category.departments.length > 0
+                    ? category.departments.map((cd: any) => cd.department.name).join(', ')
+                    : 'Business-Wide';
+                  
+                  return (
+                    <option key={category.id} value={category.id}>
+                      {category.name} ({deptNames})
+                    </option>
+                  );
+                })}
               </select>
               <p className="mt-1 text-sm text-gray-500">
                 The category this function belongs to

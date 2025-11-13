@@ -29,9 +29,7 @@ export async function GET(request: NextRequest) {
     const functions = await prisma.departmentFunction.findMany({
       where: {
         category: {
-          department: {
-            businessId: businessId
-          }
+          businessId: businessId
         }
       },
       include: {
@@ -44,6 +42,16 @@ export async function GET(request: NextRequest) {
               select: {
                 id: true,
                 name: true
+              }
+            },
+            departments: {
+              include: {
+                department: {
+                  select: {
+                    id: true,
+                    name: true
+                  }
+                }
               }
             }
           }
@@ -103,9 +111,7 @@ export async function POST(request: NextRequest) {
     const category = await prisma.departmentCategory.findFirst({
       where: {
         id: categoryId,
-        department: {
-          businessId: businessId
-        }
+        businessId: businessId
       }
     })
 

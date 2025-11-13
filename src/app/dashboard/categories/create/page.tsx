@@ -21,7 +21,7 @@ export default function CreateCategoryPage() {
     name: '',
     description: '',
     color: '#3B82F6',
-    departmentId: ''
+    departmentIds: [] as string[]
   })
 
   useEffect(() => {
@@ -34,9 +34,6 @@ export default function CreateCategoryPage() {
       if (res.ok) {
         const data = await res.json()
         setDepartments(data)
-        if (data.length > 0) {
-          setFormData(prev => ({ ...prev, departmentId: data[0].id }))
-        }
       }
     } catch (error) {
       console.error('Error fetching departments:', error)
@@ -98,7 +95,7 @@ export default function CreateCategoryPage() {
               </h1>
             </div>
             <p className="mt-2 text-gray-600 ml-14">
-              Add a new category to organize your department functions
+              Add a new category to organize your functions 
             </p>
           </div>
           <div className="hidden md:flex items-center space-x-2">
@@ -145,25 +142,61 @@ export default function CreateCategoryPage() {
             />
           </div>
 
-          {/* Department */}
+          {/* Departments (Multi-select) */}
           <div>
-            <label htmlFor="departmentId" className="block text-sm font-medium text-gray-700 mb-2">
-              Department *
+            <label htmlFor="departments" className="block text-sm font-medium text-gray-700 mb-2">
+              Departments <span className="text-gray-500 text-xs">(Optional - leave empty for business-wide category)</span>
             </label>
-            <select
-              id="departmentId"
-              required
-              value={formData.departmentId}
-              onChange={(e) => setFormData({ ...formData, departmentId: e.target.value })}
-              className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-            >
-              <option value="">Select Department</option>
-              {departments.map((dept) => (
-                <option key={dept.id} value={dept.id}>
-                  {dept.name}
-                </option>
-              ))}
-            </select>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-60 overflow-y-auto border border-gray-300 rounded-xl p-4 bg-white/70 backdrop-blur-sm">
+              {departments.length === 0 ? (
+                <p className="text-sm text-gray-500 col-span-full">No departments available</p>
+              ) : (
+                <>
+                  <label className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={formData.departmentIds.length === 0}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setFormData({ ...formData, departmentIds: [] })
+                        }
+                      }}
+                      className="h-4 w-4 text-[#31BCFF] border-gray-300 rounded focus:ring-[#31BCFF]"
+                    />
+                    <span className="text-sm font-medium text-gray-700">Business-Wide (All Departments)</span>
+                  </label>
+                  {departments.map((dept) => (
+                    <label key={dept.id} className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={formData.departmentIds.includes(dept.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setFormData({ 
+                              ...formData, 
+                              departmentIds: [...formData.departmentIds, dept.id] 
+                            })
+                          } else {
+                            setFormData({ 
+                              ...formData, 
+                              departmentIds: formData.departmentIds.filter(id => id !== dept.id) 
+                            })
+                          }
+                        }}
+                        className="h-4 w-4 text-[#31BCFF] border-gray-300 rounded focus:ring-[#31BCFF]"
+                      />
+                      <span className="text-sm text-gray-700">{dept.name}</span>
+                    </label>
+                  ))}
+                </>
+              )}
+            </div>
+            <p className="mt-2 text-xs text-gray-500">
+              {formData.departmentIds.length === 0 
+                ? 'Business-wide categories can be used by all departments.' 
+                : `Selected ${formData.departmentIds.length} department${formData.departmentIds.length > 1 ? 's' : ''}.`
+              }
+            </p>
           </div>
 
           {/* Color */}

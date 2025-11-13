@@ -10,10 +10,17 @@ interface Category {
   id: string
   name: string
   color?: string | null
-  department: {
+  department?: {
     id: string
     name: string
-  }
+  } | null
+  departments?: Array<{
+    id: string
+    department: {
+      id: string
+      name: string
+    }
+  }>
 }
 
 interface Function {
@@ -40,12 +47,19 @@ export default function FunctionsPage() {
   }, [])
 
   useEffect(() => {
-    const filtered = functions.filter(func =>
-      func.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      func.category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      func.category.department.name.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    setFilteredFunctions(filtered)
+    const filtered = functions.filter(func => {
+      const searchLower = searchTerm.toLowerCase();
+      const matchesName = func.name.toLowerCase().includes(searchLower);
+      const matchesCategory = func.category.name.toLowerCase().includes(searchLower);
+
+      const deptNames = func.category.departments && func.category.departments.length > 0
+        ? func.category.departments.map((cd: any) => cd.department.name).join(' ')
+        : func.category.department?.name || '';
+      const matchesDept = deptNames.toLowerCase().includes(searchLower);
+      
+      return matchesName || matchesCategory || matchesDept;
+    });
+    setFilteredFunctions(filtered);
   }, [searchTerm, functions])
 
   const fetchFunctions = async () => {
@@ -211,7 +225,10 @@ export default function FunctionsPage() {
                           {func.category.name}
                         </span>
                         <span className="text-xs text-gray-500">
-                          {func.category.department.name}
+                          {func.category.departments && func.category.departments.length > 0
+                            ? func.category.departments.map((cd: any) => cd.department.name).join(', ')
+                            : func.category.department?.name || 'Business-Wide'
+                          }
                         </span>
                       </div>
                     </div>
