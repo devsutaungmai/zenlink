@@ -85,7 +85,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json(employees, {
       headers: {
-        'Cache-Control': 'public, max-age=60, stale-while-revalidate=120',
+        'Cache-Control': 'private, no-cache, no-store, must-revalidate',
         'X-Total-Count': totalCount.toString(),
         'X-Page': page.toString(),
         'X-Per-Page': limit.toString(),

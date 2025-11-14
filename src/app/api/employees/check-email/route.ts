@@ -74,7 +74,7 @@ export async function POST(request: Request) {
       available: true
     }, {
       headers: {
-        'Cache-Control': 'public, max-age=30, stale-while-revalidate=60'
+        'Cache-Control': 'private, no-cache, no-store, must-revalidate'
       }
     })
 
