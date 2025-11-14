@@ -8,7 +8,9 @@ import {
   TrashIcon,
   ClockIcon,
   CurrencyDollarIcon,
+  MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline'
+import Swal from 'sweetalert2'
 
 interface OvertimeRule {
   id: string
@@ -52,6 +54,7 @@ export default function OvertimeRuleManagement() {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editingRule, setEditingRule] = useState<OvertimeRule | null>(null)
+  const [searchTerm, setSearchTerm] = useState('')
   const [formData, setFormData] = useState<OvertimeRuleFormData>({
     name: '',
     description: '',
@@ -158,24 +161,43 @@ export default function OvertimeRuleManagement() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this overtime rule?')) {
-      return
-    }
-
     try {
-      const response = await fetch(`/api/overtime-rules/${id}`, {
-        method: 'DELETE',
+      const result = await Swal.fire({
+        title: t('common.confirm'),
+        text: t('deleteConfirmation'),
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#31BCFF',
+        cancelButtonColor: '#d33',
+        confirmButtonText: t('buttons.delete'),
+        cancelButtonText: t('buttons.cancel')
       })
 
-      if (response.ok) {
-        await fetchOvertimeRules()
-      } else {
-        const data = await response.json()
-        alert(data.error || 'Failed to delete overtime rule')
+      if (result.isConfirmed) {
+        const response = await fetch(`/api/overtime-rules/${id}`, {
+          method: 'DELETE',
+        })
+
+        if (response.ok) {
+          await fetchOvertimeRules()
+          await Swal.fire({
+            title: t('common.success'),
+            text: t('deleteSuccess'),
+            icon: 'success',
+            confirmButtonColor: '#31BCFF',
+          })
+        } else {
+          throw new Error('Failed to delete overtime rule')
+        }
       }
     } catch (error) {
       console.error('Error deleting overtime rule:', error)
-      alert('Failed to delete overtime rule')
+      await Swal.fire({
+        title: t('common.error'),
+        text: t('deleteError'),
+        icon: 'error',
+        confirmButtonColor: '#31BCFF',
+      })
     }
   }
 
@@ -209,18 +231,34 @@ export default function OvertimeRuleManagement() {
     )
   }
 
+  const filteredRules = overtimeRules.filter(rule =>
+    rule.payRule.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    rule.payRule.salaryCode.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    rule.payRule.salaryCode.name.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header Section */}
       <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-2xl p-6 border border-orange-100">
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between">
+          <div className="mb-4 sm:mb-0">
             <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
               {t('title')}
             </h1>
             <p className="mt-2 text-gray-600">
               {t('subtitle')}
             </p>
+            <div className="mt-4 flex items-center space-x-4 text-sm text-gray-500">
+              <span className="flex items-center">
+                <div className="w-2 h-2 bg-orange-500 rounded-full mr-2"></div>
+                {t('totalRules', { count: overtimeRules.length })}
+              </span>
+              <span className="flex items-center">
+                <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                {t('activeRules', { count: overtimeRules.filter(r => r.payRule.isActive).length })}
+              </span>
+            </div>
           </div>
           <button
             onClick={() => {
@@ -235,18 +273,39 @@ export default function OvertimeRuleManagement() {
               })
               setShowForm(true)
             }}
-            className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-medium rounded-xl hover:from-orange-600 hover:to-amber-600 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transform hover:scale-105 transition-all duration-200 shadow-lg"
+            className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 group"
           >
-            <PlusIcon className="w-5 h-5 mr-2" />
+            <PlusIcon className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
             {t('addOvertimeRule')}
           </button>
         </div>
       </div>
 
+      {/* Search and Filters */}
+      <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 border border-gray-200/50 shadow-lg">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <div className="absolute inset-y-0 left-0 flex items-center pl-4">
+              <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+            </div>
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder={t('searchPlaceholder')}
+              className="block w-full pl-12 pr-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200"
+            />
+          </div>
+          <div className="flex items-center text-sm text-gray-500">
+            {t('showing', { current: filteredRules.length, total: overtimeRules.length })}
+          </div>
+        </div>
+      </div>
+
       {/* Form Modal */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl">
             <h2 className="text-xl font-bold text-gray-900 mb-4">
               {editingRule ? t('form.editOvertimeRule') : t('form.addNewOvertimeRule')}
             </h2>
@@ -254,13 +313,13 @@ export default function OvertimeRuleManagement() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('form.ruleName')} <span className="text-red-500">{t('form.required')}</span>
+                  {t('form.ruleName')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:outline-none"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:outline-none transition-colors duration-200"
                   placeholder={t('form.ruleNamePlaceholder')}
                   required
                 />
@@ -268,7 +327,7 @@ export default function OvertimeRuleManagement() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('form.hoursThreshold')} <span className="text-red-500">{t('form.required')}</span>
+                  {t('form.hoursThreshold')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="number"
@@ -276,7 +335,7 @@ export default function OvertimeRuleManagement() {
                   step="0.5"
                   value={formData.hoursThreshold}
                   onChange={(e) => setFormData(prev => ({ ...prev, hoursThreshold: parseFloat(e.target.value) }))}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:outline-none"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:outline-none transition-colors duration-200"
                   placeholder="40"
                   required
                 />
@@ -285,7 +344,7 @@ export default function OvertimeRuleManagement() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('form.overtimeMultiplier')} <span className="text-red-500">{t('form.required')}</span>
+                  {t('form.overtimeMultiplier')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="number"
@@ -293,7 +352,7 @@ export default function OvertimeRuleManagement() {
                   step="0.1"
                   value={formData.multiplier}
                   onChange={(e) => setFormData(prev => ({ ...prev, multiplier: parseFloat(e.target.value) }))}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:outline-none"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:outline-none transition-colors duration-200"
                   placeholder="1.5"
                   required
                 />
@@ -313,7 +372,7 @@ export default function OvertimeRuleManagement() {
                     ...prev,
                     maxOvertimeHours: e.target.value ? parseFloat(e.target.value) : null
                   }))}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:outline-none"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:outline-none transition-colors duration-200"
                   placeholder={t('form.maxHoursPlaceholder')}
                 />
                 <p className="text-xs text-gray-500 mt-1">{t('form.maxHoursHelp')}</p>
@@ -321,12 +380,12 @@ export default function OvertimeRuleManagement() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('form.salaryCode')} <span className="text-red-500">{t('form.required')}</span>
+                  {t('form.salaryCode')} <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={formData.salaryCodeId}
                   onChange={(e) => setFormData(prev => ({ ...prev, salaryCodeId: e.target.value }))}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:outline-none"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:outline-none transition-colors duration-200"
                   required
                 >
                   <option value="">{t('form.selectSalaryCode')}</option>
@@ -346,25 +405,25 @@ export default function OvertimeRuleManagement() {
                   value={formData.description}
                   onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                   rows={3}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:outline-none"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:outline-none transition-colors duration-200"
                   placeholder={t('form.descriptionPlaceholder')}
                 />
               </div>
 
-              <div className="flex space-x-3 pt-4">
+              <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4">
                 <button
                   type="button"
                   onClick={() => {
                     setShowForm(false)
                     setEditingRule(null)
                   }}
-                  className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 font-medium"
+                  className="w-full sm:flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 font-medium transition-colors duration-200"
                 >
                   {t('buttons.cancel')}
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-3 bg-orange-500 text-white rounded-xl hover:bg-orange-600 font-medium"
+                  className="w-full sm:flex-1 px-4 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-xl hover:from-orange-600 hover:to-amber-600 font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
                 >
                   {editingRule ? t('buttons.update') : t('buttons.create')}
                 </button>
@@ -375,115 +434,130 @@ export default function OvertimeRuleManagement() {
       )}
 
       {/* Overtime Rules List */}
-      <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg overflow-hidden">
-        {overtimeRules.length === 0 ? (
-          <div className="p-12 text-center">
-            <ClockIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">{t('emptyState.title')}</h3>
-            <p className="text-gray-500 mb-6">{t('emptyState.description')}</p>
+      {filteredRules.length === 0 ? (
+        <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-12 border border-gray-200/50 shadow-lg text-center">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            {searchTerm ? (
+              <MagnifyingGlassIcon className="w-8 h-8 text-gray-400" />
+            ) : (
+              <ClockIcon className="w-8 h-8 text-gray-400" />
+            )}
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            {searchTerm ? t('noRulesFound') : t('emptyState.title')}
+          </h3>
+          <p className="text-gray-500 mb-6">
+            {searchTerm ? t('adjustSearch') : t('emptyState.description')}
+          </p>
+          {!searchTerm && (
             <button
               onClick={() => setShowForm(true)}
-              className="inline-flex items-center px-6 py-3 bg-orange-500 text-white font-medium rounded-xl hover:bg-orange-600"
+              className="inline-flex items-center px-6 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-white font-medium hover:from-orange-600 hover:to-amber-600 transition-all duration-200 shadow-lg hover:shadow-xl"
             >
               <PlusIcon className="w-5 h-5 mr-2" />
               {t('emptyState.addFirstOvertimeRule')}
             </button>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50/80">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('table.ruleName')}
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('table.threshold')}
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('table.multiplier')}
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('table.maxHours')}
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('table.salaryCode')}
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('table.status')}
-                  </th>
-                  <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('table.actions')}
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200/50">
-                {overtimeRules.map((rule) => (
-                  <tr key={rule.id} className="hover:bg-orange-50/30 transition-colors duration-200">
-                    <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-gray-900">{rule.payRule.name}</div>
-                      {rule.payRule.description && (
-                        <div className="text-sm text-gray-500">{rule.payRule.description}</div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center">
-                        <ClockIcon className="w-4 h-4 text-gray-400 mr-2" />
-                        <span className="text-sm text-gray-900">{rule.triggerAfterHours}{t('table.hours')}</span>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredRules.map((rule) => (
+            <div
+              key={rule.id}
+              className="group bg-white/80 backdrop-blur-xl rounded-2xl p-6 border border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] hover:border-orange-500/30"
+            >
+              {/* Rule Header */}
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-gray-900 group-hover:text-orange-500 transition-colors duration-200">
+                    {rule.payRule.name}
+                  </h3>
+                  {rule.payRule.description && (
+                    <p className="text-sm text-gray-500 mt-1">
+                      {rule.payRule.description}
+                    </p>
+                  )}
+                </div>
+                <button
+                  onClick={() => toggleActive(rule.id, rule.payRule.isActive)}
+                  className={`ml-2 inline-flex px-2 py-1 rounded-full text-xs font-medium transition-colors duration-200 ${
+                    rule.payRule.isActive
+                      ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                      : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                  }`}
+                >
+                  {rule.payRule.isActive ? t('status.active') : t('status.inactive')}
+                </button>
+              </div>
+
+              {/* Rule Stats */}
+              <div className="space-y-3 mb-4">
+                <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl p-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <div className="w-10 h-10 bg-orange-500/10 rounded-lg flex items-center justify-center mr-3">
+                        <ClockIcon className="w-5 h-5 text-orange-500" />
                       </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center">
-                        <CurrencyDollarIcon className="w-4 h-4 text-gray-400 mr-2" />
-                        <span className="text-sm font-medium text-gray-900">{rule.rateMultiplier}x</span>
+                      <div>
+                        <p className="text-sm text-gray-500">{t('table.threshold')}</p>
+                        <p className="text-lg font-bold text-gray-900">
+                          {rule.triggerAfterHours}{t('table.hours')}
+                        </p>
                       </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">
-                        {rule.maxHoursPerDay ? `${rule.maxHoursPerDay}${t('table.hours')}` : t('table.unlimited')}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">
-                        {rule.payRule.salaryCode.code} - {rule.payRule.salaryCode.name}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <button
-                        onClick={() => toggleActive(rule.id, rule.payRule.isActive)}
-                        className={`inline-flex px-2 py-1 rounded-full text-xs font-medium transition-colors duration-200 ${rule.payRule.isActive
-                            ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                            : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
-                          }`}
-                      >
-                        {rule.payRule.isActive ? t('status.active') : t('status.inactive')}
-                      </button>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end space-x-2">
-                        <button
-                          onClick={() => handleEdit(rule)}
-                          className="p-2 text-gray-400 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-all duration-200"
-                          title={t('actions.edit')}
-                        >
-                          <PencilIcon className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(rule.id)}
-                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                          title={t('actions.delete')}
-                        >
-                          <TrashIcon className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-gray-500">{t('table.multiplier')}</p>
+                      <p className="text-lg font-bold text-orange-600">
+                        {rule.rateMultiplier}x
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-gray-50 rounded-xl p-3">
+                    <p className="text-xs text-gray-500 mb-1">{t('table.maxHours')}</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {rule.maxHoursPerDay ? `${rule.maxHoursPerDay}${t('table.hours')}` : t('table.unlimited')}
+                    </p>
+                  </div>
+                  <div className="bg-gray-50 rounded-xl p-3">
+                    <div className="flex items-center">
+                      <CurrencyDollarIcon className="w-4 h-4 text-gray-400 mr-1" />
+                      <p className="text-xs text-gray-500">{t('table.salaryCode')}</p>
+                    </div>
+                    <p className="text-sm font-medium text-gray-900 mt-1">
+                      {rule.payRule.salaryCode.code}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="text-xs text-gray-500 bg-gray-50 rounded-lg p-2">
+                  {rule.payRule.salaryCode.name}
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-2 pt-4 border-t border-gray-200/50">
+                <button
+                  onClick={() => handleEdit(rule)}
+                  className="flex-1 inline-flex items-center justify-center px-4 py-2 rounded-xl bg-gray-50 text-gray-700 font-medium hover:bg-orange-500 hover:text-white transition-all duration-200 group/btn"
+                >
+                  <PencilIcon className="w-4 h-4 mr-2 group-hover/btn:scale-110 transition-transform duration-200" />
+                  {t('actions.edit')}
+                </button>
+                <button
+                  onClick={() => handleDelete(rule.id)}
+                  className="px-4 py-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200"
+                  title={t('actions.delete')}
+                >
+                  <TrashIcon className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

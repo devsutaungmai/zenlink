@@ -65,7 +65,8 @@ export async function GET(request: Request) {
         department: {
           select: {
             id: true,
-            name: true
+            name: true,
+            businessId: true
           }
         },
         employeeGroup: {

@@ -16,7 +16,6 @@ interface Employee {
   firstName: string
   lastName: string
   userId: string
-  businessId?: string
   department?: {
     id: string
     name: string
@@ -359,7 +358,7 @@ export default function DashboardPage() {
         const now = new Date()
         const punchInData = {
           employeeId: currentEmployee.id,
-          businessId: currentEmployee.businessId || currentEmployee.department?.businessId,
+          businessId: currentEmployee.department?.businessId,
           shiftId: todayShift?.id || null,
           punchInTime: now.toISOString()
         }
@@ -440,7 +439,7 @@ export default function DashboardPage() {
       const now = new Date()
       const punchInData = {
         employeeId: currentEmployee.id,
-        businessId: currentEmployee.businessId || currentEmployee.department?.businessId,
+        businessId: currentEmployee.department?.businessId,
         shiftId: null, // No shift for unscheduled work
         punchInTime: now.toISOString()
       }

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
-import { DetailPageSkeleton } from '@/components/skeletons/CommonSkeletons'
+import { FormSkeleton } from '@/components/skeletons/CommonSkeletons'
 import EmployeeForm from '@/components/EmployeeForm'
 import { Department, EmployeeGroup } from '@prisma/client'
 import { useCurrency } from '@/shared/hooks/useCurrency'
@@ -295,7 +295,7 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
   if (loading) {
     return (
       <div className="p-6">
-        <DetailPageSkeleton />
+        <FormSkeleton rows={8} />
       </div>
     )
   }

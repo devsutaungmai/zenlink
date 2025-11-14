@@ -23,9 +23,8 @@ export function useEmployeeForm({ initialData }: UseEmployeeFormProps) {
   const employeeNoValidationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const validationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   
-  // Add validation cache to reduce API calls
   const validationCacheRef = useRef<Map<string, { result: boolean, timestamp: number }>>(new Map())
-  const CACHE_DURATION = 30000 // 30 seconds
+  const CACHE_DURATION = 30000
 
   const [formData, setFormData] = useState<EmployeeFormData>(() => {
     const baseData: EmployeeFormData = {
@@ -224,8 +223,6 @@ export function useEmployeeForm({ initialData }: UseEmployeeFormProps) {
 
     const trimmedEmployeeNo = employeeNo.trim()
     const cacheKey = `employeeNo:${trimmedEmployeeNo}:${initialData?.id || 'new'}`
-    
-    // Check cache first
     const cachedResult = checkValidationCache(cacheKey)
     if (cachedResult !== null) {
       if (!cachedResult) {
@@ -250,8 +247,6 @@ export function useEmployeeForm({ initialData }: UseEmployeeFormProps) {
 
       if (response.ok) {
         const data = await response.json()
-        
-        // Cache the result
         setValidationCache(cacheKey, data.available)
         
         if (!data.available) {

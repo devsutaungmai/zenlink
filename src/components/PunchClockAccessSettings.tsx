@@ -47,7 +47,6 @@ export default function PunchClockAccessSettings() {
   const [departments, setDepartments] = useState<Department[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [showAddLocation, setShowAddLocation] = useState(false)
   const [showMapPicker, setShowMapPicker] = useState(false)
   const [newLocation, setNewLocation] = useState({
     name: '',
@@ -120,28 +119,6 @@ export default function PunchClockAccessSettings() {
       ...prev,
       allowPunchFromAnywhere: allowAnywhere
     }))
-  }
-
-  const addLocation = () => {
-    if (!newLocation.name.trim() || !newLocation.address.trim()) {
-      return
-    }
-
-    const location: Location = {
-      id: Date.now().toString(),
-      name: newLocation.name.trim(),
-      address: newLocation.address.trim(),
-      radius: newLocation.radius,
-      departmentIds: newLocation.departmentIds
-    }
-
-    setSettings(prev => ({
-      ...prev,
-      specificLocations: [...prev.specificLocations, location]
-    }))
-
-    setNewLocation({ name: '', address: '', radius: 100, departmentIds: [] })
-    setShowAddLocation(false)
   }
 
   const handleMapLocationSelect = (mapLocation: {
@@ -370,26 +347,15 @@ export default function PunchClockAccessSettings() {
               <h4 className="text-sm sm:text-base font-medium text-gray-900">
                 {t('punch_clock.access_setting.allowed_locations.title')}
               </h4>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <button
-                  onClick={() => setShowMapPicker(true)}
-                  className="inline-flex items-center justify-center px-3 py-2 border border-transparent text-xs sm:text-sm leading-4 font-medium rounded-md text-white bg-[#31BCFF] hover:bg-[#2ba3e4] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#31BCFF] transition-colors"
-                >
-                  <MapPinIcon className="h-4 w-4 mr-2 flex-shrink-0" />
-                  <span className="whitespace-nowrap">
-                    {t('punch_clock.access_setting.allowed_locations.buttons.add_with_map')}
-                  </span>
-                </button>
-                <button
-                  onClick={() => setShowAddLocation(true)}
-                  className="inline-flex items-center justify-center px-3 py-2 border border-gray-300 text-xs sm:text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#31BCFF] transition-colors"
-                >
-                  <PlusIcon className="h-4 w-4 mr-2 flex-shrink-0" />
-                  <span className="whitespace-nowrap">
-                    {t('punch_clock.access_setting.allowed_locations.buttons.add_manually')}
-                  </span>
-                </button>
-              </div>
+              <button
+                onClick={() => setShowMapPicker(true)}
+                className="inline-flex items-center justify-center px-3 py-2 border border-transparent text-xs sm:text-sm leading-4 font-medium rounded-md text-white bg-[#31BCFF] hover:bg-[#2ba3e4] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#31BCFF] transition-colors"
+              >
+                <MapPinIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+                <span className="whitespace-nowrap">
+                  {t('punch_clock.access_setting.allowed_locations.buttons.add_with_map')}
+                </span>
+              </button>
             </div>
 
             {/* Existing Locations List */}
@@ -456,120 +422,6 @@ export default function PunchClockAccessSettings() {
                 <p className="mt-1 text-xs sm:text-sm text-gray-500 px-4">
                   {t('punch_clock.access_setting.allowed_locations.description')}
                 </p>
-              </div>
-            )}
-
-            {/* Add Location Form */}
-            {showAddLocation && (
-              <div className="mt-3 sm:mt-4 p-3 sm:p-4 border border-gray-200 rounded-lg bg-gray-50">
-                <h5 className="text-xs sm:text-sm font-medium text-gray-900 mb-2 sm:mb-3">
-                  {t('punch_clock.access_setting.allowed_locations.add_form.title')}
-                </h5>
-                <div className="space-y-2 sm:space-y-3">
-                  <div>
-                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-                      {t('punch_clock.access_setting.allowed_locations.add_form.location_name')}
-                    </label>
-                    <input
-                      type="text"
-                      value={newLocation.name}
-                      onChange={(e) => setNewLocation(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder="e.g., Main Office, Warehouse"
-                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#31BCFF] focus:border-[#31BCFF] text-xs sm:text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-                      {t('punch_clock.access_setting.allowed_locations.add_form.address')}
-                    </label>
-                    <input
-                      type="text"
-                      value={newLocation.address}
-                      onChange={(e) => setNewLocation(prev => ({ ...prev, address: e.target.value }))}
-                      placeholder={t('punch_clock.access_setting.allowed_locations.add_form.address_placeholder')}
-                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#31BCFF] focus:border-[#31BCFF] text-xs sm:text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-                                            {t('punch_clock.access_setting.allowed_locations.add_form.radius')}
-                    </label>
-                    <input
-                      type="number"
-                      min="10"
-                      max="1000"
-                      value={newLocation.radius}
-                      onChange={(e) => setNewLocation(prev => ({ ...prev, radius: parseInt(e.target.value) || 100 }))}
-                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#31BCFF] focus:border-[#31BCFF] text-xs sm:text-sm"
-                    />
-                    <p className="mt-1 text-xs text-gray-500">
-                      {t('punch_clock.access_setting.allowed_locations.add_form.radius_hint')}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-                      {t('punch_clock.access_setting.allowed_locations.add_form.departments')}
-                    </label>
-                    <p className="text-xs text-gray-500 mb-2">
-                      {t('punch_clock.access_setting.allowed_locations.add_form.departments_hint')}
-                    </p>
-                    <div className="space-y-1.5 sm:space-y-2 max-h-32 overflow-y-auto border border-gray-200 rounded-md p-2">
-                      {departments.map((dept) => (
-                        <label key={dept.id} className="flex items-center space-x-2">
-                          <input
-                            type="checkbox"
-                            checked={newLocation.departmentIds.includes(dept.id)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setNewLocation(prev => ({ 
-                                  ...prev, 
-                                  departmentIds: [...prev.departmentIds, dept.id] 
-                                }))
-                              } else {
-                                setNewLocation(prev => ({ 
-                                  ...prev, 
-                                  departmentIds: prev.departmentIds.filter(id => id !== dept.id) 
-                                }))
-                              }
-                            }}
-                            className="h-4 w-4 text-[#31BCFF] border-gray-300 rounded focus:ring-[#31BCFF]"
-                          />
-                          <span className="text-sm text-gray-700">
-                            {dept.name}
-                            {dept._count && (
-                              <span className="text-xs text-gray-500 ml-1">
-                                ({dept._count.employees} {t('punch_clock.access_setting.allowed_locations.add_form.employees_count')})
-                              </span>
-                            )}
-                          </span>
-                        </label>
-                      ))}
-                      {departments.length === 0 && (
-                        <p className="text-sm text-gray-500">
-                          {t('punch_clock.access_setting.allowed_locations.add_form.no_departments')}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                    <button
-                      onClick={addLocation}
-                      disabled={!newLocation.name.trim() || !newLocation.address.trim()}
-                      className="inline-flex items-center justify-center px-3 py-2 border border-transparent text-xs sm:text-sm leading-4 font-medium rounded-md text-white bg-[#31BCFF] hover:bg-[#2ba3e4] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#31BCFF] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      {t('punch_clock.access_setting.allowed_locations.add_form.add_button')}
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowAddLocation(false)
-                        setNewLocation({ name: '', address: '', radius: 100, departmentIds: [] })
-                      }}
-                      className="inline-flex items-center justify-center px-3 py-2 border border-gray-300 text-xs sm:text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#31BCFF] transition-colors"
-                    >
-                      {t('punch_clock.access_setting.allowed_locations.add_form.cancel_button')}
-                    </button>
-                  </div>
-                </div>
               </div>
             )}
 
