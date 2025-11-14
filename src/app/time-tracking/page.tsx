@@ -51,6 +51,7 @@ interface Shift {
   wage: number
   wageType: string
   note?: string
+  status: string
   employee: {
     id: string
     firstName: string
@@ -218,8 +219,8 @@ export default function TimeTrackingPage() {
         const shiftsData = await res.json()
         setAllShifts(shiftsData)
         
-        // Filter working shifts (active shifts without end time)
-        const activeShifts = shiftsData.filter((shift: Shift) => !shift.endTime)
+        // Filter working shifts (status is WORKING)
+        const activeShifts = shiftsData.filter((shift: Shift) => shift.status === 'WORKING')
         setWorkingShifts(activeShifts)
       } else {
         console.error('Failed to fetch shifts:', res.status, res.statusText)
@@ -298,15 +299,17 @@ export default function TimeTrackingPage() {
   }
 
   const getShiftStatusColor = (shift: Shift) => {
-    if (!shift.endTime) return 'text-green-600 bg-green-100'
-    if (shift.approved) return 'text-blue-600 bg-blue-100'
-    return 'text-yellow-600 bg-yellow-100'
+    if (shift.status === 'WORKING') return 'text-green-600 bg-green-100'
+    if (shift.status === 'COMPLETED') return 'text-blue-600 bg-blue-100'
+    if (shift.status === 'CANCELLED') return 'text-red-600 bg-red-100'
+    return 'text-yellow-600 bg-yellow-100' // SCHEDULED
   }
 
   const getShiftStatusText = (shift: Shift) => {
-    if (!shift.endTime) return 'Working'
-    if (shift.approved) return 'Completed'
-    return 'Pending'
+    if (shift.status === 'WORKING') return 'Working'
+    if (shift.status === 'COMPLETED') return 'Completed'
+    if (shift.status === 'CANCELLED') return 'Cancelled'
+    return 'Scheduled'
   }
 
   const handleEmployeeClick = (employee: Employee) => {

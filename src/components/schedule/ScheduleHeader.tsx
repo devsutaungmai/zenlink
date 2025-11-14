@@ -104,6 +104,7 @@ export default function ScheduleHeader({
 }: ScheduleHeaderProps) {
   const { t } = useTranslation('schedule')
   const [showFilters, setShowFilters] = useState(false)
+  const [employeeSearchQuery, setEmployeeSearchQuery] = useState('')
   const filterButtonRef = useRef<HTMLDivElement>(null)
   const filterDropdownRef = useRef<HTMLDivElement>(null)
   const mobileFilterRef = useRef<HTMLDivElement>(null)
@@ -145,6 +146,12 @@ export default function ScheduleHeader({
   const filteredFunctions = selectedCategoryId
     ? safeFunctions.filter(f => f.categoryId === selectedCategoryId)
     : safeFunctions
+  
+  // Filter employees based on search query
+  const filteredEmployees = safeEmployees.filter(employee => {
+    const fullName = `${employee.firstName} ${employee.lastName}`.toLowerCase()
+    return fullName.includes(employeeSearchQuery.toLowerCase())
+  })
   
   const handleFilterChange = (key: keyof FilterOptions, value: any) => {
     onFiltersChange({ ...filters, [key]: value })
@@ -260,20 +267,34 @@ export default function ScheduleHeader({
                   {/* Employees Filter */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Employees</label>
+                    {/* Search Input */}
+                    <input
+                      type="text"
+                      placeholder="Search employees..."
+                      value={employeeSearchQuery}
+                      onChange={(e) => setEmployeeSearchQuery(e.target.value)}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md mb-2 focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF]"
+                    />
                     <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-md">
-                      {safeEmployees.map(employee => (
-                        <label key={employee.id} className="flex items-center px-3 py-2.5 hover:bg-gray-50 cursor-pointer active:bg-gray-100">
-                          <input
-                            type="checkbox"
-                            checked={filters.employeeIds.includes(employee.id)}
-                            onChange={() => toggleEmployeeFilter(employee.id)}
-                            className="rounded border-gray-300 text-[#31BCFF] focus:ring-[#31BCFF] w-5 h-5"
-                          />
-                          <span className="ml-3 text-sm text-gray-700">
-                            {employee.firstName} {employee.lastName}
-                          </span>
-                        </label>
-                      ))}
+                      {filteredEmployees.length > 0 ? (
+                        filteredEmployees.map(employee => (
+                          <label key={employee.id} className="flex items-center px-3 py-2.5 hover:bg-gray-50 cursor-pointer active:bg-gray-100">
+                            <input
+                              type="checkbox"
+                              checked={filters.employeeIds.includes(employee.id)}
+                              onChange={() => toggleEmployeeFilter(employee.id)}
+                              className="rounded border-gray-300 text-[#31BCFF] focus:ring-[#31BCFF] w-5 h-5"
+                            />
+                            <span className="ml-3 text-sm text-gray-700">
+                              {employee.firstName} {employee.lastName}
+                            </span>
+                          </label>
+                        ))
+                      ) : (
+                        <div className="px-3 py-2.5 text-sm text-gray-500 text-center">
+                          No employees found
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -510,20 +531,34 @@ export default function ScheduleHeader({
                   {/* Employees Filter */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Employees</label>
+                    {/* Search Input */}
+                    <input
+                      type="text"
+                      placeholder="Search employees..."
+                      value={employeeSearchQuery}
+                      onChange={(e) => setEmployeeSearchQuery(e.target.value)}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md mb-2 focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF]"
+                    />
                     <div className="max-h-40 overflow-y-auto border border-gray-200 rounded-md">
-                      {safeEmployees.map(employee => (
-                        <label key={employee.id} className="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={filters.employeeIds.includes(employee.id)}
-                            onChange={() => toggleEmployeeFilter(employee.id)}
-                            className="rounded border-gray-300 text-[#31BCFF] focus:ring-[#31BCFF]"
-                          />
-                          <span className="ml-2 text-sm text-gray-700">
-                            {employee.firstName} {employee.lastName}
-                          </span>
-                        </label>
-                      ))}
+                      {filteredEmployees.length > 0 ? (
+                        filteredEmployees.map(employee => (
+                          <label key={employee.id} className="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={filters.employeeIds.includes(employee.id)}
+                              onChange={() => toggleEmployeeFilter(employee.id)}
+                              className="rounded border-gray-300 text-[#31BCFF] focus:ring-[#31BCFF]"
+                            />
+                            <span className="ml-2 text-sm text-gray-700">
+                              {employee.firstName} {employee.lastName}
+                            </span>
+                          </label>
+                        ))
+                      ) : (
+                        <div className="px-3 py-2 text-sm text-gray-500 text-center">
+                          No employees found
+                        </div>
+                      )}
                     </div>
                   </div>
 

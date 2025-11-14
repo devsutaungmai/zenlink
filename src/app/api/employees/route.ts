@@ -62,6 +62,9 @@ export async function GET(request: Request) {
         dateOfHire: true,
         createdAt: true,
         profilePhoto: true,
+        salaryRate: true,
+        employeeGroupId: true,
+        departmentId: true,
         department: {
           select: {
             id: true,
