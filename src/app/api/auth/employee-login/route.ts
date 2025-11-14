@@ -21,7 +21,7 @@ export async function POST(req: Request) {
       )
     }
 
-    const employee = await prisma.employee.findUnique({
+    const employee = await prisma.employee.findFirst({
       where: { employeeNo: employeeId },
       include: {
         user: true,
