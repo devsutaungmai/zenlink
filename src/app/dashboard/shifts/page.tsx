@@ -33,6 +33,10 @@ interface Shift {
   wage: number
   wageType: string
   approved: boolean
+  shiftTypeConfig?: {
+    id: string
+    name: string
+  }
   employee?: {
     firstName: string
     lastName: string
@@ -297,13 +301,18 @@ export default function ShiftsPage() {
     }
   }
 
+  const getShiftTypeDisplayName = (shift: Shift) => {
+    return shift.shiftTypeConfig?.name || shift.shiftType
+  }
+
   const filteredShifts = shifts.filter(shift => {
     // Text search filter
+    const shiftTypeDisplayName = getShiftTypeDisplayName(shift)
     const matchesSearch = !searchTerm || 
       shift.employee?.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       shift.employee?.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       shift.employeeGroup?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      shift.shiftType.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      shiftTypeDisplayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       shift.date.toLowerCase().includes(searchTerm.toLowerCase()) ||
       shift.employee?.department?.name.toLowerCase().includes(searchTerm.toLowerCase())
 
@@ -575,7 +584,7 @@ export default function ShiftsPage() {
                         </td>
                         <td className="px-6 py-4">
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            {shift.shiftType}
+                            {getShiftTypeDisplayName(shift)}
                           </span>
                         </td>
                         <td className="px-6 py-4">
@@ -764,7 +773,7 @@ export default function ShiftsPage() {
                   <div>
                     <div className="text-xs text-gray-500 mb-0.5">{t('shifts.table.type')}</div>
                     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      {shift.shiftType}
+                      {getShiftTypeDisplayName(shift)}
                     </span>
                   </div>
                   <div>

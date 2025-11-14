@@ -97,6 +97,12 @@ export async function GET(request: Request) {
             name: true
           }
         },
+        shiftTypeConfig: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
         function: {
           select: {
             id: true,
