@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import DashboardNavbar from '@/components/DashboardNavbar'
 import { useUser } from '@/shared/lib/useUser'
@@ -12,7 +12,6 @@ export default function DashboardLayout({
 }) {
   const router = useRouter()
   const { user, loading } = useUser()
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   // Authentication check - redirect if not logged in
   useEffect(() => {
@@ -32,10 +31,10 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <DashboardNavbar setMobileMenuOpen={setMobileMenuOpen} />
+      <DashboardNavbar />
       
       <div className="flex flex-col flex-1">
-        <div className="pt-16"> {/* Padding to account for fixed navbar */}
+        <div className="pt-16 pb-24 md:pb-0"> {/* Padding for fixed top+bottom navs */}
           <div className="py-8 px-4 sm:px-6 lg:px-8">
             {children}
           </div>

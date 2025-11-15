@@ -558,7 +558,9 @@
     "shifts_overview": "Skiftoversikt",
     "a_list_of_all_shifts_in_your_organization": "En liste over alle skift i organisasjonen din",
     "search_shifts": "Søk skift etter ansatt, avdeling eller type...",
-    "create_shift": "Opprett skift"
+    "create_shift": "Opprett skift",
+    "welcome_back": "Velkommen tilbake",
+    "navigate": "Naviger"
   },
   "showing_paginated": "Viser {{start}} til {{end}} av {{total}}",
   "page_info": "Side {{current}} av {{total}}",

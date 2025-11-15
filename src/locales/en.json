@@ -559,7 +559,9 @@
     "shifts_overview": "Shifts Overview",
     "a_list_of_all_shifts_in_your_organization": "A list of all shifts in your organization",
     "search_shifts": "Search shifts by employee, department, or type...",
-    "create_shift": "Create Shift"
+    "create_shift": "Create Shift",
+    "welcome_back": "Welcome back",
+    "navigate": "Navigate"
   },
   "showing_paginated": "Showing {{start}} to {{end}} of {{total}}",
   "page_info": "Page {{current}} of {{total}}",
