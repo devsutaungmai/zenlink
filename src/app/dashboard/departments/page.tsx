@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 import { useTranslation } from 'react-i18next'
 import Swal from 'sweetalert2'
+import { CardGridSkeleton } from '@/components/skeletons/ScheduleSkeleton'
 
 interface Department {
   id: string
@@ -40,8 +41,7 @@ export default function DepartmentsPage() {
       }
       
       const data = await res.json()
-      
-      // Ensure data is an array before setting it
+
       if (Array.isArray(data)) {
         setDepartments(data)
       } else {
@@ -50,7 +50,7 @@ export default function DepartmentsPage() {
       }
     } catch (error) {
       console.error('Error fetching departments:', error)
-      setDepartments([]) // Set empty array on error
+      setDepartments([])
     } finally {
       setLoading(false)
     }
@@ -105,8 +105,8 @@ export default function DepartmentsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#31BCFF]"></div>
+      <div className="p-6">
+        <CardGridSkeleton count={8} />
       </div>
     )
   }
@@ -204,14 +204,14 @@ export default function DepartmentsPage() {
                     </p>
                   )}
                 </div>
-                <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  <Link
+                <div className="flex items-center space-x-2">
+                  {/* <Link
                     href={`/dashboard/departments/${department.id}/edit`}
                     className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
                     title="Edit Department"
                   >
                     <PencilIcon className="h-4 w-4" />
-                  </Link>
+                  </Link> */}
                   <button
                     onClick={() => handleDelete(department.id)}
                     className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"

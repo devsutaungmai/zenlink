@@ -16,6 +16,7 @@ import {
 } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
 import { useTranslation } from 'react-i18next'
+import { ProfileSkeleton } from '@/components/skeletons/CommonSkeletons'
 
 interface UserProfile {
   id: string
@@ -105,15 +106,7 @@ export default function ProfilePage() {
   }
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 py-4 sm:py-8">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-[#31BCFF]"></div>
-          </div>
-        </div>
-      </div>
-    )
+    return <ProfileSkeleton />
   }
 
   if (!profile) {

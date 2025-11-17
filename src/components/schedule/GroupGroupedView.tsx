@@ -1,8 +1,10 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { format } from 'date-fns'
 import { Employee } from '@prisma/client'
+import { PlusIcon } from '@heroicons/react/24/outline'
 import { ShiftWithRelations } from '@/types/schedule'
 import { useCurrency } from '@/shared/hooks/useCurrency'
+import ShiftsModal from './ShiftsModal'
 
 interface EmployeeGroup {
   id: string
@@ -15,6 +17,7 @@ interface GroupGroupedViewProps {
   employees: Employee[]
   employeeGroups: EmployeeGroup[]
   onEditShift: (shift: ShiftWithRelations) => void
+  onAddShift?: (data?: { date?: string; employeeGroupId?: string }) => void
 }
 
 export default function GroupGroupedView({
@@ -22,9 +25,21 @@ export default function GroupGroupedView({
   shifts,
   employees,
   employeeGroups,
-  onEditShift
+  onEditShift,
+  onAddShift = () => {}
 }: GroupGroupedViewProps) {
   const { currencySymbol } = useCurrency()
+  const [modalState, setModalState] = useState<{
+    isOpen: boolean
+    shifts: ShiftWithRelations[]
+    date: Date | null
+    title: string
+  }>({
+    isOpen: false,
+    shifts: [],
+    date: null,
+    title: ''
+  })
   
   const groupOverlappingShifts = (shifts: ShiftWithRelations[]) => {
     const sortedShifts = [...shifts].sort((a, b) => {
@@ -101,8 +116,153 @@ export default function GroupGroupedView({
     return `${hours}h ${minutes}m`;
   };
 
+  const handleShowMoreShifts = (shifts: ShiftWithRelations[], date: Date, groupName: string) => {
+    setModalState({
+      isOpen: true,
+      shifts,
+      date,
+      title: `${groupName} - All Shifts`
+    })
+  }
+
+  const handleCloseModal = () => {
+    setModalState({
+      isOpen: false,
+      shifts: [],
+      date: null,
+      title: ''
+    })
+  }
+
   return (
-    <div className="overflow-auto">
+    <div className="overflow-hidden">
+      {/* Mobile View - Grid Layout */}
+      <div className="md:hidden bg-gray-50">
+        {/* Week Days Header - Perfectly aligned with grid */}
+        <div className="bg-white sticky top-0 z-10 border-b shadow-sm">
+          <div className="grid grid-cols-7 gap-0">
+            {weekDates.map((date, i) => {
+              const isToday = new Date().toDateString() === date.toDateString()
+              return (
+                <div key={i} className="text-center py-3 border-r last:border-r-0">
+                  <div className={`text-xs font-medium mb-0.5 ${isToday ? 'text-[#31BCFF]' : 'text-gray-500'}`}>
+                    {format(date, 'EEE')}
+                  </div>
+                  <div className={`text-xl font-bold ${isToday ? 'text-[#31BCFF]' : 'text-gray-900'}`}>
+                    {format(date, 'd')}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Group Rows */}
+        <div className="p-3 space-y-3">
+          {employeeGroups.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <p className="text-sm">No groups found</p>
+            </div>
+          ) : (
+            employeeGroups.map((group) => {
+              const groupShiftsAll = shifts.filter(s => 
+                s.employeeGroupId === group.id || 
+                (s.employeeId && employees.find(e => e.id === s.employeeId)?.employeeGroupId === group.id)
+              )
+              const groupShiftsCount = groupShiftsAll.length
+              
+              return (
+                <div key={group.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+                  {/* Group Header */}
+                  <div className="flex items-center justify-between px-3 py-2.5 border-b bg-gray-50">
+                    <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                      <div className="w-9 h-9 rounded-full bg-[#31BCFF] flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+                        {group.name.substring(0, 2).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm text-gray-900 truncate">
+                          {group.name}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {getGroupTotalHours(group.id)} / {currencySymbol}0.00 / {groupShiftsCount} Shift{groupShiftsCount !== 1 ? 's' : ''}
+                        </div>
+                      </div>
+                    </div>
+                    <button className="text-gray-400 hover:text-gray-600 p-1 text-xl leading-none">
+                      ×
+                    </button>
+                  </div>
+
+                  {/* Day Grid - Exactly 7 columns matching header */}
+                  <div className="grid grid-cols-7 gap-0 p-3">
+                    {weekDates.map((date, dayIndex) => {
+                      const formattedDate = format(date, 'yyyy-MM-dd')
+                      const dayShifts = getGroupShifts(group.id, date)
+                      const isToday = new Date().toDateString() === date.toDateString()
+
+                      return (
+                        <div key={dayIndex} className="px-1">
+                          <div className="aspect-square">
+                            {dayShifts.length === 0 ? (
+                              <button
+                                onClick={() => onAddShift({ 
+                                  date: formattedDate,
+                                  employeeGroupId: group.id 
+                                })}
+                                className={`w-full h-full border-2 border-dashed rounded-xl flex items-center justify-center transition-all active:scale-95 ${
+                                  isToday 
+                                    ? 'border-[#31BCFF] bg-blue-50 hover:bg-blue-100' 
+                                    : 'border-gray-300 hover:border-[#31BCFF] hover:bg-blue-50'
+                                }`}
+                              >
+                                <PlusIcon className="w-6 h-6 text-[#31BCFF]" />
+                              </button>
+                            ) : (
+                              <div className="w-full h-full flex flex-col">
+                                {dayShifts.slice(0, 1).map(shift => (
+                                  <button
+                                    key={shift.id}
+                                    onClick={() => onEditShift(shift)}
+                                    className={`w-full flex-1 rounded-xl text-white font-medium flex flex-col items-center justify-center gap-0.5 transition-all active:scale-95 ${
+                                      shift.status === 'CANCELLED' ? 'bg-red-500' :
+                                      shift.status === 'WORKING' ? 'bg-blue-500' :
+                                      'bg-[#31BCFF]'
+                                    }`}
+                                  >
+                                    <span className="text-xs leading-tight">
+                                      {shift.startTime.substring(0, 5)}
+                                    </span>
+                                    {shift.endTime && (
+                                      <span className="text-xs leading-tight">
+                                        {shift.endTime.substring(0, 5)}
+                                      </span>
+                                    )}
+                                  </button>
+                                ))}
+                                {dayShifts.length > 1 && (
+                                  <button 
+                                    onClick={() => handleShowMoreShifts(dayShifts, date, group.name)}
+                                    className="w-full text-xs text-center text-gray-600 hover:text-[#31BCFF] font-semibold mt-1 py-1 px-2 bg-gray-100 hover:bg-blue-50 rounded transition-all active:scale-95"
+                                  >
+                                    +{dayShifts.length - 1} more
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })
+          )}
+        </div>
+      </div>
+
+      {/* Desktop View - Original Grid Layout */}
+      <div className="hidden md:block overflow-auto">
       <div className="min-w-full">
         {/* Header Row */}
         <div className="grid grid-cols-[1fr_repeat(7,minmax(140px,1fr))] border-b bg-gray-50 sticky top-0">
@@ -150,10 +310,20 @@ export default function GroupGroupedView({
                 const shiftGroups = groupOverlappingShifts(dayShifts);
                 
                 return (
-                  <div key={dateIndex} className="border-r p-2 relative min-h-[80px]">
-                    {shiftGroups.map((group, groupIndex) => (
-                      <React.Fragment key={`group-${groupIndex}`}>
-                        {group.map((shift, shiftIndex) => {
+                  <div key={dateIndex} className="border-r p-2 relative min-h-[80px] group">
+                    {shiftGroups.length === 0 ? (
+                      <button
+                        onClick={() => onAddShift({ 
+                          date: format(date, 'yyyy-MM-dd'),
+                          employeeGroupId: group.id 
+                        })}
+                        className="w-full h-full min-h-[76px] border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center transition-all hover:border-[#31BCFF] hover:bg-blue-50 opacity-0 group-hover:opacity-100"
+                      >
+                        <PlusIcon className="w-5 h-5 text-[#31BCFF]" />
+                      </button>
+                    ) : (
+                      <>
+                        {dayShifts.slice(0, 2).map((shift, shiftIndex) => {
                           const employee = employees.find(emp => emp.id === shift.employeeId);
                           
                           return (
@@ -176,8 +346,25 @@ export default function GroupGroupedView({
                             </div>
                           );
                         })}
-                      </React.Fragment>
-                    ))}
+                        {dayShifts.length > 2 && (
+                          <button
+                            onClick={() => handleShowMoreShifts(dayShifts, date, group.name)}
+                            className="text-xs text-gray-500 hover:text-[#31BCFF] font-medium transition-colors mb-1"
+                          >
+                            +{dayShifts.length - 2} more shifts
+                          </button>
+                        )}
+                        <button
+                          onClick={() => onAddShift({ 
+                            date: format(date, 'yyyy-MM-dd'),
+                            employeeGroupId: group.id 
+                          })}
+                          className="absolute bottom-1 right-1 w-6 h-6 border border-[#31BCFF] bg-white rounded-full flex items-center justify-center transition-all hover:bg-[#31BCFF] hover:text-white opacity-0 group-hover:opacity-100 shadow-sm"
+                        >
+                          <PlusIcon className="w-3 h-3" />
+                        </button>
+                      </>
+                    )}
                   </div>
                 );
               })}
@@ -185,6 +372,18 @@ export default function GroupGroupedView({
           );
         })}
       </div>
+      </div>
+
+      {/* Shifts Modal */}
+      <ShiftsModal
+        isOpen={modalState.isOpen}
+        onClose={handleCloseModal}
+        shifts={modalState.shifts}
+        date={modalState.date || new Date()}
+        title={modalState.title}
+        employees={employees}
+        onEditShift={onEditShift}
+      />
     </div>
   );
 }

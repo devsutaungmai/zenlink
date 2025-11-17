@@ -20,7 +20,6 @@ export async function POST(request: Request) {
       })
     }
 
-    // Check if employee number is already in use by another employee in the same business
     const existingEmployee = await prisma.employee.findFirst({
       where: {
         employeeNo: employeeNo.trim(),
@@ -37,9 +36,9 @@ export async function POST(request: Request) {
       }
     })
 
-    if (existingEmployee) {
-      return NextResponse.json({
-        available: false,
+    const response = {
+      available: !existingEmployee,
+      ...(existingEmployee && {
         existingEmployee: {
           name: `${existingEmployee.firstName} ${existingEmployee.lastName}`,
           employeeNo: existingEmployee.employeeNo
@@ -47,8 +46,10 @@ export async function POST(request: Request) {
       })
     }
 
-    return NextResponse.json({
-      available: true
+    return NextResponse.json(response, {
+      headers: {
+        'Cache-Control': 'private, no-cache, no-store, must-revalidate'
+      }
     })
 
   } catch (error) {

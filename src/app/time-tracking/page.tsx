@@ -28,7 +28,7 @@ interface Employee {
   id: string
   firstName: string
   lastName: string
-  employeeNo: string
+  employeeNo: string | null
   department: {
     name: string
   }
@@ -51,11 +51,12 @@ interface Shift {
   wage: number
   wageType: string
   note?: string
+  status: string
   employee: {
     id: string
     firstName: string
     lastName: string
-    employeeNo: string
+    employeeNo: string | null
   }
   employeeGroup?: {
     name: string
@@ -218,8 +219,8 @@ export default function TimeTrackingPage() {
         const shiftsData = await res.json()
         setAllShifts(shiftsData)
         
-        // Filter working shifts (active shifts without end time)
-        const activeShifts = shiftsData.filter((shift: Shift) => !shift.endTime)
+        // Filter working shifts (status is WORKING)
+        const activeShifts = shiftsData.filter((shift: Shift) => shift.status === 'WORKING')
         setWorkingShifts(activeShifts)
       } else {
         console.error('Failed to fetch shifts:', res.status, res.statusText)
@@ -253,15 +254,47 @@ export default function TimeTrackingPage() {
     return matchesSearch
   })
 
-  const filteredShifts = allShifts.filter(shift => {
+  const filteredWorkingShifts = workingShifts.filter(shift => {
     const searchLower = searchTerm.toLowerCase()
-    return (
+    const matchesSearch = (
       `${shift.employee.firstName || ''} ${shift.employee.lastName || ''}`.toLowerCase().includes(searchLower) ||
       (shift.employee.employeeNo || '').toLowerCase().includes(searchLower) ||
       (shift.shiftType || '').toLowerCase().includes(searchLower) ||
       (shift.employeeGroup?.name || '').toLowerCase().includes(searchLower) ||
       (shift.note || '').toLowerCase().includes(searchLower)
     )
+
+    if (selectedFilter === 'team-leaders') {
+      const employee = employees.find(emp => emp.id === shift.employee.id)
+      return matchesSearch && employee?.isTeamLeader
+    }
+    
+    return matchesSearch
+  })
+
+  const filteredShifts = allShifts.filter(shift => {
+    const searchLower = searchTerm.toLowerCase()
+    const matchesSearch = (
+      `${shift.employee.firstName || ''} ${shift.employee.lastName || ''}`.toLowerCase().includes(searchLower) ||
+      (shift.employee.employeeNo || '').toLowerCase().includes(searchLower) ||
+      (shift.shiftType || '').toLowerCase().includes(searchLower) ||
+      (shift.employeeGroup?.name || '').toLowerCase().includes(searchLower) ||
+      (shift.note || '').toLowerCase().includes(searchLower)
+    )
+
+    if (selectedFilter === 'all') return matchesSearch
+    if (selectedFilter === 'working') {
+      return matchesSearch && shift.status === 'WORKING'
+    }
+    if (selectedFilter === 'available') {
+      return matchesSearch && shift.status !== 'WORKING'
+    }
+    if (selectedFilter === 'team-leaders') {
+      const employee = employees.find(emp => emp.id === shift.employee.id)
+      return matchesSearch && employee?.isTeamLeader
+    }
+    
+    return matchesSearch
   })
 
   const formatTime = (timeString: string) => {
@@ -270,7 +303,6 @@ export default function TimeTrackingPage() {
 
   const calculateShiftDuration = (startTime: string, endTime?: string | null) => {
     if (!endTime) {
-      // Calculate current duration for active shifts
       const now = new Date()
       const currentTime = now.toTimeString().substring(0, 5)
       return calculateTimeDifference(startTime, currentTime)
@@ -298,18 +330,24 @@ export default function TimeTrackingPage() {
   }
 
   const getShiftStatusColor = (shift: Shift) => {
-    if (!shift.endTime) return 'text-green-600 bg-green-100'
-    if (shift.approved) return 'text-blue-600 bg-blue-100'
-    return 'text-yellow-600 bg-yellow-100'
+    if (shift.status === 'WORKING') return 'text-green-600 bg-green-100'
+    if (shift.status === 'COMPLETED') return 'text-blue-600 bg-blue-100'
+    if (shift.status === 'CANCELLED') return 'text-red-600 bg-red-100'
+    return 'text-yellow-600 bg-yellow-100' // SCHEDULED
   }
 
   const getShiftStatusText = (shift: Shift) => {
-    if (!shift.endTime) return 'Working'
-    if (shift.approved) return 'Completed'
-    return 'Pending'
+    if (shift.status === 'WORKING') return 'Working'
+    if (shift.status === 'COMPLETED') return 'Completed'
+    if (shift.status === 'CANCELLED') return 'Cancelled'
+    return 'Scheduled'
   }
 
   const handleEmployeeClick = (employee: Employee) => {
+    if (!employee.employeeNo) {
+      alert('This employee does not have an Employee ID set. Please contact your administrator.')
+      return
+    }
     router.push(`/employee/login?employeeId=${employee.employeeNo}`)
   }
 
@@ -486,7 +524,7 @@ export default function TimeTrackingPage() {
                   <div key={shift.id} className="p-3 hover:bg-gray-50/70 transition-colors duration-200 touch-manipulation">
                     <div className="flex items-center justify-between mb-2">
                       <div className="font-medium text-gray-900 text-sm">
-                        {shift.employee.firstName} {shift.employee.lastName}
+                        {shift.employee.firstName} {shift.employee.lastName} {shift.employee.employeeNo && `(${shift.employee.employeeNo})`}
                       </div>
                       <span className={`px-2 py-1 text-xs rounded-full font-medium ${getShiftStatusColor(shift)}`}>
                         {getShiftStatusText(shift)}
@@ -498,16 +536,6 @@ export default function TimeTrackingPage() {
                         <span>
                           {formatTime(shift.startTime)} - {shift.endTime ? formatTime(shift.endTime) : 'Active'}
                         </span>
-                      </div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs bg-gray-100 px-2 py-0.5 rounded">
-                          {shift.employee.employeeNo}
-                        </span>
-                        {shift.employeeGroup && (
-                          <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
-                            {shift.employeeGroup.name}
-                          </span>
-                        )}
                       </div>
                       <div className="text-xs text-gray-500">
                         Duration: {calculateShiftDuration(shift.startTime, shift.endTime)}
@@ -529,20 +557,20 @@ export default function TimeTrackingPage() {
               </div>
               <div>
                 <h3 className="text-base font-semibold text-gray-900">Currently Working</h3>
-                <p className="text-xs text-gray-500">{workingShifts.length} active</p>
+                <p className="text-xs text-gray-500">{filteredWorkingShifts.length} active</p>
               </div>
             </div>
           </div>
           
           <div className="flex-1 overflow-y-auto overflow-x-hidden">
-            {workingShifts.length === 0 ? (
+            {filteredWorkingShifts.length === 0 ? (
               <div className="p-4 text-center">
                 <PauseIcon className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                 <p className="text-gray-500 text-sm">No one working</p>
               </div>
             ) : (
               <div className="divide-y divide-gray-200/50">
-                {workingShifts.map((shift) => (
+                {filteredWorkingShifts.map((shift) => (
                   <div key={shift.id} className="p-3 hover:bg-gray-50/70 transition-colors duration-200 touch-manipulation">
                     <div className="flex items-center justify-between mb-2">
                       <div className="font-medium text-gray-900 text-sm">
@@ -558,7 +586,7 @@ export default function TimeTrackingPage() {
                         <ClockIcon className="w-3 h-3 opacity-60" />
                         <span>Started {formatTime(shift.startTime)}</span>
                       </div>
-                      <div className="flex items-center gap-2 flex-wrap">
+                      {/* <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-xs bg-gray-100 px-2 py-0.5 rounded">
                           {shift.employee.employeeNo}
                         </span>
@@ -570,7 +598,7 @@ export default function TimeTrackingPage() {
                       </div>
                       <div className="text-xs text-green-600 font-medium">
                         Working: {calculateShiftDuration(shift.startTime)}
-                      </div>
+                      </div> */}
                     </div>
                   </div>
                 ))}
@@ -631,7 +659,7 @@ export default function TimeTrackingPage() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
                             <div className="font-medium text-gray-900 text-sm hover:text-blue-600 transition-colors truncate">
-                              {employee.firstName} {employee.lastName} ({employee.employeeNo})
+                              {employee.firstName} {employee.lastName} {employee.employeeNo && `(${employee.employeeNo})`}
                             </div>
                             <div className="flex items-center gap-2 flex-shrink-0 ml-2">
                               {employee.isTeamLeader && (

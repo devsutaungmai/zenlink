@@ -25,15 +25,23 @@ export async function GET(
     const category = await prisma.departmentCategory.findFirst({
       where: {
         id: id,
-        department: {
-          businessId: businessId
-        }
+        businessId: businessId
       },
       include: {
         department: {
           select: {
             id: true,
             name: true
+          }
+        },
+        departments: {
+          include: {
+            department: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
           }
         },
         functions: {
@@ -78,14 +86,15 @@ export async function PUT(
     }
 
     const body = await request.json()
-    const { name, description, color, departmentId } = body
+    const { name, description, color, departmentIds } = body // Changed from departmentId to departmentIds (array)
 
     const existingCategory = await prisma.departmentCategory.findFirst({
       where: {
         id: id,
-        department: {
-          businessId: businessId
-        }
+        businessId: businessId
+      },
+      include: {
+        departments: true
       }
     })
 
@@ -93,16 +102,16 @@ export async function PUT(
       return NextResponse.json({ error: 'Category not found' }, { status: 404 })
     }
 
-    if (departmentId && departmentId !== existingCategory.departmentId) {
-      const department = await prisma.department.findFirst({
+    if (departmentIds && departmentIds.length > 0) {
+      const departments = await prisma.department.findMany({
         where: {
-          id: departmentId,
+          id: { in: departmentIds },
           businessId: businessId
         }
       })
 
-      if (!department) {
-        return NextResponse.json({ error: 'Department not found' }, { status: 404 })
+      if (departments.length !== departmentIds.length) {
+        return NextResponse.json({ error: 'One or more departments not found' }, { status: 404 })
       }
     }
 
@@ -112,13 +121,25 @@ export async function PUT(
         name,
         description,
         color,
-        ...(departmentId && { departmentId })
+        departments: {
+          deleteMany: {},
+          create: departmentIds && departmentIds.length > 0 ? departmentIds.map((deptId: string) => ({
+            department: {
+              connect: { id: deptId }
+            }
+          })) : []
+        }
       },
       include: {
-        department: {
-          select: {
-            id: true,
-            name: true
+        department: true,
+        departments: {
+          include: {
+            department: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
           }
         },
         functions: true
@@ -130,7 +151,7 @@ export async function PUT(
     console.error('Error updating category:', error)
 
     if (error.code === 'P2002') {
-      return NextResponse.json({ error: 'Category name already exists in this department' }, { status: 409 })
+      return NextResponse.json({ error: 'Category name already exists in this business' }, { status: 409 })
     }
 
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -160,9 +181,7 @@ export async function DELETE(
     const category = await prisma.departmentCategory.findFirst({
       where: {
         id: id,
-        department: {
-          businessId: businessId
-        }
+        businessId: businessId
       },
       include: {
         _count: {

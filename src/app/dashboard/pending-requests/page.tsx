@@ -16,6 +16,7 @@ import {
 } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
 import { useTranslation } from 'react-i18next'
+import { CardGridSkeleton } from '@/components/skeletons/ScheduleSkeleton'
 
 interface Employee {
   id: string
@@ -198,8 +199,8 @@ export default function PendingRequestsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-sky-500"></div>
+      <div className="p-6">
+        <CardGridSkeleton count={8} />
       </div>
     )
   }

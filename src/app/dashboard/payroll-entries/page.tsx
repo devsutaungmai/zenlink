@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useTranslation } from 'react-i18next'
+import { PayrollSkeleton } from '@/components/skeletons/CommonSkeletons'
 import { PayrollEntry, PayrollPeriod } from '@/shared/types'
 import { 
   PlusIcon,
@@ -541,9 +542,8 @@ export default function PayrollEntriesPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#31BCFF]"></div>
-        <span className="ml-4 text-gray-600">{t('loading')}</span>
+      <div className="p-6">
+        <PayrollSkeleton />
       </div>
     )
   }

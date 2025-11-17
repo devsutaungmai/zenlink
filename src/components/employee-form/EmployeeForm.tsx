@@ -94,7 +94,7 @@ export default function EmployeeForm({
       }
       employeeNoValidationTimeoutRef.current = setTimeout(() => {
         validateEmployeeNumberUniqueness(value)
-      }, 1000)
+      }, 1500)
     }
   }
 

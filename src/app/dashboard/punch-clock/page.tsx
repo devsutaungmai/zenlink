@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
+import { PunchClockSkeleton } from '@/components/skeletons/CommonSkeletons'
 import { useUser } from '@/shared/lib/useUser'
 import Image from 'next/image'
 import Swal from 'sweetalert2'
@@ -195,6 +196,7 @@ export default function PunchClockPage() {
       }
     } catch (error) {
       console.error('Error fetching employees:', error)
+      setEmployees([])
     }
   }
 
@@ -609,12 +611,7 @@ export default function PunchClockPage() {
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#31BCFF]"></div>
-        <div className="ml-4 text-gray-600">{t('loading')}</div>
-      </div>
-    )
+    return <PunchClockSkeleton />
   }
 
   if (error) {

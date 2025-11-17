@@ -77,6 +77,16 @@ import overTimeRulesEn from '../../locales/overtime-rules/en.json'
 import overTimeRulesNo from '../../locales/overtime-rules/no.json'
 import overTimeRulesDe from '../../locales/overtime-rules/de.json'
 
+// Import categories translations
+import categoriesEn from '../../locales/categories/en.json'
+import categoriesNo from '../../locales/categories/no.json'
+import categoriesDe from '../../locales/categories/de.json'
+
+// Import functions translations
+import functionsEn from '../../locales/functions/en.json'
+import functionsNo from '../../locales/functions/no.json'
+import functionsDe from '../../locales/functions/de.json'
+
 const resources = {
   en: { 
     translation: en,
@@ -93,7 +103,9 @@ const resources = {
     settings: settingsEn,
     'salary-codes':salaryCodeEn,
     'pay-rules': payRulesEn,
-    'overtime-rules': overTimeRulesEn
+    'overtime-rules': overTimeRulesEn,
+    categories: categoriesEn,
+    functions: functionsEn
 
   },
   no: { 
@@ -111,7 +123,9 @@ const resources = {
     settings: settingsNo,
     'salary-codes': salaryCodeNo,
     'pay-rules': payRulesNo,
-    'overtime-rules': overTimeRulesNo
+    'overtime-rules': overTimeRulesNo,
+    categories: categoriesNo,
+    functions: functionsNo
   },
   de: { 
     translation: de,
@@ -128,7 +142,9 @@ const resources = {
     settings: settingsDe,
     'salary-codes': salaryCodeDe,
     'pay-rules': payRulesDe,
-    'overtime-rules': overTimeRulesDe
+    'overtime-rules': overTimeRulesDe,
+    categories: categoriesDe,
+    functions: functionsDe
   }
 }
 
@@ -151,7 +167,7 @@ i18n
     },
 
     // Support for namespaces
-    ns: ['translation', 'schedule', 'punch-clock', 'availability', 'sick-leave', 'pending-requests', 'payroll-entries', 'payroll-periods', 'payroll-reports', 'employee-dashboard','settings','salary-codes','pay-rules','overtime-rules'],
+    ns: ['translation', 'schedule', 'punch-clock', 'availability', 'sick-leave', 'pending-requests', 'payroll-entries', 'payroll-periods', 'payroll-reports', 'employee-dashboard','settings','salary-codes','pay-rules','overtime-rules', 'categories', 'functions'],
     defaultNS: 'translation',
   })
 

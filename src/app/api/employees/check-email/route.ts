@@ -72,6 +72,10 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       available: true
+    }, {
+      headers: {
+        'Cache-Control': 'private, no-cache, no-store, must-revalidate'
+      }
     })
 
   } catch (error) {

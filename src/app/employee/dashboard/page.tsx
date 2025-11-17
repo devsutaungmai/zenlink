@@ -38,7 +38,6 @@ interface Employee {
   firstName: string
   lastName: string
   employeeNo: string
-  businessId: string
   department: {
     id: string
     name: string
@@ -632,7 +631,7 @@ function EmployeeDashboardContent() {
       const now = new Date()
       const punchInData = {
         employeeId: employee.id,
-        businessId: employee.businessId,
+        businessId: employee.department.businessId,
         shiftId: todayShift?.id || null,
         punchInTime: now.toISOString()
       }

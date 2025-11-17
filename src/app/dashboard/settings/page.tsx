@@ -25,7 +25,7 @@ import { useTranslation } from 'react-i18next'
 
 export default function SettingsPage() {
   const router = useRouter()
-  const [activeSection, setActiveSection] = useState<string>('people-contract-setup')
+  const [activeSection, setActiveSection] = useState<string>('labor-laws')
   const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set(['people']))
   const { t } = useTranslation('settings')
   

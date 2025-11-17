@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 import { useTranslation } from 'react-i18next'
+import { CardGridSkeleton } from '@/components/skeletons/ScheduleSkeleton'
 import Swal from 'sweetalert2'
 
 interface Category {
@@ -24,7 +25,7 @@ interface Category {
 }
 
 export default function CategoriesPage() {
-  const { t } = useTranslation()
+  const { t } = useTranslation('categories')
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -60,14 +61,14 @@ export default function CategoriesPage() {
   const handleDelete = async (id: string, categoryName: string) => {
     try {
       const result = await Swal.fire({
-        title: t('common.confirm'),
-        text: `Are you sure you want to delete "${categoryName}"?`,
+        title: t('delete_confirm_title'),
+        text: t('delete_confirm_message', { name: categoryName }),
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#31BCFF',
         cancelButtonColor: '#d33',
-        confirmButtonText: t('common.yes'),
-        cancelButtonText: t('common.cancel')
+        confirmButtonText: t('delete_confirm'),
+        cancelButtonText: t('cancel')
       })
 
       if (result.isConfirmed) {
@@ -79,8 +80,8 @@ export default function CategoriesPage() {
           setCategories(categories.filter(cat => cat.id !== id))
           
           await Swal.fire({
-            title: t('common.success'),
-            text: 'Category deleted successfully',
+            title: t('success'),
+            text: t('delete_success'),
             icon: 'success',
             confirmButtonColor: '#31BCFF',
           })
@@ -91,8 +92,8 @@ export default function CategoriesPage() {
     } catch (error) {
       console.error('Error deleting category:', error)
       await Swal.fire({
-        title: t('common.error'),
-        text: 'Failed to delete category',
+        title: t('error'),
+        text: t('delete_error'),
         icon: 'error',
         confirmButtonColor: '#31BCFF',
       })
@@ -107,8 +108,8 @@ export default function CategoriesPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#31BCFF]"></div>
+      <div className="p-6">
+        <CardGridSkeleton count={9} />
       </div>
     )
   }
@@ -120,19 +121,19 @@ export default function CategoriesPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between">
           <div className="mb-4 sm:mb-0">
             <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-              Categories
+              {t('page_title')}
             </h1>
             <p className="mt-2 text-gray-600">
-              Manage department categories and their functions
+              {t('page_description')}
             </p>
             <div className="mt-4 flex items-center space-x-4 text-sm text-gray-500">
               <span className="flex items-center">
                 <div className="w-2 h-2 bg-[#31BCFF] rounded-full mr-2"></div>
-                {categories.length} {categories.length === 1 ? 'category' : 'categories'}
+                {categories.length} {categories.length === 1 ? t('categories_count_single') : t('categories_count_plural')}
               </span>
               <span className="flex items-center">
                 <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                {categories.reduce((sum, cat) => sum + cat.functions.length, 0)} functions
+                {categories.reduce((sum, cat) => sum + cat.functions.length, 0)} {t('functions_count')}
               </span>
             </div>
           </div>
@@ -141,7 +142,7 @@ export default function CategoriesPage() {
             className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 group"
           >
             <PlusIcon className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
-            Create Category
+            {t('create_category')}
           </Link>
         </div>
       </div>
@@ -157,12 +158,12 @@ export default function CategoriesPage() {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search categories..."
+              placeholder={t('search_placeholder')}
               className="block w-full pl-12 pr-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
             />
           </div>
           <div className="flex items-center text-sm text-gray-500">
-            Showing {filteredCategories.length} of {categories.length}
+            {t('showing_count', { count: filteredCategories.length, total: categories.length })}
           </div>
         </div>
       </div>
@@ -173,9 +174,9 @@ export default function CategoriesPage() {
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <MagnifyingGlassIcon className="w-8 h-8 text-gray-400" />
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No categories found</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">{t('no_categories_found')}</h3>
           <p className="text-gray-500 mb-6">
-            {searchTerm ? 'Try adjusting your search terms' : 'Get started by creating your first category'}
+            {searchTerm ? t('try_adjusting_search') : t('create_first_category')}
           </p>
           {!searchTerm && (
             <Link
@@ -183,7 +184,7 @@ export default function CategoriesPage() {
               className="inline-flex items-center px-6 py-3 rounded-xl bg-[#31BCFF] text-white font-medium hover:bg-[#31BCFF]/90 transition-colors duration-200"
             >
               <PlusIcon className="w-5 h-5 mr-2" />
-              Create First Category
+              {t('create_first_category')}
             </Link>
           )}
         </div>
@@ -211,18 +212,30 @@ export default function CategoriesPage() {
                       {category.description}
                     </p>
                   )}
-                  <p className="text-xs text-gray-400 mt-1">
-                    {category.department.name}
-                  </p>
+                  <div className="flex flex-wrap items-center gap-2 mt-2">
+                    {category.departments && category.departments.length > 0 ? (
+                      <>
+                        {category.departments.map((cd: any) => (
+                          <span key={cd.id} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            {cd.department.name}
+                          </span>
+                        ))}
+                      </>
+                    ) : (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        {t('business_wide')}
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  <Link
+                <div className="flex items-center space-x-2">
+                  {/* <Link
                     href={`/dashboard/categories/${category.id}/edit`}
                     className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
                     title="Edit Category"
                   >
                     <PencilIcon className="h-4 w-4" />
-                  </Link>
+                  </Link> */}
                   <button
                     onClick={() => handleDelete(category.id, category.name)}
                     className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
@@ -247,7 +260,7 @@ export default function CategoriesPage() {
                         {category.functions.length}
                       </p>
                       <p className="text-sm text-gray-500">
-                        {category.functions.length === 1 ? 'Function' : 'Functions'}
+                        {category.functions.length === 1 ? t('function_single') : t('functions_plural')}
                       </p>
                     </div>
                   </div>
@@ -257,7 +270,7 @@ export default function CategoriesPage() {
               {/* Functions List */}
               {category.functions.length > 0 && (
                 <div className="space-y-2 mb-4">
-                  <p className="text-xs font-medium text-gray-500 uppercase">Functions</p>
+                  <p className="text-xs font-medium text-gray-500 uppercase">{t('functions_plural')}</p>
                   <div className="space-y-1">
                     {category.functions.slice(0, 3).map((func) => (
                       <div key={func.id} className="flex items-center gap-2 text-sm text-gray-600">
@@ -270,7 +283,7 @@ export default function CategoriesPage() {
                     ))}
                     {category.functions.length > 3 && (
                       <p className="text-xs text-gray-400 ml-4">
-                        +{category.functions.length - 3} more
+                        +{category.functions.length - 3} {t('more')}
                       </p>
                     )}
                   </div>
@@ -284,7 +297,7 @@ export default function CategoriesPage() {
                   className="w-full inline-flex items-center justify-center px-4 py-2 rounded-xl bg-gray-50 text-gray-700 font-medium hover:bg-[#31BCFF] hover:text-white transition-all duration-200 group/btn"
                 >
                   <PencilIcon className="w-4 h-4 mr-2 group-hover/btn:scale-110 transition-transform duration-200" />
-                  Edit Category
+                  {t('edit_category')}
                 </Link>
               </div>
             </div>

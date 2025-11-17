@@ -13,6 +13,7 @@ import {
 } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
 import { useTranslation } from 'react-i18next'
+import { RichTextEditor } from '@/components/ui/rich-text-editor'
 
 interface EmployeeGroup {
   id: string
@@ -283,8 +284,8 @@ export default function ContractTemplateForm() {
       html: `
         <div class="text-left">
           <p class="text-sm text-gray-600 mb-4">Employee Group: ${template.employeeGroup.name}</p>
-          <div class="max-h-96 overflow-y-auto">
-            <pre class="whitespace-pre-wrap text-sm">${template.body}</pre>
+          <div class="max-h-96 overflow-y-auto" style="line-height: 1.6;">
+            ${template.body}
           </div>
         </div>
       `,
@@ -426,16 +427,12 @@ export default function ContractTemplateForm() {
           <label className="block text-sm font-medium text-gray-700 mb-2">
             {t('people.contract_setup_setting.contract_body_label')}<span className="text-red-500">*</span>
           </label>
-          <div className="border border-gray-300 rounded-lg overflow-hidden">
-            <textarea
-              value={formData.body}
-              onChange={(e) => handleInputChange('body', e.target.value)}
-              placeholder={t('people.contract_setup_setting.contract_body_placeholder')}
-              rows={12}
-              className="w-full px-3 py-2 resize-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] outline-none"
-              required
-            />
-          </div>
+          <RichTextEditor
+            content={formData.body}
+            onChange={(content) => handleInputChange('body', content)}
+            placeholder={t('people.contract_setup_setting.contract_body_placeholder')}
+            className="min-h-[300px]"
+          />
           <p className="text-xs text-gray-500 mt-1">
             {/* Use variables in double curly braces like {`{{employee_name}}, {{start_date}}, {{department}}`} to automatically fill employee data */}
             {t('people.contract_setup_setting.variables_hint')}

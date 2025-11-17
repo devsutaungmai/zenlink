@@ -5,6 +5,8 @@
     "users": "Benutzer",
     "employees": "Mitarbeiter",
     "departments": "Abteilungen",
+    "categories": "Kategorien",
+    "functions": "Funktionen",
     "employee_groups": "Mitarbeitergruppen",
     "contracts": "Verträge",
     "documents": "Dokumente",
@@ -593,7 +595,9 @@
     "shifts_overview": "Schichtübersicht",
     "a_list_of_all_shifts_in_your_organization": "Eine Liste aller Schichten in Ihrer Organisation",
     "search_shifts": "Schichten nach Mitarbeiter, Abteilung oder Typ suchen...",
-    "create_shift": "Schicht erstellen"
+    "create_shift": "Schicht erstellen",
+    "welcome_back": "Willkommen zurück",
+    "navigate": "Navigieren"
   },
   "showing_paginated": "Zeige {{start}} bis {{end}} von {{total}}",
   "page_info": "Seite {{current}} von {{total}}",

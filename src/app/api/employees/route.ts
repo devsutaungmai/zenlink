@@ -14,6 +14,9 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '50')
+    const search = searchParams.get('search')
 
     let businessId: string
     if (auth.type === 'user') {
@@ -32,6 +35,19 @@ export async function GET(request: Request) {
       whereClause.userId = userId
     }
 
+    if (search && search.trim()) {
+      whereClause.OR = [
+        { firstName: { contains: search.trim(), mode: 'insensitive' } },
+        { lastName: { contains: search.trim(), mode: 'insensitive' } },
+        { employeeNo: { contains: search.trim(), mode: 'insensitive' } },
+        { email: { contains: search.trim(), mode: 'insensitive' } }
+      ]
+    }
+
+    const skip = (page - 1) * limit
+
+    const totalCount = await prisma.employee.count({ where: whereClause })
+
     const employees = await prisma.employee.findMany({
       where: whereClause,
       select: {
@@ -42,12 +58,13 @@ export async function GET(request: Request) {
         employeeNo: true,
         email: true,
         mobile: true,
-        address: true,
         isTeamLeader: true,
         dateOfHire: true,
         createdAt: true,
         profilePhoto: true,
         salaryRate: true,
+        employeeGroupId: true,
+        departmentId: true,
         department: {
           select: {
             id: true,
@@ -64,10 +81,20 @@ export async function GET(request: Request) {
       },
       orderBy: {
         createdAt: 'desc'
-      }
+      },
+      skip,
+      take: limit
     })
 
-    return NextResponse.json(employees)
+    return NextResponse.json(employees, {
+      headers: {
+        'Cache-Control': 'private, no-cache, no-store, must-revalidate',
+        'X-Total-Count': totalCount.toString(),
+        'X-Page': page.toString(),
+        'X-Per-Page': limit.toString(),
+        'X-Total-Pages': Math.ceil(totalCount / limit).toString()
+      }
+    })
   } catch (error) {
     console.error('Failed to fetch employees:', error)
     return NextResponse.json(
@@ -105,60 +132,17 @@ export async function POST(request: Request) {
     // Generate employee number if not provided
     let employeeNo = data.employeeNo
     if (!employeeNo) {
-      // Find the highest existing employee number for this business
-      const lastEmployee = await prisma.employee.findFirst({
+      const employeeCount = await prisma.employee.count({
         where: {
           user: {
             businessId: currentUser.businessId
           }
-        },
-        orderBy: {
-          employeeNo: 'desc'
-        },
-        select: {
-          employeeNo: true
         }
       })
 
-      let nextNumber = 1
-      
-      if (lastEmployee?.employeeNo) {
-        // Try to parse the employee number as an integer
-        const lastNumber = parseInt(lastEmployee.employeeNo, 10)
-        
-        if (!isNaN(lastNumber)) {
-          // If it's a valid number, increment it
-          nextNumber = lastNumber + 1
-        } else {
-          // If it's not a number, find the highest numeric employee number
-          const employees = await prisma.employee.findMany({
-            where: {
-              user: {
-                businessId: currentUser.businessId
-              }
-            },
-            select: {
-              employeeNo: true
-            }
-          })
-
-          let highestNumber = 0
-          employees.forEach(emp => {
-            if (emp.employeeNo) {
-              const num = parseInt(emp.employeeNo, 10)
-              if (!isNaN(num) && num > highestNumber) {
-                highestNumber = num
-              }
-            }
-          })
-
-          nextNumber = highestNumber + 1
-        }
-      }
-
+      let nextNumber = employeeCount + 1
       employeeNo = nextNumber.toString()
 
-      // Ensure the generated number is unique
       let attempts = 0
       while (attempts < 100) {
         const existingEmployee = await prisma.employee.findFirst({
@@ -187,8 +171,6 @@ export async function POST(request: Request) {
       }
     }
 
-    // Create a separate User record for the employee
-    // Use a guaranteed unique email for the User record (employees can have their own email in Employee table)
     let userEmail = `employee.${employeeNo}@company.local`
     let emailSuffix = 0
     

@@ -47,6 +47,7 @@ model Business {
   updatedAt                DateTime                  @updatedAt
   currency                 String                    @default("USD")
   attendances              Attendance[]
+  categories               DepartmentCategory[]      @relation("BusinessCategories")
   contracts                Contract[]
   contractTemplates        ContractTemplate[]
   departments              Department[]
@@ -74,7 +75,7 @@ model Employee {
   socialSecurityNo    String?              @unique
   address             String
   mobile              String
-  employeeNo          String?              @unique
+  employeeNo          String?
   bankAccount         String
   hoursPerMonth       Float?
   dateOfHire          DateTime
@@ -167,22 +168,41 @@ model Department {
   employees          Employee[]
   projects           Project[]
   punchClockProfiles PunchClockProfile[]
-  categories         DepartmentCategory[]
+  categories         DepartmentCategory[]   // Old relation - kept for backward compatibility
+  categoriesManyMany CategoryDepartment[]   // New many-to-many relation
   shifts             Shift[]
 }
 
 model DepartmentCategory {
-  id           String               @id @default(cuid())
+  id           String                  @id @default(cuid())
   name         String
   description  String?
   color        String?
-  departmentId String
-  createdAt    DateTime             @default(now())
-  updatedAt    DateTime             @updatedAt
-  department   Department           @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  businessId   String
+  departmentId String?                 // Deprecated: kept for backward compatibility
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
+  business     Business                @relation("BusinessCategories", fields: [businessId], references: [id], onDelete: Cascade)
+  department   Department?             @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   functions    DepartmentFunction[]
+  departments  CategoryDepartment[]    // Many-to-many relation
 
-  @@unique([name, departmentId])
+  @@unique([name, businessId])
+  @@index([businessId])
+  @@index([departmentId])
+}
+
+// Junction table for many-to-many relationship between categories and departments
+model CategoryDepartment {
+  id           String             @id @default(cuid())
+  categoryId   String
+  departmentId String
+  createdAt    DateTime           @default(now())
+  category     DepartmentCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  department   Department         @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  @@unique([categoryId, departmentId])
+  @@index([categoryId])
   @@index([departmentId])
 }
 

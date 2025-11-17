@@ -15,7 +15,7 @@ interface Department {
 export default function EditCategoryPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params)
   const router = useRouter()
-  const { t } = useTranslation()
+  const { t } = useTranslation('categories')
   const [loading, setLoading] = useState(false)
   const [fetchingLoading, setFetchingLoading] = useState(true)
   const [departments, setDepartments] = useState<Department[]>([])
@@ -23,7 +23,7 @@ export default function EditCategoryPage({ params }: { params: Promise<{ id: str
     name: '',
     description: '',
     color: '#3B82F6',
-    departmentId: ''
+    departmentIds: [] as string[]
   })
 
   useEffect(() => {
@@ -48,11 +48,12 @@ export default function EditCategoryPage({ params }: { params: Promise<{ id: str
       const res = await fetch(`/api/categories/${resolvedParams.id}`)
       if (res.ok) {
         const data = await res.json()
+        const departmentIds = data.departments?.map((d: any) => d.department.id) || []
         setFormData({
           name: data.name,
           description: data.description || '',
           color: data.color || '#3B82F6',
-          departmentId: data.departmentId
+          departmentIds: departmentIds
         })
       }
     } catch (error) {
@@ -79,8 +80,8 @@ export default function EditCategoryPage({ params }: { params: Promise<{ id: str
       }
 
       await Swal.fire({
-        title: 'Success!',
-        text: 'Category updated successfully',
+        title: t('success'),
+        text: t('update_success'),
         icon: 'success',
         confirmButtonColor: '#31BCFF',
       })
@@ -89,8 +90,8 @@ export default function EditCategoryPage({ params }: { params: Promise<{ id: str
       router.refresh()
     } catch (error) {
       await Swal.fire({
-        title: 'Error',
-        text: error instanceof Error ? error.message : 'An error occurred',
+        title: t('error'),
+        text: error instanceof Error ? error.message : t('update_error'),
         icon: 'error',
         confirmButtonColor: '#31BCFF',
       })
@@ -172,25 +173,61 @@ export default function EditCategoryPage({ params }: { params: Promise<{ id: str
             />
           </div>
 
-          {/* Department */}
+          {/* Departments (Multi-select) */}
           <div>
-            <label htmlFor="departmentId" className="block text-sm font-medium text-gray-700 mb-2">
-              Department *
+            <label htmlFor="departments" className="block text-sm font-medium text-gray-700 mb-2">
+              Departments <span className="text-gray-500 text-xs">(Optional - leave empty for business-wide category)</span>
             </label>
-            <select
-              id="departmentId"
-              required
-              value={formData.departmentId}
-              onChange={(e) => setFormData({ ...formData, departmentId: e.target.value })}
-              className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-            >
-              <option value="">Select Department</option>
-              {departments.map((dept) => (
-                <option key={dept.id} value={dept.id}>
-                  {dept.name}
-                </option>
-              ))}
-            </select>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-60 overflow-y-auto border border-gray-300 rounded-xl p-4 bg-white/70 backdrop-blur-sm">
+              {departments.length === 0 ? (
+                <p className="text-sm text-gray-500 col-span-full">No departments available</p>
+              ) : (
+                <>
+                  <label className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={formData.departmentIds.length === 0}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setFormData({ ...formData, departmentIds: [] })
+                        }
+                      }}
+                      className="h-4 w-4 text-[#31BCFF] border-gray-300 rounded focus:ring-[#31BCFF]"
+                    />
+                    <span className="text-sm font-medium text-gray-700">Business-Wide (All Departments)</span>
+                  </label>
+                  {departments.map((dept) => (
+                    <label key={dept.id} className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={formData.departmentIds.includes(dept.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setFormData({ 
+                              ...formData, 
+                              departmentIds: [...formData.departmentIds, dept.id] 
+                            })
+                          } else {
+                            setFormData({ 
+                              ...formData, 
+                              departmentIds: formData.departmentIds.filter(id => id !== dept.id) 
+                            })
+                          }
+                        }}
+                        className="h-4 w-4 text-[#31BCFF] border-gray-300 rounded focus:ring-[#31BCFF]"
+                      />
+                      <span className="text-sm text-gray-700">{dept.name}</span>
+                    </label>
+                  ))}
+                </>
+              )}
+            </div>
+            <p className="mt-2 text-xs text-gray-500">
+              {formData.departmentIds.length === 0 
+                ? 'Business-wide categories can be used by all departments.' 
+                : `Selected ${formData.departmentIds.length} department${formData.departmentIds.length > 1 ? 's' : ''}.`
+              }
+            </p>
           </div>
 
           {/* Color */}

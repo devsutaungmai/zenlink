@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 import { useTranslation } from 'react-i18next'
+import { CardGridSkeleton } from '@/components/skeletons/ScheduleSkeleton'
 import Swal from 'sweetalert2'
 import { useCurrency } from '@/shared/hooks/useCurrency'
 import {
@@ -15,6 +16,15 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
+import {
+  MobileCardList,
+  MobileCard,
+  MobileCardHeader,
+  MobileCardGrid,
+  MobileCardField,
+  MobileCardActions,
+  Badge,
+} from "@/components/MobileCardList"
 
 interface EmployeeGroup {
   id: string
@@ -137,8 +147,8 @@ export default function EmployeeGroupsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#31BCFF]"></div>
+      <div className="p-6">
+        <CardGridSkeleton count={6} />
       </div>
     )
   }
@@ -236,82 +246,139 @@ export default function EmployeeGroupsPage() {
           )}
         </div>
       ) : (
-        <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50/80">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('employee_groups.table.group_name')}
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('employee_groups.table.wage_type')}
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('employee_groups.table.hourly_wage')}
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('employee_groups.table.wage_shift')}
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('employee_groups.table.employees')}
-                  </th>
-                  <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('actions')}
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200/50">
-                {paginatedEmployeeGroups.map((group) => (
-                  <tr key={group.id} className="hover:bg-blue-50/30 transition-colors duration-200">
-                    <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-gray-900">
-                        {group.name}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {group.defaultWageType}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900 font-medium">
-                        {currencySymbol}{group.hourlyWage}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900 font-medium">
-                        {currencySymbol}{group.wagePerShift}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+        <>
+          {/* Mobile Card View */}
+          <MobileCardList>
+            {paginatedEmployeeGroups.map((group) => (
+              <MobileCard key={group.id}>
+                <MobileCardHeader
+                  title={group.name}
+                  badge={
+                    <Badge variant="blue">
+                      {group.defaultWageType}
+                    </Badge>
+                  }
+                />
+
+                <MobileCardGrid columns={2}>
+                  <MobileCardField
+                    label={t('employee_groups.table.hourly_wage')}
+                    value={`${currencySymbol}${group.hourlyWage}`}
+                  />
+                  <MobileCardField
+                    label={t('employee_groups.table.wage_shift')}
+                    value={`${currencySymbol}${group.wagePerShift}`}
+                  />
+                </MobileCardGrid>
+
+                <MobileCardGrid columns={2}>
+                  <MobileCardField
+                    label={t('employee_groups.table.employees')}
+                    value={
+                      <Badge variant="gray">
                         {group._count.employees} {t('employee_groups.table.employees')}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-end gap-2">
-                        <Link
-                          href={`/dashboard/employee-groups/${group.id}/edit`}
-                          className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
-                          title={t('employee_groups.edit_group')}
-                        >
-                          <PencilIcon className="h-4 w-4" />
-                        </Link>
-                        <button
-                          onClick={() => handleDelete(group.id)}
-                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                          title={t('employee_groups.delete_group')}
-                        >
-                          <TrashIcon className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
+                      </Badge>
+                    }
+                  />
+                </MobileCardGrid>
+
+                <MobileCardActions>
+                  <Link
+                    href={`/dashboard/employee-groups/${group.id}/edit`}
+                    className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
+                    title={t('employee_groups.edit_group')}
+                  >
+                    <PencilIcon className="h-5 w-5" />
+                  </Link>
+                  <button
+                    onClick={() => handleDelete(group.id)}
+                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                    title={t('employee_groups.delete_group')}
+                  >
+                    <TrashIcon className="h-5 w-5" />
+                  </button>
+                </MobileCardActions>
+              </MobileCard>
+            ))}
+          </MobileCardList>
+
+          {/* Desktop Table View */}
+          <div className="hidden lg:block bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50/80">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t('employee_groups.table.group_name')}
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t('employee_groups.table.wage_type')}
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t('employee_groups.table.hourly_wage')}
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t('employee_groups.table.wage_shift')}
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t('employee_groups.table.employees')}
+                    </th>
+                    <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t('actions')}
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-gray-200/50">
+                  {paginatedEmployeeGroups.map((group) => (
+                    <tr key={group.id} className="hover:bg-blue-50/30 transition-colors duration-200">
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-medium text-gray-900">
+                          {group.name}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          {group.defaultWageType}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-900 font-medium">
+                          {currencySymbol}{group.hourlyWage}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-900 font-medium">
+                          {currencySymbol}{group.wagePerShift}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                          {group._count.employees} {t('employee_groups.table.employees')}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-end gap-2">
+                          <Link
+                            href={`/dashboard/employee-groups/${group.id}/edit`}
+                            className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
+                            title={t('employee_groups.edit_group')}
+                          >
+                            <PencilIcon className="h-4 w-4" />
+                          </Link>
+                          <button
+                            onClick={() => handleDelete(group.id)}
+                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                            title={t('employee_groups.delete_group')}
+                          >
+                            <TrashIcon className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           
           {/* Pagination */}
           {totalPages > 1 && (
@@ -367,6 +434,60 @@ export default function EmployeeGroupsPage() {
             </div>
           )}
         </div>
+
+        {/* Pagination for Mobile */}
+        {totalPages > 1 && (
+          <div className="lg:hidden flex items-center justify-center px-4 py-4">
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious 
+                    onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
+                    className={currentPage <= 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                  />
+                </PaginationItem>
+                
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                  if (
+                    page === 1 ||
+                    page === totalPages ||
+                    (page >= currentPage - 1 && page <= currentPage + 1)
+                  ) {
+                    return (
+                      <PaginationItem key={page}>
+                        <PaginationLink
+                          onClick={() => handlePageChange(page)}
+                          isActive={page === currentPage}
+                          className="cursor-pointer"
+                        >
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                    )
+                  } else if (
+                    page === currentPage - 2 ||
+                    page === currentPage + 2
+                  ) {
+                    return (
+                      <PaginationItem key={page}>
+                        <PaginationEllipsis />
+                      </PaginationItem>
+                    )
+                  }
+                  return null
+                })}
+                
+                <PaginationItem>
+                  <PaginationNext 
+                    onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
+                    className={currentPage >= totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
+        )}
+      </>
       )}
     </div>
   )

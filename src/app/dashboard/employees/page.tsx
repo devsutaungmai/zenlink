@@ -23,6 +23,16 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
+import {
+  MobileCardList,
+  MobileCard,
+  MobileCardHeader,
+  MobileCardGrid,
+  MobileCardField,
+  MobileCardSection,
+  MobileCardActions,
+  Badge,
+} from "@/components/MobileCardList"
 
 interface Employee {
   id: string
@@ -75,11 +85,13 @@ export default function EmployeesPage() {
       
       const data = await response.json()
       
-      if (Array.isArray(data)) {
+      if (data.employees && Array.isArray(data.employees)) {
+        setEmployees(data.employees)
+      } else if (Array.isArray(data)) {
         setEmployees(data)
       } else {
-        console.error('Expected array but got:', data)
-        throw new Error('Invalid data format received from server')
+        console.error('Expected employees array but got:', data)
+        setError('Invalid data format received')
       }
     } catch (error) {
       console.error('Error fetching employees:', error)
@@ -349,128 +361,235 @@ export default function EmployeesPage() {
           )}
         </div>
       ) : (
-        <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50/80">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('employees.table.employee')}
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('employees.table.employee_no')}
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('employees.table.department')}
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('employees.table.group')}
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('employees.table.contact')}
-                  </th>
-                  <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('employees.table.actions')}
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200/50">
-                {paginatedEmployees.map((employee) => (
-                  <tr key={employee.id} className="hover:bg-blue-50/30 transition-colors duration-200">
-                    <td className="px-6 py-4">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">
-                          {employee.firstName} {employee.lastName}
-                        </div>
-                        {employee.isTeamLeader && (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mt-1">
-                            {t('employees.table.team_leader')}
-                          </span>
+        <>
+          {/* Mobile Card View */}
+          <MobileCardList>
+            {paginatedEmployees.map((employee) => (
+              <MobileCard key={employee.id}>
+                <MobileCardHeader
+                  title={`${employee.firstName} ${employee.lastName}`}
+                  subtitle={`${t('employees.table.employee_no')}: ${employee.employeeNo}`}
+                  badge={
+                    employee.isTeamLeader ? (
+                      <Badge variant="blue">
+                        {t('employees.table.team_leader')}
+                      </Badge>
+                    ) : null
+                  }
+                />
+
+                <MobileCardGrid columns={2}>
+                  <MobileCardField
+                    label={t('employees.table.department')}
+                    value={employee.department.name}
+                  />
+                  <MobileCardField
+                    label={t('employees.table.group')}
+                    value={
+                      employee.employeeGroup?.name || (
+                        <span className="text-gray-400 italic">{t('employees.table.no_group')}</span>
+                      )
+                    }
+                  />
+                </MobileCardGrid>
+
+                <MobileCardSection>
+                  <MobileCardField
+                    label={t('employees.table.contact')}
+                    value={
+                      <>
+                        <div>{employee.mobile}</div>
+                        {employee.email && (
+                          <div className="text-gray-500 mt-0.5">{employee.email}</div>
                         )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">{employee.employeeNo}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">{employee.department.name}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">
-                        {employee.employeeGroup?.name || (
-                          <span className="text-gray-400 italic">{t('employees.table.no_group')}</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">{employee.mobile}</div>
-                      {employee.email && (
-                        <div className="text-sm text-gray-500">{employee.email}</div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => handleInvite(employee.email || '', employee.id)}
-                          className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
-                          title={t('employees.table.send_invite')}
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={1.5}
-                            stroke="currentColor"
-                            className="w-4 h-4"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25H4.5a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"
-                            />
-                          </svg>
-                        </button>
-                        <button
-                          onClick={() => handleSetPin(employee.id, `${employee.firstName} ${employee.lastName}`)}
-                          className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200"
-                          title={t('employees.table.set_pin')}
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={1.5}
-                            stroke="currentColor"
-                            className="w-4 h-4"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z"
-                            />
-                          </svg>
-                        </button>
-                        <Link
-                          href={`/dashboard/employees/${employee.id}/edit`}
-                          className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
-                          title={t('employees.table.edit_employee')}
-                        >
-                          <PencilIcon className="h-4 w-4" />
-                        </Link>
-                        <button
-                          onClick={() => handleDelete(employee.id)}
-                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                          title={t('employees.table.delete_employee')}
-                        >
-                          <TrashIcon className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
+                      </>
+                    }
+                  />
+                </MobileCardSection>
+
+                <MobileCardActions>
+                  <button
+                    onClick={() => handleInvite(employee.email || '', employee.id)}
+                    className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
+                    title={t('employees.table.send_invite')}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                      stroke="currentColor"
+                      className="w-5 h-5"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25H4.5a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"
+                      />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => handleSetPin(employee.id, `${employee.firstName} ${employee.lastName}`)}
+                    className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200"
+                    title={t('employees.table.set_pin')}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                      stroke="currentColor"
+                      className="w-5 h-5"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z"
+                      />
+                    </svg>
+                  </button>
+                  <Link
+                    href={`/dashboard/employees/${employee.id}/edit`}
+                    className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
+                    title={t('employees.table.edit_employee')}
+                  >
+                    <PencilIcon className="h-5 w-5" />
+                  </Link>
+                  <button
+                    onClick={() => handleDelete(employee.id)}
+                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                    title={t('employees.table.delete_employee')}
+                  >
+                    <TrashIcon className="h-5 w-5" />
+                  </button>
+                </MobileCardActions>
+              </MobileCard>
+            ))}
+          </MobileCardList>
+
+          {/* Desktop Table View */}
+          <div className="hidden lg:block bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50/80">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t('employees.table.employee')}
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t('employees.table.employee_no')}
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t('employees.table.department')}
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t('employees.table.group')}
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t('employees.table.contact')}
+                    </th>
+                    <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t('employees.table.actions')}
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-gray-200/50">
+                  {paginatedEmployees.map((employee) => (
+                    <tr key={employee.id} className="hover:bg-blue-50/30 transition-colors duration-200">
+                      <td className="px-6 py-4">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {employee.firstName} {employee.lastName}
+                          </div>
+                          {employee.isTeamLeader && (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mt-1">
+                              {t('employees.table.team_leader')}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-900">{employee.employeeNo}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-900">{employee.department.name}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-900">
+                          {employee.employeeGroup?.name || (
+                            <span className="text-gray-400 italic">{t('employees.table.no_group')}</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-900">{employee.mobile}</div>
+                        {employee.email && (
+                          <div className="text-sm text-gray-500">{employee.email}</div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => handleInvite(employee.email || '', employee.id)}
+                            className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
+                            title={t('employees.table.send_invite')}
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              strokeWidth={1.5}
+                              stroke="currentColor"
+                              className="w-4 h-4"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25H4.5a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"
+                              />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => handleSetPin(employee.id, `${employee.firstName} ${employee.lastName}`)}
+                            className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200"
+                            title={t('employees.table.set_pin')}
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              strokeWidth={1.5}
+                              stroke="currentColor"
+                              className="w-4 h-4"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z"
+                              />
+                            </svg>
+                          </button>
+                          <Link
+                            href={`/dashboard/employees/${employee.id}/edit`}
+                            className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
+                            title={t('employees.table.edit_employee')}
+                          >
+                            <PencilIcon className="h-4 w-4" />
+                          </Link>
+                          <button
+                            onClick={() => handleDelete(employee.id)}
+                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                            title={t('employees.table.delete_employee')}
+                          >
+                            <TrashIcon className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           
           {/* Pagination */}
           {totalPages > 1 && (
@@ -526,6 +645,61 @@ export default function EmployeesPage() {
             </div>
           )}
         </div>
+
+        {/* Pagination for Mobile */}
+        {totalPages > 1 && (
+          <div className="lg:hidden flex items-center justify-center px-4 py-4">
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious 
+                    onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
+                    className={currentPage <= 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                  />
+                </PaginationItem>
+                
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                  // Show first page, last page, current page, and pages around current page
+                  if (
+                    page === 1 ||
+                    page === totalPages ||
+                    (page >= currentPage - 1 && page <= currentPage + 1)
+                  ) {
+                    return (
+                      <PaginationItem key={page}>
+                        <PaginationLink
+                          onClick={() => handlePageChange(page)}
+                          isActive={page === currentPage}
+                          className="cursor-pointer"
+                        >
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                    )
+                  } else if (
+                    page === currentPage - 2 ||
+                    page === currentPage + 2
+                  ) {
+                    return (
+                      <PaginationItem key={page}>
+                        <PaginationEllipsis />
+                      </PaginationItem>
+                    )
+                  }
+                  return null
+                })}
+                
+                <PaginationItem>
+                  <PaginationNext 
+                    onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
+                    className={currentPage >= totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
+        )}
+      </>
       )}
 
       {/* Modals */}

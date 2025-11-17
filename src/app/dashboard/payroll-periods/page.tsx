@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useTranslation } from 'react-i18next'
+import { CardGridSkeleton, TableSkeleton } from '@/components/skeletons/ScheduleSkeleton'
 import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon, CalendarIcon, ClockIcon } from '@heroicons/react/24/outline'
 import { PayrollPeriod } from '@/shared/types'
 import Swal from 'sweetalert2'
@@ -144,9 +145,8 @@ export default function PayrollPeriodsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#31BCFF]"></div>
-        <span className="ml-4 text-gray-600">{t('loading')}</span>
+      <div className="p-6">
+        <CardGridSkeleton />
       </div>
     )
   }
@@ -258,24 +258,15 @@ export default function PayrollPeriodsPage() {
                     {new Date(period.startDate).toLocaleDateString()} - {new Date(period.endDate).toLocaleDateString()}
                   </p>
                 </div>
-                <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  <Link
-                    href={`/dashboard/payroll-periods/${period.id}/edit`}
-                    className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
-                    title={t('actions.edit_period')}
+                {period.status === 'DRAFT' && (
+                  <button
+                    onClick={() => handleDelete(period.id)}
+                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                    title={t('actions.delete_period')}
                   >
-                    <PencilIcon className="h-4 w-4" />
-                  </Link>
-                  {period.status === 'DRAFT' && (
-                    <button
-                      onClick={() => handleDelete(period.id)}
-                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                      title={t('actions.delete_period')}
-                    >
-                      <TrashIcon className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
+                    <TrashIcon className="h-4 w-4" />
+                  </button>
+                )}
               </div>
 
               {/* Period Status */}

@@ -4,16 +4,25 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
+import { useTranslation } from 'react-i18next'
+import { CardGridSkeleton } from '@/components/skeletons/ScheduleSkeleton'
 import Swal from 'sweetalert2'
 
 interface Category {
   id: string
   name: string
   color?: string | null
-  department: {
+  department?: {
     id: string
     name: string
-  }
+  } | null
+  departments?: Array<{
+    id: string
+    department: {
+      id: string
+      name: string
+    }
+  }>
 }
 
 interface Function {
@@ -30,6 +39,7 @@ interface Function {
 
 export default function FunctionsPage() {
   const router = useRouter()
+  const { t } = useTranslation('functions')
   const [functions, setFunctions] = useState<Function[]>([])
   const [filteredFunctions, setFilteredFunctions] = useState<Function[]>([])
   const [searchTerm, setSearchTerm] = useState('')
@@ -40,12 +50,19 @@ export default function FunctionsPage() {
   }, [])
 
   useEffect(() => {
-    const filtered = functions.filter(func =>
-      func.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      func.category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      func.category.department.name.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    setFilteredFunctions(filtered)
+    const filtered = functions.filter(func => {
+      const searchLower = searchTerm.toLowerCase();
+      const matchesName = func.name.toLowerCase().includes(searchLower);
+      const matchesCategory = func.category.name.toLowerCase().includes(searchLower);
+
+      const deptNames = func.category.departments && func.category.departments.length > 0
+        ? func.category.departments.map((cd: any) => cd.department.name).join(' ')
+        : func.category.department?.name || '';
+      const matchesDept = deptNames.toLowerCase().includes(searchLower);
+      
+      return matchesName || matchesCategory || matchesDept;
+    });
+    setFilteredFunctions(filtered);
   }, [searchTerm, functions])
 
   const fetchFunctions = async () => {
@@ -67,14 +84,14 @@ export default function FunctionsPage() {
 
   const handleDelete = async (id: string, name: string) => {
     const result = await Swal.fire({
-      title: 'Are you sure?',
-      text: `Do you want to delete the function "${name}"?`,
+      title: t('delete_confirm_title'),
+      text: t('delete_confirm_message', { name }),
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#EF4444',
-      cancelButtonColor: '#6B7280',
-      confirmButtonText: 'Yes, delete it!',
-      cancelButtonText: 'Cancel'
+      confirmButtonColor: '#31BCFF',
+      cancelButtonColor: '#d33',
+      confirmButtonText: t('delete_confirm'),
+      cancelButtonText: t('cancel')
     })
 
     if (result.isConfirmed) {
@@ -85,27 +102,27 @@ export default function FunctionsPage() {
 
         if (response.ok) {
           await Swal.fire({
-            title: 'Deleted!',
-            text: 'Function has been deleted.',
+            title: t('success'),
+            text: t('delete_success'),
             icon: 'success',
-            confirmButtonColor: '#3B82F6'
+            confirmButtonColor: '#31BCFF'
           })
           fetchFunctions()
         } else {
           await Swal.fire({
-            title: 'Error!',
-            text: 'Failed to delete function.',
+            title: t('error'),
+            text: t('delete_error'),
             icon: 'error',
-            confirmButtonColor: '#EF4444'
+            confirmButtonColor: '#31BCFF'
           })
         }
       } catch (error) {
         console.error('Error deleting function:', error)
         await Swal.fire({
-          title: 'Error!',
-          text: 'An error occurred while deleting the function.',
+          title: t('error'),
+          text: t('delete_error'),
           icon: 'error',
-          confirmButtonColor: '#EF4444'
+          confirmButtonColor: '#31BCFF'
         })
       }
     }
@@ -113,141 +130,174 @@ export default function FunctionsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="p-6">
+        <CardGridSkeleton count={9} />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 mb-8 shadow-sm">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Functions</h1>
-              <p className="mt-2 text-gray-600">
-                Manage specific roles and tasks within categories
-              </p>
-            </div>
-            <Link
-              href="/dashboard/functions/create"
-              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-md hover:shadow-lg"
-            >
-              <PlusIcon className="h-5 w-5 mr-2" />
-              Add Function
-            </Link>
-          </div>
-
-          {/* Stats */}
-          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div className="bg-white rounded-lg p-4 shadow-sm">
-              <div className="text-sm font-medium text-gray-500">Total Functions</div>
-              <div className="mt-1 text-2xl font-semibold text-gray-900">{functions.length}</div>
-            </div>
-            <div className="bg-white rounded-lg p-4 shadow-sm">
-              <div className="text-sm font-medium text-gray-500">Total Employees</div>
-              <div className="mt-1 text-2xl font-semibold text-gray-900">
-                {functions.reduce((sum, func) => sum + func._count.employees, 0)}
-              </div>
-            </div>
-            <div className="bg-white rounded-lg p-4 shadow-sm">
-              <div className="text-sm font-medium text-gray-500">Total Shifts</div>
-              <div className="mt-1 text-2xl font-semibold text-gray-900">
-                {functions.reduce((sum, func) => sum + func._count.shifts, 0)}
-              </div>
+    <div className="space-y-6">
+      {/* Header Section */}
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-100">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between">
+          <div className="mb-4 sm:mb-0">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+              {t('page_title')}
+            </h1>
+            <p className="mt-2 text-gray-600">
+              {t('page_description')}
+            </p>
+            <div className="mt-4 flex items-center space-x-4 text-sm text-gray-500">
+              <span className="flex items-center">
+                <div className="w-2 h-2 bg-[#31BCFF] rounded-full mr-2"></div>
+                {t('total_functions')}: {functions.length}
+              </span>
+              <span className="flex items-center">
+                <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                {t('total_employees')}: {functions.reduce((sum, func) => sum + func._count.employees, 0)}
+              </span>
+              <span className="flex items-center">
+                <div className="w-2 h-2 bg-purple-500 rounded-full mr-2"></div>
+                {t('total_shifts')}: {functions.reduce((sum, func) => sum + func._count.shifts, 0)}
+              </span>
             </div>
           </div>
+          <Link
+            href="/dashboard/functions/create"
+            className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 group"
+          >
+            <PlusIcon className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
+            {t('add_function')}
+          </Link>
         </div>
+      </div>
 
-        {/* Search */}
-        <div className="mb-6">
-          <div className="relative">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+      {/* Search and Filters */}
+      <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 border border-gray-200/50 shadow-lg">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <div className="absolute inset-y-0 left-0 flex items-center pl-4">
+              <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+            </div>
             <input
               type="text"
-              placeholder="Search functions, categories, or departments..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder={t('search_placeholder')}
+              className="block w-full pl-12 pr-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
             />
           </div>
-        </div>
-
-        {/* Functions Grid */}
-        {filteredFunctions.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-lg shadow-sm">
-            <p className="text-gray-500 text-lg">No functions found</p>
-            <p className="text-gray-400 mt-2">
-              {searchTerm ? 'Try adjusting your search' : 'Create your first function to get started'}
-            </p>
+          <div className="flex items-center text-sm text-gray-500">
+            {t('showing', { current: filteredFunctions.length, total: functions.length })}
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredFunctions.map((func) => (
-              <div
-                key={func.id}
-                className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden"
-              >
-                <div
-                  className="h-2"
-                  style={{ backgroundColor: func.color || func.category.color || '#3B82F6' }}
-                />
-                <div className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                        {func.name}
-                      </h3>
-                      <div className="flex flex-col space-y-1">
-                        <span
-                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium w-fit"
-                          style={{
-                            backgroundColor: `${func.category.color || '#3B82F6'}20`,
-                            color: func.category.color || '#3B82F6'
-                          }}
-                        >
-                          {func.category.name}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          {func.category.department.name}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+        </div>
+      </div>
 
-                  <div className="flex items-center justify-between text-sm text-gray-600 mb-4">
-                    <div>
-                      <span className="font-medium">{func._count.employees}</span> employees
-                    </div>
-                    <div>
-                      <span className="font-medium">{func._count.shifts}</span> shifts
-                    </div>
+      {/* Functions Grid */}
+      {filteredFunctions.length === 0 ? (
+        <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-12 border border-gray-200/50 shadow-lg text-center">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <MagnifyingGlassIcon className="w-8 h-8 text-gray-400" />
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">{t('no_functions_found')}</h3>
+          <p className="text-gray-500 mb-6">
+            {searchTerm ? t('try_adjusting_search') : t('create_first_function')}
+          </p>
+          {!searchTerm && (
+            <Link
+              href="/dashboard/functions/create"
+              className="inline-flex items-center px-6 py-3 rounded-xl bg-[#31BCFF] text-white font-medium hover:bg-[#31BCFF]/90 transition-colors duration-200"
+            >
+              <PlusIcon className="w-5 h-5 mr-2" />
+              {t('add_function')}
+            </Link>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredFunctions.map((func) => (
+            <div
+              key={func.id}
+              className="group bg-white/80 backdrop-blur-xl rounded-2xl p-6 border border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] hover:border-[#31BCFF]/30"
+            >
+              {/* Function Header with Color Indicator */}
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: func.color || func.category.color || '#31BCFF' }}
+                    />
+                    <h3 className="text-lg font-semibold text-gray-900 group-hover:text-[#31BCFF] transition-colors duration-200">
+                      {func.name}
+                    </h3>
                   </div>
+                  <span
+                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                    style={{
+                      backgroundColor: `${func.category.color || '#31BCFF'}20`,
+                      color: func.category.color || '#31BCFF'
+                    }}
+                  >
+                    {func.category.name}
+                  </span>
+                  {(func.category.departments && func.category.departments.length > 0 
+                    ? func.category.departments.map((cd: any) => cd.department.name).join(', ')
+                    : func.category.department?.name) && (
+                    <p className="text-sm text-gray-500 mt-1">
+                      {func.category.departments && func.category.departments.length > 0
+                        ? func.category.departments.map((cd: any) => cd.department.name).join(', ')
+                        : func.category.department?.name || t('business_wide')}
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center space-x-2">
+                  {/* <Link
+                    href={`/dashboard/functions/${func.id}/edit`}
+                    className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
+                    title="Edit Function"
+                  >
+                    <PencilIcon className="h-4 w-4" />
+                  </Link> */}
+                  <button
+                    onClick={() => handleDelete(func.id, func.name)}
+                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                    title="Delete Function"
+                  >
+                    <TrashIcon className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
 
-                  <div className="flex space-x-2">
-                    <Link
-                      href={`/dashboard/functions/${func.id}/edit`}
-                      className="flex-1 inline-flex items-center justify-center px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200"
-                    >
-                      <PencilIcon className="h-4 w-4 mr-1.5" />
-                      Edit
-                    </Link>
-                    <button
-                      onClick={() => handleDelete(func.id, func.name)}
-                      className="flex-1 inline-flex items-center justify-center px-3 py-2 border border-red-300 rounded-lg text-sm font-medium text-red-700 bg-white hover:bg-red-50 transition-colors duration-200"
-                    >
-                      <TrashIcon className="h-4 w-4 mr-1.5" />
-                      Delete
-                    </button>
+              {/* Function Stats */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 mb-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-500">Employees</p>
+                    <p className="text-2xl font-bold text-gray-900">{func._count.employees}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Shifts</p>
+                    <p className="text-2xl font-bold text-gray-900">{func._count.shifts}</p>
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+
+              {/* Quick Action */}
+              <div className="mt-4 pt-4 border-t border-gray-200/50">
+                <Link
+                  href={`/dashboard/functions/${func.id}/edit`}
+                  className="w-full inline-flex items-center justify-center px-4 py-2 rounded-xl bg-gray-50 text-gray-700 font-medium hover:bg-[#31BCFF] hover:text-white transition-all duration-200 group/btn"
+                >
+                  <PencilIcon className="w-4 h-4 mr-2 group-hover/btn:scale-110 transition-transform duration-200" />
+                  {t('edit')}
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

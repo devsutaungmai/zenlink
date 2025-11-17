@@ -1,23 +1,19 @@
 import Link from 'next/link'
 import { Fragment, useState } from 'react'
-import { Menu, Transition, Disclosure } from '@headlessui/react'
+import { Menu, Transition } from '@headlessui/react'
 import { APP_NAME } from '@/app/constants/constants'
 import { 
-  BellIcon, 
   UserCircleIcon, 
   ChevronDownIcon,
   HomeIcon,
-  UsersIcon,
   UserGroupIcon,
   UserIcon,
   Cog6ToothIcon,
-  Bars3Icon,
-  XMarkIcon,
   ClockIcon,
   CurrencyDollarIcon,
   CalendarIcon
 } from '@heroicons/react/24/outline'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useUser } from '@/shared/lib/useUser'
 import { useTranslation } from 'react-i18next'
 import LanguageSwitcher from './LanguageSwitcher'
@@ -35,15 +31,24 @@ type NavigationItem = {
   children?: NavigationChild[]
 }
 
-interface DashboardNavbarProps {
-  setMobileMenuOpen: (open: boolean) => void
-}
-
-export default function DashboardNavbar({ setMobileMenuOpen }: DashboardNavbarProps) {
+export default function DashboardNavbar() {
   const router = useRouter()
+  const pathname = usePathname()
   const { user, loading } = useUser()
   const { t } = useTranslation()
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [activeBottomMenu, setActiveBottomMenu] = useState<string | null>(null)
+  const profileInitials = (() => {
+    const first = user?.firstName?.charAt(0) ?? ''
+    const last = user?.lastName?.charAt(0) ?? ''
+    const initials = `${first}${last}`.trim()
+    if (initials) return initials.toUpperCase()
+    if (user?.email) return user.email.charAt(0).toUpperCase()
+    return APP_NAME.charAt(0).toUpperCase()
+  })()
+  const profileDisplayName = user?.firstName || user?.lastName
+    ? [user?.firstName, user?.lastName].filter(Boolean).join(' ')
+    : user?.email || t('navigation.profile')
+  const profileGreeting = t('common.welcome_back')
   
   const adminNavigation: NavigationItem[] = [
     { name: t('navigation.home'), href: '/dashboard', icon: HomeIcon },
@@ -53,8 +58,8 @@ export default function DashboardNavbar({ setMobileMenuOpen }: DashboardNavbarPr
       icon: UserGroupIcon,
       children: [
         { name: t('navigation.departments'), href: '/dashboard/departments' },
-        { name: 'Categories', href: '/dashboard/categories' },
-        { name: 'Functions', href: '/dashboard/functions' },
+        { name: t('navigation.categories'), href: '/dashboard/categories' },
+        { name: t('navigation.functions'), href: '/dashboard/functions' },
         { name: t('navigation.employees'), href: '/dashboard/employees' },
         { name: t('navigation.employee_groups'), href: '/dashboard/employee-groups' },
         { name: t('navigation.contracts'), href: '/dashboard/contracts' },
@@ -120,23 +125,47 @@ export default function DashboardNavbar({ setMobileMenuOpen }: DashboardNavbarPr
     }
   }
 
+  const activeBottomItem = navigation.find(item => item.name === activeBottomMenu)
+
+  const handleBottomNavClick = (item: NavigationItem) => {
+    if (item.children?.length) {
+      setActiveBottomMenu(prev => prev === item.name ? null : item.name)
+      return
+    }
+
+    if (item.href) {
+      router.push(item.href)
+      setActiveBottomMenu(null)
+    }
+  }
+
+  const handleChildNavClick = (href: string) => {
+    router.push(href)
+    setActiveBottomMenu(null)
+  }
+
+  const isNavItemActive = (item: NavigationItem) => {
+    if (item.href) {
+      if (item.href === '/dashboard') {
+        return pathname === '/dashboard'
+      }
+
+      return pathname === item.href || pathname.startsWith(`${item.href}/`)
+    }
+
+    if (item.children) {
+      return item.children.some(child => pathname.startsWith(child.href))
+    }
+
+    return false
+  }
+
   return (
-    <nav className="bg-white/80 backdrop-blur-xl border-b border-gray-200/50 shadow-lg fixed w-full z-30">
+    <>
+      <nav className="hidden md:block bg-white/80 backdrop-blur-xl border-b border-gray-200/50 shadow-lg fixed w-full z-30">
       <div className="px-6 h-18 flex items-center justify-between">
         {/* Left section with logo */}
         <div className="flex items-center">
-          <button
-            type="button"
-            className="md:hidden -ml-0.5 -mt-0.5 h-12 w-12 inline-flex items-center justify-center rounded-xl text-gray-500 hover:text-gray-900 hover:bg-gray-100/50 transition-all duration-200"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-          >
-            <span className="sr-only">Open menu</span>
-            {isMenuOpen ? (
-              <XMarkIcon className="h-6 w-6" aria-hidden="true" />
-            ) : (
-              <Bars3Icon className="h-6 w-6" aria-hidden="true" />
-            )}
-          </button>
           <Link href="/dashboard" className="text-2xl font-bold bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] bg-clip-text text-transparent ml-2 md:ml-0 hover:scale-105 transition-transform duration-200">
             {APP_NAME}
           </Link>
@@ -285,63 +314,165 @@ export default function DashboardNavbar({ setMobileMenuOpen }: DashboardNavbarPr
         </div>
       </div>
 
-      {/* Mobile menu - also conditionally rendered based on user role */}
-      <Transition
-        show={isMenuOpen}
-        enter="transition ease-out duration-200 transform"
-        enterFrom="opacity-0 scale-95 -translate-y-2"
-        enterTo="opacity-100 scale-100 translate-y-0"
-        leave="transition ease-in duration-150 transform"
-        leaveFrom="opacity-100 scale-100 translate-y-0"
-        leaveTo="opacity-0 scale-95 -translate-y-2"
-      >
-        <div className="md:hidden">
-          <div className="px-4 pt-2 pb-3 space-y-1 bg-white/95 backdrop-blur-xl shadow-xl border-t border-gray-200/50">
-            {navigation.map((item) => 
-              !item.children ? (
-                <Link
-                  key={item.name}
-                  href={item.href || '#'}
-                  className="flex items-center px-4 py-3 rounded-xl text-base font-medium text-gray-700 hover:text-[#31BCFF] hover:bg-blue-50/50 transition-all duration-200 group"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <item.icon className="h-5 w-5 mr-3 group-hover:scale-110 transition-transform duration-200" aria-hidden="true" />
-                  {item.name}
-                </Link>
-              ) : (
-                <Disclosure key={item.name} as="div">
-                  {({ open }) => (
-                    <>
-                      <Disclosure.Button className="flex items-center w-full px-4 py-3 text-left text-base font-medium text-gray-700 rounded-xl hover:text-[#31BCFF] hover:bg-blue-50/50 transition-all duration-200 group">
-                        <item.icon className="h-5 w-5 mr-3 flex-shrink-0 group-hover:scale-110 transition-transform duration-200" />
-                        <span className="flex-1 text-left">{item.name}</span>
-                        <ChevronDownIcon
-                          className={`${
-                            open ? 'rotate-180' : ''
-                          } w-5 h-5 flex-shrink-0 transition-transform duration-200`}
-                        />
-                      </Disclosure.Button>
-                      <Disclosure.Panel className="px-4 pt-2 pb-2 space-y-1">
-                        {item.children?.map((child) => (
-                          <Link
-                            key={child.name}
-                            href={child.href}
-                            className="flex items-center pl-9 pr-4 py-3 text-sm font-medium text-gray-600 rounded-xl hover:text-[#31BCFF] hover:bg-blue-50/50 transition-all duration-200 group"
-                            onClick={() => setIsMenuOpen(false)}
-                          >
-                            <div className="w-2 h-2 bg-current rounded-full mr-3 opacity-60 group-hover:scale-125 transition-transform duration-200"></div>
-                            {child.name}
-                          </Link>
-                        ))}
-                      </Disclosure.Panel>
-                    </>
+      </nav>
+
+      {/* Mobile compact header */}
+      <div className="md:hidden fixed top-0 inset-x-0 z-30 bg-white/95 backdrop-blur-xl border-b border-gray-200/70 shadow-lg">
+        <div className="flex items-center justify-between px-4 py-3">
+          <div>
+            <Link href="/dashboard" className="text-2xl font-bold bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] bg-clip-text text-transparent">
+              {APP_NAME}
+            </Link>
+          </div>
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher />
+            <NotificationCenter />
+            <Menu as="div" className="relative">
+              <Menu.Button
+                aria-label={t('navigation.profile')}
+                className="flex items-center gap-3 px-3 py-1.5 rounded-full bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white shadow-lg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#31BCFF] transition-all duration-200"
+              >
+                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-white/15 text-sm font-semibold uppercase">
+                  {loading ? (
+                    <span className="block h-3 w-8 rounded-full bg-white/40" />
+                  ) : (
+                    profileInitials
                   )}
-                </Disclosure>
+                </div>
+                <div className="flex flex-col text-left leading-tight min-w-0">
+                  Profile
+                </div>
+                <ChevronDownIcon className="h-4 w-4 text-white/80" />
+              </Menu.Button>
+
+              <Transition
+                as={Fragment}
+                enter="transition ease-out duration-200"
+                enterFrom="transform opacity-0 scale-95 translate-y-1"
+                enterTo="transform opacity-100 scale-100 translate-y-0"
+                leave="transition ease-in duration-150"
+                leaveFrom="transform opacity-100 scale-100 translate-y-0"
+                leaveTo="transform opacity-0 scale-95 translate-y-1"
+              >
+                <Menu.Items className="absolute right-0 mt-3 w-60 origin-top-right bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl ring-1 ring-black/5 focus:outline-none border border-gray-200/70 p-2">
+                  {/* <div className="flex items-center gap-3 p-3 rounded-2xl bg-blue-50/60 mb-2">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-[#31BCFF] text-lg font-semibold uppercase">
+                      {profileInitials}
+                    </div>
+                    <div className="flex flex-col text-sm">
+                      <span className="text-gray-500">{t('common.welcome_back')}</span>
+                      <span className="font-semibold text-gray-900 truncate">{profileDisplayName}</span>
+                    </div>
+                  </div> */}
+                  <Menu.Item>
+                    {({ active }) => (
+                      <Link
+                        href="/dashboard/profile"
+                        className={`${
+                          active ? 'bg-blue-50/70 text-[#31BCFF]' : 'text-gray-700'
+                        } flex items-center px-4 py-3 text-sm font-medium rounded-2xl transition-all duration-200`}
+                      >
+                        <UserCircleIcon className="h-5 w-5 mr-3 opacity-70" />
+                        {t('navigation.edit_profile')}
+                      </Link>
+                    )}
+                  </Menu.Item>
+                  <div className="border-t border-gray-200/70 my-2" />
+                  <Menu.Item>
+                    {({ active }) => (
+                      <button
+                        onClick={handleLogout}
+                        className={`${
+                          active ? 'bg-red-50/70 text-red-600' : 'text-red-500'
+                        } flex w-full items-center px-4 py-3 text-sm font-semibold rounded-2xl transition-all duration-200`}
+                      >
+                        <svg className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        {t('navigation.logout')}
+                      </button>
+                    )}
+                  </Menu.Item>
+                </Menu.Items>
+              </Transition>
+            </Menu>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile bottom navigation */}
+      <div className="md:hidden fixed bottom-0 inset-x-0 z-30" aria-label="Primary navigation">
+        <div className="bg-white/95 backdrop-blur-xl border-t border-gray-200/70 shadow-2xl">
+          <nav className="flex items-center justify-around px-2 py-2">
+            {navigation.map(item => {
+              const isActive = isNavItemActive(item)
+              const hasChildren = item.children && item.children.length > 0
+              return (
+                <button
+                  key={item.name}
+                  onClick={() => handleBottomNavClick(item)}
+                  className={`relative flex flex-col items-center flex-1 px-3 py-2 rounded-2xl transition-all duration-200 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#31BCFF] ${
+                    isActive ? 'text-[#31BCFF] bg-blue-50/60 shadow-inner' : 'text-gray-500'
+                  }`}
+                >
+                  <item.icon className={`h-5 w-5 ${isActive ? 'text-[#31BCFF]' : 'text-gray-400'}`} />
+                  <span className="text-[11px] font-medium mt-1 truncate">{item.name}</span>
+                  {hasChildren && (
+                    <span className="absolute -top-1 right-3 text-[10px] text-gray-400">⋯</span>
+                  )}
+                </button>
               )
-            )}
+            })}
+          </nav>
+        </div>
+      </div>
+
+      {/* Mobile sub menu drawer */}
+      <Transition
+        show={!!activeBottomItem?.children}
+        as={Fragment}
+        enter="transition ease-out duration-200"
+        enterFrom="opacity-0 translate-y-4"
+        enterTo="opacity-100 translate-y-0"
+        leave="transition ease-in duration-150"
+        leaveFrom="opacity-100 translate-y-0"
+        leaveTo="opacity-0 translate-y-4"
+      >
+        <div className="md:hidden" aria-live="polite">
+          <div
+            className="fixed inset-0 bg-black/20 z-30"
+            onClick={() => setActiveBottomMenu(null)}
+            aria-hidden="true"
+          ></div>
+          <div className="fixed bottom-20 inset-x-0 px-4 z-40">
+            <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-gray-200/70 p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <p className="text-base font-semibold text-gray-900">{activeBottomItem?.name}</p>
+                </div>
+                <button
+                  onClick={() => setActiveBottomMenu(null)}
+                  className="text-sm text-gray-500 hover:text-gray-800"
+                >
+                  {t('common.close') ?? 'Close'}
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {activeBottomItem?.children?.map(child => (
+                  <button
+                    key={child.name}
+                    onClick={() => handleChildNavClick(child.href)}
+                    className="flex items-center gap-2 w-full px-3 py-3 text-sm rounded-2xl border border-gray-100 hover:border-[#31BCFF] hover:bg-blue-50/70 hover:text-[#31BCFF] transition-all duration-200"
+                  >
+                    <span className="h-2 w-2 rounded-full bg-current opacity-60"></span>
+                    <span className="text-left">{child.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </Transition>
-    </nav>
+    </>
   )
 }

@@ -34,9 +34,7 @@ export async function GET(
       where: {
         id,
         category: {
-          department: {
-            businessId: businessId
-          }
+          businessId: businessId
         }
       },
       include: {
@@ -49,6 +47,16 @@ export async function GET(
               select: {
                 id: true,
                 name: true
+              }
+            },
+            departments: {
+              include: {
+                department: {
+                  select: {
+                    id: true,
+                    name: true
+                  }
+                }
               }
             }
           }
@@ -108,9 +116,7 @@ export async function PUT(
       where: {
         id,
         category: {
-          department: {
-            businessId: businessId
-          }
+          businessId: businessId
         }
       }
     })
@@ -123,9 +129,7 @@ export async function PUT(
       const category = await prisma.departmentCategory.findFirst({
         where: {
           id: categoryId,
-          department: {
-            businessId: businessId
-          }
+          businessId: businessId
         }
       })
 
@@ -202,9 +206,7 @@ export async function DELETE(
       where: {
         id,
         category: {
-          department: {
-            businessId: businessId
-          }
+          businessId: businessId
         }
       }
     })

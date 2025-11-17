@@ -170,24 +170,25 @@ export default function NotificationCenter({ employeeId }: NotificationCenterPro
           />
           
           {/* Dropdown Panel */}
-          <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-96 overflow-hidden">
+          <div className="fixed sm:absolute left-4 right-4 sm:left-auto sm:right-0 top-16 sm:top-auto mt-0 sm:mt-2 
+                         w-auto sm:w-96 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-[calc(100vh-5rem)] sm:max-h-96 overflow-hidden">
             {/* Header */}
-            <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
-              <h3 className="text-lg font-medium text-gray-900">Notifications</h3>
-              <div className="flex items-center gap-2">
+            <div className="px-3 sm:px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+              <h3 className="text-base sm:text-lg font-medium text-gray-900">Notifications</h3>
+              <div className="flex items-center gap-1 sm:gap-2">
                 {unreadCount > 0 && (
                   <button
                     onClick={markAllAsRead}
-                    className="text-sm text-blue-600 hover:text-blue-800"
+                    className="text-xs sm:text-sm text-blue-600 hover:text-blue-800 whitespace-nowrap"
                   >
                     Mark all read
                   </button>
                 )}
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-gray-600 p-1"
                 >
-                  <XMarkIcon className="h-5 w-5" />
+                  <XMarkIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                 </button>
               </div>
             </div>
@@ -209,37 +210,37 @@ export default function NotificationCenter({ employeeId }: NotificationCenterPro
                   {notifications.map((notification) => (
                     <div
                       key={notification.id}
-                      className={`p-4 hover:bg-gray-50 transition-colors ${
+                      className={`p-3 sm:p-4 hover:bg-gray-50 transition-colors ${
                         !notification.isRead ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
                       }`}
                     >
-                      <div className="flex items-start gap-3">
-                        <span className="text-2xl mt-1 flex-shrink-0">
+                      <div className="flex items-start gap-2 sm:gap-3">
+                        <span className="text-lg sm:text-2xl mt-1 flex-shrink-0">
                           {getNotificationIcon(notification.type)}
                         </span>
                         
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-1">
-                            <h4 className="text-sm font-medium text-gray-900 truncate">
+                          <div className="flex items-start justify-between mb-1 gap-2">
+                            <h4 className="text-sm font-medium text-gray-900 line-clamp-2">
                               {notification.title}
                             </h4>
                             {!notification.isRead && (
                               <button
                                 onClick={() => markAsRead(notification.id)}
-                                className="text-blue-600 hover:text-blue-800 flex-shrink-0 ml-2"
+                                className="text-blue-600 hover:text-blue-800 flex-shrink-0 p-1"
                                 title="Mark as read"
                               >
-                                <CheckIcon className="h-4 w-4" />
+                                <CheckIcon className="h-3 w-3 sm:h-4 sm:w-4" />
                               </button>
                             )}
                           </div>
                           
-                          <p className="text-sm text-gray-600 mb-2">
+                          <p className="text-xs sm:text-sm text-gray-600 mb-2 line-clamp-2">
                             {notification.message}
                           </p>
                           
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-gray-400">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs text-gray-400 flex-shrink-0">
                               {formatTime(notification.createdAt)}
                             </span>
                             
@@ -251,7 +252,7 @@ export default function NotificationCenter({ employeeId }: NotificationCenterPro
                                   // This would open a modal or navigate to a detailed view
                                   console.log('View shift exchange:', notification.data.shiftExchangeId)
                                 }}
-                                className="text-xs text-blue-600 hover:text-blue-800 bg-blue-100 px-2 py-1 rounded"
+                                className="text-xs text-blue-600 hover:text-blue-800 bg-blue-100 px-2 py-1 rounded whitespace-nowrap"
                               >
                                 View Details
                               </button>
@@ -267,14 +268,14 @@ export default function NotificationCenter({ employeeId }: NotificationCenterPro
 
             {/* Footer */}
             {notifications.length > 0 && (
-              <div className="px-4 py-3 border-t border-gray-200 bg-gray-50">
+              <div className="px-3 sm:px-4 py-3 border-t border-gray-200 bg-gray-50">
                 <button
                   onClick={() => {
                     // Navigate to full notifications page
                     setIsOpen(false)
                     // You can add navigation here
                   }}
-                  className="text-sm text-blue-600 hover:text-blue-800 font-medium w-full text-center"
+                  className="text-xs sm:text-sm text-blue-600 hover:text-blue-800 font-medium w-full text-center py-1"
                 >
                   View All Notifications
                 </button>

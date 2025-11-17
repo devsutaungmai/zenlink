@@ -9,13 +9,13 @@ import { LocationValidationResult, validatePunchLocation } from '@/shared/lib/lo
 import LocationValidationModal from '@/components/LocationValidationModal'
 import DepartmentSelectionModal from '@/components/DepartmentSelectionModal'
 import { useTranslation } from 'react-i18next'
+import { DashboardStatsSkeleton } from '@/components/skeletons/CommonSkeletons'
 
 interface Employee {
   id: string
   firstName: string
   lastName: string
   userId: string
-  businessId?: string
   department?: {
     id: string
     name: string
@@ -204,10 +204,10 @@ export default function DashboardPage() {
       if (response.ok) {
         const shifts = await response.json()
         
-        // Find today's approved shift assigned to this employee
         const todayApprovedShift = shifts.find((shift: TodayShift) => 
           shift.date.substring(0, 10) === today && 
-          shift.approved === true
+          shift.approved === true &&
+          shift.status !== 'COMPLETED'
         )
         
         setTodayShift(todayApprovedShift || null)
@@ -358,7 +358,7 @@ export default function DashboardPage() {
         const now = new Date()
         const punchInData = {
           employeeId: currentEmployee.id,
-          businessId: currentEmployee.businessId || currentEmployee.department?.businessId,
+          businessId: currentEmployee.department?.businessId,
           shiftId: todayShift?.id || null,
           punchInTime: now.toISOString()
         }
@@ -439,7 +439,7 @@ export default function DashboardPage() {
       const now = new Date()
       const punchInData = {
         employeeId: currentEmployee.id,
-        businessId: currentEmployee.businessId || currentEmployee.department?.businessId,
+        businessId: currentEmployee.department?.businessId,
         shiftId: null, // No shift for unscheduled work
         punchInTime: now.toISOString()
       }
@@ -630,14 +630,7 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="py-8 px-4 sm:px-6 lg:px-8">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/4 mb-8"></div>
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="bg-gray-200 h-24 rounded-lg"></div>
-            ))}
-          </div>
-        </div>
+        <DashboardStatsSkeleton />
       </div>
     )
   }
@@ -659,7 +652,7 @@ export default function DashboardPage() {
                   <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
                   <div className="h-4 bg-gray-200 rounded w-1/2"></div>
                 </div>
-              ) : todayShift ? (
+              ) : todayShift && todayShift.status !== 'COMPLETED' ? (
                 <div className="bg-sky-50 border border-sky-200 rounded-lg p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
@@ -677,7 +670,6 @@ export default function DashboardPage() {
                       <div className="flex items-center space-x-2">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                           todayShift.status === 'WORKING' ? 'bg-green-100 text-green-800' :
-                          todayShift.status === 'COMPLETED' ? 'bg-blue-100 text-blue-800' :
                           todayShift.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
                           'bg-yellow-100 text-yellow-800'
                         }`}>
