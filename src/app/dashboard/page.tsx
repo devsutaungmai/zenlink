@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect, useTransition } from 'react'
-import { CalendarIcon, UserGroupIcon, ClockIcon, ChartBarIcon, PlayIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
+import Link from 'next/link'
+import Image from 'next/image'
+import { useState, useEffect } from 'react'
+import { CalendarIcon, ClockIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
 import { useUser } from '@/shared/lib/useUser'
 import PunchClockModal from '@/components/PunchClockModal'
-import ActiveShiftTimer from '@/components/ActiveShiftTimer'
 import { LocationValidationResult, validatePunchLocation } from '@/shared/lib/locationValidation'
 import LocationValidationModal from '@/components/LocationValidationModal'
 import DepartmentSelectionModal from '@/components/DepartmentSelectionModal'
@@ -20,6 +21,10 @@ interface Employee {
     id: string
     name: string
     businessId: string
+  }
+  employeeGroup?: {
+    id: string
+    name: string
   }
 }
 
@@ -68,6 +73,32 @@ interface TodayShift {
   }
 }
 
+interface WeeklyShift {
+  id: string
+  date: string
+  startTime: string
+  endTime: string | null
+  shiftType: string
+  status: 'SCHEDULED' | 'WORKING' | 'COMPLETED' | 'CANCELLED'
+  approved?: boolean
+  employee?: {
+    firstName?: string | null
+    lastName?: string | null
+    department?: {
+      name?: string | null
+    } | null
+  } | null
+  employeeGroup?: {
+    name?: string | null
+  } | null
+  department?: {
+    name?: string | null
+  } | null
+  shiftTypeConfig?: {
+    name?: string | null
+  } | null
+}
+
 interface Attendance {
   id: string
   employeeId: string
@@ -76,6 +107,25 @@ interface Attendance {
   punchInTime: string
   punchOutTime?: string | null
   shift?: TodayShift | null
+  employee?: {
+    firstName?: string | null
+    lastName?: string | null
+    employeeNo?: string | null
+    profilePhoto?: string | null
+    department?: {
+      name?: string | null
+    } | null
+    employeeGroup?: {
+      name?: string | null
+    } | null
+  }
+}
+
+interface DashboardStats {
+  activeEmployees: number
+  shiftsInProgress: number
+  pendingApprovals: number
+  hoursWorkedThisWeek: number
 }
 
 export default function DashboardPage() {
@@ -99,14 +149,45 @@ export default function DashboardPage() {
   const [showDepartmentModal, setShowDepartmentModal] = useState(false)
   const [pendingPunchAction, setPendingPunchAction] = useState<'in' | 'out' | null>(null)
   const [pendingUnscheduledWork, setPendingUnscheduledWork] = useState(false)
+  const [adminStats, setAdminStats] = useState<DashboardStats | null>(null)
+  const [adminStatsLoading, setAdminStatsLoading] = useState(false)
+  const [workDuration, setWorkDuration] = useState('')
+  const [liveTimer, setLiveTimer] = useState('')
+  const [recentAttendances, setRecentAttendances] = useState<Attendance[]>([])
+  const [recentAttendanceLoading, setRecentAttendanceLoading] = useState(false)
+  const [weeklyShifts, setWeeklyShifts] = useState<WeeklyShift[]>([])
+  const [weeklyShiftsLoading, setWeeklyShiftsLoading] = useState(false)
   const {t} = useTranslation();
+  const isEmployeeUser = user?.role === 'EMPLOYEE' || Boolean(user?.employee)
+  const showAdminQuickCards = !isEmployeeUser
+  const canAutoStartExtraShift = !todayShift || todayShift.status === 'COMPLETED'
 
-  const stats = [
-    { name: t('dashboard.stats.total_employees'), value: '25', icon: UserGroupIcon },
-    { name: t('dashboard.stats.hours_scheduled'), value: '156', icon: ClockIcon },
-    { name: t('dashboard.stats.shifts_today'), value: '12', icon: CalendarIcon },
-    { name: t('dashboard.stats.weekly_hours'), value: '480', icon: ChartBarIcon },
-  ]
+  const formatDurationText = (ms: number) => {
+    const totalMinutes = Math.floor(ms / (1000 * 60))
+    const hours = Math.floor(totalMinutes / 60)
+    const minutes = totalMinutes % 60
+    if (hours <= 0) {
+      return `${minutes}m`
+    }
+    return `${hours}h ${minutes}m`
+  }
+
+  const formatLiveTimerText = (seconds: number) => {
+    if (seconds < 60) {
+      return `${seconds.toString().padStart(2, '0')}s`
+    }
+
+    const hours = Math.floor(seconds / 3600)
+    const minutes = Math.floor((seconds % 3600) / 60)
+    const secs = seconds % 60
+
+    if (hours > 0) {
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+    }
+
+    return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+  }
+
   // Fetch data needed for the shift form and check for active shifts
   useEffect(() => {
     if (user?.role === 'EMPLOYEE') {
@@ -124,6 +205,170 @@ export default function DashboardPage() {
       fetchCurrentAttendance()
     }
   }, [employees, user])
+
+  useEffect(() => {
+    if (!user || isEmployeeUser) {
+      setAdminStats(null)
+      return
+    }
+
+    let ignore = false
+    const fetchAdminStats = async () => {
+      setAdminStatsLoading(true)
+      try {
+        const response = await fetch('/api/dashboard/stats')
+        if (!response.ok) {
+          throw new Error('Failed to fetch dashboard stats')
+        }
+        const data = await response.json()
+        if (!ignore) {
+          setAdminStats(data)
+        }
+      } catch (error) {
+        console.error('Error fetching dashboard stats:', error)
+        if (!ignore) {
+          setAdminStats(null)
+        }
+      } finally {
+        if (!ignore) {
+          setAdminStatsLoading(false)
+        }
+      }
+    }
+
+    fetchAdminStats()
+
+    return () => {
+      ignore = true
+    }
+  }, [user, isEmployeeUser])
+
+  useEffect(() => {
+    if (!showAdminQuickCards) {
+      setRecentAttendances([])
+      return
+    }
+
+    let ignore = false
+
+    const fetchRecentAttendance = async () => {
+      setRecentAttendanceLoading(true)
+      try {
+        const params = new URLSearchParams({ limit: '2' })
+        const response = await fetch(`/api/attendance?${params.toString()}`)
+        if (!response.ok) {
+          throw new Error('Failed to fetch recent attendance')
+        }
+        const data = await response.json()
+        if (!ignore) {
+          setRecentAttendances(Array.isArray(data) ? data.slice(0, 2) : [])
+        }
+      } catch (error) {
+        console.error('Error fetching recent attendance:', error)
+        if (!ignore) {
+          setRecentAttendances([])
+        }
+      } finally {
+        if (!ignore) {
+          setRecentAttendanceLoading(false)
+        }
+      }
+    }
+
+    fetchRecentAttendance()
+
+    return () => {
+      ignore = true
+    }
+  }, [showAdminQuickCards])
+
+  useEffect(() => {
+    if (!user) {
+      return
+    }
+
+    const resolvedEmployeeId = isEmployeeUser
+      ? user.employee?.id || employees.find(emp => emp.userId === user.id)?.id
+      : null
+
+    if (isEmployeeUser && !resolvedEmployeeId) {
+      return
+    }
+
+    let ignore = false
+
+    const fetchWeeklyShifts = async () => {
+      setWeeklyShiftsLoading(true)
+      try {
+        const { start, end } = getCurrentWeekRange()
+        const params = new URLSearchParams({
+          startDate: start.toISOString().split('T')[0],
+          endDate: end.toISOString().split('T')[0]
+        })
+
+        if (resolvedEmployeeId) {
+          params.append('employeeId', resolvedEmployeeId)
+        }
+
+        const response = await fetch(`/api/shifts?${params.toString()}`)
+        if (!response.ok) {
+          throw new Error('Failed to fetch weekly shifts')
+        }
+
+        const data = await response.json()
+        if (!ignore) {
+          setWeeklyShifts(Array.isArray(data) ? data : [])
+        }
+      } catch (error) {
+        console.error('Error fetching weekly shifts:', error)
+        if (!ignore) {
+          setWeeklyShifts([])
+        }
+      } finally {
+        if (!ignore) {
+          setWeeklyShiftsLoading(false)
+        }
+      }
+    }
+
+    fetchWeeklyShifts()
+
+    return () => {
+      ignore = true
+    }
+  }, [user, isEmployeeUser, employees])
+
+  useEffect(() => {
+    if (!currentAttendance) {
+      setWorkDuration('')
+      setLiveTimer('')
+      return
+    }
+
+    const updateDuration = () => {
+      try {
+        const start = new Date(currentAttendance.punchInTime).getTime()
+        const now = Date.now()
+        const diffMs = now - start
+        if (Number.isNaN(diffMs) || diffMs < 0) {
+          setWorkDuration('')
+          setLiveTimer('')
+          return
+        }
+
+        setWorkDuration(formatDurationText(diffMs))
+        setLiveTimer(formatLiveTimerText(Math.floor(diffMs / 1000)))
+      } catch (error) {
+        console.error('Error calculating work duration:', error)
+        setWorkDuration('')
+        setLiveTimer('')
+      }
+    }
+
+    updateDuration()
+    const interval = setInterval(updateDuration, 1000)
+    return () => clearInterval(interval)
+  }, [currentAttendance])
 
   const fetchEmployees = async () => {
     try {
@@ -248,6 +493,15 @@ export default function DashboardPage() {
 
   const handleStartNewShift = () => {
     setShowShiftModal(true)
+  }
+
+  const handlePrimaryShiftAction = () => {
+    if (canAutoStartExtraShift && !currentAttendance) {
+      handlePunchIn()
+      return
+    }
+
+    handleStartNewShift()
   }
 
   const handleShiftFormSubmit = async (formData: any) => {
@@ -609,6 +863,177 @@ export default function DashboardPage() {
     emp.userId === user?.id
   )
 
+  const formatShiftTime = (time?: string | null) => {
+    if (!time) return null
+    return time.substring(0, 5)
+  }
+
+  const formatPunchTime = (iso?: string | null) => {
+    if (!iso) return null
+    try {
+      return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
+    } catch (error) {
+      console.error('Error formatting time:', error)
+      return null
+    }
+  }
+
+  const formatPunchDate = (iso?: string | null) => {
+    if (!iso) return null
+    try {
+      return new Date(iso).toLocaleDateString([], { month: 'short', day: 'numeric' })
+    } catch (error) {
+      console.error('Error formatting date:', error)
+      return null
+    }
+  }
+
+  const getCurrentWeekRange = () => {
+    const now = new Date()
+    const day = now.getDay() // 0 (Sun) - 6 (Sat)
+    const diff = day === 0 ? -6 : 1 - day
+    const start = new Date(now)
+    start.setDate(start.getDate() + diff)
+    start.setHours(0, 0, 0, 0)
+    const end = new Date(start)
+    end.setDate(start.getDate() + 6)
+    end.setHours(23, 59, 59, 999)
+    return { start, end }
+  }
+
+  const formatWeekRangeDate = (date: Date) => {
+    return date.toLocaleDateString([], { month: 'short', day: 'numeric' })
+  }
+
+  const getWeekRangeLabel = () => {
+    const { start, end } = getCurrentWeekRange()
+    return t('dashboard.weekly_shifts.range_label', {
+      start: formatWeekRangeDate(start),
+      end: formatWeekRangeDate(end)
+    })
+  }
+
+  const formatShiftDateLabel = (iso?: string | null) => {
+    if (!iso) return '--'
+    try {
+      return new Date(iso).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })
+    } catch (error) {
+      console.error('Error formatting shift date label:', error)
+      return '--'
+    }
+  }
+
+  const getWeeklyShiftTimeLabel = (shift: WeeklyShift) => {
+    const start = formatShiftTime(shift.startTime) || '--:--'
+    const end = shift.endTime ? formatShiftTime(shift.endTime) : t('dashboard.cards.punch_clock.active')
+    return `${start} - ${end}`
+  }
+
+  const getShiftStatusInfo = (status?: WeeklyShift['status']) => {
+    const statusClasses: Record<string, string> = {
+      WORKING: 'bg-green-100 text-green-700',
+      COMPLETED: 'bg-blue-100 text-blue-700',
+      CANCELLED: 'bg-red-100 text-red-700',
+      SCHEDULED: 'bg-slate-200 text-slate-700'
+    }
+
+    if (!status) {
+      return {
+        label: t('dashboard.weekly_shifts.status.SCHEDULED'),
+        classes: statusClasses.SCHEDULED
+      }
+    }
+
+    return {
+      label: t(`dashboard.weekly_shifts.status.${status}`),
+      classes: statusClasses[status] || statusClasses.SCHEDULED
+    }
+  }
+
+  const getWeeklyShiftSecondaryLine = (shift: WeeklyShift) => {
+    if (isEmployeeUser) {
+      const label = [shift.employeeGroup?.name, shift.department?.name].filter(Boolean).join(' • ')
+      return label || t('dashboard.weekly_shifts.no_assignment')
+    }
+
+    const name = `${shift.employee?.firstName || ''} ${shift.employee?.lastName || ''}`.trim()
+    const dept = shift.department?.name
+    const label = [name || null, dept || null].filter(Boolean).join(' • ')
+    return label || t('dashboard.weekly_shifts.unassigned_employee')
+  }
+
+  const getEmployeeDisplayName = (record: Attendance) => {
+    const first = record.employee?.firstName?.trim() || ''
+    const last = record.employee?.lastName?.trim() || ''
+    const fullName = `${first} ${last}`.trim()
+    return fullName || t('dashboard.attendance_feed.unknown_employee')
+  }
+
+  const getEmployeeInitials = (record: Attendance) => {
+    const firstInitial = record.employee?.firstName?.[0]?.toUpperCase() || ''
+    const lastInitial = record.employee?.lastName?.[0]?.toUpperCase() || ''
+    const initials = `${firstInitial}${lastInitial}`.trim()
+    return initials || '??'
+  }
+
+  const getWorkDurationLabel = (record: Attendance) => {
+    try {
+      const start = new Date(record.punchInTime).getTime()
+      const end = record.punchOutTime ? new Date(record.punchOutTime).getTime() : Date.now()
+      if (Number.isNaN(start) || Number.isNaN(end) || end <= start) {
+        return '--'
+      }
+      return formatDurationText(end - start)
+    } catch (error) {
+      console.error('Error formatting work duration:', error)
+      return '--'
+    }
+  }
+
+  const getShiftSummary = (record: Attendance) => {
+    if (record.shift?.startTime) {
+      const start = formatShiftTime(record.shift.startTime) || '--:--'
+      const end = record.shift.endTime ? formatShiftTime(record.shift.endTime) : t('dashboard.cards.punch_clock.active')
+      const context = [record.shift.employeeGroup?.name, record.shift.department?.name].filter(Boolean).join(' • ')
+      return context ? `${start} - ${end} • ${context}` : `${start} - ${end}`
+    }
+
+    const deptLine = [record.employee?.department?.name, record.employee?.employeeGroup?.name].filter(Boolean).join(' • ')
+    return deptLine || t('dashboard.cards.attendance.unscheduled_label')
+  }
+
+  const hasScheduledShift = Boolean(todayShift && todayShift.status !== 'COMPLETED')
+
+  const attendanceShiftWindow = currentAttendance?.shift
+    ? `${formatShiftTime(currentAttendance.shift.startTime) || '--:--'} - ${currentAttendance.shift.endTime ? formatShiftTime(currentAttendance.shift.endTime) : t('dashboard.cards.punch_clock.active')}`
+    : null
+  const disablePrimaryShiftAction = clockingIn || !!currentAttendance
+  const roleLabel = [
+    currentEmployee?.employeeGroup?.name || t('dashboard.cards.attendance.default_role'),
+    currentEmployee?.department?.name
+  ]
+    .filter(Boolean)
+    .join(', ')
+
+  const shiftWindowLabel = attendanceShiftWindow
+    ? [
+        attendanceShiftWindow,
+        currentAttendance?.shift?.employeeGroup?.name,
+        currentAttendance?.shift?.department?.name
+      ].filter(Boolean).join(' • ')
+    : (todayShift && todayShift.status !== 'COMPLETED'
+        ? [
+            `${formatShiftTime(todayShift.startTime) || '--:--'} - ${todayShift.endTime ? formatShiftTime(todayShift.endTime) : t('dashboard.cards.punch_clock.active')}`,
+            todayShift.employeeGroup?.name,
+            todayShift.department?.name
+          ].filter(Boolean).join(' • ')
+        : t('dashboard.cards.attendance.unscheduled_label'))
+
+  const weeklyShiftsSubtitle = isEmployeeUser
+    ? t('dashboard.weekly_shifts.subtitle_employee')
+    : t('dashboard.weekly_shifts.subtitle_admin')
+  const weeklyRangeLabel = getWeekRangeLabel()
+
   const getInitialShiftData = () => {
     const now = new Date()
     const today = now.toISOString().split('T')[0]
@@ -636,255 +1061,290 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="py-8 px-4 sm:px-6 lg:px-8">
-      <div className="sm:flex sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-semibold text-gray-900">{t('dashboard.title')}</h1>
-      </div>
+    <div className="bg-slate-50 min-h-screen py-2 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-5xl">
+        {/* <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <h1 className="text-3xl font-bold text-slate-900">{t('dashboard.overview_title')}</h1>
+          </div>
+        </div> */}
+        <section className="mt-4 rounded-3xl bg-gradient-to-r from-[#1f3b73] via-[#1f5fdb] to-[#22a3ff] p-6 text-white shadow-[0_20px_60px_rgba(30,64,175,0.35)]">
+              <p className="text-sm uppercase tracking-wide text-white/80">{t('dashboard.hero.caption')}</p>
+              <h2 className="mt-2 text-2xl font-semibold">{t('dashboard.hero.title')}</h2>
+              <p className="mt-2 max-w-2xl text-sm text-white/90">{t('dashboard.hero.description')}</p>
+        </section>
 
-      {/* Today's Shift Section - Only for Employees */}
-      {user?.role === 'EMPLOYEE' && (
-        <div className="mt-8">
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Today's Schedule</h3>
+        <section className="mt-6 rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_20px_50px_rgba(15,23,42,0.08)]">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-medium text-slate-500">{t('dashboard.weekly_shifts.title')}</p>
+              <h3 className="text-2xl font-semibold text-slate-900">{weeklyShiftsSubtitle}</h3>
+              <p className="text-xs text-slate-500">{weeklyRangeLabel}</p>
+            </div>
+            <Link href="/dashboard/schedule" className="text-sm font-semibold text-[#2563eb] hover:text-[#1d4ed8]">
+              {t('dashboard.weekly_shifts.view_schedule')}
+            </Link>
+          </div>
+          <div className="mt-4 space-y-3">
+            {weeklyShiftsLoading ? (
+              <div className="space-y-3">
+                {[0, 1, 2].map((item) => (
+                  <div key={item} className="h-20 rounded-2xl bg-slate-100 animate-pulse" />
+                ))}
+              </div>
+            ) : weeklyShifts.length === 0 ? (
+              <p className="text-sm text-slate-500">{t('dashboard.weekly_shifts.empty')}</p>
+            ) : (
+              weeklyShifts.map((shift) => {
+                const statusInfo = getShiftStatusInfo(shift.status)
+                const dateLabel = formatShiftDateLabel(shift.date)
+                const timeLabel = getWeeklyShiftTimeLabel(shift)
+                const secondaryLine = getWeeklyShiftSecondaryLine(shift)
+                const typeLabel = shift.shiftTypeConfig?.name || shift.shiftType
+
+                return (
+                  <div
+                    key={shift.id}
+                    className="flex flex-col gap-3 rounded-2xl border border-slate-100 bg-slate-50/80 p-4 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div>
+                      <p className="text-xs uppercase text-slate-500">{dateLabel}</p>
+                      <p className="text-base font-semibold text-slate-900">{timeLabel}</p>
+                      <p className="text-sm text-slate-500">{secondaryLine}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs text-slate-500">{typeLabel}</span>
+                      <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${statusInfo.classes}`}>
+                        {statusInfo.label}
+                      </span>
+                    </div>
+                  </div>
+                )
+              })
+            )}
+          </div>
+        </section>
+
+        {showAdminQuickCards && (
+          <section className="mt-6 rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_20px_50px_rgba(15,23,42,0.08)]">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h3 className="text-xl font-semibold text-slate-900">{t('dashboard.attendance_feed.subtitle')}</h3>
+              </div>
+              <Link href="/dashboard/punch-clock" className="text-sm font-semibold text-[#2563eb] hover:text-[#1d4ed8]">
+                {t('dashboard.attendance_feed.view_punch_clock')}
+              </Link>
+            </div>
+            <div className="mt-4 space-y-4">
+              {recentAttendanceLoading ? (
+                <div className="space-y-3">
+                  <div className="h-24 rounded-2xl bg-slate-100 animate-pulse" />
+                  <div className="h-24 rounded-2xl bg-slate-100 animate-pulse" />
+                </div>
+              ) : recentAttendances.length === 0 ? (
+                <p className="text-sm text-slate-500">{t('dashboard.attendance_feed.empty')}</p>
+              ) : (
+                recentAttendances.map((record) => {
+                  const inTime = formatPunchTime(record.punchInTime) || '--:--'
+                  const outTime = record.punchOutTime ? formatPunchTime(record.punchOutTime) : null
+                  const isWorking = !record.punchOutTime
+                  const statusClasses = isWorking ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-700'
+                  const statusLabel = isWorking
+                    ? t('dashboard.cards.attendance.status_working')
+                    : t('dashboard.cards.attendance.status_idle')
+                  const shiftSummary = getShiftSummary(record)
+                  const durationLabel = getWorkDurationLabel(record)
+
+                  return (
+                    <div
+                      key={record.id}
+                      className="rounded-2xl border border-slate-100 bg-white/80 p-4"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden">
+                            {record.employee?.profilePhoto ? (
+                              <Image
+                                src={record.employee.profilePhoto}
+                                alt={getEmployeeDisplayName(record)}
+                                width={48}
+                                height={48}
+                                className="h-12 w-12 object-cover"
+                              />
+                            ) : (
+                              <span className="text-sm font-semibold text-slate-600">
+                                {getEmployeeInitials(record)}
+                              </span>
+                            )}
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-slate-900">{getEmployeeDisplayName(record)}</p>
+                            <p className="text-xs text-slate-500">#{record.employee?.employeeNo || '—'}</p>
+                          </div>
+                        </div>
+                        <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${statusClasses}`}>
+                          {statusLabel}
+                        </span>
+                      </div>
+
+                      <div className="mt-4 grid grid-cols-3 gap-3 text-xs text-slate-500">
+                        <div>
+                          <p className="font-semibold text-slate-900 text-sm">{inTime}</p>
+                          <p>{t('dashboard.attendance_feed.punch_in')}</p>
+                        </div>
+                        <div>
+                          <p className="font-semibold text-slate-900 text-sm">{outTime || t('dashboard.cards.punch_clock.active')}</p>
+                          <p>{t('dashboard.attendance_feed.punch_out')}</p>
+                        </div>
+                        <div>
+                          <p className="font-semibold text-slate-900 text-sm">{durationLabel}</p>
+                          <p>{t('dashboard.attendance_feed.duration')}</p>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 flex items-center gap-2 text-xs text-slate-500">
+                        <CalendarIcon className="h-4 w-4 text-slate-400" />
+                        <span className="truncate">
+                          {formatPunchDate(record.punchInTime)} • {shiftSummary}
+                        </span>
+                      </div>
+                    </div>
+                  )
+                })
+              )}
+            </div>
+          </section>
+        )}
+
+        {isEmployeeUser && (
+          <section className="mt-6 rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_20px_50px_rgba(15,23,42,0.08)]">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-medium text-slate-500">{t('dashboard.punch_clock.title')}</p>
+                <h3 className="text-2xl font-semibold text-slate-900">{t('dashboard.cards.punch_clock.headline')}</h3>
+                {!hasScheduledShift && (
+                  <p className="text-sm text-slate-500">{t('dashboard.punch_clock.description')}</p>
+                )}
+              </div>
+              {!hasScheduledShift && (
+                <button
+                  onClick={handlePrimaryShiftAction}
+                  disabled={disablePrimaryShiftAction}
+                  className="inline-flex items-center justify-center rounded-full border border-[#2563eb] px-5 py-2 text-sm font-semibold text-[#2563eb] transition hover:bg-[#2563eb] hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {clockingIn
+                    ? t('dashboard.cards.punch_clock.punching_in')
+                    : currentAttendance
+                      ? t('dashboard.cards.attendance.status_working')
+                      : t('dashboard.punch_clock.start_new_shift')}
+                </button>
+              )}
+            </div>
+
+            {currentAttendance && (
+              <div className="mt-6">
+                <div className="rounded-3xl border border-slate-100 bg-white p-6 text-center shadow-[0_20px_50px_rgba(15,23,42,0.08)]">
+                  <div className="inline-flex items-center justify-center gap-2 text-sm font-semibold text-slate-500">
+                    <ClockIcon className="h-5 w-5" />
+                    <span>{t('dashboard.punch_clock.title')}</span>
+                  </div>
+                  <p className="mt-4 text-4xl font-bold tracking-tight text-slate-900">
+                    {liveTimer || '--'}
+                  </p>
+                  <p className="text-sm text-slate-500">
+                    {formatPunchTime(currentAttendance.punchInTime) || '--:--'} - {currentAttendance.punchOutTime ? formatPunchTime(currentAttendance.punchOutTime) : '?'}
+                  </p>
+                  <p className="mt-4 text-sm font-semibold text-slate-600">
+                    {roleLabel}
+                  </p>
+                  <p className="text-xs text-slate-400">{shiftWindowLabel}</p>
+                  <div className="mt-6 flex flex-col gap-2">
+                    <button
+                      onClick={handlePunchOut}
+                      disabled={clockingOut}
+                      className="inline-flex items-center justify-center rounded-full bg-red-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 disabled:opacity-60"
+                    >
+                      <ClockIcon className="mr-1 h-4 w-4" />
+                      {clockingOut ? t('dashboard.cards.punch_clock.punching_out') : t('dashboard.cards.punch_clock.punch_out')}
+                    </button>
+                    {(activeShift || currentAttendance?.shiftId || todayShift) && (
+                      <button
+                        onClick={isOnBreak ? handleEndBreak : handleStartBreak}
+                        disabled={breakLoading}
+                        className="inline-flex items-center justify-center rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-300 hover:text-slate-900 disabled:opacity-60"
+                      >
+                        <ClockIcon className="mr-1 h-4 w-4" />
+                        {breakLoading
+                          ? isOnBreak
+                            ? t('dashboard.cards.punch_clock.ending_break')
+                            : t('dashboard.cards.punch_clock.starting_break')
+                          : isOnBreak
+                            ? t('dashboard.cards.punch_clock.end_break')
+                            : t('dashboard.cards.punch_clock.start_break')}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="mt-6">
               {loadingTodayShift ? (
-                <div className="animate-pulse">
-                  <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
-                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                <div className="space-y-2">
+                  <div className="h-4 w-1/4 animate-pulse rounded bg-slate-200" />
+                  <div className="h-4 w-1/2 animate-pulse rounded bg-slate-200" />
                 </div>
               ) : todayShift && todayShift.status !== 'COMPLETED' ? (
-                <div className="bg-sky-50 border border-sky-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <CalendarIcon className="h-8 w-8 text-sky-600" />
+                <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-white text-[#2563eb]">
+                        <CalendarIcon className="h-6 w-6" />
+                      </span>
                       <div>
-                        <h4 className="font-semibold text-sky-800">
-                          {todayShift.startTime.substring(0, 5)} - {todayShift.endTime ? todayShift.endTime.substring(0, 5) : 'Active'}
-                        </h4>
-                        <p className="text-sm text-sky-600">
+                        <p className="text-sm font-medium text-slate-500">{t('dashboard.cards.punch_clock.today')}</p>
+                        <p className="text-lg font-semibold text-slate-900">
+                          {todayShift.startTime.substring(0, 5)} - {todayShift.endTime ? todayShift.endTime.substring(0, 5) : t('dashboard.cards.punch_clock.active')}
+                        </p>
+                        <p className="text-sm text-slate-500">
                           {todayShift.shiftType} {todayShift.employeeGroup && `• ${todayShift.employeeGroup.name}`}
                         </p>
                       </div>
                     </div>
-                    <div className="flex flex-col items-end space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          todayShift.status === 'WORKING' ? 'bg-green-100 text-green-800' :
-                          todayShift.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
-                          'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {todayShift.status}
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
+                          todayShift.status === 'WORKING'
+                            ? 'bg-green-100 text-green-700'
+                            : todayShift.status === 'CANCELLED'
+                              ? 'bg-red-100 text-red-700'
+                              : 'bg-amber-100 text-amber-700'
+                        }`}
+                      >
+                        {todayShift.status}
+                      </span>
+                      {todayShift.approved && (
+                        <span className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+                          <CheckCircleIcon className="mr-1 h-3 w-3" />
+                          {t('dashboard.cards.punch_clock.approved')}
                         </span>
-                        {todayShift.approved && (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
-                            <CheckCircleIcon className="w-3 h-3 mr-1" />
-                            Approved
-                          </span>
-                        )}
-                      </div>
+                      )}
                     </div>
                   </div>
-                  
-                  {/* Punch In/Out Buttons */}
-                  <div className="mt-4 pt-4 border-t border-sky-200">
-                    <div className="flex items-center justify-between">
-                      <div className="text-sm text-sky-600">
-                        {currentAttendance ? (
-                          <span className="flex items-center">
-                            <CheckCircleIcon className="w-4 h-4 mr-1 text-green-500" />
-                            Punched in at {new Date(currentAttendance.punchInTime).toLocaleTimeString('en-US', { 
-                              hour: 'numeric', 
-                              minute: '2-digit' 
-                            })}
-                            {isOnBreak && (
-                              <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                                On Break
-                              </span>
-                            )}
-                          </span>
-                        ) : (
-                          <span>Ready to punch in</span>
-                        )}
-                      </div>
-                      <div className="flex space-x-2">
-                        {!currentAttendance ? (
-                          <button
-                            onClick={handlePunchIn}
-                            disabled={clockingIn}
-                            className="inline-flex items-center px-3 py-2 text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
-                          >
-                            <PlayIcon className="w-4 h-4 mr-1" />
-                            {clockingIn ? 'Punching In...' : 'Punch In'}
-                          </button>
-                        ) : (
-                          <>
-                            <button
-                              onClick={handlePunchOut}
-                              disabled={clockingOut}
-                              className="inline-flex items-center px-3 py-2 text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
-                            >
-                              <ClockIcon className="w-4 h-4 mr-1" />
-                              {clockingOut ? 'Punching Out...' : 'Punch Out'}
-                            </button>
-                            
-                            {/* Break buttons - show if there's an active shift or if attendance is linked to a shift */}
-                            {(activeShift || currentAttendance?.shiftId) && (
-                              !isOnBreak ? (
-                                <button
-                                  onClick={handleStartBreak}
-                                  disabled={breakLoading}
-                                  className="inline-flex items-center px-3 py-2 text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50"
-                                >
-                                  <ClockIcon className="w-4 h-4 mr-1" />
-                                  {breakLoading ? 'Starting...' : 'Start Break'}
-                                </button>
-                              ) : (
-                                <button
-                                  onClick={handleEndBreak}
-                                  disabled={breakLoading}
-                                  className="inline-flex items-center px-3 py-2 text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
-                                >
-                                  <PlayIcon className="w-4 h-4 mr-1" />
-                                  {breakLoading ? 'Ending...' : 'End Break'}
-                                </button>
-                              )
-                            )}
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+
                 </div>
               ) : (
-                // No scheduled shift - allow punch in/out for unscheduled work
                 <div className="space-y-4">
-                  <div className="text-center p-4 bg-gray-50 rounded-lg">
-                    <CalendarIcon className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-gray-600">No approved shift scheduled for today</p>
-                    <p className="text-sm text-gray-500 mt-1">You can still punch in for unscheduled work</p>
-                  </div>
-                  
-                  {/* Punch In/Out for Unscheduled Work */}
-                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-semibold text-orange-800 mb-1">Unscheduled Work</h4>
-                        <div className="text-sm text-orange-600">
-                          {currentAttendance ? (
-                            <span className="flex items-center">
-                              <CheckCircleIcon className="w-4 h-4 mr-1 text-green-500" />
-                              Punched in at {new Date(currentAttendance.punchInTime).toLocaleTimeString('en-US', { 
-                                hour: 'numeric', 
-                                minute: '2-digit' 
-                              })}
-                              {isOnBreak && (
-                                <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                                  On Break
-                                </span>
-                              )}
-                            </span>
-                          ) : (
-                            <span>Ready to punch in for unscheduled work</span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex space-x-2">
-                        {!currentAttendance ? (
-                          <button
-                            onClick={handlePunchIn}
-                            disabled={clockingIn}
-                            className="inline-flex items-center px-3 py-2 text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
-                          >
-                            <PlayIcon className="w-4 h-4 mr-1" />
-                            {clockingIn ? 'Punching In...' : 'Punch In'}
-                          </button>
-                        ) : (
-                          <>
-                            <button
-                              onClick={handlePunchOut}
-                              disabled={clockingOut}
-                              className="inline-flex items-center px-3 py-2 text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
-                            >
-                              <ClockIcon className="w-4 h-4 mr-1" />
-                              {clockingOut ? 'Punching Out...' : 'Punch Out'}
-                            </button>
-                            
-                            {/* Break buttons are available for all punched in work */}
-                            {!isOnBreak ? (
-                              <button
-                                onClick={handleStartBreak}
-                                disabled={breakLoading}
-                                className="inline-flex items-center px-3 py-2 text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50"
-                              >
-                                <ClockIcon className="w-4 h-4 mr-1" />
-                                {breakLoading ? 'Starting...' : 'Start Break'}
-                              </button>
-                            ) : (
-                              <button
-                                onClick={handleEndBreak}
-                                disabled={breakLoading}
-                                className="inline-flex items-center px-3 py-2 text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
-                              >
-                                <PlayIcon className="w-4 h-4 mr-1" />
-                                {breakLoading ? 'Ending...' : 'End Break'}
-                              </button>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    </div>
+                  <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-center">
+                    <CalendarIcon className="mx-auto h-10 w-10 text-slate-400" />
+                    <p className="mt-3 text-base font-semibold text-slate-900">{t('dashboard.cards.punch_clock.no_shift')}</p>
+                    <p className="text-sm text-slate-500">{t('dashboard.cards.punch_clock.no_shift_hint')}</p>
                   </div>
                 </div>
               )}
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Stats Grid */}
-      <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
-          <div
-            key={stat.name}
-            className="bg-white overflow-hidden shadow rounded-lg"
-          >
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <stat.icon className="h-6 w-6 text-gray-400" aria-hidden="true" />
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
-                      {stat.name}
-                    </dt>
-                    <dd className="flex items-baseline">
-                      <div className="text-2xl font-semibold text-gray-900">
-                        {stat.value}
-                      </div>
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Recent Activity */}
-      <div className="mt-8">
-        <div className="bg-white shadow rounded-lg">
-          <div className="px-4 py-5 sm:p-6">
-            <h3 className="text-lg leading-6 font-medium text-gray-900">
-              {t('dashboard.recent_activity')}
-            </h3>
-            <div className="mt-4">
-              <div className="border-t border-gray-200">
-                <p className="py-4 text-sm text-gray-500">{t('dashboard.no_recent_activity')}</p>
-              </div>
-            </div>
-          </div>
-        </div>
+          </section>
+        )}
       </div>
 
       {/* Punch Clock Modal */}

@@ -402,12 +402,14 @@ export default function DashboardNavbar() {
                 <button
                   key={item.name}
                   onClick={() => handleBottomNavClick(item)}
-                  className={`relative flex flex-col items-center flex-1 px-3 py-2 rounded-2xl transition-all duration-200 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#31BCFF] ${
+                  className={`relative flex flex-col items-center flex-1 min-w-0 px-3 py-2 rounded-2xl transition-all duration-200 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#31BCFF] ${
                     isActive ? 'text-[#31BCFF] bg-blue-50/60 shadow-inner' : 'text-gray-500'
                   }`}
                 >
                   <item.icon className={`h-5 w-5 ${isActive ? 'text-[#31BCFF]' : 'text-gray-400'}`} />
-                  <span className="text-[11px] font-medium mt-1 truncate">{item.name}</span>
+                  <span className="text-[11px] font-medium mt-1 text-center leading-tight whitespace-normal break-words">
+                    {item.name}
+                  </span>
                   {hasChildren && (
                     <span className="absolute -top-1 right-3 text-[10px] text-gray-400">⋯</span>
                   )}

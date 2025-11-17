@@ -1,14 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/shared/lib/prisma'
 import { ShiftExchangeNotifications } from '@/shared/lib/notifications'
-import { getCurrentUser } from '@/shared/lib/auth'
+import { getCurrentUser, getCurrentUserOrEmployee } from '@/shared/lib/auth'
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await getCurrentUser()
-    if (!user) {
+    const session = await getCurrentUserOrEmployee()
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const businessId =
+      session.type === 'user'
+        ? session.data.businessId
+        : session.data.department?.businessId
+
+    if (!businessId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const requestingEmployeeId = session.type === 'employee' ? session.data.id : null
 
     const body = await request.json()
     const { fromShiftId, toEmployeeId, type, requestReason } = body
@@ -54,10 +65,17 @@ export async function POST(request: NextRequest) {
       where: { id: shift.employee.departmentId }
     })
 
-    if (!shiftEmployeeDept || shiftEmployeeDept.businessId !== user.businessId) {
+    if (!shiftEmployeeDept || shiftEmployeeDept.businessId !== businessId) {
       return NextResponse.json(
         { error: 'Shift not found or access denied' },
         { status: 404 }
+      )
+    }
+
+    if (requestingEmployeeId && shift.employeeId !== requestingEmployeeId) {
+      return NextResponse.json(
+        { error: 'You can only request exchanges for your own shifts' },
+        { status: 403 }
       )
     }
 
@@ -65,7 +83,7 @@ export async function POST(request: NextRequest) {
       where: { 
         id: toEmployeeId,
         department: {
-          businessId: user.businessId
+          businessId
         }
       }
     })

@@ -83,6 +83,15 @@ export async function GET(request: NextRequest) {
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
     const date = searchParams.get('date')
+    const limitParam = searchParams.get('limit')
+
+    let limit: number | undefined
+    if (limitParam) {
+      const parsedLimit = parseInt(limitParam, 10)
+      if (!Number.isNaN(parsedLimit)) {
+        limit = Math.max(1, Math.min(parsedLimit, 50))
+      }
+    }
 
     const whereClause: any = {}
 
@@ -97,9 +106,9 @@ export async function GET(request: NextRequest) {
     // Handle date filtering - priority: startDate/endDate, then single date
     if (startDate && endDate) {
       const start = new Date(startDate)
-      start.setHours(0, 0, 0, 0)
+      start.setUTCHours(0, 0, 0, 0)
       const end = new Date(endDate)
-      end.setHours(23, 59, 59, 999)
+      end.setUTCHours(23, 59, 59, 999)
 
       whereClause.punchInTime = {
         gte: start,
@@ -107,9 +116,9 @@ export async function GET(request: NextRequest) {
       }
     } else if (date) {
       const startOfDay = new Date(date)
-      startOfDay.setHours(0, 0, 0, 0)
+      startOfDay.setUTCHours(0, 0, 0, 0)
       const endOfDay = new Date(date)
-      endOfDay.setHours(23, 59, 59, 999)
+      endOfDay.setUTCHours(23, 59, 59, 999)
 
       whereClause.punchInTime = {
         gte: startOfDay,
@@ -145,13 +154,24 @@ export async function GET(request: NextRequest) {
             startTime: true,
             endTime: true,
             shiftType: true,
-            status: true
+            status: true,
+            employeeGroup: {
+              select: {
+                name: true
+              }
+            },
+            department: {
+              select: {
+                name: true
+              }
+            }
           }
         }
       },
       orderBy: {
         punchInTime: 'desc'
-      }
+      },
+      ...(limit ? { take: limit } : {})
     })
 
     return NextResponse.json(attendances)

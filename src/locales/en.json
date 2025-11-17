@@ -34,11 +34,92 @@
     "title": "Dashboard",
     "welcome_back": "Welcome back, {{name}}",
     "zenlink_dashboard": "Zenlink Dashboard",
+    "overview_subtitle": "Homie",
+    "overview_title": "Overview",
+    "hero": {
+      "caption": "Get started",
+      "title": "Get started with Zenlink",
+      "description": "Learn the basics to get the most out of your team today.",
+      "cta": "Explore schedule"
+    },
     "stats": {
-      "total_employees": "Total Employees",
-      "hours_scheduled": "Hours Scheduled",
-      "shifts_today": "Shifts Today",
-      "weekly_hours": "Weekly Hours"
+      "active_employees": "Active Employees",
+      "shifts_in_progress": "Shifts In Progress",
+      "pending_approvals": "Pending Approvals",
+      "hours_logged_this_week": "Hours Logged This Week"
+    },
+    "cards": {
+      "see_all": "See all",
+      "requests": {
+        "title": "Requests",
+        "upcoming_shift": "Next shift today at {{time}}.",
+        "caught_up": "All caught up! No requests need your attention right now.",
+        "pending_admin": "Pending approvals: {{count}}",
+        "loading": "Loading latest requests..."
+      },
+      "attendance": {
+        "title": "Attendance",
+        "checked_in": "Currently punched in since {{time}}.",
+        "no_updates": "No updates right now — check back later.",
+        "status_working": "Clocked in",
+        "status_break": "On break",
+        "status_idle": "Clocked out",
+        "duration": "Working for {{duration}} today.",
+        "view_details": "Open punch clock",
+        "default_role": "Team member",
+        "unscheduled_label": "Unscheduled work",
+        "active_admin": "Employees clocked in: {{count}}",
+        "loading": "Loading attendance..."
+      },
+      "punch_clock": {
+        "headline": "Keep track of your day",
+        "today": "Today's schedule",
+        "active": "Active",
+        "approved": "Approved",
+        "punched_in": "Punched in at {{time}}",
+        "on_break": "On Break",
+        "ready": "Ready to punch in",
+        "punching_in": "Punching In...",
+        "punch_in": "Punch In",
+        "punching_out": "Punching Out...",
+        "punch_out": "Punch Out",
+        "starting_break": "Starting...",
+        "start_break": "Start Break",
+        "ending_break": "Ending...",
+        "end_break": "End Break",
+        "no_shift": "No approved shift scheduled for today",
+        "no_shift_hint": "You can still punch in for unscheduled work",
+        "unscheduled": "Unscheduled Work",
+        "ready_unscheduled": "Ready to punch in for unscheduled work"
+      }
+    },
+    "attendance_feed": {
+      "title": "Attendance feed",
+      "subtitle": "Latest punch clock activity",
+      "empty": "No attendance updates yet.",
+      "view_punch_clock": "Open punch clock",
+      "unknown_employee": "Unknown employee",
+      "working_since": "Working since {{time}}",
+      "worked_window": "{{inTime}} - {{outTime}}",
+      "punch_in": "Punch in",
+      "punch_out": "Punch out",
+      "duration": "Duration"
+    },
+    "weekly_shifts": {
+      "title": "This week's shifts",
+      "subtitle_admin": "All scheduled shifts across your organization",
+      "subtitle_employee": "Your shifts scheduled for this week",
+      "view_schedule": "Open schedule",
+      "empty": "No shifts scheduled for this week.",
+      "range_label": "Week of {{start}} – {{end}}",
+      "no_assignment": "No assignment yet",
+      "unassigned_employee": "Unassigned employee",
+      "status": {
+        "SCHEDULED": "Scheduled",
+        "WORKING": "Working",
+        "COMPLETED": "Completed",
+        "CANCELLED": "Cancelled"
+      }
     },
     "recent_activity": "Recent Activity",
     "no_recent_activity": "No recent activity",

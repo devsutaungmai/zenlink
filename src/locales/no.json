@@ -3,14 +3,54 @@
     "home": "Hjem",
     "dashboard": "Dashbord",
     "users": "Brukere",
-    "employees": "Ansatte",
-    "departments": "Avdelinger",
+    "overview_subtitle": "Homie",
+    "overview_title": "Oversikt",
+    "hero": {
+      "caption": "Kom i gang",
+      "title": "Kom i gang med Zenlink",
+      "description": "Lær det grunnleggende for å få mest mulig ut av teamet ditt.",
+      "cta": "Utforsk vaktplan"
+    },
     "categories": "Kategorier",
     "functions": "Funksjoner",
     "employee_groups": "Ansattgrupper",
     "contracts": "Kontrakter",
     "documents": "Dokumenter",
     "schedule": "Tidsplan",
+    "cards": {
+      "see_all": "Se alle",
+      "requests": {
+        "title": "Forespørsler",
+        "upcoming_shift": "Neste vakt i dag kl. {{time}}.",
+        "caught_up": "Alt unnagjort! Ingen forespørsler trenger oppmerksomhet nå."
+      },
+      "attendance": {
+        "title": "Oppmøte",
+        "checked_in": "Stempler inn siden {{time}}.",
+        "no_updates": "Ingen oppdateringer nå – sjekk senere."
+      },
+      "punch_clock": {
+        "headline": "Hold oversikt over dagen",
+        "today": "Dagens vakt",
+        "active": "Aktiv",
+        "approved": "Godkjent",
+        "punched_in": "Stemplet inn kl. {{time}}",
+        "on_break": "Pause",
+        "ready": "Klar til å stemple inn",
+        "punching_in": "Stempler inn...",
+        "punch_in": "Stemple inn",
+        "punching_out": "Stempler ut...",
+        "punch_out": "Stemple ut",
+        "starting_break": "Starter...",
+        "start_break": "Start pause",
+        "ending_break": "Avslutter...",
+        "end_break": "Avslutt pause",
+        "no_shift": "Ingen godkjent vakt planlagt i dag",
+        "no_shift_hint": "Du kan fortsatt stemple inn for uplanlagt arbeid",
+        "unscheduled": "Uplanlagt arbeid",
+        "ready_unscheduled": "Klar til å stemple inn for uplanlagt arbeid"
+      }
+    },
     "shift": "Skift",
     "punch_clock": "Stemplingsur",
     "availability": "Tilgjengelighet",
@@ -34,11 +74,62 @@
     "title": "Dashbord",
     "welcome_back": "Velkommen tilbake, {{name}}",
     "zenlink_dashboard": "Zenlink Dashbord",
+    "cards": {
+      "requests": {
+        "title": "Forespørsler",
+        "upcoming_shift": "Neste vakt i dag kl. {{time}}.",
+        "caught_up": "Alt unnagjort! Ingen forespørsler trenger oppmerksomhet nå.",
+        "pending_admin": "Avventer godkjenning: {{count}}",
+        "loading": "Laster forespørsler..."
+      },
+      "attendance": {
+        "title": "Oppmøte",
+        "checked_in": "Stemplet inn siden {{time}}.",
+        "no_updates": "Ingen oppdateringer nå – sjekk senere.",
+        "status_working": "Stemplet inn",
+        "status_break": "På pause",
+        "status_idle": "Stemplet ut",
+        "duration": "Jobber i {{duration}} i dag.",
+        "view_details": "Åpne stemplingsur",
+        "default_role": "Teammedlem",
+        "unscheduled_label": "Uplanlagt arbeid",
+        "active_admin": "Ansatte stemplet inn: {{count}}",
+        "loading": "Laster oppmøte..."
+      }
+    },
+    "attendance_feed": {
+      "title": "Oppmøtefeed",
+      "subtitle": "Siste stemplingsaktivitet",
+      "empty": "Ingen oppmøteoppdateringer ennå.",
+      "view_punch_clock": "Åpne stemplingsur",
+      "unknown_employee": "Ukjent ansatt",
+      "working_since": "Jobber siden {{time}}",
+      "worked_window": "{{inTime}} - {{outTime}}",
+      "punch_in": "Stemple inn",
+      "punch_out": "Stemple ut",
+      "duration": "Varighet"
+    },
+    "weekly_shifts": {
+      "title": "Ukens vakter",
+      "subtitle_admin": "Alle planlagte vakter i virksomheten",
+      "subtitle_employee": "Dine vakter denne uken",
+      "view_schedule": "Åpne vaktplan",
+      "empty": "Ingen vakter planlagt denne uken.",
+      "range_label": "Uke {{start}} – {{end}}",
+      "no_assignment": "Ingen tilknytning",
+      "unassigned_employee": "Ikke tildelt ansatt",
+      "status": {
+        "SCHEDULED": "Planlagt",
+        "WORKING": "I arbeid",
+        "COMPLETED": "Fullført",
+        "CANCELLED": "Avlyst"
+      }
+    },
     "stats": {
-      "total_employees": "Totalt ansatte",
-      "hours_scheduled": "Timer planlagt",
-      "shifts_today": "Skift i dag",
-      "weekly_hours": "Uketimer"
+      "active_employees": "Aktive ansatte",
+      "shifts_in_progress": "Pågående vakter",
+      "pending_approvals": "Avventer godkjenning",
+      "hours_logged_this_week": "Timer logget denne uken"
     },
     "recent_activity": "Nylig aktivitet",
     "no_recent_activity": "Ingen nylig aktivitet",
