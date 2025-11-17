@@ -563,7 +563,13 @@
     "cancel": "Cancel",
     "department_info": "Department Information",
     "employees_count": "{{count}} Employee",
-    "employees_count_plural": "{{count}} Employees"
+    "employees_count_plural": "{{count}} Employees",
+    "errors": {
+      "name_exists": "A department with this name already exists in your business.",
+      "number_exists": "This department number is already in use.",
+      "phone_invalid": "Enter a valid phone number for {{country}}.",
+      "country_required": "Select a country to validate the phone number."
+    }
   },
   "pending_requests": {
     "title": "Pending Requests",

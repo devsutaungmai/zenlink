@@ -539,7 +539,13 @@
     "cancel": "Avbryt",
     "department_info": "Avdelingsinformasjon",
     "employees_count": "{{count}} ansatt",
-    "employees_count_plural": "{{count}} ansatte"
+    "employees_count_plural": "{{count}} ansatte",
+    "errors": {
+      "name_exists": "En avdeling med dette navnet finnes allerede i virksomheten.",
+      "number_exists": "Dette avdelingsnummeret er allerede i bruk.",
+      "phone_invalid": "Angi et gyldig telefonnummer for {{country}}.",
+      "country_required": "Velg et land for å validere telefonnummeret."
+    }
   },
   "pending_requests": {
     "title": "Ventende forespørsler",

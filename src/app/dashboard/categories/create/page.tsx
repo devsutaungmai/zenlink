@@ -23,6 +23,9 @@ export default function CreateCategoryPage() {
     color: '#3B82F6',
     departmentIds: [] as string[]
   })
+  const [isBusinessWide, setIsBusinessWide] = useState(true)
+
+  const allDepartmentIds = departments.map((dept) => dept.id)
 
   useEffect(() => {
     fetchDepartments()
@@ -38,6 +41,46 @@ export default function CreateCategoryPage() {
     } catch (error) {
       console.error('Error fetching departments:', error)
     }
+  }
+
+  const handleBusinessWideChange = (checked: boolean) => {
+    if (checked) {
+      setIsBusinessWide(true)
+      setFormData((prev) => ({ ...prev, departmentIds: [] }))
+    } else {
+      setIsBusinessWide(false)
+      setFormData((prev) => ({ ...prev, departmentIds: allDepartmentIds }))
+    }
+  }
+
+  const handleDepartmentToggle = (deptId: string, checked: boolean) => {
+    if (allDepartmentIds.length === 0) {
+      return
+    }
+
+    setFormData((prev) => {
+      const wasBusinessWide = isBusinessWide
+      let updatedIds = wasBusinessWide ? [...allDepartmentIds] : [...prev.departmentIds]
+
+      if (wasBusinessWide) {
+        setIsBusinessWide(false)
+      }
+
+      if (checked) {
+        if (!updatedIds.includes(deptId)) {
+          updatedIds.push(deptId)
+        }
+      } else {
+        updatedIds = updatedIds.filter((id) => id !== deptId)
+      }
+
+      if (!wasBusinessWide && updatedIds.length === allDepartmentIds.length) {
+        setIsBusinessWide(true)
+        return { ...prev, departmentIds: [] }
+      }
+
+      return { ...prev, departmentIds: updatedIds }
+    })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -155,12 +198,8 @@ export default function CreateCategoryPage() {
                   <label className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors">
                     <input
                       type="checkbox"
-                      checked={formData.departmentIds.length === 0}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setFormData({ ...formData, departmentIds: [] })
-                        }
-                      }}
+                      checked={isBusinessWide}
+                      onChange={(e) => handleBusinessWideChange(e.target.checked)}
                       className="h-4 w-4 text-[#31BCFF] border-gray-300 rounded focus:ring-[#31BCFF]"
                     />
                     <span className="text-sm font-medium text-gray-700">{t('business_wide')}</span>
@@ -169,20 +208,8 @@ export default function CreateCategoryPage() {
                     <label key={dept.id} className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors">
                       <input
                         type="checkbox"
-                        checked={formData.departmentIds.includes(dept.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setFormData({ 
-                              ...formData, 
-                              departmentIds: [...formData.departmentIds, dept.id] 
-                            })
-                          } else {
-                            setFormData({ 
-                              ...formData, 
-                              departmentIds: formData.departmentIds.filter(id => id !== dept.id) 
-                            })
-                          }
-                        }}
+                        checked={isBusinessWide || formData.departmentIds.includes(dept.id)}
+                        onChange={(e) => handleDepartmentToggle(dept.id, e.target.checked)}
                         className="h-4 w-4 text-[#31BCFF] border-gray-300 rounded focus:ring-[#31BCFF]"
                       />
                       <span className="text-sm text-gray-700">{dept.name}</span>
@@ -192,9 +219,12 @@ export default function CreateCategoryPage() {
               )}
             </div>
             <p className="mt-2 text-xs text-gray-500">
-              {formData.departmentIds.length === 0 
-                ? t('helper_business_wide')
-                : t('selected_count', { count: formData.departmentIds.length })
+              {isBusinessWide
+                ? (departments.length === 0
+                    ? t('helper_business_wide')
+                    : t(departments.length === 1 ? 'selected_count' : 'selected_count_plural', { count: departments.length })
+                  )
+                : t(formData.departmentIds.length === 1 ? 'selected_count' : 'selected_count_plural', { count: formData.departmentIds.length })
               }
             </p>
           </div>

@@ -1,6 +1,13 @@
 import Link from 'next/link'
 
-export default function HeroSection() {
+interface HeroSectionProps {
+  isAuthenticated?: boolean
+}
+
+export default function HeroSection({ isAuthenticated = false }: HeroSectionProps) {
+  const primaryCtaLabel = isAuthenticated ? 'Go to Dashboard' : 'Start Free Trial'
+  const primaryCtaHref = isAuthenticated ? '/dashboard' : '/register'
+
   return (
     <section className="bg-gradient-to-br from-[#31BCFF] to-[#0EA5E9] text-white pt-16 sm:pt-20 md:pt-24 relative overflow-hidden">
       <div className="container mx-auto px-4 sm:px-6 py-12 sm:py-16 md:py-20 relative z-10">
@@ -16,10 +23,10 @@ export default function HeroSection() {
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-center pt-4 sm:pt-6">
             <Link
-              href="/register"
+              href={primaryCtaHref}
               className="w-full sm:w-auto bg-white text-[#31BCFF] px-6 sm:px-8 py-3 sm:py-4 rounded-lg font-semibold hover:bg-gray-100 transition-all duration-200 transform hover:scale-105 shadow-lg text-center"
             >
-              Start Free Trial
+              {primaryCtaLabel}
             </Link>
             <Link
               href="#demo"

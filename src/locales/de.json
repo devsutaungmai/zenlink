@@ -562,7 +562,13 @@
     "cancel": "Abbrechen",
     "department_info": "Abteilungsinformationen",
     "employees_count": "{{count}} Mitarbeiter",
-    "employees_count_plural": "{{count}} Mitarbeiter"
+    "employees_count_plural": "{{count}} Mitarbeiter",
+    "errors": {
+      "name_exists": "Eine Abteilung mit diesem Namen existiert bereits in Ihrem Unternehmen.",
+      "number_exists": "Diese Abteilungsnummer wird bereits verwendet.",
+      "phone_invalid": "Geben Sie eine gültige Telefonnummer für {{country}} ein.",
+      "country_required": "Wählen Sie ein Land aus, um die Telefonnummer zu validieren."
+    }
   },
   "pending_requests": {
     "title": "Wartende Anfragen",

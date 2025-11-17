@@ -47,6 +47,7 @@
   "create_error": "Kunne ikke opprette funksjon",
   "update_error": "Kunne ikke oppdatere funksjon",
   "delete_error": "Kunne ikke slette funksjon",
+  "delete_in_use": "Denne funksjonen er i bruk på vakter og kan ikke slettes.",
   "creating": "Oppretter...",
   "name_required": "Vennligst skriv inn et funksjonsnavn",
   "add_new_function": "Legg til en ny funksjon for å definere spesifikke roller innenfor en kategori",

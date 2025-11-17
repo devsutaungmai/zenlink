@@ -25,22 +25,41 @@ export default function EditDepartmentPage({ params }: { params: Promise<{ id: s
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [existingDepartments, setExistingDepartments] = useState<{ id: string; name: string; number?: string | null }[]>([])
 
   useEffect(() => {
-    const fetchDepartment = async () => {
+    const fetchData = async () => {
       try {
-        const res = await fetch(`/api/departments/${departmentId}`)
-        if (!res.ok) throw new Error('Failed to fetch department')
-        const data = await res.json()
-        setDepartment(data)
-      } catch (error) {
-        setError(error instanceof Error ? error.message : 'An error occurred')
+        const [departmentRes, existingRes] = await Promise.all([
+          fetch(`/api/departments/${departmentId}`),
+          fetch('/api/departments')
+        ])
+
+        if (!departmentRes.ok) {
+          throw new Error('Failed to fetch department')
+        }
+
+        const departmentData = await departmentRes.json()
+        setDepartment(departmentData)
+
+        if (existingRes.ok) {
+          const existingData = await existingRes.json()
+          setExistingDepartments(
+            existingData.map((dept: { id: string; name: string; number?: string | null }) => ({
+              id: dept.id,
+              name: dept.name,
+              number: dept.number ?? null,
+            }))
+          )
+        }
+      } catch (fetchError) {
+        setError(fetchError instanceof Error ? fetchError.message : 'An error occurred')
       } finally {
         setLoading(false)
       }
     }
 
-    fetchDepartment()
+    fetchData()
   }, [departmentId])
 
   const handleSubmit = async (formData: any) => {
@@ -148,7 +167,9 @@ export default function EditDepartmentPage({ params }: { params: Promise<{ id: s
             country: department.country
           } : undefined}
           onSubmit={handleSubmit} 
-          loading={saving} 
+          loading={saving}
+          existingDepartments={existingDepartments}
+          currentDepartmentId={departmentId}
         />
       </div>
     </div>

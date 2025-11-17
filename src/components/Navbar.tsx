@@ -3,7 +3,11 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { APP_NAME } from '@/app/constants/constants'
 
-export default function Navbar() {
+interface NavbarProps {
+  isAuthenticated?: boolean
+}
+
+export default function Navbar({ isAuthenticated = false }: NavbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   return (
@@ -24,18 +28,29 @@ export default function Navbar() {
           
           {/* Desktop Auth Buttons */}
           <div className="hidden md:flex space-x-4">
-            <Link 
-              href="/login" 
-              className="px-4 py-2 text-[#31BCFF] font-medium hover:bg-[#31BCFF]/10 rounded-md transition-colors"
-            >
-              Login
-            </Link>
-            <Link 
-              href="/register" 
-              className="px-4 py-2 bg-[#31BCFF] text-white rounded-md font-medium hover:bg-[#31BCFF]/90 transition-colors"
-            >
-              Get Started
-            </Link>
+            {isAuthenticated ? (
+              <Link 
+                href="/dashboard" 
+                className="px-4 py-2 bg-[#31BCFF] text-white rounded-md font-medium hover:bg-[#31BCFF]/90 transition-colors"
+              >
+                Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link 
+                  href="/login" 
+                  className="px-4 py-2 text-[#31BCFF] font-medium hover:bg-[#31BCFF]/10 rounded-md transition-colors"
+                >
+                  Login
+                </Link>
+                <Link 
+                  href="/register" 
+                  className="px-4 py-2 bg-[#31BCFF] text-white rounded-md font-medium hover:bg-[#31BCFF]/90 transition-colors"
+                >
+                  Get Started
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -92,20 +107,32 @@ export default function Navbar() {
                 Resources
               </Link>
               <div className="border-t pt-3 mt-3 space-y-2">
-                <Link 
-                  href="/login" 
-                  className="block px-3 py-2 text-[#31BCFF] font-medium hover:bg-[#31BCFF]/10 rounded-md transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Login
-                </Link>
-                <Link 
-                  href="/register" 
-                  className="block px-3 py-2 bg-[#31BCFF] text-white rounded-md font-medium hover:bg-[#31BCFF]/90 text-center transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Get Started
-                </Link>
+                {isAuthenticated ? (
+                  <Link 
+                    href="/dashboard" 
+                    className="block px-3 py-2 bg-[#31BCFF] text-white rounded-md font-medium hover:bg-[#31BCFF]/90 text-center transition-colors"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Dashboard
+                  </Link>
+                ) : (
+                  <>
+                    <Link 
+                      href="/login" 
+                      className="block px-3 py-2 text-[#31BCFF] font-medium hover:bg-[#31BCFF]/10 rounded-md transition-colors"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Login
+                    </Link>
+                    <Link 
+                      href="/register" 
+                      className="block px-3 py-2 bg-[#31BCFF] text-white rounded-md font-medium hover:bg-[#31BCFF]/90 text-center transition-colors"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Get Started
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
           </div>

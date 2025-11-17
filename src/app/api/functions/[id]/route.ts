@@ -208,11 +208,28 @@ export async function DELETE(
         category: {
           businessId: businessId
         }
+      },
+      include: {
+        _count: {
+          select: {
+            shifts: true
+          }
+        }
       }
     })
 
     if (!functionItem) {
       return NextResponse.json({ error: 'Function not found' }, { status: 404 })
+    }
+
+    if (functionItem._count.shifts > 0) {
+      return NextResponse.json(
+        {
+          code: 'FUNCTION_IN_USE',
+          message: 'Function is assigned to shifts and cannot be deleted'
+        },
+        { status: 400 }
+      )
     }
 
     await prisma.departmentFunction.delete({
