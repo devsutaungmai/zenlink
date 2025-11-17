@@ -95,7 +95,7 @@
     },
     "attendance_feed": {
       "title": "Attendance feed",
-      "subtitle": "Latest punch clock activity",
+      "subtitle": "Attendances",
       "empty": "No attendance updates yet.",
       "view_punch_clock": "Open punch clock",
       "unknown_employee": "Unknown employee",
@@ -107,7 +107,7 @@
     },
     "weekly_shifts": {
       "title": "This week's shifts",
-      "subtitle_admin": "All scheduled shifts across your organization",
+      "subtitle_admin": "Schedules",
       "subtitle_employee": "Your shifts scheduled for this week",
       "view_schedule": "Open schedule",
       "empty": "No shifts scheduled for this week.",

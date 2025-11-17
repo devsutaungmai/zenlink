@@ -1068,10 +1068,13 @@ export default function DashboardPage() {
             <h1 className="text-3xl font-bold text-slate-900">{t('dashboard.overview_title')}</h1>
           </div>
         </div> */}
-        <section className="mt-4 rounded-3xl bg-gradient-to-r from-[#1f3b73] via-[#1f5fdb] to-[#22a3ff] p-6 text-white shadow-[0_20px_60px_rgba(30,64,175,0.35)]">
-              <p className="text-sm uppercase tracking-wide text-white/80">{t('dashboard.hero.caption')}</p>
-              <h2 className="mt-2 text-2xl font-semibold">{t('dashboard.hero.title')}</h2>
-              <p className="mt-2 max-w-2xl text-sm text-white/90">{t('dashboard.hero.description')}</p>
+          <section className="mt-4 rounded-3xl bg-gradient-to-r from-[#1f3b73] via-[#1f5fdb] to-[#22a3ff] p-6 text-white shadow-[0_20px_60px_rgba(30,64,175,0.35)]">
+            <div className="inline-flex items-center gap-2 text-sm uppercase tracking-wide text-white/80">
+              <CheckCircleIcon className="h-4 w-4 text-white/80" />
+              <span>{t('dashboard.hero.caption')}</span>
+            </div>
+            <h2 className="mt-2 text-2xl font-semibold">{t('dashboard.hero.title')}</h2>
+            <p className="mt-2 max-w-2xl text-sm text-white/90">{t('dashboard.hero.description')}</p>
         </section>
 
         <section className="mt-6 rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_20px_50px_rgba(15,23,42,0.08)]">
@@ -1129,7 +1132,10 @@ export default function DashboardPage() {
           <section className="mt-6 rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_20px_50px_rgba(15,23,42,0.08)]">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h3 className="text-xl font-semibold text-slate-900">{t('dashboard.attendance_feed.subtitle')}</h3>
+                <div className="inline-flex items-center gap-2 text-xl font-semibold text-slate-900">
+                  <CalendarIcon className="h-5 w-5 text-slate-500" />
+                  <span>{t('dashboard.attendance_feed.subtitle')}</span>
+                </div>
               </div>
               <Link href="/dashboard/punch-clock" className="text-sm font-semibold text-[#2563eb] hover:text-[#1d4ed8]">
                 {t('dashboard.attendance_feed.view_punch_clock')}
@@ -1220,7 +1226,10 @@ export default function DashboardPage() {
           <section className="mt-6 rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_20px_50px_rgba(15,23,42,0.08)]">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-500">{t('dashboard.punch_clock.title')}</p>
+                <div className="inline-flex items-center gap-2 text-sm font-medium text-slate-500">
+                  <CheckCircleIcon className="h-4 w-4 text-slate-400" />
+                  <span>{t('dashboard.punch_clock.title')}</span>
+                </div>
                 <h3 className="text-2xl font-semibold text-slate-900">{t('dashboard.cards.punch_clock.headline')}</h3>
                 {!hasScheduledShift && (
                   <p className="text-sm text-slate-500">{t('dashboard.punch_clock.description')}</p>

@@ -95,7 +95,7 @@
     },
     "attendance_feed": {
       "title": "Anwesenheitsfeed",
-      "subtitle": "Neueste Stempeluhr-Aktivität",
+      "subtitle": "Anwesenheiten",
       "empty": "Noch keine Anwesenheitsaktualisierungen.",
       "view_punch_clock": "Stempeluhr öffnen",
       "unknown_employee": "Unbekannter Mitarbeiter",
@@ -107,7 +107,7 @@
     },
     "weekly_shifts": {
       "title": "Schichten dieser Woche",
-      "subtitle_admin": "Alle geplanten Schichten in deinem Unternehmen",
+      "subtitle_admin": "Dienstpläne",
       "subtitle_employee": "Deine Schichten in dieser Woche",
       "view_schedule": "Dienstplan öffnen",
       "empty": "Für diese Woche sind keine Schichten geplant.",
