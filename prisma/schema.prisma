@@ -63,6 +63,7 @@ model Business {
   customers                Customer[]
   products                 Product[]
   invoices                 Invoice[]
+  paymentTerms             PaymentTerms[]
 }
 
 model Employee {
@@ -151,8 +152,6 @@ model Contract {
 
 model Department {
   id                 String               @id @default(cuid())
-  customerId         String?              @map("customer_id")
-  customer           Customer?            @relation(fields: [customerId], references: [id], onDelete: SetNull)
   name               String
   address            String
   createdAt          DateTime             @default(now())
@@ -171,6 +170,7 @@ model Department {
   categories         DepartmentCategory[]   // Old relation - kept for backward compatibility
   categoriesManyMany CategoryDepartment[]   // New many-to-many relation
   shifts             Shift[]
+  customers          Customer[]
 }
 
 model DepartmentCategory {
@@ -253,7 +253,13 @@ model Project {
   id           String      @id @default(cuid())
   customerId   String?     @map("customer_id")
   customer     Customer?   @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  name         String
+  name         String      // Prosjektnummer - project number/identifier
+  projectNumber  String?   @unique
+  active       Boolean     @default(true) // Aktiv - checkbox to activate
+  status       String?     // Status (nullable)
+  category     String?     // Prosjektkategori - project category (nullable)
+  startDate    DateTime?   // Startdato (nullable)
+  endDate      DateTime?   // Sluttdato (nullable)
   departmentId String
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @default(now())
@@ -661,29 +667,15 @@ model Customer {
   contactPersons ContactPerson[]
   customerGroups CustomerGroup[]
   projects       Project[]
-  departments    Department[]
-  paymentTerms   PaymentTerms?
   invoices       Invoice[]
-
+  departmentId   String?      
+  department     Department?       @relation(fields: [departmentId], references: [id],onDelete: SetNull)
+  paymentTermsId String?       @map("payment_terms_id")
+  paymentTerms   PaymentTerms? @relation(fields: [paymentTermsId], references: [id], onDelete: SetNull)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("customers")
-}
-
-model PaymentTerms {
-  id         String   @id @default(cuid())
-  customerId String   @unique @map("customer_id")
-  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-
-  termName     String  @map("term_name")
-  daysUntilDue Int     @map("days_until_due")
-  description  String?
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  @@map("payment_terms")
 }
 
 model ContactPerson {
@@ -803,6 +795,9 @@ model Invoice {
   vatAmount     Decimal @map("vat_amount") @db.Decimal(10, 2)
   vatPercentage Decimal @default(25) @map("vat_percentage") @db.Decimal(5, 2)
   totalInclVAT  Decimal @map("total_incl_vat") @db.Decimal(10, 2)
+ 
+ paymentTermsId String?       @map("payment_terms_id")
+ paymentTerms   PaymentTerms? @relation(fields: [paymentTermsId], references: [id], onDelete: SetNull)
 
   // Additional fields
   notes  String?
@@ -858,6 +853,42 @@ enum InvoiceStatus {
   CANCELLED // Cancelled
 
   @@map("invoice_status")
+}
+
+// Payment Terms Model
+model PaymentTerms {
+  id          String              @id @default(cuid())
+  name        String              // Display name, e.g., "Net 14 days", "Fixed 1st of month"
+  type        PaymentTermType     // DAYS_AFTER or FIXED_DATE
+  daysUntil   Int?                // Number of days/months after invoice date (only for DAYS_AFTER type)
+  timeUnit    PaymentTimeUnit?    // DAYS or MONTHS (only for DAYS_AFTER type)
+  
+  // Relations
+  customers   Customer[]          // One payment term can be used by many customers
+  invoices    Invoice[]           // One payment term can be used by many invoices
+  businessId  String              @map("business_id")
+  business    Business            @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime            @default(now()) @map("created_at")
+  updatedAt   DateTime            @updatedAt @map("updated_at")
+
+  @@map("payment_terms")
+}
+
+// Payment Term Type Enum
+enum PaymentTermType {
+  DAYS_AFTER  // Calculate due date as X days/months after invoice date
+  FIXED_DATE  // Due date is always 1st of the month
+
+  @@map("payment_term_type")
+}
+
+// Payment Time Unit Enum
+enum PaymentTimeUnit {
+  DAYS
+  MONTHS
+
+  @@map("payment_time_unit")
 }
 
 enum WageType {
