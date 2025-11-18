@@ -1,0 +1,97 @@
+{
+  "pageLabel": "Timer",
+  "heading": "Arbeidsoversikt",
+  "subheading": "Følg godkjente vakter, tilstedeværelse og økter på ett sted.",
+  "rangeLabel": "Viser {{range}}",
+  "loading": "Henter timer...",
+  "error": {
+    "title": "Vi klarte ikke å laste timene dine"
+  },
+  "accessDenied": {
+    "title": "Kun for ansatte",
+    "description": "Bytt til en ansattkonto for å se arbeidstimer."
+  },
+  "quickRanges": {
+    "today": "I dag",
+    "week": "Denne uken",
+    "month": "Denne måneden"
+  },
+  "form": {
+    "startDate": "Startdato",
+    "endDate": "Sluttdato"
+  },
+  "cards": {
+    "hoursWorked": {
+      "title": "Totalt antall timer",
+      "meta": "Fullførte økter: {{count}}"
+    },
+    "approvedHours": {
+      "title": "Godkjente timer",
+      "meta": "Godkjente vakter: {{count}}"
+    },
+    "scheduledShifts": {
+      "title": "Planlagte vakter",
+      "meta": "Aktive vakter: {{count}}"
+    },
+    "workingSessions": {
+      "title": "Arbeidsøkter",
+      "meta": "Registreringer: {{count}}"
+    }
+  },
+  "summary": {
+    "title": "Oppsummering",
+    "statsLine": "Godkjent {{approved}} av {{scheduled}} planlagte vakter",
+    "hours": {
+      "title": "Timer",
+      "total": "Totalt",
+      "approved": "Godkjent",
+      "activeSessions": "Aktive økter"
+    },
+    "shifts": {
+      "title": "Vakter",
+      "completed": "Fullført",
+      "scheduled": "Planlagt",
+      "attendance": "Tilstedeværelseslogg"
+    }
+  },
+  "shiftTimeline": {
+    "title": "Vaktlinje",
+    "subtitle": "Godkjente og planlagte vakter",
+    "count": "Vakter: {{count}}",
+    "badge": {
+      "approved": "Godkjent",
+      "pending": "Venter"
+    },
+    "empty": "Ingen vakter i dette tidsrommet.",
+    "status": {
+      "SCHEDULED": "Planlagt",
+      "APPROVED": "Godkjent",
+      "ACTIVE": "Aktiv",
+      "WORKING": "Pågår",
+      "COMPLETED": "Fullført",
+      "CANCELLED": "Avlyst",
+      "PENDING": "Venter",
+      "DRAFT": "Utkast"
+    }
+  },
+  "attendance": {
+    "title": "Tilstedeværelse",
+    "subtitle": "Siste stemplinger",
+    "count": "Registreringer: {{count}}",
+    "inProgress": "fortsatt på jobb",
+    "shiftLabel": "Planlagt vakt",
+    "tracking": "Måler...",
+    "empty": "Ingen tilstedeværelse i dette tidsrommet.",
+    "badge": {
+      "approved": "Godkjent",
+      "pending": "Venter",
+      "active": "Aktiv"
+    },
+    "pagination": {
+      "summary": "Viser {{start}}-{{end}} av {{total}} registreringer",
+      "page": "Side {{current}} av {{total}}",
+      "previous": "Forrige",
+      "next": "Neste"
+    }
+  }
+}

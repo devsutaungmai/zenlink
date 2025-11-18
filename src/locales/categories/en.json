@@ -50,6 +50,8 @@
   "create_error": "Failed to create category",
   "update_error": "Failed to update category",
   "delete_error": "Failed to delete category",
+  "delete_has_functions": "This category still has functions assigned and cannot be deleted.",
+  "delete_has_departments": "This category is linked to one or more departments and cannot be deleted.",
   "creating": "Creating...",
   "name_required": "Category name is required",
   "add_new_category": "Add a new category to organize your functions (can be business-wide or department-specific)",

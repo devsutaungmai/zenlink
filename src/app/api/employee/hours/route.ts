@@ -2,6 +2,21 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/shared/lib/prisma'
 import { getCurrentUserOrEmployee } from '@/shared/lib/auth'
 
+const formatDuration = (minutes: number) => {
+  const hrs = Math.floor(minutes / 60)
+  const mins = Math.max(0, minutes % 60)
+
+  if (hrs > 0 && mins > 0) {
+    return `${hrs}h ${mins}m`
+  }
+
+  if (hrs > 0) {
+    return `${hrs}h`
+  }
+
+  return `${mins}m`
+}
+
 export async function GET(request: NextRequest) {
   try {
     const auth = await getCurrentUserOrEmployee()
@@ -147,6 +162,57 @@ export async function GET(request: NextRequest) {
     const approvedShiftWholeHours = Math.floor(approvedShiftHours)
     const approvedShiftMinutes = Math.round((approvedShiftHours - approvedShiftWholeHours) * 60)
 
+    const attendanceEntries = attendances.map(att => {
+      const punchIn = new Date(att.punchInTime)
+      const punchOut = att.punchOutTime ? new Date(att.punchOutTime) : null
+      const durationMinutes = punchOut
+        ? Math.max(0, Math.round((punchOut.getTime() - punchIn.getTime()) / (1000 * 60)))
+        : null
+
+      return {
+        id: att.id,
+        punchInTime: att.punchInTime,
+        punchOutTime: att.punchOutTime,
+        approved: att.approved,
+        durationMinutes,
+        durationFormatted: durationMinutes !== null ? formatDuration(durationMinutes) : null,
+        shift: att.shift
+          ? {
+              id: att.shift.id,
+              date: att.shift.date,
+              startTime: att.shift.startTime,
+              endTime: att.shift.endTime,
+              approved: att.shift.approved,
+              status: att.shift.status
+            }
+          : null
+      }
+    })
+
+    const shiftDetails = shifts.map(shift => {
+      const shiftHours = shift.endTime
+        ? calculateShiftHours(
+            shift.startTime,
+            shift.endTime,
+            shift.breakStart,
+            shift.breakEnd,
+            shift.breakPaid || false
+          )
+        : 0
+      const durationMinutes = Math.round(shiftHours * 60)
+
+      return {
+        id: shift.id,
+        date: shift.date,
+        startTime: shift.startTime,
+        endTime: shift.endTime,
+        approved: shift.approved,
+        status: shift.status,
+        durationMinutes,
+        durationFormatted: durationMinutes > 0 ? formatDuration(durationMinutes) : null
+      }
+    })
+
     return NextResponse.json({
       dateRange: {
         startDate: start.toISOString().split('T')[0],
@@ -175,7 +241,9 @@ export async function GET(request: NextRequest) {
         workingSessions: attendances.length,
         completedSessions: completedAttendances,
         activeSessions: activeAttendances
-      }
+      },
+      attendanceEntries,
+      shiftDetails
     })
 
   } catch (error) {

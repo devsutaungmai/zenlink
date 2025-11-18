@@ -47,6 +47,7 @@
   "create_error": "Funktion konnte nicht erstellt werden",
   "update_error": "Funktion konnte nicht aktualisiert werden",
   "delete_error": "Funktion konnte nicht gelöscht werden",
+  "delete_in_use": "Diese Funktion ist Schichten zugewiesen und kann nicht gelöscht werden.",
   "creating": "Wird erstellt...",
   "name_required": "Bitte geben Sie einen Funktionsnamen ein",
   "add_new_function": "Fügen Sie eine neue Funktion hinzu, um spezifische Rollen innerhalb einer Kategorie zu definieren",

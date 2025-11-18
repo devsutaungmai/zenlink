@@ -3,8 +3,6 @@
     "home": "Hjem",
     "dashboard": "Dashbord",
     "users": "Brukere",
-    "employees": "Ansatte",
-    "departments": "Avdelinger",
     "categories": "Kategorier",
     "functions": "Funksjoner",
     "employee_groups": "Ansattgrupper",
@@ -34,11 +32,70 @@
     "title": "Dashbord",
     "welcome_back": "Velkommen tilbake, {{name}}",
     "zenlink_dashboard": "Zenlink Dashbord",
+    "overview_subtitle": "Homie",
+    "overview_title": "Oversikt",
+    "hero": {
+      "caption": "Kom i gang",
+      "title": "Kom i gang med Zenlink",
+      "description": "Lær det grunnleggende for å få mest mulig ut av teamet ditt.",
+      "cta": "Utforsk vaktplan"
+    },
+    "cards": {
+      "requests": {
+        "title": "Forespørsler",
+        "upcoming_shift": "Neste vakt i dag kl. {{time}}.",
+        "caught_up": "Alt unnagjort! Ingen forespørsler trenger oppmerksomhet nå.",
+        "pending_admin": "Avventer godkjenning: {{count}}",
+        "loading": "Laster forespørsler..."
+      },
+      "attendance": {
+        "title": "Oppmøte",
+        "checked_in": "Stemplet inn siden {{time}}.",
+        "no_updates": "Ingen oppdateringer nå – sjekk senere.",
+        "status_working": "Stemplet inn",
+        "status_break": "På pause",
+        "status_idle": "Stemplet ut",
+        "duration": "Jobber i {{duration}} i dag.",
+        "view_details": "Åpne stemplingsur",
+        "default_role": "Teammedlem",
+        "unscheduled_label": "Uplanlagt arbeid",
+        "active_admin": "Ansatte stemplet inn: {{count}}",
+        "loading": "Laster oppmøte..."
+      }
+    },
+    "attendance_feed": {
+      "title": "Oppmøtefeed",
+      "subtitle": "Oppmøter",
+      "empty": "Ingen oppmøteoppdateringer ennå.",
+      "view_punch_clock": "Åpne stemplingsur",
+      "unknown_employee": "Ukjent ansatt",
+      "working_since": "Jobber siden {{time}}",
+      "worked_window": "{{inTime}} - {{outTime}}",
+      "punch_in": "Stemple inn",
+      "punch_out": "Stemple ut",
+      "duration": "Varighet"
+    },
+    "weekly_shifts": {
+      "title": "Ukens vakter",
+      "subtitle_admin": "Vaktplaner",
+      "subtitle_employee": "Dine vakter denne uken",
+      "view_schedule": "Åpne vaktplan",
+      "empty": "Ingen vakter planlagt denne uken.",
+      "range_label": "Uke {{start}} – {{end}}",
+      "no_assignment": "Ingen tilknytning",
+      "unassigned_employee": "Ikke tildelt ansatt",
+      "status": {
+        "SCHEDULED": "Planlagt",
+        "WORKING": "I arbeid",
+        "COMPLETED": "Fullført",
+        "CANCELLED": "Avlyst"
+      }
+    },
     "stats": {
-      "total_employees": "Totalt ansatte",
-      "hours_scheduled": "Timer planlagt",
-      "shifts_today": "Skift i dag",
-      "weekly_hours": "Uketimer"
+      "active_employees": "Aktive ansatte",
+      "shifts_in_progress": "Pågående vakter",
+      "pending_approvals": "Avventer godkjenning",
+      "hours_logged_this_week": "Timer logget denne uken"
     },
     "recent_activity": "Nylig aktivitet",
     "no_recent_activity": "Ingen nylig aktivitet",
@@ -482,7 +539,13 @@
     "cancel": "Avbryt",
     "department_info": "Avdelingsinformasjon",
     "employees_count": "{{count}} ansatt",
-    "employees_count_plural": "{{count}} ansatte"
+    "employees_count_plural": "{{count}} ansatte",
+    "errors": {
+      "name_exists": "En avdeling med dette navnet finnes allerede i virksomheten.",
+      "number_exists": "Dette avdelingsnummeret er allerede i bruk.",
+      "phone_invalid": "Angi et gyldig telefonnummer for {{country}}.",
+      "country_required": "Velg et land for å validere telefonnummeret."
+    }
   },
   "pending_requests": {
     "title": "Ventende forespørsler",

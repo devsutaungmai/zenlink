@@ -184,6 +184,11 @@ export async function DELETE(
         businessId: businessId
       },
       include: {
+        departments: {
+          select: {
+            id: true
+          }
+        },
         _count: {
           select: { functions: true }
         }
@@ -194,7 +199,28 @@ export async function DELETE(
       return NextResponse.json({ error: 'Category not found' }, { status: 404 })
     }
 
-    // Delete the category (cascade will delete functions)
+    if (category._count.functions > 0) {
+      return NextResponse.json(
+        {
+          code: 'CATEGORY_HAS_FUNCTIONS',
+          message: 'Category has functions assigned and cannot be deleted'
+        },
+        { status: 400 }
+      )
+    }
+
+    const hasDepartments = Boolean(category.departmentId) || (category.departments?.length ?? 0) > 0
+    if (hasDepartments) {
+      return NextResponse.json(
+        {
+          code: 'CATEGORY_HAS_DEPARTMENTS',
+          message: 'Category is linked to departments and cannot be deleted'
+        },
+        { status: 400 }
+      )
+    }
+
+    // Delete the category
     await prisma.departmentCategory.delete({
       where: { id: id }
     })

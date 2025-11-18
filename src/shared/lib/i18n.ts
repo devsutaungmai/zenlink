@@ -57,6 +57,11 @@ import shiftTypesEn from '../../locales/en/shift-types.json'
 import shiftTypesNo from '../../locales/no/shift-types.json'
 import shiftTypesDe from '../../locales/de/shift-types.json'
 
+// Import employee-hours translations
+import employeeHoursEn from '../../locales/employee-hours/en.json'
+import employeeHoursNo from '../../locales/employee-hours/no.json'
+import employeeHoursDe from '../../locales/employee-hours/de.json'
+
 // Import settings translations
 import settingsEn from '../../locales/settings/en.json'
 import settingsNo from '../../locales/settings/no.json'
@@ -105,7 +110,8 @@ const resources = {
     'pay-rules': payRulesEn,
     'overtime-rules': overTimeRulesEn,
     categories: categoriesEn,
-    functions: functionsEn
+    functions: functionsEn,
+    'employee-hours': employeeHoursEn
 
   },
   no: { 
@@ -125,7 +131,8 @@ const resources = {
     'pay-rules': payRulesNo,
     'overtime-rules': overTimeRulesNo,
     categories: categoriesNo,
-    functions: functionsNo
+    functions: functionsNo,
+    'employee-hours': employeeHoursNo
   },
   de: { 
     translation: de,
@@ -144,7 +151,8 @@ const resources = {
     'pay-rules': payRulesDe,
     'overtime-rules': overTimeRulesDe,
     categories: categoriesDe,
-    functions: functionsDe
+    functions: functionsDe,
+    'employee-hours': employeeHoursDe
   }
 }
 
@@ -167,7 +175,7 @@ i18n
     },
 
     // Support for namespaces
-    ns: ['translation', 'schedule', 'punch-clock', 'availability', 'sick-leave', 'pending-requests', 'payroll-entries', 'payroll-periods', 'payroll-reports', 'employee-dashboard','settings','salary-codes','pay-rules','overtime-rules', 'categories', 'functions'],
+    ns: ['translation', 'schedule', 'punch-clock', 'availability', 'sick-leave', 'pending-requests', 'payroll-entries', 'payroll-periods', 'payroll-reports', 'employee-dashboard','settings','salary-codes','pay-rules','overtime-rules', 'categories', 'functions', 'employee-hours'],
     defaultNS: 'translation',
   })
 

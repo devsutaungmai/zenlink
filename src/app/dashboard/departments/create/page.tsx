@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import DepartmentForm from '@/components/DepartmentForm'
@@ -10,6 +10,28 @@ export default function CreateDepartmentPage() {
   const { t } = useTranslation()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [existingDepartments, setExistingDepartments] = useState<{ id: string; name: string; number?: string | null }[]>([])
+
+  useEffect(() => {
+    const fetchExistingDepartments = async () => {
+      try {
+        const res = await fetch('/api/departments')
+        if (!res.ok) return
+        const data = await res.json()
+        setExistingDepartments(
+          data.map((dept: { id: string; name: string; number?: string | null }) => ({
+            id: dept.id,
+            name: dept.name,
+            number: dept.number ?? null,
+          }))
+        )
+      } catch (fetchError) {
+        console.error('Failed to load departments for validation', fetchError)
+      }
+    }
+
+    fetchExistingDepartments()
+  }, [])
 
   const handleSubmit = async (formData: any) => {
     setLoading(true)
@@ -71,7 +93,11 @@ export default function CreateDepartmentPage() {
 
       {/* Form Container */}
       <div className="bg-white/80 p-3 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg">
-        <DepartmentForm onSubmit={handleSubmit} loading={loading} />
+        <DepartmentForm 
+          onSubmit={handleSubmit} 
+          loading={loading}
+          existingDepartments={existingDepartments}
+        />
       </div>
     </div>
   )

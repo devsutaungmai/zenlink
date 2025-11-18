@@ -50,6 +50,8 @@
   "create_error": "Kunne ikke opprette kategori",
   "update_error": "Kunne ikke oppdatere kategori",
   "delete_error": "Kunne ikke slette kategori",
+  "delete_has_functions": "Denne kategorien har fortsatt funksjoner tilknyttet og kan ikke slettes.",
+  "delete_has_departments": "Denne kategorien er knyttet til én eller flere avdelinger og kan ikke slettes.",
   "creating": "Oppretter...",
   "name_required": "Kategorinavn er påkrevd",
   "add_new_category": "Legg til en ny kategori for å organisere funksjonene dine (kan være bedriftsomfattende eller avdelingsspesifikk)",

@@ -105,17 +105,17 @@ export default function NotificationCenter({ employeeId }: NotificationCenterPro
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'SHIFT_EXCHANGE_REQUEST':
-        return '🔄'
+        return ''
       case 'SHIFT_EXCHANGE_ACCEPTED':
-        return '✅'
+        return ''
       case 'SHIFT_EXCHANGE_REJECTED':
-        return '❌'
+        return ''
       case 'SHIFT_EXCHANGE_APPROVED':
-        return '👍'
+        return ''
       case 'ADMIN_APPROVAL_NEEDED':
-        return '⚠️'
+        return ''
       default:
-        return '📝'
+        return ''
     }
   }
 

@@ -1,0 +1,97 @@
+{
+  "pageLabel": "Your hours",
+  "heading": "Your work summary",
+  "subheading": "Track approved shifts, live attendance, and working sessions in one view.",
+  "rangeLabel": "Showing {{range}}",
+  "loading": "Fetching the latest hours...",
+  "error": {
+    "title": "We could not load your hours"
+  },
+  "accessDenied": {
+    "title": "Employee view only",
+    "description": "Switch to an employee account to see worked hours."
+  },
+  "quickRanges": {
+    "today": "Today",
+    "week": "This week",
+    "month": "This month"
+  },
+  "form": {
+    "startDate": "Start date",
+    "endDate": "End date"
+  },
+  "cards": {
+    "hoursWorked": {
+      "title": "Total hours",
+      "meta": "Completed sessions: {{count}}"
+    },
+    "approvedHours": {
+      "title": "Approved hours",
+      "meta": "Approved shifts: {{count}}"
+    },
+    "scheduledShifts": {
+      "title": "Scheduled shifts",
+      "meta": "Active shifts: {{count}}"
+    },
+    "workingSessions": {
+      "title": "Working sessions",
+      "meta": "Attendance entries: {{count}}"
+    }
+  },
+  "summary": {
+    "title": "Summary",
+    "statsLine": "Approved {{approved}} of {{scheduled}} scheduled shifts",
+    "hours": {
+      "title": "Hours",
+      "total": "Total",
+      "approved": "Approved",
+      "activeSessions": "Active sessions"
+    },
+    "shifts": {
+      "title": "Shifts",
+      "completed": "Completed",
+      "scheduled": "Scheduled",
+      "attendance": "Attendance records"
+    }
+  },
+  "shiftTimeline": {
+    "title": "Shift timeline",
+    "subtitle": "Approved and scheduled shifts",
+    "count": "Shifts: {{count}}",
+    "badge": {
+      "approved": "Approved",
+      "pending": "Pending"
+    },
+    "empty": "No shifts available in this range.",
+    "status": {
+      "SCHEDULED": "Scheduled",
+      "APPROVED": "Approved",
+      "ACTIVE": "Active",
+      "WORKING": "In progress",
+      "COMPLETED": "Completed",
+      "CANCELLED": "Cancelled",
+      "PENDING": "Pending",
+      "DRAFT": "Draft"
+    }
+  },
+  "attendance": {
+    "title": "Attendance",
+    "subtitle": "Latest punch clock sessions",
+    "count": "Entries: {{count}}",
+    "inProgress": "still working",
+    "shiftLabel": "Scheduled shift",
+    "tracking": "Tracking...",
+    "empty": "No attendance records for this range.",
+    "badge": {
+      "approved": "Approved",
+      "pending": "Pending",
+      "active": "Active"
+    },
+    "pagination": {
+      "summary": "Showing {{start}}-{{end}} of {{total}} entries",
+      "page": "Page {{current}} of {{total}}",
+      "previous": "Previous",
+      "next": "Next"
+    }
+  }
+}

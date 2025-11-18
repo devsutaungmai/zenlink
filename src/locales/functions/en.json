@@ -47,6 +47,7 @@
   "create_error": "Failed to create function",
   "update_error": "Failed to update function",
   "delete_error": "Failed to delete function",
+  "delete_in_use": "This function is assigned to shifts and cannot be deleted.",
   "creating": "Creating...",
   "name_required": "Please enter a function name",
   "add_new_function": "Add a new function to define specific roles within a category",

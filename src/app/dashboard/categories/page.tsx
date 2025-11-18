@@ -17,6 +17,13 @@ interface Category {
     id: string
     name: string
   }
+  departments?: Array<{
+    id: string
+    department: {
+      id: string
+      name: string
+    }
+  }>
   functions: Array<{
     id: string
     name: string
@@ -86,7 +93,26 @@ export default function CategoriesPage() {
             confirmButtonColor: '#31BCFF',
           })
         } else {
-          throw new Error('Failed to delete category')
+          let errorMessage = t('delete_error')
+          try {
+            const data = await res.json()
+            if (data?.code === 'CATEGORY_HAS_FUNCTIONS') {
+              errorMessage = t('delete_has_functions')
+            } else if (data?.code === 'CATEGORY_HAS_DEPARTMENTS') {
+              errorMessage = t('delete_has_departments')
+            } else if (data?.message) {
+              errorMessage = data.message
+            }
+          } catch (err) {
+            console.error('Error parsing delete response:', err)
+          }
+
+          await Swal.fire({
+            title: t('error'),
+            text: errorMessage,
+            icon: 'error',
+            confirmButtonColor: '#31BCFF',
+          })
         }
       }
     } catch (error) {

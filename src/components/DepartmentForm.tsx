@@ -1,8 +1,11 @@
+'use client'
+
 import React, { useState, useRef, useEffect } from 'react'
 import { ChevronDownIcon, MagnifyingGlassIcon, CheckIcon } from '@heroicons/react/24/outline'
 import { countries } from '@/app/constants/countries'
 import { useTranslation } from 'react-i18next'
 import { useRouter } from 'next/navigation'
+import { isValidPhoneNumber, CountryCode } from 'libphonenumber-js/min'
 
 interface DepartmentFormData {
   name: string
@@ -19,9 +22,11 @@ interface DepartmentFormProps {
   initialData?: DepartmentFormData
   onSubmit: (data: DepartmentFormData) => void
   loading: boolean
+  existingDepartments?: { id: string; name: string; number?: string | null }[]
+  currentDepartmentId?: string
 }
 
-export default function DepartmentForm({ initialData, onSubmit, loading }: DepartmentFormProps) {
+export default function DepartmentForm({ initialData, onSubmit, loading, existingDepartments = [], currentDepartmentId }: DepartmentFormProps) {
   const { t } = useTranslation()
   const router = useRouter()
   const [formData, setFormData] = React.useState<DepartmentFormData>(
@@ -60,14 +65,124 @@ export default function DepartmentForm({ initialData, onSubmit, loading }: Depar
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
   
+  const [errors, setErrors] = useState<{ name?: string; number?: string; phone?: string }>({})
+
   const handleCountrySelect = (countryName: string) => {
     setFormData({ ...formData, country: countryName })
+    if (formData.phone) {
+      validatePhone(formData.phone, countryName)
+    }
     setIsCountryDropdownOpen(false)
     setCountrySearch('')
   }
 
+  const sanitize = (value: string) => value.trim().toLowerCase()
+
+  const validateName = (name: string) => {
+    const normalized = sanitize(name)
+    if (!normalized) {
+      setErrors((prev) => ({ ...prev, name: undefined }))
+      return true
+    }
+
+    const duplicate = existingDepartments.some((dept) => {
+      if (dept.id === currentDepartmentId) return false
+      return sanitize(dept.name) === normalized
+    })
+
+    if (duplicate) {
+      setErrors((prev) => ({ ...prev, name: t('departments.errors.name_exists') }))
+      return false
+    }
+
+    setErrors((prev) => ({ ...prev, name: undefined }))
+    return true
+  }
+
+  const normalizeNumber = (value?: string | null) => value?.replace(/\s+/g, '') ?? ''
+
+  const validateNumber = (numberValue?: string | null) => {
+    const normalized = normalizeNumber(numberValue)
+
+    if (!normalized) {
+      setErrors((prev) => ({ ...prev, number: undefined }))
+      return true
+    }
+
+    const duplicate = existingDepartments.some((dept) => {
+      if (dept.id === currentDepartmentId) return false
+      return normalizeNumber(dept.number) === normalized
+    })
+
+    if (duplicate) {
+      setErrors((prev) => ({ ...prev, number: t('departments.errors.number_exists') }))
+      return false
+    }
+
+    setErrors((prev) => ({ ...prev, number: undefined }))
+    return true
+  }
+
+  const getCountryCodeByName = (countryName?: string) => {
+    if (!countryName) return undefined
+    return countries.find((country) => country.name === countryName)?.code as CountryCode | undefined
+  }
+
+  useEffect(() => {
+    if (existingDepartments.length) {
+      if (formData.name) {
+        validateName(formData.name)
+      }
+      if (formData.number) {
+        validateNumber(formData.number)
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [existingDepartments])
+
+  const validatePhone = (phoneValue: string, selectedCountry?: string) => {
+    const countryName = selectedCountry || formData.country
+
+    if (!countryName) {
+      setErrors((prev) => ({ ...prev, phone: t('departments.errors.country_required') }))
+      return false
+    }
+
+    const countryCode = getCountryCodeByName(countryName)
+
+    if (!countryCode) {
+      setErrors((prev) => ({ ...prev, phone: t('departments.errors.phone_invalid', { country: countryName }) }))
+      return false
+    }
+
+    const sanitizedValue = phoneValue.replace(/[^\d+]/g, '')
+
+    if (!sanitizedValue) {
+      setErrors((prev) => ({ ...prev, phone: t('departments.errors.phone_invalid', { country: countryName }) }))
+      return false
+    }
+
+    const phoneIsValid = isValidPhoneNumber(sanitizedValue, countryCode)
+
+    if (!phoneIsValid) {
+      setErrors((prev) => ({ ...prev, phone: t('departments.errors.phone_invalid', { country: countryName }) }))
+      return false
+    }
+
+    setErrors((prev) => ({ ...prev, phone: undefined }))
+    return true
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    const isNameValid = validateName(formData.name)
+    const isNumberValid = validateNumber(formData.number)
+    const isPhoneValid = validatePhone(formData.phone)
+
+    if (!isNameValid || !isNumberValid || !isPhoneValid) {
+      return
+    }
+
     onSubmit(formData)
   }
 
@@ -81,11 +196,19 @@ export default function DepartmentForm({ initialData, onSubmit, loading }: Depar
           <input
             type="text"
             value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            onChange={(e) => {
+              setFormData({ ...formData, name: e.target.value })
+              if (existingDepartments.length) {
+                validateName(e.target.value)
+              }
+            }}
             className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-[#31BCFF] focus:outline-none focus:ring-1 focus:ring-[#31BCFF]"
             placeholder={t('departments.enter_department_name')}
             required
           />
+          {errors.name && (
+            <p className="mt-1 text-sm text-red-600">{errors.name}</p>
+          )}
         </div>
 
         <div>
@@ -95,10 +218,18 @@ export default function DepartmentForm({ initialData, onSubmit, loading }: Depar
           <input
             type="text"
             value={formData.number}
-            onChange={(e) => setFormData({ ...formData, number: e.target.value })}
+            onChange={(e) => {
+              setFormData({ ...formData, number: e.target.value })
+              if (existingDepartments.length) {
+                validateNumber(e.target.value)
+              }
+            }}
             className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-[#31BCFF] focus:outline-none focus:ring-1 focus:ring-[#31BCFF]"
             placeholder={t('departments.department_number')}
           />
+          {errors.number && (
+            <p className="mt-1 text-sm text-red-600">{errors.number}</p>
+          )}
         </div>
 
         <div className="sm:col-span-2">
@@ -151,20 +282,6 @@ export default function DepartmentForm({ initialData, onSubmit, loading }: Depar
             onChange={(e) => setFormData({ ...formData, city: e.target.value })}
             className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-[#31BCFF] focus:outline-none focus:ring-1 focus:ring-[#31BCFF]"
             placeholder={t('departments.city_name')}
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            {t('departments.phone')} <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="tel"
-            value={formData.phone}
-            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-[#31BCFF] focus:outline-none focus:ring-1 focus:ring-[#31BCFF]"
-            placeholder={t('departments.phone_number')}
             required
           />
         </div>
@@ -229,6 +346,26 @@ export default function DepartmentForm({ initialData, onSubmit, loading }: Depar
                 )}
               </div>
             </div>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            {t('departments.phone')} <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="tel"
+            value={formData.phone}
+            onChange={(e) => {
+              setFormData({ ...formData, phone: e.target.value })
+              validatePhone(e.target.value)
+            }}
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-[#31BCFF] focus:outline-none focus:ring-1 focus:ring-[#31BCFF]"
+            placeholder={t('departments.phone_number')}
+            required
+          />
+          {errors.phone && (
+            <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
           )}
         </div>
       </div>

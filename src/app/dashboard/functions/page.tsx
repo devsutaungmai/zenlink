@@ -109,9 +109,21 @@ export default function FunctionsPage() {
           })
           fetchFunctions()
         } else {
+          let errorMessage = t('delete_error')
+          try {
+            const data = await response.json()
+            if (data?.code === 'FUNCTION_IN_USE') {
+              errorMessage = t('delete_in_use')
+            } else if (data?.message) {
+              errorMessage = data.message
+            }
+          } catch (err) {
+            console.error('Error parsing delete response:', err)
+          }
+
           await Swal.fire({
             title: t('error'),
-            text: t('delete_error'),
+            text: errorMessage,
             icon: 'error',
             confirmButtonColor: '#31BCFF'
           })

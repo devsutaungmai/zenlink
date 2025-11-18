@@ -1,0 +1,97 @@
+{
+  "pageLabel": "Deine Stunden",
+  "heading": "Arbeitsübersicht",
+  "subheading": "Behalte genehmigte Schichten, Anwesenheit und Sessions im Blick.",
+  "rangeLabel": "Zeitraum: {{range}}",
+  "loading": "Lade aktuelle Stunden...",
+  "error": {
+    "title": "Stunden konnten nicht geladen werden"
+  },
+  "accessDenied": {
+    "title": "Nur für Mitarbeitende",
+    "description": "Wechsle zu einem Mitarbeiterkonto, um Arbeitszeiten zu sehen."
+  },
+  "quickRanges": {
+    "today": "Heute",
+    "week": "Diese Woche",
+    "month": "Dieser Monat"
+  },
+  "form": {
+    "startDate": "Startdatum",
+    "endDate": "Enddatum"
+  },
+  "cards": {
+    "hoursWorked": {
+      "title": "Gesamtstunden",
+      "meta": "Abgeschlossene Sessions: {{count}}"
+    },
+    "approvedHours": {
+      "title": "Genehmigte Stunden",
+      "meta": "Genehmigte Schichten: {{count}}"
+    },
+    "scheduledShifts": {
+      "title": "Geplante Schichten",
+      "meta": "Aktive Schichten: {{count}}"
+    },
+    "workingSessions": {
+      "title": "Arbeitssessions",
+      "meta": "Anwesenheitsbuchungen: {{count}}"
+    }
+  },
+  "summary": {
+    "title": "Zusammenfassung",
+    "statsLine": "Genehmigt {{approved}} von {{scheduled}} geplanten Schichten",
+    "hours": {
+      "title": "Stunden",
+      "total": "Gesamt",
+      "approved": "Genehmigt",
+      "activeSessions": "Aktive Sessions"
+    },
+    "shifts": {
+      "title": "Schichten",
+      "completed": "Abgeschlossen",
+      "scheduled": "Geplant",
+      "attendance": "Anwesenheit"
+    }
+  },
+  "shiftTimeline": {
+    "title": "Schichtverlauf",
+    "subtitle": "Genehmigte und geplante Schichten",
+    "count": "Schichten: {{count}}",
+    "badge": {
+      "approved": "Genehmigt",
+      "pending": "Ausstehend"
+    },
+    "empty": "Keine Schichten in diesem Zeitraum.",
+    "status": {
+      "SCHEDULED": "Geplant",
+      "APPROVED": "Genehmigt",
+      "ACTIVE": "Aktiv",
+      "WORKING": "Laufend",
+      "COMPLETED": "Abgeschlossen",
+      "CANCELLED": "Abgesagt",
+      "PENDING": "Ausstehend",
+      "DRAFT": "Entwurf"
+    }
+  },
+  "attendance": {
+    "title": "Anwesenheit",
+    "subtitle": "Letzte Stempelungen",
+    "count": "Einträge: {{count}}",
+    "inProgress": "noch aktiv",
+    "shiftLabel": "Geplante Schicht",
+    "tracking": "Läuft...",
+    "empty": "Keine Anwesenheitsdaten für diesen Zeitraum.",
+    "badge": {
+      "approved": "Genehmigt",
+      "pending": "Ausstehend",
+      "active": "Aktiv"
+    },
+    "pagination": {
+      "summary": "Zeige {{start}}-{{end}} von {{total}} Einträgen",
+      "page": "Seite {{current}} von {{total}}",
+      "previous": "Zurück",
+      "next": "Weiter"
+    }
+  }
+}

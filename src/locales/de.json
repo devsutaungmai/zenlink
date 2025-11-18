@@ -26,19 +26,100 @@
     "edit_profile": "Profil bearbeiten",
     "time_tracking_portal": "Zeiterfassungsportal",
     "your_hours": "Ihre Stunden",
-    "salary_codes": "Lønkoder",
-    "pay_rules": "Lønregler",
-    "overtime_rules": "Overtidsregler"
+    "salary_codes": "Lohncodes",
+    "pay_rules": "Lohnregeln",
+    "overtime_rules": "Überstundenregeln"
   },
   "dashboard": {
     "title": "Dashboard",
     "welcome_back": "Willkommen zurück, {{name}}",
     "zenlink_dashboard": "Zenlink Dashboard",
+    "overview_subtitle": "Homie",
+    "overview_title": "Übersicht",
+    "hero": {
+      "caption": "Loslegen",
+      "title": "Jetzt mit Zenlink starten",
+      "description": "Lerne die Grundlagen, um das Beste aus deinem Team herauszuholen.",
+      "cta": "Dienstplan öffnen"
+    },
     "stats": {
-      "total_employees": "Gesamte Mitarbeiter",
-      "hours_scheduled": "Geplante Stunden",
-      "shifts_today": "Schichten heute",
-      "weekly_hours": "Wochenstunden"
+      "active_employees": "Aktive Mitarbeitende",
+      "shifts_in_progress": "Laufende Schichten",
+      "pending_approvals": "Ausstehende Freigaben",
+      "hours_logged_this_week": "Gearbeitete Stunden (diese Woche)"
+    },
+    "cards": {
+      "see_all": "Alle anzeigen",
+      "requests": {
+        "title": "Anfragen",
+        "upcoming_shift": "Nächste Schicht heute um {{time}}.",
+        "caught_up": "Alles erledigt! Keine Anfragen benötigen derzeit Aufmerksamkeit.",
+        "pending_admin": "Ausstehende Genehmigungen: {{count}}",
+        "loading": "Lade aktuelle Anfragen..."
+      },
+      "attendance": {
+        "title": "Anwesenheit",
+        "checked_in": "Seit {{time}} eingestempelt.",
+        "no_updates": "Keine Neuigkeiten – schau später noch einmal vorbei.",
+        "status_working": "Eingestempelt",
+        "status_break": "In Pause",
+        "status_idle": "Ausgestempelt",
+        "duration": "Arbeitszeit heute: {{duration}}.",
+        "view_details": "Stechuhr öffnen",
+        "default_role": "Teammitglied",
+        "unscheduled_label": "Nicht eingeplante Arbeit",
+        "active_admin": "Eingestempelte Mitarbeitende: {{count}}",
+        "loading": "Anwesenheit wird geladen..."
+      },
+      "punch_clock": {
+        "headline": "Behalte deinen Tag im Blick",
+        "today": "Heutiger Einsatz",
+        "active": "Aktiv",
+        "approved": "Genehmigt",
+        "punched_in": "Eingestempelt um {{time}}",
+        "on_break": "Pause",
+        "ready": "Bereit zum Einstempeln",
+        "punching_in": "Stemple ein...",
+        "punch_in": "Einstempeln",
+        "punching_out": "Stemple aus...",
+        "punch_out": "Ausstempeln",
+        "starting_break": "Starte...",
+        "start_break": "Pause starten",
+        "ending_break": "Beende...",
+        "end_break": "Pause beenden",
+        "no_shift": "Heute ist keine genehmigte Schicht geplant",
+        "no_shift_hint": "Du kannst trotzdem für ungeplante Arbeit einstempeln",
+        "unscheduled": "Ungeplanter Einsatz",
+        "ready_unscheduled": "Bereit zum Einstempeln für ungeplante Arbeit"
+      }
+    },
+    "attendance_feed": {
+      "title": "Anwesenheitsfeed",
+      "subtitle": "Anwesenheiten",
+      "empty": "Noch keine Anwesenheitsaktualisierungen.",
+      "view_punch_clock": "Stempeluhr öffnen",
+      "unknown_employee": "Unbekannter Mitarbeiter",
+      "working_since": "Seit {{time}} im Einsatz",
+      "worked_window": "{{inTime}} - {{outTime}}",
+      "punch_in": "Einstempeln",
+      "punch_out": "Ausstempeln",
+      "duration": "Dauer"
+    },
+    "weekly_shifts": {
+      "title": "Schichten dieser Woche",
+      "subtitle_admin": "Dienstpläne",
+      "subtitle_employee": "Deine Schichten in dieser Woche",
+      "view_schedule": "Dienstplan öffnen",
+      "empty": "Für diese Woche sind keine Schichten geplant.",
+      "range_label": "Woche vom {{start}} bis {{end}}",
+      "no_assignment": "Keine Zuordnung",
+      "unassigned_employee": "Nicht zugewiesener Mitarbeiter",
+      "status": {
+        "SCHEDULED": "Geplant",
+        "WORKING": "Im Einsatz",
+        "COMPLETED": "Abgeschlossen",
+        "CANCELLED": "Abgesagt"
+      }
     },
     "recent_activity": "Neueste Aktivität",
     "no_recent_activity": "Keine neueste Aktivität",
@@ -208,44 +289,6 @@
       "set_pin": "PIN setzen",
       "edit_employee": "Mitarbeiter bearbeiten",
       "delete_employee": "Mitarbeiter löschen"
-    },
-    "invite_modal": {
-      "title": "Einladung senden",
-      "email": "E-Mail",
-      "send": "Senden",
-      "sending": "Senden...",
-      "success": "Einladung erfolgreich gesendet!",
-      "error": "Einladung konnte nicht gesendet werden."
-    },
-    "pin_modal": {
-      "title": "PIN für {{name}} setzen",
-      "pin_label": "6-stellige PIN",
-      "pin_description": "Geben Sie eine 6-stellige PIN ein, die der Mitarbeiter zum Ein-/Ausstempeln verwendet",
-      "set_pin": "PIN setzen",
-      "success": "PIN erfolgreich gesetzt!",
-      "error": "PIN konnte nicht gesetzt werden."
-    },
-    "form": {
-      "first_name": "Vorname",
-      "last_name": "Nachname",
-      "birthday": "Geburtstag",
-      "gender": "Geschlecht",
-      "male": "Männlich",
-      "female": "Weiblich",
-      "other": "Andere",
-      "social_security_no": "Sozialversicherungsnummer",
-      "employee_number": "Mitarbeiternummer",
-      "date_of_hire": "Einstellungsdatum",
-      "hours_per_month": "Stunden pro Monat",
-      "department": "Abteilung",
-      "select_department": "Abteilung auswählen",
-      "employee_group": "Mitarbeitergruppe",
-      "no_group": "Keine Gruppe",
-      "address": "Adresse",
-      "mobile": "Mobil",
-      "bank_account": "Bankkonto",
-      "team_leader": "Teamleiter",
-      "saving": "Speichern..."
     }
   },
   "employee_groups": {
@@ -519,7 +562,13 @@
     "cancel": "Abbrechen",
     "department_info": "Abteilungsinformationen",
     "employees_count": "{{count}} Mitarbeiter",
-    "employees_count_plural": "{{count}} Mitarbeiter"
+    "employees_count_plural": "{{count}} Mitarbeiter",
+    "errors": {
+      "name_exists": "Eine Abteilung mit diesem Namen existiert bereits in Ihrem Unternehmen.",
+      "number_exists": "Diese Abteilungsnummer wird bereits verwendet.",
+      "phone_invalid": "Geben Sie eine gültige Telefonnummer für {{country}} ein.",
+      "country_required": "Wählen Sie ein Land aus, um die Telefonnummer zu validieren."
+    }
   },
   "pending_requests": {
     "title": "Wartende Anfragen",
