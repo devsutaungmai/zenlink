@@ -34,16 +34,18 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/categories - Create a new category
+// POST /api/customers - Create a new customer
 export async function POST(request: NextRequest) {
   try {
     const user = await requireAuth()
     const auth = await getCurrentUserOrEmployee()
-
+    
     if (!auth) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
     let businessId: string
+    
     if (auth.type === 'user') {
       businessId = (auth.data as any).businessId
     } else {
@@ -59,7 +61,7 @@ export async function POST(request: NextRequest) {
     }
 
     const formData = await request.json()
-    const { customerName, customerNumber } = formData
+    const { customerName, customerNumber, customerPaymentTerm, ...restData } = formData
 
     console.log('Creating customer with data:', JSON.stringify(formData))
 
@@ -67,21 +69,59 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'CustomerName and CustomerNumber are required' }, { status: 400 })
     }
 
-    const category = await prisma.customer.create({
+    // Handle InvoicePaymentTerms
+    let paymentTermsId: string | null = null
+
+    if (customerPaymentTerm) {
+      // Check if payment term already exists with these exact settings
+      const existingPaymentTerm = await prisma.invoicePaymentTerms.findFirst({
+        where: {
+          businessId: businessId,
+          invoiceDueDateType: customerPaymentTerm.dueDateType,
+          invoiceDueDateValue: customerPaymentTerm.dueDateValue,
+          invoiceDueDateUnit: customerPaymentTerm.dueDateUnit,
+        }
+      })
+
+      if (existingPaymentTerm) {
+        // Use existing payment term
+        paymentTermsId = existingPaymentTerm.id
+        console.log('Using existing payment term:', paymentTermsId)
+      } else {
+        // Create new payment term
+        const newPaymentTerm = await prisma.invoicePaymentTerms.create({
+          data: {
+            businessId: businessId,
+            invoiceDueDateType: customerPaymentTerm.dueDateType,
+            invoiceDueDateValue: customerPaymentTerm.dueDateValue,
+            invoiceDueDateUnit: customerPaymentTerm.dueDateUnit,
+          }
+        })
+        paymentTermsId = newPaymentTerm.id
+        console.log('Created new payment term:', paymentTermsId)
+      }
+    }
+
+    // Create customer with payment term ID
+    const customer = await prisma.customer.create({
       data: {
-        ...formData,
-        businessId
+        ...restData,
+        customerName,
+        customerNumber,
+        businessId,
+        invoicepaymentTermsId: paymentTermsId,
       }
     })
 
-    return NextResponse.json(category, { status: 201 })
+    return NextResponse.json(customer, { status: 201 })
+    
   } catch (error: any) {
     console.error('Error creating customer:', error)
-
+    
     if (error.code === 'P2002') {
-      return NextResponse.json({ error: 'Customer name already exists in this department' }, { status: 409 })
+      return NextResponse.json({ error: 'Customer number already exists' }, { status: 409 })
     }
-
+    
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

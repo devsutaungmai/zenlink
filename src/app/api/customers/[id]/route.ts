@@ -49,11 +49,13 @@ export async function PUT(
   try {
     const { id } = await params
     const auth = await getCurrentUserOrEmployee()
-
+    
     if (!auth) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
     let businessId: string
+    
     if (auth.type === 'user') {
       businessId = (auth.data as any).businessId
     } else {
@@ -69,7 +71,9 @@ export async function PUT(
     }
 
     const body = await request.json()
+    const { customerPaymentTerm, ...restData } = body
 
+    // Check if customer exists
     const existingCustomer = await prisma.customer.findFirst({
       where: {
         id: id,
@@ -81,19 +85,57 @@ export async function PUT(
       return NextResponse.json({ error: 'Customer not found' }, { status: 404 })
     }
 
+    // Handle InvoicePaymentTerms
+    let paymentTermsId: string | null = null
+
+    if (customerPaymentTerm) {
+      // Check if payment term already exists with these exact settings
+      const existingPaymentTerm = await prisma.invoicePaymentTerms.findFirst({
+        where: {
+          businessId: businessId,
+          invoiceDueDateType: customerPaymentTerm.dueDateType,
+          invoiceDueDateValue: customerPaymentTerm.dueDateValue,
+          invoiceDueDateUnit: customerPaymentTerm.dueDateUnit,
+        }
+      })
+
+      if (existingPaymentTerm) {
+        // Use existing payment term
+        paymentTermsId = existingPaymentTerm.id
+        console.log('Using existing payment term:', paymentTermsId)
+      } else {
+        // Create new payment term
+        const newPaymentTerm = await prisma.invoicePaymentTerms.create({
+          data: {
+            businessId: businessId,
+            invoiceDueDateType: customerPaymentTerm.dueDateType,
+            invoiceDueDateValue: customerPaymentTerm.dueDateValue,
+            invoiceDueDateUnit: customerPaymentTerm.dueDateUnit,
+          }
+        })
+        paymentTermsId = newPaymentTerm.id
+        console.log('Created new payment term:', paymentTermsId)
+      }
+    }
+
+    // Update customer with payment term ID
     const customer = await prisma.customer.update({
       where: { id: id },
-      data: body
+      data: {
+        ...restData,
+        invoicepaymentTermsId: paymentTermsId,
+      }
     })
 
     return NextResponse.json(customer)
+    
   } catch (error: any) {
     console.error('Error updating customer:', error)
-
+    
     if (error.code === 'P2002') {
-      return NextResponse.json({ error: 'Customer name already exists in this department' }, { status: 409 })
+      return NextResponse.json({ error: 'Customer number already exists' }, { status: 409 })
     }
-
+    
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
