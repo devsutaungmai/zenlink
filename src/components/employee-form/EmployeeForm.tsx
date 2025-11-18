@@ -56,10 +56,56 @@ export default function EmployeeForm({
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target as HTMLInputElement
+    const target = e.target as HTMLInputElement
+    const { name, value, type } = target
+
+    if (name === 'mobile') {
+      const digitsOnly = value.replace(/\D/g, '').slice(0, 8)
+      setFormData(prev => ({ ...prev, mobile: digitsOnly }))
+
+      if (digitsOnly.length > 0 && digitsOnly.length < 8) {
+        setValidationErrors(prev => ({ ...prev, mobile: 'Mobile number must contain 8 digits' }))
+      } else {
+        setValidationErrors(prev => ({ ...prev, mobile: '' }))
+      }
+
+      debouncedValidation(name, digitsOnly)
+      return
+    }
+
+    if (name === 'salaryRate') {
+      if (value === '') {
+        setFormData(prev => ({ ...prev, salaryRate: undefined }))
+        setValidationErrors(prev => ({ ...prev, salaryRate: '' }))
+        debouncedValidation(name, undefined)
+        return
+      }
+
+      if (value.includes('-')) {
+        setValidationErrors(prev => ({ ...prev, salaryRate: 'Salary rate cannot be negative' }))
+        return
+      }
+
+      const parsedValue = Number(value)
+      if (Number.isNaN(parsedValue)) {
+        setValidationErrors(prev => ({ ...prev, salaryRate: 'Salary rate must be a valid number' }))
+        return
+      }
+
+      if (parsedValue <= 0) {
+        setValidationErrors(prev => ({ ...prev, salaryRate: 'Salary rate must be greater than 0' }))
+      } else {
+        setValidationErrors(prev => ({ ...prev, salaryRate: '' }))
+      }
+
+      setFormData(prev => ({ ...prev, salaryRate: parsedValue }))
+      debouncedValidation(name, parsedValue)
+      return
+    }
+
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : 
+      [name]: type === 'checkbox' ? target.checked : 
               type === 'number' ? (value === '' ? undefined : parseFloat(value)) : 
               value
     }))

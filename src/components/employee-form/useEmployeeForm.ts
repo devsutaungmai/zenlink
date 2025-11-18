@@ -61,6 +61,22 @@ export function useEmployeeForm({ initialData }: UseEmployeeFormProps) {
     try {
       await employeeValidationSchema.parseAsync(formData)
 
+      const customFieldErrors: Record<string, string> = {}
+
+      if (formData.mobile && formData.mobile.length !== 8) {
+        customFieldErrors.mobile = 'Mobile number must contain exactly 8 digits'
+      }
+
+      if (formData.salaryRate !== undefined && formData.salaryRate !== null && formData.salaryRate <= 0) {
+        customFieldErrors.salaryRate = 'Salary rate must be greater than 0'
+      }
+
+      if (Object.keys(customFieldErrors).length > 0) {
+        setValidationErrors(prev => ({ ...prev, ...customFieldErrors }))
+        setIsFormValid(false)
+        return false
+      }
+
       const hasUniqueErrors = Object.keys(validationErrors).some(key => 
         validationErrors[key] && 
         validationErrors[key] !== '' && 
@@ -98,6 +114,21 @@ export function useEmployeeForm({ initialData }: UseEmployeeFormProps) {
   }
 
   const validateField = (fieldName: string, value: any) => {
+    if (fieldName === 'salaryRate') {
+      if (value === undefined || value === null || value === '') {
+        setValidationErrors(prev => ({ ...prev, salaryRate: '' }))
+        return
+      }
+
+      const numericValue = typeof value === 'number' ? value : Number(value)
+      if (Number.isNaN(numericValue) || numericValue <= 0) {
+        setValidationErrors(prev => ({ ...prev, salaryRate: 'Salary rate must be greater than 0' }))
+      } else {
+        setValidationErrors(prev => ({ ...prev, salaryRate: '' }))
+      }
+      return
+    }
+
     try {
       const fieldSchema = employeeValidationSchema.shape[fieldName as keyof typeof employeeValidationSchema.shape]
       if (fieldSchema) {
@@ -177,7 +208,8 @@ export function useEmployeeForm({ initialData }: UseEmployeeFormProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: email.trim(),
-          excludeEmployeeId: initialData?.id
+          excludeEmployeeId: initialData?.id,
+          scope: 'global'
         })
       })
 
@@ -187,8 +219,8 @@ export function useEmployeeForm({ initialData }: UseEmployeeFormProps) {
           setValidationErrors(prev => ({
             ...prev,
             email: data.existingEmployee 
-              ? `Email already in use by ${data.existingEmployee.name}`
-              : 'Email already in use'
+              ? `Email already in used`
+              : 'Email already in used'
           }))
         } else {
           setValidationErrors(prev => ({ ...prev, email: '' }))

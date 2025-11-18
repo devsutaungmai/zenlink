@@ -116,7 +116,7 @@
   "employees": {
     "title": "Ansatte",
     "description": "Administrer organisasjonens ansatte og deres informasjon",
-    "search_placeholder": "Søk etter navn, ansattnummer, avdeling eller mobil...",
+    "search_placeholder": "Søk etter navn, ansattnummer...",
     "add_employee": "Legg til ansatt",
     "create_employee": "Opprett ansatt",
     "edit_employee": "Rediger ansatt",
@@ -145,7 +145,7 @@
     "no_employees_message": "Prøv å justere søkeordene",
     "get_started": "Kom i gang ved å legge til din første ansatte",
     "add_first_employee": "Legg til første ansatte",
-    "showing": "Viser {{current}} av {{total}} ansatte",
+    "showing": "Viser {{current}} av {{total}}",
     "team_leader": "Teamleder",
     "no_group": "Ingen gruppe",
     "send_invite": "Send invitasjon",

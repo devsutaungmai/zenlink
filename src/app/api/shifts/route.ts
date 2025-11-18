@@ -13,9 +13,11 @@ export async function GET(request: Request) {
 
     let isAuthorized = false
     let currentEmployeeId = null
+    let businessId: string | null = null
 
     if (currentUser) {
       isAuthorized = true
+      businessId = currentUser.businessId
     }
 
     if (!isAuthorized && employeeToken) {
@@ -42,6 +44,29 @@ export async function GET(request: Request) {
       )
     }
 
+    if (!businessId && currentEmployeeId) {
+      const employeeRecord = await prisma.employee.findUnique({
+        where: { id: currentEmployeeId },
+        select: {
+          department: { select: { businessId: true } },
+          employeeGroup: { select: { businessId: true } },
+          user: { select: { businessId: true } }
+        }
+      })
+
+      businessId = employeeRecord?.department?.businessId 
+        ?? employeeRecord?.employeeGroup?.businessId
+        ?? employeeRecord?.user?.businessId
+        ?? null
+    }
+
+    if (!businessId) {
+      return NextResponse.json(
+        { error: 'Business context not found' },
+        { status: 403 }
+      )
+    }
+
     const { searchParams } = new URL(request.url)
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
@@ -64,13 +89,17 @@ export async function GET(request: Request) {
       whereCondition.employeeId = employeeId
     }
 
-    if (currentUser) {
-      whereCondition.employee = {
-        user: {
-          businessId: currentUser.businessId
-        }
+    whereCondition.AND = [
+      ...(whereCondition.AND || []),
+      {
+        OR: [
+          { employee: { user: { businessId } } },
+          { department: { businessId } },
+          { employeeGroup: { businessId } },
+          { function: { category: { businessId } } }
+        ]
       }
-    }
+    ]
     
     const shifts = await prisma.shift.findMany({
       where: whereCondition,

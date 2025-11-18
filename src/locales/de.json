@@ -169,7 +169,7 @@
     "no_employees_message": "Versuchen Sie, Ihre Suchbegriffe anzupassen",
     "get_started": "Beginnen Sie mit dem Hinzufügen Ihres ersten Mitarbeiters",
     "add_first_employee": "Ersten Mitarbeiter hinzufügen",
-    "showing": "Zeige {{current}} von {{total}} Mitarbeitern",
+    "showing": "Zeige {{current}} von {{total}}",
     "team_leader": "Teamleiter",
     "no_group": "Keine Gruppe",
     "send_invite": "Einladung senden",

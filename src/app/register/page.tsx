@@ -29,6 +29,8 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [stepOneLoading, setStepOneLoading] = useState(false)
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string; confirmPassword?: string }>({})
 
   const [userForm, setUserForm] = useState<UserForm>({
     email: '',
@@ -45,13 +47,60 @@ export default function RegisterPage() {
     employeesQty: 1,
   })
 
+  const checkEmailExists = async (email: string) => {
+    const encodedEmail = encodeURIComponent(email.trim())
+    const res = await fetch(`/api/auth/register?email=${encodedEmail}`)
+
+    if (!res.ok) {
+      throw new Error('Failed to verify email')
+    }
+
+    const data = await res.json()
+    return Boolean(data.exists)
+  }
+
+  const getPasswordStrengthError = (password: string) => {
+    const strengthRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/
+
+    if (!strengthRegex.test(password)) {
+      return 'Password must be at least 8 characters and include uppercase, lowercase, number, and special character.'
+    }
+
+    return null
+  }
+
   const handleUserSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (userForm.password !== userForm.confirmPassword) {
-      setError('Passwords do not match')
+    setError(null)
+    setFieldErrors({})
+
+    const passwordError = getPasswordStrengthError(userForm.password)
+    if (passwordError) {
+      setFieldErrors((prev) => ({ ...prev, password: passwordError }))
       return
     }
-    setStep(2)
+
+    if (userForm.password !== userForm.confirmPassword) {
+      setFieldErrors((prev) => ({ ...prev, confirmPassword: 'Passwords do not match' }))
+      return
+    }
+
+    try {
+      setStepOneLoading(true)
+      const emailExists = await checkEmailExists(userForm.email)
+
+      if (emailExists) {
+        setFieldErrors((prev) => ({ ...prev, email: 'Email already exists' }))
+        return
+      }
+
+      setStep(2)
+    } catch (validationError) {
+      console.error(validationError)
+      setError('Unable to verify email right now. Please try again in a moment.')
+    } finally {
+      setStepOneLoading(false)
+    }
   }
 
   const handleBusinessSubmit = async (e: React.FormEvent) => {
@@ -118,7 +167,9 @@ export default function RegisterPage() {
                 <input
                   type="text"
                   value={userForm.firstName}
-                  onChange={(e) => setUserForm({ ...userForm, firstName: e.target.value })}
+                  onChange={(e) => {
+                    setUserForm({ ...userForm, firstName: e.target.value })
+                  }}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-[#31BCFF] focus:border-[#31BCFF] outline-none text-gray-700"
                   required
                 />
@@ -140,10 +191,18 @@ export default function RegisterPage() {
               <input
                 type="email"
                 value={userForm.email}
-                onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
+                onChange={(e) => {
+                  setUserForm({ ...userForm, email: e.target.value })
+                  if (fieldErrors.email) {
+                    setFieldErrors((prev) => ({ ...prev, email: undefined }))
+                  }
+                }}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-[#31BCFF] focus:border-[#31BCFF] outline-none text-gray-700"
                 required
               />
+              {fieldErrors.email && (
+                <p className="mt-1 text-sm text-red-600">{fieldErrors.email}</p>
+              )}
             </div>
 
             <div className="mb-4">
@@ -152,7 +211,12 @@ export default function RegisterPage() {
                 <input
                   type={showPassword ? "text" : "password"}
                   value={userForm.password}
-                  onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
+                  onChange={(e) => {
+                    setUserForm({ ...userForm, password: e.target.value })
+                    if (fieldErrors.password) {
+                      setFieldErrors((prev) => ({ ...prev, password: undefined }))
+                    }
+                  }}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-[#31BCFF] focus:border-[#31BCFF] outline-none text-gray-700"
                   required
                 />
@@ -168,6 +232,12 @@ export default function RegisterPage() {
                   )}
                 </button>
               </div>
+              <p className="mt-1 text-xs text-gray-500">
+                Must include uppercase, lowercase, number, and special character.
+              </p>
+              {fieldErrors.password && (
+                <p className="mt-1 text-sm text-red-600">{fieldErrors.password}</p>
+              )}
             </div>
 
             <div className="mb-6">
@@ -175,17 +245,26 @@ export default function RegisterPage() {
               <input
                 type="password"
                 value={userForm.confirmPassword}
-                onChange={(e) => setUserForm({ ...userForm, confirmPassword: e.target.value })}
+                onChange={(e) => {
+                  setUserForm({ ...userForm, confirmPassword: e.target.value })
+                  if (fieldErrors.confirmPassword) {
+                    setFieldErrors((prev) => ({ ...prev, confirmPassword: undefined }))
+                  }
+                }}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-[#31BCFF] focus:border-[#31BCFF] outline-none text-gray-700"
                 required
               />
+              {fieldErrors.confirmPassword && (
+                <p className="mt-1 text-sm text-red-600">{fieldErrors.confirmPassword}</p>
+              )}
             </div>
 
             <button
               type="submit"
-              className="w-full bg-[#31BCFF] hover:bg-[#31BCFF]/90 text-white py-2 px-4 rounded-md transition-colors"
+              disabled={stepOneLoading}
+              className="w-full bg-[#31BCFF] hover:bg-[#31BCFF]/90 text-white py-2 px-4 rounded-md transition-colors disabled:opacity-50"
             >
-              Continue
+              {stepOneLoading ? 'Validating...' : 'Continue'}
             </button>
           </form>
         ) : (

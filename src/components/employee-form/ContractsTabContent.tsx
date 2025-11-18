@@ -20,13 +20,15 @@ interface ContractsTabContentProps {
   employeeName?: string
   isNewEmployee?: boolean
   loading?: boolean
+  onCreateContract?: () => void
 }
 
 export function ContractsTabContent({ 
   contracts, 
   employeeName, 
   isNewEmployee,
-  loading 
+  loading,
+  onCreateContract
 }: ContractsTabContentProps) {
   const [downloading, setDownloading] = useState<string | null>(null)
   const [viewingContract, setViewingContract] = useState<Contract | null>(null)
@@ -174,11 +176,21 @@ export function ContractsTabContent({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium text-gray-900">Employee Contracts</h3>
-        <div className="text-sm text-gray-500">
-          {employeeName && `Contracts for ${employeeName}`}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h3 className="text-lg font-medium text-gray-900">Employee Contracts</h3>
+          <div className="text-sm text-gray-500">
+            {employeeName && `Contracts for ${employeeName}`}
+          </div>
         </div>
+        {onCreateContract && !isNewEmployee && (
+          <button
+            onClick={onCreateContract}
+            className="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-[#31BCFF] text-white text-sm font-medium shadow hover:bg-[#31BCFF]/90 transition-colors"
+          >
+            Create Contract
+          </button>
+        )}
       </div>
 
       {!contracts || contracts.length === 0 ? (
@@ -188,6 +200,14 @@ export function ContractsTabContent({
           <p className="text-gray-500">
             This employee has no contracts assigned yet.
           </p>
+          {onCreateContract && !isNewEmployee && (
+            <button
+              onClick={onCreateContract}
+              className="mt-4 inline-flex items-center justify-center px-4 py-2 rounded-lg bg-[#31BCFF] text-white text-sm font-medium hover:bg-[#31BCFF]/90"
+            >
+              Create Contract
+            </button>
+          )}
         </div>
       ) : (
         <div className="space-y-3">

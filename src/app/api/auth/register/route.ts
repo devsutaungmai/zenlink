@@ -1,6 +1,6 @@
 import { prisma } from '@/shared/lib/prisma'
 import bcrypt from 'bcryptjs'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
 
 export async function POST(req: Request) {
@@ -99,5 +99,32 @@ export async function POST(req: Request) {
       { error: 'Failed to create account' },
       { status: 500 }
     )
+  }
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const email = request.nextUrl.searchParams.get('email')
+
+    if (!email || !email.trim()) {
+      return NextResponse.json({ exists: false })
+    }
+
+    const trimmedEmail = email.trim()
+
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        email: {
+          equals: trimmedEmail,
+          mode: 'insensitive'
+        }
+      },
+      select: { id: true }
+    })
+
+    return NextResponse.json({ exists: Boolean(existingUser) })
+  } catch (error) {
+    console.error('Email availability check failed:', error)
+    return NextResponse.json({ exists: false, error: 'Unable to verify email at the moment' }, { status: 500 })
   }
 }

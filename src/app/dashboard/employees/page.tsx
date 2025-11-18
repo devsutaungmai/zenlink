@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon, PhoneIcon } from '@heroicons/react/24/outline'
 import { useTranslation } from 'react-i18next'
 import Swal from 'sweetalert2'
 import {
@@ -66,6 +66,9 @@ export default function EmployeesPage() {
   const [newPin, setNewPin] = useState('');
   const [inviteLoading, setInviteLoading] = useState(false);
   const [pinLoading, setPinLoading] = useState(false);
+  const [phoneFilter, setPhoneFilter] = useState('');
+  const isPinValid = /^\d{6}$/.test(newPin);
+  const normalizePhone = (value: string) => value ? value.replace(/\D/g, '') : ''
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1)
@@ -159,16 +162,16 @@ export default function EmployeesPage() {
   };
 
   const handleSetPin = (employeeId: string, employeeName: string) => {
-    setPinEmployeeId(employeeId);
-    setPinEmployeeName(employeeName);
-    setNewPin('');
-    setShowPinModal(true);
-  };
+    setPinEmployeeId(employeeId)
+    setPinEmployeeName(employeeName)
+    setNewPin('')
+    setShowPinModal(true)
+  }
 
   const handlePinSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!/^\d{6}$/.test(newPin)) {
+    if (!isPinValid) {
       Swal.fire({
         title: t('employees.pin_modal.invalid_pin'),
         text: t('employees.pin_modal.invalid_pin'),
@@ -235,13 +238,22 @@ export default function EmployeesPage() {
     return new Date(date).toLocaleDateString()
   }
 
-  const filteredEmployees = employees.filter(employee =>
-    `${employee.firstName} ${employee.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    employee.employeeNo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    employee.department.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (employee.employeeGroup?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    employee.mobile.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const normalizedSearch = searchTerm.toLowerCase()
+  const normalizedPhoneFilter = normalizePhone(phoneFilter)
+
+  const filteredEmployees = employees.filter(employee => {
+    const matchesSearch =
+      `${employee.firstName} ${employee.lastName}`.toLowerCase().includes(normalizedSearch) ||
+      employee.employeeNo?.toLowerCase().includes(normalizedSearch) ||
+      employee.department.name.toLowerCase().includes(normalizedSearch) ||
+      (employee.employeeGroup?.name || '').toLowerCase().includes(normalizedSearch) ||
+      employee.mobile.toLowerCase().includes(normalizedSearch)
+
+    const matchesPhone =
+      normalizedPhoneFilter === '' || normalizePhone(employee.mobile).includes(normalizedPhoneFilter)
+
+    return matchesSearch && matchesPhone
+  })
 
   // Pagination calculations
   const totalPages = Math.ceil(filteredEmployees.length / itemsPerPage)
@@ -252,7 +264,7 @@ export default function EmployeesPage() {
   // Reset to page 1 when search changes
   useEffect(() => {
     setCurrentPage(1)
-  }, [searchTerm])
+  }, [searchTerm, phoneFilter])
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
@@ -317,6 +329,16 @@ export default function EmployeesPage() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder={t('employees.search_placeholder')}
+              className="block w-full pl-12 pr-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+            />
+          </div>
+          <div className="relative flex-1">
+            <PhoneIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <input
+              type="text"
+              value={phoneFilter}
+              onChange={(e) => setPhoneFilter(e.target.value)}
+              placeholder={t('employees.phone_filter_placeholder', { defaultValue: 'Filter by phone number' })}
               className="block w-full pl-12 pr-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
             />
           </div>
@@ -822,6 +844,9 @@ export default function EmployeesPage() {
               <p className="mt-1 text-xs text-gray-500">
                 {t('employees.pin_modal.pin_description')}
               </p>
+              <p className="mt-1 text-xs text-gray-500">
+                {t('employees.pin_modal.pin_not_viewable', { defaultValue: 'Existing PINs cannot be displayed for security reasons. Set a new PIN below.' })}
+              </p>
             </div>
             <div className="flex justify-end space-x-2">
               <Button
@@ -834,8 +859,8 @@ export default function EmployeesPage() {
               </Button>
               <Button
                 type="submit"
-                disabled={newPin.length !== 6 || pinLoading}
-                className="bg-[#31BCFF] hover:bg-[#31BCFF]/90 text-white"
+                disabled={!isPinValid || pinLoading}
+                className={`bg-[#31BCFF] hover:bg-[#31BCFF]/90 text-white ${(!isPinValid || pinLoading) ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 {pinLoading ? t('employees.pin_modal.setting') : t('employees.pin_modal.set_pin')}
               </Button>

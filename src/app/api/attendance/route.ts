@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/shared/lib/prisma'
+import { getCurrentUserOrEmployee } from '@/shared/lib/auth'
 
 export async function POST(request: NextRequest) {
   try {
@@ -77,9 +78,32 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
+    const auth = await getCurrentUserOrEmployee()
+
+    if (!auth) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    let businessId: string | null = null
+    let enforcedEmployeeId: string | null = null
+
+    if (auth.type === 'user') {
+      businessId = (auth.data as any)?.businessId || null
+    } else {
+      const employeeData = auth.data as any
+      businessId = employeeData?.department?.businessId 
+        ?? employeeData?.employeeGroup?.businessId
+        ?? null
+      enforcedEmployeeId = employeeData?.id || null
+    }
+
+    if (!businessId) {
+      return NextResponse.json({ error: 'Business context not found' }, { status: 403 })
+    }
+
     const { searchParams } = new URL(request.url)
-    const employeeId = searchParams.get('employeeId')
-    const businessId = searchParams.get('businessId')
+    const requestedEmployeeId = searchParams.get('employeeId')
+    const requestedBusinessId = searchParams.get('businessId')
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
     const date = searchParams.get('date')
@@ -93,14 +117,18 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const whereClause: any = {}
-
-    if (businessId) {
-      whereClause.businessId = businessId
+    const whereClause: any = {
+      businessId
     }
 
-    if (employeeId) {
-      whereClause.employeeId = employeeId
+    if (requestedBusinessId && requestedBusinessId !== businessId) {
+      return NextResponse.json({ error: 'Unauthorized business scope' }, { status: 403 })
+    }
+
+    if (auth.type === 'employee') {
+      whereClause.employeeId = enforcedEmployeeId
+    } else if (requestedEmployeeId) {
+      whereClause.employeeId = requestedEmployeeId
     }
 
     // Handle date filtering - priority: startDate/endDate, then single date

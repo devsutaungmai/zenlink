@@ -140,7 +140,7 @@
   "employees": {
     "title": "Employees",
     "description": "Manage your organization's employees and their information",
-    "search_placeholder": "Search by name, employee number, department, or mobile...",
+    "search_placeholder": "Search by name, employee number, department ...",
     "add_employee": "Add Employee",
     "create_employee": "Create Employee",
     "edit_employee": "Edit Employee",
@@ -169,7 +169,7 @@
     "no_employees_message": "Try adjusting your search terms",
     "get_started": "Get started by adding your first employee",
     "add_first_employee": "Add First Employee",
-    "showing": "Showing {{current}} of {{total}} employees",
+    "showing": "Showing {{current}} of {{total}}",
     "team_leader": "Team Leader",
     "no_group": "No group",
     "send_invite": "Send Invite",

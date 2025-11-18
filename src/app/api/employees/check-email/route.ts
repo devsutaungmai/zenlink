@@ -12,7 +12,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const { email, excludeEmployeeId } = await request.json()
+    const { email, excludeEmployeeId, scope } = await request.json()
 
     if (!email || email.trim() === '') {
       return NextResponse.json({
@@ -20,14 +20,19 @@ export async function POST(request: Request) {
       })
     }
 
+    const employeeWhere: any = {
+      email: email.trim(),
+      ...(excludeEmployeeId && { id: { not: excludeEmployeeId } })
+    }
+
+    if (scope !== 'global') {
+      employeeWhere.user = {
+        businessId: currentUser.businessId
+      }
+    }
+
     const existingEmployee = await prisma.employee.findFirst({
-      where: {
-        email: email.trim(),
-        user: {
-          businessId: currentUser.businessId
-        },
-        ...(excludeEmployeeId && { id: { not: excludeEmployeeId } })
-      },
+      where: employeeWhere,
       select: {
         id: true,
         firstName: true,
