@@ -63,7 +63,7 @@ model Business {
   customers                Customer[]
   products                 Product[]
   invoices                 Invoice[]
-  paymentTerms             PaymentTerms[]
+  InvoicePaymentTerms      InvoicePaymentTerms[]
 }
 
 model Employee {
@@ -670,8 +670,8 @@ model Customer {
   invoices       Invoice[]
   departmentId   String?      
   department     Department?       @relation(fields: [departmentId], references: [id],onDelete: SetNull)
-  paymentTermsId String?       @map("payment_terms_id")
-  paymentTerms   PaymentTerms? @relation(fields: [paymentTermsId], references: [id], onDelete: SetNull)
+  invoicepaymentTermsId String?       @map("invoice_payment_terms_id")
+  InvoicePaymentTerms   InvoicePaymentTerms? @relation(fields: [invoicepaymentTermsId], references: [id], onDelete: SetNull)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -796,8 +796,8 @@ model Invoice {
   vatPercentage Decimal @default(25) @map("vat_percentage") @db.Decimal(5, 2)
   totalInclVAT  Decimal @map("total_incl_vat") @db.Decimal(10, 2)
  
- paymentTermsId String?       @map("payment_terms_id")
- paymentTerms   PaymentTerms? @relation(fields: [paymentTermsId], references: [id], onDelete: SetNull)
+ invoicepaymentTermsId String?       @map("invoice_payment_terms_id")
+ InvoicePaymentTerms   InvoicePaymentTerms? @relation(fields: [invoicepaymentTermsId], references: [id], onDelete: SetNull)
 
   // Additional fields
   notes  String?
@@ -856,12 +856,12 @@ enum InvoiceStatus {
 }
 
 // Payment Terms Model
-model PaymentTerms {
+model InvoicePaymentTerms {
   id          String              @id @default(cuid())
-  name        String              // Display name, e.g., "Net 14 days", "Fixed 1st of month"
-  type        PaymentTermType     // DAYS_AFTER or FIXED_DATE
-  daysUntil   Int?                // Number of days/months after invoice date (only for DAYS_AFTER type)
-  timeUnit    PaymentTimeUnit?    // DAYS or MONTHS (only for DAYS_AFTER type)
+  invoiceDueDateType    InvoiceDueDateType @default(DAYS_AFTER) @map("invoice_due_date_type")
+  invoiceDueDateValue    Int                @default(14) @map("invoice_due_date_value") // 14 days, 1 month, etc.
+  invoiceDueDateUnit     PaymentTimeUnit    @default(DAYS) @map("invoice_due_date_unit") // DAYS or MONTHS
+  defaultDiscountPercent Decimal?           @default(0) @map("default_discount_percent") @db.Decimal(5, 2)
   
   // Relations
   customers   Customer[]          // One payment term can be used by many customers
@@ -872,15 +872,15 @@ model PaymentTerms {
   createdAt   DateTime            @default(now()) @map("created_at")
   updatedAt   DateTime            @updatedAt @map("updated_at")
 
-  @@map("payment_terms")
+  @@map("invoice_payment_terms")
 }
 
-// Payment Term Type Enum
-enum PaymentTermType {
+// Invoice Due Date Type Enum
+enum InvoiceDueDateType {
   DAYS_AFTER  // Calculate due date as X days/months after invoice date
   FIXED_DATE  // Due date is always 1st of the month
 
-  @@map("payment_term_type")
+  @@map("invoice_due_date_type")
 }
 
 // Payment Time Unit Enum

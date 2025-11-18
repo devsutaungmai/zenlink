@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import Link from 'next/link'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
+import { Department } from '../../create/page'
 
 export default function EditCustomersPage({ params }: { params: Promise<{ id: string }> }) {
     const resolvedParams = use(params)
@@ -13,6 +14,8 @@ export default function EditCustomersPage({ params }: { params: Promise<{ id: st
     const { t } = useTranslation()
     const [loading, setLoading] = useState(false)
     const [fetchingLoading, setFetchingLoading] = useState(false)
+      const [departments, setDepartments] = useState<Department[]>([])
+    
     const [formData, setFormData] = useState({
         customerName: "",
         customerNumber: "",
@@ -26,12 +29,24 @@ export default function EditCustomersPage({ params }: { params: Promise<{ id: st
         deliveryAddress: "",
         deliveryAddressPostalCode: "",
         deliveryAddressPostalAddress: "",
+        departmentId:""
     })
     useEffect(() => {
         fetchCustomer()
+        fetchDepartments()
     }, [resolvedParams.id])
 
-
+     const fetchDepartments = async () => {
+    try {
+      const res = await fetch('/api/departments')
+      if (res.ok) {
+        const data = await res.json()
+        setDepartments(data)
+      }
+    } catch (error) {
+      console.error('Error fetching departments:', error)
+    }
+  }
     const fetchCustomer = async () => {
         try {
             const res = await fetch(`/api/customers/${resolvedParams.id}`)
@@ -50,6 +65,7 @@ export default function EditCustomersPage({ params }: { params: Promise<{ id: st
                     deliveryAddress: data.deliveryAddress || '',
                     deliveryAddressPostalCode: data.deliveryAddressPostalCode || '',
                     deliveryAddressPostalAddress: data.deliveryAddressPostalAddress || '',
+                    departmentId: data.departmentId || ""
                 })
             }
         } catch (error) {
@@ -312,8 +328,30 @@ export default function EditCustomersPage({ params }: { params: Promise<{ id: st
                                 placeholder="Postal code for delivery"
                             />
                         </div>
-
+                        
                         <div>
+                            <label htmlFor="departmentId" className="block text-sm font-medium text-gray-700 mb-2">
+                                Department *
+                            </label>
+                            <select
+                                id="departmentId"
+                                required
+                                value={formData.departmentId || ''}
+                                onChange={(e) => setFormData({ ...formData, departmentId: e.target.value })}
+                                className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                            >
+                                <option value="">Select Department</option>
+                                {departments.map((dep) => (
+                                    <option key={dep.id} value={dep.id}>
+                                        {dep.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                       
+                    </div>
+
+                     <div className="grid">
                             <label htmlFor="deliveryAddressPostalAddress" className="block text-sm font-medium text-gray-700 mb-2">
                                 Delivery Address Postal Address
                             </label>
@@ -326,7 +364,6 @@ export default function EditCustomersPage({ params }: { params: Promise<{ id: st
                                 placeholder="Postal address for delivery"
                             />
                         </div>
-                    </div>
 
                     {/* Form Actions */}
                     <div className="flex items-center justify-end gap-4 pt-6 border-t border-gray-200">

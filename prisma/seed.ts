@@ -1,17 +1,17 @@
-import { PrismaClient } from '@prisma/client'
+import { InvoiceDueDateType, PaymentTimeUnit, PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
 async function main() {
   // First, get the first business to use as default
-  // const business = await prisma.business.findFirst()
+  const business = await prisma.business.findFirst()
   
-  // if (!business) {
-  //   console.log('No business found. Please create a business first.')
-  //   return
-  // }
+  if (!business) {
+    console.log('No business found. Please create a business first.')
+    return
+  }
 
-  // console.log('Seeding salary codes for business:', business.name)
+  console.log('Seeding salary codes for business:', business.name)
 
   // // Create default salary codes
   // const defaultSalaryCodes = [
@@ -121,6 +121,42 @@ async function main() {
   //   }
   // }
    console.log('Start seeding...');
+
+    // Term 1: 14 days after invoice date
+  const term1 = await prisma.invoicePaymentTerms.upsert({
+    where: {
+      id: `default-term-14-days`,
+    },
+    update: {},
+    create: {
+      id: `default-term-14-days`,
+      invoiceDueDateType: InvoiceDueDateType.DAYS_AFTER,
+      invoiceDueDateValue: 14,
+      invoiceDueDateUnit: PaymentTimeUnit.DAYS,
+      defaultDiscountPercent: 0,
+      businessId: business.id,
+    },
+  });
+
+  console.log('✓ Created payment term 1: 14 days after invoice date');
+
+  // Term 2: Fixed date day 1 of month
+  const term2 = await prisma.invoicePaymentTerms.upsert({
+    where: {
+      id: `default-term-fixed-1`,
+    },
+    update: {},
+    create: {
+      id: `default-term-fixed-1`,
+      invoiceDueDateType: InvoiceDueDateType.FIXED_DATE,
+      invoiceDueDateValue: 1,
+      invoiceDueDateUnit: PaymentTimeUnit.MONTHS,
+      defaultDiscountPercent: 0,
+      businessId: business.id,
+    },
+  });
+
+  console.log('✓ Created payment term 2: Fixed day 1 of each month');
 
   // Create Units
   const units = await Promise.all([

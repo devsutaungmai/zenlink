@@ -6,12 +6,42 @@ import { useTranslation } from 'react-i18next'
 import Link from 'next/link'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
+import CustomerPaymentTermComponent from '@/components/invoice/CustomerPaymentTerm'
+
+export interface Department {
+    id: string
+    name: string
+}
+
+export interface InvoicePaymentTerms {
+    dueDateType: 'DAYS_AFTER' | 'FIXED_DATE',
+    dueDateValue?: number,
+    dueDateUnit: 'DAYS' | 'MONTHS'
+}
 
 export default function CreateCustomersPage() {
     const router = useRouter()
     const { t } = useTranslation()
     const [loading, setLoading] = useState(false)
-    const [formData, setFormData] = useState({
+    const [departments, setDepartments] = useState<Department[]>([]);
+
+    // Update formData state
+    const [formData, setFormData] = useState<{
+        customerName: string
+        customerNumber: string
+        organizationNumber: string
+        address: string
+        postalCode: string
+        postalAddress: string
+        phoneNumber: string
+        email: string
+        discountPercentage: string
+        deliveryAddress: string
+        deliveryAddressPostalCode: string
+        deliveryAddressPostalAddress: string
+        departmentId: string
+        customerPaymentTerm: InvoicePaymentTerms
+    }>({
         customerName: "",
         customerNumber: "",
         organizationNumber: "",
@@ -24,7 +54,27 @@ export default function CreateCustomersPage() {
         deliveryAddress: "",
         deliveryAddressPostalCode: "",
         deliveryAddressPostalAddress: "",
+        departmentId: "",
+        customerPaymentTerm: {
+            dueDateType: "DAYS_AFTER",
+            dueDateValue: 14,
+            dueDateUnit: "DAYS"
+        }
     })
+    useEffect(() => {
+        fetchDepartments();
+    }, [])
+    const fetchDepartments = async () => {
+        try {
+            const res = await fetch('/api/departments')
+            if (res.ok) {
+                const data = await res.json()
+                setDepartments(data)
+            }
+        } catch (error) {
+            console.error('Error fetching departments:', error)
+        }
+    }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -271,21 +321,60 @@ export default function CreateCustomersPage() {
                                 placeholder="Postal code for delivery"
                             />
                         </div>
-
                         <div>
-                            <label htmlFor="deliveryAddressPostalAddress" className="block text-sm font-medium text-gray-700 mb-2">
-                                Delivery Address Postal Address
+                            <label htmlFor="departmentId" className="block text-sm font-medium text-gray-700 mb-2">
+                                Department *
                             </label>
-                            <input
-                                type="text"
-                                id="deliveryAddressPostalAddress"
-                                value={formData.deliveryAddressPostalAddress}
-                                onChange={(e) => setFormData({ ...formData, deliveryAddressPostalAddress: e.target.value })}
-                                className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                                placeholder="Postal address for delivery"
-                            />
+                            <select
+                                id="departmentId"
+                                required
+                                value={formData.departmentId || ''}
+                                onChange={(e) => setFormData({ ...formData, departmentId: e.target.value })}
+                                className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                            >
+                                <option value="">Select Department</option>
+                                {departments.map((dep) => (
+                                    <option key={dep.id} value={dep.id}>
+                                        {dep.name}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
                     </div>
+
+                    <div className="grid grid-cols-1">
+                        <label htmlFor="deliveryAddressPostalAddress" className="block text-sm font-medium text-gray-700 mb-2">
+                            Delivery Address Postal Address
+                        </label>
+                        <input
+                            type="text"
+                            id="deliveryAddressPostalAddress"
+                            value={formData.deliveryAddressPostalAddress}
+                            onChange={(e) => setFormData({ ...formData, deliveryAddressPostalAddress: e.target.value })}
+                            className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                            placeholder="Postal address for delivery"
+                        />
+                    </div>
+
+                    <CustomerPaymentTermComponent
+                        defaultValues={{
+                            dueDateType: 'DAYS_AFTER',
+                            daysAfter: 14,
+                            unit: 'DAYS',
+                            fixedDateDay: 1,
+                        }}
+                        onSettingsChange={(settings) => {
+                            console.log('Settings updated:', settings)
+                            const updatedPaymentTerm: InvoicePaymentTerms = {
+                                dueDateType: settings.dueDateType,
+                                dueDateValue: (settings.dueDateType === 'DAYS_AFTER'
+                                    ? settings.daysAfter
+                                    : settings.fixedDateDay) ?? 14,
+                                dueDateUnit: settings.unit === 'DAYS' ? 'DAYS' : 'MONTHS'
+                            }
+                            setFormData({ ...formData, customerPaymentTerm: updatedPaymentTerm })
+                        }}
+                    />
 
                     {/* Form Actions */}
                     <div className="flex items-center justify-end gap-4 pt-6 border-t border-gray-200">
