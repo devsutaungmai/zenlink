@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const payrollPeriodId = searchParams.get('payrollPeriodId')
-    const status = searchParams.get('status') || 'APPROVED'
+    const statusParam = searchParams.get('status')
 
     if (!payrollPeriodId) {
       return NextResponse.json(
@@ -49,8 +49,13 @@ export async function GET(request: NextRequest) {
       payrollPeriodId,
     }
 
-    if (status !== 'all') {
-      whereClause.status = status
+    if (statusParam && statusParam !== 'all') {
+      const statuses = statusParam.split(',').map((value) => value.trim().toUpperCase()).filter(Boolean)
+      if (statuses.length > 0) {
+        whereClause.status = statuses.length === 1 ? statuses[0] : { in: statuses }
+      }
+    } else {
+      whereClause.status = { in: ['APPROVED', 'PAID'] }
     }
 
     const payrollEntries = await prisma.payrollEntry.findMany({

@@ -1051,6 +1051,7 @@ export default function DashboardPage() {
     ? t('dashboard.weekly_shifts.subtitle_employee')
     : t('dashboard.weekly_shifts.subtitle_admin')
   const weeklyRangeLabel = getWeekRangeLabel()
+  const displayedWeeklyShifts = weeklyShifts.length > 2 ? weeklyShifts.slice(-2) : weeklyShifts
   const assignedShiftStats = adminStats?.shiftCompletion ?? { assigned: 0, completed: 0 }
   const totalAssignedShifts = assignedShiftStats.assigned || 0
   const totalCompletedShifts = assignedShiftStats.completed || 0
@@ -1128,7 +1129,7 @@ export default function DashboardPage() {
             ) : weeklyShifts.length === 0 ? (
               <p className="text-sm text-slate-500">{t('dashboard.weekly_shifts.empty')}</p>
             ) : (
-              weeklyShifts.map((shift) => {
+              displayedWeeklyShifts.map((shift) => {
                 const statusInfo = getShiftStatusInfo(shift.status)
                 const dateLabel = formatShiftDateLabel(shift.date)
                 const timeLabel = getWeeklyShiftTimeLabel(shift)

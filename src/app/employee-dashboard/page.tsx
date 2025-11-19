@@ -3,8 +3,6 @@
 import React, { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCurrency } from '@/shared/hooks/useCurrency'
-import { LocationValidationResult, validatePunchLocation } from '@/shared/lib/locationValidation'
-import LocationValidationModal from '@/components/LocationValidationModal'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -18,8 +16,7 @@ import {
   ExclamationTriangleIcon,
   CheckCircleIcon,
   ArrowLeftIcon,
-  PlusIcon,
-  MapPinIcon
+  PlusIcon
 } from '@heroicons/react/24/outline'
 
 interface Employee {
@@ -74,11 +71,6 @@ function EmployeeDashboardContent() {
   const [currentTime, setCurrentTime] = useState(new Date())
   const [showPunchForm, setShowPunchForm] = useState(false)
   const [isNewShift, setIsNewShift] = useState(false)
-  const [showLocationModal, setShowLocationModal] = useState(false)
-  const [pendingPunchAction, setPendingPunchAction] = useState<{
-    action: 'in' | 'out'
-    shift?: Shift
-  } | null>(null)
   const [punchFormData, setPunchFormData] = useState({
     shiftType: '',
     startTime: '',
@@ -145,22 +137,7 @@ function EmployeeDashboardContent() {
     }
   }
 
-  const handlePunchIn = async (shift: Shift) => {
-    // Set pending action and show location modal for validation
-    setPendingPunchAction({ action: 'in', shift })
-    setShowLocationModal(true)
-  }
-
-  const handlePunchOut = async (shift: Shift) => {
-    // Set pending action and show location modal for validation
-    setPendingPunchAction({ action: 'out', shift })
-    setShowLocationModal(true)
-  }
-
-  const executePunchAction = async () => {
-    if (!pendingPunchAction || !pendingPunchAction.shift) return
-
-    const { action, shift } = pendingPunchAction
+  const performPunchAction = async (action: 'in' | 'out', shift: Shift) => {
     setSelectedShift(shift)
     setPunchAction(action)
     
@@ -194,22 +171,15 @@ function EmployeeDashboardContent() {
     } finally {
       setPunchAction(null)
       setSelectedShift(null)
-      setPendingPunchAction(null)
-      setShowLocationModal(false)
     }
   }
 
-  const handleLocationValidationSuccess = () => {
-    // Location validation passed, execute the punch action
-    setShowLocationModal(false)
-    executePunchAction()
+  const handlePunchIn = async (shift: Shift) => {
+    await performPunchAction('in', shift)
   }
 
-  const handleLocationValidationFailed = (result: LocationValidationResult) => {
-    // Location validation failed, show error and reset state
-    setPendingPunchAction(null)
-    setShowLocationModal(false)
-    alert(result.message)
+  const handlePunchOut = async (shift: Shift) => {
+    await performPunchAction('out', shift)
   }
 
   const handleOpenPunchForm = (shift?: Shift) => {
@@ -268,14 +238,6 @@ function EmployeeDashboardContent() {
 
     try {
       if (isNewShift) {
-        // For new shifts, validate location first
-        const locationValidation = await validatePunchLocation(employee.id)
-        
-        if (!locationValidation.isAllowed) {
-          alert(locationValidation.message)
-          return
-        }
-
         // Create new shift and punch in
         const response = await fetch('/api/shifts', {
           method: 'POST',
@@ -701,17 +663,6 @@ function EmployeeDashboardContent() {
           </DialogContent>
         </Dialog>
 
-        {/* Location Validation Modal */}
-        <LocationValidationModal
-          isOpen={showLocationModal}
-          onClose={() => {
-            setShowLocationModal(false)
-            setPendingPunchAction(null)
-          }}
-          onValidationSuccess={handleLocationValidationSuccess}
-          onValidationFailed={handleLocationValidationFailed}
-          employeeId={employee?.id}
-        />
       </div>
     </div>
   )
