@@ -64,6 +64,7 @@ model Business {
   products                 Product[]
   invoices                 Invoice[]
   InvoicePaymentTerms      InvoicePaymentTerms[]
+  invoiceFormSettings      InvoiceFormSettings[]
 }
 
 model Employee {
@@ -909,7 +910,26 @@ enum WageType {
   HOURLY
   PER_SHIFT
 }
-
+model InvoiceFormSettings {
+  id         String   @id @default(cuid())
+  businessId String
+  deviceId   String?
+  
+  showContactPerson    Boolean @default(true)
+  showDeliveryAddress  Boolean @default(true)
+  showPaymentTerms     Boolean @default(true)
+  showDepartment       Boolean @default(true)
+  showSeller           Boolean @default(true)
+  showDiscount         Boolean @default(true)
+  
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  
+  @@unique([businessId, deviceId])
+  @@index([businessId])
+}
 enum Role {
   ADMIN
   HR_ADMIN
