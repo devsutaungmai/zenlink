@@ -27,6 +27,18 @@ export async function GET(
       where: {
         id: id,
         businessId: businessId
+      },
+      include:{
+        contactPersons: true,
+        InvoicePaymentTerms: true,
+        projects: true,
+        department:true,
+        business:{
+          select:{
+            name: true
+          }
+        }
+
       }
     })
 

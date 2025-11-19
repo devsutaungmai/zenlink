@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/categories - Create a new category
+// POST /api/invoices - Create a new invocies
 export async function POST(request: NextRequest) {
   try {
     const user = await requireAuth()
@@ -56,11 +56,18 @@ export async function POST(request: NextRequest) {
     const {
       customerId,
       productId,
+      contactPersonId,
+      projectId,
+      departmentId,
+      deliveryAddress,
       quantity,
       pricePerUnit,
       discountPercentage = 0,
       notes,
-      dueDate
+      sentAt,
+      paidAt,
+      dueDay,
+
     } = body
 
     // Validate inputs
@@ -107,6 +114,10 @@ export async function POST(request: NextRequest) {
         invoiceNumber: generateInvoiceNumber(businessId),
         customerId,
         businessId,
+        contactPersonId,
+        projectId,
+        departmentId,
+        deliveryAddress,
 
         // Invoice totals
         totalExclVAT: calculations.totalExclVAT,
@@ -114,9 +125,13 @@ export async function POST(request: NextRequest) {
         vatAmount: calculations.vatAmount,
         totalInclVAT: calculations.totalInclVAT,
 
-        dueDate: dueDate ? new Date(dueDate) : null,
+        dueDate: paidAt ? new Date(paidAt) : null,
         notes,
         status: 'DRAFT',
+        sentAt: sentAt ? new Date(sentAt) : null,
+        paidAt: paidAt ? new Date(paidAt) : null,
+        dueDay,
+
 
         // Create invoice line with product
         invoiceLines: {

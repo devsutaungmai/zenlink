@@ -6,15 +6,46 @@ import { useTranslation } from 'react-i18next'
 import Link from 'next/link'
 import { ArrowLeftIcon, ArrowDownIcon } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
+import { Contact } from 'lucide-react'
 
-interface Customer {
+export interface Customer {
     id: string
     customerName: string
+    contactPerson?: {
+        id: string,
+        name: string
+    }
+    InvoicePaymentTerms?: {
+        id: string
+        invoiceDueDateType: 'DAYS_AFTER' | 'FIXED_DATE',
+        invoiceDueDateValue: number
+        invoiceDueDateUnit: 'DAYS' | 'MONTHS'
+    }
+    project?: Project
+    department?: Department,
+    business:{
+        name: string
+    }
+
 }
 
-interface Invoice {
+export interface Invoice {
     id: string
     productName: string
+}
+
+export interface Project {
+    id: string
+    name: string
+}
+
+export interface Department {
+    id: string
+    name: string
+}
+export interface ContactPerson{
+    id: string,
+    name: string
 }
 
 export default function CreateInvoicePage() {
@@ -23,21 +54,47 @@ export default function CreateInvoicePage() {
     const [loading, setLoading] = useState(false)
     const [customers, setCustomers] = useState<Customer[]>([])
     const [products, setProducts] = useState<Invoice[]>([])
+    const [projects, setProjects] = useState<Project[]>([])
+    const [departments, setDepartments] = useState<Department[]>([])
+    const [contacts,setContacts] = useState<ContactPerson[]>([]);
     const [showDropdown, setShowDropdown] = useState(false)
+     const [fetchingCustomer, setFetchingCustomer] = useState(false)
     const [formData, setFormData] = useState({
         customerId: '',
+        contactPersonId: '',
+        deliveryAddress: '',
+        sentAt: new Date().toISOString().split('T')[0],
+        dueDay: 0, 
+        paidAt: '',
+        projectId: '',
+        departmentId: '',
         productId: '',
+        seller:'',
         quantity: 0,
         pricePerUnit: 0.0,
         discountPercentage: 0,
         notes: ''
     })
-  const [emailSendLoading, setEmailSendLoading] = useState(false);
+    const [emailSendLoading, setEmailSendLoading] = useState(false);
 
     useEffect(() => {
         fetchCustomers()
         fetchProducts()
     }, [])
+
+     // Calculate paidAt whenever sentAt or dueDay changes
+    useEffect(() => {
+        if (formData.sentAt && formData.dueDay) {
+            const sentDate = new Date(formData.sentAt)
+            const paidDate = new Date(sentDate)
+            paidDate.setDate(paidDate.getDate() + Number(formData.dueDay))
+            
+            setFormData(prev => ({
+                ...prev,
+                paidAt: paidDate.toISOString().split('T')[0]
+            }))
+        }
+    }, [formData.sentAt, formData.dueDay])
 
     const fetchCustomers = async () => {
         try {
@@ -69,10 +126,81 @@ export default function CreateInvoicePage() {
         }
     }
 
+    const fetchCustomerDetails = async (customerId: string) => {
+        if (!customerId) return
+        
+        setFetchingCustomer(true)
+        try {
+            const res = await fetch(`/api/customers/${customerId}`)
+            if (res.ok) {
+                const data = await res.json()
+                console.log("Customer Details ===> ", JSON.stringify(data?.InvoicePaymentTerms))
+                 // Calculate default due days from payment terms
+                let defaultDueDay = 14 // Default fallback
+                if (data.InvoicePaymentTerms) {
+                    const { invoiceDueDateValue, invoiceDueDateUnit } = data.InvoicePaymentTerms
+                    if (invoiceDueDateUnit === 'DAYS') {
+                        defaultDueDay = invoiceDueDateValue
+                    } else if (invoiceDueDateUnit === 'MONTHS') {
+                        defaultDueDay = invoiceDueDateValue * 30 // Convert months to days
+                    }
+                }
+                // Update form data with customer information
+                setFormData(prev => ({
+                    ...prev,
+                    customerId: customerId,
+                    contactName: data.contactPersons?.[0]?.name || '',
+                    deliveryAddress: data.deliveryAddress || data.address || '',
+                    departmentId: data.departmentId || '',
+                    discountPercentage: data.discountPercentage || prev.discountPercentage,
+                    seller: data.business?.name,
+                    dueDay: defaultDueDay
+                }))
+
+                // Update projects list if customer has projects
+                if (data.projects && data.projects.length > 0) {
+                    setProjects(data.projects)
+                    setFormData(prev => ({
+                    ...prev,
+                    projectId: data.projects?.[0].id
+                }))
+                }else{
+                    setProjects([]);
+                }
+
+                // Update departments list if customer has department
+                if (data.department) {
+                    setDepartments([data.department])
+                }
+
+                if(data.contactPersons){
+                    setContacts(data.contactPersons)
+                     setFormData(prev => ({
+                    ...prev,
+                    contactPersonId: data.contactPersons?.[0].id
+                }))
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching customer details:', error)
+            await Swal.fire({
+                title: 'Error',
+                text: 'Failed to fetch customer details',
+                icon: 'error',
+                confirmButtonColor: '#31BCFF',
+            })
+        } finally {
+            setFetchingCustomer(false)
+        }
+    }
+    const handleCustomerChange = (customerId: string) => {
+        setFormData({ ...formData, customerId })
+        fetchCustomerDetails(customerId)
+    }
     const exportToPDF = async (invoiceId: string) => {
         try {
             const response = await fetch(`/api/invoices/export/pdf?invoiceId=${invoiceId}`)
-            
+
             if (response.ok) {
                 const blob = await response.blob()
                 const url = window.URL.createObjectURL(blob)
@@ -81,7 +209,7 @@ export default function CreateInvoicePage() {
                 a.download = `invoice_${invoiceId}.pdf`
                 a.click()
                 window.URL.revokeObjectURL(url)
-                
+
                 return true
             } else {
                 console.error('Failed to export PDF')
@@ -96,64 +224,64 @@ export default function CreateInvoicePage() {
     const sendEmail = async (invoiceId: string) => {
         try {
             const response = await fetch('/api/invoices/email/send', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ 
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
                     invoiceId: invoiceId,
-                  }),
-                })
-            
+                }),
+            })
+
             if (response.ok) {
-               Swal.fire({
-                   title: 'Success!',
-                   text: 'Invoice created and sent email to the customer!',
-                   icon: 'success',
-                   toast: true,
-                   position: 'top-end',
-                   showConfirmButton: false,
-                   timer: 3000,
-                   timerProgressBar: true
-                  });
+                Swal.fire({
+                    title: 'Success!',
+                    text: 'Invoice created and sent email to the customer!',
+                    icon: 'success',
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true
+                });
             } else {
-               const data = await response.json();
-               throw new Error(data.error || 'Failed to send invite');
+                const data = await response.json();
+                throw new Error(data.error || 'Failed to send invite');
             }
         } catch (error) {
             console.error('Error sending invite:', error);
-                Swal.fire({
-                  title: 'Partial Success!',
-                  text: 'Invoice created but Email functionality failed!',
-                  icon: 'info',
-                  toast: true,
-                  position: 'top-end',
-                  showConfirmButton: false,
-                  timer: 3000,
-                  timerProgressBar: true
-                });
+            Swal.fire({
+                title: 'Partial Success!',
+                text: 'Invoice created but Email functionality failed!',
+                icon: 'info',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true
+            });
         }
     }
 
-    const handleSubmit = async (e: React.FormEvent,action: 'save' | 'print' | 'email') => {
+    const handleSubmit = async (e: React.FormEvent, action: 'save' | 'print' | 'email') => {
         e.preventDefault()
         setLoading(true)
-
+        const { seller, ...filteredData } = formData
         try {
             const res = await fetch('/api/invoices', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData),
+                body: JSON.stringify(filteredData),
             })
 
             if (!res.ok) {
                 const error = await res.json()
                 throw new Error(error.error || 'Failed to create product')
             }
-             const createdInvoice = await res.json()
+            const createdInvoice = await res.json()
 
             // Handle different actions
             if (action === 'print') {
                 const pdfSuccess = await exportToPDF(createdInvoice.id)
-                
+
                 if (pdfSuccess) {
                     await Swal.fire({
                         title: 'Success!',
@@ -172,7 +300,7 @@ export default function CreateInvoicePage() {
             } else if (action === 'email') {
                 // Placeholder for email functionality
                 await sendEmail(createdInvoice.id);
-                
+
             } else {
                 await Swal.fire({
                     title: 'Success!',
@@ -229,118 +357,252 @@ export default function CreateInvoicePage() {
 
             {/* Form Container */}
             <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg p-6">
-                <form onSubmit={(e) => { e.preventDefault(); handleSubmit(e,'save'); }} className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Customer && Invoice */}
-                        <div>
-                            <label htmlFor="customerId" className="block text-sm font-medium text-gray-700 mb-2">
-                                Customers *
-                            </label>
-                            <select
-                                id="customerId"
-                                required
-                                value={formData.customerId || ''}
-                                onChange={(e) => setFormData({ ...formData, customerId: e.target.value })}
-                                className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                            >
-                                <option value="">Select Invoice Group</option>
-                                {customers.map((cus) => (
-                                    <option key={cus.id} value={cus.id}>
-                                        {cus.customerName}
-                                    </option>
-                                ))}
-                            </select>
+                <form onSubmit={(e) => { e.preventDefault(); handleSubmit(e, 'save'); }} className="space-y-6">
+                    <div className="bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-xl border border-slate-200 p-6">
+                        <h2 className="text-lg font-semibold text-gray-900 mb-4">Customer</h2>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <div>
+                                <label htmlFor="customerId" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Customer *
+                                </label>
+                                <select
+                                    id="customerId"
+                                    required
+                                    value={formData.customerId || ''}
+                                    onChange={(e) => handleCustomerChange(e.target.value)}
+                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                >
+                                    <option value="">Select Customer</option>
+                                    {customers.map((cus) => (
+                                        <option key={cus.id} value={cus.id}>
+                                            {cus.customerName}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+
+                            <div>
+                                <label htmlFor="contactPersonId" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Contact Name *
+                                </label>
+                                <select
+                                    id="contactPersonId"
+                                    required
+                                    value={formData.contactPersonId || ''}
+                                    onChange={(e) => setFormData({ ...formData, contactPersonId: e.target.value })}
+                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                >
+                                    <option value="">Select Project</option>
+                                    {contacts.map((contact) => (
+                                        <option key={contact.id} value={contact.id}>
+                                            {contact.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
 
-                        <div>
-                            <label htmlFor="productId" className="block text-sm font-medium text-gray-700 mb-2">
-                                Products *
-                            </label>
-                            <select
-                                id="productId"
-                                required
-                                value={formData.productId || ''}
-                                onChange={(e) => setFormData({ ...formData, productId: e.target.value })}
-                                className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                            >
-                                <option value="">Select Sales Account</option>
-                                {products.map((pr) => (
-                                    <option key={pr.id} value={pr.id}>
-                                        {pr.productName}
-                                    </option>
-                                ))}
-                            </select>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <div>
+                                <label htmlFor="sentAt" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Delivery Date (sentAt) *
+                                </label>
+                                <input
+                                    type="date"
+                                    id="sentAt"
+                                    required
+                                    value={formData.sentAt || ""}
+                                    onChange={(e) => setFormData({ ...formData, sentAt: e.target.value })}
+                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                />
+                            </div>
+                            <div>
+                                <label htmlFor="dueDay" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Days until due (PaidAt - {formData.paidAt || 'Not calculated'})
+                                </label>
+                                <input
+                                    type="number"
+                                    id="dueDay"
+                                    required
+                                    min="0"
+                                    value={formData.dueDay}
+                                    onChange={(e) => setFormData({ ...formData, dueDay: parseInt(e.target.value) || 0})}
+                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                    placeholder="Enter days until due"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                          
+
+                            <div>
+                                <label htmlFor="projectId" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Project *
+                                </label>
+                                <select
+                                    id="projectId"
+                                    required
+                                    value={formData.projectId || ''}
+                                    onChange={(e) => setFormData({ ...formData, projectId: e.target.value })}
+                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                >
+                                    <option value="">Select Project</option>
+                                    {projects.map((proj) => (
+                                        <option key={proj.id} value={proj.id}>
+                                            {proj.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label htmlFor="departmentId" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Department *
+                                </label>
+                                <select
+                                    id="departmentId"
+                                    required
+                                    value={formData.departmentId || ''}
+                                    onChange={(e) => setFormData({ ...formData, departmentId: e.target.value })}
+                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                >
+                                    <option value="">Select Department</option>
+                                    {departments.map((dept) => (
+                                        <option key={dept.id} value={dept.id}>
+                                            {dept.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                              <div>
+                                <label htmlFor="deliveryAddress" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Delivery Address *
+                                </label>
+                                <input
+                                    type="text"
+                                    id="deliveryAddress"
+                                    required
+                                    value={formData.deliveryAddress || ""}
+                                    onChange={(e) => setFormData({ ...formData, deliveryAddress: e.target.value })}
+                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                    placeholder="Enter delivery address"
+                                />
+                            </div>
+                            
                         </div>
                     </div>
 
-                    {/* quantity & pricePerUnit */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label htmlFor="salesPrice" className="block text-sm font-medium text-gray-700 mb-2">
-                                Quantity *
-                            </label>
-                            <input
-                                type="number"
-                                id="quantity"
-                                required
-                                min="1"
-                                value={formData.quantity || ""}
-                                onChange={(e) => setFormData({ ...formData, quantity: parseFloat(e.target.value) })}
-                                className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                                placeholder="Enter the quantity"
-                            />
+                    <div className="bg-gradient-to-br rounded-xl border p-6">
+                        <h2 className="text-lg font-semibold text-gray-900 mb-4">Product/Invoice Line</h2>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <div>
+                                <label htmlFor="productId" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Product *
+                                </label>
+                                <select
+                                    id="productId"
+                                    required
+                                    value={formData.productId || ''}
+                                    onChange={(e) => setFormData({ ...formData, productId: e.target.value })}
+                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                >
+                                    <option value="">Select Product</option>
+                                    {products.map((pr) => (
+                                        <option key={pr.id} value={pr.id}>
+                                            {pr.productName}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label htmlFor="seller" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Seller *
+                                </label>
+                                <input
+                                    type="text"
+                                    id="seller"
+                                    required
+                                    min="1"
+                                    value={formData.seller || ""}
+                                    disabled
+                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                    placeholder="Enter quantity"
+                                />
+                            </div>
+
                         </div>
 
-                        <div>
-                            <label htmlFor="costPrice" className="block text-sm font-medium text-gray-700 mb-2">
-                                Price Per Unit *
-                            </label>
-                            <input
-                                type="number"
-                                id="pricePerUnit"
-                                required
-                                step="0.01"
-                                value={formData.pricePerUnit || ""}
-                                onChange={(e) => setFormData({ ...formData, pricePerUnit: parseFloat(e.target.value) })}
-                                className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                                placeholder="Enter price per unit"
-                            />
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div>
+                                <label htmlFor="quantity" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Quantity *
+                                </label>
+                                <input
+                                    type="number"
+                                    id="quantity"
+                                    required
+                                    min="1"
+                                    value={formData.quantity || ""}
+                                    onChange={(e) => setFormData({ ...formData, quantity: parseFloat(e.target.value) })}
+                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                    placeholder="Enter quantity"
+                                />
+                            </div>
+
+                            <div>
+                                <label htmlFor="pricePerUnit" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Price Per Unit *
+                                </label>
+                                <input
+                                    type="number"
+                                    id="pricePerUnit"
+                                    required
+                                    step="0.01"
+                                    value={formData.pricePerUnit || ""}
+                                    onChange={(e) => setFormData({ ...formData, pricePerUnit: parseFloat(e.target.value) })}
+                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                    placeholder="Enter price per unit"
+                                />
+                            </div>
+
+                            <div>
+                                <label htmlFor="discountPercentage" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Discount Percentage *
+                                </label>
+                                <input
+                                    type="number"
+                                    id="discountPercentage"
+                                    step="0.01"
+                                    min="0"
+                                    max="100"
+                                    required
+                                    value={formData.discountPercentage || ""}
+                                    onChange={(e) => setFormData({ ...formData, discountPercentage: parseFloat(e.target.value) })}
+                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                    placeholder="Enter discount percentage"
+                                />
+                            </div>
                         </div>
                     </div>
 
-                    {/* discountPercentage & note */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label htmlFor="salesPrice" className="block text-sm font-medium text-gray-700 mb-2">
-                                Discount Percentage *
-                            </label>
-                            <input
-                                type="number"
-                                id="discountPercentage"
-                                step="0.01"
-                                min="0"
-                                max="100"
-                                required
-                                value={formData.discountPercentage || ""}
-                                onChange={(e) => setFormData({ ...formData, discountPercentage: parseFloat(e.target.value) })}
-                                className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                                placeholder="Enter discount percentage"
-                            />
-                        </div>
-
-                        <div>
-                            <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
-                                Notes
-                            </label>
-                            <input
-                                type="text"
-                                id="notes"
-                                value={formData.notes || ""}
-                                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                                className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                                placeholder="Enter notes"
-                            />
-                        </div>
+                    {/* Notes Section */}
+                    <div>
+                        <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
+                            Additional Notes
+                        </label>
+                        <textarea
+                            id="notes"
+                            value={formData.notes || ""}
+                            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                            className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                            placeholder="Enter any additional notes"
+                            rows={3}
+                        />
                     </div>
 
                     {/* Form Actions */}
@@ -358,9 +620,9 @@ export default function CreateInvoicePage() {
                                 disabled={loading}
                                 className="px-6 py-3 rounded-l-xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                             >
-                                {loading ? 'Creating...' : 'Create Invoice'}
+                                {loading ? 'Creating...' : 'Create Invoice (Draft)'}
                             </button>
-                            
+
                             <button
                                 type="button"
                                 disabled={loading}
@@ -369,13 +631,13 @@ export default function CreateInvoicePage() {
                             >
                                 <ArrowDownIcon className="w-5 h-5" />
                             </button>
-                            
+
                             {/* Dropdown Menu */}
                             {showDropdown && (
                                 <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-200 py-2 z-10">
                                     <button
                                         type="button"
-                                        onClick={(e) => {e.preventDefault();handleSubmit(e,'print')}}
+                                        onClick={(e) => { e.preventDefault(); handleSubmit(e, 'print') }}
                                         disabled={loading}
                                         className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
@@ -384,10 +646,10 @@ export default function CreateInvoicePage() {
                                         </svg>
                                         <span className="text-gray-700 font-medium">Print</span>
                                     </button>
-                                    
+
                                     <button
                                         type="button"
-                                        onClick={(e) => {e.preventDefault();handleSubmit(e,'email')}}
+                                        onClick={(e) => { e.preventDefault(); handleSubmit(e, 'email') }}
                                         disabled={loading}
                                         className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >

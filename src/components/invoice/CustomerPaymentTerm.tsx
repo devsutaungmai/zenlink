@@ -1,14 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ChevronUpIcon, ChevronDownIcon, InformationCircleIcon } from '@heroicons/react/24/outline'
 
 interface CustomerPaymentTermProps {
-  onSettingsChange?: (settings: CustomerPaymentTerm) => void
-  defaultValues?: CustomerPaymentTerm
+  onSettingsChange?: (settings: CustomerPaymentTermForComponent) => void
+  defaultValues?: CustomerPaymentTermForComponent
 }
 
-export interface CustomerPaymentTerm {
+export interface CustomerPaymentTermForComponent {
   dueDateType: 'DAYS_AFTER' | 'FIXED_DATE'
   daysAfter?: number
   fixedDateDay?: number
@@ -20,7 +20,7 @@ export default function CustomerPaymentTermComponent({
   defaultValues,
 }: CustomerPaymentTermProps) {
   const [isExpanded, setIsExpanded] = useState(true)
-  const [settings, setSettings] = useState<CustomerPaymentTerm>(
+  const [settings, setSettings] = useState<CustomerPaymentTermForComponent>(
     defaultValues || {
       dueDateType: 'DAYS_AFTER',
       daysAfter: 14,
@@ -28,8 +28,15 @@ export default function CustomerPaymentTermComponent({
       fixedDateDay: 1,
     }
   )
+  
+   useEffect(() => {
+    if (defaultValues) {
+      setSettings(defaultValues)
+    }
+  }, [defaultValues])
 
-  const handleSettingChange = (newSetting: Partial<CustomerPaymentTerm>) => {
+
+  const handleSettingChange = (newSetting: Partial<CustomerPaymentTermForComponent>) => {
     const updatedSettings = { ...settings, ...newSetting }
     setSettings(updatedSettings)
     onSettingsChange?.(updatedSettings)
@@ -39,7 +46,7 @@ export default function CustomerPaymentTermComponent({
     <div className="border border-gray-200 rounded-xl overflow-hidden">
       {/* Header */}
       <button
-        onClick={() => setIsExpanded(!isExpanded)}
+        onClick={(e) => {e.preventDefault(); setIsExpanded(!isExpanded)}}
         className="w-full px-6 py-4 flex items-center justify-between bg-white hover:bg-gray-50 transition-colors"
       >
         <h2 className="text-lg font-semibold text-gray-900">Customer Payment Term</h2>
@@ -104,14 +111,14 @@ export default function CustomerPaymentTermComponent({
                   className="w-16 px-3 py-2 rounded-lg border border-gray-300 bg-white text-center text-sm focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF]"
                 />
                 <select
-                  value={settings.unit || 'Days'}
+                  value={settings.unit || 'DAYS'}
                   onChange={(e) =>
                     handleSettingChange({ unit: e.target.value as 'DAYS' | 'MONTHS' })
                   }
                   className="px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF]"
                 >
-                  <option>Days</option>
-                  <option>Months</option>
+                  <option value="DAYS">Days</option>
+                  <option value="MONTHS">Months</option>
                 </select>
                 <span className="text-sm text-gray-700">after the invoice date.</span>
               </div>

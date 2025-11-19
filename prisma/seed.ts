@@ -5,7 +5,7 @@ const prisma = new PrismaClient()
 async function main() {
   // First, get the first business to use as default
   const business = await prisma.business.findFirst()
-  
+
   if (!business) {
     console.log('No business found. Please create a business first.')
     return
@@ -120,9 +120,9 @@ async function main() {
   //     console.log('✗ Failed to create pay rule:', error)
   //   }
   // }
-   console.log('Start seeding...');
+  console.log('Start seeding...');
 
-    // Term 1: 14 days after invoice date
+  // Term 1: 14 days after invoice date
   const term1 = await prisma.invoicePaymentTerms.upsert({
     where: {
       id: `default-term-14-days`,
@@ -305,6 +305,134 @@ async function main() {
   ]);
 
   console.log('✓ Sales Accounts created');
+  console.log('Creating projects...');
+
+  const departments = await prisma.department.findMany({
+    where: { businessId: business.id },
+  });
+
+  const customers = await prisma.customer.findMany({
+    where: { businessId: business.id },
+  });
+
+  if (departments.length === 0 || customers.length === 0) {
+    console.log('No departments or customers found. Skipping projects.');
+    return;
+  }
+
+  const projectsData = [
+    {
+      name: 'Website Redesign',
+      projectNumber: 'PRJ-2024-001',
+      status: 'In Progress',
+      category: 'Web Development',
+      startDate: new Date('2024-01-15'),
+      endDate: new Date('2024-06-30'),
+      active: true,
+    },
+    {
+      name: 'Mobile App Development',
+      projectNumber: 'PRJ-2024-002',
+      status: 'Planning',
+      category: 'Mobile Development',
+      startDate: new Date('2024-02-01'),
+      endDate: new Date('2024-08-31'),
+      active: true,
+    },
+    {
+      name: 'Database Migration',
+      projectNumber: 'PRJ-2024-003',
+      status: 'Completed',
+      category: 'Infrastructure',
+      startDate: new Date('2023-11-01'),
+      endDate: new Date('2024-01-31'),
+      active: false,
+    },
+    {
+      name: 'Marketing Campaign Q1',
+      projectNumber: 'PRJ-2024-004',
+      status: 'In Progress',
+      category: 'Marketing',
+      startDate: new Date('2024-01-01'),
+      endDate: new Date('2024-03-31'),
+      active: true,
+    },
+    {
+      name: 'ERP System Implementation',
+      projectNumber: 'PRJ-2024-005',
+      status: 'Planning',
+      category: 'Enterprise Software',
+      startDate: new Date('2024-03-01'),
+      endDate: new Date('2024-12-31'),
+      active: true,
+    },
+    {
+      name: 'Office Renovation',
+      projectNumber: 'PRJ-2024-006',
+      status: 'On Hold',
+      category: 'Facilities',
+      startDate: new Date('2024-04-01'),
+      endDate: new Date('2024-05-31'),
+      active: true,
+    },
+  ];
+
+  const createdProjects = [];
+
+  for (let i = 0; i < projectsData.length; i++) {
+    const projectData = projectsData[i];
+    const department = departments[i % departments.length];
+    const customer = customers[i % customers.length];
+
+    try {
+      const project = await prisma.project.upsert({
+        where: { projectNumber: projectData.projectNumber },
+        update: { ...projectData },
+        create: {
+          ...projectData,
+          departmentId: department.id,
+          customerId: customer.id,
+        },
+      });
+
+      createdProjects.push(project);
+      console.log(`✓ Created project: ${project.projectNumber} - ${project.name}`);
+    } catch (error) {
+      console.log(`✗ Failed to create project ${projectData.projectNumber}:`, error);
+    }
+  }
+
+  console.log(`✓ Created ${createdProjects.length} projects`);
+  console.log(`Found ${customers.length} customers`)
+
+  for (const customer of customers) {
+    // 2. Check if contact person already exists (avoid duplicate seeds)
+    const existingContact = await prisma.contactPerson.findFirst({
+      where: { customerId: customer.id },
+    })
+
+    if (existingContact) {
+      console.log(
+        `Skipping ${customer.customerName} — contact already exists`
+      )
+      continue
+    }
+
+    // 3. Create default contact
+    await prisma.contactPerson.create({
+      data: {
+        customerId: customer.id,
+        name: `${customer.customerName} Main Contact`,
+        title: 'Manager',
+        phoneNumber: '099-999-9999',
+        email: `contact+${customer.id.slice(0, 6)}@example.com`,
+        isPrimary: true,
+      },
+    })
+
+    console.log(`Created contact for ${customer.customerName}`)
+  }
+
   console.log('✓ Database seeding completed!')
 }
 

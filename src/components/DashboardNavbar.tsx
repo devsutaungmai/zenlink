@@ -52,7 +52,6 @@ export default function DashboardNavbar() {
   
   const adminNavigation: NavigationItem[] = [
     { name: t('navigation.home'), href: '/dashboard', icon: HomeIcon },
-    { name: 'Invoice', href: '/dashboard/invoices', icon: HomeIcon },
     {
       name: t('navigation.employees'),
       icon: UserGroupIcon,
@@ -94,6 +93,7 @@ export default function DashboardNavbar() {
       name: "Invoice Control",
       icon: CurrencyDollarIcon,
       children: [
+        { name: 'Invoice', href: '/dashboard/invoices' },
         { name:"Customer", href: '/dashboard/customers' },
         { name: "Product", href: '/dashboard/products' },
       ],

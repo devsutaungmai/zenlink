@@ -81,24 +81,23 @@ export default function CreateCustomersPage() {
         setLoading(true)
 
         try {
-            console.log(JSON.stringify(formData));
-        //     const res = await fetch('/api/customers', {
-        //         method: 'POST',
-        //         headers: { 'Content-Type': 'application/json' },
-        //         body: JSON.stringify(formData),
-        //     })
+            const res = await fetch('/api/customers', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData),
+            })
 
-        //     if (!res.ok) {
-        //         const error = await res.json()
-        //         throw new Error(error.error || 'Failed to create customer')
-        //     }
+            if (!res.ok) {
+                const error = await res.json()
+                throw new Error(error.error || 'Failed to create customer')
+            }
 
-        //     await Swal.fire({
-        //         title: 'Success!',
-        //         text: 'Customer created successfully',
-        //         icon: 'success',
-        //         confirmButtonColor: '#31BCFF',
-        //     })
+            await Swal.fire({
+                title: 'Success!',
+                text: 'Customer created successfully',
+                icon: 'success',
+                confirmButtonColor: '#31BCFF',
+            })
 
             router.push('/dashboard/customers')
             router.refresh()
@@ -358,12 +357,7 @@ export default function CreateCustomersPage() {
                     </div>
 
                     <CustomerPaymentTermComponent
-                        defaultValues={{
-                            dueDateType: 'DAYS_AFTER',
-                            daysAfter: 14,
-                            unit: 'DAYS',
-                            fixedDateDay: 1,
-                        }}
+                        defaultValues={formData.customerPaymentTerm}
                         onSettingsChange={(settings) => {
                             console.log('Settings updated:', settings)
                             const updatedPaymentTerm: InvoicePaymentTerms = {
@@ -380,7 +374,7 @@ export default function CreateCustomersPage() {
                     {/* Form Actions */}
                     <div className="flex items-center justify-end gap-4 pt-6 border-t border-gray-200">
                         <Link
-                            href="/dashboard/categories"
+                            href="/dashboard/customers"
                             className="px-6 py-3 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium hover:bg-gray-50 transition-colors duration-200"
                         >
                             Cancel

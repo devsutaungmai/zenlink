@@ -25,20 +25,29 @@ export async function GET(
         id: id,
         businessId: businessId
       },
-      include:{
-        customer:{
+      include: {
+        customer: {
           select: {
             id: true,
-            customerName: true
+            customerName: true,
+            contactPersons: true,
+            InvoicePaymentTerms: true,
+            projects: true,
+            department: true,
+            business: {
+              select: {
+                name: true
+              }
+            }
           }
         },
         invoiceLines: {
-          select:{
+          select: {
             quantity: true,
             pricePerUnit: true,
             discountPercentage: true,
             product: {
-              select:{
+              select: {
                 id: true,
                 productName: true
               }
@@ -72,17 +81,23 @@ export async function PUT(
     const { id } = await params
     const invoiceId = id
     const body = await request.json()
-    const { 
-      customerId, 
-      productId, 
-      quantity, 
+    const {
+      customerId,
+      productId,
+      contactPersonId,
+      projectId,
+      departmentId,
+      deliveryAddress,
+      quantity,
       pricePerUnit,
       discountPercentage = 0,
       notes,
-      dueDate
+      sentAt,
+      paidAt,
+      dueDay
     } = body
 
-    const lines = [{productId,quantity,pricePerUnit,discountPercentage}]; // one invoice has one product for now but many products in one invoice for future
+    const lines = [{ productId, quantity, pricePerUnit, discountPercentage }]; // one invoice has one product for now but many products in one invoice for future
 
     // For now, support single product (backward compatible)
     // Future: support multiple products in 'lines' array
@@ -194,13 +209,20 @@ export async function PUT(
         where: { id: invoiceId },
         data: {
           customerId,
+          contactPersonId,
+          projectId,
+          departmentId,
+          deliveryAddress,
           totalExclVAT,
           vatPercentage,
           vatAmount,
           totalInclVAT,
-          dueDate: dueDate ? new Date(dueDate) : null,
+          dueDate: paidAt ? new Date(paidAt) : null,
           notes,
-          status:'DRAFT',
+          status: 'DRAFT',
+          sentAt: sentAt ? new Date(sentAt) : null,
+          paidAt: paidAt ? new Date(paidAt) : null,
+          dueDay,
 
           // Create new invoice lines
           invoiceLines: {
