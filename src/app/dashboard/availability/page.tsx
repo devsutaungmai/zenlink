@@ -314,7 +314,8 @@ export default function AdminAvailabilityPage() {
 
           setEmployees([resolvedEmployee])
 
-          await fetchAvailabilities([resolvedEmployee])
+          const employeeAvailabilities = await fetchAvailabilities([resolvedEmployee])
+          await fetchStats([resolvedEmployee], employeeAvailabilities)
 
           setDataCache(prev => ({
             ...prev,
@@ -322,13 +323,6 @@ export default function AdminAvailabilityPage() {
             lastFetch: now,
             cacheKey
           }))
-
-          setStats({
-            totalEmployees: 1,
-            availableToday: 0,
-            unavailableToday: 0,
-            pendingRequests: 0
-          })
         } catch (error) {
           console.error('Error fetching employee data:', error)
           setError(t('error.failed_to_load'))
@@ -336,15 +330,15 @@ export default function AdminAvailabilityPage() {
       } else {
         // For admins, fetch all employees and full data
         const employeesRes = await fetch('/api/employees')
-        let employeesData: any[] = []
+        let employeesData: Employee[] = []
         
         if (employeesRes.ok) {
           employeesData = await employeesRes.json()
           setEmployees(employeesData)
         }
 
-        await fetchAvailabilities(employeesData)
-        await fetchStats()
+        const adminAvailabilities = await fetchAvailabilities(employeesData)
+        await fetchStats(employeesData, adminAvailabilities)
 
         setDataCache(prev => ({
           ...prev,
@@ -363,7 +357,7 @@ export default function AdminAvailabilityPage() {
 
 
 
-  const fetchAvailabilities = async (employeesData?: any[]) => {
+  const fetchAvailabilities = async (employeesData?: Employee[]) => {
     try {
       let url = `/api/availability?month=${currentMonth + 1}&year=${currentYear}`
       
@@ -399,7 +393,7 @@ export default function AdminAvailabilityPage() {
       }
       const res = await fetch(url)
       if (res.ok) {
-        const availabilitiesData = await res.json()
+        const availabilitiesData: Availability[] = await res.json()
         setAvailabilities(availabilitiesData)
         
         // Update cache with availability data
@@ -407,21 +401,28 @@ export default function AdminAvailabilityPage() {
           ...prev,
           availabilities: availabilitiesData
         }))
+
+        return availabilitiesData
       }
     } catch (error) {
       console.error('Error fetching availabilities:', error)
     }
+
+    return undefined
   }
 
-  const fetchStats = async () => {
+  const fetchStats = async (employeesData?: Employee[], availabilitiesData?: Availability[]) => {
     try {
       const today = new Date().toISOString().split('T')[0]
-      const todayAvailabilities = availabilities.filter(a => 
+      const sourceEmployees = employeesData ?? employees
+      const sourceAvailabilities = availabilitiesData ?? availabilities
+
+      const todayAvailabilities = sourceAvailabilities.filter(a => 
         a.date.split('T')[0] === today
       )
       
       setStats({
-        totalEmployees: employees.length,
+        totalEmployees: sourceEmployees.length,
         availableToday: todayAvailabilities.filter(a => a.isAvailable).length,
         unavailableToday: todayAvailabilities.filter(a => !a.isAvailable).length,
         pendingRequests: 0 // Can be enhanced based on business logic
