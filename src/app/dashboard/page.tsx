@@ -1026,7 +1026,6 @@ export default function DashboardPage() {
   const attendanceShiftWindow = currentAttendance?.shift
     ? `${formatShiftTime(currentAttendance.shift.startTime) || '--:--'} - ${currentAttendance.shift.endTime ? formatShiftTime(currentAttendance.shift.endTime) : t('dashboard.cards.punch_clock.active')}`
     : null
-  const disablePrimaryShiftAction = clockingIn || !!currentAttendance
   const roleLabel = [
     currentEmployee?.employeeGroup?.name || t('dashboard.cards.attendance.default_role'),
     currentEmployee?.department?.name
@@ -1369,16 +1368,16 @@ export default function DashboardPage() {
                   <p className="text-sm text-slate-500">{t('dashboard.punch_clock.description')}</p>
                 )}
               </div>
-              {!hasScheduledShift && (
+              {!currentAttendance && (
                 <button
-                  onClick={handlePrimaryShiftAction}
-                  disabled={disablePrimaryShiftAction}
+                  onClick={hasScheduledShift ? handlePunchIn : handlePrimaryShiftAction}
+                  disabled={clockingIn}
                   className="inline-flex items-center justify-center rounded-full border border-[#2563eb] px-5 py-2 text-sm font-semibold text-[#2563eb] transition hover:bg-[#2563eb] hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {clockingIn
                     ? t('dashboard.cards.punch_clock.punching_in')
-                    : currentAttendance
-                      ? t('dashboard.cards.attendance.status_working')
+                    : hasScheduledShift
+                      ? t('dashboard.cards.punch_clock.punch_in')
                       : t('dashboard.punch_clock.start_new_shift')}
                 </button>
               )}
