@@ -19,11 +19,13 @@ export default function TimeTrackingLoginPage() {
   const [success, setSuccess] = useState<string | null>(null)
   const [step, setStep] = useState<'business' | 'activation'>('business')
   const [checking, setChecking] = useState(true)
+  const [businessData, setBusinessData] = useState<{ id: string; name: string; address?: string | null; type?: string | null } | null>(null)
 
   useEffect(() => {
     // Check if user already has business and activation data
     const storedBusinessName = localStorage.getItem('timeTrackingBusiness')
     const storedProfile = localStorage.getItem('punchClockProfile')
+    const storedBusinessData = localStorage.getItem('timeTrackingBusinessData')
     
     if (storedBusinessName && storedProfile) {
       try {
@@ -46,6 +48,16 @@ export default function TimeTrackingLoginPage() {
     if (storedBusinessName && !storedProfile) {
       setBusinessName(storedBusinessName)
       setStep('activation')
+    }
+
+    if (storedBusinessData) {
+      try {
+        const parsedBusiness = JSON.parse(storedBusinessData)
+        setBusinessData(parsedBusiness)
+      } catch (error) {
+        console.error('Error parsing stored business data:', error)
+        localStorage.removeItem('timeTrackingBusinessData')
+      }
     }
     
     // Small delay to show loading state
@@ -94,6 +106,7 @@ export default function TimeTrackingLoginPage() {
       // Store the validated business information
       localStorage.setItem('timeTrackingBusiness', businessName.trim())
       localStorage.setItem('timeTrackingBusinessData', JSON.stringify(data.business))
+      setBusinessData(data.business)
       
       setSuccess(`Business "${data.business.name}" found! Enter activation code...`)
       
@@ -116,6 +129,12 @@ export default function TimeTrackingLoginPage() {
       return
     }
 
+    if (!businessData?.id) {
+      setError('Please validate your business before entering an activation code')
+      setStep('business')
+      return
+    }
+
     setLoading(true)
     setError(null)
     setSuccess(null)
@@ -127,7 +146,8 @@ export default function TimeTrackingLoginPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          activationCode: activationCode.trim().toUpperCase()
+          activationCode: activationCode.trim().toUpperCase(),
+          businessId: businessData.id
         }),
       })
 
@@ -160,6 +180,9 @@ export default function TimeTrackingLoginPage() {
     setActivationCode('')
     setError(null)
     setSuccess(null)
+    setBusinessData(null)
+    localStorage.removeItem('timeTrackingBusiness')
+    localStorage.removeItem('timeTrackingBusinessData')
   }
 
   // Show loading spinner while checking for existing activation data
@@ -269,6 +292,11 @@ export default function TimeTrackingLoginPage() {
                 <p className="mt-1 text-xs text-gray-500">
                   Get this code from your administrator or manager
                 </p>
+                {businessData?.name && (
+                  <p className="mt-1 text-xs text-gray-600">
+                    Using activation code for <span className="font-semibold">{businessData.name}</span>
+                  </p>
+                )}
               </div>
             )}
 

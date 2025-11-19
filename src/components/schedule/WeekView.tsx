@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import SpanningShiftCard from './SpanningShiftCard'
 import HourColumn from './HourColumn'
 import { Shift as PrismaShift, Employee } from '@prisma/client'
+import { getShiftSegmentsForDate, ShiftSegment } from './utils'
 
 type Shift = PrismaShift & {
   functionId?: string | null;
@@ -20,6 +21,8 @@ interface WeekViewProps {
   scheduleViewType?: 'time' | 'employees' | 'groups' | 'functions'
   onEditShift: (shift: Shift) => void
   onAddShift: (formData?: any) => void
+  isEmployeeUnavailable?: (employeeId: string, date: string) => boolean
+  onUnavailableClick?: (employeeId: string, date: string) => void
 }
 
 export default function WeekView({
@@ -31,7 +34,9 @@ export default function WeekView({
   categories = [],
   scheduleViewType = 'time',
   onEditShift,
-  onAddShift
+  onAddShift,
+  isEmployeeUnavailable,
+  onUnavailableClick
 }: WeekViewProps) {
   const { t, i18n } = useTranslation('schedule')
   const [isDragging, setIsDragging] = useState(false)
@@ -89,11 +94,12 @@ export default function WeekView({
   const handleDragEndToCreate = () => {
     if (dragStartHour !== null && dragEndHour !== null && dragDate !== null) {
       const startHour = Math.min(dragStartHour, dragEndHour)
-      const endHour = Math.max(dragStartHour, dragEndHour)
+      const endHourExclusive = Math.max(dragStartHour, dragEndHour) + 1
+      const normalizeHour = (hour: number) => ((hour % 24) + 24) % 24
 
       const formattedDate = format(dragDate, 'yyyy-MM-dd')
-      const startTime = `${startHour.toString().padStart(2, '0')}:00`
-      const endTime = `${(endHour + 1).toString().padStart(2, '0')}:00` // Add 1 to end hour to make range inclusive
+      const startTime = `${normalizeHour(startHour).toString().padStart(2, '0')}:00`
+      const endTime = `${normalizeHour(endHourExclusive).toString().padStart(2, '0')}:00`
 
       // Pass the form data directly to the parent component
       onAddShift({
@@ -124,35 +130,42 @@ export default function WeekView({
     }).length
   }
 
-  const groupOverlappingShifts = (shifts: Shift[]) => {
+  const getMinutes = (time: string) => {
+    const [hours, minutes] = time.split(':').map(Number)
+    return hours * 60 + minutes
+  }
+
+  const groupOverlappingShifts = (segments: ShiftSegment[]) => {
     // Sort shifts by start time to ensure consistent grouping
-    const sortedShifts = [...shifts].sort((a, b) => {
-      // First by start time
-      if (a.startTime < b.startTime) return -1;
-      if (a.startTime > b.startTime) return 1;
-      
-      // Then by end time if start times are equal
-      const aEndTime = a.endTime || '23:59'; // Use end of day for active shifts
-      const bEndTime = b.endTime || '23:59';
-      return aEndTime < bEndTime ? -1 : 1;
+    const sortedSegments = [...segments].sort((a, b) => {
+      if (a.displayStartTime < b.displayStartTime) return -1
+      if (a.displayStartTime > b.displayStartTime) return 1
+
+      const aEnd = a.displayEndTime || '24:00'
+      const bEnd = b.displayEndTime || '24:00'
+      if (aEnd < bEnd) return -1
+      if (aEnd > bEnd) return 1
+      return 0
     });
 
-    const groups: Shift[][] = [];
+    const groups: ShiftSegment[][] = [];
     
-    for (const shift of sortedShifts) {
+    for (const segment of sortedSegments) {
       // Find if this shift overlaps with any existing groups
       let addedToGroup = false;
       
       for (const group of groups) {
         const overlapsWithGroup = group.some(groupShift => {
-          // Check if shifts overlap - handle null endTime
-          const shiftEndTime = shift.endTime || '23:59';
-          const groupShiftEndTime = groupShift.endTime || '23:59';
-          return (shift.startTime < groupShiftEndTime && shiftEndTime > groupShift.startTime);
+          const segmentStart = getMinutes(segment.displayStartTime)
+          const segmentEnd = getMinutes(segment.displayEndTime || '24:00')
+          const groupStart = getMinutes(groupShift.displayStartTime)
+          const groupEnd = getMinutes(groupShift.displayEndTime || '24:00')
+
+          return segmentStart < groupEnd && segmentEnd > groupStart
         });
         
         if (overlapsWithGroup) {
-          group.push(shift);
+          group.push(segment);
           addedToGroup = true;
           break;
         }
@@ -160,7 +173,7 @@ export default function WeekView({
       
       // If not added to any existing group, create a new group
       if (!addedToGroup) {
-        groups.push([shift]);
+        groups.push([segment]);
       }
     }
     
@@ -301,23 +314,35 @@ export default function WeekView({
                         return shiftDate.substring(0, 10) === formattedDate
                       })
                       const isToday = new Date().toDateString() === date.toDateString()
+                      const unavailable = isEmployeeUnavailable?.(employee.id, formattedDate) ?? false
 
                       return (
                         <div key={dayIndex} className="px-1">
                           <div className="aspect-square">
                             {dayShifts.length === 0 ? (
                               <button
-                                onClick={() => onAddShift({ 
-                                  date: formattedDate,
-                                  employeeId: employee.id 
-                                })}
-                                className={`w-full h-full border-2 border-dashed rounded-xl flex items-center justify-center transition-all active:scale-95 ${
-                                  isToday 
-                                    ? 'border-[#31BCFF] bg-blue-50 hover:bg-blue-100' 
-                                    : 'border-gray-300 hover:border-[#31BCFF] hover:bg-blue-50'
+                                onClick={() => {
+                                  if (unavailable) {
+                                    onUnavailableClick?.(employee.id, formattedDate)
+                                    return
+                                  }
+                                  onAddShift({ 
+                                    date: formattedDate,
+                                    employeeId: employee.id 
+                                  })
+                                }}
+                                className={`w-full h-full border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 ${
+                                  unavailable
+                                    ? 'border-red-300 bg-red-50 text-red-500 cursor-not-allowed'
+                                    : isToday 
+                                      ? 'border-[#31BCFF] bg-blue-50 hover:bg-blue-100' 
+                                      : 'border-gray-300 hover:border-[#31BCFF] hover:bg-blue-50'
                                 }`}
                               >
-                                <PlusIcon className="w-6 h-6 text-[#31BCFF]" />
+                                <PlusIcon className={`w-6 h-6 ${unavailable ? 'text-red-400' : 'text-[#31BCFF]'}`} />
+                                {unavailable && (
+                                  <span className="hidden md:inline text-[10px] font-semibold text-red-500">Unavailable</span>
+                                )}
                               </button>
                             ) : (
                               <div className="w-full h-full">
@@ -386,14 +411,11 @@ export default function WeekView({
             
             {weekDates.map((date, i) => {
               const formattedDate = format(date, 'yyyy-MM-dd')
-              const dayShifts = shifts.filter(shift => {
-                const shiftDate = typeof shift.date === 'string' ? shift.date : format(shift.date, 'yyyy-MM-dd')
-                return shiftDate.substring(0, 10) === formattedDate
-              })
+              const daySegments = getShiftSegmentsForDate(shifts, date)
               const isToday = new Date().toDateString() === date.toDateString()
               
               // Group overlapping shifts
-              const shiftGroups = groupOverlappingShifts(dayShifts);
+              const shiftGroups = groupOverlappingShifts(daySegments);
               
               return (
                 <div key={i} className="relative">
@@ -408,14 +430,14 @@ export default function WeekView({
                     </div>
                     <div className="text-[10px] text-gray-900">
                       <PlusIcon className="inline h-3 w-3 mr-0.5" />
-                      <span className="hidden sm:inline">{dayShifts.length} {t('week_view.shifts')}</span>
-                      <span className="sm:hidden">{dayShifts.length}</span>
+                      <span className="hidden sm:inline">{getDayShiftCount(formattedDate)} {t('week_view.shifts')}</span>
+                      <span className="sm:hidden">{getDayShiftCount(formattedDate)}</span>
                     </div>
                   </div>
                   
                   <div className="relative">
                     {/* Hour cells for drag to create */}
-                    {Array.from({ length: 23 }, (_, hour) => hour + 1).map(hour => (
+                    {Array.from({ length: 24 }, (_, hour) => hour).map(hour => (
                       <div
                         key={hour}
                         className="border-b border-r p-1 h-[24px] relative hover:bg-gray-50"
@@ -438,15 +460,18 @@ export default function WeekView({
                     {/* Render grouped shifts */}
                     {shiftGroups.map((group, groupIndex) => (
                       <React.Fragment key={`group-${groupIndex}`}>
-                        {group.map((shift, shiftIndex) => (
+                        {group.map((segment, shiftIndex) => (
                           <SpanningShiftCard 
-                            key={shift.id} 
-                            shift={shift} 
+                            key={segment.segmentId}
+                            shift={segment.shift} 
                             date={formattedDate}
                             employees={employees}
                             onEdit={onEditShift}
                             index={shiftIndex}
                             total={group.length}
+                            displayStartTime={segment.displayStartTime}
+                            displayEndTime={segment.displayEndTime}
+                            isContinuation={segment.isContinuation}
                           />
                         ))}
                       </React.Fragment>

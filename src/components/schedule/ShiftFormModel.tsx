@@ -17,6 +17,7 @@ interface ShiftFormModalProps {
   employees: Employee[]
   employeeGroups: EmployeeGroup[]
   onSubmit: (formData: any) => void
+  onDelete?: (shiftId: string) => void
   viewType: 'week' | 'day'
   loading: boolean
 }
@@ -28,6 +29,7 @@ export default function ShiftFormModal({
   employees,
   employeeGroups,
   onSubmit,
+  onDelete,
   viewType,
   loading
 }: ShiftFormModalProps) {
@@ -44,6 +46,7 @@ export default function ShiftFormModal({
           employees={employees}
           employeeGroups={employeeGroups}
           onSubmit={onSubmit}
+          onDelete={onDelete}
           onCancel={onClose}
           loading={loading}
           showEmployee={true}

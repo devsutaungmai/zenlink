@@ -15,6 +15,8 @@ interface EmployeeGroupedViewProps {
   onToggleGroup: (groupId: string) => void
   onEditShift: (shift: ShiftWithRelations) => void
   onAddShift?: (data?: { date?: string; employeeId?: string }) => void
+  isEmployeeUnavailable?: (employeeId: string, date: string) => boolean
+  onUnavailableClick?: (employeeId: string, date: string) => void
 }
 
 export default function EmployeeGroupedView({
@@ -24,7 +26,9 @@ export default function EmployeeGroupedView({
   expandedGroups,
   onToggleGroup,
   onEditShift,
-  onAddShift = () => {}
+  onAddShift = () => {},
+  isEmployeeUnavailable,
+  onUnavailableClick
 }: EmployeeGroupedViewProps) {
   const { currencySymbol } = useCurrency()
   const [modalState, setModalState] = useState<{
@@ -187,23 +191,35 @@ export default function EmployeeGroupedView({
                       const formattedDate = format(date, 'yyyy-MM-dd')
                       const dayShifts = getEmployeeShifts(employee.id, date)
                       const isToday = new Date().toDateString() === date.toDateString()
+                      const unavailable = isEmployeeUnavailable?.(employee.id, formattedDate) ?? false
 
                       return (
                         <div key={dayIndex} className="px-1">
                           <div className="aspect-square">
                             {dayShifts.length === 0 ? (
                               <button
-                                onClick={() => onAddShift({ 
-                                  date: formattedDate,
-                                  employeeId: employee.id 
-                                })}
-                                className={`w-full h-full border-2 border-dashed rounded-xl flex items-center justify-center transition-all active:scale-95 ${
-                                  isToday 
-                                    ? 'border-[#31BCFF] bg-blue-50 hover:bg-blue-100' 
-                                    : 'border-gray-300 hover:border-[#31BCFF] hover:bg-blue-50'
+                                onClick={() => {
+                                  if (unavailable) {
+                                    onUnavailableClick?.(employee.id, formattedDate)
+                                    return
+                                  }
+                                  onAddShift({ 
+                                    date: formattedDate,
+                                    employeeId: employee.id 
+                                  })
+                                }}
+                                className={`w-full h-full border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 ${
+                                  unavailable
+                                    ? 'border-red-300 bg-red-50 text-red-500 cursor-not-allowed'
+                                    : isToday 
+                                      ? 'border-[#31BCFF] bg-blue-50 hover:bg-blue-100' 
+                                      : 'border-gray-300 hover:border-[#31BCFF] hover:bg-blue-50'
                                 }`}
                               >
-                                <PlusIcon className="w-6 h-6 text-[#31BCFF]" />
+                                <PlusIcon className={`w-6 h-6 ${unavailable ? 'text-red-400' : 'text-[#31BCFF]'}`} />
+                                {unavailable && (
+                                  <span className="hidden md:inline text-[10px] font-semibold text-red-500">Unavailable</span>
+                                )}
                               </button>
                             ) : (
                               <div className="w-full h-full flex flex-col">
@@ -294,18 +310,32 @@ export default function EmployeeGroupedView({
                 const formattedDate = format(date, 'yyyy-MM-dd');
                 const dayShifts = getEmployeeShifts(employee.id, date);
                 const shiftGroups = groupOverlappingShifts(dayShifts);
+                const unavailable = isEmployeeUnavailable?.(employee.id, formattedDate) ?? false;
                 
                 return (
                   <div key={dateIndex} className="border-r p-2 relative min-h-[80px] group">
                     {shiftGroups.length === 0 ? (
                       <button
-                        onClick={() => onAddShift({ 
-                          date: formattedDate,
-                          employeeId: employee.id 
-                        })}
-                        className="w-full h-full min-h-[76px] border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center transition-all hover:border-[#31BCFF] hover:bg-blue-50 opacity-0 group-hover:opacity-100"
+                        onClick={() => {
+                          if (unavailable) {
+                            onUnavailableClick?.(employee.id, formattedDate)
+                            return
+                          }
+                          onAddShift({ 
+                            date: formattedDate,
+                            employeeId: employee.id 
+                          })
+                        }}
+                        className={`w-full h-full min-h-[76px] border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-1 transition-all opacity-0 group-hover:opacity-100 ${
+                          unavailable
+                            ? 'border-red-300 bg-red-50 text-red-500 cursor-not-allowed'
+                            : 'border-gray-300 hover:border-[#31BCFF] hover:bg-blue-50'
+                        }`}
                       >
-                        <PlusIcon className="w-5 h-5 text-[#31BCFF]" />
+                        <PlusIcon className={`w-5 h-5 ${unavailable ? 'text-red-400' : 'text-[#31BCFF]'}`} />
+                        {unavailable && (
+                          <span className="hidden md:inline text-[10px] font-semibold text-red-500">Unavailable</span>
+                        )}
                       </button>
                     ) : (
                       <>
@@ -334,11 +364,21 @@ export default function EmployeeGroupedView({
                           </button>
                         )}
                         <button
-                          onClick={() => onAddShift({ 
-                            date: formattedDate,
-                            employeeId: employee.id 
-                          })}
-                          className="absolute bottom-1 right-1 w-6 h-6 border border-[#31BCFF] bg-white rounded-full flex items-center justify-center transition-all hover:bg-[#31BCFF] hover:text-white opacity-0 group-hover:opacity-100 shadow-sm"
+                          onClick={() => {
+                            if (unavailable) {
+                              onUnavailableClick?.(employee.id, formattedDate)
+                              return
+                            }
+                            onAddShift({ 
+                              date: formattedDate,
+                              employeeId: employee.id 
+                            })
+                          }}
+                          className={`absolute bottom-1 right-1 w-6 h-6 border bg-white rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 shadow-sm ${
+                            unavailable
+                              ? 'border-red-300 text-red-400 cursor-not-allowed'
+                              : 'border-[#31BCFF] hover:bg-[#31BCFF] hover:text-white'
+                          }`}
                         >
                           <PlusIcon className="w-3 h-3" />
                         </button>

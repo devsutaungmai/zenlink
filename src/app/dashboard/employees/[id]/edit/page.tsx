@@ -665,13 +665,13 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <button 
+                          {/* <button 
                             onClick={() => window.open(`/api/payroll-entries/${payslip.id}/payslip`, '_blank')}
                             className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
                             title="View Payslip"
                           >
                             <EyeIcon className="w-4 h-4" />
-                          </button>
+                          </button> */}
                           <button 
                             onClick={() => {
                               const link = document.createElement('a')

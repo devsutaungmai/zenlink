@@ -3,11 +3,11 @@ import { prisma } from '@/shared/lib/prisma'
 
 export async function POST(request: NextRequest) {
   try {
-    const { activationCode } = await request.json()
+    const { activationCode, businessId } = await request.json()
 
-    if (!activationCode) {
+    if (!activationCode || !businessId) {
       return NextResponse.json(
-        { error: 'Activation code is required' },
+        { error: 'Activation code and business are required' },
         { status: 400 }
       )
     }
@@ -16,6 +16,7 @@ export async function POST(request: NextRequest) {
     const profile = await prisma.punchClockProfile.findFirst({
       where: {
         activationCode: activationCode.toUpperCase(),
+        businessId,
         isActive: true, // Only active profiles can be activated
       },
       include: {
@@ -38,7 +39,7 @@ export async function POST(request: NextRequest) {
 
     if (!profile) {
       return NextResponse.json(
-        { error: 'Invalid or expired activation code' },
+        { error: 'Invalid activation code for this business' },
         { status: 404 }
       )
     }

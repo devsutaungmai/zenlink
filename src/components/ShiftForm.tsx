@@ -5,6 +5,17 @@ import { AutoBreakType, ShiftType, WageType } from '@prisma/client'
 import { useUser } from '@/shared/lib/useUser'
 import { ShiftExchange } from '@/shared/types'
 import Swal from 'sweetalert2'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 
 interface ShiftTypeOption {
   id: string
@@ -119,6 +130,7 @@ interface FunctionItem {
 interface ShiftFormProps {
   initialData?: ShiftFormData & { id?: string }
   onSubmit: (data: ShiftFormData) => void
+  onDelete?: (shiftId: string) => Promise<void> | void
   onCancel: () => void
   loading: boolean
   employees: EmployeeForForm[]
@@ -131,6 +143,7 @@ interface ShiftFormProps {
 export default function ShiftForm({
   initialData,
   onSubmit,
+  onDelete,
   onCancel,
   loading,
   employees,
@@ -265,6 +278,7 @@ export default function ShiftForm({
   const [showBreakFields, setShowBreakFields] = useState<boolean>(() => {
     return initialData ? !!initialData.breakStart || !!initialData.breakEnd : false
   })
+  const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false)
 
   const [departments, setDepartments] = useState<Department[]>([])
   const [categories, setCategories] = useState<Category[]>([])
@@ -684,6 +698,19 @@ export default function ShiftForm({
       console.error('Error parsing date:', e)
     }
   }
+
+  const handleDeleteConfirm = async () => {
+    if (!initialData?.id || !onDelete) return
+    await onDelete(initialData.id)
+    setDeleteDialogOpen(false)
+  }
+
+  const canDeleteShift = Boolean(
+    !isEmployee &&
+    onDelete &&
+    initialData?.id &&
+    initialData?.approved === false
+  )
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -1213,24 +1240,60 @@ export default function ShiftForm({
       )}
 
       {/* Action Buttons */}
-      <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-4 border-t">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#31BCFF]"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={loading || isEmployee}
-          className={`w-full sm:w-auto px-4 py-2 text-sm font-medium text-white border border-transparent rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#31BCFF] disabled:opacity-50 ${
-            isEmployee ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#31BCFF] hover:bg-[#31BCFF]/90'
-          }`}
-          title={isEmployee ? "Employees cannot create or edit shifts" : ""}
-        >
-          {loading ? 'Saving...' : isEmployee ? 'Not Authorized' : 'Save'}
-        </button>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 border-t">
+        {canDeleteShift && (
+          <AlertDialog open={isDeleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+            <AlertDialogTrigger asChild>
+              <button
+                type="button"
+                disabled={loading}
+                className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+              >
+                Delete Shift
+              </button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete this shift?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. The shift will be permanently removed from the schedule.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-red-600 hover:bg-red-700 focus:ring-red-500"
+                  onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                    e.preventDefault()
+                    handleDeleteConfirm()
+                  }}
+                  disabled={loading}
+                >
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 w-full sm:w-auto">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#31BCFF]"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={loading || isEmployee}
+            className={`w-full sm:w-auto px-4 py-2 text-sm font-medium text-white border border-transparent rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#31BCFF] disabled:opacity-50 ${
+              isEmployee ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#31BCFF] hover:bg-[#31BCFF]/90'
+            }`}
+            title={isEmployee ? "Employees cannot create or edit shifts" : ""}
+          >
+            {loading ? 'Saving...' : isEmployee ? 'Not Authorized' : 'Save'}
+          </button>
+        </div>
       </div>
     </form>
   )

@@ -169,22 +169,83 @@ export class LaborLawValidator {
    * Calculate rest time between two shifts in hours
    */
   private calculateRestTime(shift1: ShiftData, shift2: ShiftData): number {
-    const shift1End = this.parseTime(shift1.endTime)
-    const shift2Start = this.parseTime(shift2.startTime)
-    
-    const shift1Date = new Date(shift1.date)
-    const shift2Date = new Date(shift2.date)
-    
-    const daysDiff = Math.floor((shift2Date.getTime() - shift1Date.getTime()) / (24 * 60 * 60 * 1000))
-    
-    let restHours = (daysDiff * 24) + shift2Start - shift1End
-    
-    // Handle same day or next day scenarios
-    if (restHours < 0) {
-      restHours += 24
+    const prev = this.getShiftDateTimes(shift1)
+    const curr = this.getShiftDateTimes(shift2)
+
+    const diffMs = curr.start.getTime() - prev.end.getTime()
+    return diffMs / (1000 * 60 * 60)
+  }
+
+  private getShiftDateTimes(shift: ShiftData) {
+    const baseDate = new Date(shift.date)
+
+    const [startHour, startMinute] = shift.startTime.split(':').map(Number)
+    const start = new Date(baseDate)
+    start.setHours(startHour, startMinute, 0, 0)
+
+    const [endHour, endMinute] = shift.endTime.split(':').map(Number)
+    const end = new Date(baseDate)
+    end.setHours(endHour, endMinute, 0, 0)
+
+    if (end <= start) {
+      end.setDate(end.getDate() + 1)
     }
-    
-    return restHours
+
+    return { start, end }
+  }
+
+  private normalizeDateOnly(value: string | Date) {
+    const date = value instanceof Date ? new Date(value) : new Date(value)
+    date.setHours(0, 0, 0, 0)
+    return date
+  }
+
+  private isNextCalendarDay(prev: string | Date, next: string | Date) {
+    const prevDate = this.normalizeDateOnly(prev)
+    const nextDate = this.normalizeDateOnly(next)
+    const diffDays = (nextDate.getTime() - prevDate.getTime()) / (24 * 60 * 60 * 1000)
+    return diffDays === 1
+  }
+
+  private mergeSplitOvernightShifts(shifts: ShiftData[]): ShiftData[] {
+    if (shifts.length < 2) return shifts
+
+    const sorted = [...shifts].sort((a, b) => {
+      const aStart = this.getShiftDateTimes(a).start.getTime()
+      const bStart = this.getShiftDateTimes(b).start.getTime()
+      return aStart - bStart
+    })
+
+    const merged: ShiftData[] = []
+    let index = 0
+
+    while (index < sorted.length) {
+      const current = sorted[index]
+      const next = sorted[index + 1]
+
+      const looksLikeSplit =
+        next &&
+        current.employeeId === next.employeeId &&
+        this.isNextCalendarDay(current.date, next.date) &&
+        current.endTime === '23:59' &&
+        (next.startTime === '01:00' || next.startTime === '00:00')
+
+      if (looksLikeSplit) {
+        merged.push({
+          ...current,
+          endTime: next.endTime,
+          breakStart: current.breakStart ?? next.breakStart,
+          breakEnd: next.breakEnd ?? current.breakEnd,
+        })
+        index += 2
+        continue
+      }
+
+      merged.push(current)
+      index += 1
+    }
+
+    return merged
   }
 
   /**
@@ -332,8 +393,10 @@ export class LaborLawValidator {
     const allShifts = [...existingShifts.filter(s => s.id !== shift.id), shift]
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
 
+    const normalizedShifts = this.mergeSplitOvernightShifts(allShifts)
+
     // Check weekly hours
-    const weeklyHours = allShifts.reduce((total, s) => total + this.calculateShiftHours(s), 0)
+    const weeklyHours = normalizedShifts.reduce((total, s) => total + this.calculateShiftHours(s), 0)
     if (weeklyHours > this.rules.maxHoursPerWeek) {
       violations.push({
         type: 'MAX_HOURS_PER_WEEK',
@@ -345,7 +408,7 @@ export class LaborLawValidator {
     }
 
     // Check weekly overtime
-    const weeklyOvertime = allShifts.reduce((total, s) => {
+    const weeklyOvertime = normalizedShifts.reduce((total, s) => {
       const shiftHours = this.calculateShiftHours(s)
       return total + Math.max(0, shiftHours - this.rules.overtimeThreshold)
     }, 0)
@@ -362,9 +425,9 @@ export class LaborLawValidator {
     }
 
     // Check rest time between consecutive shifts
-    for (let i = 1; i < allShifts.length; i++) {
-      const prevShift = allShifts[i - 1]
-      const currentShift = allShifts[i]
+    for (let i = 1; i < normalizedShifts.length; i++) {
+      const prevShift = normalizedShifts[i - 1]
+      const currentShift = normalizedShifts[i]
       
       const restTime = this.calculateRestTime(prevShift, currentShift)
       if (restTime < this.rules.minRestHoursBetweenShifts) {
@@ -383,9 +446,9 @@ export class LaborLawValidator {
     let consecutiveDays = 1
     let maxConsecutive = 1
     
-    for (let i = 1; i < allShifts.length; i++) {
-      const prevDate = new Date(allShifts[i - 1].date)
-      const currentDate = new Date(allShifts[i].date)
+    for (let i = 1; i < normalizedShifts.length; i++) {
+      const prevDate = new Date(normalizedShifts[i - 1].date)
+      const currentDate = new Date(normalizedShifts[i].date)
       const daysDiff = Math.floor((currentDate.getTime() - prevDate.getTime()) / (24 * 60 * 60 * 1000))
       
       if (daysDiff === 1) {

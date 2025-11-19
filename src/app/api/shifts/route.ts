@@ -333,66 +333,6 @@ export async function POST(req: Request) {
       return NextResponse.json(shift);
     }
 
-    const startHour = parseInt(data.startTime.split(':')[0], 10);
-    const endHour = parseInt(data.endTime.split(':')[0], 10);
-
-    if (endHour < startHour) {
-      const nextDay = new Date(data.date);
-      nextDay.setDate(nextDay.getDate() + 1);
-
-      // Create first part data
-      const firstPartData: any = {
-        ...data,
-        date: new Date(data.date),
-        endTime: '23:59',
-        breakStart: data.breakStart,
-        breakEnd: data.breakEnd,
-      };
-
-      if (employeeId) {
-        firstPartData.employee = { connect: { id: employeeId } };
-      }
-      if (employeeGroupId) {
-        firstPartData.employeeGroup = { connect: { id: employeeGroupId } };
-      }
-      if (departmentId) {
-        firstPartData.department = { connect: { id: departmentId } };
-      }
-      if (functionId) {
-        firstPartData.function = { connect: { id: functionId } };
-      }
-
-      // Create second part data
-      const secondPartData: any = {
-        ...data,
-        date: nextDay,
-        startTime: '01:00',
-        breakStart: shiftData.breakStart ? convertTimeToDateTime(shiftData.breakStart, nextDay.toISOString().split('T')[0]) : null,
-        breakEnd: shiftData.breakEnd ? convertTimeToDateTime(shiftData.breakEnd, nextDay.toISOString().split('T')[0]) : null,
-      };
-
-      if (employeeId) {
-        secondPartData.employee = { connect: { id: employeeId } };
-      }
-      if (employeeGroupId) {
-        secondPartData.employeeGroup = { connect: { id: employeeGroupId } };
-      }
-      if (departmentId) {
-        secondPartData.department = { connect: { id: departmentId } };
-      }
-      if (functionId) {
-        secondPartData.function = { connect: { id: functionId } };
-      }
-
-      const [firstShift, secondShift] = await Promise.all([
-        prisma.shift.create({ data: firstPartData }),
-        prisma.shift.create({ data: secondPartData }),
-      ]);
-
-      return NextResponse.json([firstShift, secondShift]);
-    }
-
-    // If the shift does not span across two days, create it as a single shift
     const shift = await prisma.shift.create({
       data: createData,
     });

@@ -4,22 +4,21 @@ import React, { useEffect, useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useUser } from '@/shared/lib/useUser'
 import Swal from 'sweetalert2'
-import { 
+import {
   CalendarIcon,
+  CheckCircleIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
-  MagnifyingGlassIcon,
-  FunnelIcon,
-  CheckCircleIcon,
-  XCircleIcon,
   ClockIcon,
+  ExclamationTriangleIcon,
+  MagnifyingGlassIcon,
   UserGroupIcon,
-  ExclamationTriangleIcon
+  XCircleIcon,
 } from '@heroicons/react/24/outline'
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Pagination,
   PaginationContent,
@@ -28,8 +27,18 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-} from "@/components/ui/pagination"
-import { AvailabilitySkeleton } from "@/components/skeletons/AvailabilitySkeleton"
+} from '@/components/ui/pagination'
+import { AvailabilitySkeleton } from '@/components/skeletons/AvailabilitySkeleton'
+
+interface Department {
+  id: string
+  name: string
+}
+
+interface EmployeeGroup {
+  id: string
+  name: string
+}
 
 interface Employee {
   id: string
@@ -37,14 +46,8 @@ interface Employee {
   firstName: string
   lastName: string
   employeeNo: string
-  department: {
-    id: string
-    name: string
-  }
-  employeeGroup?: {
-    id: string
-    name: string
-  }
+  department: Department
+  employeeGroup?: EmployeeGroup
 }
 
 interface Availability {
@@ -52,12 +55,7 @@ interface Availability {
   date: string
   isAvailable: boolean
   note?: string
-  employee: {
-    id: string
-    firstName: string
-    lastName: string
-    employeeNo: string
-  }
+  employee: Employee
 }
 
 interface AvailabilityStats {
@@ -764,88 +762,87 @@ export default function AdminAvailabilityPage() {
             </div>
           </CardHeader>
           <CardContent className="p-3 sm:p-6">
-            {/* Calendar Grid */}
-            <div className="overflow-x-auto -mx-3 sm:mx-0">
-              <div className="min-w-[800px] px-3 sm:px-0">
-                {/* Week days header */}
-                <div className="grid grid-cols-8 gap-1 mb-2">
-                  <div className="p-1 sm:p-2 text-xs sm:text-sm font-semibold text-gray-600">Employee</div>
-                  {weekDays.map(day => (
-                    <div key={day} className="p-1 sm:p-2 text-center text-xs sm:text-sm font-semibold text-gray-600 bg-gray-50 rounded">
-                      {day}
+            {/* Calendar Cards */}
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
+              {currentEmployees.map(employee => (
+                <div key={`calendar-card-${employee.id}`} className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <div className="text-base font-semibold text-gray-900">
+                        {employee.firstName} {employee.lastName}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {employee.employeeNo}
+                      </div>
                     </div>
-                  ))}
-                </div>
-
-                {/* Employee rows */}
-                {currentEmployees.map(employee => (
-                  <div key={employee.id} className="grid grid-cols-8 gap-1 mb-1 items-center">
-                    <div className="p-1 sm:p-2 text-xs sm:text-sm font-medium">
-                      <div className="truncate">{employee.firstName} {employee.lastName}</div>
-                      <div className="text-xs text-gray-500 truncate">{employee.employeeNo}</div>
-                      <Badge variant="secondary" className="text-xs mt-1 hidden sm:inline-block">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge variant="secondary" className="text-xs">
                         {employee.department.name}
                       </Badge>
+                      {employee.employeeGroup && (
+                        <Badge className="text-xs bg-blue-50 text-blue-700">
+                          {employee.employeeGroup.name}
+                        </Badge>
+                      )}
                     </div>
-                    
-                    {/* Calendar days for this employee */}
-                    {days.map((day, dayIndex) => {
-                      if (!day) {
-                        return <div key={dayIndex} className="p-2"></div>
-                      }
-                      
-                      const availability = getAvailabilityForDate(employee.id, day)
-                      const isToday = day.toDateString() === new Date().toDateString()
-                      
-                      // Only employees can interact with their own calendar
-                      const isSelected = isEmployee && isDateSelected(day)
-                      // For employees, check if this is their own employee record (by userId)
-                      const isClickable = isEmployee && (!!employeeRecordId && employee.id === employeeRecordId)
-                      
-
-                      
-                      return (
-                        <div
-                          key={dayIndex}
-                          onClick={() => isClickable && toggleDateSelection(day)}
-                          className={`p-2 text-center text-xs border rounded transition-all ${
-                            isToday 
-                              ? 'border-blue-500 bg-blue-50' 
-                              : isSelected 
-                                ? 'border-purple-500 bg-purple-100' 
-                                : 'border-gray-200'
-                          } ${
-                            isClickable 
-                              ? 'cursor-pointer hover:bg-gray-50' 
-                              : ''
-                          }`}
-                        >
-                          <div className="font-semibold text-gray-700">{day.getDate()}</div>
-                          {isSelected && (
-                            <div className="mt-1 p-1 rounded bg-purple-500 text-white text-xs">
-                              ●
-                            </div>
-                          )}
-                          {!isSelected && availability && (
-                            <div className={`mt-1 p-1 rounded text-white text-xs ${
-                              availability.isAvailable 
-                                ? 'bg-green-500' 
-                                : 'bg-red-500'
-                            }`}>
-                              {availability.isAvailable ? '✓' : '✗'}
-                            </div>
-                          )}
-                          {availability?.note && (
-                            <div className="mt-1 text-xs text-gray-600 truncate" title={availability.note}>
-                              📝
-                            </div>
-                          )}
-                        </div>
-                      )
-                    })}
                   </div>
-                ))}
-              </div>
+
+                  <div className="mt-4">
+                    <div className="grid grid-cols-7 gap-1 text-[11px] sm:text-xs text-center text-gray-500 font-semibold">
+                      {weekDays.map(day => (
+                        <div key={`card-header-${employee.id}-${day}`}>{day}</div>
+                      ))}
+                    </div>
+                    <div className="grid grid-cols-7 gap-1 mt-1">
+                      {days.map((day, dayIndex) => {
+                        if (!day) {
+                          return (
+                            <div key={`card-empty-${employee.id}-${dayIndex}`} className="p-2 border border-transparent" />
+                          )
+                        }
+
+                        const availability = getAvailabilityForDate(employee.id, day)
+                        const isToday = day.toDateString() === new Date().toDateString()
+                        const isSelected = isEmployee && isDateSelected(day)
+                        const isClickable = isEmployee && (!!employeeRecordId && employee.id === employeeRecordId)
+
+                        return (
+                          <div
+                            key={`card-${employee.id}-${dayIndex}`}
+                            onClick={() => isClickable && toggleDateSelection(day)}
+                            className={`p-1.5 text-center text-[11px] sm:text-xs border rounded transition-all ${
+                              isToday
+                                ? 'border-blue-500 bg-blue-50'
+                                : isSelected
+                                  ? 'border-purple-500 bg-purple-100'
+                                  : 'border-gray-200'
+                            } ${isClickable ? 'cursor-pointer hover:bg-gray-50' : ''}`}
+                          >
+                            <div className="font-semibold text-gray-700">{day.getDate()}</div>
+                            {!isSelected && availability && (
+                              <div className={`mt-0.5 rounded text-white text-[10px] py-0.5 ${
+                                availability.isAvailable ? 'bg-green-500' : 'bg-red-500'
+                              }`}>
+                                {availability.isAvailable ? '✓' : '✗'}
+                              </div>
+                            )}
+                            {isSelected && (
+                              <div className="mt-0.5 rounded bg-purple-500 text-white text-[10px] py-0.5">
+                                ●
+                              </div>
+                            )}
+                            {availability?.note && (
+                              <div className="mt-0.5 text-[10px] text-gray-500 truncate" title={availability.note}>
+                                📝
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
@@ -1045,10 +1042,6 @@ export default function AdminAvailabilityPage() {
                 <span>Selected</span>
               </div>
             )}
-            <div className="flex items-center gap-2">
-              <span className="flex-shrink-0">📝</span>
-              <span>Has Note</span>
-            </div>
             {isEmployee && (
               <div className="flex items-center gap-2 text-xs text-gray-500 w-full mt-2">
                 <span>💡 Click on your calendar days to select, then mark as available/unavailable</span>

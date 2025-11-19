@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { format, addDays, addWeeks, subWeeks, startOfWeek, endOfWeek } from 'date-fns'
 import { Employee, EmployeeGroup } from '@prisma/client'
 
@@ -45,6 +45,7 @@ export default function SchedulePage() {
   const [categories, setCategories] = useState<any[]>([])
   const [functions, setFunctions] = useState<any[]>([])
   const [shiftTypes, setShiftTypes] = useState<any[]>([])
+  const [availabilityLookup, setAvailabilityLookup] = useState<Record<string, { isAvailable: boolean; note?: string }>>({})
   const [filters, setFilters] = useState({
     employeeIds: [] as string[],
     employeeGroupIds: [] as string[],
@@ -102,6 +103,10 @@ export default function SchedulePage() {
     // Only fetch shifts when date or employee changes
     fetchShifts()
   }, [currentDate, selectedEmployeeId, startDate, endDate])
+
+  useEffect(() => {
+    fetchAvailability()
+  }, [startDate, endDate])
 
   useEffect(() => {
     const fetchStaticData = async () => {
@@ -182,6 +187,37 @@ export default function SchedulePage() {
     }
   }
 
+  const fetchAvailability = async () => {
+    try {
+      const start = format(startDate, 'yyyy-MM-dd')
+      const end = format(endDate, 'yyyy-MM-dd')
+      const res = await fetch(`/api/availability?startDate=${start}&endDate=${end}`, {
+        headers: { 'Cache-Control': 'max-age=60' }
+      })
+
+      if (!res.ok) {
+        throw new Error('Failed to fetch availability')
+      }
+
+      const data = await res.json()
+      const lookup: Record<string, { isAvailable: boolean; note?: string }> = {}
+
+      data.forEach((entry: any) => {
+        if (!entry?.employeeId || !entry?.date) return
+        const dateKey = format(new Date(entry.date), 'yyyy-MM-dd')
+        lookup[`${entry.employeeId}-${dateKey}`] = {
+          isAvailable: Boolean(entry.isAvailable),
+          note: entry.note || undefined
+        }
+      })
+
+      setAvailabilityLookup(lookup)
+    } catch (error) {
+      console.error('Error fetching availability for schedule:', error)
+      setAvailabilityLookup({})
+    }
+  }
+
   const fetchShifts = async () => {
     try {
       setLoading(true)
@@ -211,6 +247,72 @@ export default function SchedulePage() {
     }
   }
 
+  const getAvailabilityStatus = useCallback((employeeId: string, date: string) => {
+    if (!employeeId || !date) return undefined
+    const normalizedDate = format(new Date(date), 'yyyy-MM-dd')
+    return availabilityLookup[`${employeeId}-${normalizedDate}`]
+  }, [availabilityLookup])
+
+  const notifyEmployeeUnavailable = useCallback((employeeId: string, date: string) => {
+    const employee = employees.find(emp => emp.id === employeeId)
+    const employeeName = employee ? `${employee.firstName} ${employee.lastName}` : 'This employee'
+    const status = getAvailabilityStatus(employeeId, date)
+
+    Swal.fire({
+      icon: 'info',
+      title: 'Employee unavailable',
+      text: status?.note
+        ? `${employeeName} is unavailable on ${format(new Date(date), 'MMM d, yyyy')} (${status.note}).`
+        : `${employeeName} is unavailable on ${format(new Date(date), 'MMM d, yyyy')}.`,
+      confirmButtonColor: '#31BCFF'
+    })
+  }, [employees, getAvailabilityStatus])
+
+  const shouldPreventShiftCreation = useCallback((employeeId?: string, date?: string) => {
+    if (!employeeId || !date) return false
+    const status = getAvailabilityStatus(employeeId, date)
+    if (status && status.isAvailable === false) {
+      notifyEmployeeUnavailable(employeeId, date)
+      return true
+    }
+    return false
+  }, [getAvailabilityStatus, notifyEmployeeUnavailable])
+
+  const isEmployeeUnavailableOnDate = useCallback((employeeId?: string, date?: string) => {
+    if (!employeeId || !date) return false
+    const status = getAvailabilityStatus(employeeId, date)
+    return status?.isAvailable === false
+  }, [getAvailabilityStatus])
+
+  const attachSelectedEmployee = useCallback((formData?: any | null) => {
+    if (!selectedEmployeeId) {
+      return formData ? { ...formData } : null
+    }
+
+    if (formData) {
+      if (!formData.employeeId) {
+        return { ...formData, employeeId: selectedEmployeeId }
+      }
+      return { ...formData }
+    }
+
+    return { employeeId: selectedEmployeeId }
+  }, [selectedEmployeeId])
+
+  const openShiftModal = useCallback((view: 'week' | 'day', formData?: any | null) => {
+    const payload = formData ? { ...formData } : null
+
+    if (payload?.employeeId && payload?.date) {
+      if (shouldPreventShiftCreation(payload.employeeId, payload.date)) {
+        return
+      }
+    }
+
+    setModalViewType(view)
+    setShiftInitialData(payload ?? null)
+    setShowShiftModal(true)
+  }, [shouldPreventShiftCreation])
+
   const handlePreviousWeek = () => {
     setCurrentDate(prevDate => subWeeks(prevDate, 1))
   }
@@ -219,46 +321,68 @@ export default function SchedulePage() {
     setCurrentDate(prevDate => addWeeks(prevDate, 1))
   }
 
-  // Check if employee already has a shift on the given date
-  const checkExistingShift = (employeeId: string, shiftDate: string, excludeShiftId?: string): boolean => {
-    return shifts.some(shift => {
-      const shiftDateStr = typeof shift.date === 'string' 
-        ? (shift.date as string).substring(0, 10) 
-        : format(new Date(shift.date), 'yyyy-MM-dd');
-      
-      return shift.employeeId === employeeId && 
-             shiftDateStr === shiftDate && 
-             (!excludeShiftId || shift.id !== excludeShiftId);
-    });
-  };
+  const toMinutes = (time: string) => {
+    const [hours, minutes] = time.split(':').map(Number)
+    return hours * 60 + minutes
+  }
 
-  // Get existing shift details for better user information
-  const getExistingShift = (employeeId: string, shiftDate: string, excludeShiftId?: string) => {
+  const normalizeRange = (start: string, end?: string | null) => {
+    const startMinutes = toMinutes(start)
+    let endMinutes = end ? toMinutes(end) : startMinutes + 24 * 60
+
+    if (endMinutes <= startMinutes) {
+      endMinutes += 24 * 60
+    }
+
+    return { startMinutes, endMinutes }
+  }
+
+  const findOverlappingShift = (
+    employeeId: string,
+    shiftDate: string,
+    startTime?: string,
+    endTime?: string,
+    excludeShiftId?: string
+  ) => {
+    if (!startTime || !endTime) return null
+
+    const newDate = shiftDate.substring(0, 10)
+    const newRange = normalizeRange(startTime, endTime)
+
     return shifts.find(shift => {
-      const shiftDateStr = typeof shift.date === 'string' 
-        ? (shift.date as string).substring(0, 10) 
-        : format(new Date(shift.date), 'yyyy-MM-dd');
-      
-      return shift.employeeId === employeeId && 
-             shiftDateStr === shiftDate && 
-             (!excludeShiftId || shift.id !== excludeShiftId);
-    });
-  };
+      if (shift.employeeId !== employeeId) return false
+
+      const shiftDateStr = typeof shift.date === 'string'
+        ? (shift.date as string).substring(0, 10)
+        : format(new Date(shift.date), 'yyyy-MM-dd')
+
+      if (shiftDateStr !== newDate) return false
+      if (excludeShiftId && shift.id === excludeShiftId) return false
+
+      const existingRange = normalizeRange(shift.startTime, shift.endTime ?? undefined)
+
+      const overlaps = !(newRange.endMinutes <= existingRange.startMinutes || newRange.startMinutes >= existingRange.endMinutes)
+
+      return overlaps
+    }) || null
+  }
 
   const handleShiftFormSubmit = async (formData: any) => {
-    if (formData.employeeId && formData.date) {
-      const hasExistingShift = checkExistingShift(formData.employeeId, formData.date, formData.id);
+    if (formData.employeeId && formData.date && formData.startTime && formData.endTime) {
+      const existingShift = findOverlappingShift(
+        formData.employeeId,
+        formData.date,
+        formData.startTime,
+        formData.endTime,
+        formData.id
+      )
       
-      if (hasExistingShift) {
+      if (existingShift) {
         const employee = employees.find(emp => emp.id === formData.employeeId);
-        const existingShift = getExistingShift(formData.employeeId, formData.date, formData.id);
         const employeeName = employee ? `${employee.firstName} ${employee.lastName}` : 'This employee';
         
-        let conflictTitle = `Shift Conflict: ${employeeName}`;
-        let conflictMessage = `Already has a shift on ${formData.date}`;
-        if (existingShift) {
-          conflictMessage += ` (${existingShift.startTime} - ${existingShift.endTime})`;
-        }
+        const conflictTitle = `Shift Conflict: ${employeeName}`;
+        const conflictMessage = `Overlaps with existing shift on ${formData.date} (${existingShift.startTime} - ${existingShift.endTime || 'Active'})`;
 
         Swal.fire({
           text: `${conflictTitle}: ${conflictMessage}`,
@@ -486,6 +610,51 @@ export default function SchedulePage() {
     setLoading(false);
   };
 
+  const handleShiftDelete = async (shiftId: string) => {
+    if (!shiftId) return
+
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/shifts/${shiftId}`, {
+        method: 'DELETE'
+      })
+
+      if (!res.ok) {
+        throw new Error('Failed to delete shift')
+      }
+
+      await fetchShifts()
+      setShowShiftModal(false)
+
+      Swal.fire({
+        text: 'Shift deleted successfully!',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        customClass: {
+          popup: 'swal-toast-wide'
+        }
+      })
+    } catch (error) {
+      console.error('Error deleting shift:', error)
+      Swal.fire({
+        text: 'Failed to delete shift.',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 4000,
+        timerProgressBar: true,
+        customClass: {
+          popup: 'swal-toast-wide'
+        }
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const calculateShiftHours = (startTime: string, endTime: string): number => {
     const getMinutes = (timeStr: string): number => {
       const [hours, minutes] = timeStr.split(':').map(Number)
@@ -678,24 +847,11 @@ export default function SchedulePage() {
                   categories={categories}
                   scheduleViewType={scheduleViewType}
                   onEditShift={handleEditShift}
+                  isEmployeeUnavailable={isEmployeeUnavailableOnDate}
+                  onUnavailableClick={notifyEmployeeUnavailable}
                   onAddShift={(formData) => {
-                    if (formData) {
-                      setModalViewType('week');
-                      if (selectedEmployeeId) {
-                        formData.employeeId = selectedEmployeeId;
-                      }
-                      setShiftInitialData(formData);
-                    } else {
-                      setModalViewType('week');
-                      if (selectedEmployeeId) {
-                        setShiftInitialData({
-                          employeeId: selectedEmployeeId,
-                        });
-                      } else {
-                        setShiftInitialData(null);
-                      }
-                    }
-                    setShowShiftModal(true);
+                    const payload = attachSelectedEmployee(formData ?? null)
+                    openShiftModal('week', payload)
                   }}
                 />
               ) : scheduleViewType === 'employees' ? (
@@ -714,14 +870,10 @@ export default function SchedulePage() {
                     setExpandedGroups(newExpanded);
                   }}
                   onEditShift={handleEditShift}
+                  isEmployeeUnavailable={isEmployeeUnavailableOnDate}
+                  onUnavailableClick={notifyEmployeeUnavailable}
                   onAddShift={(data) => {
-                    setModalViewType('week');
-                    if (data) {
-                      setShiftInitialData(data);
-                    } else {
-                      setShiftInitialData(null);
-                    }
-                    setShowShiftModal(true);
+                    openShiftModal('week', data ?? null)
                   }}
                 />
               ) : scheduleViewType === 'groups' ? (
@@ -731,14 +883,12 @@ export default function SchedulePage() {
                   employees={employees}
                   employeeGroups={employeeGroups}
                   onEditShift={handleEditShift}
+                  selectedEmployeeId={selectedEmployeeId}
+                  isEmployeeUnavailable={isEmployeeUnavailableOnDate}
+                  onUnavailableClick={notifyEmployeeUnavailable}
                   onAddShift={(data) => {
-                    setModalViewType('week');
-                    if (data) {
-                      setShiftInitialData(data);
-                    } else {
-                      setShiftInitialData(null);
-                    }
-                    setShowShiftModal(true);
+                    const payload = attachSelectedEmployee(data ?? null)
+                    openShiftModal('week', payload)
                   }}
                 />
               ) : scheduleViewType === 'functions' ? (
@@ -748,14 +898,12 @@ export default function SchedulePage() {
                   employees={employees}
                   functions={functions}
                   onEditShift={handleEditShift}
+                  selectedEmployeeId={selectedEmployeeId}
+                  isEmployeeUnavailable={isEmployeeUnavailableOnDate}
+                  onUnavailableClick={notifyEmployeeUnavailable}
                   onAddShift={(data) => {
-                    setModalViewType('week');
-                    if (data) {
-                      setShiftInitialData(data);
-                    } else {
-                      setShiftInitialData(null);
-                    }
-                    setShowShiftModal(true);
+                    const payload = attachSelectedEmployee(data ?? null)
+                    openShiftModal('week', payload)
                   }}
                 />
               ) : (
@@ -768,59 +916,30 @@ export default function SchedulePage() {
                   categories={categories}
                   scheduleViewType={scheduleViewType}
                   onEditShift={handleEditShift}
+                  isEmployeeUnavailable={isEmployeeUnavailableOnDate}
+                  onUnavailableClick={notifyEmployeeUnavailable}
                   onAddShift={(formData) => {
-                    if (formData) {
-                      setModalViewType('week');
-                      if (selectedEmployeeId) {
-                        formData.employeeId = selectedEmployeeId;
-                      }
-                      setShiftInitialData(formData);
-                    } else {
-                      setModalViewType('week');
-                      if (selectedEmployeeId) {
-                        setShiftInitialData({
-                          employeeId: selectedEmployeeId,
-                        });
-                      } else {
-                        setShiftInitialData(null);
-                      }
-                    }
-                    setShowShiftModal(true);
+                    const payload = attachSelectedEmployee(formData ?? null)
+                    openShiftModal('week', payload)
                   }}
                 />
               )
             ) : (
              <DayView
                 selectedDate={selectedDate}
-                shifts={filteredShifts.filter((shift: any) => 
-                  format(
-                    typeof shift.date === 'string' ? new Date(shift.date) : shift.date, 
-                    'yyyy-MM-dd'
-                  ) === format(selectedDate, 'yyyy-MM-dd')
-                )}
+                shifts={filteredShifts}
                 employees={employees}
                 onEditShift={handleEditShift}
                 onAddShift={(formData) => {
-                  setModalViewType('day');
-                  
-                  if (formData) {
-                    if (selectedEmployeeId) {
-                      formData.employeeId = selectedEmployeeId;
-                    }
-                    setShiftInitialData(formData);
-                  } else {
-                    if (selectedEmployeeId) {
-                      setShiftInitialData({
-                        date: format(selectedDate, 'yyyy-MM-dd'),
-                        employeeId: selectedEmployeeId,
-                      });
-                    } else {
-                      setShiftInitialData({
-                        date: format(selectedDate, 'yyyy-MM-dd'),
-                      });
-                    }
+                  const defaultDate = format(selectedDate, 'yyyy-MM-dd')
+                  let payload = formData ? { ...formData } : { date: defaultDate }
+
+                  if (!payload.date) {
+                    payload.date = defaultDate
                   }
-                  setShowShiftModal(true);
+
+                  const enrichedPayload = attachSelectedEmployee(payload)
+                  openShiftModal('day', enrichedPayload)
                 }}
               />
             )}
@@ -835,6 +954,7 @@ export default function SchedulePage() {
           employees={employees}
           employeeGroups={employeeGroups}
           onSubmit={handleShiftFormSubmit}
+          onDelete={handleShiftDelete}
           viewType={modalViewType}
           loading={loading}
         />
