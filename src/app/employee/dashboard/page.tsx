@@ -13,7 +13,6 @@ import ShiftDetailsModal from "@/components/ShiftDetailsModal"
 import PendingRequestsModal from "@/components/PendingRequestsModal"
 import NotificationCenter from "@/components/NotificationCenter"
 import LanguageSwitcher from "@/components/LanguageSwitcher"
-import { validatePunchLocation, LocationValidationResult } from "@/shared/lib/locationValidation"
 import {
   Building2,
   Clock,
@@ -157,8 +156,7 @@ function EmployeeDashboardContent() {
   const [pendingExchanges, setPendingExchanges] = useState<any[]>([])
   const [showPendingRequestsModal, setShowPendingRequestsModal] = useState(false)
   const [pendingRequestsCount, setPendingRequestsCount] = useState(0)
-  const [locationValidation, setLocationValidation] = useState<LocationValidationResult | null>(null)
-  const [checkingLocation, setCheckingLocation] = useState(false)
+  // Location validation temporarily disabled
   
   // Schedule view state
   const [showScheduleView, setShowScheduleView] = useState(false)
@@ -228,30 +226,7 @@ function EmployeeDashboardContent() {
     fetchEmployeeData()
   }, [])
 
-  useEffect(() => {
-    // Check location access after employee data is loaded
-    if (employee || employeeId) {
-      checkLocationAccess()
-    }
-  }, [employee, employeeId])
-
-  const checkLocationAccess = async () => {
-    setCheckingLocation(true)
-    try {
-      // Use employeeId if available (PIN login), otherwise use current employee
-      const idToUse = employeeId || employee?.id
-      const result = await validatePunchLocation(idToUse)
-      setLocationValidation(result)
-    } catch (error) {
-      console.error('Error checking location access:', error)
-      setLocationValidation({
-        isAllowed: false,
-        message: 'Unable to verify location. Please try again.'
-      })
-    } finally {
-      setCheckingLocation(false)
-    }
-  }
+  // Location validation temporarily disabled
 
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString("en-US", {
@@ -1017,43 +992,12 @@ function EmployeeDashboardContent() {
                               
                               <Button
                                 onClick={handlePunchIn}
-                                disabled={clockingIn || (locationValidation?.isAllowed === false)}
+                                disabled={clockingIn}
                                 className="w-full bg-green-500 hover:bg-green-600 text-white py-3 disabled:bg-gray-400 disabled:cursor-not-allowed"
                               >
                                 <Play className="w-5 h-5 mr-2" />
                                 {clockingIn ? t('time_card.punching_in') : t('time_card.punch_in')}
                               </Button>
-                              
-                              {/* Location requirement message in Today's Shift - only show when location validation fails */}
-                              {locationValidation?.isAllowed === false && (
-                                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <AlertTriangle className="w-4 h-4 text-red-600 flex-shrink-0" />
-                                    <p className="text-sm text-red-700">
-                                      {locationValidation.message}
-                                    </p>
-                                  </div>
-                                  <Button
-                                    onClick={checkLocationAccess}
-                                    disabled={checkingLocation}
-                                    className="w-full text-xs py-1 h-8 bg-red-600 hover:bg-red-700 text-white"
-                                  >
-                                    {checkingLocation ? 'Checking...' : 'Retry Location Check'}
-                                  </Button>
-                                </div>
-                              )}
-                              
-                              {/* Show loading state while checking location */}
-                              {checkingLocation && (
-                                <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                                  <div className="flex items-center gap-2">
-                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
-                                    <p className="text-sm text-gray-600">
-                                      Checking location access...
-                                    </p>
-                                  </div>
-                                </div>
-                              )}
                             </>
                           )}
                         </div>

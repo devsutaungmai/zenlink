@@ -1259,111 +1259,59 @@ export default function PunchClockPage() {
             {displayedAttendance.map((record) => (
               <div key={record.id} className="p-4 hover:bg-gray-50">
                 {/* Employee Info */}
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="flex-shrink-0">
-                    {record.employee.profilePhoto ? (
-                      <Image
-                        src={record.employee.profilePhoto}
-                        alt={`${record.employee.firstName} ${record.employee.lastName}`}
-                        width={48}
-                        height={48}
-                        className="rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="h-12 w-12 rounded-full bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] flex items-center justify-center">
-                        <span className="text-sm font-medium text-white">
-                          {record.employee.firstName.charAt(0)}{record.employee.lastName.charAt(0)}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  {displayedAttendance.length > 0 && (
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 sm:px-6 py-4 border-t border-gray-100">
-                      <div className="text-sm text-gray-600 text-center sm:text-left">
-                        {totalCountDisplay === 0
-                          ? t('table.empty_summary', { defaultValue: 'No records found' })
-                          : t('table.pagination_summary', {
-                              defaultValue: 'Showing {{start}}-{{end}} of {{total}} records',
-                              start: paginationStart,
-                              end: paginationEnd,
-                              total: totalCountDisplay
-                            })}
-                      </div>
-                      <div className="flex flex-col sm:flex-row items-center gap-3">
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <span>{t('table.rows_per_page', { defaultValue: 'Rows per page' })}</span>
-                          <select
-                            value={pageSize}
-                            onChange={(e) => {
-                              const nextSize = parseInt(e.target.value, 10)
-                              setPageSize(Number.isNaN(nextSize) ? 25 : nextSize)
-                              setPage(1)
-                            }}
-                            className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-[#31BCFF]"
-                          >
-                            {[10, 25, 50, 100].map((size) => (
-                              <option key={size} value={size}>
-                                {size}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-                            disabled={page === 1 || totalCountDisplay === 0}
-                            className="p-2 rounded-md border border-gray-200 text-gray-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
-                            aria-label="Previous page"
-                          >
-                            <ChevronLeftIcon className="w-4 h-4" />
-                          </button>
-                          <span className="text-sm text-gray-700">
-                            {page} / {paginationMeta.totalPages}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mb-4">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="flex-shrink-0">
+                      {record.employee.profilePhoto ? (
+                        <Image
+                          src={record.employee.profilePhoto}
+                          alt={`${record.employee.firstName} ${record.employee.lastName}`}
+                          width={48}
+                          height={48}
+                          className="rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="h-12 w-12 rounded-full bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] flex items-center justify-center">
+                          <span className="text-sm font-medium text-white">
+                            {record.employee.firstName.charAt(0)}{record.employee.lastName.charAt(0)}
                           </span>
-                          <button
-                            onClick={() => setPage((prev) => Math.min(paginationMeta.totalPages, prev + 1))}
-                            disabled={page >= paginationMeta.totalPages || totalCountDisplay === 0}
-                            className="p-2 rounded-md border border-gray-200 text-gray-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
-                            aria-label="Next page"
-                          >
-                            <ChevronRightIcon className="w-4 h-4" />
-                          </button>
                         </div>
-                      </div>
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-gray-900 truncate">
-                      {record.employee.firstName} {record.employee.lastName}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      #{record.employee.employeeNo}
-                    </div>
-                    <div className="text-xs text-gray-600 mt-0.5">
-                      {record.employee.department.name}
-                      {record.employee.employeeGroup && (
-                        <span className="ml-1">• {record.employee.employeeGroup.name}</span>
                       )}
                     </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold text-gray-900 truncate">
+                        {record.employee.firstName} {record.employee.lastName}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        #{record.employee.employeeNo}
+                      </div>
+                      <div className="text-xs text-gray-600 mt-0.5">
+                        {record.employee.department.name}
+                        {record.employee.employeeGroup && (
+                          <span className="ml-1">• {record.employee.employeeGroup.name}</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  {getStatusBadge(record)}
+                  <div className="flex sm:flex-none items-start sm:items-center sm:justify-end">
+                    {getStatusBadge(record)}
+                  </div>
                 </div>
 
                 {/* Time Info */}
-                <div className="grid grid-cols-2 gap-3 mb-3">
-                  <div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                  <div className="rounded-xl border border-gray-100 bg-gray-50 p-3">
                     <div className="text-xs text-gray-500 mb-1">{t('table.columns.punch_in')}</div>
-                    <div className={`text-sm font-medium ${getPunchInTimeStyle(record)}`}>
+                    <div className={`text-base font-semibold ${getPunchInTimeStyle(record)}`}>
                       {formatTime(record.punchInTime)}
                     </div>
                     <div className="text-xs text-gray-500">{formatDate(record.punchInTime)}</div>
                   </div>
-                  <div>
+                  <div className="rounded-xl border border-gray-100 bg-gray-50 p-3">
                     <div className="text-xs text-gray-500 mb-1">{t('table.columns.punch_out')}</div>
                     {record.punchOutTime ? (
                       <>
-                        <div className="text-sm font-medium text-gray-900">
+                        <div className="text-base font-semibold text-gray-900">
                           {formatTime(record.punchOutTime)}
                         </div>
                         <div className="text-xs text-gray-500">{formatDate(record.punchOutTime)}</div>
@@ -1375,27 +1323,32 @@ export default function PunchClockPage() {
                 </div>
 
                 {/* Duration and Status */}
-                <div className="mb-3">
-                  <div className="text-xs text-gray-500 mb-1">{t('table.columns.duration')}</div>
-                  <div className="text-sm font-medium text-gray-900">
+                <div className="mb-4 rounded-xl border border-gray-100 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.08)] p-3">
+                  <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+                    <span>{t('table.columns.duration')}</span>
+                    <span className="text-[10px] uppercase tracking-wide text-gray-400">{t('status.worked', { defaultValue: 'Worked' })}</span>
+                  </div>
+                  <div className="text-lg font-semibold text-gray-900">
                     {calculateWorkDuration(record.punchInTime, record.punchOutTime)}
                   </div>
-                  {getEarlyLateStatus(record)?.map((status, index) => (
-                    <span key={index} className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1 mr-1 ${status.color}`}>
-                      {status.text}
-                    </span>
-                  ))}
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {getEarlyLateStatus(record)?.map((status, index) => (
+                      <span key={index} className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${status.color}`}>
+                        {status.text}
+                      </span>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Shift Info */}
-                <div className="mb-3">
+                <div className="mb-4 rounded-xl border border-gray-100 bg-gray-50 p-3">
                   <div className="text-xs text-gray-500 mb-1">{t('table.columns.shift_info')}</div>
                   {record.shift ? (
-                    <div>
-                      <div className="text-sm text-gray-900">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                      <div className="text-sm font-medium text-gray-900">
                         {formatShiftTime(record.shift.startTime)} - {record.shift.endTime ? formatShiftTime(record.shift.endTime) : 'Active'}
                       </div>
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1 ${
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                         record.shift.status === 'WORKING' ? 'bg-green-100 text-green-800' :
                         record.shift.status === 'COMPLETED' ? 'bg-blue-100 text-blue-800' :
                         'bg-gray-100 text-gray-800'
@@ -1448,6 +1401,62 @@ export default function PunchClockPage() {
           </>
         )}
       </div>
+
+      {displayedAttendance.length > 0 && (
+        <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-6 py-4 bg-white rounded-xl border border-gray-200 shadow-sm">
+          <div className="text-sm text-gray-600 text-center sm:text-left">
+            {totalCountDisplay === 0
+              ? t('table.empty_summary', { defaultValue: 'No records found' })
+              : t('table.pagination_summary', {
+                  defaultValue: 'Showing {{start}}-{{end}} of {{total}} records',
+                  start: paginationStart,
+                  end: paginationEnd,
+                  total: totalCountDisplay
+                })}
+          </div>
+          <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+            <div className="flex items-center gap-2 text-sm text-gray-600 w-full sm:w-auto justify-center sm:justify-start">
+              <span>{t('table.rows_per_page', { defaultValue: 'Rows per page' })}</span>
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  const nextSize = parseInt(e.target.value, 10)
+                  setPageSize(Number.isNaN(nextSize) ? 25 : nextSize)
+                  setPage(1)
+                }}
+                className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-[#31BCFF]"
+              >
+                {[10, 25, 50, 100].map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center gap-2 justify-center sm:justify-start w-full sm:w-auto">
+              <button
+                onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+                disabled={page === 1 || totalCountDisplay === 0}
+                className="p-2 rounded-md border border-gray-200 text-gray-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
+                aria-label="Previous page"
+              >
+                <ChevronLeftIcon className="w-4 h-4" />
+              </button>
+              <span className="text-sm text-gray-700">
+                {page} / {paginationMeta.totalPages}
+              </span>
+              <button
+                onClick={() => setPage((prev) => Math.min(paginationMeta.totalPages, prev + 1))}
+                disabled={page >= paginationMeta.totalPages || totalCountDisplay === 0}
+                className="p-2 rounded-md border border-gray-200 text-gray-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
+                aria-label="Next page"
+              >
+                <ChevronRightIcon className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Edit Modal - Admin Only */}
       <Dialog open={isAdmin && showEditModal} onOpenChange={setShowEditModal}>
