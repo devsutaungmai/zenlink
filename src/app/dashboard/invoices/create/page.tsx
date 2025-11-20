@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { ArrowLeftIcon, ArrowDownIcon } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
 import { Contact } from 'lucide-react'
+import { useInvoiceSettings } from '@/shared/hooks/useInvoiceSettings'
 
 export interface Customer {
     id: string
@@ -23,7 +24,7 @@ export interface Customer {
     }
     project?: Project
     department?: Department,
-    business:{
+    business: {
         name: string
     }
 
@@ -43,7 +44,7 @@ export interface Department {
     id: string
     name: string
 }
-export interface ContactPerson{
+export interface ContactPerson {
     id: string,
     name: string
 }
@@ -56,39 +57,40 @@ export default function CreateInvoicePage() {
     const [products, setProducts] = useState<Invoice[]>([])
     const [projects, setProjects] = useState<Project[]>([])
     const [departments, setDepartments] = useState<Department[]>([])
-    const [contacts,setContacts] = useState<ContactPerson[]>([]);
+    const [contacts, setContacts] = useState<ContactPerson[]>([]);
     const [showDropdown, setShowDropdown] = useState(false)
-     const [fetchingCustomer, setFetchingCustomer] = useState(false)
+    const [fetchingCustomer, setFetchingCustomer] = useState(false)
     const [formData, setFormData] = useState({
         customerId: '',
         contactPersonId: '',
         deliveryAddress: '',
         sentAt: new Date().toISOString().split('T')[0],
-        dueDay: 0, 
+        dueDay: 0,
         paidAt: '',
         projectId: '',
         departmentId: '',
         productId: '',
-        seller:'',
+        seller: '',
         quantity: 0,
         pricePerUnit: 0.0,
         discountPercentage: 0,
         notes: ''
     })
     const [emailSendLoading, setEmailSendLoading] = useState(false);
+    const { settings } = useInvoiceSettings();
 
     useEffect(() => {
         fetchCustomers()
         fetchProducts()
     }, [])
 
-     // Calculate paidAt whenever sentAt or dueDay changes
+    // Calculate paidAt whenever sentAt or dueDay changes
     useEffect(() => {
         if (formData.sentAt && formData.dueDay) {
             const sentDate = new Date(formData.sentAt)
             const paidDate = new Date(sentDate)
             paidDate.setDate(paidDate.getDate() + Number(formData.dueDay))
-            
+
             setFormData(prev => ({
                 ...prev,
                 paidAt: paidDate.toISOString().split('T')[0]
@@ -128,14 +130,14 @@ export default function CreateInvoicePage() {
 
     const fetchCustomerDetails = async (customerId: string) => {
         if (!customerId) return
-        
+
         setFetchingCustomer(true)
         try {
             const res = await fetch(`/api/customers/${customerId}`)
             if (res.ok) {
                 const data = await res.json()
                 console.log("Customer Details ===> ", JSON.stringify(data?.InvoicePaymentTerms))
-                 // Calculate default due days from payment terms
+                // Calculate default due days from payment terms
                 let defaultDueDay = 14 // Default fallback
                 if (data.InvoicePaymentTerms) {
                     const { invoiceDueDateValue, invoiceDueDateUnit } = data.InvoicePaymentTerms
@@ -161,10 +163,10 @@ export default function CreateInvoicePage() {
                 if (data.projects && data.projects.length > 0) {
                     setProjects(data.projects)
                     setFormData(prev => ({
-                    ...prev,
-                    projectId: data.projects?.[0].id
-                }))
-                }else{
+                        ...prev,
+                        projectId: data.projects?.[0].id
+                    }))
+                } else {
                     setProjects([]);
                 }
 
@@ -173,12 +175,12 @@ export default function CreateInvoicePage() {
                     setDepartments([data.department])
                 }
 
-                if(data.contactPersons){
+                if (data.contactPersons) {
                     setContacts(data.contactPersons)
-                     setFormData(prev => ({
-                    ...prev,
-                    contactPersonId: data.contactPersons?.[0].id
-                }))
+                    setFormData(prev => ({
+                        ...prev,
+                        contactPersonId: data.contactPersons?.[0].id
+                    }))
                 }
             }
         } catch (error) {
@@ -382,8 +384,7 @@ export default function CreateInvoicePage() {
                                 </select>
                             </div>
 
-
-                            <div>
+                            {settings.showContactPerson && <div>
                                 <label htmlFor="contactPersonId" className="block text-sm font-medium text-gray-700 mb-2">
                                     Contact Name *
                                 </label>
@@ -401,43 +402,42 @@ export default function CreateInvoicePage() {
                                         </option>
                                     ))}
                                 </select>
-                            </div>
+                            </div>}
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                            <div>
-                                <label htmlFor="sentAt" className="block text-sm font-medium text-gray-700 mb-2">
-                                    Delivery Date (sentAt) *
-                                </label>
-                                <input
-                                    type="date"
-                                    id="sentAt"
-                                    required
-                                    value={formData.sentAt || ""}
-                                    onChange={(e) => setFormData({ ...formData, sentAt: e.target.value })}
-                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                                />
-                            </div>
-                            <div>
-                                <label htmlFor="dueDay" className="block text-sm font-medium text-gray-700 mb-2">
-                                    Days until due (PaidAt - {formData.paidAt || 'Not calculated'})
-                                </label>
-                                <input
-                                    type="number"
-                                    id="dueDay"
-                                    required
-                                    min="0"
-                                    value={formData.dueDay}
-                                    onChange={(e) => setFormData({ ...formData, dueDay: parseInt(e.target.value) || 0})}
-                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                                    placeholder="Enter days until due"
-                                />
-                            </div>
-                        </div>
+                        {settings.showPaymentTerms &&
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                <div>
+                                    <label htmlFor="sentAt" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Delivery Date (sentAt) *
+                                    </label>
+                                    <input
+                                        type="date"
+                                        id="sentAt"
+                                        required
+                                        value={formData.sentAt || ""}
+                                        onChange={(e) => setFormData({ ...formData, sentAt: e.target.value })}
+                                        className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                    />
+                                </div>
+                                <div>
+                                    <label htmlFor="dueDay" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Days until due (PaidAt - {formData.paidAt || 'Not calculated'})
+                                    </label>
+                                    <input
+                                        type="number"
+                                        id="dueDay"
+                                        required
+                                        min="0"
+                                        value={formData.dueDay}
+                                        onChange={(e) => setFormData({ ...formData, dueDay: parseInt(e.target.value) || 0 })}
+                                        className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                        placeholder="Enter days until due"
+                                    />
+                                </div>
+                            </div>}
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                          
-
                             <div>
                                 <label htmlFor="projectId" className="block text-sm font-medium text-gray-700 mb-2">
                                     Project *
@@ -458,41 +458,45 @@ export default function CreateInvoicePage() {
                                 </select>
                             </div>
 
-                            <div>
-                                <label htmlFor="departmentId" className="block text-sm font-medium text-gray-700 mb-2">
-                                    Department *
-                                </label>
-                                <select
-                                    id="departmentId"
-                                    required
-                                    value={formData.departmentId || ''}
-                                    onChange={(e) => setFormData({ ...formData, departmentId: e.target.value })}
-                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                                >
-                                    <option value="">Select Department</option>
-                                    {departments.map((dept) => (
-                                        <option key={dept.id} value={dept.id}>
-                                            {dept.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
+                            {settings.showDepartment &&
+                                <div>
+                                    <label htmlFor="departmentId" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Department *
+                                    </label>
+                                    <select
+                                        id="departmentId"
+                                        required
+                                        value={formData.departmentId || ''}
+                                        onChange={(e) => setFormData({ ...formData, departmentId: e.target.value })}
+                                        className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                    >
+                                        <option value="">Select Department</option>
+                                        {departments.map((dept) => (
+                                            <option key={dept.id} value={dept.id}>
+                                                {dept.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            }
 
-                              <div>
-                                <label htmlFor="deliveryAddress" className="block text-sm font-medium text-gray-700 mb-2">
-                                    Delivery Address *
-                                </label>
-                                <input
-                                    type="text"
-                                    id="deliveryAddress"
-                                    required
-                                    value={formData.deliveryAddress || ""}
-                                    onChange={(e) => setFormData({ ...formData, deliveryAddress: e.target.value })}
-                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                                    placeholder="Enter delivery address"
-                                />
-                            </div>
-                            
+                            {settings.showDeliveryAddress &&
+                                <div>
+                                    <label htmlFor="deliveryAddress" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Delivery Address *
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="deliveryAddress"
+                                        required
+                                        value={formData.deliveryAddress || ""}
+                                        onChange={(e) => setFormData({ ...formData, deliveryAddress: e.target.value })}
+                                        className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                        placeholder="Enter delivery address"
+                                    />
+                                </div>
+                            }
+
                         </div>
                     </div>
 
@@ -519,21 +523,23 @@ export default function CreateInvoicePage() {
                                     ))}
                                 </select>
                             </div>
-                            <div>
-                                <label htmlFor="seller" className="block text-sm font-medium text-gray-700 mb-2">
-                                    Seller *
-                                </label>
-                                <input
-                                    type="text"
-                                    id="seller"
-                                    required
-                                    min="1"
-                                    value={formData.seller || ""}
-                                    disabled
-                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                                    placeholder="Enter quantity"
-                                />
-                            </div>
+                            {settings.showSeller &&
+                                <div>
+                                    <label htmlFor="seller" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Seller *
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="seller"
+                                        required
+                                        min="1"
+                                        value={formData.seller || ""}
+                                        disabled
+                                        className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                        placeholder="Enter quantity"
+                                    />
+                                </div>
+                            }
 
                         </div>
 
@@ -570,23 +576,25 @@ export default function CreateInvoicePage() {
                                 />
                             </div>
 
-                            <div>
-                                <label htmlFor="discountPercentage" className="block text-sm font-medium text-gray-700 mb-2">
-                                    Discount Percentage *
-                                </label>
-                                <input
-                                    type="number"
-                                    id="discountPercentage"
-                                    step="0.01"
-                                    min="0"
-                                    max="100"
-                                    required
-                                    value={formData.discountPercentage || ""}
-                                    onChange={(e) => setFormData({ ...formData, discountPercentage: parseFloat(e.target.value) })}
-                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                                    placeholder="Enter discount percentage"
-                                />
-                            </div>
+                            {settings.showDiscount &&
+                                <div>
+                                    <label htmlFor="discountPercentage" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Discount Percentage *
+                                    </label>
+                                    <input
+                                        type="number"
+                                        id="discountPercentage"
+                                        step="0.01"
+                                        min="0"
+                                        max="100"
+                                        required
+                                        value={formData.discountPercentage || ""}
+                                        onChange={(e) => setFormData({ ...formData, discountPercentage: parseFloat(e.target.value) })}
+                                        className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                        placeholder="Enter discount percentage"
+                                    />
+                                </div>
+                            }
                         </div>
                     </div>
 

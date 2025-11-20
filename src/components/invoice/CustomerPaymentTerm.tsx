@@ -30,6 +30,7 @@ export default function CustomerPaymentTermComponent({
   )
   
    useEffect(() => {
+    console.log("Payment Term==>",JSON.stringify(defaultValues))
     if (defaultValues) {
       setSettings(defaultValues)
     }
@@ -88,7 +89,7 @@ export default function CustomerPaymentTermComponent({
                   name="dueDateType"
                   value="FIXED_DATE"
                   checked={settings.dueDateType === 'FIXED_DATE'}
-                  onChange={() => handleSettingChange({ dueDateType: 'FIXED_DATE' })}
+                  onChange={() => handleSettingChange({ dueDateType: 'FIXED_DATE'})}
                   className="w-5 h-5"
                 />
                 <span className="text-sm text-gray-700 flex items-center gap-2">
@@ -131,7 +132,7 @@ export default function CustomerPaymentTermComponent({
                   type="number"
                   value={settings.fixedDateDay || 1}
                   onChange={(e) =>
-                    handleSettingChange({ fixedDateDay: parseInt(e.target.value) || 1 })
+                    handleSettingChange({ fixedDateDay: parseInt(e.target.value) || 1})
                   }
                   min="1"
                   max="31"

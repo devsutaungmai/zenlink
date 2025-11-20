@@ -927,7 +927,7 @@ model InvoiceFormSettings {
   
   business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
   
-  @@unique([businessId, deviceId])
+  @@unique([businessId])
   @@index([businessId])
 }
 enum Role {

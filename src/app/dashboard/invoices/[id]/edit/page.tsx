@@ -8,6 +8,7 @@ import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
 import { ContactPerson, Project } from '../../create/page'
 import { Department } from '@prisma/client'
+import { useInvoiceSettings } from '@/shared/hooks/useInvoiceSettings'
 
 interface Customer {
     id: string
@@ -48,6 +49,7 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
         discountPercentage: 0,
         notes: ''
     })
+    const { settings } = useInvoiceSettings()
 
     useEffect(() => {
         fetchCustomers()
@@ -55,13 +57,13 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
         fetchInvoice()
     }, [resolvedParams.id])
 
-      // Calculate paidAt whenever sentAt or dueDay changes
+    // Calculate paidAt whenever sentAt or dueDay changes
     useEffect(() => {
         if (formData.sentAt && formData.dueDay) {
             const sentDate = new Date(formData.sentAt)
             const paidDate = new Date(sentDate)
             paidDate.setDate(paidDate.getDate() + Number(formData.dueDay))
-            
+
             setFormData(prev => ({
                 ...prev,
                 paidAt: paidDate.toISOString().split('T')[0]
@@ -105,7 +107,7 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
             if (res.ok) {
                 const data = await res.json()
                 console.log("Invoice", JSON.stringify(data));
-                                // Update projects list if customer has projects
+                // Update projects list if customer has projects
                 if (data.customer?.projects && data.customer?.projects.length > 0) {
                     setProjects(data.customer.projects)
                 } else {
@@ -207,7 +209,7 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                             </h1>
                         </div>
                         <p className="mt-2 text-gray-600 ml-14">
-                             Update the invoice to send
+                            Update the invoice to send
                         </p>
                     </div>
                     <div className="hidden md:flex items-center space-x-2">
@@ -231,7 +233,7 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                                 <label htmlFor="customerId" className="block text-sm font-medium text-gray-700 mb-2">
                                     Customer *
                                 </label>
-                                
+
                                 <select
                                     id="customerId"
                                     required
@@ -251,57 +253,59 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                             </div>
 
 
-                            <div>
-                                <label htmlFor="contactPersonId" className="block text-sm font-medium text-gray-700 mb-2">
-                                    Contact Name *
-                                </label>
-                                <select
-                                    id="contactPersonId"
-                                    required
-                                    value={formData.contactPersonId || ''}
-                                    onChange={(e) => setFormData({ ...formData, contactPersonId: e.target.value })}
-                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                                >
-                                    <option value="">Select Project</option>
-                                    {contacts.map((contact) => (
-                                        <option key={contact.id} value={contact.id}>
-                                            {contact.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
+                            {settings.showContactPerson &&
+                                <div>
+                                    <label htmlFor="contactPersonId" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Contact Name *
+                                    </label>
+                                    <select
+                                        id="contactPersonId"
+                                        required
+                                        value={formData.contactPersonId || ''}
+                                        onChange={(e) => setFormData({ ...formData, contactPersonId: e.target.value })}
+                                        className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                    >
+                                        <option value="">Select Project</option>
+                                        {contacts.map((contact) => (
+                                            <option key={contact.id} value={contact.id}>
+                                                {contact.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>}
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                            <div>
-                                <label htmlFor="sentAt" className="block text-sm font-medium text-gray-700 mb-2">
-                                    Delivery Date (sentAt) *
-                                </label>
-                                <input
-                                    type="date"
-                                    id="sentAt"
-                                    required
-                                    value={formData.sentAt || ""}
-                                    onChange={(e) => setFormData({ ...formData, sentAt: e.target.value })}
-                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                                />
-                            </div>
-                            <div>
-                                <label htmlFor="dueDay" className="block text-sm font-medium text-gray-700 mb-2">
-                                    Days until due (PaidAt - {formData.paidAt || 'Not calculated'})
-                                </label>
-                                <input
-                                    type="number"
-                                    id="dueDay"
-                                    required
-                                    min="0"
-                                    value={formData.dueDay}
-                                    onChange={(e) => setFormData({ ...formData, dueDay: parseInt(e.target.value) || 0 })}
-                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                                    placeholder="Enter days until due"
-                                />
-                            </div>
-                        </div>
+                        {settings.showPaymentTerms &&
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                <div>
+                                    <label htmlFor="sentAt" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Delivery Date (sentAt) *
+                                    </label>
+                                    <input
+                                        type="date"
+                                        id="sentAt"
+                                        required
+                                        value={formData.sentAt || ""}
+                                        onChange={(e) => setFormData({ ...formData, sentAt: e.target.value })}
+                                        className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                    />
+                                </div>
+                                <div>
+                                    <label htmlFor="dueDay" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Days until due (PaidAt - {formData.paidAt || 'Not calculated'})
+                                    </label>
+                                    <input
+                                        type="number"
+                                        id="dueDay"
+                                        required
+                                        min="0"
+                                        value={formData.dueDay}
+                                        onChange={(e) => setFormData({ ...formData, dueDay: parseInt(e.target.value) || 0 })}
+                                        className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                        placeholder="Enter days until due"
+                                    />
+                                </div>
+                            </div>}
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
@@ -326,40 +330,42 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                                 </select>
                             </div>
 
-                            <div>
-                                <label htmlFor="departmentId" className="block text-sm font-medium text-gray-700 mb-2">
-                                    Department *
-                                </label>
-                                <select
-                                    id="departmentId"
-                                    required
-                                    value={formData.departmentId || ''}
-                                    onChange={(e) => setFormData({ ...formData, departmentId: e.target.value })}
-                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                                >
-                                    <option value="">Select Department</option>
-                                    {departments.map((dept) => (
-                                        <option key={dept.id} value={dept.id}>
-                                            {dept.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
+                            {settings.showDepartment &&
+                                <div>
+                                    <label htmlFor="departmentId" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Department *
+                                    </label>
+                                    <select
+                                        id="departmentId"
+                                        required
+                                        value={formData.departmentId || ''}
+                                        onChange={(e) => setFormData({ ...formData, departmentId: e.target.value })}
+                                        className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                    >
+                                        <option value="">Select Department</option>
+                                        {departments.map((dept) => (
+                                            <option key={dept.id} value={dept.id}>
+                                                {dept.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>}
 
-                            <div>
-                                <label htmlFor="deliveryAddress" className="block text-sm font-medium text-gray-700 mb-2">
-                                    Delivery Address *
-                                </label>
-                                <input
-                                    type="text"
-                                    id="deliveryAddress"
-                                    required
-                                    value={formData.deliveryAddress || ""}
-                                    onChange={(e) => setFormData({ ...formData, deliveryAddress: e.target.value })}
-                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                                    placeholder="Enter delivery address"
-                                />
-                            </div>
+                            {settings.showDeliveryAddress &&
+                                <div>
+                                    <label htmlFor="deliveryAddress" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Delivery Address *
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="deliveryAddress"
+                                        required
+                                        value={formData.deliveryAddress || ""}
+                                        onChange={(e) => setFormData({ ...formData, deliveryAddress: e.target.value })}
+                                        className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                        placeholder="Enter delivery address"
+                                    />
+                                </div>}
 
                         </div>
                     </div>
@@ -387,21 +393,22 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                                     ))}
                                 </select>
                             </div>
-                            <div>
-                                <label htmlFor="seller" className="block text-sm font-medium text-gray-700 mb-2">
-                                    Seller *
-                                </label>
-                                <input
-                                    type="text"
-                                    id="seller"
-                                    required
-                                    min="1"
-                                    value={formData.seller || ""}
-                                    disabled
-                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                                    placeholder="Enter quantity"
-                                />
-                            </div>
+                            {settings.showSeller &&
+                                <div>
+                                    <label htmlFor="seller" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Seller *
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="seller"
+                                        required
+                                        min="1"
+                                        value={formData.seller || ""}
+                                        disabled
+                                        className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                        placeholder="Enter quantity"
+                                    />
+                                </div>}
 
                         </div>
 
@@ -438,23 +445,24 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                                 />
                             </div>
 
-                            <div>
-                                <label htmlFor="discountPercentage" className="block text-sm font-medium text-gray-700 mb-2">
-                                    Discount Percentage *
-                                </label>
-                                <input
-                                    type="number"
-                                    id="discountPercentage"
-                                    step="0.01"
-                                    min="0"
-                                    max="100"
-                                    required
-                                    value={formData.discountPercentage || ""}
-                                    onChange={(e) => setFormData({ ...formData, discountPercentage: parseFloat(e.target.value) })}
-                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                                    placeholder="Enter discount percentage"
-                                />
-                            </div>
+                            {settings.showDiscount &&
+                                <div>
+                                    <label htmlFor="discountPercentage" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Discount Percentage *
+                                    </label>
+                                    <input
+                                        type="number"
+                                        id="discountPercentage"
+                                        step="0.01"
+                                        min="0"
+                                        max="100"
+                                        required
+                                        value={formData.discountPercentage || ""}
+                                        onChange={(e) => setFormData({ ...formData, discountPercentage: parseFloat(e.target.value) })}
+                                        className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                        placeholder="Enter discount percentage"
+                                    />
+                                </div>}
                         </div>
                     </div>
 

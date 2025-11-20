@@ -79,7 +79,6 @@ export default function EditCustomersPage({ params }: { params: Promise<{ id: st
             if (res.ok) {
                 const data = await res.json()
                 //let's prepare for component's format
-                console.log("Customer ===> "+JSON.stringify(data));
                 let paymentTermForComponent = {
                     dueDateType: 'DAYS_AFTER' as const,
                     daysAfter: 14,
@@ -421,14 +420,18 @@ export default function EditCustomersPage({ params }: { params: Promise<{ id: st
                     <CustomerPaymentTermComponent
                         defaultValues={paymentTermDefaults}
                         onSettingsChange={(settings) => {
-                            console.log('Settings updated:', settings)
                             const updatedPaymentTerm: InvoicePaymentTerms = {
                                 dueDateType: settings.dueDateType,
                                 dueDateValue: (settings.dueDateType === 'DAYS_AFTER'
-                                    ? settings.daysAfter
-                                    : settings.fixedDateDay) ?? 14,
-                                dueDateUnit: settings.unit === 'DAYS' ? 'DAYS' : 'MONTHS'
+                                    ? settings.daysAfter ?? 14
+                                    : settings.fixedDateDay ?? 1),
+                                dueDateUnit: (settings.dueDateType === 'DAYS_AFTER' ?
+                                    settings.unit === 'DAYS' ? 'DAYS' : 'MONTHS' :
+                                    'MONTHS'
+                                )
                             }
+                            console.log('Settings updated:', updatedPaymentTerm)
+
                             setFormData({ ...formData, customerPaymentTerm: updatedPaymentTerm })
                         }}
                     />

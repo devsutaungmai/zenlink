@@ -94,6 +94,7 @@ export default function DashboardNavbar() {
       icon: CurrencyDollarIcon,
       children: [
         { name: 'Invoice', href: '/dashboard/invoices' },
+        { name: 'Invoice Overviews', href: '/dashboard/invoice-overviews' },
         { name:"Customer", href: '/dashboard/customers' },
         { name: "Product", href: '/dashboard/products' },
       ],

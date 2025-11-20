@@ -24,10 +24,7 @@ export async function GET(req: NextRequest) {
         // Find existing settings
         let settings = await prisma.invoiceFormSettings.findUnique({
             where: {
-                businessId_deviceId: {
-                    businessId,
-                    deviceId: deviceId || ''
-                }
+                businessId:businessId
             }
         })
 
@@ -77,8 +74,7 @@ export async function POST(req: NextRequest) {
             showPaymentTerms,
             showDepartment,
             showSeller,
-            showDiscount,
-            deviceId
+            showDiscount
         } = body
 
         // Validate boolean fields
@@ -103,10 +99,7 @@ export async function POST(req: NextRequest) {
         // Upsert settings (update if exists, create if not)
         const settings = await prisma.invoiceFormSettings.upsert({
             where: {
-                businessId_deviceId: {
-                    businessId,
-                    deviceId: deviceId || ''
-                }
+                businessId
             },
             update: {
                 showContactPerson,
@@ -118,7 +111,6 @@ export async function POST(req: NextRequest) {
             },
             create: {
                 businessId,
-                deviceId: deviceId || null,
                 showContactPerson,
                 showDeliveryAddress,
                 showPaymentTerms,

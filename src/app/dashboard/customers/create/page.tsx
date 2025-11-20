@@ -357,16 +357,19 @@ export default function CreateCustomersPage() {
                     </div>
 
                     <CustomerPaymentTermComponent
-                        defaultValues={formData.customerPaymentTerm}
                         onSettingsChange={(settings) => {
-                            console.log('Settings updated:', settings)
                             const updatedPaymentTerm: InvoicePaymentTerms = {
                                 dueDateType: settings.dueDateType,
                                 dueDateValue: (settings.dueDateType === 'DAYS_AFTER'
-                                    ? settings.daysAfter
-                                    : settings.fixedDateDay) ?? 14,
-                                dueDateUnit: settings.unit === 'DAYS' ? 'DAYS' : 'MONTHS'
+                                    ? settings.daysAfter ?? 14
+                                    : settings.fixedDateDay ?? 1),
+                                dueDateUnit: (settings.dueDateType === 'DAYS_AFTER' ?
+                                    settings.unit === 'DAYS' ? 'DAYS' : 'MONTHS' :
+                                    'MONTHS'
+                                )
                             }
+                            console.log('Settings updated:', updatedPaymentTerm)
+
                             setFormData({ ...formData, customerPaymentTerm: updatedPaymentTerm })
                         }}
                     />

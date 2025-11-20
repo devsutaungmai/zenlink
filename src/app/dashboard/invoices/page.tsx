@@ -86,6 +86,19 @@ export default function InvoicesPage() {
         fetchInvoices()
     }, [])
 
+    useEffect(() => {
+        if (settings) {
+            setVisibleFields({
+                showDiscount: settings.showDiscount,
+                showPaymentTerms: settings.showPaymentTerms,
+                showDepartment: settings.showDepartment,
+                showSeller: settings.showSeller,
+                showContactPerson: settings.showContactPerson,
+                showDeliveryAddress: settings.showDeliveryAddress,
+            })
+        }
+    }, [settings])
+
     const fetchInvoices = async () => {
         try {
             setLoading(true)
@@ -271,7 +284,7 @@ export default function InvoicesPage() {
                                         <input
                                             type="checkbox"
                                             id="showDiscount"
-                                            checked={settings.showDiscount ? visibleFields.showDiscount : false}
+                                            checked={visibleFields.showDiscount}
                                             onChange={(e) =>
                                                 setVisibleFields({ ...visibleFields, showDiscount: e.target.checked })
                                             }
@@ -286,7 +299,7 @@ export default function InvoicesPage() {
                                         <input
                                             type="checkbox"
                                             id="showPaymentTerms"
-                                            checked={settings.showPaymentTerms ? visibleFields.showPaymentTerms : false}
+                                            checked={visibleFields.showPaymentTerms}
                                             onChange={(e) =>
                                                 setVisibleFields({ ...visibleFields, showPaymentTerms: e.target.checked })
                                             }

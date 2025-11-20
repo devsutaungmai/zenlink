@@ -104,10 +104,8 @@ export async function PUT(
       // Check if payment term already exists with these exact settings
       const existingPaymentTerm = await prisma.invoicePaymentTerms.findFirst({
         where: {
+          id: existingCustomer.invoicepaymentTermsId || "",
           businessId: businessId,
-          invoiceDueDateType: customerPaymentTerm.dueDateType,
-          invoiceDueDateValue: customerPaymentTerm.dueDateValue,
-          invoiceDueDateUnit: customerPaymentTerm.dueDateUnit,
         }
       })
 
@@ -115,6 +113,17 @@ export async function PUT(
         // Use existing payment term
         paymentTermsId = existingPaymentTerm.id
         console.log('Using existing payment term:', paymentTermsId)
+        await prisma.invoicePaymentTerms.update({
+          where:{
+            id: paymentTermsId,
+            businessId: businessId
+          },
+          data:{
+            invoiceDueDateType: customerPaymentTerm.dueDateType,
+            invoiceDueDateValue: customerPaymentTerm.dueDateValue,
+            invoiceDueDateUnit: customerPaymentTerm.dueDateUnit,
+          }
+        })
       } else {
         // Create new payment term
         const newPaymentTerm = await prisma.invoicePaymentTerms.create({

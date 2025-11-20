@@ -23,7 +23,14 @@ export async function GET(request: NextRequest) {
         customer: {
           select: {
             id: true,
-            customerName: true
+            customerName: true,
+            email: true
+          }
+        },
+        project: {
+          select:{
+            id: true,
+            name: true
           }
         }
       },
