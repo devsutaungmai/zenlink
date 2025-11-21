@@ -29,19 +29,19 @@ export function calculateInvoiceTotals(
 ): InvoiceCalculation {
   // Step 1: Calculate subtotal
   const subtotal = quantity * pricePerUnit
-  
+
   // Step 2: Calculate discount
   const discountAmount = subtotal * (discountPercentage / 100)
-  
+
   // Step 3: Calculate total excluding VAT
   const totalExclVAT = subtotal - discountAmount
-  
+
   // Step 4: Calculate VAT
   const vatAmount = totalExclVAT * (vatPercentage / 100)
-  
+
   // Step 5: Calculate total including VAT
   const totalInclVAT = totalExclVAT + vatAmount
-  
+
   return {
     subtotal: Math.round(subtotal * 100) / 100,
     discountAmount: Math.round(discountAmount * 100) / 100,
@@ -55,4 +55,28 @@ export function generateInvoiceNumber(prefix: string = 'INV'): string {
   const year = new Date().getFullYear()
   const timestamp = Date.now()
   return `${prefix}-${year}-${timestamp}`
+}
+
+export async function exportToPDF(invoiceId: string) {
+  try {
+    const response = await fetch(`/api/invoices/export/pdf?invoiceId=${invoiceId}`)
+
+    if (response.ok) {
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `invoice_${invoiceId}.pdf`
+      a.click()
+      window.URL.revokeObjectURL(url)
+
+      return true
+    } else {
+      console.error('Failed to export PDF')
+      return false
+    }
+  } catch (error) {
+    console.error('Error exporting PDF:', error)
+    return false
+  }
 }

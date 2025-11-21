@@ -1,13 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import Link from 'next/link'
 import { ArrowLeftIcon, ArrowDownIcon } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
 import { Contact } from 'lucide-react'
 import { useInvoiceSettings } from '@/shared/hooks/useInvoiceSettings'
+import { exportToPDF } from '@/shared/lib/invoiceHelper'
 
 export interface Customer {
     id: string
@@ -51,6 +52,9 @@ export interface ContactPerson {
 
 export default function CreateInvoicePage() {
     const router = useRouter()
+    const searchParams = useSearchParams()
+    const copyMode = searchParams.get('copy') === "true";
+    const invoiceId = searchParams.get('invoiceId') ?? "";
     const { t } = useTranslation()
     const [loading, setLoading] = useState(false)
     const [customers, setCustomers] = useState<Customer[]>([])
@@ -60,6 +64,7 @@ export default function CreateInvoicePage() {
     const [contacts, setContacts] = useState<ContactPerson[]>([]);
     const [showDropdown, setShowDropdown] = useState(false)
     const [fetchingCustomer, setFetchingCustomer] = useState(false)
+    const [fetchingLoading, setFetchingLoading] = useState(false);
     const [formData, setFormData] = useState({
         customerId: '',
         contactPersonId: '',
@@ -83,6 +88,12 @@ export default function CreateInvoicePage() {
         fetchCustomers()
         fetchProducts()
     }, [])
+    useEffect(() => {
+        if (copyMode && invoiceId) {
+            fetchInvoice();
+        }
+    }, [copyMode, invoiceId]);
+
 
     // Calculate paidAt whenever sentAt or dueDay changes
     useEffect(() => {
@@ -97,6 +108,53 @@ export default function CreateInvoicePage() {
             }))
         }
     }, [formData.sentAt, formData.dueDay])
+
+    const fetchInvoice = async () => {
+        try {
+            const res = await fetch(`/api/invoices/${invoiceId}`)
+            if (res.ok) {
+                const data = await res.json()
+                console.log("Invoice", JSON.stringify(data));
+                // Update projects list if customer has projects
+                if (data.customer?.projects && data.customer?.projects.length > 0) {
+                    setProjects(data.customer.projects)
+                } else {
+                    setProjects([]);
+                }
+
+                // Update departments list if customer has department
+                if (data.customer?.department) {
+                    setDepartments([data.customer?.department])
+                }
+
+                if (data.customer?.contactPersons) {
+                    setContacts(data.customer?.contactPersons)
+                }
+
+                setFormData({
+                    customerId: data.customerId || '',
+                    contactPersonId: data.contactPersonId || '',
+                    deliveryAddress: data.deliveryAddress || '',
+                    sentAt: data.sentAt ? data.sentAt.split('T')[0] : new Date().toISOString().split('T')[0],
+                    dueDay: data.dueDay ?? 0,
+                    paidAt: data.paidAt ? data.paidAt.split('T')[0] : '',
+                    projectId: data.projectId || '',
+                    departmentId: data.departmentId || '',
+                    productId: data.invoiceLines?.[0]?.product?.id || '',
+                    seller: data.customer.business.name || '',
+                    quantity: data.invoiceLines?.[0]?.quantity ?? 0,
+                    pricePerUnit: data.invoiceLines?.[0]?.pricePerUnit ?? 0.0,
+                    discountPercentage: data.invoiceLines?.[0]?.discountPercentage ?? 0,
+                    notes: data.notes || ''
+                })
+            }
+        } catch (error) {
+            console.error('Error fetching invoice:', error)
+        } finally {
+            setFetchingLoading(false)
+        }
+    }
+
 
     const fetchCustomers = async () => {
         try {
@@ -199,30 +257,7 @@ export default function CreateInvoicePage() {
         setFormData({ ...formData, customerId })
         fetchCustomerDetails(customerId)
     }
-    const exportToPDF = async (invoiceId: string) => {
-        try {
-            const response = await fetch(`/api/invoices/export/pdf?invoiceId=${invoiceId}`)
-
-            if (response.ok) {
-                const blob = await response.blob()
-                const url = window.URL.createObjectURL(blob)
-                const a = document.createElement('a')
-                a.href = url
-                a.download = `invoice_${invoiceId}.pdf`
-                a.click()
-                window.URL.revokeObjectURL(url)
-
-                return true
-            } else {
-                console.error('Failed to export PDF')
-                return false
-            }
-        } catch (error) {
-            console.error('Error exporting PDF:', error)
-            return false
-        }
-    }
-
+  
     const sendEmail = async (invoiceId: string) => {
         try {
             const response = await fetch('/api/invoices/email/send', {
@@ -409,7 +444,7 @@ export default function CreateInvoicePage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                                 <div>
                                     <label htmlFor="sentAt" className="block text-sm font-medium text-gray-700 mb-2">
-                                        Delivery Date (sentAt) *
+                                        Invoice Date (sentAt) *
                                     </label>
                                     <input
                                         type="date"

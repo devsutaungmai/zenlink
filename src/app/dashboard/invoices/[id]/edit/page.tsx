@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, use } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import Link from 'next/link'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
@@ -279,7 +279,7 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                                 <div>
                                     <label htmlFor="sentAt" className="block text-sm font-medium text-gray-700 mb-2">
-                                        Delivery Date (sentAt) *
+                                        Invoice Date (sentAt) *
                                     </label>
                                     <input
                                         type="date"

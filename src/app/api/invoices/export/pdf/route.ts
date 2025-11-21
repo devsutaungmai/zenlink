@@ -237,6 +237,7 @@ export async function GET(request: NextRequest) {
             border-top: 1px solid #000;
             border-bottom: 1px solid #000;
             text-transform: uppercase;
+            color: white;
         }
         
         .invoice-table td {

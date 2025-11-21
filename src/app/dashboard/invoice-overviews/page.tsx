@@ -27,6 +27,9 @@ import {
     PaginationNext,
 } from "@/components/ui/pagination"
 import { Decimal } from "@prisma/client/runtime/library"
+import Link from "next/link"
+import { exportToPDF } from "@/shared/lib/invoiceHelper"
+import Swal from "sweetalert2"
 
 export enum InvoiceStatus {
     DRAFT = 'DRAFT',       // Not sent yet
@@ -62,7 +65,7 @@ export interface Invoice {
     customerId: string
     customer?: Customer,
     product?: Product,
-    project?:Project
+    project?: Project
 
     // Summary calculations
     totalExclVAT: Decimal
@@ -239,6 +242,35 @@ export default function InvoiceOverview() {
         })
     }
 
+    const handlePDf = async (invoiceId: string) => {
+        try {
+            const pdfSuccess = await exportToPDF(invoiceId);
+            if (pdfSuccess) {
+                await Swal.fire({
+                    title: 'Success!',
+                    text: 'PDF downloaded',
+                    icon: 'success',
+                    confirmButtonColor: '#31BCFF',
+                })
+            } else {
+                await Swal.fire({
+                    title: 'Partial Success',
+                    text: 'PDF download failed',
+                    icon: 'warning',
+                    confirmButtonColor: '#31BCFF',
+                })
+            }
+
+        } catch (error) {
+            await Swal.fire({
+                title: 'Partial Success',
+                text: 'PDF download failed',
+                icon: 'warning',
+                confirmButtonColor: '#31BCFF',
+            })
+        }
+    }
+
     return (
         <div className="min-h-screen bg-gray-50 p-6">
             <div className="max-w-[1600px] mx-auto space-y-6">
@@ -279,21 +311,21 @@ export default function InvoiceOverview() {
                     <button
                         onClick={() => setActiveTab("invoices")}
                         className={`px-4 py-3 font-medium text-sm border-b-2 transition-colors ${activeTab === "invoices"
-                                ? "border-blue-600 text-blue-600"
-                                : "border-transparent text-gray-500 hover:text-gray-700"
+                            ? "border-blue-600 text-blue-600"
+                            : "border-transparent text-gray-500 hover:text-gray-700"
                             }`}
                     >
                         Invoices
                     </button>
-                    <button
+                    {/* <button
                         onClick={() => setActiveTab("other")}
                         className={`px-4 py-3 font-medium text-sm border-b-2 transition-colors ${activeTab === "other"
-                                ? "border-blue-600 text-blue-600"
-                                : "border-transparent text-gray-500 hover:text-gray-700"
+                            ? "border-blue-600 text-blue-600"
+                            : "border-transparent text-gray-500 hover:text-gray-700"
                             }`}
                     >
                         Other entries
-                    </button>
+                    </button> */}
                 </div>
 
                 {selectedInvoices.size > 0 ? (
@@ -470,10 +502,10 @@ export default function InvoiceOverview() {
                                             <td className="px-4 py-3">
                                                 <span
                                                     className={`text-sm ${invoice.status === "OUTSTANDING"
+                                                        ? "text-gray-900"
+                                                        : invoice.status === "PAID"
                                                             ? "text-gray-900"
-                                                            : invoice.status === "PAID"
-                                                                ? "text-gray-900"
-                                                                : "text-gray-900"
+                                                            : "text-gray-900"
                                                         }`}
                                                 >
                                                     {invoice.status}
@@ -485,7 +517,7 @@ export default function InvoiceOverview() {
                                             <td className="px-4 py-3 text-sm text-gray-900 text-right">{0.0}</td>
                                             <td className="px-4 py-3 text-sm text-gray-900 text-right">{(invoice.totalExclVAT).toString()}</td>
                                             <td className="px-2 py-3">
-                                                <button className="p-1 hover:bg-gray-200 rounded">
+                                                <button className="p-1 hover:bg-gray-200 rounded" onClick={() => handlePDf(invoice.id)}>
                                                     <PaperClipIcon className="h-4 w-4 text-gray-400" />
                                                 </button>
                                             </td>
@@ -505,26 +537,30 @@ export default function InvoiceOverview() {
                                                                 <CheckCircleIcon className="h-4 w-4" />
                                                                 Register payment
                                                             </DropdownMenu.Item>
-                                                            <DropdownMenu.Item className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2">
+                                                            {/* <DropdownMenu.Item className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2">
                                                                 <ClockIcon className="h-4 w-4" />
                                                                 Payment follow-up
-                                                            </DropdownMenu.Item>
-                                                            <DropdownMenu.Item className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2">
+                                                            </DropdownMenu.Item> */}
+                                                            {/* <DropdownMenu.Item className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2">
                                                                 <span className="text-base">📄</span>
                                                                 Credit note
-                                                            </DropdownMenu.Item>
+                                                            </DropdownMenu.Item> */}
                                                             <DropdownMenu.Item className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2">
-                                                                <span className="text-base">📋</span>
-                                                                Copy invoice
+                                                                <Link
+                                                                    href={`/dashboard/invoices/create?invoiceId=${invoice.id}&copy=true`}
+                                                                    className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2"
+                                                                >
+                                                                    <span className="text-base">📋</span>
+                                                                    Copy invoice</Link>
                                                             </DropdownMenu.Item>
                                                             <DropdownMenu.Item className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2">
                                                                 <span className="text-base">✓</span>
                                                                 Delete amount outstanding
                                                             </DropdownMenu.Item>
-                                                            <DropdownMenu.Item className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2">
+                                                            {/* <DropdownMenu.Item className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2">
                                                                 <span className="text-base">✓</span>
                                                                 Close with other entries
-                                                            </DropdownMenu.Item>
+                                                            </DropdownMenu.Item> */}
                                                         </DropdownMenu.Content>
                                                     </DropdownMenu.Portal>
                                                 </DropdownMenu.Root>
@@ -557,7 +593,7 @@ export default function InvoiceOverview() {
                                                             <tbody>
                                                                 <tr>
                                                                     <td className="px-4 py-3 text-sm text-gray-900">{invoice.sentAt ? new Date(invoice.sentAt).getDate() : ""}</td>
-                                                                    <td className="px-4 py-3 text-sm text-gray-900">{invoice.dueDate? new Date(invoice.dueDate).getDate() : ""}</td>
+                                                                    <td className="px-4 py-3 text-sm text-gray-900">{invoice.dueDate ? new Date(invoice.dueDate).getDate() : ""}</td>
                                                                     <td className="px-4 py-3 text-sm text-gray-900">{invoice.notes}</td>
                                                                     <td className="px-4 py-3">
                                                                         <div className="flex items-center gap-2">
