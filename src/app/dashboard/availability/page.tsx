@@ -228,8 +228,7 @@ export default function AdminAvailabilityPage() {
   const employeeCacheKey = isEmployee ? (employeeRecordId || currentEmployeeUserId || 'unknown') : 'all'
   const cacheKey = `${isEmployee ? 'employee' : 'admin'}-${employeeCacheKey}-${currentMonth}-${currentYear}`
       const now = Date.now().toString()
-      
-      // Check if we have cached data for the last 30 seconds
+
       const cacheExpiry = 30000 // 30 seconds
       if (dataCache.cacheKey === cacheKey &&
           dataCache.lastFetch &&
@@ -237,7 +236,6 @@ export default function AdminAvailabilityPage() {
           dataCache.employees &&
           dataCache.availabilities) {
 
-        // Use cached data
         setEmployees(dataCache.employees)
         setAvailabilities(dataCache.availabilities)
         return

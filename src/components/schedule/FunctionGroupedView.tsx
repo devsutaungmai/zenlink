@@ -10,6 +10,22 @@ interface FunctionItem {
   id: string
   name: string
   categoryId?: string | null
+  category?: {
+    id: string
+    name: string
+    color?: string | null
+    department?: {
+      id: string
+      name: string
+    } | null
+    departments?: Array<{
+      id: string
+      department: {
+        id: string
+        name: string
+      }
+    }>
+  } | null
 }
 
 interface FunctionGroupedViewProps {
@@ -18,7 +34,7 @@ interface FunctionGroupedViewProps {
   employees: Employee[]
   functions: FunctionItem[]
   onEditShift: (shift: ShiftWithRelations) => void
-  onAddShift?: (data?: { date?: string; functionId?: string }) => void
+  onAddShift?: (data?: { date?: string; functionId?: string; categoryId?: string; departmentId?: string }) => void
   selectedEmployeeId?: string | null
   isEmployeeUnavailable?: (employeeId: string, date: string) => boolean
   onUnavailableClick?: (employeeId: string, date: string) => void
@@ -181,6 +197,9 @@ export default function FunctionGroupedView({
                       <div className="flex-1 min-w-0">
                         <div className="font-medium text-sm text-gray-900 truncate">
                           {fn.name}
+                          {fn.category && (
+                            <span className="ml-2 text-xs font-normal text-gray-500">• {fn.category.name}</span>
+                          )}
                         </div>
                         <div className="text-xs text-gray-500">
                           {getFunctionTotalHours(fn.id)} / {currencySymbol}0.00 / {functionShiftsCount} Shift{functionShiftsCount !== 1 ? 's' : ''}
@@ -214,7 +233,9 @@ export default function FunctionGroupedView({
                                   }
                                   onAddShift({ 
                                     date: formattedDate,
-                                    functionId: fn.id 
+                                    functionId: fn.id,
+                                    categoryId: fn.categoryId || fn.category?.id,
+                                    departmentId: fn.category?.department?.id || fn.category?.departments?.[0]?.department?.id
                                   })
                                 }}
                                 className={`w-full h-full border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 ${
@@ -309,6 +330,9 @@ export default function FunctionGroupedView({
               <div className="p-3 border-r">
                 <div className="font-medium text-sm text-gray-900">
                   {fn.name}
+                  {fn.category && (
+                    <span className="ml-2 text-xs font-normal text-gray-500">• {fn.category.name}</span>
+                  )}
                 </div>
                 <div className="text-xs text-gray-500 mt-0.5">
                   {getFunctionTotalHours(fn.id)} / {currencySymbol} 0.00 / {functionShiftsCount} Shift{functionShiftsCount !== 1 ? 's' : ''}
@@ -334,7 +358,9 @@ export default function FunctionGroupedView({
                           }
                           onAddShift({ 
                             date: formattedDate,
-                            functionId: fn.id 
+                            functionId: fn.id,
+                            categoryId: fn.categoryId || fn.category?.id,
+                            departmentId: fn.category?.department?.id || fn.category?.departments?.[0]?.department?.id
                           })
                         }}
                         className={`w-full h-full min-h-[76px] border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-1 transition-all opacity-0 group-hover:opacity-100 ${

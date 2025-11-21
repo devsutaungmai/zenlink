@@ -134,7 +134,7 @@ interface ShiftFormProps {
   onCancel: () => void
   loading: boolean
   employees: EmployeeForForm[]
-  employeeGroups: { id: string; name: string; wage?: number | null }[]
+  employeeGroups: { id: string; name: string; wage?: number | null; functionId?: string | null }[]
   showEmployee?: boolean
   showStartTime?: boolean
   showDate?: boolean
@@ -194,6 +194,9 @@ export default function ShiftForm({
       shiftTypeId: initialData.shiftTypeId || undefined,
       autoBreakType: initialData.autoBreakType || 'MANUAL_BREAK',
       autoBreakValue: initialData.autoBreakValue || null,
+      departmentId: initialData.departmentId || undefined,
+      categoryId: initialData.categoryId || undefined,
+      functionId: initialData.functionId || undefined,
     } : {
       date: todayString,
       startTime: '09:00',
@@ -420,8 +423,54 @@ export default function ShiftForm({
     }
   }
 
-  // Don't filter employees - show all employees in the business
-  const filteredEmployees = safeEmployees
+  const linkedFunctionGroup = React.useMemo(() => {
+    if (!formData.functionId) return undefined
+    return employeeGroups.find(group => group.functionId === formData.functionId)
+  }, [formData.functionId, employeeGroups])
+
+  const filteredEmployees = React.useMemo(() => {
+    if (!formData.functionId) {
+      return safeEmployees
+    }
+    if (!linkedFunctionGroup) {
+      return []
+    }
+    return safeEmployees.filter(emp => emp.employeeGroupId === linkedFunctionGroup.id)
+  }, [safeEmployees, formData.functionId, linkedFunctionGroup])
+
+  const employeeSelectDisabled = isEmployee || (formData.functionId ? !linkedFunctionGroup || filteredEmployees.length === 0 : false)
+  const employeeGroupSelectDisabled = isEmployee || !!linkedFunctionGroup
+
+  useEffect(() => {
+    if (!formData.functionId) {
+      return
+    }
+
+    if (!linkedFunctionGroup) {
+      if (formData.employeeGroupId || formData.employeeId) {
+        setFormData(prev => ({
+          ...prev,
+          employeeGroupId: undefined,
+          employeeId: undefined,
+        }))
+      }
+      return
+    }
+
+    const employeeStillValid = formData.employeeId
+      ? filteredEmployees.some(emp => emp.id === formData.employeeId)
+      : true
+
+    if (formData.employeeGroupId === linkedFunctionGroup.id && employeeStillValid) {
+      return
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      employeeGroupId: linkedFunctionGroup.id,
+      employeeId: employeeStillValid ? prev.employeeId : undefined,
+    }))
+  }, [formData.functionId, formData.employeeGroupId, formData.employeeId, linkedFunctionGroup, filteredEmployees])
 
 
   useEffect(() => {
@@ -945,6 +994,16 @@ export default function ShiftForm({
                 </option>
               ))}
             </select>
+            {formData.functionId && linkedFunctionGroup && (
+              <p className="mt-1 text-xs text-gray-500">
+                Linked employee group: {linkedFunctionGroup.name}. Employee options are limited to this group.
+              </p>
+            )}
+            {formData.functionId && !linkedFunctionGroup && (
+              <p className="mt-1 text-xs text-red-500">
+                No employee group is linked to this function. Update your employee group settings before assigning employees.
+              </p>
+            )}
           </div>
 
           {/* Employee */}
@@ -956,19 +1015,35 @@ export default function ShiftForm({
               <select
                 value={formData.employeeId || ''}
                 onChange={(e) => setFormData({ ...formData, employeeId: e.target.value || undefined })}
-                disabled={isEmployee}
-                className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                disabled={employeeSelectDisabled}
+                className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${employeeSelectDisabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                 required={!!formData.functionId}
               >
-                <option value="">Select an employee (optional)</option>
+                <option value="">
+                  {formData.functionId
+                    ? linkedFunctionGroup
+                      ? filteredEmployees.length > 0
+                        ? `Select an employee from ${linkedFunctionGroup.name}`
+                        : 'No eligible employees in this group'
+                      : 'Link this function to an employee group'
+                    : 'Select an employee (optional)'}
+                </option>
                 {filteredEmployees.map((employee) => (
                   <option key={employee.id} value={employee.id}>
                     {employee.firstName} {employee.lastName} {employee.employeeNo && `(${employee.employeeNo})`}
                   </option>
                 ))}
               </select>
-              <p className="mt-1 text-xs text-gray-500">
-                All employees in the business are shown
+              <p
+                className={`mt-1 text-xs ${formData.functionId && (!linkedFunctionGroup || filteredEmployees.length === 0) ? 'text-red-500' : 'text-gray-500'}`}
+              >
+                {formData.functionId
+                  ? linkedFunctionGroup
+                    ? filteredEmployees.length > 0
+                      ? `Only employees in ${linkedFunctionGroup.name} can be assigned.`
+                      : 'No employees currently belong to this group.'
+                    : 'Link this function to an employee group to assign employees.'
+                  : 'All employees in the business are shown.'}
               </p>
             </div>
           )}
@@ -979,16 +1054,28 @@ export default function ShiftForm({
             <select
               value={formData.employeeGroupId || ''}
               onChange={(e) => setFormData({ ...formData, employeeGroupId: e.target.value || undefined })}
-              disabled={isEmployee}
-              className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+              disabled={employeeGroupSelectDisabled}
+              className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${employeeGroupSelectDisabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
             >
-              <option value="">Select a group</option>
+              <option value="">
+                {linkedFunctionGroup ? 'Automatically linked to function' : 'Select a group'}
+              </option>
               {employeeGroups.map((group) => (
                 <option key={group.id} value={group.id}>
                   {group.name}
                 </option>
               ))}
             </select>
+            {linkedFunctionGroup && (
+              <p className="mt-1 text-xs text-gray-500">
+                Automatically set to {linkedFunctionGroup.name} because of the selected function.
+              </p>
+            )}
+            {formData.functionId && !linkedFunctionGroup && (
+              <p className="mt-1 text-xs text-red-500">
+                Assign a function to an employee group before creating this shift.
+              </p>
+            )}
           </div>
 
           {/* Wage */}
