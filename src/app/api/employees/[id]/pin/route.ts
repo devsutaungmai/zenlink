@@ -45,7 +45,9 @@ export async function PATCH(
 
     await prisma.user.update({
       where: { id: employee.userId },
-      data: { pin: hashedPin }
+      data: {
+        pin: hashedPin
+      }
     })
 
     // Send PIN via email if employee has an email address

@@ -1,7 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import React, { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { PunchClockSkeleton } from '@/components/skeletons/CommonSkeletons'
 import { useUser } from '@/shared/lib/useUser'
@@ -20,7 +19,9 @@ import {
   PencilIcon,
   ArrowDownTrayIcon,
   DocumentTextIcon,
-  TableCellsIcon
+  TableCellsIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon
 } from '@heroicons/react/24/outline'
 import {
   Dialog,
@@ -32,6 +33,24 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+
+const getCurrentDateISO = () => new Date().toISOString().split('T')[0]
+
+const getCurrentWeekStartDate = () => {
+  const now = new Date()
+  const day = now.getDay() // 0 (Sun) to 6 (Sat)
+  const diff = day === 0 ? -6 : 1 - day
+  const monday = new Date(now)
+  monday.setDate(now.getDate() + diff)
+  monday.setHours(0, 0, 0, 0)
+  return monday.toISOString().split('T')[0]
+}
+
+const getCurrentMonthYearValue = () => {
+  const now = new Date()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  return `${now.getFullYear()}-${month}`
+}
 
 interface Business {
   id: string
@@ -93,22 +112,39 @@ interface Attendance {
   }
 }
 
+type AttendanceStatus = 'working' | 'completed' | 'pending' | 'rejected'
+
+const getAttendanceStatus = (record: Attendance): AttendanceStatus => {
+  if (!record.approved) {
+    return record.punchOutTime ? 'rejected' : 'pending'
+  }
+
+  return record.punchOutTime ? 'completed' : 'working'
+}
+
 export default function PunchClockPage() {
-  const router = useRouter()
   const { t } = useTranslation('punch-clock')
   const { user } = useUser() // Add user context
   const [business, setBusiness] = useState<Business | null>(null)
   const [employees, setEmployees] = useState<Employee[]>([])
   const [attendanceRecords, setAttendanceRecords] = useState<Attendance[]>([])
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(25)
+  const [paginationMeta, setPaginationMeta] = useState({
+    totalPages: 1,
+    totalCount: 0
+  })
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedFilter, setSelectedFilter] = useState('all')
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
-  const [selectedEndDate, setSelectedEndDate] = useState(new Date().toISOString().split('T')[0])
+  const [selectedDate, setSelectedDate] = useState(getCurrentDateISO())
+  const [selectedEndDate, setSelectedEndDate] = useState(getCurrentDateISO())
   const [dateRangeType, setDateRangeType] = useState<'single' | 'week' | 'month'>('single')
-  const [weekStartDate, setWeekStartDate] = useState('')
-  const [monthYear, setMonthYear] = useState('')
+  const [weekStartDate, setWeekStartDate] = useState(getCurrentWeekStartDate())
+  const [monthYear, setMonthYear] = useState(getCurrentMonthYearValue())
   const [selectedEmployee, setSelectedEmployee] = useState<string>('')
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [currentTime, setCurrentTime] = useState(new Date())
   const [editingRecord, setEditingRecord] = useState<Attendance | null>(null)
@@ -117,19 +153,68 @@ export default function PunchClockPage() {
     punchInTime: '',
     punchOutTime: ''
   })
+  const filtersInitializedRef = useRef(false)
 
   const isAdmin = user?.role === 'ADMIN'
 
+  const initializeData = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      filtersInitializedRef.current = false
+      await Promise.all([fetchBusiness(), fetchEmployees()])
+      await fetchAttendance()
+    } catch (error) {
+      console.error('Error initializing punch clock data:', error)
+      setError('Failed to load data')
+    } finally {
+      setLoading(false)
+      setInitialLoadComplete(true)
+    }
+  }
+
   useEffect(() => {
-    fetchData()
-    
+    initializeData()
+  }, [])
+
+  useEffect(() => {
     // Update current time every second
     const timeInterval = setInterval(() => {
       setCurrentTime(new Date())
     }, 1000)
 
     return () => clearInterval(timeInterval)
-  }, [selectedDate,selectedEndDate, weekStartDate, monthYear, dateRangeType])
+  }, [])
+
+  useEffect(() => {
+    if (!initialLoadComplete) return
+
+    if (!filtersInitializedRef.current) {
+      filtersInitializedRef.current = true
+      return
+    }
+
+    let isCancelled = false
+
+    const refreshAttendance = async () => {
+      try {
+        setRefreshing(true)
+        await fetchAttendance()
+      } catch (error) {
+        console.error('Error refreshing attendance:', error)
+      } finally {
+        if (!isCancelled) {
+          setRefreshing(false)
+        }
+      }
+    }
+
+    refreshAttendance()
+
+    return () => {
+      isCancelled = true
+    }
+  }, [initialLoadComplete, selectedDate, selectedEndDate, weekStartDate, monthYear, dateRangeType, selectedEmployee, searchTerm, selectedFilter, page, pageSize])
 
   const getDateRange = () => {
     switch (dateRangeType) {
@@ -159,109 +244,140 @@ export default function PunchClockPage() {
     }
   }
 
-  const fetchData = async () => {
-    try {
-      setLoading(true)
-      await Promise.all([
-        fetchBusiness(),
-        fetchEmployees(),
-        fetchAttendance()
-      ])
-    } catch (error) {
-      console.error('Error fetching data:', error)
-      setError('Failed to load data')
-    } finally {
-      setLoading(false)
-    }
+  const getStatusFilterParam = () => {
+    if (selectedFilter === 'working') return 'working'
+    if (selectedFilter === 'completed') return 'completed'
+    return ''
   }
 
-  const fetchBusiness = async () => {
+  const buildAttendanceQueryParams = (options?: { includePagination?: boolean }) => {
+    const dateRange = getDateRange()
+    if (!dateRange) return null
+
+    const params = new URLSearchParams()
+    params.append('startDate', dateRange.startDate)
+    params.append('endDate', dateRange.endDate)
+
+    if (business?.id) {
+      params.append('businessId', business.id)
+    }
+
+    if (selectedEmployee) {
+      params.append('employeeId', selectedEmployee)
+    }
+
+    const trimmedSearch = searchTerm.trim()
+    if (trimmedSearch) {
+      params.append('search', trimmedSearch)
+    }
+
+    const statusFilter = getStatusFilterParam()
+    if (statusFilter) {
+      params.append('status', statusFilter)
+    }
+
+    if (options?.includePagination !== false) {
+      params.append('page', page.toString())
+      params.append('pageSize', pageSize.toString())
+    }
+
+    return params
+  }
+
+  const fetchBusiness = async (): Promise<Business | null> => {
     try {
       const res = await fetch('/api/business')
       if (res.ok) {
         const businessData = await res.json()
         setBusiness(businessData)
+        return businessData
       }
     } catch (error) {
       console.error('Error fetching business:', error)
     }
+
+    return business
   }
 
-  const fetchEmployees = async () => {
+  const fetchEmployees = async (): Promise<Employee[]> => {
     try {
       const res = await fetch('/api/employees')
       if (res.ok) {
         const employeesData = await res.json()
         setEmployees(employeesData)
+        return employeesData
       }
     } catch (error) {
       console.error('Error fetching employees:', error)
       setEmployees([])
     }
+
+    return []
   }
 
   const fetchAttendance = async () => {
     try {
-      // First get the business info to get the business ID
-      const businessRes = await fetch('/api/business')
-      let businessId = ''
-      
-      if (businessRes.ok) {
-        const businessData = await businessRes.json()
-        businessId = businessData.id
-      }
-      
-      // If no business found, try to get first business or use fallback
-      if (!businessId) {
-        console.warn('No business ID found, fetching all attendance records')
-        // For now, let's try without business ID to see if we get data
-      }
+      const params = buildAttendanceQueryParams()
 
-      // Build query parameters
-      const dateRange = getDateRange()
-      if (!dateRange) {
+      if (!params) {
         setAttendanceRecords([])
+        setPaginationMeta({ totalPages: 1, totalCount: 0 })
         return
       }
 
-      const params = new URLSearchParams()
-      if (businessId) params.append('businessId', businessId)
-      params.append('startDate', dateRange.startDate)
-      params.append('endDate', dateRange.endDate)
-      if (selectedEmployee) params.append('employeeId', selectedEmployee)
-        
       const res = await fetch(`/api/attendance?${params.toString()}`)
-      if (res.ok) {
-        const attendanceData = await res.json()
-        setAttendanceRecords(attendanceData)
-      } else {
+      if (!res.ok) {
         console.error('Failed to fetch attendance:', await res.text())
         setAttendanceRecords([])
+        setPaginationMeta({ totalPages: 1, totalCount: 0 })
+        return
       }
+
+      const data = await res.json()
+
+      if (Array.isArray(data)) {
+        setAttendanceRecords(data)
+        setPaginationMeta({ totalPages: 1, totalCount: data.length })
+        return
+      }
+
+      const totalPagesFromServer = Math.max(1, data.pagination?.totalPages ?? 1)
+      const totalCountFromServer = data.pagination?.totalCount ?? (data.data?.length ?? 0)
+
+      if (page > totalPagesFromServer && totalPagesFromServer > 0) {
+        setAttendanceRecords([])
+        setPaginationMeta({ totalPages: totalPagesFromServer, totalCount: totalCountFromServer })
+        if (page !== totalPagesFromServer) {
+          setPage(totalPagesFromServer)
+        }
+        return
+      }
+
+      setAttendanceRecords(data.data || [])
+      setPaginationMeta({ totalPages: totalPagesFromServer, totalCount: totalCountFromServer })
     } catch (error) {
       console.error('Error fetching attendance:', error)
       setAttendanceRecords([])
+      setPaginationMeta({ totalPages: 1, totalCount: 0 })
     }
   }
 
-  const filteredAttendance = attendanceRecords.filter(record => {
-    const searchLower = searchTerm.toLowerCase()
-    const matchesSearch = 
-      `${record.employee.firstName || ''} ${record.employee.lastName || ''}`.toLowerCase().includes(searchLower) ||
-      (record.employee.employeeNo || '').toLowerCase().includes(searchLower) ||
-      (record.employee.department?.name || '').toLowerCase().includes(searchLower) ||
-      (record.employee.employeeGroup?.name || '').toLowerCase().includes(searchLower)
+  const handleDateRangeTypeChange = (nextType: 'single' | 'week' | 'month') => {
+    setPage(1)
+    setDateRangeType(nextType)
 
-    if (selectedFilter === 'all') return matchesSearch
-    if (selectedFilter === 'working') {
-      return matchesSearch && !record.punchOutTime
+    if (nextType === 'week') {
+      setWeekStartDate((prev) => prev || getCurrentWeekStartDate())
+    } else if (nextType === 'month') {
+      setMonthYear((prev) => prev || getCurrentMonthYearValue())
+    } else {
+      const today = getCurrentDateISO()
+      setSelectedDate(today)
+      setSelectedEndDate(today)
     }
-    if (selectedFilter === 'completed') {
-      return matchesSearch && record.punchOutTime
-    }
-    
-    return matchesSearch
-  })
+  }
+
+  const displayedAttendance = attendanceRecords
 
   const formatTime = (timeString: string) => {
     return new Date(timeString).toLocaleTimeString('en-US', { 
@@ -390,7 +506,27 @@ export default function PunchClockPage() {
   }
 
   const getStatusBadge = (record: Attendance) => {
-    if (!record.punchOutTime) {
+    const status = getAttendanceStatus(record)
+
+    if (status === 'pending') {
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+          <ClockIcon className="w-3 h-3 mr-1" />
+          {t('status.pending', { defaultValue: 'Pending Approval' })}
+        </span>
+      )
+    }
+
+    if (status === 'rejected') {
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
+          <XCircleIcon className="w-3 h-3 mr-1" />
+          {t('status.rejected', { defaultValue: 'Rejected' })}
+        </span>
+      )
+    }
+
+    if (status === 'working') {
       return (
         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
           <div className="w-2 h-2 bg-green-500 rounded-full mr-1 animate-pulse"></div>
@@ -407,8 +543,52 @@ export default function PunchClockPage() {
     )
   }
 
-  const activeCount = attendanceRecords.filter(record => !record.punchOutTime).length
-  const completedCount = attendanceRecords.filter(record => record.punchOutTime).length
+  const renderUnscheduledStatus = (record: Attendance) => {
+    const status = getAttendanceStatus(record)
+
+    if (status === 'pending') {
+      return (
+        <div className="mt-1">
+          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+            {t('status.pending', { defaultValue: 'Pending Approval' })}
+          </span>
+        </div>
+      )
+    }
+
+    if (status === 'rejected') {
+      return (
+        <div className="mt-1">
+          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
+            {t('status.rejected', { defaultValue: 'Rejected' })}
+          </span>
+        </div>
+      )
+    }
+
+    if (status === 'completed') {
+      return (
+        <div className="mt-1">
+          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+            <CheckCircleIcon className="w-3 h-3 mr-1" />
+            {t('status.approved', { defaultValue: 'Approved' })}
+          </span>
+        </div>
+      )
+    }
+
+    return null
+  }
+
+  const activeCount = displayedAttendance.filter(record => !record.punchOutTime).length
+  const completedCount = displayedAttendance.filter(record => record.punchOutTime).length
+  const totalCountDisplay = paginationMeta.totalCount ?? displayedAttendance.length
+  const paginationStart = totalCountDisplay === 0 || displayedAttendance.length === 0
+    ? 0
+    : Math.min((page - 1) * pageSize + 1, totalCountDisplay)
+  const paginationEnd = displayedAttendance.length === 0
+    ? 0
+    : Math.min(paginationStart + displayedAttendance.length - 1, totalCountDisplay)
 
   // Admin functions
   const handleEditRecord = (record: Attendance) => {
@@ -499,17 +679,12 @@ export default function PunchClockPage() {
     if (!isAdmin) return
 
     try {
-      const adminId = user?.id || 'admin'
-      const response = await fetch('/api/attendance/pending', {
+      const response = await fetch(`/api/attendance/${attendanceId}/approval`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
-          attendanceId, 
-          approved,
-          adminId 
-        }),
+        body: JSON.stringify({ approved }),
       })
 
       if (response.ok) {
@@ -552,32 +727,67 @@ export default function PunchClockPage() {
     }
   }
 
-  const exportToCSV = () => {
+  const exportToCSV = async () => {
     if (!isAdmin) return
-    
-    const headers = ['Employee Name', 'Employee No', 'Department', 'Punch In', 'Punch Out', 'Duration', 'Status', 'Shift Info']
-    const csvData = filteredAttendance.map(record => [
-      `${record.employee.firstName} ${record.employee.lastName}`,
-      record.employee.employeeNo,
-      record.employee.department.name,
-      formatTime(record.punchInTime),
-      record.punchOutTime ? formatTime(record.punchOutTime) : 'Still working',
-      calculateWorkDuration(record.punchInTime, record.punchOutTime),
-      record.punchOutTime ? 'Completed' : 'Working',
-      record.shift ? `${record.shift.startTime} - ${record.shift.endTime || 'Active'}` : 'No shift'
-    ])
 
-    const csvContent = [headers, ...csvData]
-      .map(row => row.map(field => `"${field}"`).join(','))
-      .join('\n')
+    try {
+      const params = buildAttendanceQueryParams({ includePagination: false })
+      if (!params) return
 
-    const blob = new Blob([csvContent], { type: 'text/csv' })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `attendance_${getDateRange()?.startDate || selectedDate}.csv`
-    a.click()
-    window.URL.revokeObjectURL(url)
+      const response = await fetch(`/api/attendance?${params.toString()}`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch attendance for export')
+      }
+
+      const json = await response.json()
+      const exportRecords: Attendance[] = Array.isArray(json) ? json : json.data || []
+
+      const headers = ['Employee Name', 'Employee No', 'Department', 'Punch In', 'Punch Out', 'Duration', 'Status', 'Shift Info']
+      const csvData = exportRecords.map(record => {
+        const status = getAttendanceStatus(record)
+        const statusLabel =
+          status === 'pending'
+            ? t('status.pending', { defaultValue: 'Pending Approval' })
+            : status === 'rejected'
+              ? t('status.rejected', { defaultValue: 'Rejected' })
+              : status === 'working'
+                ? t('status.working')
+                : t('status.completed')
+
+        return [
+        `${record.employee.firstName} ${record.employee.lastName}`,
+        record.employee.employeeNo,
+        record.employee.department.name,
+        formatTime(record.punchInTime),
+        record.punchOutTime ? formatTime(record.punchOutTime) : 'Still working',
+        calculateWorkDuration(record.punchInTime, record.punchOutTime),
+        statusLabel,
+        record.shift ? `${record.shift.startTime} - ${record.shift.endTime || 'Active'}` : 'No shift'
+      ]})
+
+      const csvContent = [headers, ...csvData]
+        .map(row => row.map(field => `"${field}"`).join(','))
+        .join('\n')
+
+      const blob = new Blob([csvContent], { type: 'text/csv' })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `attendance_${getDateRange()?.startDate || selectedDate}.csv`
+      a.click()
+      window.URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Error exporting CSV:', error)
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        icon: 'error',
+        title: 'Failed to export CSV'
+      })
+    }
   }
 
   const exportToPDF = async () => {
@@ -590,6 +800,16 @@ export default function PunchClockPage() {
         endDate: dateRange?.endDate || selectedEndDate,
         ...(selectedEmployee && { employeeId: selectedEmployee })
       })
+
+      const statusFilter = getStatusFilterParam()
+      if (statusFilter) {
+        params.append('status', statusFilter)
+      }
+
+      const trimmedSearch = searchTerm.trim()
+      if (trimmedSearch) {
+        params.append('search', trimmedSearch)
+      }
 
       const response = await fetch(`/api/attendance/export/pdf?${params.toString()}`)
       
@@ -620,7 +840,7 @@ export default function PunchClockPage() {
         <div className="text-center text-red-600">
           {t('error.failed_to_load')}: {error}
           <button 
-            onClick={fetchData}
+            onClick={initializeData}
             className="ml-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
           >
             {t('error.retry')}
@@ -645,7 +865,7 @@ export default function PunchClockPage() {
             <div className="grid grid-cols-2 sm:flex sm:items-center gap-3 sm:gap-8 text-xs sm:text-sm text-gray-500">
               <div className="flex items-center gap-2">
                 <UserGroupIcon className="w-4 h-4 flex-shrink-0" />
-                <span className="truncate">{attendanceRecords.length} {t('header.records_today')}</span>
+                <span className="truncate">{totalCountDisplay} {t('header.records_today')}</span>
               </div>
               <div className="flex items-center gap-2">
                 <PlayIcon className="w-4 h-4 flex-shrink-0" />
@@ -673,7 +893,7 @@ export default function PunchClockPage() {
               </label>
               <select
                 value={dateRangeType}
-                onChange={(e) => setDateRangeType(e.target.value as 'single' | 'week' | 'month')}
+                onChange={(e) => handleDateRangeTypeChange(e.target.value as 'single' | 'week' | 'month')}
                 className="block w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] text-sm"
               >
                 <option value="single">Single Day</option>
@@ -690,7 +910,10 @@ export default function PunchClockPage() {
                 <input
                   type="date"
                   value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
+                  onChange={(e) => {
+                    setPage(1)
+                    setSelectedDate(e.target.value)
+                  }}
                   className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] text-sm"
                 />
               </div>
@@ -701,7 +924,10 @@ export default function PunchClockPage() {
                 <input
                   type="date"
                   value={selectedEndDate}
-                  onChange={(e) => setSelectedEndDate(e.target.value)}
+                  onChange={(e) => {
+                    setPage(1)
+                    setSelectedEndDate(e.target.value)
+                  }}
                   className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] text-sm"
                 />
               </div>
@@ -717,7 +943,10 @@ export default function PunchClockPage() {
                 <input
                   type="date"
                   value={weekStartDate}
-                  onChange={(e) => setWeekStartDate(e.target.value)}
+                  onChange={(e) => {
+                    setPage(1)
+                    setWeekStartDate(e.target.value)
+                  }}
                   className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] text-sm"
                 />
               </div>
@@ -731,7 +960,10 @@ export default function PunchClockPage() {
                 <input
                   type="month"
                   value={monthYear}
-                  onChange={(e) => setMonthYear(e.target.value)}
+                  onChange={(e) => {
+                    setPage(1)
+                    setMonthYear(e.target.value)
+                  }}
                   className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] text-sm"
                 />
               </div>
@@ -752,7 +984,10 @@ export default function PunchClockPage() {
               <input
                 type="text"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  setPage(1)
+                  setSearchTerm(e.target.value)
+                }}
                 placeholder={t('search.placeholder')}
                 className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] text-sm"
               />
@@ -761,7 +996,10 @@ export default function PunchClockPage() {
             <div className="w-full sm:w-auto sm:min-w-[200px]">
               <select
                 value={selectedEmployee}
-                onChange={(e) => setSelectedEmployee(e.target.value)}
+                onChange={(e) => {
+                  setPage(1)
+                  setSelectedEmployee(e.target.value)
+                }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] text-sm"
               >
                 <option value="">All Employees</option>
@@ -788,7 +1026,11 @@ export default function PunchClockPage() {
               ].map((filter) => (
                 <button
                   key={filter.value}
-                  onClick={() => setSelectedFilter(filter.value)}
+                  onClick={() => {
+                    if (selectedFilter === filter.value) return
+                    setSelectedFilter(filter.value)
+                    setPage(1)
+                  }}
                   className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${
                     selectedFilter === filter.value
                       ? 'bg-[#31BCFF] text-white shadow-md'
@@ -829,12 +1071,19 @@ export default function PunchClockPage() {
       {/* Attendance Records Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
-          <h3 className="text-base sm:text-lg font-semibold text-gray-900">
-            {t('table.title')} ({filteredAttendance.length})
-          </h3>
+          <div className="flex items-center gap-3">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900">
+              {t('table.title')} ({totalCountDisplay})
+            </h3>
+            {refreshing && (
+              <span className="text-xs text-blue-600">
+                {t('table.refreshing', { defaultValue: 'Refreshing...' })}
+              </span>
+            )}
+          </div>
         </div>
         
-        {filteredAttendance.length === 0 ? (
+        {displayedAttendance.length === 0 ? (
           <div className="text-center py-12">
             <ClockIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">{t('empty_state.title')}</h3>
@@ -878,7 +1127,7 @@ export default function PunchClockPage() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredAttendance.map((record) => (
+                  {displayedAttendance.map((record) => (
                     <tr key={record.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
@@ -962,21 +1211,7 @@ export default function PunchClockPage() {
                       ) : (
                         <div>
                           <span className="text-sm text-gray-500">{t('status.no_shift')}</span>
-                          {!record.approved && (
-                            <div className="mt-1">
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                Pending Approval
-                              </span>
-                            </div>
-                          )}
-                          {record.approved && !record.shift && (
-                            <div className="mt-1">
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                <CheckCircleIcon className="w-3 h-3 mr-1" />
-                                Approved
-                              </span>
-                            </div>
-                          )}
+                          {renderUnscheduledStatus(record)}
                         </div>
                       )}
                     </td>
@@ -992,7 +1227,7 @@ export default function PunchClockPage() {
                           </button>
                           
                           {/* Show approval buttons for unscheduled work that needs approval */}
-                          {!record.shift && !record.approved && (
+                          {!record.shift && getAttendanceStatus(record) === 'pending' && (
                             <>
                               <button
                                 onClick={() => handleAttendanceApproval(record.id, true)}
@@ -1021,58 +1256,62 @@ export default function PunchClockPage() {
 
           {/* Mobile Card View */}
           <div className="lg:hidden divide-y divide-gray-200">
-            {filteredAttendance.map((record) => (
+            {displayedAttendance.map((record) => (
               <div key={record.id} className="p-4 hover:bg-gray-50">
                 {/* Employee Info */}
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="flex-shrink-0">
-                    {record.employee.profilePhoto ? (
-                      <Image
-                        src={record.employee.profilePhoto}
-                        alt={`${record.employee.firstName} ${record.employee.lastName}`}
-                        width={48}
-                        height={48}
-                        className="rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="h-12 w-12 rounded-full bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] flex items-center justify-center">
-                        <span className="text-sm font-medium text-white">
-                          {record.employee.firstName.charAt(0)}{record.employee.lastName.charAt(0)}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-gray-900 truncate">
-                      {record.employee.firstName} {record.employee.lastName}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      #{record.employee.employeeNo}
-                    </div>
-                    <div className="text-xs text-gray-600 mt-0.5">
-                      {record.employee.department.name}
-                      {record.employee.employeeGroup && (
-                        <span className="ml-1">• {record.employee.employeeGroup.name}</span>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mb-4">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="flex-shrink-0">
+                      {record.employee.profilePhoto ? (
+                        <Image
+                          src={record.employee.profilePhoto}
+                          alt={`${record.employee.firstName} ${record.employee.lastName}`}
+                          width={48}
+                          height={48}
+                          className="rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="h-12 w-12 rounded-full bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] flex items-center justify-center">
+                          <span className="text-sm font-medium text-white">
+                            {record.employee.firstName.charAt(0)}{record.employee.lastName.charAt(0)}
+                          </span>
+                        </div>
                       )}
                     </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold text-gray-900 truncate">
+                        {record.employee.firstName} {record.employee.lastName}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        #{record.employee.employeeNo}
+                      </div>
+                      <div className="text-xs text-gray-600 mt-0.5">
+                        {record.employee.department.name}
+                        {record.employee.employeeGroup && (
+                          <span className="ml-1">• {record.employee.employeeGroup.name}</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  {getStatusBadge(record)}
+                  <div className="flex sm:flex-none items-start sm:items-center sm:justify-end">
+                    {getStatusBadge(record)}
+                  </div>
                 </div>
 
                 {/* Time Info */}
-                <div className="grid grid-cols-2 gap-3 mb-3">
-                  <div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                  <div className="rounded-xl border border-gray-100 bg-gray-50 p-3">
                     <div className="text-xs text-gray-500 mb-1">{t('table.columns.punch_in')}</div>
-                    <div className={`text-sm font-medium ${getPunchInTimeStyle(record)}`}>
+                    <div className={`text-base font-semibold ${getPunchInTimeStyle(record)}`}>
                       {formatTime(record.punchInTime)}
                     </div>
                     <div className="text-xs text-gray-500">{formatDate(record.punchInTime)}</div>
                   </div>
-                  <div>
+                  <div className="rounded-xl border border-gray-100 bg-gray-50 p-3">
                     <div className="text-xs text-gray-500 mb-1">{t('table.columns.punch_out')}</div>
                     {record.punchOutTime ? (
                       <>
-                        <div className="text-sm font-medium text-gray-900">
+                        <div className="text-base font-semibold text-gray-900">
                           {formatTime(record.punchOutTime)}
                         </div>
                         <div className="text-xs text-gray-500">{formatDate(record.punchOutTime)}</div>
@@ -1084,27 +1323,32 @@ export default function PunchClockPage() {
                 </div>
 
                 {/* Duration and Status */}
-                <div className="mb-3">
-                  <div className="text-xs text-gray-500 mb-1">{t('table.columns.duration')}</div>
-                  <div className="text-sm font-medium text-gray-900">
+                <div className="mb-4 rounded-xl border border-gray-100 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.08)] p-3">
+                  <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+                    <span>{t('table.columns.duration')}</span>
+                    <span className="text-[10px] uppercase tracking-wide text-gray-400">{t('status.worked', { defaultValue: 'Worked' })}</span>
+                  </div>
+                  <div className="text-lg font-semibold text-gray-900">
                     {calculateWorkDuration(record.punchInTime, record.punchOutTime)}
                   </div>
-                  {getEarlyLateStatus(record)?.map((status, index) => (
-                    <span key={index} className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1 mr-1 ${status.color}`}>
-                      {status.text}
-                    </span>
-                  ))}
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {getEarlyLateStatus(record)?.map((status, index) => (
+                      <span key={index} className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${status.color}`}>
+                        {status.text}
+                      </span>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Shift Info */}
-                <div className="mb-3">
+                <div className="mb-4 rounded-xl border border-gray-100 bg-gray-50 p-3">
                   <div className="text-xs text-gray-500 mb-1">{t('table.columns.shift_info')}</div>
                   {record.shift ? (
-                    <div>
-                      <div className="text-sm text-gray-900">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                      <div className="text-sm font-medium text-gray-900">
                         {formatShiftTime(record.shift.startTime)} - {record.shift.endTime ? formatShiftTime(record.shift.endTime) : 'Active'}
                       </div>
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1 ${
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                         record.shift.status === 'WORKING' ? 'bg-green-100 text-green-800' :
                         record.shift.status === 'COMPLETED' ? 'bg-blue-100 text-blue-800' :
                         'bg-gray-100 text-gray-800'
@@ -1115,21 +1359,7 @@ export default function PunchClockPage() {
                   ) : (
                     <div>
                       <span className="text-sm text-gray-500">{t('status.no_shift')}</span>
-                      {!record.approved && (
-                        <div className="mt-1">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                            Pending Approval
-                          </span>
-                        </div>
-                      )}
-                      {record.approved && !record.shift && (
-                        <div className="mt-1">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            <CheckCircleIcon className="w-3 h-3 mr-1" />
-                            Approved
-                          </span>
-                        </div>
-                      )}
+                      {renderUnscheduledStatus(record)}
                     </div>
                   )}
                 </div>
@@ -1145,7 +1375,7 @@ export default function PunchClockPage() {
                       Edit
                     </button>
                     
-                    {!record.shift && !record.approved && (
+                    {!record.shift && getAttendanceStatus(record) === 'pending' && (
                       <>
                         <button
                           onClick={() => handleAttendanceApproval(record.id, true)}
@@ -1171,6 +1401,62 @@ export default function PunchClockPage() {
           </>
         )}
       </div>
+
+      {displayedAttendance.length > 0 && (
+        <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-6 py-4 bg-white rounded-xl border border-gray-200 shadow-sm">
+          <div className="text-sm text-gray-600 text-center sm:text-left">
+            {totalCountDisplay === 0
+              ? t('table.empty_summary', { defaultValue: 'No records found' })
+              : t('table.pagination_summary', {
+                  defaultValue: 'Showing {{start}}-{{end}} of {{total}} records',
+                  start: paginationStart,
+                  end: paginationEnd,
+                  total: totalCountDisplay
+                })}
+          </div>
+          <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+            <div className="flex items-center gap-2 text-sm text-gray-600 w-full sm:w-auto justify-center sm:justify-start">
+              <span>{t('table.rows_per_page', { defaultValue: 'Rows per page' })}</span>
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  const nextSize = parseInt(e.target.value, 10)
+                  setPageSize(Number.isNaN(nextSize) ? 25 : nextSize)
+                  setPage(1)
+                }}
+                className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-[#31BCFF]"
+              >
+                {[10, 25, 50, 100].map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center gap-2 justify-center sm:justify-start w-full sm:w-auto">
+              <button
+                onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+                disabled={page === 1 || totalCountDisplay === 0}
+                className="p-2 rounded-md border border-gray-200 text-gray-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
+                aria-label="Previous page"
+              >
+                <ChevronLeftIcon className="w-4 h-4" />
+              </button>
+              <span className="text-sm text-gray-700">
+                {page} / {paginationMeta.totalPages}
+              </span>
+              <button
+                onClick={() => setPage((prev) => Math.min(paginationMeta.totalPages, prev + 1))}
+                disabled={page >= paginationMeta.totalPages || totalCountDisplay === 0}
+                className="p-2 rounded-md border border-gray-200 text-gray-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
+                aria-label="Next page"
+              >
+                <ChevronRightIcon className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Edit Modal - Admin Only */}
       <Dialog open={isAdmin && showEditModal} onOpenChange={setShowEditModal}>

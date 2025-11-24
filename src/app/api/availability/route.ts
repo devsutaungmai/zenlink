@@ -13,6 +13,8 @@ export async function GET(request: NextRequest) {
     const employeeId = searchParams.get('employeeId')
     const month = searchParams.get('month')
     const year = searchParams.get('year')
+    const startDateParam = searchParams.get('startDate')
+    const endDateParam = searchParams.get('endDate')
 
     let whereClause: any = {}
 
@@ -22,7 +24,17 @@ export async function GET(request: NextRequest) {
     }
 
     // Add date filter if month and year are provided
-    if (month && year) {
+    if (startDateParam && endDateParam) {
+      const startDate = new Date(startDateParam)
+      const endDate = new Date(endDateParam)
+
+      if (!isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
+        whereClause.date = {
+          gte: startDate,
+          lte: endDate
+        }
+      }
+    } else if (month && year) {
       const startDate = new Date(parseInt(year), parseInt(month) - 1, 1)
       const endDate = new Date(parseInt(year), parseInt(month), 0)
       

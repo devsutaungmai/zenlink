@@ -25,6 +25,19 @@ export async function GET() {
         businessId: businessId
       },
       include: {
+        function: {
+          select: {
+            id: true,
+            name: true,
+            color: true,
+            category: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          }
+        },
         _count: {
           select: { employees: true }
         }
@@ -56,6 +69,34 @@ export async function POST(request: Request) {
       )
     }
 
+    if (!data.functionId) {
+      return NextResponse.json(
+        { error: 'Function is required' },
+        { status: 400 }
+      )
+    }
+
+    const targetFunction = await prisma.departmentFunction.findFirst({
+      where: {
+        id: data.functionId,
+        category: {
+          businessId: user.businessId
+        }
+      },
+      include: {
+        category: {
+          select: { id: true, name: true }
+        }
+      }
+    })
+
+    if (!targetFunction) {
+      return NextResponse.json(
+        { error: 'Function not found for this business' },
+        { status: 404 }
+      )
+    }
+
     const employeeGroup = await prisma.employeeGroup.create({
       data: {
         name: data.name,
@@ -63,7 +104,27 @@ export async function POST(request: Request) {
         wagePerShift: data.wagePerShift || 0,
         defaultWageType: data.defaultWageType || 'HOURLY',
         salaryCode: data.salaryCode || null,
-        businessId: user.businessId,
+        business: {
+          connect: { id: user.businessId }
+        },
+        function: {
+          connect: { id: data.functionId }
+        }
+      },
+      include: {
+        function: {
+          select: {
+            id: true,
+            name: true,
+            color: true,
+            category: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          }
+        }
       }
     })
 

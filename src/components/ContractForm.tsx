@@ -8,6 +8,7 @@ import { Employee, EmployeeGroup } from '@prisma/client'
 interface ContractFormProps {
   onClose: () => void
   onContractCreated: (contract: any) => void
+  initialEmployeeId?: string
 }
 
 interface ContractTemplate {
@@ -21,9 +22,9 @@ interface ContractTemplate {
   }
 }
 
-export default function ContractForm({ onClose, onContractCreated }: ContractFormProps) {
+export default function ContractForm({ onClose, onContractCreated, initialEmployeeId }: ContractFormProps) {
   const [formData, setFormData] = useState({
-    employeeId: '',
+    employeeId: initialEmployeeId || '',
     employeeGroupId: '',
     contractTemplateId: '',
     startDate: '',
@@ -35,6 +36,13 @@ export default function ContractForm({ onClose, onContractCreated }: ContractFor
   const [employees, setEmployees] = useState<Employee[]>([])
   const [employeeGroups, setEmployeeGroups] = useState<EmployeeGroup[]>([])
   const [contractTemplates, setContractTemplates] = useState<ContractTemplate[]>([])
+
+  useEffect(() => {
+    if (!initialEmployeeId) return
+    setFormData(prev => (
+      prev.employeeId === initialEmployeeId ? prev : { ...prev, employeeId: initialEmployeeId }
+    ))
+  }, [initialEmployeeId])
 
   useEffect(() => {
     const fetchData = async () => {

@@ -214,13 +214,17 @@ export default function TimeTrackingPage() {
       const endDate = new Date(today)
       endDate.setHours(23, 59, 59, 999)
       
-      const res = await fetch(`/api/time-tracking/shifts?businessName=${encodeURIComponent(businessName)}&startDate=${startDate.toISOString().split('T')[0]}&endDate=${endDate.toISOString().split('T')[0]}`)
+      const todayDateString = startDate.toISOString().split('T')[0]
+      const res = await fetch(`/api/time-tracking/shifts?businessName=${encodeURIComponent(businessName)}&startDate=${todayDateString}&endDate=${endDate.toISOString().split('T')[0]}`)
       if (res.ok) {
         const shiftsData = await res.json()
-        setAllShifts(shiftsData)
+        const todaysShifts = Array.isArray(shiftsData)
+          ? shiftsData.filter((shift: Shift) => (shift.date || '').split('T')[0] === todayDateString)
+          : []
+        setAllShifts(todaysShifts)
         
         // Filter working shifts (status is WORKING)
-        const activeShifts = shiftsData.filter((shift: Shift) => shift.status === 'WORKING')
+        const activeShifts = todaysShifts.filter((shift: Shift) => shift.status === 'WORKING')
         setWorkingShifts(activeShifts)
       } else {
         console.error('Failed to fetch shifts:', res.status, res.statusText)

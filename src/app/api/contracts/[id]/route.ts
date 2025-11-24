@@ -24,6 +24,10 @@ export async function DELETE(
       return NextResponse.json({ error: 'Contract not found' }, { status: 404 })
     }
 
+    if (contract.signedStatus && contract.signedStatus !== 'UNSIGNED') {
+      return NextResponse.json({ error: 'Signed contracts cannot be deleted' }, { status: 400 })
+    }
+
     // Delete the contract
     await prisma.contract.delete({
       where: { id: contractId },

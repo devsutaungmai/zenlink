@@ -32,6 +32,15 @@ interface EmployeeGroup {
   hourlyWage: number
   wagePerShift: number
   defaultWageType: string
+  functionId?: string | null
+  function?: {
+    id: string
+    name: string
+    category?: {
+      id: string
+      name: string
+    } | null
+  } | null
   _count: {
     employees: number
   }
@@ -273,6 +282,16 @@ export default function EmployeeGroupsPage() {
 
                 <MobileCardGrid columns={2}>
                   <MobileCardField
+                    label={t('employee_groups.table.function', { defaultValue: 'Function' })}
+                    value={group.function?.name
+                      ? `${group.function.name}${group.function?.category?.name ? ` • ${group.function.category.name}` : ''}`
+                      : t('employee_groups.table.no_function', { defaultValue: 'Not linked' })}
+                    className="col-span-2"
+                  />
+                </MobileCardGrid>
+
+                <MobileCardGrid columns={2}>
+                  <MobileCardField
                     label={t('employee_groups.table.employees')}
                     value={
                       <Badge variant="gray">
@@ -321,6 +340,9 @@ export default function EmployeeGroupsPage() {
                       {t('employee_groups.table.wage_shift')}
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t('employee_groups.table.function', { defaultValue: 'Function' })}
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       {t('employee_groups.table.employees')}
                     </th>
                     <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -349,6 +371,19 @@ export default function EmployeeGroupsPage() {
                       <td className="px-6 py-4">
                         <div className="text-sm text-gray-900 font-medium">
                           {currencySymbol}{group.wagePerShift}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-900">
+                          {group.function?.name
+                            ? (
+                              <span>
+                                {group.function.name}
+                                {group.function?.category?.name ? ` • ${group.function.category.name}` : ''}
+                              </span>
+                            ) : (
+                              t('employee_groups.table.no_function', { defaultValue: 'Not linked' })
+                            )}
                         </div>
                       </td>
                       <td className="px-6 py-4">

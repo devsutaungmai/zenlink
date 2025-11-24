@@ -7,12 +7,8 @@ import { ChevronLeftIcon } from '@heroicons/react/24/outline'
 import EmployeeGroupForm from '@/components/EmployeeGroupForm'
 import { WageType, EmployeeGroupFormData } from '@/components/EmployeeGroupForm'
 
-interface EmployeeGroup {
+interface EmployeeGroup extends EmployeeGroupFormData {
   id: string
-  name: string
-  hourlyWage: number
-  wagePerShift: number
-  defaultWageType: WageType
 }
 
 export default function EditEmployeeGroupPage({ params }: { params: Promise<{ id: string }> }) {
@@ -30,7 +26,15 @@ export default function EditEmployeeGroupPage({ params }: { params: Promise<{ id
         const res = await fetch(`/api/employee-groups/${employeeGroupId}`)
         if (!res.ok) throw new Error('Failed to fetch employee group')
         const data = await res.json()
-        setEmployeeGroup(data)
+        const mapped: EmployeeGroup = {
+          id: data.id,
+          name: data.name,
+          hourlyWage: data.hourlyWage,
+          wagePerShift: data.wagePerShift,
+          defaultWageType: data.defaultWageType,
+          functionId: data.functionId || data.function?.id || ''
+        }
+        setEmployeeGroup(mapped)
       } catch (error) {
         setError(error instanceof Error ? error.message : 'An error occurred')
       } finally {

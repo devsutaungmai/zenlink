@@ -138,11 +138,6 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
         const data = await response.json()
         setContracts(data)
         
-        if (data && data.length > 0) {
-          setAvailableTabs([...defaultEmployeeTabs, contractTab])
-        } else {
-          setAvailableTabs(defaultEmployeeTabs)
-        }
       }
     } catch (error) {
       console.error('Error fetching contracts:', error)
@@ -150,6 +145,12 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
       setContractsLoading(false)
     }
   }
+
+  useEffect(() => {
+    if (employeeId) {
+      setAvailableTabs([...defaultEmployeeTabs, contractTab])
+    }
+  }, [employeeId])
 
   const fetchPayslips = async () => {
     if (!employeeId) return
@@ -260,6 +261,11 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
     })
     const timeRange = endTime ? `${startTime} - ${endTime}` : `${startTime} - Ongoing`
     return { date: shiftDate, time: timeRange }
+  }
+
+  const handleCreateContractNavigation = () => {
+    if (!employeeId) return
+    router.push(`/dashboard/contracts?employeeId=${employeeId}`)
   }
 
   const filteredShifts = shifts.filter(shift => {
@@ -659,13 +665,13 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <button 
+                          {/* <button 
                             onClick={() => window.open(`/api/payroll-entries/${payslip.id}/payslip`, '_blank')}
                             className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
                             title="View Payslip"
                           >
                             <EyeIcon className="w-4 h-4" />
-                          </button>
+                          </button> */}
                           <button 
                             onClick={() => {
                               const link = document.createElement('a')
@@ -756,6 +762,7 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
               contracts={contracts}
               employeeName={employee ? `${employee.firstName} ${employee.lastName}` : undefined}
               loading={contractsLoading}
+              onCreateContract={handleCreateContractNavigation}
             />
           )}
         </div>

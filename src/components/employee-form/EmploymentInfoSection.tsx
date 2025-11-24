@@ -112,7 +112,7 @@ export function EmploymentInfoSection({
 
       <div>
         <label className="block text-sm font-medium text-gray-700">
-          Salary Rate (per hour)
+          Salary Rate (per hour) <span className="text-red-500">*</span>
         </label>
         <input
           type="number"
@@ -120,8 +120,13 @@ export function EmploymentInfoSection({
           value={formData.salaryRate || ''}
           onChange={onChange}
           step="0.01"
+          min="0.01"
           className={getFieldStyle('salaryRate')}
+          required
         />
+        {validationErrors.salaryRate && (
+          <p className="mt-1 text-sm text-red-500">{validationErrors.salaryRate}</p>
+        )}
       </div>
 
       <div>

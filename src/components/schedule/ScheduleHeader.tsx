@@ -36,6 +36,11 @@ interface FunctionItem {
   name: string
   color?: string | null
   categoryId: string
+  category?: {
+    id: string
+    name: string
+    color?: string | null
+  } | null
 }
 
 interface FilterOptions {
@@ -208,15 +213,15 @@ export default function ScheduleHeader({
     <div className="space-y-3">
       {/* Mobile Layout - Stacked */}
       <div className="md:hidden space-y-3">
-        {/* Row 1: Department Filter and Filters Button */}
-        <div className="flex items-center gap-2">
+        {/* Row 1: Department, Category, and Function Filters */}
+        <div className="space-y-2">
           <select
             value={selectedDepartmentId || ""}
             onChange={(e) => {
               const value = e.target.value === "" ? null : e.target.value
               onDepartmentChange(value)
             }}
-            className="flex-1 px-3 py-2 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#31BCFF] bg-white"
+            className="w-full px-3 py-2 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#31BCFF] bg-white"
           >
             <option value="">All Departments</option>
             {safeDepartments.map(department => (
@@ -226,8 +231,48 @@ export default function ScheduleHeader({
             ))}
           </select>
 
+          <select
+            value={selectedCategoryId || ""}
+            onChange={(e) => {
+              const value = e.target.value === "" ? null : e.target.value
+              onCategoryChange(value)
+              // Clear function selection when category changes
+              if (value !== selectedCategoryId) {
+                onFunctionChange(null)
+              }
+            }}
+            className="w-full px-3 py-2 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#31BCFF] bg-white"
+          >
+            <option value="">All Categories</option>
+            {safeCategories.map(category => (
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={selectedFunctionId || ""}
+            onChange={(e) => {
+              const value = e.target.value === "" ? null : e.target.value
+              onFunctionChange(value)
+            }}
+            disabled={!selectedCategoryId && filteredFunctions.length === 0}
+            className="w-full px-3 py-2 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#31BCFF] bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
+          >
+            <option value="">{selectedCategoryId ? 'All Functions' : 'Select category first'}</option>
+            {filteredFunctions.map(func => (
+              <option key={func.id} value={func.id}>
+                {func.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Row 2: Filters Button */}
+        <div className="flex items-center gap-2">
           {/* Filters Button - Mobile */}
-          <div className="relative" ref={filterButtonRef}>
+          <div className="relative flex-1" ref={filterButtonRef}>
             <button 
               onClick={() => setShowFilters(!showFilters)}
               className="px-3 py-2 rounded-md border border-gray-300 hover:bg-gray-50 bg-white flex items-center gap-2"
@@ -392,7 +437,7 @@ export default function ScheduleHeader({
           </div>
         </div>
 
-        {/* Row 2: Date Navigation */}
+        {/* Row 3: Date Navigation */}
         <div className="flex items-center justify-between">
           <button
             onClick={onTodayClick}
@@ -432,12 +477,51 @@ export default function ScheduleHeader({
             const value = e.target.value === "" ? null : e.target.value
             onDepartmentChange(value)
           }}
-          className="px-3 py-2 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#31BCFF] bg-white min-w-[200px]"
+          className="px-3 py-2 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#31BCFF] bg-white min-w-[160px]"
         >
           <option value="">All Departments</option>
           {safeDepartments.map(department => (
             <option key={department.id} value={department.id}>
               {department.name}
+            </option>
+          ))}
+        </select>
+
+        {/* Category Filter */}
+        <select
+          value={selectedCategoryId || ""}
+          onChange={(e) => {
+            const value = e.target.value === "" ? null : e.target.value
+            onCategoryChange(value)
+            // Clear function selection when category changes
+            if (value !== selectedCategoryId) {
+              onFunctionChange(null)
+            }
+          }}
+          className="px-3 py-2 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#31BCFF] bg-white min-w-[160px]"
+        >
+          <option value="">All Categories</option>
+          {safeCategories.map(category => (
+            <option key={category.id} value={category.id}>
+              {category.name}
+            </option>
+          ))}
+        </select>
+
+        {/* Function Filter */}
+        <select
+          value={selectedFunctionId || ""}
+          onChange={(e) => {
+            const value = e.target.value === "" ? null : e.target.value
+            onFunctionChange(value)
+          }}
+          disabled={!selectedCategoryId && filteredFunctions.length === 0}
+          className="px-3 py-2 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#31BCFF] bg-white min-w-[160px] disabled:bg-gray-100 disabled:cursor-not-allowed"
+        >
+          <option value="">{selectedCategoryId ? 'All Functions' : 'Select category first'}</option>
+          {filteredFunctions.map(func => (
+            <option key={func.id} value={func.id}>
+              {func.name}
             </option>
           ))}
         </select>

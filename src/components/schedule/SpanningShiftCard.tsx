@@ -10,6 +10,9 @@ interface SpanningShiftCardProps {
   onEdit: (shift: ShiftWithRelations) => void
   index?: number  // Position in the overlapping group
   total?: number  // Total shifts in the overlapping group
+  displayStartTime?: string
+  displayEndTime?: string | null
+  isContinuation?: boolean
 }
 
 export default function SpanningShiftCard({ 
@@ -18,10 +21,15 @@ export default function SpanningShiftCard({
   employees = [], // Provide a default empty array 
   onEdit, 
   index = 0, 
-  total = 1 
+  total = 1,
+  displayStartTime,
+  displayEndTime,
+  isContinuation = false
 }: SpanningShiftCardProps) {
   const { currencySymbol } = useCurrency()
-  const { top, height } = getShiftPosition(shift.startTime, shift.endTime)
+  const effectiveStart = displayStartTime ?? shift.startTime
+  const effectiveEnd = displayEndTime ?? shift.endTime
+  const { top, height } = getShiftPosition(effectiveStart, effectiveEnd)
   
   // Check if there's an approved exchange to determine the current assigned employee
   const approvedExchange = shift.shiftExchanges?.find(exchange => exchange.status === 'APPROVED')
@@ -40,7 +48,8 @@ export default function SpanningShiftCard({
   }
   
   // Format end time for display - show "Active" if null
-  const endTimeDisplay = shift.endTime ? shift.endTime.substring(0, 5) : 'Active'
+  const endTimeDisplay = effectiveEnd ? effectiveEnd.substring(0, 5) : 'Active'
+  const startTimeDisplay = effectiveStart.substring(0, 5)
   
   // Calculate horizontal position for overlapping shifts
   const cardWidth = total > 1 ? `calc((100% - 16px) / ${total})` : 'calc(100% - 16px)'
@@ -83,7 +92,7 @@ export default function SpanningShiftCard({
       
       {/* Time range */}
       <div className={`${shift.function ? 'font-medium text-[10px]' : 'font-medium text-xs'} truncate`}>
-        {shift.startTime.substring(0, 5)} - {endTimeDisplay}
+        {startTimeDisplay} - {endTimeDisplay}
       </div>
       
       {/* Employee name */}
@@ -150,9 +159,8 @@ const getShiftPosition = (startTime: string, endTime: string | null) => {
   const pixelsPerHour = 24;
   const height = ((endOffset - startOffset) / 60) * pixelsPerHour;
   
-  // Top position: offset from the top of the schedule grid
-  // Assuming the grid starts at hour 1 (not 0)
-  const top = ((startOffset - 60) / 60) * pixelsPerHour; // Subtract 60 minutes to adjust for grid starting at hour 1
+  // Top position: offset from the top of the schedule grid starting at 00:00
+  const top = (startOffset / 60) * pixelsPerHour;
   
   return { top, height };
 };

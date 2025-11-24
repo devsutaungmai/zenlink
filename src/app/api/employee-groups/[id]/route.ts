@@ -14,6 +14,19 @@ export async function GET(request: NextRequest, context: { params: { id: string 
       },
       include: {
         employees: true,
+        function: {
+          select: {
+            id: true,
+            name: true,
+            color: true,
+            category: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          }
+        },
         _count: {
           select: { employees: true }
         }
@@ -53,12 +66,46 @@ export async function PUT(
       )
     }
 
+    if (!rawData.functionId) {
+      return NextResponse.json(
+        { error: 'Function is required' },
+        { status: 400 }
+      )
+    }
+
+    const targetFunction = await prisma.departmentFunction.findFirst({
+      where: {
+        id: rawData.functionId,
+        category: {
+          businessId: user.businessId
+        }
+      },
+      include: {
+        category: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
+      }
+    })
+
+    if (!targetFunction) {
+      return NextResponse.json(
+        { error: 'Function not found for this business' },
+        { status: 404 }
+      )
+    }
+
     const data = {
       name: rawData.name,
       hourlyWage: parseFloat(rawData.hourlyWage) || 0,
       wagePerShift: parseFloat(rawData.wagePerShift) || 0,
       defaultWageType: rawData.defaultWageType,
       salaryCode: rawData.salaryCode || null,
+      function: {
+        connect: { id: rawData.functionId }
+      }
     }
     
     const employeeGroup = await prisma.employeeGroup.update({
@@ -69,6 +116,19 @@ export async function PUT(
       data,
       include: {
         employees: true,
+        function: {
+          select: {
+            id: true,
+            name: true,
+            color: true,
+            category: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          }
+        },
         _count: {
           select: { employees: true }
         }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/shared/lib/prisma'
+import { getCurrentUserOrEmployee } from '@/shared/lib/auth'
 
 export async function POST(request: NextRequest) {
   try {
@@ -77,13 +78,40 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
+    const auth = await getCurrentUserOrEmployee()
+
+    if (!auth) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    let businessId: string | null = null
+    let enforcedEmployeeId: string | null = null
+
+    if (auth.type === 'user') {
+      businessId = (auth.data as any)?.businessId || null
+    } else {
+      const employeeData = auth.data as any
+      businessId = employeeData?.department?.businessId 
+        ?? employeeData?.employeeGroup?.businessId
+        ?? null
+      enforcedEmployeeId = employeeData?.id || null
+    }
+
+    if (!businessId) {
+      return NextResponse.json({ error: 'Business context not found' }, { status: 403 })
+    }
+
     const { searchParams } = new URL(request.url)
-    const employeeId = searchParams.get('employeeId')
-    const businessId = searchParams.get('businessId')
+    const requestedEmployeeId = searchParams.get('employeeId')
+    const requestedBusinessId = searchParams.get('businessId')
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
     const date = searchParams.get('date')
     const limitParam = searchParams.get('limit')
+    const pageParam = searchParams.get('page')
+    const pageSizeParam = searchParams.get('pageSize')
+    const searchParam = searchParams.get('search')
+    const statusParam = searchParams.get('status')
 
     let limit: number | undefined
     if (limitParam) {
@@ -93,14 +121,30 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const whereClause: any = {}
+    const isPaginated = !!(pageParam || pageSizeParam)
+    let page = Math.max(1, parseInt(pageParam || '1', 10) || 1)
+    let pageSize = Math.max(1, Math.min(parseInt(pageSizeParam || '25', 10) || 25, 100))
 
-    if (businessId) {
-      whereClause.businessId = businessId
+    const whereClause: any = {
+      businessId
     }
 
-    if (employeeId) {
-      whereClause.employeeId = employeeId
+    if (requestedBusinessId && requestedBusinessId !== businessId) {
+      return NextResponse.json({ error: 'Unauthorized business scope' }, { status: 403 })
+    }
+
+    if (auth.type === 'employee') {
+      whereClause.employeeId = enforcedEmployeeId
+    } else if (requestedEmployeeId) {
+      whereClause.employeeId = requestedEmployeeId
+    }
+
+    if (statusParam === 'working') {
+      whereClause.punchOutTime = null
+    } else if (statusParam === 'completed') {
+      whereClause.punchOutTime = {
+        not: null
+      }
     }
 
     // Handle date filtering - priority: startDate/endDate, then single date
@@ -124,6 +168,70 @@ export async function GET(request: NextRequest) {
         gte: startOfDay,
         lte: endOfDay
       }
+    }
+
+    const trimmedSearch = searchParam?.trim()
+    if (trimmedSearch) {
+      whereClause.OR = [
+        {
+          employee: {
+            is: {
+              firstName: {
+                contains: trimmedSearch,
+                mode: 'insensitive'
+              }
+            }
+          }
+        },
+        {
+          employee: {
+            is: {
+              lastName: {
+                contains: trimmedSearch,
+                mode: 'insensitive'
+              }
+            }
+          }
+        },
+        {
+          employee: {
+            is: {
+              employeeNo: {
+                contains: trimmedSearch,
+                mode: 'insensitive'
+              }
+            }
+          }
+        },
+        {
+          employee: {
+            is: {
+              department: {
+                is: {
+                  name: {
+                    contains: trimmedSearch,
+                    mode: 'insensitive'
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          employee: {
+            is: {
+              employeeGroup: {
+                is: {
+                  name: {
+                    contains: trimmedSearch,
+                    mode: 'insensitive'
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
     }
 
     const attendances = await prisma.attendance.findMany({
@@ -171,8 +279,30 @@ export async function GET(request: NextRequest) {
       orderBy: {
         punchInTime: 'desc'
       },
-      ...(limit ? { take: limit } : {})
+      ...(isPaginated
+        ? {
+            skip: (page - 1) * pageSize,
+            take: pageSize
+          }
+        : limit
+          ? { take: limit }
+          : {})
     })
+
+    if (isPaginated) {
+      const totalCount = await prisma.attendance.count({ where: whereClause })
+      const totalPages = Math.max(1, Math.ceil(totalCount / pageSize) || 1)
+
+      return NextResponse.json({
+        data: attendances,
+        pagination: {
+          page,
+          pageSize,
+          totalCount,
+          totalPages
+        }
+      })
+    }
 
     return NextResponse.json(attendances)
 

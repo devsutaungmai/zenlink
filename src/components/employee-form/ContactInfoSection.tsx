@@ -112,13 +112,16 @@ export function ContactInfoSection({
             name="mobile"
             value={formData.mobile}
             onChange={onChange}
-            placeholder="123456789"
+            placeholder="12345678"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            maxLength={8}
             className={getFieldStyle('mobile')}
             required
           />
         </div>
         <p className="mt-1 text-xs text-gray-500">
-          Full number will be: {formData.mobile.startsWith('+') ? formData.mobile : formData.countryCode + formData.mobile}
+          Enter exactly 8 digits. Full number will be: {formData.mobile.startsWith('+') ? formData.mobile : formData.countryCode + formData.mobile}
         </p>
         {validationErrors.mobile && (
           <p className="mt-1 text-sm text-red-500">{validationErrors.mobile}</p>

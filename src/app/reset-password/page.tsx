@@ -30,6 +30,14 @@ function ResetPasswordForm() {
     setValidating(false)
   }, [token])
 
+  const getPasswordStrengthError = (value: string) => {
+    const strengthRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/
+    if (!strengthRegex.test(value)) {
+      return 'Password must be at least 8 characters and include uppercase, lowercase, number, and special character.'
+    }
+    return null
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -49,9 +57,10 @@ function ResetPasswordForm() {
       return
     }
 
-    if (password.length < 8) {
+    const strengthError = getPasswordStrengthError(password)
+    if (strengthError) {
       Swal.fire({
-        text: 'Password must be at least 8 characters long',
+        text: strengthError,
         toast: true,
         position: 'top-end',
         showConfirmButton: false,
@@ -202,7 +211,7 @@ function ResetPasswordForm() {
               </button>
             </div>
             <p className="mt-1 text-xs text-gray-500">
-              Password must be at least 8 characters long
+              Must include uppercase, lowercase, number, and special character.
             </p>
           </div>
 

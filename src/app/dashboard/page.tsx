@@ -126,6 +126,18 @@ interface DashboardStats {
   shiftsInProgress: number
   pendingApprovals: number
   hoursWorkedThisWeek: number
+  mostActiveEmployee: {
+    id: string
+    firstName: string | null
+    lastName: string | null
+    employeeGroup?: string | null
+    hoursWorked: number
+    completedShifts: number
+  } | null
+  shiftCompletion: {
+    assigned: number
+    completed: number
+  }
 }
 
 export default function DashboardPage() {
@@ -888,6 +900,13 @@ export default function DashboardPage() {
     }
   }
 
+  const formatHoursValue = (hours?: number | null) => {
+    if (!hours || Number.isNaN(hours)) {
+      return '0.0h'
+    }
+    return `${hours.toFixed(1)}h`
+  }
+
   const getCurrentWeekRange = () => {
     const now = new Date()
     const day = now.getDay() // 0 (Sun) - 6 (Sat)
@@ -1007,7 +1026,6 @@ export default function DashboardPage() {
   const attendanceShiftWindow = currentAttendance?.shift
     ? `${formatShiftTime(currentAttendance.shift.startTime) || '--:--'} - ${currentAttendance.shift.endTime ? formatShiftTime(currentAttendance.shift.endTime) : t('dashboard.cards.punch_clock.active')}`
     : null
-  const disablePrimaryShiftAction = clockingIn || !!currentAttendance
   const roleLabel = [
     currentEmployee?.employeeGroup?.name || t('dashboard.cards.attendance.default_role'),
     currentEmployee?.department?.name
@@ -1033,6 +1051,19 @@ export default function DashboardPage() {
     ? t('dashboard.weekly_shifts.subtitle_employee')
     : t('dashboard.weekly_shifts.subtitle_admin')
   const weeklyRangeLabel = getWeekRangeLabel()
+  const displayedWeeklyShifts = weeklyShifts.length > 2 ? weeklyShifts.slice(-2) : weeklyShifts
+  const assignedShiftStats = adminStats?.shiftCompletion ?? { assigned: 0, completed: 0 }
+  const totalAssignedShifts = assignedShiftStats.assigned || 0
+  const totalCompletedShifts = assignedShiftStats.completed || 0
+  const shiftCompletionPercent = totalAssignedShifts > 0
+    ? Math.min(100, Math.round((totalCompletedShifts / totalAssignedShifts) * 100))
+    : 0
+  const mostActiveEmployeeStat = adminStats?.mostActiveEmployee ?? null
+  const mostActiveDisplayName = adminStatsLoading
+    ? t('dashboard.admin_metrics.loading', { defaultValue: 'Loading...' })
+    : (mostActiveEmployeeStat
+        ? `${mostActiveEmployeeStat.firstName || ''} ${mostActiveEmployeeStat.lastName || ''}`.trim() || t('dashboard.admin_metrics.unknown_employee', { defaultValue: 'Unnamed Employee' })
+        : t('dashboard.admin_metrics.no_employee_data', { defaultValue: 'Not enough data yet' }))
 
   const getInitialShiftData = () => {
     const now = new Date()
@@ -1062,7 +1093,7 @@ export default function DashboardPage() {
 
   return (
     <div className="bg-slate-50 min-h-screen py-2 px-4 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-5xl">
+      <div className="w-full xl:max-w-7xl xl:mx-auto">
         {/* <div className="flex flex-col gap-1">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <h1 className="text-3xl font-bold text-slate-900">{t('dashboard.overview_title')}</h1>
@@ -1098,7 +1129,7 @@ export default function DashboardPage() {
             ) : weeklyShifts.length === 0 ? (
               <p className="text-sm text-slate-500">{t('dashboard.weekly_shifts.empty')}</p>
             ) : (
-              weeklyShifts.map((shift) => {
+              displayedWeeklyShifts.map((shift) => {
                 const statusInfo = getShiftStatusInfo(shift.status)
                 const dateLabel = formatShiftDateLabel(shift.date)
                 const timeLabel = getWeeklyShiftTimeLabel(shift)
@@ -1127,6 +1158,109 @@ export default function DashboardPage() {
             )}
           </div>
         </section>
+
+        {showAdminQuickCards && (
+          <section className="mt-6 rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_20px_50px_rgba(15,23,42,0.08)]">
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-5">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                      {t('dashboard.admin_metrics.most_active', { defaultValue: 'Most Active Employee' })}
+                    </p>
+                    <h3 className="text-lg font-semibold text-slate-900">{mostActiveDisplayName}</h3>
+                    {mostActiveEmployeeStat?.employeeGroup && (
+                      <p className="text-sm text-slate-500">{mostActiveEmployeeStat.employeeGroup}</p>
+                    )}
+                  </div>
+                  <div className="rounded-2xl bg-white px-4 py-2 text-center sm:text-right">
+                    <p className="text-xs uppercase text-slate-400">{t('dashboard.admin_metrics.hours', { defaultValue: 'Hours' })}</p>
+                    <p className="text-2xl font-semibold text-slate-900">{mostActiveEmployeeStat ? formatHoursValue(mostActiveEmployeeStat.hoursWorked) : '0.0h'}</p>
+                  </div>
+                </div>
+
+                {adminStatsLoading ? (
+                  <div className="mt-6 h-24 rounded-xl bg-slate-200/60 animate-pulse" />
+                ) : mostActiveEmployeeStat ? (
+                  <div className="mt-6 grid gap-4 text-sm text-slate-500 sm:grid-cols-2">
+                    <div className="rounded-xl border border-slate-100 bg-white p-4 text-center sm:text-left">
+                      <p className="text-xs uppercase tracking-wide text-slate-400">
+                        {t('dashboard.admin_metrics.completed_shifts', { defaultValue: 'Completed Shifts' })}
+                      </p>
+                      <p className="text-2xl font-semibold text-slate-900">{mostActiveEmployeeStat.completedShifts}</p>
+                    </div>
+                    <div className="rounded-xl border border-slate-100 bg-white p-4 text-center sm:text-left">
+                      <p className="text-xs uppercase tracking-wide text-slate-400">
+                        {t('dashboard.admin_metrics.total_hours', { defaultValue: 'Team Hours (Week)' })}
+                      </p>
+                      <p className="text-2xl font-semibold text-slate-900">{formatHoursValue(adminStats?.hoursWorkedThisWeek || 0)}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="mt-6 text-sm text-slate-500 text-center sm:text-left">
+                    {t('dashboard.admin_metrics.no_activity', { defaultValue: 'We need more recent activity to highlight a most active employee.' })}
+                  </p>
+                )}
+              </div>
+
+              <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-5">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                      {t('dashboard.admin_metrics.shift_health', { defaultValue: 'Shift Completion' })}
+                    </p>
+                    <h3 className="text-lg font-semibold text-slate-900">
+                      {t('dashboard.admin_metrics.weekly_pie_title', { defaultValue: 'Assigned vs Completed (Week)' })}
+                    </h3>
+                  </div>
+                  <span className="text-2xl font-semibold text-slate-900">{shiftCompletionPercent}%</span>
+                </div>
+
+                {adminStatsLoading ? (
+                  <div className="mt-6 h-32 rounded-full bg-slate-200/60 animate-pulse" />
+                ) : (
+                  <div className="mt-6 flex flex-col items-center gap-6 sm:flex-row sm:items-center">
+                    <div className="relative h-40 w-40 sm:h-32 sm:w-32">
+                      <div
+                        className="h-full w-full rounded-full"
+                        style={{
+                          background: `conic-gradient(#22c55e ${shiftCompletionPercent}%, #e2e8f0 ${shiftCompletionPercent}% 100%)`,
+                        }}
+                      />
+                      <div className="absolute inset-4 sm:inset-3 rounded-full bg-white flex flex-col items-center justify-center text-center">
+                        <span className="text-xs uppercase text-slate-400">{t('dashboard.admin_metrics.completed', { defaultValue: 'Completed' })}</span>
+                        <span className="text-2xl font-semibold text-slate-900">{totalCompletedShifts}</span>
+                      </div>
+                    </div>
+                    <div className="space-y-4 text-sm text-slate-600 text-center sm:text-left">
+                      <div className="flex flex-col items-center gap-1 sm:flex-row sm:items-center sm:gap-3">
+                        <span className="h-3 w-3 rounded-full bg-[#22c55e]" />
+                        <div>
+                          <p className="text-xs uppercase tracking-wide text-slate-400">{t('dashboard.admin_metrics.completed_shifts', { defaultValue: 'Completed Shifts' })}</p>
+                          <p className="text-lg font-semibold text-slate-900">{totalCompletedShifts}</p>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-center gap-1 sm:flex-row sm:items-center sm:gap-3">
+                        <span className="h-3 w-3 rounded-full bg-slate-300" />
+                        <div>
+                          <p className="text-xs uppercase tracking-wide text-slate-400">{t('dashboard.admin_metrics.assigned_shifts', { defaultValue: 'Assigned Shifts' })}</p>
+                          <p className="text-lg font-semibold text-slate-900">{totalAssignedShifts}</p>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-center gap-1 sm:flex-row sm:items-center sm:gap-3">
+                        <span className="h-3 w-3 rounded-full bg-slate-100 border border-slate-300" />
+                        <div>
+                          <p className="text-xs uppercase tracking-wide text-slate-400">{t('dashboard.admin_metrics.remaining', { defaultValue: 'Remaining' })}</p>
+                          <p className="text-lg font-semibold text-slate-900">{Math.max(totalAssignedShifts - totalCompletedShifts, 0)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
 
         {showAdminQuickCards && (
           <section className="mt-6 rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_20px_50px_rgba(15,23,42,0.08)]">
@@ -1235,16 +1369,16 @@ export default function DashboardPage() {
                   <p className="text-sm text-slate-500">{t('dashboard.punch_clock.description')}</p>
                 )}
               </div>
-              {!hasScheduledShift && (
+              {!currentAttendance && (
                 <button
-                  onClick={handlePrimaryShiftAction}
-                  disabled={disablePrimaryShiftAction}
+                  onClick={hasScheduledShift ? handlePunchIn : handlePrimaryShiftAction}
+                  disabled={clockingIn}
                   className="inline-flex items-center justify-center rounded-full border border-[#2563eb] px-5 py-2 text-sm font-semibold text-[#2563eb] transition hover:bg-[#2563eb] hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {clockingIn
                     ? t('dashboard.cards.punch_clock.punching_in')
-                    : currentAttendance
-                      ? t('dashboard.cards.attendance.status_working')
+                    : hasScheduledShift
+                      ? t('dashboard.cards.punch_clock.punch_in')
                       : t('dashboard.punch_clock.start_new_shift')}
                 </button>
               )}

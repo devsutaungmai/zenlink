@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Upload, X, FileText, Calendar } from 'lucide-react'
 import Swal from 'sweetalert2'
 import { useTranslation } from 'react-i18next'
@@ -33,10 +33,18 @@ export default function SickLeaveForm({
   isEmployee = false
 }: SickLeaveFormProps) {
   const { t } = useTranslation('sick-leave')
+  const normalizeDateValue = (value?: string) => {
+    if (!value) return ''
+    if (value.includes('T')) {
+      return value.split('T')[0]
+    }
+    return value
+  }
+
   const [formData, setFormData] = useState<SickLeaveFormData>(() => ({
     employeeId: initialData?.employeeId || '',
-    startDate: initialData?.startDate || '',
-    endDate: initialData?.endDate || '',
+    startDate: normalizeDateValue(initialData?.startDate),
+    endDate: normalizeDateValue(initialData?.endDate),
     reason: initialData?.reason || '',
     document: initialData?.document || ''
   }))
@@ -50,6 +58,26 @@ export default function SickLeaveForm({
     url: initialData.document,
     size: 0
   } : null)
+  useEffect(() => {
+    setFormData({
+      employeeId: initialData?.employeeId || '',
+      startDate: normalizeDateValue(initialData?.startDate),
+      endDate: normalizeDateValue(initialData?.endDate),
+      reason: initialData?.reason || '',
+      document: initialData?.document || ''
+    })
+
+    if (initialData?.document) {
+      setUploadedFile({
+        name: 'Previous document',
+        url: initialData.document,
+        size: 0
+      })
+    } else {
+      setUploadedFile(null)
+    }
+  }, [initialData])
+
 
   const [uploading, setUploading] = useState(false)
 

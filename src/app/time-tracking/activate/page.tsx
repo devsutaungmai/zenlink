@@ -6,19 +6,26 @@ import {
   KeyIcon,
   CheckCircleIcon,
   ExclamationTriangleIcon,
-  ArrowLeftIcon
+  ArrowLeftIcon,
+  BuildingOfficeIcon
 } from '@heroicons/react/24/outline'
 
 export default function ActivationCodePage() {
   const router = useRouter()
+  const [businessName, setBusinessName] = useState('')
   const [activationCode, setActivationCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [profileData, setProfileData] = useState<any>(null)
+  const [businessData, setBusinessData] = useState<any>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!businessName.trim()) {
+      setError('Please enter a business name')
+      return
+    }
     
     if (!activationCode.trim()) {
       setError('Please enter an activation code')
@@ -30,13 +37,32 @@ export default function ActivationCodePage() {
     setSuccess(null)
 
     try {
+      const businessResponse = await fetch('/api/business/validate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          businessName: businessName.trim()
+        })
+      })
+
+      const validatedBusiness = await businessResponse.json()
+
+      if (!businessResponse.ok) {
+        throw new Error(validatedBusiness.error || 'Failed to validate business')
+      }
+
+      setBusinessData(validatedBusiness.business)
+
       const response = await fetch('/api/punch-clock-profiles/activate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          activationCode: activationCode.trim().toUpperCase()
+          activationCode: activationCode.trim().toUpperCase(),
+          businessId: validatedBusiness.business.id
         }),
       })
 
@@ -49,6 +75,8 @@ export default function ActivationCodePage() {
       // Store the connected profile information
       localStorage.setItem('punchClockProfile', JSON.stringify(data.profile))
       localStorage.setItem('punchClockBusiness', data.profile.business.name)
+      localStorage.setItem('timeTrackingBusiness', validatedBusiness.business.name)
+      localStorage.setItem('timeTrackingBusinessData', JSON.stringify(validatedBusiness.business))
       
       setProfileData(data.profile)
       setSuccess(`Successfully connected to "${data.profile.name}" profile!`)
@@ -99,6 +127,29 @@ export default function ActivationCodePage() {
         {/* Connection Form */}
         <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-xl p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Business Name Input */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Business Name
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <BuildingOfficeIcon className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  value={businessName}
+                  onChange={(e) => setBusinessName(e.target.value)}
+                  placeholder="Enter your business name"
+                  className="block w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                  required
+                />
+              </div>
+              <p className="mt-1 text-xs text-gray-500">
+                We will verify the business before connecting the punch clock profile
+              </p>
+            </div>
+
             {/* Activation Code Input */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">

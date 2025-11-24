@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useCallback, useEffect, useState } from 'react'
-import { PlusIcon, CheckIcon, XMarkIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { PlusIcon, CheckIcon, XMarkIcon, PencilIcon, TrashIcon, UserGroupIcon, DocumentTextIcon, ShieldCheckIcon, ChartBarIcon } from '@heroicons/react/24/outline'
 import { FileText, Calendar, User, Clock } from 'lucide-react'
 import Swal from 'sweetalert2'
 import SickLeaveModal from '@/components/SickLeaveModal'
@@ -275,6 +275,20 @@ export default function SickLeavesPage() {
   }
 
   const handleDelete = async (id: string) => {
+    const target = sickLeaves.find(sl => sl.id === id)
+    if (target?.approved) {
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        icon: 'info',
+        title: t('actions.locked_message', { defaultValue: 'Approved sick leaves cannot be deleted.' })
+      })
+      return
+    }
+
     try {
       const result = await Swal.fire({
         title: t('delete.confirm_title'),
@@ -323,6 +337,19 @@ export default function SickLeavesPage() {
   }
 
   const handleEdit = (sickLeave: SickLeave) => {
+    if (sickLeave.approved) {
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        icon: 'info',
+        title: t('actions.locked_message', { defaultValue: 'Approved sick leaves cannot be edited.' })
+      })
+      return
+    }
+
     setEditingData(sickLeave)
     setShowModal(true)
   }
@@ -341,6 +368,20 @@ export default function SickLeavesPage() {
     const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
     return `${days} day${days > 1 ? 's' : ''}`
   }
+
+  const stats = useMemo(() => {
+    const totalRequests = sickLeaves.length
+    const approvedCount = sickLeaves.filter(sl => sl.approved).length
+    const pendingCount = totalRequests - approvedCount
+    const documentedCount = sickLeaves.filter(sl => Boolean(sl.document)).length
+
+    return {
+      totalRequests,
+      approvedCount,
+      pendingCount,
+      documentedCount
+    }
+  }, [sickLeaves])
 
   const filteredSickLeaves = sickLeaves.filter(sl => {
     const matchesSearch = searchTerm === '' || 
@@ -380,29 +421,74 @@ export default function SickLeavesPage() {
 
   return (
     <>
-      <div className="sm:flex sm:items-center">
-        <div className="sm:flex-auto">
-          <h1 className="text-xl font-semibold text-gray-900">{isEmployeeUser ? t('employee.title') : t('title')}</h1>
-          <p className="mt-2 text-sm text-gray-700">
-            {isEmployeeUser ? t('employee.subtitle') : t('subtitle')}
-          </p>
-        </div>
-        <div className="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
-          <button
-            onClick={() => {
-              setEditingData(null)
-              setShowModal(true)
-            }}
-            className="inline-flex items-center justify-center rounded-md border border-transparent bg-[#31BCFF] px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-[#31BCFF]/90"
-          >
-            <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
-            {isEmployeeUser ? t('employee.request_button') : t('form.submit')}
-          </button>
+      <div className="bg-gradient-to-r from-blue-50 via-cyan-50 to-blue-100 border border-blue-100 rounded-2xl p-4 sm:p-6 shadow-sm">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <p className="uppercase text-xs font-semibold text-blue-500 tracking-wider">{t('banner.label', { defaultValue: 'Sick Leave Center' })}</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mt-1">
+              {isEmployeeUser ? t('employee.title') : t('title')}
+            </h1>
+            <p className="text-sm sm:text-base text-gray-600 mt-2 max-w-2xl">
+              {isEmployeeUser ? t('employee.subtitle') : t('subtitle')}
+            </p>
+            <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 mt-3">
+              <div className="flex items-center gap-1">
+                <ShieldCheckIcon className="w-4 h-4 text-green-600" />
+                <span>{t('banner.approved_count', { defaultValue: '{{count}} approved', count: stats.approvedCount })}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <ChartBarIcon className="w-4 h-4 text-yellow-500" />
+                <span>{t('banner.pending_count', { defaultValue: '{{count}} pending', count: stats.pendingCount })}</span>
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 text-sm">
+              <div className="bg-white rounded-xl border border-blue-100 px-4 py-3 shadow">
+                <div className="flex items-center gap-2">
+                  <UserGroupIcon className="w-5 h-5 text-blue-500" />
+                  <span className="text-gray-500 text-xs uppercase tracking-wide">{t('stats.total_requests', { defaultValue: 'Total Requests' })}</span>
+                </div>
+                <p className="text-xl font-semibold text-gray-900 mt-2">{stats.totalRequests}</p>
+              </div>
+              <div className="bg-white rounded-xl border border-green-100 px-4 py-3 shadow">
+                <div className="flex items-center gap-2">
+                  <ShieldCheckIcon className="w-5 h-5 text-green-600" />
+                  <span className="text-gray-500 text-xs uppercase tracking-wide">{t('stats.approved', { defaultValue: 'Approved' })}</span>
+                </div>
+                <p className="text-xl font-semibold text-gray-900 mt-2">{stats.approvedCount}</p>
+              </div>
+              <div className="bg-white rounded-xl border border-yellow-100 px-4 py-3 shadow">
+                <div className="flex items-center gap-2">
+                  <ChartBarIcon className="w-5 h-5 text-yellow-500" />
+                  <span className="text-gray-500 text-xs uppercase tracking-wide">{t('stats.pending', { defaultValue: 'Pending' })}</span>
+                </div>
+                <p className="text-xl font-semibold text-gray-900 mt-2">{stats.pendingCount}</p>
+              </div>
+              <div className="bg-white rounded-xl border border-slate-200 px-4 py-3 shadow">
+                <div className="flex items-center gap-2">
+                  <DocumentTextIcon className="w-5 h-5 text-indigo-500" />
+                  <span className="text-gray-500 text-xs uppercase tracking-wide">{t('stats.documents', { defaultValue: 'With Documents' })}</span>
+                </div>
+                <p className="text-xl font-semibold text-gray-900 mt-2">{stats.documentedCount}</p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                setEditingData(null)
+                setShowModal(true)
+              }}
+              className="inline-flex items-center justify-center rounded-xl border border-transparent bg-[#31BCFF] px-4 py-3 text-sm font-semibold text-white shadow-lg hover:bg-[#1FA7E6] transition"
+            >
+              <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
+              {isEmployeeUser ? t('employee.request_button') : t('form.submit')}
+            </button>
+          </div>
         </div>
       </div>
       
       {/* Filters */}
-      <div className="mt-4 flex flex-col sm:flex-row gap-4">
+      <div className="mt-6 flex flex-col sm:flex-row gap-4">
         <div className="flex-1 max-w-xs">
           <input
             type="text"
@@ -543,15 +629,17 @@ export default function SickLeavesPage() {
                       )}
                       <button
                         onClick={() => handleEdit(sickLeave)}
-                        className="text-[#31BCFF] hover:text-[#31BCFF]/90 p-1"
-                        title={t('actions.edit')}
+                        className={`p-1 rounded ${sickLeave.approved ? 'text-gray-400 cursor-not-allowed' : 'text-[#31BCFF] hover:text-[#31BCFF]/90'}`}
+                        title={sickLeave.approved ? t('actions.locked_tooltip', { defaultValue: 'Approved sick leaves cannot be edited' }) : t('actions.edit')}
+                        disabled={sickLeave.approved}
                       >
                         <PencilIcon className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(sickLeave.id)}
-                        className="text-red-600 hover:text-red-900 p-1"
-                        title={t('actions.delete')}
+                        className={`p-1 rounded ${sickLeave.approved ? 'text-gray-300 cursor-not-allowed' : 'text-red-600 hover:text-red-900'}`}
+                        title={sickLeave.approved ? t('actions.locked_tooltip', { defaultValue: 'Approved sick leaves cannot be deleted' }) : t('actions.delete')}
+                        disabled={sickLeave.approved}
                       >
                         <TrashIcon className="h-4 w-4" />
                       </button>

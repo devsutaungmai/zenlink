@@ -4,9 +4,7 @@ import {
   ClockIcon, 
   CalendarIcon,
   UserIcon,
-  ArrowsRightLeftIcon,
-  HandRaisedIcon,
-  CurrencyDollarIcon
+  HandRaisedIcon
 } from '@heroicons/react/24/outline'
 import {
   Select,
@@ -57,14 +55,12 @@ interface ShiftDetailsModalProps {
   currentEmployeeId: string
 }
 
-type ActionType = 'swap' | 'handover' | 'sell' | null
+type ActionType = 'handover' | null
 
 export default function ShiftDetailsModal({ isOpen, onClose, shift, currentEmployeeId }: ShiftDetailsModalProps) {
   const [activeAction, setActiveAction] = useState<ActionType>(null)
   const [employees, setEmployees] = useState<Employee[]>([])
-  const [employeeShifts, setEmployeeShifts] = useState<Shift[]>([])
   const [selectedEmployee, setSelectedEmployee] = useState<string>('')
-  const [selectedSwapShift, setSelectedSwapShift] = useState<string>('')
   const [loading, setLoading] = useState(false)
   const [submitLoading, setSubmitLoading] = useState(false)
   const [pendingExchanges, setPendingExchanges] = useState<any[]>([])
@@ -77,16 +73,10 @@ export default function ShiftDetailsModal({ isOpen, onClose, shift, currentEmplo
   }, [isOpen, shift])
 
   useEffect(() => {
-    if (isOpen && (activeAction === 'swap' || activeAction === 'handover')) {
+    if (isOpen && activeAction === 'handover') {
       fetchEmployees()
     }
   }, [isOpen, activeAction])
-
-  useEffect(() => {
-    if (selectedEmployee && activeAction === 'swap') {
-      fetchEmployeeShifts(selectedEmployee)
-    }
-  }, [selectedEmployee, activeAction])
 
   const fetchEmployees = async () => {
     setLoading(true)
@@ -105,25 +95,6 @@ export default function ShiftDetailsModal({ isOpen, onClose, shift, currentEmplo
     }
   }
 
-  const fetchEmployeeShifts = async (employeeId: string) => {
-    if (!shift) return
-    
-    setLoading(true)
-    try {
-      // Fetch shifts for the selected employee on the same date
-      const shiftDate = shift.date.split('T')[0]
-      const response = await fetch(`/api/shifts?employeeId=${employeeId}&startDate=${shiftDate}&endDate=${shiftDate}`)
-      if (response.ok) {
-        const data = await response.json()
-        setEmployeeShifts(data)
-      }
-    } catch (error) {
-      console.error('Error fetching employee shifts:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const fetchPendingExchanges = async () => {
     if (!shift) return
     
@@ -137,75 +108,6 @@ export default function ShiftDetailsModal({ isOpen, onClose, shift, currentEmplo
       }
     } catch (error) {
       console.error('Error fetching pending exchanges:', error)
-    }
-  }
-
-  const handleSwapRequest = async () => {
-    if (!shift || !selectedEmployee) return
-
-    setSubmitLoading(true)
-    try {
-      // Get selected employee details for better messaging
-      const selectedEmp = employees.find(emp => emp.id === selectedEmployee)
-      const selectedShiftDetails = selectedSwapShift 
-        ? employeeShifts.find(s => s.id === selectedSwapShift)
-        : null
-
-      let requestReason = `Swap request with ${selectedEmp?.firstName} ${selectedEmp?.lastName}`
-      if (selectedShiftDetails) {
-        requestReason += ` for their shift on ${formatDate(selectedShiftDetails.date)} (${formatTime(selectedShiftDetails.startTime)} - ${selectedShiftDetails.endTime ? formatTime(selectedShiftDetails.endTime) : 'Open End'})`
-      }
-
-      const response = await fetch('/api/shift-exchanges', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          fromShiftId: shift.id,
-          toEmployeeId: selectedEmployee,
-          type: 'SWAP',
-          requestReason
-        }),
-      })
-
-      if (response.ok) {
-        Swal.fire({
-          toast: true,
-          position: 'top-end',
-          showConfirmButton: false,
-          timer: 3000,
-          timerProgressBar: true,
-          icon: 'success',
-          title: 'Swap request submitted successfully! Waiting for admin approval.'
-        })
-        await fetchPendingExchanges() // Refresh pending exchanges
-        resetForm()
-      } else {
-        const error = await response.json()
-        Swal.fire({
-          toast: true,
-          position: 'top-end',
-          showConfirmButton: false,
-          timer: 3000,
-          timerProgressBar: true,
-          icon: 'error',
-          title: error.error || 'Failed to submit swap request'
-        })
-      }
-    } catch (error) {
-      console.error('Error submitting swap request:', error)
-      Swal.fire({
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        timer: 3000,
-        timerProgressBar: true,
-        icon: 'error',
-        title: 'Failed to submit swap request'
-      })
-    } finally {
-      setSubmitLoading(false)
     }
   }
 
@@ -313,66 +215,9 @@ export default function ShiftDetailsModal({ isOpen, onClose, shift, currentEmplo
     }
   }
 
-  const handleSellShift = async () => {
-    if (!shift) return
-
-    setSubmitLoading(true)
-    try {
-      const response = await fetch(`/api/shifts/${shift.id}/sell`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          status: 'FOR_SALE'
-        }),
-      })
-
-      if (response.ok) {
-        Swal.fire({
-          toast: true,
-          position: 'top-end',
-          showConfirmButton: false,
-          timer: 3000,
-          timerProgressBar: true,
-          icon: 'success',
-          title: 'Shift marked for sale successfully!'
-        })
-        onClose()
-        resetForm()
-      } else {
-        const error = await response.json()
-        Swal.fire({
-          toast: true,
-          position: 'top-end',
-          showConfirmButton: false,
-          timer: 3000,
-          timerProgressBar: true,
-          icon: 'error',
-          title: error.error || 'Failed to mark shift for sale'
-        })
-      }
-    } catch (error) {
-      console.error('Error marking shift for sale:', error)
-      Swal.fire({
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        timer: 3000,
-        timerProgressBar: true,
-        icon: 'error',
-        title: 'Failed to mark shift for sale'
-      })
-    } finally {
-      setSubmitLoading(false)
-    }
-  }
-
   const resetForm = () => {
     setActiveAction(null)
     setSelectedEmployee('')
-    setSelectedSwapShift('')
-    setEmployeeShifts([])
   }
 
   const formatTime = (timeString: string) => {
@@ -529,17 +374,6 @@ export default function ShiftDetailsModal({ isOpen, onClose, shift, currentEmplo
                   <h4 className="font-medium text-gray-900 mb-3">Available Actions</h4>
                   
                   <button
-                    onClick={() => setActiveAction('swap')}
-                    className="w-full flex items-center gap-3 p-4 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors text-left"
-                  >
-                    <ArrowsRightLeftIcon className="w-5 h-5 text-blue-600" />
-                    <div>
-                      <p className="font-medium text-blue-900">Swap Shift</p>
-                      <p className="text-sm text-blue-600">Exchange this shift with another employee's shift</p>
-                    </div>
-                  </button>
-
-                  <button
                     onClick={() => setActiveAction('handover')}
                     className="w-full flex items-center gap-3 p-4 bg-green-50 hover:bg-green-100 rounded-xl transition-colors text-left"
                   >
@@ -547,17 +381,6 @@ export default function ShiftDetailsModal({ isOpen, onClose, shift, currentEmplo
                     <div>
                       <p className="font-medium text-green-900">Handover Shift</p>
                       <p className="text-sm text-green-600">Transfer this shift to another employee</p>
-                    </div>
-                  </button>
-
-                  <button
-                    onClick={() => setActiveAction('sell')}
-                    className="w-full flex items-center gap-3 p-4 bg-orange-50 hover:bg-orange-100 rounded-xl transition-colors text-left"
-                  >
-                    <CurrencyDollarIcon className="w-5 h-5 text-orange-600" />
-                    <div>
-                      <p className="font-medium text-orange-900">Sell Shift</p>
-                      <p className="text-sm text-orange-600">Put this shift up for sale to other employees</p>
                     </div>
                   </button>
                 </div>
@@ -595,71 +418,6 @@ export default function ShiftDetailsModal({ isOpen, onClose, shift, currentEmplo
               </button>
 
               {/* Action Forms */}
-              {activeAction === 'swap' && (
-                <div className="space-y-4">
-                  <h4 className="font-medium text-gray-900">Swap Shift</h4>
-                  <p className="text-sm text-gray-600">Choose an employee to swap shifts with. Optionally select a specific shift:</p>
-
-                  {/* Employee Selection */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Select Employee
-                    </label>
-                    <Select value={selectedEmployee} onValueChange={setSelectedEmployee} disabled={loading}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Choose an employee..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {employees.map((employee) => (
-                          <SelectItem key={employee.id} value={employee.id}>
-                            {employee.firstName} {employee.lastName} ({employee.employeeNo}) - {employee.department.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Shift Selection */}
-                  {selectedEmployee && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Select Their Shift to Swap (Optional)
-                      </label>
-                      {loading ? (
-                        <p className="text-sm text-gray-500">Loading shifts...</p>
-                      ) : employeeShifts.length > 0 ? (
-                        <Select value={selectedSwapShift} onValueChange={setSelectedSwapShift}>
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Choose a shift..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {employeeShifts.map((empShift) => (
-                              <SelectItem key={empShift.id} value={empShift.id}>
-                                {formatTime(empShift.startTime)} - {empShift.endTime ? formatTime(empShift.endTime) : 'Open End'} 
-                                ({empShift.shiftType || 'Regular'})
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <p className="text-sm text-gray-500 p-3 bg-gray-50 rounded-lg">
-                          This employee has no shifts on the same date to swap with.
-                        </p>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Submit Button */}
-                  <button
-                    onClick={handleSwapRequest}
-                    disabled={!selectedEmployee || submitLoading}
-                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white py-3 px-4 rounded-lg font-medium transition-colors"
-                  >
-                    {submitLoading ? 'Submitting Request...' : 'Submit Swap Request'}
-                  </button>
-                </div>
-              )}
-
               {activeAction === 'handover' && (
                 <div className="space-y-4">
                   <h4 className="font-medium text-gray-900">Handover Shift</h4>
@@ -691,31 +449,6 @@ export default function ShiftDetailsModal({ isOpen, onClose, shift, currentEmplo
                     className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white py-3 px-4 rounded-lg font-medium transition-colors"
                   >
                     {submitLoading ? 'Submitting Request...' : 'Submit Handover Request'}
-                  </button>
-                </div>
-              )}
-
-              {activeAction === 'sell' && (
-                <div className="space-y-4">
-                  <h4 className="font-medium text-gray-900">Sell Shift</h4>
-                  <p className="text-sm text-gray-600">
-                    This will mark your shift as available for sale. Other employees will be able to see and purchase this shift.
-                  </p>
-
-                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                    <h5 className="font-medium text-orange-900 mb-2">Shift to be sold:</h5>
-                    <p className="text-sm text-orange-800">
-                      {formatDate(shift.date)} • {formatTime(shift.startTime)} - {shift.endTime ? formatTime(shift.endTime) : 'Open End'}
-                    </p>
-                  </div>
-
-                  {/* Submit Button */}
-                  <button
-                    onClick={handleSellShift}
-                    disabled={submitLoading}
-                    className="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-gray-300 text-white py-3 px-4 rounded-lg font-medium transition-colors"
-                  >
-                    {submitLoading ? 'Marking for Sale...' : 'Mark Shift for Sale'}
                   </button>
                 </div>
               )}

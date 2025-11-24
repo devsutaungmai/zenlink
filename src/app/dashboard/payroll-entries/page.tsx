@@ -346,12 +346,12 @@ export default function PayrollEntriesPage() {
   }
 
   const exportToExcel = () => {
-    const approvedEntries = filteredEntries.filter(entry => entry.status === 'APPROVED' || entry.status === 'PAID' )
+    const approvedEntries = filteredEntries.filter(entry => entry.status === 'APPROVED' || entry.status === 'PAID')
     
     if (approvedEntries.length === 0) {
       Swal.fire({
-        title: 'No Approved Entries',
-        text: 'There are no approved payroll entries to export.',
+        title: 'No Approved or Paid Entries',
+        text: 'There are no approved or paid payroll entries to export.',
         icon: 'info',
         confirmButtonColor: '#31BCFF',
       })
@@ -433,8 +433,8 @@ export default function PayrollEntriesPage() {
         
         if (approvedEntries.length === 0) {
           await Swal.fire({
-            title: 'No Approved Entries',
-            text: 'There are no approved payroll entries to export.',
+            title: 'No Approved or Paid Entries',
+            text: 'There are no approved or paid payroll entries to export.',
             icon: 'warning',
             confirmButtonColor: '#31BCFF',
           })
@@ -456,7 +456,8 @@ export default function PayrollEntriesPage() {
         payrollPeriodId = Array.from(uniquePeriods)[0]
       }
 
-      const response = await fetch(`/api/payroll-entries/export-poweroffice?payrollPeriodId=${payrollPeriodId}&status=${statusFilter !== 'all' ? statusFilter : 'APPROVED'}`)
+      const statusQuery = statusFilter !== 'all' ? statusFilter : 'APPROVED,PAID'
+      const response = await fetch(`/api/payroll-entries/export-poweroffice?payrollPeriodId=${payrollPeriodId}&status=${encodeURIComponent(statusQuery)}`)
       const result = await response.json()
 
       if (!response.ok) {
@@ -564,7 +565,7 @@ export default function PayrollEntriesPage() {
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
             <button
               onClick={exportToExcel}
-              disabled={filteredEntries.filter(entry => entry.status === 'APPROVED').length === 0}
+              disabled={filteredEntries.filter(entry => entry.status === 'APPROVED' || entry.status === 'PAID').length === 0}
               className="inline-flex items-center justify-center px-4 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-white border border-gray-200 text-gray-700 text-sm sm:text-base font-medium shadow-sm hover:shadow-md transition-all duration-200 sm:hover:scale-105 group disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               title={t('actions.export_excel')}
             >

@@ -69,7 +69,7 @@ export default function DashboardNavbar() {
       name: t('navigation.schedule'),
       icon: ClockIcon,
       children: [
-        { name: t('navigation.shift'), href: '/dashboard/shifts' },
+        // { name: t('navigation.shift'), href: '/dashboard/shifts' },
         { name: t('navigation.schedule'), href: '/dashboard/schedule' },
         { name: t('navigation.punch_clock'), href: '/dashboard/punch-clock' },
         { name: t('navigation.availability'), href: '/dashboard/availability' },

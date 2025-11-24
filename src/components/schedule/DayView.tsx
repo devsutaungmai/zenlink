@@ -1,15 +1,17 @@
-import React, { useState, useRef } from 'react'
+import React, { useState } from 'react'
 import { format } from 'date-fns'
 import { useTranslation } from 'react-i18next'
 import SpanningShiftCard from './SpanningShiftCard'
 import HourColumn from './HourColumn'
 import { useUser } from '@/shared/lib/useUser'
-import { Shift, Employee } from '@prisma/client'
+import { Employee } from '@prisma/client'
+import { getShiftSegmentsForDate, ShiftSegment } from './utils'
+import { ShiftWithRelations } from '@/types/schedule'
 interface DayViewProps {
   selectedDate: Date
-  shifts: Shift[]
+  shifts: ShiftWithRelations[]
   onAddShift: (formData?: any) => void
-  onEditShift: (shift: Shift) => void
+  onEditShift: (shift: ShiftWithRelations) => void
   employees: Employee[]
 }
 
@@ -47,11 +49,12 @@ export default function DayView({
     
     if (dragStartHour !== null && dragEndHour !== null) {
       const startHour = Math.min(dragStartHour, dragEndHour)
-      const endHour = Math.max(dragStartHour, dragEndHour)
+      const endHourExclusive = Math.max(dragStartHour, dragEndHour) + 1
+      const normalizeHour = (hour: number) => ((hour % 24) + 24) % 24
 
       const formattedDate = format(selectedDate, 'yyyy-MM-dd')
-      const startTime = `${startHour.toString().padStart(2, '0')}:00`
-      const endTime = `${(endHour + 1).toString().padStart(2, '0')}:00` 
+      const startTime = `${normalizeHour(startHour).toString().padStart(2, '0')}:00`
+      const endTime = `${normalizeHour(endHourExclusive).toString().padStart(2, '0')}:00`
 
 
       onAddShift({
@@ -73,50 +76,57 @@ export default function DayView({
     }
   }
 
-  const groupOverlappingShifts = (shifts: Shift[]) => {
-    const sortedShifts = [...shifts].sort((a, b) => {
-      // First by start time
-      if (a.startTime < b.startTime) return -1;
-      if (a.startTime > b.startTime) return 1;
-      
-      // Then by end time if start times are equal
-      const aEndTime = a.endTime || '23:59'; // Use end of day for active shifts
-      const bEndTime = b.endTime || '23:59';
-      return aEndTime < bEndTime ? -1 : 1;
-    });
+  const getMinutes = (time: string) => {
+    const [hours, minutes] = time.split(':').map(Number)
+    return hours * 60 + minutes
+  }
 
-    const groups: Shift[][] = [];
-    
-    for (const shift of sortedShifts) {
-      // Find if this shift overlaps with any existing groups
-      let addedToGroup = false;
-      
+  const groupOverlappingShifts = (segments: ShiftSegment[]) => {
+    const sortedSegments = [...segments].sort((a, b) => {
+      if (a.displayStartTime < b.displayStartTime) return -1
+      if (a.displayStartTime > b.displayStartTime) return 1
+
+      const aEnd = a.displayEndTime || '24:00'
+      const bEnd = b.displayEndTime || '24:00'
+      if (aEnd < bEnd) return -1
+      if (aEnd > bEnd) return 1
+      return 0
+    })
+
+    const groups: ShiftSegment[][] = []
+
+    for (const segment of sortedSegments) {
+      let addedToGroup = false
+
       for (const group of groups) {
-        const overlapsWithGroup = group.some(groupShift => {
-          // Check if shifts overlap - handle null endTime
-          const shiftEndTime = shift.endTime || '23:59';
-          const groupShiftEndTime = groupShift.endTime || '23:59';
-          return (shift.startTime < groupShiftEndTime && shiftEndTime > groupShift.startTime);
-        });
-        
+        const overlapsWithGroup = group.some(groupSegment => {
+          const segmentStart = getMinutes(segment.displayStartTime)
+          const segmentEnd = getMinutes(segment.displayEndTime || '24:00')
+          const groupStart = getMinutes(groupSegment.displayStartTime)
+          const groupEnd = getMinutes(groupSegment.displayEndTime || '24:00')
+
+          return segmentStart < groupEnd && segmentEnd > groupStart
+        })
+
         if (overlapsWithGroup) {
-          group.push(shift);
-          addedToGroup = true;
-          break;
+          group.push(segment)
+          addedToGroup = true
+          break
         }
       }
-      
+
       if (!addedToGroup) {
-        groups.push([shift]);
+        groups.push([segment])
       }
     }
-    
-    return groups;
-  };
+
+    return groups
+  }
 
   const formattedDate = format(selectedDate, 'yyyy-MM-dd')
   const isToday = new Date().toDateString() === selectedDate.toDateString()
-  const shiftGroups = groupOverlappingShifts(shifts);
+  const daySegments = getShiftSegmentsForDate(shifts, selectedDate)
+  const shiftGroups = groupOverlappingShifts(daySegments)
 
   if (!employees) {
     return (
@@ -144,12 +154,12 @@ export default function DayView({
                   )}
                 </div>
                 <div className="text-[10px] text-gray-900">
-                  <span className="ml-1">{shifts.length} {t('day_view.shifts')}</span>
+                  <span className="ml-1">{daySegments.length} {t('day_view.shifts')}</span>
                 </div>
               </div>
               
               <div className="relative">
-              {Array.from({ length: 23 }, (_, hour) => hour + 1).map(hour => (
+              {Array.from({ length: 24 }, (_, hour) => hour).map(hour => (
                 <div
                   key={hour}
                   className={`border-b border-r p-1 h-[24px] relative ${!isEmployee ? 'hover:bg-gray-50' : ''}`}
@@ -170,15 +180,18 @@ export default function DayView({
               {/* Render grouped shifts */}
               {shiftGroups.map((group, groupIndex) => (
                 <React.Fragment key={`group-${groupIndex}`}>
-                  {group.map((shift, shiftIndex) => (
+                  {group.map((segment, shiftIndex) => (
                     <SpanningShiftCard 
-                      key={shift.id} 
-                      shift={shift} 
+                      key={segment.segmentId}
+                      shift={segment.shift} 
                       date={formattedDate}
                       employees={employees}
                       onEdit={onEditShift}
                       index={shiftIndex}
                       total={group.length}
+                      displayStartTime={segment.displayStartTime}
+                      displayEndTime={segment.displayEndTime}
+                      isContinuation={segment.isContinuation}
                     />
                   ))}
                 </React.Fragment>

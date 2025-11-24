@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { PlusIcon, DocumentTextIcon, MagnifyingGlassIcon, PencilIcon, TrashIcon, ArrowDownTrayIcon, PencilSquareIcon } from '@heroicons/react/24/outline'
 import { useTranslation } from 'react-i18next'
 import { CardGridSkeleton } from '@/components/skeletons/ScheduleSkeleton'
@@ -101,6 +102,9 @@ export default function ContractsPage() {
   const [statistics, setStatistics] = useState<ContractStatistics | null>(null)
   const [activeFilter, setActiveFilter] = useState<'all' | 'missing' | 'expiring' | 'expired'>('all')
   const { user } = useUser()
+  const searchParams = useSearchParams()
+  const preselectedEmployeeId = searchParams.get('employeeId') || undefined
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | undefined>(preselectedEmployeeId)
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1)
@@ -151,12 +155,40 @@ export default function ContractsPage() {
     fetchContracts()
   }, [])
 
-  const handleContractCreated = (newContract: any) => {
-    setContracts([...contracts, newContract])
+  const openCreateForm = React.useCallback((employeeId?: string) => {
+    setSelectedEmployeeId(employeeId)
+    setShowCreateForm(true)
+  }, [])
+
+  useEffect(() => {
+    if (preselectedEmployeeId) {
+      openCreateForm(preselectedEmployeeId)
+    }
+  }, [preselectedEmployeeId, openCreateForm])
+
+  const handleCloseForm = () => {
     setShowCreateForm(false)
+    if (!preselectedEmployeeId) {
+      setSelectedEmployeeId(undefined)
+    }
   }
 
-  const handleDelete = async (id: string) => {
+  const handleContractCreated = (newContract: any) => {
+    setContracts(prev => [...prev, newContract])
+    handleCloseForm()
+  }
+
+  const handleDelete = async (contract: Contract) => {
+    if (!canDeleteContract(contract)) {
+      Swal.fire({
+        title: 'Contract Cannot Be Deleted',
+        text: 'Signed contracts must be voided or archived instead of deleted.',
+        icon: 'info',
+        confirmButtonColor: '#31BCFF'
+      })
+      return
+    }
+
     try {
       const result = await Swal.fire({
         title: 'Delete Contract?',
@@ -170,12 +202,12 @@ export default function ContractsPage() {
       })
 
       if (result.isConfirmed) {
-        const res = await fetch(`/api/contracts/${id}`, {
+        const res = await fetch(`/api/contracts/${contract.id}`, {
           method: 'DELETE',
         })
         
         if (res.ok) {
-          setContracts(contracts.filter(contract => contract.id !== id))
+          setContracts(prev => prev.filter(item => item.id !== contract.id))
           
           await Swal.fire({
             title: 'Success!',
@@ -442,6 +474,10 @@ export default function ContractsPage() {
     return null;
   };
 
+  const canDeleteContract = (contract: Contract) => {
+    return !contract.signedStatus || contract.signedStatus === 'UNSIGNED'
+  }
+
   const isContractExpiringThisMonth = (endDate?: string) => {
     if (!endDate) return false;
     
@@ -623,7 +659,7 @@ export default function ContractsPage() {
               
           </div>
           <button
-            onClick={() => setShowCreateForm(true)}
+            onClick={() => openCreateForm()}
             className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 group"
           >
             <PlusIcon className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
@@ -634,8 +670,9 @@ export default function ContractsPage() {
 
       {showCreateForm && (
         <ContractForm 
-          onClose={() => setShowCreateForm(false)}
+          onClose={handleCloseForm}
           onContractCreated={handleContractCreated}
+          initialEmployeeId={selectedEmployeeId}
         />
       )}
 
@@ -849,7 +886,7 @@ export default function ContractsPage() {
 
                       <MobileCardActions>
                         <button
-                          onClick={() => setShowCreateForm(true)}
+                          onClick={() => openCreateForm(employee.id)}
                           className="inline-flex items-center px-3 py-1.5 rounded-lg bg-orange-100 text-orange-800 text-sm font-medium hover:bg-orange-200 transition-colors duration-200"
                           title="Create Contract"
                         >
@@ -910,7 +947,7 @@ export default function ContractsPage() {
                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                               <div className="flex items-center justify-end gap-2">
                                 <button
-                                  onClick={() => setShowCreateForm(true)}
+                                  onClick={() => openCreateForm(employee.id)}
                                   className="inline-flex items-center px-3 py-1.5 rounded-lg bg-orange-100 text-orange-800 text-sm font-medium hover:bg-orange-200 transition-colors duration-200"
                                   title="Create Contract"
                                 >
@@ -998,7 +1035,7 @@ export default function ContractsPage() {
                 </p>
                 {!searchTerm && (
                   <button
-                    onClick={() => setShowCreateForm(true)}
+                    onClick={() => openCreateForm()}
                     className="inline-flex items-center px-6 py-3 rounded-xl bg-[#31BCFF] text-white font-medium hover:bg-[#31BCFF]/90 transition-colors duration-200"
                   >
                     <PlusIcon className="w-5 h-5 mr-2" />
@@ -1070,9 +1107,10 @@ export default function ContractsPage() {
                           <PencilSquareIcon className="h-5 w-5" />
                         </button>
                         <button
-                          onClick={() => handleDelete(contract.id)}
-                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                          title="Delete Contract"
+                          onClick={() => handleDelete(contract)}
+                          disabled={!canDeleteContract(contract)}
+                          className={`p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 ${!canDeleteContract(contract) ? 'opacity-50 cursor-not-allowed hover:text-gray-400 hover:bg-transparent' : ''}`}
+                          title={canDeleteContract(contract) ? 'Delete Contract' : 'Signed contracts cannot be deleted'}
                         >
                           <TrashIcon className="h-5 w-5" />
                         </button>
@@ -1154,9 +1192,10 @@ export default function ContractsPage() {
                                   <PencilSquareIcon className="h-4 w-4" />
                                 </button>
                                 <button
-                                  onClick={() => handleDelete(contract.id)}
-                                  className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                                  title="Delete Contract"
+                                  onClick={() => handleDelete(contract)}
+                                  disabled={!canDeleteContract(contract)}
+                                  className={`p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 ${!canDeleteContract(contract) ? 'opacity-50 cursor-not-allowed hover:text-gray-400 hover:bg-transparent' : ''}`}
+                                  title={canDeleteContract(contract) ? 'Delete Contract' : 'Signed contracts cannot be deleted'}
                                 >
                                   <TrashIcon className="h-4 w-4" />
                                 </button>
