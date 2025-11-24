@@ -65,6 +65,7 @@ model Business {
   invoices                 Invoice[]
   InvoicePaymentTerms      InvoicePaymentTerms[]
   invoiceFormSettings      InvoiceFormSettings[]
+  projects                 Project[]
 }
 
 model Employee {
@@ -255,6 +256,16 @@ model PunchClockProfile {
   @@unique([name, businessId])
 }
 
+model ProjectCategory {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  projects  Project[] // One category can have many projects
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+
 model Project {
   id           String      @id @default(cuid())
   customerId   String?     @map("customer_id")
@@ -263,7 +274,8 @@ model Project {
   projectNumber  String?   @unique
   active       Boolean     @default(true) // Aktiv - checkbox to activate
   status       String?     // Status (nullable)
-  category     String?     // Prosjektkategori - project category (nullable)
+  categoryId   String?           @map("category_id")
+  category     ProjectCategory?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   startDate    DateTime?   // Startdato (nullable)
   endDate      DateTime?   // Sluttdato (nullable)
   departmentId String
@@ -271,7 +283,9 @@ model Project {
   updatedAt    DateTime    @default(now())
   department   Department  @relation(fields: [departmentId], references: [id])
   timeEntries  TimeEntry[]
-  invoices  Invoice[] 
+  invoices     Invoice[] 
+  businessId     String
+  business       Business   @relation(fields: [businessId], references: [id])
 }
 
 model TimeEntry {

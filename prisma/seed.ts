@@ -433,6 +433,25 @@ async function main() {
     console.log(`Created contact for ${customer.customerName}`)
   }
 
+   const categories = [
+    { name: "Internal" },
+    { name: "External" },
+    { name: "Maintenance" },
+    { name: "Development" },
+    { name: "Service" },
+    { name: "Other" }
+  ]
+
+  for (const cat of categories) {
+    await prisma.projectCategory.upsert({
+      where: { name: cat.name },
+      update: {},
+      create: cat,
+    })
+  }
+
+  console.log("✅ Project categories seeded!")
+
   console.log('✓ Database seeding completed!')
 }
 

@@ -95,6 +95,7 @@ export default function DashboardNavbar() {
       children: [
         { name: 'Invoice', href: '/dashboard/invoices' },
         { name: 'Invoice Overviews', href: '/dashboard/invoice-overviews' },
+        { name:"Project", href: '/dashboard/projects' },
         { name:"Customer", href: '/dashboard/customers' },
         { name: "Product", href: '/dashboard/products' },
       ],
