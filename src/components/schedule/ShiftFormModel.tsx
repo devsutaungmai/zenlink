@@ -18,7 +18,7 @@ interface ShiftFormModalProps {
   employeeGroups: EmployeeGroup[]
   onSubmit: (formData: any) => void
   onDelete?: (shiftId: string) => void
-  viewType: 'week' | 'day'
+  viewType: 'week' | 'day' | 'month'
   loading: boolean
 }
 
@@ -50,7 +50,7 @@ export default function ShiftFormModal({
           onCancel={onClose}
           loading={loading}
           showEmployee={true}
-          showStartTime={viewType === 'week'}
+          showStartTime={true}
           showDate={true}
         />
       </DialogContent>

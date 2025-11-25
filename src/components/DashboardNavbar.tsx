@@ -153,17 +153,17 @@ export default function DashboardNavbar() {
 
   return (
     <>
-      <nav className="hidden md:block bg-white/80 backdrop-blur-xl border-b border-gray-200/50 shadow-lg fixed w-full z-30">
+      <nav className="hidden lg:block bg-white/80 backdrop-blur-xl border-b border-gray-200/50 shadow-lg fixed w-full z-30">
       <div className="px-6 h-18 flex items-center justify-between">
         {/* Left section with logo */}
         <div className="flex items-center">
-          <Link href="/dashboard" className="text-2xl font-bold bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] bg-clip-text text-transparent ml-2 md:ml-0 hover:scale-105 transition-transform duration-200">
+          <Link href="/dashboard" className="text-2xl font-bold bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] bg-clip-text text-transparent ml-2 lg:ml-0 hover:scale-105 transition-transform duration-200">
             {APP_NAME}
           </Link>
         </div>
 
         {/* Center section with navigation - conditionally rendered based on user role */}
-        <div className="hidden md:flex items-center space-x-1">
+        <div className="hidden lg:flex items-center space-x-1">
           {navigation.map((item) => 
             !item.children ? (
               <Link
@@ -227,7 +227,7 @@ export default function DashboardNavbar() {
                 <UserCircleIcon className="h-9 w-9 text-gray-600 group-hover:text-[#31BCFF] transition-colors duration-200" />
                 <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-green-500 rounded-full border-2 border-white"></div>
               </div>
-              <div className="hidden md:block text-left">
+              <div className="hidden lg:block text-left">
                 {loading ? (
                   <div className="animate-pulse">
                     <div className="h-4 bg-gray-200 rounded w-24 mb-1"></div>
@@ -308,7 +308,7 @@ export default function DashboardNavbar() {
       </nav>
 
       {/* Mobile compact header */}
-      <div className="md:hidden fixed top-0 inset-x-0 z-30 bg-white/95 backdrop-blur-xl border-b border-gray-200/70 shadow-lg">
+      <div className="lg:hidden fixed top-0 inset-x-0 z-30 bg-white/95 backdrop-blur-xl border-b border-gray-200/70 shadow-lg">
         <div className="flex items-center justify-between px-4 py-3">
           <div>
             <Link href="/dashboard" className="text-2xl font-bold bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] bg-clip-text text-transparent">
@@ -392,7 +392,7 @@ export default function DashboardNavbar() {
       </div>
 
       {/* Mobile bottom navigation */}
-      <div className="md:hidden fixed bottom-0 inset-x-0 z-30" aria-label="Primary navigation">
+      <div className="lg:hidden fixed bottom-0 inset-x-0 z-30" aria-label="Primary navigation">
         <div className="bg-white/95 backdrop-blur-xl border-t border-gray-200/70 shadow-2xl">
           <nav className="flex items-center justify-around px-2 py-2">
             {navigation.map(item => {
@@ -431,7 +431,7 @@ export default function DashboardNavbar() {
         leaveFrom="opacity-100 translate-y-0"
         leaveTo="opacity-0 translate-y-4"
       >
-        <div className="md:hidden" aria-live="polite">
+        <div className="lg:hidden" aria-live="polite">
           <div
             className="fixed inset-0 bg-black/20 z-30"
             onClick={() => setActiveBottomMenu(null)}

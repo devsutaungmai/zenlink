@@ -34,7 +34,7 @@ export default function DashboardLayout({
       <DashboardNavbar />
       
       <div className="flex flex-col flex-1">
-        <div className="pt-16 pb-24 md:pb-0"> {/* Padding for fixed top+bottom navs */}
+        <div className="pt-16 pb-24 lg:pb-0"> {/* Padding for fixed top+bottom navs */}
           <div className="py-8 px-4 sm:px-6 lg:px-8">
             {children}
           </div>

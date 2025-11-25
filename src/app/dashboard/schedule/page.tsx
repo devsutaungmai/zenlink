@@ -1,13 +1,18 @@
 'use client'
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
-import { format, addDays, addWeeks, subWeeks, startOfWeek, endOfWeek } from 'date-fns'
+import { format, addDays, addWeeks, subWeeks, startOfWeek, endOfWeek, addMonths, subMonths, startOfMonth, endOfMonth } from 'date-fns'
 import { Employee, EmployeeGroup } from '@prisma/client'
+import { ClockIcon, UsersIcon, UserGroupIcon, Squares2X2Icon } from '@heroicons/react/24/outline'
 
 import Swal from 'sweetalert2'
 import ScheduleHeader from '@/components/schedule/ScheduleHeader'
 import WeekView from '@/components/schedule/WeekView'
 import DayView from '@/components/schedule/DayView'
+import DayEmployeeTimeline from '@/components/schedule/DayEmployeeTimeline'
+import DayGroupsTimeline from '@/components/schedule/DayGroupsTimeline'
+import DayFunctionsTimeline from '@/components/schedule/DayFunctionsTimeline'
+import MonthView from '@/components/schedule/MonthView'
 import EmployeeGroupedView from '@/components/schedule/EmployeeGroupedView'
 import GroupGroupedView from '@/components/schedule/GroupGroupedView'
 import FunctionGroupedView from '@/components/schedule/FunctionGroupedView'
@@ -21,17 +26,24 @@ import {
   FunctionGroupedViewSkeleton 
 } from '@/components/skeletons/ScheduleSkeleton'
 
+const VIEW_TABS: Array<{ value: 'time' | 'employees' | 'groups' | 'functions'; label: string; description: string; icon: (props: React.ComponentProps<'svg'>) => JSX.Element }> = [
+  { value: 'time', label: 'Timeline', description: 'Chronological grid', icon: ClockIcon },
+  { value: 'employees', label: 'Employees', description: 'People-centric view', icon: UsersIcon },
+  { value: 'groups', label: 'Groups', description: 'Team allocations', icon: UserGroupIcon },
+  { value: 'functions', label: 'Functions', description: 'Role coverage', icon: Squares2X2Icon }
+]
+
 export default function SchedulePage() {
   const [showShiftModal, setShowShiftModal] = useState(false)
   const [shiftInitialData, setShiftInitialData] = useState<any>(null)
-  const [modalViewType, setModalViewType] = useState<'week' | 'day'>('week')
+  const [modalViewType, setModalViewType] = useState<'week' | 'day' | 'month'>('week')
 
   const [currentDate, setCurrentDate] = useState(new Date())
   const [employees, setEmployees] = useState<Employee[]>([])
   const [employeeGroups, setEmployeeGroups] = useState<EmployeeGroup[]>([])
   const [shifts, setShifts] = useState<ShiftWithRelations[]>([])
   const [loading, setLoading] = useState(true)
-  const [viewMode, setViewMode] = useState<'week' | 'day'>('week')
+  const [viewMode, setViewMode] = useState<'week' | 'day' | 'month'>('week')
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [scheduleViewType, setScheduleViewType] = useState<'time' | 'employees' | 'groups' | 'functions'>('employees')
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
@@ -93,8 +105,25 @@ export default function SchedulePage() {
     })
   }, [shifts, filters, employees, selectedDepartmentId, selectedCategoryId, selectedFunctionId])
 
-  const startDate = useMemo(() => startOfWeek(currentDate, { weekStartsOn: 0 }), [currentDate])
-  const endDate = useMemo(() => endOfWeek(currentDate, { weekStartsOn: 0 }), [currentDate])
+  const startDate = useMemo(() => {
+    if (viewMode === 'month') {
+      return startOfMonth(currentDate)
+    }
+    if (viewMode === 'day') {
+      return selectedDate
+    }
+    return startOfWeek(currentDate, { weekStartsOn: 0 })
+  }, [currentDate, viewMode, selectedDate])
+  
+  const endDate = useMemo(() => {
+    if (viewMode === 'month') {
+      return endOfMonth(currentDate)
+    }
+    if (viewMode === 'day') {
+      return selectedDate
+    }
+    return endOfWeek(currentDate, { weekStartsOn: 0 })
+  }, [currentDate, viewMode, selectedDate])
   
   const weekDates = useMemo(() => Array(7).fill(0).map((_, i) => addDays(startDate, i)), [startDate])
 
@@ -299,7 +328,7 @@ export default function SchedulePage() {
     return { employeeId: selectedEmployeeId }
   }, [selectedEmployeeId])
 
-  const openShiftModal = useCallback((view: 'week' | 'day', formData?: any | null) => {
+  const openShiftModal = useCallback((view: 'week' | 'day' | 'month', formData?: any | null) => {
     const payload = formData ? { ...formData } : null
 
     if (payload?.employeeId && payload?.date) {
@@ -314,11 +343,27 @@ export default function SchedulePage() {
   }, [shouldPreventShiftCreation])
 
   const handlePreviousWeek = () => {
-    setCurrentDate(prevDate => subWeeks(prevDate, 1))
+    if (viewMode === 'day') {
+      setSelectedDate(prevDate => addDays(prevDate, -1))
+    } else {
+      setCurrentDate(prevDate => subWeeks(prevDate, 1))
+    }
   }
 
   const handleNextWeek = () => {
-    setCurrentDate(prevDate => addWeeks(prevDate, 1))
+    if (viewMode === 'day') {
+      setSelectedDate(prevDate => addDays(prevDate, 1))
+    } else {
+      setCurrentDate(prevDate => addWeeks(prevDate, 1))
+    }
+  }
+
+  const handlePreviousMonth = () => {
+    setCurrentDate(prevDate => subMonths(prevDate, 1))
+  }
+
+  const handleNextMonth = () => {
+    setCurrentDate(prevDate => addMonths(prevDate, 1))
   }
 
   const toMinutes = (time: string) => {
@@ -742,13 +787,13 @@ export default function SchedulePage() {
   return (
     <div className="flex flex-col h-screen bg-gray-50">
       {/* Header with navigation and filters */}
-      <div className="bg-white border-b px-4 sm:px-6 lg:px-8 py-3 md:py-4">
+      <div className="bg-white border-b px-4 sm:px-6 lg:px-8 py-3 lg:py-4">
         <ScheduleHeader
           startDate={startDate}
           endDate={endDate}
           viewMode={viewMode}
-          onPreviousWeek={handlePreviousWeek}
-          onNextWeek={handleNextWeek}
+          onPreviousWeek={viewMode === 'month' ? handlePreviousMonth : handlePreviousWeek}
+          onNextWeek={viewMode === 'month' ? handleNextMonth : handleNextWeek}
           onTodayClick={handleTodayClick}
           onViewModeChange={setViewMode}
           employees={employees}
@@ -772,54 +817,80 @@ export default function SchedulePage() {
         />
       </div>
 
-      {/* View Type Tabs */}
-      <div className="bg-white border-b px-4 sm:px-6 lg:px-8">
-        <div className="flex gap-0 md:gap-1 -mb-px overflow-x-auto scrollbar-hide">
-          <button
-            onClick={() => setScheduleViewType('time')}
-            className={`px-3 md:px-4 py-2.5 md:py-3 text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
-              scheduleViewType === 'time'
-                ? 'text-[#31BCFF] border-b-2 border-[#31BCFF] bg-blue-50 md:bg-transparent'
-                : 'text-gray-600 hover:text-gray-800'
-            }`}
-          >
-            Time
-          </button>
-          <button
-            onClick={() => setScheduleViewType('employees')}
-            className={`px-3 md:px-4 py-2.5 md:py-3 text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
-              scheduleViewType === 'employees'
-                ? 'text-[#31BCFF] border-b-2 border-[#31BCFF] bg-blue-50 md:bg-transparent'
-                : 'text-gray-600 hover:text-gray-800'
-            }`}
-          >
-            Employees
-          </button>
-          <button
-            onClick={() => setScheduleViewType('groups')}
-            className={`px-3 md:px-4 py-2.5 md:py-3 text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
-              scheduleViewType === 'groups'
-                ? 'text-[#31BCFF] border-b-2 border-[#31BCFF] bg-blue-50 md:bg-transparent'
-                : 'text-gray-600 hover:text-gray-800'
-            }`}
-          >
-            Groups
-          </button>
-          <button
-            onClick={() => setScheduleViewType('functions')}
-            className={`px-3 md:px-4 py-2.5 md:py-3 text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
-              scheduleViewType === 'functions'
-                ? 'text-[#31BCFF] border-b-2 border-[#31BCFF] bg-blue-50 md:bg-transparent'
-                : 'text-gray-600 hover:text-gray-800'
-            }`}
-          >
-            Functions
-          </button>
+      {/* View Type Tabs - Hidden in Month View */}
+      {viewMode !== 'month' && (
+        <div className="bg-white border-b px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col gap-3 py-3">
+            {/* Compact mobile tabs */}
+            <div
+              className="flex md:hidden gap-2"
+              role="tablist"
+              aria-label="Schedule view types (mobile)"
+            >
+              {VIEW_TABS.map(tab => {
+                const isActive = scheduleViewType === tab.value
+                return (
+                  <button
+                    key={`mobile-${tab.value}`}
+                    onClick={() => setScheduleViewType(tab.value)}
+                    role="tab"
+                    aria-selected={isActive}
+                    className={`flex-1 rounded-xl border px-2 py-2 text-[11px] font-semibold uppercase tracking-wide transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#31BCFF] focus-visible:ring-offset-2 ${
+                      isActive
+                        ? 'border-[#31BCFF] bg-[#31BCFF]/10 text-[#0B5CAB]'
+                        : 'border-gray-200 bg-white text-gray-500'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Rich desktop/tablet tabs */}
+            <div
+              className="hidden md:flex w-full gap-2 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory"
+              role="tablist"
+              aria-label="Schedule view types"
+            >
+              {VIEW_TABS.map(tab => {
+                const isActive = scheduleViewType === tab.value
+                const Icon = tab.icon
+                return (
+                  <button
+                    key={tab.value}
+                    onClick={() => setScheduleViewType(tab.value)}
+                    role="tab"
+                    aria-selected={isActive}
+                    className={`group flex min-w-[170px] flex-1 items-center gap-3 rounded-2xl border px-3 md:px-4 py-2.5 text-left text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#31BCFF] focus-visible:ring-offset-2 snap-start ${
+                      isActive
+                        ? 'border-[#31BCFF] bg-blue-50 text-[#0B5CAB] shadow-sm'
+                        : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    <span
+                      className={`inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border text-base transition-colors ${
+                        isActive
+                          ? 'border-transparent bg-[#31BCFF]/15 text-[#0B5CAB]'
+                          : 'border-gray-200 bg-white text-gray-500'
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    <span className="flex flex-col">
+                      <span className="font-semibold leading-tight">{tab.label}</span>
+                      <span className="text-[11px] text-gray-500 hidden lg:inline">{tab.description}</span>
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Main content area */}
-      <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
+      <main className="flex-1 overflow-auto p-4 md:p-6 lg:p-8">
         {loading ? (
           viewMode === 'week' ? (
             scheduleViewType === 'employees' ? (
@@ -924,24 +995,99 @@ export default function SchedulePage() {
                   }}
                 />
               )
-            ) : (
-             <DayView
-                selectedDate={selectedDate}
+            ) : viewMode === 'month' ? (
+              <MonthView
+                currentDate={currentDate}
                 shifts={filteredShifts}
                 employees={employees}
                 onEditShift={handleEditShift}
-                onAddShift={(formData) => {
-                  const defaultDate = format(selectedDate, 'yyyy-MM-dd')
-                  let payload = formData ? { ...formData } : { date: defaultDate }
-
-                  if (!payload.date) {
-                    payload.date = defaultDate
-                  }
-
-                  const enrichedPayload = attachSelectedEmployee(payload)
-                  openShiftModal('day', enrichedPayload)
+                isEmployeeUnavailable={isEmployeeUnavailableOnDate}
+                onUnavailableClick={notifyEmployeeUnavailable}
+                onAddShift={(data) => {
+                  const payload = attachSelectedEmployee(data ?? null)
+                  openShiftModal('month', payload)
                 }}
               />
+            ) : (
+              scheduleViewType === 'time' ? (
+                <DayView
+                  selectedDate={selectedDate}
+                  shifts={filteredShifts}
+                  employees={employees}
+                  onEditShift={handleEditShift}
+                  onAddShift={(formData) => {
+                    const defaultDate = format(selectedDate, 'yyyy-MM-dd')
+                    let payload = formData ? { ...formData } : { date: defaultDate }
+
+                    if (!payload.date) {
+                      payload.date = defaultDate
+                    }
+
+                    const enrichedPayload = attachSelectedEmployee(payload)
+                    openShiftModal('day', enrichedPayload)
+                  }}
+                />
+              ) : scheduleViewType === 'employees' ? (
+                <DayEmployeeTimeline
+                  date={selectedDate}
+                  shifts={filteredShifts}
+                  employees={employees}
+                  onEditShift={handleEditShift}
+                  onAddShift={(data) => {
+                    const payload = data ? { ...data } : {}
+                    if (!payload.date) {
+                      payload.date = format(selectedDate, 'yyyy-MM-dd')
+                    }
+                    openShiftModal('day', payload)
+                  }}
+                />
+              ) : scheduleViewType === 'groups' ? (
+                <DayGroupsTimeline
+                  date={selectedDate}
+                  shifts={filteredShifts}
+                  employeeGroups={employeeGroups}
+                  onEditShift={handleEditShift}
+                  onAddShift={(data) => {
+                    const payload = data ? { ...data } : {}
+                    if (!payload.date) {
+                      payload.date = format(selectedDate, 'yyyy-MM-dd')
+                    }
+                    openShiftModal('day', payload)
+                  }}
+                />
+              ) : scheduleViewType === 'functions' ? (
+                <DayFunctionsTimeline
+                  date={selectedDate}
+                  shifts={filteredShifts}
+                  functions={functions}
+                  onEditShift={handleEditShift}
+                  onAddShift={(data) => {
+                    const payload = data ? { ...data } : {}
+                    if (!payload.date) {
+                      payload.date = format(selectedDate, 'yyyy-MM-dd')
+                    }
+                    openShiftModal('day', payload)
+                  }}
+                />
+              ) : (
+                <DayView
+                  selectedDate={selectedDate}
+                  shifts={filteredShifts}
+                  employees={employees}
+                  onEditShift={handleEditShift}
+                  onAddShift={(formData) => {
+                    const defaultDate = format(selectedDate, 'yyyy-MM-dd')
+                    let payload = formData ? { ...formData } : { date: defaultDate }
+
+                    if (!payload.date) {
+                      payload.date = defaultDate
+                    }
+
+                    const enrichedPayload = attachSelectedEmployee(payload)
+                    openShiftModal('day', enrichedPayload)
+                  }}
+                />
+              )
             )}
           </>
         )}

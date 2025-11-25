@@ -55,11 +55,11 @@ interface FilterOptions {
 interface ScheduleHeaderProps {
   startDate: Date
   endDate: Date
-  viewMode: 'week' | 'day'
+  viewMode: 'week' | 'day' | 'month'
   onPreviousWeek: () => void
   onNextWeek: () => void
   onTodayClick: () => void
-  onViewModeChange: (mode: 'week' | 'day') => void
+  onViewModeChange: (mode: 'week' | 'day' | 'month') => void
   employees: Employee[]
   selectedEmployeeId: string | null
   onEmployeeChange: (employeeId: string | null) => void
@@ -468,183 +468,211 @@ export default function ScheduleHeader({
         </div>
       </div>
 
-      {/* Desktop Layout - Horizontal */}
-      <div className="hidden md:flex items-center gap-3">
-        {/* Department Filter */}
-        <select
-          value={selectedDepartmentId || ""}
-          onChange={(e) => {
-            const value = e.target.value === "" ? null : e.target.value
-            onDepartmentChange(value)
-          }}
-          className="px-3 py-2 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#31BCFF] bg-white min-w-[160px]"
-        >
-          <option value="">All Departments</option>
-          {safeDepartments.map(department => (
-            <option key={department.id} value={department.id}>
-              {department.name}
-            </option>
-          ))}
-        </select>
-
-        {/* Category Filter */}
-        <select
-          value={selectedCategoryId || ""}
-          onChange={(e) => {
-            const value = e.target.value === "" ? null : e.target.value
-            onCategoryChange(value)
-            // Clear function selection when category changes
-            if (value !== selectedCategoryId) {
-              onFunctionChange(null)
-            }
-          }}
-          className="px-3 py-2 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#31BCFF] bg-white min-w-[160px]"
-        >
-          <option value="">All Categories</option>
-          {safeCategories.map(category => (
-            <option key={category.id} value={category.id}>
-              {category.name}
-            </option>
-          ))}
-        </select>
-
-        {/* Function Filter */}
-        <select
-          value={selectedFunctionId || ""}
-          onChange={(e) => {
-            const value = e.target.value === "" ? null : e.target.value
-            onFunctionChange(value)
-          }}
-          disabled={!selectedCategoryId && filteredFunctions.length === 0}
-          className="px-3 py-2 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#31BCFF] bg-white min-w-[160px] disabled:bg-gray-100 disabled:cursor-not-allowed"
-        >
-          <option value="">{selectedCategoryId ? 'All Functions' : 'Select category first'}</option>
-          {filteredFunctions.map(func => (
-            <option key={func.id} value={func.id}>
-              {func.name}
-            </option>
-          ))}
-        </select>
-
-        {/* Week Dropdown */}
-        <select
-          className="px-3 py-2 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#31BCFF] bg-white"
-        >
-          <option>Week</option>
-        </select>
-
-        {/* Today Button */}
-        <button
-          onClick={onTodayClick}
-          className="px-4 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50 whitespace-nowrap bg-white"
-        >
-          Today
-        </button>
-
-        {/* Navigation: Arrows and Date Range */}
-        <div className="flex items-center gap-2">
-          <button 
-            onClick={onPreviousWeek}
-            className="p-2 hover:bg-gray-100 rounded-md"
-          >
-            <ArrowLeftIcon className="h-4 w-4 text-gray-600" />
-          </button>
-          
-          <div className="px-3 py-2 text-sm text-gray-700 whitespace-nowrap">
-            {format(startDate, 'MMM d')} - {format(endDate, 'MMM d')}
-          </div>
-          
-          <button 
-            onClick={onNextWeek}
-            className="p-2 hover:bg-gray-100 rounded-md"
-          >
-            <ArrowRightIcon className="h-4 w-4 text-gray-600" />
-          </button>
-        </div>
-
-        {/* Spacer */}
-        <div className="flex-1"></div>
-
-        {/* Right side actions - Templates, Tools, Filters, Publish */}
-        <div className="flex items-center gap-2">
-          <button className="p-2 hover:bg-gray-100 rounded-md">
-            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-            </svg>
-          </button>
-
-          {/* Filters Button with Dropdown - Desktop */}
-          <div className="relative">
-            <button 
-              onClick={() => setShowFilters(!showFilters)}
-              className="px-4 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50 bg-white flex items-center gap-2"
+      {/* Desktop Layout - Responsive */}
+      <div className="hidden md:block">
+        <div className="space-y-3">
+          {/* Row 1: Filters and view toggle */}
+          <div className="flex flex-wrap lg:flex-nowrap items-center gap-3">
+            <select
+              value={selectedDepartmentId || ""}
+              onChange={(e) => {
+                const value = e.target.value === "" ? null : e.target.value
+                onDepartmentChange(value)
+              }}
+              className="px-3 py-2 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#31BCFF] bg-white w-full md:w-auto md:min-w-[160px]"
             >
-              <FunnelIcon className="w-4 h-4" />
-              Filters
-              {activeFilterCount > 0 && (
-                <span className="bg-[#31BCFF] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                  {activeFilterCount}
-                </span>
-              )}
-            </button>
+              <option value="">All Departments</option>
+              {safeDepartments.map(department => (
+                <option key={department.id} value={department.id}>
+                  {department.name}
+                </option>
+              ))}
+            </select>
 
-            {/* Filter Dropdown - Desktop */}
-            {showFilters && (
-              <div 
-                ref={filterDropdownRef}
-                className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-[600px] overflow-y-auto"
+            <select
+              value={selectedCategoryId || ""}
+              onChange={(e) => {
+                const value = e.target.value === "" ? null : e.target.value
+                onCategoryChange(value)
+                if (value !== selectedCategoryId) {
+                  onFunctionChange(null)
+                }
+              }}
+              className="px-3 py-2 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#31BCFF] bg-white w-full md:w-auto md:min-w-[160px]"
+            >
+              <option value="">All Categories</option>
+              {safeCategories.map(category => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={selectedFunctionId || ""}
+              onChange={(e) => {
+                const value = e.target.value === "" ? null : e.target.value
+                onFunctionChange(value)
+              }}
+              disabled={!selectedCategoryId && filteredFunctions.length === 0}
+              className="px-3 py-2 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#31BCFF] bg-white w-full md:w-auto md:min-w-[160px] disabled:bg-gray-100 disabled:cursor-not-allowed"
+            >
+              <option value="">{selectedCategoryId ? 'All Functions' : 'Select category first'}</option>
+              {filteredFunctions.map(func => (
+                <option key={func.id} value={func.id}>
+                  {func.name}
+                </option>
+              ))}
+            </select>
+
+            <div className="flex rounded-md border border-gray-300 overflow-hidden bg-white w-full md:w-auto">
+              <button
+                onClick={() => onViewModeChange('week')}
+                className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${
+                  viewMode === 'week' 
+                    ? 'bg-[#31BCFF] text-white' 
+                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                }`}
               >
-                <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between z-10">
-                  <h3 className="font-semibold text-gray-900">Filters</h3>
-                  <div className="flex items-center gap-2">
-                    {activeFilterCount > 0 && (
-                      <button
-                        onClick={clearAllFilters}
-                        className="text-xs text-[#31BCFF] hover:text-[#28a8e6]"
-                      >
-                        Clear all
-                      </button>
-                    )}
-                    <button onClick={() => setShowFilters(false)} className="text-gray-400 hover:text-gray-600">
-                      <XMarkIcon className="w-5 h-5" />
-                    </button>
-                  </div>
-                </div>
+                Week
+              </button>
+              <button
+                onClick={() => onViewModeChange('month')}
+                className={`flex-1 px-3 py-2 text-sm font-medium transition-colors border-l ${
+                  viewMode === 'month' 
+                    ? 'bg-[#31BCFF] text-white' 
+                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                Month
+              </button>
+              <button
+                onClick={() => onViewModeChange('day')}
+                className={`flex-1 px-3 py-2 text-sm font-medium transition-colors border-l ${
+                  viewMode === 'day' 
+                    ? 'bg-[#31BCFF] text-white' 
+                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                Day
+              </button>
+            </div>
+          </div>
 
-                <div className="p-4 space-y-4">
-                  {/* Employees Filter */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Employees</label>
-                    {/* Search Input */}
-                    <input
-                      type="text"
-                      placeholder="Search employees..."
-                      value={employeeSearchQuery}
-                      onChange={(e) => setEmployeeSearchQuery(e.target.value)}
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md mb-2 focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF]"
-                    />
-                    <div className="max-h-40 overflow-y-auto border border-gray-200 rounded-md">
-                      {filteredEmployees.length > 0 ? (
-                        filteredEmployees.map(employee => (
-                          <label key={employee.id} className="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={filters.employeeIds.includes(employee.id)}
-                              onChange={() => toggleEmployeeFilter(employee.id)}
-                              className="rounded border-gray-300 text-[#31BCFF] focus:ring-[#31BCFF]"
-                            />
-                            <span className="ml-2 text-sm text-gray-700">
-                              {employee.firstName} {employee.lastName}
-                            </span>
-                          </label>
-                        ))
-                      ) : (
-                        <div className="px-3 py-2 text-sm text-gray-500 text-center">
-                          No employees found
-                        </div>
-                      )}
+          {/* Row 2: Navigation and actions */}
+          <div className="flex flex-wrap lg:flex-nowrap gap-3 items-center justify-between">
+            <div className="flex flex-wrap lg:flex-nowrap items-center gap-3">
+              <button
+                onClick={onTodayClick}
+                className="px-4 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50 whitespace-nowrap bg-white"
+              >
+                Today
+              </button>
+
+              <div className="flex items-center gap-2 flex-wrap md:flex-nowrap">
+                <button 
+                  onClick={onPreviousWeek}
+                  className="p-2 hover:bg-gray-100 rounded-md"
+                >
+                  <ArrowLeftIcon className="h-4 w-4 text-gray-600" />
+                </button>
+                
+                <div className="px-3 py-2 text-sm text-gray-700 bg-white rounded-md min-w-[160px] text-center">
+                  {viewMode === 'month'
+                    ? format(startDate, 'MMMM yyyy')
+                    : viewMode === 'day'
+                      ? format(startDate, 'EEEE, MMM d')
+                      : `${format(startDate, 'MMM d')} - ${format(endDate, 'MMM d')}`}
+                </div>
+                
+                <button 
+                  onClick={onNextWeek}
+                  className="p-2 hover:bg-gray-100 rounded-md"
+                >
+                  <ArrowRightIcon className="h-4 w-4 text-gray-600" />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap lg:flex-nowrap justify-end">
+              <button className="p-2 hover:bg-gray-100 rounded-md">
+                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                </svg>
+              </button>
+
+              <div className="relative">
+                <button 
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="px-4 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50 bg-white flex items-center gap-2"
+                >
+                  <FunnelIcon className="w-4 h-4" />
+                  Filters
+                  {activeFilterCount > 0 && (
+                    <span className="bg-[#31BCFF] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </button>
+
+                {showFilters && (
+                  <div 
+                    ref={filterDropdownRef}
+                    className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-[600px] overflow-y-auto"
+                  >
+                    <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between z-10">
+                      <h3 className="font-semibold text-gray-900">Filters</h3>
+                      <div className="flex items-center gap-2">
+                        {activeFilterCount > 0 && (
+                          <button
+                            onClick={clearAllFilters}
+                            className="text-xs text-[#31BCFF] hover:text-[#28a8e6]"
+                          >
+                            Clear all
+                          </button>
+                        )}
+                        <button onClick={() => setShowFilters(false)} className="text-gray-400 hover:text-gray-600">
+                          <XMarkIcon className="w-5 h-5" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
+
+                    <div className="p-4 space-y-4">
+                      {/* Employees Filter */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Employees</label>
+                        <input
+                          type="text"
+                          placeholder="Search employees..."
+                          value={employeeSearchQuery}
+                          onChange={(e) => setEmployeeSearchQuery(e.target.value)}
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md mb-2 focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF]"
+                        />
+                        <div className="max-h-40 overflow-y-auto border border-gray-200 rounded-md">
+                          {filteredEmployees.length > 0 ? (
+                            filteredEmployees.map(employee => (
+                              <label
+                                key={employee.id}
+                                className="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={filters.employeeIds.includes(employee.id)}
+                                  onChange={() => toggleEmployeeFilter(employee.id)}
+                                  className="rounded border-gray-300 text-[#31BCFF] focus:ring-[#31BCFF]"
+                                />
+                                <span className="ml-2 text-sm text-gray-700">
+                                  {employee.firstName} {employee.lastName}
+                                </span>
+                              </label>
+                            ))
+                          ) : (
+                            <div className="px-3 py-2 text-sm text-gray-500 text-center">
+                              No employees found
+                            </div>
+                          )}
+                        </div>
+                      </div>
 
                   {/* Employee Groups Filter */}
                   <div>
@@ -731,5 +759,7 @@ export default function ScheduleHeader({
         </div>
       </div>
     </div>
+  </div>
+</div>
   )
 }
