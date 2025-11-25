@@ -62,40 +62,76 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const {
       customerId,
-      productId,
       contactPersonId,
       projectId,
       departmentId,
       deliveryAddress,
-      quantity,
-      pricePerUnit,
-      discountPercentage = 0,
       notes,
       sentAt,
       paidAt,
       dueDay,
-
+      invoiceLines,
+      status
     } = body
 
     // Validate inputs
-    if (!customerId || !productId || !quantity || !pricePerUnit) {
+    if (!customerId || !invoiceLines.length) {
       return NextResponse.json(
-        { error: 'Missing required fields: customerId, productId, quantity, pricePerUnit' },
+        { error: 'Missing required fields: customerId,orderLine' },
         { status: 400 }
       )
     }
+    let invoiceLinesData = [];
+    let totalExclVAT = 0
 
-    // Get product details for snapshot
-    const product = await prisma.product.findUnique({
-      where: { id: productId }
-    })
+    for (const line of invoiceLines) {
 
-    if (!product) {
-      return NextResponse.json(
-        { error: 'Product not found' },
-        { status: 404 }
+      const {productId,quantity,pricePerUnit,discountPercentage}= line;
+       // Validate line data
+      if (!productId || !quantity || !pricePerUnit) {
+        return NextResponse.json(
+          { error: 'Each line must have productId, quantity, and pricePerUnit' },
+          { status: 400 }
+        )
+      }
+
+      // Get product details for snapshot
+      const product = await prisma.product.findFirst({
+        where: { id: productId, businessId }
+      })
+
+      if (!product) {
+        return NextResponse.json(
+          { error: `Product not found: ${productId}` },
+          { status: 404 }
+        )
+      }
+      // Calculate totals
+      const calculations = calculateInvoiceTotals(
+        quantity,
+        pricePerUnit,
+        discountPercentage
       )
+
+      totalExclVAT += calculations.totalExclVAT
+
+      invoiceLinesData.push({
+        productId,
+        quantity,
+        pricePerUnit,
+        discountPercentage,
+        subtotal: calculations.subtotal,
+        discountAmount: calculations.discountAmount,
+        lineTotal: calculations.totalExclVAT,
+        productName: product.productName,
+        productNumber: product.productNumber || ''
+      })
     }
+
+    // Calculate invoice-level VAT (after summing all lines)
+    const vatPercentage = 25
+    const vatAmount = Math.round(totalExclVAT * (vatPercentage / 100) * 100) / 100
+    const totalInclVAT = Math.round((totalExclVAT + vatAmount) * 100) / 100
 
     // Verify customer exists
     const customer = await prisma.customer.findUnique({
@@ -109,12 +145,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Calculate totals
-    const calculations = calculateInvoiceTotals(
-      quantity,
-      pricePerUnit,
-      discountPercentage
-    )
+    
     // Create invoice with nested invoice line
     const invoice = await prisma.invoice.create({
       data: {
@@ -127,14 +158,14 @@ export async function POST(request: NextRequest) {
         deliveryAddress,
 
         // Invoice totals
-        totalExclVAT: calculations.totalExclVAT,
+        totalExclVAT: totalExclVAT,
         vatPercentage: 25,
-        vatAmount: calculations.vatAmount,
-        totalInclVAT: calculations.totalInclVAT,
+        vatAmount: vatAmount,
+        totalInclVAT: totalInclVAT,
 
         dueDate: paidAt ? new Date(paidAt) : null,
         notes,
-        status: 'DRAFT',
+        status: status,
         sentAt: sentAt ? new Date(sentAt) : null,
         paidAt: paidAt ? new Date(paidAt) : null,
         dueDay,
@@ -142,21 +173,7 @@ export async function POST(request: NextRequest) {
 
         // Create invoice line with product
         invoiceLines: {
-          create: {
-            productId,
-            quantity,
-            pricePerUnit,
-            discountPercentage,
-
-            // Calculated fields
-            subtotal: calculations.subtotal,
-            discountAmount: calculations.discountAmount,
-            lineTotal: calculations.totalExclVAT,
-
-            // Product snapshot
-            productName: product.productName,
-            productNumber: product.productNumber || ''
-          }
+          create: invoiceLinesData
         }
       },
       include: {

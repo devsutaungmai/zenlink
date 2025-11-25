@@ -1,4 +1,5 @@
 import { getCurrentUserOrEmployee } from '@/shared/lib/auth'
+import Swal from 'sweetalert2'
 
 export interface InvoiceCalculation {
   subtotal: number
@@ -80,3 +81,43 @@ export async function exportToPDF(invoiceId: string) {
     return false
   }
 }
+
+export async function sendEmail(invoiceId: string) {
+        try {
+            const response = await fetch('/api/invoices/email/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    invoiceId: invoiceId,
+                }),
+            })
+
+            if (response.ok) {
+                Swal.fire({
+                    title: 'Success!',
+                    text: 'Invoice created and sent email to the customer!',
+                    icon: 'success',
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true
+                });
+            } else {
+                const data = await response.json();
+                throw new Error(data.error || 'Failed to send invite');
+            }
+        } catch (error) {
+            console.error('Error sending invite:', error);
+            Swal.fire({
+                title: 'Partial Success!',
+                text: 'Invoice created but Email functionality failed!',
+                icon: 'info',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true
+            });
+        }
+    }

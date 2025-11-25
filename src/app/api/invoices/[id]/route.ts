@@ -43,6 +43,7 @@ export async function GET(
         },
         invoiceLines: {
           select: {
+            productId: true,
             quantity: true,
             pricePerUnit: true,
             discountPercentage: true,
@@ -83,30 +84,17 @@ export async function PUT(
     const body = await request.json()
     const {
       customerId,
-      productId,
       contactPersonId,
       projectId,
       departmentId,
       deliveryAddress,
-      quantity,
-      pricePerUnit,
-      discountPercentage = 0,
       notes,
       sentAt,
       paidAt,
-      dueDay
+      dueDay,
+      invoiceLines,
+      status
     } = body
-
-    const lines = [{ productId, quantity, pricePerUnit, discountPercentage }]; // one invoice has one product for now but many products in one invoice for future
-
-    // For now, support single product (backward compatible)
-    // Future: support multiple products in 'lines' array
-    const invoiceLines = lines || [{
-      productId: body.productId,
-      quantity: body.quantity,
-      pricePerUnit: body.pricePerUnit,
-      discountPercentage: body.discountPercentage || 0
-    }]
 
     // Validate inputs
     if (!customerId || !invoiceLines.length) {
@@ -219,7 +207,7 @@ export async function PUT(
           totalInclVAT,
           dueDate: paidAt ? new Date(paidAt) : null,
           notes,
-          status: 'DRAFT',
+          status: status,
           sentAt: sentAt ? new Date(sentAt) : null,
           paidAt: paidAt ? new Date(paidAt) : null,
           dueDay,

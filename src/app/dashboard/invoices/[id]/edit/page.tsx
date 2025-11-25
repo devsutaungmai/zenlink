@@ -4,11 +4,12 @@ import { useState, useEffect, use } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import Link from 'next/link'
-import { ArrowLeftIcon } from '@heroicons/react/24/outline'
+import { ArrowDownIcon, ArrowLeftIcon } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
-import { ContactPerson, Project } from '../../create/page'
+import { ContactPerson, InvoiceFormData, InvoiceLine, Project } from '../../create/page'
 import { Department } from '@prisma/client'
 import { useInvoiceSettings } from '@/shared/hooks/useInvoiceSettings'
+import { exportToPDF, sendEmail } from '@/shared/lib/invoiceHelper'
 
 interface Customer {
     id: string
@@ -33,7 +34,8 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
     const [departments, setDepartments] = useState<Department[]>([])
     const [contacts, setContacts] = useState<ContactPerson[]>([]);
     const [fetchingCustomer, setFetchingCustomer] = useState(false)
-    const [formData, setFormData] = useState({
+    const [showDropdown, setShowDropdown] = useState(false)
+    const [formData, setFormData] = useState<InvoiceFormData>({
         customerId: '',
         contactPersonId: '',
         deliveryAddress: '',
@@ -42,11 +44,9 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
         paidAt: '',
         projectId: '',
         departmentId: '',
-        productId: '',
         seller: '',
-        quantity: 0,
-        pricePerUnit: 0.0,
-        discountPercentage: 0,
+        invoiceLines: [],
+        status:'',
         notes: ''
     })
     const { settings } = useInvoiceSettings()
@@ -132,11 +132,9 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                     paidAt: data.paidAt ? data.paidAt.split('T')[0] : '',
                     projectId: data.projectId || '',
                     departmentId: data.departmentId || '',
-                    productId: data.invoiceLines?.[0]?.product?.id || '',
                     seller: data.customer.business.name || '',
-                    quantity: data.invoiceLines?.[0]?.quantity ?? 0,
-                    pricePerUnit: data.invoiceLines?.[0]?.pricePerUnit ?? 0.0,
-                    discountPercentage: data.invoiceLines?.[0]?.discountPercentage ?? 0,
+                    invoiceLines: data.invoiceLines || [],
+                    status: data.status || '',
                     notes: data.notes || ''
                 })
             }
@@ -152,12 +150,49 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
     //     fetchCustomerDetails(customerId)
     // }
 
+    const deleteInvoiceLine = (index: number) => {
+        console.log("Deleting....")
+        const updatedInvoices = formData.invoiceLines.filter((_, i) => i !== index);
+        setFormData(prev => ({ ...prev, invoiceLines: updatedInvoices }));
+    }
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleNewOrderLine = () => {
+        setFormData((prev: InvoiceFormData) => ({
+            ...prev,
+            invoiceLines: [
+                ...prev.invoiceLines,
+                {
+                    productId: '',
+                    quantity: 1,
+                    pricePerUnit: 0,
+                    discountPercentage: 0
+                }
+            ]
+        }))
+    }
+
+    const handleCopyOrderLine = (copiedInvoiceLine: InvoiceLine) => {
+        setFormData((prev: InvoiceFormData) => ({
+            ...prev,
+            invoiceLines: [
+                ...prev.invoiceLines,
+                {
+                    productId: copiedInvoiceLine.productId,
+                    quantity: copiedInvoiceLine.quantity,
+                    pricePerUnit: copiedInvoiceLine.pricePerUnit,
+                    discountPercentage: copiedInvoiceLine.discountPercentage
+                }
+            ]
+        }))
+    }
+
+    const handleSubmit = async (e: React.FormEvent, action: 'update' |'print' | 'send_invoice_with_email'| 'send_invoice_without_email') => {
         e.preventDefault()
         setLoading(true)
-        const { seller, ...filteredData } = formData
-
+        const invoiceStatus = action === "send_invoice_with_email" || action === "send_invoice_without_email" ? "SENT" : "DRAFT";
+        let { seller, ...filteredData } = formData
+        filteredData ={...filteredData,status: invoiceStatus}
+        // console.log("Submitting data:", filteredData);
         try {
             const res = await fetch(`/api/invoices/${resolvedParams.id}`, {
                 method: 'PUT',
@@ -170,6 +205,32 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                 throw new Error(error.error || 'Failed to update the invoice')
             }
 
+            const updatedInvoice = await res.json()
+
+            // Handle different actions
+            if (action === 'print') {
+                const pdfSuccess = await exportToPDF(updatedInvoice.id)
+
+                if (pdfSuccess) {
+                    await Swal.fire({
+                        title: 'Success!',
+                        text: 'Invoice created and PDF downloaded',
+                        icon: 'success',
+                        confirmButtonColor: '#31BCFF',
+                    })
+                } else {
+                    await Swal.fire({
+                        title: 'Partial Success',
+                        text: 'Invoice created but PDF download failed',
+                        icon: 'warning',
+                        confirmButtonColor: '#31BCFF',
+                    })
+                }
+            } else if (action === 'send_invoice_with_email') {
+                // Placeholder for email functionality
+                await sendEmail(updatedInvoice.id);
+
+            }
             await Swal.fire({
                 title: 'Success!',
                 text: 'Invoice updated successfully',
@@ -224,9 +285,9 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
 
             {/* Form Container */}
             <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg p-6">
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={(e) => handleSubmit(e,'update')} className="space-y-6">
                     <div className="bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-xl border border-slate-200 p-6">
-                        <h2 className="text-lg font-semibold text-gray-900 mb-4">Customer</h2>
+                        <h2 className="text-lg font-semibold text-gray-900 mb-4">Customer Information</h2>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                             <div>
@@ -251,28 +312,25 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                                 </select>
                                 <p className="text-xs mt-2 text-blue-400">Customer is already assigned </p>
                             </div>
-
-
-                            {settings.showContactPerson &&
-                                <div>
-                                    <label htmlFor="contactPersonId" className="block text-sm font-medium text-gray-700 mb-2">
-                                        Contact Name *
-                                    </label>
-                                    <select
-                                        id="contactPersonId"
-                                        required
-                                        value={formData.contactPersonId || ''}
-                                        onChange={(e) => setFormData({ ...formData, contactPersonId: e.target.value })}
-                                        className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                                    >
-                                        <option value="">Select Project</option>
-                                        {contacts.map((contact) => (
-                                            <option key={contact.id} value={contact.id}>
-                                                {contact.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>}
+                            {settings.showContactPerson && <div>
+                                <label htmlFor="contactPersonId" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Contact Name *
+                                </label>
+                                <select
+                                    id="contactPersonId"
+                                    required
+                                    value={formData.contactPersonId || ''}
+                                    onChange={(e) => setFormData({ ...formData, contactPersonId: e.target.value })}
+                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                >
+                                    <option value="">Select Project</option>
+                                    {contacts.map((contact) => (
+                                        <option key={contact.id} value={contact.id}>
+                                            {contact.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>}
                         </div>
 
                         {settings.showPaymentTerms &&
@@ -308,8 +366,6 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                             </div>}
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-
                             <div>
                                 <label htmlFor="projectId" className="block text-sm font-medium text-gray-700 mb-2">
                                     Project *
@@ -349,7 +405,8 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                                             </option>
                                         ))}
                                     </select>
-                                </div>}
+                                </div>
+                            }
 
                             {settings.showDeliveryAddress &&
                                 <div>
@@ -365,105 +422,174 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                                         className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
                                         placeholder="Enter delivery address"
                                     />
-                                </div>}
+                                </div>
+                            }
 
                         </div>
                     </div>
 
-                    <div className="bg-gradient-to-br rounded-xl border p-6">
-                        <h2 className="text-lg font-semibold text-gray-900 mb-4">Product/Invoice Line</h2>
+                    {settings.showSeller && <div className="bg-gradient-to-br rounded-xl border p-6">
+                        <h2 className="text-lg font-semibold text-gray-900 mb-4">Seller Information</h2>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div className="grid grid-cols-1 md:grid-cols-1 gap-6 mb-6">
+
                             <div>
-                                <label htmlFor="productId" className="block text-sm font-medium text-gray-700 mb-2">
-                                    Product *
-                                </label>
-                                <select
-                                    id="productId"
-                                    required
-                                    value={formData.productId || ''}
-                                    onChange={(e) => setFormData({ ...formData, productId: e.target.value })}
-                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                                >
-                                    <option value="">Select Product</option>
-                                    {products.map((pr) => (
-                                        <option key={pr.id} value={pr.id}>
-                                            {pr.productName}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                            {settings.showSeller &&
-                                <div>
-                                    <label htmlFor="seller" className="block text-sm font-medium text-gray-700 mb-2">
-                                        Seller *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        id="seller"
-                                        required
-                                        min="1"
-                                        value={formData.seller || ""}
-                                        disabled
-                                        className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                                        placeholder="Enter quantity"
-                                    />
-                                </div>}
-
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div>
-                                <label htmlFor="quantity" className="block text-sm font-medium text-gray-700 mb-2">
-                                    Quantity *
+                                <label htmlFor="seller" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Seller *
                                 </label>
                                 <input
-                                    type="number"
-                                    id="quantity"
+                                    type="text"
+                                    id="seller"
                                     required
                                     min="1"
-                                    value={formData.quantity || ""}
-                                    onChange={(e) => setFormData({ ...formData, quantity: parseFloat(e.target.value) })}
+                                    value={formData.seller || ""}
+                                    disabled
                                     className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                                    placeholder="Enter quantity"
+                                    placeholder="Seller Name"
                                 />
                             </div>
+                        </div>
+                    </div>}
 
-                            <div>
-                                <label htmlFor="pricePerUnit" className="block text-sm font-medium text-gray-700 mb-2">
-                                    Price Per Unit *
-                                </label>
-                                <input
-                                    type="number"
-                                    id="pricePerUnit"
-                                    required
-                                    step="0.01"
-                                    value={formData.pricePerUnit || ""}
-                                    onChange={(e) => setFormData({ ...formData, pricePerUnit: parseFloat(e.target.value) })}
-                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                                    placeholder="Enter price per unit"
-                                />
-                            </div>
-
-                            {settings.showDiscount &&
+                    <div className="bg-gradient-to-br rounded-xl border p-6">
+                        <div className="flex justify-between">
+                            <h2 className="text-lg font-semibold text-gray-900 mb-4">Order Lines</h2>
+                            <button
+                                type="button"
+                                onClick={handleNewOrderLine}
+                                disabled={loading}
+                                className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >New Order Line</button>
+                        </div>
+                        {formData.invoiceLines.map((line, index) => (
+                            <div className="grid grid-cols-1 md:grid-cols-6 gap-6" key={index}>
                                 <div>
-                                    <label htmlFor="discountPercentage" className="block text-sm font-medium text-gray-700 mb-2">
-                                        Discount Percentage *
+                                    <label htmlFor="productId" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Product *
+                                    </label>
+                                    <select
+                                        id="productId"
+                                        required
+                                        value={line.productId || ''}
+                                        onChange={(e) => {
+                                            const updatedLines = [...formData.invoiceLines];
+                                            updatedLines[index].productId = e.target.value;
+                                            setFormData({ ...formData, invoiceLines: updatedLines });
+                                        }}
+                                        className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                    >
+                                        <option value="">Select Product</option>
+                                        {products.map((pr) => (
+                                            <option key={pr.id} value={pr.id}>
+                                                {pr.productName}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label htmlFor="quantity" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Quantity *
                                     </label>
                                     <input
                                         type="number"
-                                        id="discountPercentage"
-                                        step="0.01"
-                                        min="0"
-                                        max="100"
+                                        id="quantity"
                                         required
-                                        value={formData.discountPercentage || ""}
-                                        onChange={(e) => setFormData({ ...formData, discountPercentage: parseFloat(e.target.value) })}
+                                        min="1"
+                                        value={line.quantity || ""}
+                                        onChange={(e) => {
+                                            const updatedLines = [...formData.invoiceLines];
+                                            updatedLines[index].quantity = parseFloat(e.target.value);
+                                            setFormData({ ...formData, invoiceLines: updatedLines })
+                                        }}
                                         className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                                        placeholder="Enter discount percentage"
+                                        placeholder="Enter quantity"
                                     />
-                                </div>}
-                        </div>
+                                </div>
+
+                                <div>
+                                    <label htmlFor="pricePerUnit" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Price Per Unit *
+                                    </label>
+                                    <input
+                                        type="number"
+                                        id="pricePerUnit"
+                                        required
+                                        step="0.01"
+                                        value={line.pricePerUnit || 0.0}
+                                        onChange={(e) => {
+                                            const updatedLines = [...formData.invoiceLines];
+                                            updatedLines[index].pricePerUnit = parseFloat(e.target.value);
+                                            setFormData({ ...formData, invoiceLines: updatedLines })
+                                        }}
+                                        className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                        placeholder="Enter price per unit"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label htmlFor="vatPercent" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Vat Percent *
+                                    </label>
+                                    <input
+                                        type="number"
+                                        id="vatPercent"
+                                        required
+                                        step="0.01"
+                                        value="25"
+                                        disabled
+                                        className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                                    />
+                                </div>
+
+
+                                {settings.showDiscount &&
+                                    <div>
+                                        <label htmlFor="discountPercentage" className="block text-sm font-medium text-gray-700 mb-2">
+                                            Discount Percentage *
+                                        </label>
+                                        <input
+                                            type="number"
+                                            id="discountPercentage"
+                                            step="0.01"
+                                            min="0"
+                                            max="100"
+                                            required
+                                            value={line.discountPercentage || ""}
+                                            onChange={(e) => {
+                                                const updatedLines = [...formData.invoiceLines];
+                                                updatedLines[index].discountPercentage = parseFloat(e.target.value);
+                                                setFormData({ ...formData, invoiceLines: updatedLines })
+                                            }}
+                                            className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                            placeholder="Enter discount percentage"
+                                        />
+                                    </div>
+                                }
+                                <div className=''>
+                                    <button
+                                        type='button'
+                                        onClick={() => deleteInvoiceLine(index)}
+                                    >
+                                        <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+
+                                    </button>
+                                    <button
+                                        type='button'
+                                        onClick={() => handleCopyOrderLine(line)}
+                                    >
+                                        <svg className="w-8 h-8 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2h-6a2 2 0 01-2-2V7z" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H7a2 2 0 00-2 2v7a2 2 0 002 2h7a2 2 0 002-2v-1" />
+                                        </svg>
+
+                                    </button>
+
+                                </div>
+
+                            </div>
+                        ))}
                     </div>
 
                     {/* Notes Section */}
@@ -489,18 +615,68 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                         >
                             Cancel
                         </Link>
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="px-6 py-3 rounded-xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                        >
-                            {loading ? 'Updating...' : 'Update Invoice'}
-                        </button>
+                        {/* Dropdown Button Group */}
+                        <div className="relative inline-flex">
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="px-6 py-3 rounded-l-xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                            >
+                                {loading ? 'Updating...' : 'Update Invoice (Draft)'}
+                            </button>
+
+                            <button
+                                type="button"
+                                disabled={loading}
+                                onClick={() => setShowDropdown(!showDropdown)}
+                                className="px-3 py-3 rounded-r-xl bg-gradient-to-r from-[#0EA5E9] to-[#0284C7] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 border-l border-white/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <ArrowDownIcon className="w-5 h-5" />
+                            </button>
+
+                            {/* Dropdown Menu */}
+                            {showDropdown && (
+                                <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-200 py-2 z-10">
+                                    {/* <button
+                                        type="button"
+                                        onClick={(e) => { handleSubmit(e, 'print') }}
+                                        disabled={loading}
+                                        className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                                        </svg>
+                                        <span className="text-gray-700 font-medium">Print</span>
+                                    </button> */}
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {handleSubmit(e,'send_invoice_without_email') }}
+                                        disabled={loading}
+                                        className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                        </svg>
+                                        <span className="text-gray-700 font-medium">Send Invoice</span>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {handleSubmit(e,'send_invoice_with_email') }}
+                                        disabled={loading}
+                                        className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                        </svg>
+                                        <span className="text-gray-700 font-medium">Send invoice with Email</span>
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </form>
             </div>
         </div>
     )
-
-
 }

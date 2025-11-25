@@ -518,12 +518,13 @@ export default function InvoicesPage() {
 
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4">
+                                    <td className="px-6 py-4">
+                                        {invoice.status === InvoiceStatus.DRAFT ? (
                                             <div className="flex items-center justify-end gap-2">
                                                 <Link
                                                     href={`/dashboard/invoices/${invoice.id}/edit`}
                                                     className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
-                                                    title="View Invoice"
+                                                    title="Edit Invoice"
                                                 >
                                                     <PencilIcon className="h-4 w-4" />
                                                 </Link>
@@ -535,7 +536,18 @@ export default function InvoicesPage() {
                                                     <TrashIcon className="h-4 w-4" />
                                                 </button>
                                             </div>
-                                        </td>
+                                        ) :
+                                        (
+                                            <button
+                                                    onClick={() => handleDelete(invoice.id, invoice.invoiceNumber)}
+                                                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                                                    title={t('employee_groups.delete_group')}
+                                                >
+                                                    <TrashIcon className="h-4 w-4" />
+                                                </button>
+                                        )
+                                        }
+                                    </td>
                                     </tr>
                                 ))}
                             </tbody>
