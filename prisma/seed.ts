@@ -260,7 +260,54 @@ async function main() {
 
   console.log('✓ Product Groups created');
 
-  // Create Sales Accounts
+  console.log('Creating sales accounts...');
+  // Create Ledger Accounts (must come before SalesAccounts)
+  const ledgerAccounts = await Promise.all([
+    prisma.ledgerAccount.upsert({
+      where: { accountNumber: 1500 },
+      update: {},
+      create: {
+        accountNumber: 1500,
+        name: "Accounts Receivable",
+        type: "ASSET",
+        businessId: business.id,
+      }
+    }),
+    prisma.ledgerAccount.upsert({
+      where: { accountNumber: 1900 },
+      update: {},
+      create: {
+        accountNumber: 1900,
+        name: "Cash (NOK)",
+        type: "ASSET",
+        businessId: business.id,
+      }
+    }),
+    prisma.ledgerAccount.upsert({
+      where: { accountNumber: 1920 },
+      update: {},
+      create: {
+        accountNumber: 1920,
+        name: "Bank Deposit",
+        type: "ASSET",
+        businessId: business.id,
+      }
+    }),
+    prisma.ledgerAccount.upsert({
+      where: { accountNumber: 3200 },
+      update: {},
+      create: {
+        accountNumber: 3200,
+        name: "Sales Revenue (Outside VAT Scope)",
+        type: "INCOME",
+        businessId: business.id,
+      }
+    }),
+  ]);
+
+  console.log("✓ Ledger Accounts created");
+
+  // Create Sales Accounts (now linked to LedgerAccount 3200)
   const salesAccounts = await Promise.all([
     prisma.salesAccount.upsert({
       where: { accountNumber: '4000' },
@@ -270,6 +317,7 @@ async function main() {
         accountName: 'Product Sales',
         description: 'General product sales revenue',
         isActive: true,
+        ledgerAccountId: ledgerAccounts[3].id, // 3200 Sales Revenue
       },
     }),
     prisma.salesAccount.upsert({
@@ -280,6 +328,7 @@ async function main() {
         accountName: 'Service Revenue',
         description: 'Revenue from services',
         isActive: true,
+        ledgerAccountId: ledgerAccounts[3].id,
       },
     }),
     prisma.salesAccount.upsert({
@@ -290,6 +339,7 @@ async function main() {
         accountName: 'Retail Sales',
         description: 'Retail product sales',
         isActive: true,
+        ledgerAccountId: ledgerAccounts[3].id,
       },
     }),
     prisma.salesAccount.upsert({
@@ -300,9 +350,11 @@ async function main() {
         accountName: 'Wholesale Sales',
         description: 'Wholesale product sales',
         isActive: true,
+        ledgerAccountId: ledgerAccounts[3].id,
       },
     }),
   ]);
+
 
   console.log('✓ Sales Accounts created');
   console.log('Creating projects...');
@@ -320,89 +372,6 @@ async function main() {
     return;
   }
 
-  // const projectsData = [
-  //   {
-  //     name: 'Website Redesign',
-  //     projectNumber: 'PRJ-2024-001',
-  //     status: 'In Progress',
-  //     category: 'Web Development',
-  //     startDate: new Date('2024-01-15'),
-  //     endDate: new Date('2024-06-30'),
-  //     active: true,
-  //   },
-  //   {
-  //     name: 'Mobile App Development',
-  //     projectNumber: 'PRJ-2024-002',
-  //     status: 'Planning',
-  //     category: 'Mobile Development',
-  //     startDate: new Date('2024-02-01'),
-  //     endDate: new Date('2024-08-31'),
-  //     active: true,
-  //   },
-  //   {
-  //     name: 'Database Migration',
-  //     projectNumber: 'PRJ-2024-003',
-  //     status: 'Completed',
-  //     category: 'Infrastructure',
-  //     startDate: new Date('2023-11-01'),
-  //     endDate: new Date('2024-01-31'),
-  //     active: false,
-  //   },
-  //   {
-  //     name: 'Marketing Campaign Q1',
-  //     projectNumber: 'PRJ-2024-004',
-  //     status: 'In Progress',
-  //     category: 'Marketing',
-  //     startDate: new Date('2024-01-01'),
-  //     endDate: new Date('2024-03-31'),
-  //     active: true,
-  //   },
-  //   {
-  //     name: 'ERP System Implementation',
-  //     projectNumber: 'PRJ-2024-005',
-  //     status: 'Planning',
-  //     category: 'Enterprise Software',
-  //     startDate: new Date('2024-03-01'),
-  //     endDate: new Date('2024-12-31'),
-  //     active: true,
-  //   },
-  //   {
-  //     name: 'Office Renovation',
-  //     projectNumber: 'PRJ-2024-006',
-  //     status: 'On Hold',
-  //     category: 'Facilities',
-  //     startDate: new Date('2024-04-01'),
-  //     endDate: new Date('2024-05-31'),
-  //     active: true,
-  //   },
-  // ];
-
-  // const createdProjects = [];
-
-  // for (let i = 0; i < projectsData.length; i++) {
-  //   const projectData = projectsData[i];
-  //   const department = departments[i % departments.length];
-  //   const customer = customers[i % customers.length];
-
-  //   try {
-  //     const project = await prisma.project.upsert({
-  //       where: { projectNumber: projectData.projectNumber },
-  //       update: { ...projectData },
-  //       create: {
-  //         ...projectData,
-  //         departmentId: department.id,
-  //         customerId: customer.id,
-  //       },
-  //     });
-
-  //     createdProjects.push(project);
-  //     console.log(`✓ Created project: ${project.projectNumber} - ${project.name}`);
-  //   } catch (error) {
-  //     console.log(`✗ Failed to create project ${projectData.projectNumber}:`, error);
-  //   }
-  // }
-
-  // console.log(`✓ Created ${createdProjects.length} projects`);
   console.log(`Found ${customers.length} customers`)
 
   for (const customer of customers) {
@@ -433,7 +402,7 @@ async function main() {
     console.log(`Created contact for ${customer.customerName}`)
   }
 
-   const categories = [
+  const categories = [
     { name: "Internal" },
     { name: "External" },
     { name: "Maintenance" },

@@ -30,6 +30,7 @@ import { Decimal } from "@prisma/client/runtime/library"
 import Link from "next/link"
 import { exportToPDF } from "@/shared/lib/invoiceHelper"
 import Swal from "sweetalert2"
+import RegisterPaymentDialog from "@/components/invoice/RegisterPaymentDialog"
 
 export enum InvoiceStatus {
     DRAFT = 'DRAFT',       // Not sent yet
@@ -167,6 +168,7 @@ export default function InvoiceOverview() {
     const startIndex = (currentPage - 1) * itemsPerPage
     const endIndex = startIndex + itemsPerPage
     const paginatedInvoices = mockInvoices.slice(startIndex, endIndex)
+    const [showPaymentDialog, setShowPaymentDialog] = useState(false);
 
     useEffect(() => {
         fetchInvoices()
@@ -271,7 +273,10 @@ export default function InvoiceOverview() {
         }
     }
 
+
     return (
+
+
         <div className="min-h-screen bg-gray-50 p-6">
             <div className="max-w-[1600px] mx-auto space-y-6">
                 {/* Header */}
@@ -336,7 +341,8 @@ export default function InvoiceOverview() {
                                 <span className="font-semibold">{selectedTotal.toFixed(2)}</span>
                             </div>
                             <div className="flex items-center gap-4">
-                                <button className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 font-medium">
+                                <button
+                                    className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 font-medium">
                                     <CheckCircleIcon className="h-5 w-5" />
                                     Register payment
                                 </button>
@@ -361,6 +367,7 @@ export default function InvoiceOverview() {
                             </div>
                         </div>
                     </div>
+
                 ) : (
                     <div className="bg-white rounded-lg border border-gray-200 p-4">
                         <div className="flex items-center gap-3 flex-wrap">
@@ -461,6 +468,7 @@ export default function InvoiceOverview() {
                             </thead>
                             <tbody className="divide-y divide-gray-200">
                                 {invoices.map((invoice) => (
+
                                     <React.Fragment key={invoice.id}>
                                         <tr className={`hover:bg-gray-50 ${expandedRows.has(invoice.id) ? "bg-blue-50/30" : ""}`}>
                                             <td className="px-4 py-3">
@@ -534,8 +542,12 @@ export default function InvoiceOverview() {
                                                             className="min-w-[220px] bg-white rounded-lg shadow-lg border border-gray-200 p-1 z-50"
                                                         >
                                                             <DropdownMenu.Item className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2">
-                                                                <CheckCircleIcon className="h-4 w-4" />
-                                                                Register payment
+                                                                <button
+                                                                    onClick={() => setShowPaymentDialog(true)}
+                                                                >
+                                                                    <CheckCircleIcon className="h-4 w-4" />
+                                                                    Register payment
+                                                                </button>
                                                             </DropdownMenu.Item>
                                                             {/* <DropdownMenu.Item className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2">
                                                                 <ClockIcon className="h-4 w-4" />
@@ -613,7 +625,14 @@ export default function InvoiceOverview() {
                                                 </td>
                                             </tr>
                                         )}
+                                        <RegisterPaymentDialog
+                                            open={showPaymentDialog}
+                                            onOpenChange={setShowPaymentDialog}
+                                            invoice={invoice}
+                                        />
                                     </React.Fragment>
+
+
                                 ))}
                             </tbody>
                         </table>
@@ -702,3 +721,4 @@ export default function InvoiceOverview() {
         </div>
     )
 }
+

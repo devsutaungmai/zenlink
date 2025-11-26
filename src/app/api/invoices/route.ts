@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/shared/lib/prisma'
 import { getCurrentUserOrEmployee, requireAuth } from '@/shared/lib/auth'
-import { calculateInvoiceTotals, generateInvoiceNumber, getBusinessId } from '@/shared/lib/invoiceHelper'
+import { calculateInvoiceTotals, generateInvoiceNumber, getBusinessId, invoiceToLedgerPosting } from '@/shared/lib/invoiceHelper'
 
 // GET /api/invoices
 export async function GET(request: NextRequest) {
@@ -185,6 +185,10 @@ export async function POST(request: NextRequest) {
         }
       }
     })
+
+    if(invoice.status === "SENT"){
+      await invoiceToLedgerPosting(invoice.id);
+    }
 
     return NextResponse.json(invoice, { status: 201 })
   } catch (error: any) {

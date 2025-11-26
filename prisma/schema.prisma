@@ -66,6 +66,9 @@ model Business {
   InvoicePaymentTerms      InvoicePaymentTerms[]
   invoiceFormSettings      InvoiceFormSettings[]
   projects                 Project[]
+  customerPayments         CustomerPayment[]
+  ledgerAccounts           LedgerAccount[]
+  ledgerEntries            LedgerEntry[]
 }
 
 model Employee {
@@ -176,7 +179,8 @@ model Department {
   categoriesManyMany CategoryDepartment[]   // New many-to-many relation
   shifts             Shift[]
   customers          Customer[]
-  invoices  Invoice[] 
+  invoices           Invoice[] 
+  ledgerEntries      LedgerEntry[]
 }
 
 model DepartmentCategory {
@@ -286,6 +290,7 @@ model Project {
   invoices     Invoice[] 
   businessId     String
   business       Business   @relation(fields: [businessId], references: [id])
+  ledgerEntries   LedgerEntry[]
 }
 
 model TimeEntry {
@@ -689,6 +694,7 @@ model Customer {
   customerGroups CustomerGroup[]
   projects       Project[]
   invoices       Invoice[]
+  customerPayments CustomerPayment[]
   departmentId   String?      
   department     Department?       @relation(fields: [departmentId], references: [id],onDelete: SetNull)
   invoicepaymentTermsId String?       @map("invoice_payment_terms_id")
@@ -786,6 +792,36 @@ model ProductGroup {
   @@map("product_groups")
 }
 
+model LedgerAccount {
+  id            String   @id @default(cuid())
+  accountNumber Int       @unique @map("account_number") // e.g. 1500, 3000, 2700, 1920
+  name          String    @map("name")                   // Account name
+  type          AccountType @map("type")                 // Asset, Liability, Income, Expense, Equity
+  isActive      Boolean   @default(true) @map("is_active")
+
+  // Reverse relations
+  debitEntries  LedgerEntry[] @relation("DebitAccount")
+  creditEntries LedgerEntry[] @relation("CreditAccount")
+
+  businessId    String       @map("business_id")
+  business      Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  saleAccounts SalesAccount[]
+
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt      @map("updated_at")
+
+  @@map("ledger_accounts")
+}
+
+enum AccountType {
+  ASSET
+  LIABILITY
+  INCOME
+  EXPENSE
+  EQUITY
+}
+
 model SalesAccount {
   id            String  @id @default(cuid())
   accountNumber String  @unique @map("account_number")
@@ -793,12 +829,49 @@ model SalesAccount {
   description   String?
   isActive      Boolean @default(true) @map("is_active")
 
+  ledgerAccountId String?        @map("ledger_account_id")
+  ledgerAccount   LedgerAccount? @relation(fields: [ledgerAccountId], references: [id], onDelete: SetNull)
+
   products Product[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("sales_accounts")
+}
+
+model LedgerEntry {
+  id             String      @id @default(cuid())
+
+  invoiceId      String?     @map("invoice_id")
+  invoice        Invoice?    @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  documentDate   DateTime?   @map("document_date")
+  postingDate    DateTime?   @map("posting_date")
+  amount         Decimal     @db.Decimal(10, 2)
+
+  // Debit & Credit Accounts
+  debitAccountId  String?     @map("debit_account_id")
+  debitAccount    LedgerAccount? @relation("DebitAccount", fields: [debitAccountId], references: [id], onDelete: SetNull)
+
+  creditAccountId String?     @map("credit_account_id")
+  creditAccount   LedgerAccount? @relation("CreditAccount", fields: [creditAccountId], references: [id], onDelete: SetNull)
+
+  projectId      String?      @map("project_id")
+  project        Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  departmentId   String?      @map("department_id")
+  department     Department?  @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+
+  businessId     String       @map("business_id")
+  business       Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  description    String?
+
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt      @map("updated_at")
+
+  @@map("ledger_entries")
 }
 
 model Invoice {
@@ -842,6 +915,11 @@ model Invoice {
   businessId   String        @map("business_id")
   business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
+  paymentAllocations PaymentAllocation[]
+
+  ledgerEntries     LedgerEntry[]
+
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -884,6 +962,7 @@ enum InvoiceStatus {
   PAID // Payment received
   OVERDUE // Past due date
   CANCELLED // Cancelled
+  OUTSTANDING //  sent and not paid yet
 
   @@map("invoice_status")
 }
@@ -947,6 +1026,45 @@ model InvoiceFormSettings {
   
   @@unique([businessId])
   @@index([businessId])
+}
+
+model CustomerPayment {
+  id            String      @id @default(cuid())
+  customerId    String
+  businessId    String
+  paymentDate   DateTime
+  method        PaymentMethod
+  amount        Decimal      @db.Decimal(10,2)
+
+  customer      Customer     @relation(fields: [customerId], references: [id])
+  business      Business     @relation(fields: [businessId], references: [id])
+
+  allocations   PaymentAllocation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+//pivot table of CustomerPayment and Invoice
+model PaymentAllocation {
+  id                String          @id @default(cuid())
+  
+  customerPaymentId String          @map("customer_payment_id")
+  customerPayment   CustomerPayment @relation(fields: [customerPaymentId], references: [id], onDelete: Cascade)
+  
+  invoiceId         String          @map("invoice_id")
+  invoice           Invoice         @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+  
+  amountAllocated   Decimal         @map("amount_allocated") @db.Decimal(10, 2)
+  
+  createdAt         DateTime        @default(now()) @map("created_at")
+  
+  @@map("payment_allocations")
+}
+
+enum PaymentMethod {
+  BANK
+  CASH
 }
 enum Role {
   ADMIN

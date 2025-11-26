@@ -315,8 +315,7 @@ export default function CreateInvoicePage() {
     }
   
 
-    const handleSubmit = async (e: React.FormEvent, action: 'save' | 'print' | 'send_invoice_with_email' | 'send_invoice_without_email') => {
-        e.preventDefault()
+    const handleSubmit = async (action: 'save' | 'print' | 'send_invoice_with_email' | 'send_invoice_without_email') => {
         setLoading(true)
         const invoiceStatus = action === "send_invoice_with_email" || action === "send_invoice_without_email" ? "SENT" : "DRAFT";
         let { seller, ...filteredData } = formData
@@ -414,7 +413,7 @@ export default function CreateInvoicePage() {
 
             {/* Form Container */}
             <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg p-6">
-                <form onSubmit={(e) => { e.preventDefault(); handleSubmit(e, 'save'); }} className="space-y-6">
+                <form onSubmit={(e) => {e.preventDefault();handleSubmit('save'); }} className="space-y-6">
                     <div className="bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-xl border border-slate-200 p-6">
                         <h2 className="text-lg font-semibold text-gray-900 mb-4">Customer Information</h2>
 
@@ -777,7 +776,7 @@ export default function CreateInvoicePage() {
                                     </button> */}
                                     <button
                                         type="button"
-                                        onClick={(e) => { e.preventDefault(); handleSubmit(e, 'send_invoice_without_email') }}
+                                        onClick={() => handleSubmit('send_invoice_without_email') }
                                         disabled={loading}
                                         className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
@@ -788,7 +787,7 @@ export default function CreateInvoicePage() {
                                     </button>
                                     <button
                                         type="button"
-                                        onClick={(e) => { e.preventDefault(); handleSubmit(e, 'send_invoice_with_email') }}
+                                        onClick={() => handleSubmit('send_invoice_with_email') }
                                         disabled={loading}
                                         className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
