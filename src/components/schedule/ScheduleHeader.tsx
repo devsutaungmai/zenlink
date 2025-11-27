@@ -55,11 +55,11 @@ interface FilterOptions {
 interface ScheduleHeaderProps {
   startDate: Date
   endDate: Date
-  viewMode: 'week' | 'day' | 'month'
+  viewMode: 'week' | 'two-week' | 'day' | 'month'
   onPreviousWeek: () => void
   onNextWeek: () => void
   onTodayClick: () => void
-  onViewModeChange: (mode: 'week' | 'day' | 'month') => void
+  onViewModeChange: (mode: 'week' | 'two-week' | 'day' | 'month') => void
   employees: Employee[]
   selectedEmployeeId: string | null
   onEmployeeChange: (employeeId: string | null) => void
@@ -207,6 +207,17 @@ export default function ScheduleHeader({
     { value: 'IN_PROGRESS', label: 'In Progress' },
     { value: 'COMPLETED', label: 'Completed' },
     { value: 'CANCELLED', label: 'Cancelled' }
+  ]
+  const mobileViewModeOptions: Array<{ value: 'week' | 'month' | 'day'; label: string }> = [
+    { value: 'week', label: 'Week' },
+    { value: 'month', label: 'Month' },
+    { value: 'day', label: 'Day' }
+  ]
+  const viewModeOptions: Array<{ value: 'week' | 'two-week' | 'month' | 'day'; label: string }> = [
+    { value: 'week', label: 'Week' },
+    { value: 'two-week', label: 'Two Weeks' },
+    { value: 'month', label: 'Month' },
+    { value: 'day', label: 'Day' }
   ]
   
   return (
@@ -437,7 +448,27 @@ export default function ScheduleHeader({
           </div>
         </div>
 
-        {/* Row 3: Date Navigation */}
+        {/* Row 3: View mode toggle */}
+        <div className="bg-white border border-gray-200 rounded-2xl p-1 flex gap-1 overflow-x-auto scrollbar-hide" role="tablist" aria-label="Schedule view modes">
+          {mobileViewModeOptions.map(option => {
+            const isActive = viewMode === option.value
+            return (
+              <button
+                key={`mobile-view-${option.value}`}
+                onClick={() => onViewModeChange(option.value)}
+                role="tab"
+                aria-selected={isActive}
+                className={`flex-1 whitespace-nowrap px-3 py-2 text-sm font-semibold rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#31BCFF] ${
+                  isActive ? 'bg-[#31BCFF] text-white shadow-sm' : 'bg-transparent text-gray-600'
+                }`}
+              >
+                {option.label}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Row 4: Date Navigation */}
         <div className="flex items-center justify-between">
           <button
             onClick={onTodayClick}
@@ -470,16 +501,15 @@ export default function ScheduleHeader({
 
       {/* Desktop Layout - Responsive */}
       <div className="hidden md:block">
-        <div className="space-y-3">
-          {/* Row 1: Filters and view toggle */}
-          <div className="flex flex-wrap lg:flex-nowrap items-center gap-3">
+        <div className="space-y-4">
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
             <select
               value={selectedDepartmentId || ""}
               onChange={(e) => {
                 const value = e.target.value === "" ? null : e.target.value
                 onDepartmentChange(value)
               }}
-              className="px-3 py-2 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#31BCFF] bg-white w-full md:w-auto md:min-w-[160px]"
+              className="px-3 py-2 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#31BCFF] bg-white w-full"
             >
               <option value="">All Departments</option>
               {safeDepartments.map(department => (
@@ -498,7 +528,7 @@ export default function ScheduleHeader({
                   onFunctionChange(null)
                 }
               }}
-              className="px-3 py-2 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#31BCFF] bg-white w-full md:w-auto md:min-w-[160px]"
+              className="px-3 py-2 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#31BCFF] bg-white w-full"
             >
               <option value="">All Categories</option>
               {safeCategories.map(category => (
@@ -515,7 +545,7 @@ export default function ScheduleHeader({
                 onFunctionChange(value)
               }}
               disabled={!selectedCategoryId && filteredFunctions.length === 0}
-              className="px-3 py-2 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#31BCFF] bg-white w-full md:w-auto md:min-w-[160px] disabled:bg-gray-100 disabled:cursor-not-allowed"
+              className="px-3 py-2 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#31BCFF] bg-white w-full disabled:bg-gray-100 disabled:cursor-not-allowed"
             >
               <option value="">{selectedCategoryId ? 'All Functions' : 'Select category first'}</option>
               {filteredFunctions.map(func => (
@@ -525,43 +555,30 @@ export default function ScheduleHeader({
               ))}
             </select>
 
-            <div className="flex rounded-md border border-gray-300 overflow-hidden bg-white w-full md:w-auto">
-              <button
-                onClick={() => onViewModeChange('week')}
-                className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${
-                  viewMode === 'week' 
-                    ? 'bg-[#31BCFF] text-white' 
-                    : 'bg-white text-gray-700 hover:bg-gray-50'
-                }`}
-              >
-                Week
-              </button>
-              <button
-                onClick={() => onViewModeChange('month')}
-                className={`flex-1 px-3 py-2 text-sm font-medium transition-colors border-l ${
-                  viewMode === 'month' 
-                    ? 'bg-[#31BCFF] text-white' 
-                    : 'bg-white text-gray-700 hover:bg-gray-50'
-                }`}
-              >
-                Month
-              </button>
-              <button
-                onClick={() => onViewModeChange('day')}
-                className={`flex-1 px-3 py-2 text-sm font-medium transition-colors border-l ${
-                  viewMode === 'day' 
-                    ? 'bg-[#31BCFF] text-white' 
-                    : 'bg-white text-gray-700 hover:bg-gray-50'
-                }`}
-              >
-                Day
-              </button>
+            <div className="w-full">
+              <div className="grid grid-cols-2 sm:grid-cols-4 rounded-xl border border-gray-300 bg-white overflow-hidden">
+                {viewModeOptions.map((option, index) => {
+                  const isActive = viewMode === option.value
+                  return (
+                    <button
+                      key={`desktop-view-${option.value}`}
+                      onClick={() => onViewModeChange(option.value)}
+                      className={`px-3 py-2 text-sm font-semibold transition-colors ${
+                        index === 0 ? '' : 'border-l border-gray-200'
+                      } ${
+                        isActive ? 'bg-[#31BCFF] text-white' : 'text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
           </div>
 
-          {/* Row 2: Navigation and actions */}
-          <div className="flex flex-wrap lg:flex-nowrap gap-3 items-center justify-between">
-            <div className="flex flex-wrap lg:flex-nowrap items-center gap-3">
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+            <div className="flex flex-wrap items-center gap-3">
               <button
                 onClick={onTodayClick}
                 className="px-4 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50 whitespace-nowrap bg-white"
@@ -570,41 +587,41 @@ export default function ScheduleHeader({
               </button>
 
               <div className="flex items-center gap-2 flex-wrap md:flex-nowrap">
-                <button 
+                <button
                   onClick={onPreviousWeek}
-                  className="p-2 hover:bg-gray-100 rounded-md"
+                  className="p-2 hover:bg-gray-100 rounded-md border border-gray-200"
                 >
                   <ArrowLeftIcon className="h-4 w-4 text-gray-600" />
                 </button>
-                
-                <div className="px-3 py-2 text-sm text-gray-700 bg-white rounded-md min-w-[160px] text-center">
+
+                <div className="px-3 py-2 text-sm text-gray-800 bg-white rounded-md min-w-[180px] text-center border border-gray-200">
                   {viewMode === 'month'
                     ? format(startDate, 'MMMM yyyy')
                     : viewMode === 'day'
                       ? format(startDate, 'EEEE, MMM d')
                       : `${format(startDate, 'MMM d')} - ${format(endDate, 'MMM d')}`}
                 </div>
-                
-                <button 
+
+                <button
                   onClick={onNextWeek}
-                  className="p-2 hover:bg-gray-100 rounded-md"
+                  className="p-2 hover:bg-gray-100 rounded-md border border-gray-200"
                 >
                   <ArrowRightIcon className="h-4 w-4 text-gray-600" />
                 </button>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 flex-wrap lg:flex-nowrap justify-end">
-              <button className="p-2 hover:bg-gray-100 rounded-md">
+            <div className="flex flex-wrap items-center gap-2 justify-end">
+              <button className="p-2 hover:bg-gray-100 rounded-md border border-gray-200">
                 <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
                 </svg>
               </button>
 
-              <div className="relative">
-                <button 
+              <div className="relative w-full sm:w-auto">
+                <button
                   onClick={() => setShowFilters(!showFilters)}
-                  className="px-4 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50 bg-white flex items-center gap-2"
+                  className="w-full sm:w-auto px-4 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50 bg-white flex items-center justify-center sm:justify-start gap-2"
                 >
                   <FunnelIcon className="w-4 h-4" />
                   Filters
@@ -616,7 +633,7 @@ export default function ScheduleHeader({
                 </button>
 
                 {showFilters && (
-                  <div 
+                  <div
                     ref={filterDropdownRef}
                     className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-[600px] overflow-y-auto"
                   >

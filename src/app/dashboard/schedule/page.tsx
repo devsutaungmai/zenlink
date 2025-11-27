@@ -43,7 +43,7 @@ export default function SchedulePage() {
   const [employeeGroups, setEmployeeGroups] = useState<EmployeeGroup[]>([])
   const [shifts, setShifts] = useState<ShiftWithRelations[]>([])
   const [loading, setLoading] = useState(true)
-  const [viewMode, setViewMode] = useState<'week' | 'day' | 'month'>('week')
+  const [viewMode, setViewMode] = useState<'week' | 'two-week' | 'day' | 'month'>('week')
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [scheduleViewType, setScheduleViewType] = useState<'time' | 'employees' | 'groups' | 'functions'>('employees')
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
@@ -122,10 +122,17 @@ export default function SchedulePage() {
     if (viewMode === 'day') {
       return selectedDate
     }
+    if (viewMode === 'two-week') {
+      return addDays(startDate, 13)
+    }
     return endOfWeek(currentDate, { weekStartsOn: 0 })
-  }, [currentDate, viewMode, selectedDate])
+  }, [currentDate, viewMode, selectedDate, startDate])
   
   const weekDates = useMemo(() => Array(7).fill(0).map((_, i) => addDays(startDate, i)), [startDate])
+  const twoWeekDates = useMemo(() => {
+    if (viewMode !== 'two-week') return []
+    return Array(14).fill(0).map((_, i) => addDays(startDate, i))
+  }, [startDate, viewMode])
 
 
   useEffect(() => {
@@ -346,7 +353,8 @@ export default function SchedulePage() {
     if (viewMode === 'day') {
       setSelectedDate(prevDate => addDays(prevDate, -1))
     } else {
-      setCurrentDate(prevDate => subWeeks(prevDate, 1))
+      const step = viewMode === 'two-week' ? 2 : 1
+      setCurrentDate(prevDate => subWeeks(prevDate, step))
     }
   }
 
@@ -354,7 +362,8 @@ export default function SchedulePage() {
     if (viewMode === 'day') {
       setSelectedDate(prevDate => addDays(prevDate, 1))
     } else {
-      setCurrentDate(prevDate => addWeeks(prevDate, 1))
+      const step = viewMode === 'two-week' ? 2 : 1
+      setCurrentDate(prevDate => addWeeks(prevDate, step))
     }
   }
 
@@ -784,6 +793,119 @@ export default function SchedulePage() {
     setSelectedEmployeeId(employeeId);
   }
 
+  const isWeekBasedView = viewMode === 'week' || viewMode === 'two-week'
+
+  const renderWeekScopedContent = (dates: Date[]) => {
+    if (scheduleViewType === 'time') {
+      return (
+        <WeekView
+          weekDates={dates}
+          shifts={filteredShifts}
+          employees={employees}
+          employeeGroups={employeeGroups}
+          functions={functions}
+          categories={categories}
+          scheduleViewType={scheduleViewType}
+          onEditShift={handleEditShift}
+          isEmployeeUnavailable={isEmployeeUnavailableOnDate}
+          onUnavailableClick={notifyEmployeeUnavailable}
+          onAddShift={(formData) => {
+            const payload = attachSelectedEmployee(formData ?? null)
+            openShiftModal('week', payload)
+          }}
+        />
+      )
+    }
+
+    if (scheduleViewType === 'employees') {
+      return (
+        <EmployeeGroupedView
+          weekDates={dates}
+          shifts={filteredShifts}
+          employees={employees}
+          expandedGroups={expandedGroups}
+          onToggleGroup={(groupId) => {
+            const newExpanded = new Set(expandedGroups);
+            if (newExpanded.has(groupId)) {
+              newExpanded.delete(groupId);
+            } else {
+              newExpanded.add(groupId);
+            }
+            setExpandedGroups(newExpanded);
+          }}
+          onEditShift={handleEditShift}
+          isEmployeeUnavailable={isEmployeeUnavailableOnDate}
+          onUnavailableClick={notifyEmployeeUnavailable}
+          onAddShift={(data) => {
+            openShiftModal('week', data ?? null)
+          }}
+        />
+      )
+    }
+
+    if (scheduleViewType === 'groups') {
+      return (
+        <GroupGroupedView
+          weekDates={dates}
+          shifts={filteredShifts}
+          employees={employees}
+          employeeGroups={employeeGroups}
+          onEditShift={handleEditShift}
+          selectedEmployeeId={selectedEmployeeId}
+          isEmployeeUnavailable={isEmployeeUnavailableOnDate}
+          onUnavailableClick={notifyEmployeeUnavailable}
+          onAddShift={(data) => {
+            const payload = attachSelectedEmployee(data ?? null)
+            openShiftModal('week', payload)
+          }}
+        />
+      )
+    }
+
+    if (scheduleViewType === 'functions') {
+      return (
+        <FunctionGroupedView
+          weekDates={dates}
+          shifts={filteredShifts}
+          employees={employees}
+          functions={functions}
+          onEditShift={handleEditShift}
+          selectedEmployeeId={selectedEmployeeId}
+          isEmployeeUnavailable={isEmployeeUnavailableOnDate}
+          onUnavailableClick={notifyEmployeeUnavailable}
+          onAddShift={(data) => {
+            const payload = attachSelectedEmployee(data ?? null)
+            openShiftModal('week', payload)
+          }}
+        />
+      )
+    }
+
+    return (
+      <WeekView
+        weekDates={dates}
+        shifts={filteredShifts}
+        employees={employees}
+        employeeGroups={employeeGroups}
+        functions={functions}
+        categories={categories}
+        scheduleViewType={scheduleViewType}
+        onEditShift={handleEditShift}
+        isEmployeeUnavailable={isEmployeeUnavailableOnDate}
+        onUnavailableClick={notifyEmployeeUnavailable}
+        onAddShift={(formData) => {
+          const payload = attachSelectedEmployee(formData ?? null)
+          openShiftModal('week', payload)
+        }}
+      />
+    )
+  }
+
+  const formatRangeLabel = (dates: Date[]) => {
+    if (!dates || dates.length === 0) return ''
+    return `${format(dates[0], 'MMM d')} - ${format(dates[dates.length - 1], 'MMM d')}`
+  }
+
   return (
     <div className="flex flex-col h-screen bg-gray-50">
       {/* Header with navigation and filters */}
@@ -892,7 +1014,7 @@ export default function SchedulePage() {
       {/* Main content area */}
       <main className="flex-1 overflow-auto p-4 md:p-6 lg:p-8">
         {loading ? (
-          viewMode === 'week' ? (
+          isWeekBasedView ? (
             scheduleViewType === 'employees' ? (
               <EmployeeGroupedViewSkeleton />
             ) : scheduleViewType === 'groups' ? (
@@ -908,93 +1030,14 @@ export default function SchedulePage() {
         ) : (
           <>
             {viewMode === 'week' ? (
-              scheduleViewType === 'time' ? (
-                <WeekView
-                  weekDates={weekDates}
-                  shifts={filteredShifts}
-                  employees={employees}
-                  employeeGroups={employeeGroups}
-                  functions={functions}
-                  categories={categories}
-                  scheduleViewType={scheduleViewType}
-                  onEditShift={handleEditShift}
-                  isEmployeeUnavailable={isEmployeeUnavailableOnDate}
-                  onUnavailableClick={notifyEmployeeUnavailable}
-                  onAddShift={(formData) => {
-                    const payload = attachSelectedEmployee(formData ?? null)
-                    openShiftModal('week', payload)
-                  }}
-                />
-              ) : scheduleViewType === 'employees' ? (
-                <EmployeeGroupedView
-                  weekDates={weekDates}
-                  shifts={filteredShifts}
-                  employees={employees}
-                  expandedGroups={expandedGroups}
-                  onToggleGroup={(groupId) => {
-                    const newExpanded = new Set(expandedGroups);
-                    if (newExpanded.has(groupId)) {
-                      newExpanded.delete(groupId);
-                    } else {
-                      newExpanded.add(groupId);
-                    }
-                    setExpandedGroups(newExpanded);
-                  }}
-                  onEditShift={handleEditShift}
-                  isEmployeeUnavailable={isEmployeeUnavailableOnDate}
-                  onUnavailableClick={notifyEmployeeUnavailable}
-                  onAddShift={(data) => {
-                    openShiftModal('week', data ?? null)
-                  }}
-                />
-              ) : scheduleViewType === 'groups' ? (
-                <GroupGroupedView
-                  weekDates={weekDates}
-                  shifts={filteredShifts}
-                  employees={employees}
-                  employeeGroups={employeeGroups}
-                  onEditShift={handleEditShift}
-                  selectedEmployeeId={selectedEmployeeId}
-                  isEmployeeUnavailable={isEmployeeUnavailableOnDate}
-                  onUnavailableClick={notifyEmployeeUnavailable}
-                  onAddShift={(data) => {
-                    const payload = attachSelectedEmployee(data ?? null)
-                    openShiftModal('week', payload)
-                  }}
-                />
-              ) : scheduleViewType === 'functions' ? (
-                <FunctionGroupedView
-                  weekDates={weekDates}
-                  shifts={filteredShifts}
-                  employees={employees}
-                  functions={functions}
-                  onEditShift={handleEditShift}
-                  selectedEmployeeId={selectedEmployeeId}
-                  isEmployeeUnavailable={isEmployeeUnavailableOnDate}
-                  onUnavailableClick={notifyEmployeeUnavailable}
-                  onAddShift={(data) => {
-                    const payload = attachSelectedEmployee(data ?? null)
-                    openShiftModal('week', payload)
-                  }}
-                />
-              ) : (
-                <WeekView
-                  weekDates={weekDates}
-                  shifts={filteredShifts}
-                  employees={employees}
-                  employeeGroups={employeeGroups}
-                  functions={functions}
-                  categories={categories}
-                  scheduleViewType={scheduleViewType}
-                  onEditShift={handleEditShift}
-                  isEmployeeUnavailable={isEmployeeUnavailableOnDate}
-                  onUnavailableClick={notifyEmployeeUnavailable}
-                  onAddShift={(formData) => {
-                    const payload = attachSelectedEmployee(formData ?? null)
-                    openShiftModal('week', payload)
-                  }}
-                />
-              )
+              renderWeekScopedContent(weekDates)
+            ) : viewMode === 'two-week' ? (
+              <div className="space-y-4">
+                <div className="text-sm font-semibold text-gray-600">
+                  {formatRangeLabel(twoWeekDates)}
+                </div>
+                {renderWeekScopedContent(twoWeekDates)}
+              </div>
             ) : viewMode === 'month' ? (
               <MonthView
                 currentDate={currentDate}

@@ -129,13 +129,22 @@ export default function EmployeeGroupedView({
     })
   }
 
+  const dayCount = Math.max(weekDates.length, 1)
+  const mobileGridStyle: React.CSSProperties = {
+    gridTemplateColumns: `repeat(${dayCount}, minmax(0, 1fr))`,
+    minWidth: dayCount > 7 ? `${dayCount * 72}px` : undefined
+  }
+  const desktopGridStyle: React.CSSProperties = {
+    gridTemplateColumns: `1fr repeat(${dayCount}, minmax(0, 1fr))`
+  }
+
   return (
     <div className="overflow-hidden">
       {/* Mobile View - Grid Layout */}
       <div className="md:hidden bg-gray-50">
         {/* Week Days Header - Perfectly aligned with grid */}
-        <div className="bg-white sticky top-0 z-10 border-b shadow-sm">
-          <div className="grid grid-cols-7 gap-0">
+        <div className="bg-white sticky top-0 z-10 border-b shadow-sm overflow-x-auto">
+          <div className="grid gap-0" style={mobileGridStyle}>
             {weekDates.map((date, i) => {
               const isToday = new Date().toDateString() === date.toDateString()
               return (
@@ -186,7 +195,8 @@ export default function EmployeeGroupedView({
                   </div>
 
                   {/* Day Grid - Exactly 7 columns matching header */}
-                  <div className="grid grid-cols-7 gap-0 p-3">
+                  <div className="overflow-x-auto">
+                    <div className="grid gap-0 p-3" style={mobileGridStyle}>
                     {weekDates.map((date, dayIndex) => {
                       const formattedDate = format(date, 'yyyy-MM-dd')
                       const dayShifts = getEmployeeShifts(employee.id, date)
@@ -257,6 +267,7 @@ export default function EmployeeGroupedView({
                         </div>
                       )
                     })}
+                    </div>
                   </div>
                 </div>
               )
@@ -266,10 +277,13 @@ export default function EmployeeGroupedView({
       </div>
 
       {/* Desktop View - Original Grid Layout */}
-      <div className="hidden md:block overflow-auto">
+      <div className="hidden md:block">
       <div className="min-w-full">
         {/* Header Row */}
-        <div className="grid grid-cols-[1fr_repeat(7,minmax(140px,1fr))] border-b bg-gray-50 sticky top-0">
+        <div
+          className="grid border-b bg-gray-50 sticky top-0"
+          style={desktopGridStyle}
+        >
           <div className="p-3 font-medium text-sm border-r"></div>
           {weekDates.map((date, i) => {
             const isToday = new Date().toDateString() === date.toDateString();
@@ -296,7 +310,11 @@ export default function EmployeeGroupedView({
           const employeeShiftsCount = shifts.filter(s => s.employeeId === employee.id).length;
           
           return (
-            <div key={employee.id} className="grid grid-cols-[1fr_repeat(7,minmax(140px,1fr))] border-b hover:bg-gray-50">
+            <div
+              key={employee.id}
+              className="grid border-b hover:bg-gray-50"
+              style={desktopGridStyle}
+            >
               <div className="p-3 border-r">
                 <div className="font-medium text-sm text-gray-900">
                   {employee.firstName} {employee.lastName}
