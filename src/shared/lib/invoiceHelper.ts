@@ -232,165 +232,185 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
 }
 
 /**
- * Calculate opening balance for an account at a specific date
- * Opening Balance = Sum of all entries BEFORE the date
+ * Calculate account balance for a given date range
+ * Opening balance = all movements before startDate
+ * Closing balance = opening + movements in period
  */
-export async function getOpeningBalance(
+export async function getAccountBalance(
+  accountId: string,
   businessId: string,
-  accountNumber: number,
-  asOfDate: Date
-): Promise<number> {
-  // Get the account
-  const account = await prisma.ledgerAccount.findFirst({
-    where: { businessId, accountNumber }
-  });
-
-  if (!account) return 0;
-
-  // Sum all debits before the date
-  const debits = await prisma.ledgerEntry.aggregate({
-    where: {
-      businessId,
-      debitAccountId: account.id,
-      postingDate: { lt: asOfDate }
-    },
-    _sum: { amount: true }
-  });
-
-  // Sum all credits before the date
-  const credits = await prisma.ledgerEntry.aggregate({
-    where: {
-      businessId,
-      creditAccountId: account.id,
-      postingDate: { lt: asOfDate }
-    },
-    _sum: { amount: true }
-  });
-
-  const debitTotal = debits._sum.amount?.toNumber() || 0;
-  const creditTotal = credits._sum.amount?.toNumber() || 0;
-
-  // For Asset/Expense accounts: Debit increases, Credit decreases
-  // For Liability/Income/Equity: Credit increases, Debit decreases
-  if (account.type === 'ASSET' || account.type === 'EXPENSE') {
-    return debitTotal - creditTotal;
-  } else {
-    return creditTotal - debitTotal;
-  }
-}
-
-/**
- * Calculate closing balance for an account at a specific date
- * Closing Balance = Opening Balance + Movements during the period
- */
-export async function getClosingBalance(
-  businessId: string,
-  accountNumber: number,
-  asOfDate: Date
-): Promise<number> {
-  const account = await prisma.ledgerAccount.findFirst({
-    where: { businessId, accountNumber }
-  });
-
-  if (!account) return 0;
-
-  // Sum all debits up to and including the date
-  const debits = await prisma.ledgerEntry.aggregate({
-    where: {
-      businessId,
-      debitAccountId: account.id,
-      postingDate: { lte: asOfDate }
-    },
-    _sum: { amount: true }
-  });
-
-  // Sum all credits up to and including the date
-  const credits = await prisma.ledgerEntry.aggregate({
-    where: {
-      businessId,
-      creditAccountId: account.id,
-      postingDate: { lte: asOfDate }
-    },
-    _sum: { amount: true }
-  });
-
-  const debitTotal = debits._sum.amount?.toNumber() || 0;
-  const creditTotal = credits._sum.amount?.toNumber() || 0;
-
-  if (account.type === 'ASSET' || account.type === 'EXPENSE') {
-    return debitTotal - creditTotal;
-  } else {
-    return creditTotal - debitTotal;
-  }
-}
-
-/**
- * Generate account statement (like your Tripletex screenshot)
- * Shows: Opening Balance, Transactions, Closing Balance
- */
-export async function getAccountStatement(
-  businessId: string,
-  accountNumber: number,
-  startDate: Date,
-  endDate: Date
+  startDate?: Date,
+  endDate?: Date
 ) {
-  const account = await prisma.ledgerAccount.findFirst({
-    where: { businessId, accountNumber }
+  const account = await prisma.ledgerAccount.findUnique({
+    where: { id: accountId },
+    select: { type: true }
   });
 
-  if (!account) throw new Error('Account not found');
+  if (!account) {
+    throw new Error('Account not found');
+  }
 
-  // Calculate opening balance (before start date)
-  const openingBalance = await getOpeningBalance(businessId, accountNumber, startDate);
+  const whereClause: any = {
+    businessId,
+    OR: [
+      { debitAccountId: accountId },
+      { creditAccountId: accountId }
+    ]
+  };
 
-  // Get all transactions in the period
+  if (startDate) {
+    whereClause.postingDate = { gte: startDate };
+  }
+  if (endDate) {
+    whereClause.postingDate = { ...whereClause.postingDate, lte: endDate };
+  }
+
   const entries = await prisma.ledgerEntry.findMany({
-    where: {
-      businessId,
-      OR: [
-        { debitAccountId: account.id },
-        { creditAccountId: account.id }
-      ],
-      postingDate: {
-        gte: startDate,
-        lte: endDate
-      }
-    },
-    include: {
-      invoice: true,
-      debitAccount: true,
-      creditAccount: true
-    },
+    where: whereClause,
     orderBy: { postingDate: 'asc' }
   });
 
-  // Calculate movements
-  const transactions = entries.map(entry => {
-    const isDebit = entry.debitAccountId === account.id;
-    const amount = entry.amount.toNumber();
+  let balance = 0;
+
+  for (const entry of entries) {
+    const amount = parseFloat(entry.amount.toString());
     
-    return {
-      date: entry.postingDate,
-      description: entry.description,
-      voucher: entry.invoice?.invoiceNumber,
-      debit: isDebit ? amount : 0,
-      credit: !isDebit ? amount : 0,
-      amount: isDebit ? amount : -amount
-    };
+    // For ASSET and EXPENSE accounts: Debit increases, Credit decreases
+    // For LIABILITY, EQUITY, INCOME accounts: Credit increases, Debit decreases
+    const isNormalDebit = account.type === 'ASSET' || account.type === 'EXPENSE';
+    
+    if (entry.debitAccountId === accountId) {
+      balance += isNormalDebit ? amount : -amount;
+    } else if (entry.creditAccountId === accountId) {
+      balance += isNormalDebit ? -amount : amount;
+    }
+  }
+
+  return balance;
+}
+
+/**
+ * Generate ledger report with opening/closing balances 
+ * Returns data formatted for the GeneralLedger component
+ */
+export async function generateLedgerReport(
+  businessId: string,
+  startDate: Date,
+  endDate: Date,
+  accountNumbers?: number[] // Optional: filter specific accounts
+) {
+  // Get all accounts or specific accounts
+  const whereClause: any = { businessId, isActive: true };
+  if (accountNumbers && accountNumbers.length > 0) {
+    whereClause.accountNumber = { in: accountNumbers };
+  }
+
+  const accounts = await prisma.ledgerAccount.findMany({
+    where: whereClause,
+    orderBy: { accountNumber: 'asc' }
   });
 
-  // Calculate closing balance
-  const closingBalance = await getClosingBalance(businessId, accountNumber, endDate);
+  const accountGroups = [];
+
+  for (const account of accounts) {
+    // Calculate opening balance (all entries before start date)
+    const dayBeforeStart = new Date(startDate);
+    dayBeforeStart.setDate(dayBeforeStart.getDate() - 1);
+    dayBeforeStart.setHours(23, 59, 59, 999);
+
+    const openingBalance = await getAccountBalance(
+      account.id,
+      businessId,
+      undefined,
+      dayBeforeStart
+    );
+
+    // Get entries in date range
+    const entries = await prisma.ledgerEntry.findMany({
+      where: {
+        businessId,
+        OR: [
+          { debitAccountId: account.id },
+          { creditAccountId: account.id }
+        ],
+        postingDate: {
+          gte: startDate,
+          lte: endDate
+        }
+      },
+      include: {
+        invoice: {
+          select: {
+            invoiceNumber: true,
+            customer: {
+              select: { customerName: true }
+            }
+          }
+        },
+        debitAccount: true,
+        creditAccount: true
+      },
+      orderBy: [
+        { postingDate: 'asc' },
+        { createdAt: 'asc' }
+      ]
+    });
+
+    // Skip accounts with no activity and zero opening balance
+    if (entries.length === 0 && Math.abs(openingBalance) < 0.01) {
+      continue;
+    }
+
+    const isNormalDebit = account.type === 'ASSET' || account.type === 'EXPENSE';
+    let runningBalance = openingBalance;
+
+    const ledgerEntries = entries.map(entry => {
+      const amount = parseFloat(entry.amount.toString());
+      const isDebit = entry.debitAccountId === account.id;
+      
+      // Calculate movement based on account type
+      let movement = 0;
+      if (isDebit) {
+        movement = isNormalDebit ? amount : -amount;
+      } else {
+        movement = isNormalDebit ? -amount : amount;
+      }
+      
+      runningBalance += movement;
+
+      // Generate voucher number from invoice or entry ID
+      const voucherNo = entry.invoice?.invoiceNumber || `V-${entry.id.slice(-8)}`;
+
+      return {
+        id: entry.id,
+        closed: true, // You can add logic to determine if entry is closed
+        voucherNo,
+        date: entry.postingDate?.toISOString().split('T')[0] || '',
+        description: entry.description || '',
+        vatCode: undefined, // Add VAT code logic if needed
+        currency: undefined, // Add currency if you support multi-currency
+        amount: isDebit ? amount : -amount, // Show as signed amount
+        hasAttachment: false // Add attachment logic if needed
+      };
+    });
+
+    accountGroups.push({
+      id: account.id,
+      code: account.accountNumber.toString(),
+      name: account.name,
+      openingBalance,
+      closingBalance: runningBalance,
+      entries: ledgerEntries
+    });
+  }
 
   return {
-    account: {
-      number: account.accountNumber,
-      name: account.name,
-      type: account.type
+    accounts: accountGroups,
+    period: {
+      startDate: startDate.toISOString().split('T')[0],
+      endDate: endDate.toISOString().split('T')[0]
     },
-    period: { startDate, endDate },
-    openingBalance,
-    transactions,
-    closingBalance
+    totalBalance: accountGroups.reduce((sum, acc) => sum + acc.closingBalance, 0)
   };
 }

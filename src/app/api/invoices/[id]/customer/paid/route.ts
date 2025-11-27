@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient, Prisma } from '@prisma/client';
+import { getBusinessId } from '@/shared/lib/invoiceHelper';
 
 const prisma = new PrismaClient();
 
@@ -85,11 +86,15 @@ export async function POST( request: NextRequest,
         if (!invoiceId) {
             return NextResponse.json({ error: 'Missing invoice id in params' }, { status: 400 });
         }
+         const businessId = await getBusinessId()
+            if (!businessId) {
+              return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+            }
 
         const body = await request.json();
-        const { customerId, businessId, paymentDate, paymentMethod, amount } = body ?? {};
+        const { customerId, paymentDate, paymentMethod, amount } = body ?? {};
 
-        if (!customerId || !businessId || !paymentDate || !paymentMethod || amount == null) {
+        if (!customerId || !paymentDate || !paymentMethod || amount == null) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 

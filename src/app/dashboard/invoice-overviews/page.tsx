@@ -522,8 +522,8 @@ export default function InvoiceOverview() {
                                             <td className="px-4 py-3 text-sm text-gray-900">{invoice.sentAt ? new Date(invoice.sentAt).getDate() : ""}</td>
                                             <td className="px-4 py-3 text-sm text-gray-900">{invoice.dueDate ? new Date(invoice.dueDate).getDate() : ""}</td>
                                             <td className="px-4 py-3 text-sm text-gray-900 text-right">{(invoice.totalInclVAT).toString()}</td>
-                                            <td className="px-4 py-3 text-sm text-gray-900 text-right">{0.0}</td>
-                                            <td className="px-4 py-3 text-sm text-gray-900 text-right">{(invoice.totalExclVAT).toString()}</td>
+                                            <td className="px-4 py-3 text-sm text-gray-900 text-right">{invoice.status === "PAID" ? (invoice.totalInclVAT).toString():0.0}</td>
+                                            <td className="px-4 py-3 text-sm text-gray-900 text-right">{invoice.status === "PAID" ? 0.0 : (invoice.totalInclVAT).toString()}</td>
                                             <td className="px-2 py-3">
                                                 <button className="p-1 hover:bg-gray-200 rounded" onClick={() => handlePDf(invoice.id)}>
                                                     <PaperClipIcon className="h-4 w-4 text-gray-400" />
@@ -541,14 +541,14 @@ export default function InvoiceOverview() {
                                                             align="end"
                                                             className="min-w-[220px] bg-white rounded-lg shadow-lg border border-gray-200 p-1 z-50"
                                                         >
-                                                            <DropdownMenu.Item className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2">
+                                                           {invoice.status !== "PAID" ? <DropdownMenu.Item className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2">
                                                                 <button
                                                                     onClick={() => setShowPaymentDialog(true)}
                                                                 >
                                                                     <CheckCircleIcon className="h-4 w-4" />
                                                                     Register payment
                                                                 </button>
-                                                            </DropdownMenu.Item>
+                                                            </DropdownMenu.Item> : null}
                                                             {/* <DropdownMenu.Item className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2">
                                                                 <ClockIcon className="h-4 w-4" />
                                                                 Payment follow-up
@@ -628,7 +628,7 @@ export default function InvoiceOverview() {
                                         <RegisterPaymentDialog
                                             open={showPaymentDialog}
                                             onOpenChange={setShowPaymentDialog}
-                                            invoice={invoice}
+                                            paymentData={{customer: invoice.customer, invoiceId: invoice.id, amount: Number(invoice.totalInclVAT)}}
                                         />
                                     </React.Fragment>
 
