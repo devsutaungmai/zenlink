@@ -578,13 +578,12 @@ export default function CreateInvoicePage() {
                     </div>}
 
                     <div className="bg-gradient-to-br rounded-xl border p-6">
-                        <div className="flex justify-between">
+                        <div className="flex justify-between items-center mb-4">
                             <h2 className="text-lg font-semibold text-gray-900 mb-4">Order Lines</h2>
                             <button
                                 type="button"
                                 onClick={handleNewOrderLine}
                                 disabled={loading}
-                                className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
                             >New Order Line</button>
                         </div>
                         {formData.invoiceLines.map((line, index) => (
@@ -690,7 +689,7 @@ export default function CreateInvoicePage() {
                                         />
                                     </div>
                                 }
-                               <div className=''>
+                               <div className='items-end flex space-x-4 mb-3 '>
                                  <button
                                     type='button'
                                     onClick={() => deleteInvoiceLine(index)}

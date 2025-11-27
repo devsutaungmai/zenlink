@@ -372,7 +372,7 @@ function AccountSection({
           </td>
           <td className="border-r border-border p-3 text-sm">{entry.date}</td>
           <td className="max-w-md truncate border-r border-border p-3 text-sm">{entry.description}</td>
-          <td className="border-r border-border p-3 text-sm">{entry.vatCode}</td>
+          <td className="border-r border-border p-3 text-sm">{account.code === "3200" ? entry.vatCode: ""}</td>
           <td className="border-r border-border p-3 text-sm col-span-2">{entry.currency}</td>
           <td className="text-right font-medium border-r border-border p-3 text-sm tabular-nums">
             {entry.amount.toFixed(2)}

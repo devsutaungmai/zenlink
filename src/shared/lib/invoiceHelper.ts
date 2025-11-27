@@ -181,8 +181,19 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
     where: { accountNumber: 1500 }
   });
 
+   // Get VAT payable account (2740 - Utgående mva)
+  const vatPayable = await prisma.ledgerAccount.findFirst({
+    where: { 
+      accountNumber: 2700  // Updated to 2740 as per Norwegian chart of accounts 
+    }
+  });
+
   if (!accountsReceivable) {
     throw new Error('Required ledger account not found: 1500 (Kundefordringer)');
+  }
+
+  if (!vatPayable) {
+    throw new Error('Required ledger account not found: 2700 (Utgående mva)');
   }
 
   await prisma.$transaction(async (tx) => {
@@ -221,7 +232,25 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
       });
     }
 
-    // Entry: DR 1500 / CR VAT Account - Amount: invoice.vatAmount (Coming soon)
+    // Entry: DR 1500 / CR VAT Account - Amount: invoice.vatAmount
+     const vatAmount = parseFloat(invoice.vatAmount.toString());
+    
+    if (vatAmount > 0) {
+      await tx.ledgerEntry.create({
+        data: {
+          businessId,
+          invoiceId: invoice.id,
+          documentDate,
+          postingDate,
+          debitAccountId: accountsReceivable.id,
+          creditAccountId: vatPayable.id,
+          amount: vatAmount,
+          projectId: invoice.projectId,
+          departmentId: invoice.departmentId,
+          description: `Faktura nummer ${invoice.invoiceNumber} til ${invoice.customer?.customerName || 'customer'} - MVA`
+        }
+      });
+    }
   });
 
   return {
@@ -388,7 +417,7 @@ export async function generateLedgerReport(
         voucherNo,
         date: entry.postingDate?.toISOString().split('T')[0] || '',
         description: entry.description || '',
-        vatCode: undefined, // Add VAT code logic if needed
+        vatCode: '25%', // Add VAT code logic if needed
         currency: undefined, // Add currency if you support multi-currency
         amount: isDebit ? amount : -amount, // Show as signed amount
         hasAttachment: false // Add attachment logic if needed

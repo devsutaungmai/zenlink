@@ -34,8 +34,8 @@ export default function RegisterPaymentDialog({
     const router = useRouter()
 
     const paymentMethods = [
-        { id: "CASH", name: "Cash" },
-        { id: "BANK", name: "Bank Transfer" }
+        { id: "CASH", name: "CASH" },
+        { id: "BANK", name: "BANK" }
     ]
 
     const [payment, setPayment] = useState<PaymentData>({
@@ -74,7 +74,7 @@ export default function RegisterPaymentDialog({
                 onOpenChange(false);
                 // Refresh invoice list or show success message
             }
-            router.push(`/dashboard/invoices-overview`);
+            router.push(`/dashboard/invoice-overviews`);
             router.refresh()
         } catch (error) {
             console.error('Failed to register payment:', error);
