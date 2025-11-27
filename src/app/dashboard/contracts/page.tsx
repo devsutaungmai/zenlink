@@ -250,7 +250,8 @@ export default function ContractsPage() {
         }
       });
 
-      const response = await fetch(`/api/contracts/${id}/download`);
+      const downloadUrl = `/api/contracts/${id}/download`;
+      const response = await fetch(downloadUrl);
       
       if (!response.ok) {
         throw new Error('Failed to generate PDF');

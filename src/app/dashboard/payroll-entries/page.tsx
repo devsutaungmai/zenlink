@@ -308,7 +308,9 @@ export default function PayrollEntriesPage() {
 
   const handleExportPayslip = async (entryId: string, employeeName: string) => {
     try {
-      const response = await fetch(`/api/payroll-entries/${entryId}/payslip`)
+      const downloadUrl = `/api/payroll-entries/${entryId}/payslip`
+
+      const response = await fetch(downloadUrl)
 
       if (response.ok) {
         const blob = await response.blob()

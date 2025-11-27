@@ -808,7 +808,8 @@ export default function PunchClockPage() {
         params.append('search', trimmedSearch)
       }
 
-      const response = await fetch(`/api/attendance/export/pdf?${params.toString()}`)
+      const downloadUrl = `/api/attendance/export/pdf?${params.toString()}`
+      const response = await fetch(downloadUrl)
       
       if (response.ok) {
         const blob = await response.blob()

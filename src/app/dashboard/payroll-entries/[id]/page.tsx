@@ -148,14 +148,16 @@ export default function PayrollEntryViewPage({ params }: { params: Promise<{ id:
 
   const handleDownloadPayslip = async () => {
     try {
-      const response = await fetch(`/api/payroll-entries/${entryId}/payslip`)
+      const downloadUrl = `/api/payroll-entries/${entryId}/payslip`
+      const filename = `payslip_${entry?.employee.firstName}_${entry?.employee.lastName}_${entry?.payrollPeriod.name}.pdf`
+
+      const response = await fetch(downloadUrl)
       
       if (!response.ok) {
         throw new Error('Failed to generate payslip')
       }
 
       const blob = await response.blob()
-      const filename = `payslip_${entry?.employee.firstName}_${entry?.employee.lastName}_${entry?.payrollPeriod.name}.pdf`
       downloadBlob(blob, filename)
 
       Swal.fire({

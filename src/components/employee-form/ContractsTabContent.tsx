@@ -40,7 +40,8 @@ export function ContractsTabContent({
     try {
       setDownloading(contract.id)
       
-      const response = await fetch(`/api/contracts/${contract.id}/download`)
+      const downloadUrl = `/api/contracts/${contract.id}/download`
+      const response = await fetch(downloadUrl)
       
       if (!response.ok) {
         throw new Error('Failed to generate PDF')

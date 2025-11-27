@@ -5,6 +5,15 @@ export interface NativeDownloadMessage {
   data: string
 }
 
+const getReactNativeWebView = () => {
+  if (typeof window === 'undefined') {
+    return undefined
+  }
+
+  return (window as unknown as { ReactNativeWebView?: { postMessage: (message: string) => void } })
+    .ReactNativeWebView
+}
+
 /**
  * Handle file downloads for both standard browsers and React Native WebViews.
  * When a React Native WebView is detected, the blob is converted to Base64 and
@@ -17,7 +26,7 @@ export const downloadBlob = (blob: Blob, filename: string) => {
   }
 
   const mimeType = blob.type || 'application/octet-stream'
-  const webview = (window as unknown as { ReactNativeWebView?: { postMessage: (message: string) => void } }).ReactNativeWebView
+  const webview = getReactNativeWebView()
 
   if (webview && typeof webview.postMessage === 'function') {
     const reader = new FileReader()
