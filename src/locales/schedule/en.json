@@ -4,7 +4,35 @@
     "all_employees": "All Employees",
     "week": "Week",
     "day": "Day",
-    "today": "Today"
+    "today": "Today",
+    "all_departments": "All Departments",
+    "all_categories": "All Categories",
+    "all_functions": "All Functions",
+    "select_category_first": "Select category first",
+    "filters": "Filters",
+    "clear_all": "Clear all",
+    "employees": "Employees",
+    "search_employees_placeholder": "Search employees...",
+    "no_employees_found": "No employees found",
+    "employee_groups": "Employee Groups",
+    "shift_types": "Shift Types",
+    "status": "Status",
+    "shift_time": "Shift Time",
+    "time_from": "From",
+    "time_to": "To",
+    "apply_filters": "Apply Filters",
+    "view_modes": {
+      "week": "Week",
+      "two_week": "Two Weeks",
+      "month": "Month",
+      "day": "Day"
+    },
+    "statuses": {
+      "scheduled": "Scheduled",
+      "in_progress": "In Progress",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    }
   },
   "week_view": {
     "today": "Today",
@@ -27,5 +55,66 @@
     "error_fetching_employees": "Error fetching employees:",
     "error_fetching_groups": "Error fetching employee groups:",
     "error_fetching_shifts": "Error fetching shifts:"
+  },
+  "view_tabs": {
+    "time": {
+      "label": "Timeline",
+      "description": "Chronological grid"
+    },
+    "employees": {
+      "label": "Employees",
+      "description": "People-centric view"
+    },
+    "groups": {
+      "label": "Groups",
+      "description": "Team allocations"
+    },
+    "functions": {
+      "label": "Functions",
+      "description": "Role coverage"
+    },
+    "aria_mobile": "Schedule view types (mobile)",
+    "aria_desktop": "Schedule view types"
+  },
+  "labels": {
+    "this_employee": "This employee",
+    "active_shift": "Active"
+  },
+  "alerts": {
+    "employee_unavailable": {
+      "title": "Employee unavailable",
+      "with_note": "{{name}} is unavailable on {{date}} ({{note}}).",
+      "without_note": "{{name}} is unavailable on {{date}}."
+    },
+    "shift_conflict": {
+      "title": "Shift Conflict: {{name}}",
+      "message": "Overlaps with existing shift on {{date}} ({{start}} - {{end}})",
+      "toast": "{{title}}: {{message}}"
+    }
+  },
+  "labor_law": {
+    "title": "Labor Law Violations Detected",
+    "intro": "This shift violates the following labor law requirements:",
+    "override_question": "Do you want to create this shift anyway?",
+    "override_hint": "As an admin, you can override these restrictions if necessary.",
+    "confirm": "Yes, Create Shift",
+    "cancel": "Cancel",
+    "override_toast_one": "Admin override: Shift created despite {{count}} labor law violation",
+    "override_toast_other": "Admin override: Shift created despite {{count}} labor law violations",
+    "violations": {
+      "max_hours_per_day": "• Shift duration: <strong>{{current}} hours</strong> (exceeds {{allowed}}h daily limit)",
+      "max_overtime_per_day": "• Daily overtime: <strong>{{current}} hours</strong> (exceeds {{allowed}}h limit)",
+      "max_overtime_per_week": "• Weekly overtime: <strong>{{current}} hours</strong> (exceeds {{allowed}}h limit)",
+      "missing_break": "• Break requirement: <strong>{{current}} minutes</strong> (minimum {{allowed}} minutes required)",
+      "generic": "• {{message}}"
+    }
+  },
+  "toasts": {
+    "shift_created": "Shift created successfully!",
+    "shift_updated": "Shift updated successfully!",
+    "shift_create_failed": "Failed to create shift.",
+    "shift_update_failed": "Failed to update shift.",
+    "shift_deleted": "Shift deleted successfully!",
+    "shift_delete_failed": "Failed to delete shift."
   }
 }

@@ -1,20 +1,20 @@
 {
-  "title": "Ansatttilgjengelighet",
-  "subtitle": "Administrer og vis ansattes tilgjengelighet på tvers av alle avdelinger",
+  "title": "Medarbeidernes tilgjengelighet",
+  "subtitle": "Administrer og vis medarbeidernes tilgjengelighet på tvers av alle avdelinger",
   "header": {
-    "total_employees": "Totalt ansatte",
+    "total_employees": "Totalt antall medarbeidere",
     "available_today": "Tilgjengelig i dag",
     "unavailable_today": "Ikke tilgjengelig i dag",
     "pending_requests": "Ventende forespørsler"
   },
   "search": {
-    "placeholder": "Søk ansatte...",
+    "placeholder": "Søk medarbeidere...",
     "showing": "Viser",
     "of": "av",
-    "employees": "ansatte"
+    "employees": "medarbeidere"
   },
   "filters": {
-    "all_employees": "Alle ansatte",
+    "all_employees": "Alle medarbeidere",
     "available_today": "Tilgjengelig i dag",
     "unavailable_today": "Ikke tilgjengelig i dag",
     "all_departments": "Alle avdelinger"
@@ -31,7 +31,7 @@
     "of": "av"
   },
   "calendar": {
-    "employee": "Ansatt",
+    "employee": "Medarbeider",
     "months": [
       "Januar", "Februar", "Mars", "April", "Mai", "Juni",
       "Juli", "August", "September", "Oktober", "November", "Desember"
@@ -39,7 +39,7 @@
     "week_days": ["Søn", "Man", "Tir", "Ons", "Tor", "Fre", "Lør"]
   },
   "list": {
-    "title": "Liste over ansattes tilgjengelighet",
+    "title": "Liste over medarbeideres tilgjengelighet",
     "available_today": "Tilgjengelig i dag",
     "unavailable_today": "Ikke tilgjengelig i dag",
     "note": "Notat"

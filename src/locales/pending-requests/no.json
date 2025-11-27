@@ -12,8 +12,8 @@
   "showing": "Viser {{count}} av {{total}} forespørsler",
   "table": {
     "type": "Type",
-    "from_employee": "Fra ansatt",
-    "to_employee": "Til ansatt",
+    "from_employee": "Fra medarbeider",
+    "to_employee": "Til medarbeider",
     "shift_date_time": "Vaktdato og tid",
     "requested": "Forespurt",
     "actions": "Handlinger"
@@ -46,11 +46,11 @@
     "request_time": "Forespørselstid"
   },
   "employee_info": {
-    "title": "Ansattinformasjon",
-    "from_employee": "Fra ansatt",
-    "to_employee": "Til ansatt",
+    "title": "Medarbeiderinformasjon",
+    "from_employee": "Fra medarbeider",
+    "to_employee": "Til medarbeider",
     "name": "Navn",
-    "employee_no": "Ansatt nr.",
+    "employee_no": "Medarbeider nr.",
     "department": "Avdeling"
   },
   "shift_details": {

@@ -1,10 +1,10 @@
 {
   "title": "Sykmeldingshåndtering",
-  "subtitle": "Administrer og spor ansattes sykmeldingsforespørsler",
+  "subtitle": "Administrer og spor medarbeideres sykmeldingsforespørsler",
   "form": {
     "title": "Send inn sykmeldingsforespørsel",
-    "employee": "Ansatt",
-    "select_employee": "Velg en ansatt",
+    "employee": "Medarbeider",
+    "select_employee": "Velg en medarbeider",
     "start_date": "Startdato",
     "end_date": "Sluttdato",
     "reason": "Årsak",
@@ -23,7 +23,7 @@
   },
   "table": {
     "title": "Sykmeldingsforespørsler",
-    "employee": "Ansatt",
+    "employee": "Medarbeider",
     "department": "Avdeling",
     "start_date": "Startdato",
     "end_date": "Sluttdato",
@@ -48,7 +48,7 @@
     "my_requests": "Mine forespørsler"
   },
   "search": {
-    "placeholder": "Søk etter ansattnavn eller årsak..."
+    "placeholder": "Søk etter medarbeidernavn eller årsak..."
   },
   "messages": {
     "success": {
@@ -66,7 +66,7 @@
     }
   },
   "validation": {
-    "employee_required": "Vennligst velg en ansatt",
+    "employee_required": "Vennligst velg en medarbeider",
     "start_date_required": "Startdato er påkrevd",
     "end_date_required": "Sluttdato er påkrevd",
     "end_before_start": "Sluttdato kan ikke være før startdato",

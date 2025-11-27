@@ -203,21 +203,21 @@ export default function ScheduleHeader({
     (filters.timeTo ? 1 : 0)
   
   const shiftStatuses = [
-    { value: 'SCHEDULED', label: 'Scheduled' },
-    { value: 'IN_PROGRESS', label: 'In Progress' },
-    { value: 'COMPLETED', label: 'Completed' },
-    { value: 'CANCELLED', label: 'Cancelled' }
+    { value: 'SCHEDULED', label: t('header.statuses.scheduled') },
+    { value: 'IN_PROGRESS', label: t('header.statuses.in_progress') },
+    { value: 'COMPLETED', label: t('header.statuses.completed') },
+    { value: 'CANCELLED', label: t('header.statuses.cancelled') }
   ]
   const mobileViewModeOptions: Array<{ value: 'week' | 'month' | 'day'; label: string }> = [
-    { value: 'week', label: 'Week' },
-    { value: 'month', label: 'Month' },
-    { value: 'day', label: 'Day' }
+    { value: 'week', label: t('header.view_modes.week') },
+    { value: 'month', label: t('header.view_modes.month') },
+    { value: 'day', label: t('header.view_modes.day') }
   ]
   const viewModeOptions: Array<{ value: 'week' | 'two-week' | 'month' | 'day'; label: string }> = [
-    { value: 'week', label: 'Week' },
-    { value: 'two-week', label: 'Two Weeks' },
-    { value: 'month', label: 'Month' },
-    { value: 'day', label: 'Day' }
+    { value: 'week', label: t('header.view_modes.week') },
+    { value: 'two-week', label: t('header.view_modes.two_week') },
+    { value: 'month', label: t('header.view_modes.month') },
+    { value: 'day', label: t('header.view_modes.day') }
   ]
   
   return (
@@ -234,7 +234,7 @@ export default function ScheduleHeader({
             }}
             className="w-full px-3 py-2 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#31BCFF] bg-white"
           >
-            <option value="">All Departments</option>
+            <option value="">{t('header.all_departments')}</option>
             {safeDepartments.map(department => (
               <option key={department.id} value={department.id}>
                 {department.name}
@@ -254,7 +254,7 @@ export default function ScheduleHeader({
             }}
             className="w-full px-3 py-2 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#31BCFF] bg-white"
           >
-            <option value="">All Categories</option>
+            <option value="">{t('header.all_categories')}</option>
             {safeCategories.map(category => (
               <option key={category.id} value={category.id}>
                 {category.name}
@@ -271,7 +271,7 @@ export default function ScheduleHeader({
             disabled={!selectedCategoryId && filteredFunctions.length === 0}
             className="w-full px-3 py-2 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#31BCFF] bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
           >
-            <option value="">{selectedCategoryId ? 'All Functions' : 'Select category first'}</option>
+            <option value="">{selectedCategoryId ? t('header.all_functions') : t('header.select_category_first')}</option>
             {filteredFunctions.map(func => (
               <option key={func.id} value={func.id}>
                 {func.name}
@@ -303,14 +303,14 @@ export default function ScheduleHeader({
                 className="fixed inset-x-0 top-0 bottom-0 bg-white z-50 overflow-y-auto"
               >
                 <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between z-10">
-                  <h3 className="font-semibold text-gray-900">Filters</h3>
+                  <h3 className="font-semibold text-gray-900">{t('header.filters')}</h3>
                   <div className="flex items-center gap-3">
                     {activeFilterCount > 0 && (
                       <button
                         onClick={clearAllFilters}
                         className="text-sm text-[#31BCFF] hover:text-[#28a8e6]"
                       >
-                        Clear all
+                        {t('header.clear_all')}
                       </button>
                     )}
                     <button onClick={() => setShowFilters(false)} className="text-gray-400 hover:text-gray-600">
@@ -322,11 +322,11 @@ export default function ScheduleHeader({
                 <div className="p-4 space-y-4 pb-20">
                   {/* Employees Filter */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Employees</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('header.employees')}</label>
                     {/* Search Input */}
                     <input
                       type="text"
-                      placeholder="Search employees..."
+                      placeholder={t('header.search_employees_placeholder')}
                       value={employeeSearchQuery}
                       onChange={(e) => setEmployeeSearchQuery(e.target.value)}
                       className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md mb-2 focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF]"
@@ -348,7 +348,7 @@ export default function ScheduleHeader({
                         ))
                       ) : (
                         <div className="px-3 py-2.5 text-sm text-gray-500 text-center">
-                          No employees found
+                          {t('header.no_employees_found')}
                         </div>
                       )}
                     </div>
@@ -356,7 +356,7 @@ export default function ScheduleHeader({
 
                   {/* Employee Groups Filter */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Employee Groups</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('header.employee_groups')}</label>
                     <div className="space-y-2">
                       {safeEmployeeGroups.map(group => (
                         <label key={group.id} className="flex items-center cursor-pointer p-2 rounded hover:bg-gray-50 active:bg-gray-100">
@@ -374,7 +374,7 @@ export default function ScheduleHeader({
 
                   {/* Shift Types Filter */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Shift Types</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('header.shift_types')}</label>
                     <div className="space-y-2">
                       {safeShiftTypes.map(shiftType => (
                         <label key={shiftType.id} className="flex items-center cursor-pointer p-2 rounded hover:bg-gray-50 active:bg-gray-100">
@@ -392,7 +392,7 @@ export default function ScheduleHeader({
 
                   {/* Status Filter */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('header.status')}</label>
                     <div className="space-y-2">
                       {shiftStatuses.map(status => (
                         <label key={status.value} className="flex items-center cursor-pointer p-2 rounded hover:bg-gray-50 active:bg-gray-100">
@@ -410,10 +410,10 @@ export default function ScheduleHeader({
 
                   {/* Time Range Filter */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Shift Time</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('header.shift_time')}</label>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-xs text-gray-600 mb-1">From</label>
+                        <label className="block text-xs text-gray-600 mb-1">{t('header.time_from')}</label>
                         <input
                           type="time"
                           value={filters.timeFrom}
@@ -422,7 +422,7 @@ export default function ScheduleHeader({
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-600 mb-1">To</label>
+                        <label className="block text-xs text-gray-600 mb-1">{t('header.time_to')}</label>
                         <input
                           type="time"
                           value={filters.timeTo}
@@ -440,7 +440,7 @@ export default function ScheduleHeader({
                     onClick={() => setShowFilters(false)}
                     className="w-full bg-[#31BCFF] text-white py-3 rounded-md font-medium hover:bg-[#28a8e6]"
                   >
-                    Apply Filters
+                    {t('header.apply_filters')}
                   </button>
                 </div>
               </div>
@@ -474,7 +474,7 @@ export default function ScheduleHeader({
             onClick={onTodayClick}
             className="px-4 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50 bg-white"
           >
-            Today
+            {t('header.today')}
           </button>
 
           <div className="flex items-center gap-2">
@@ -511,7 +511,7 @@ export default function ScheduleHeader({
               }}
               className="px-3 py-2 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#31BCFF] bg-white w-full"
             >
-              <option value="">All Departments</option>
+              <option value="">{t('header.all_departments')}</option>
               {safeDepartments.map(department => (
                 <option key={department.id} value={department.id}>
                   {department.name}
@@ -530,7 +530,7 @@ export default function ScheduleHeader({
               }}
               className="px-3 py-2 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#31BCFF] bg-white w-full"
             >
-              <option value="">All Categories</option>
+              <option value="">{t('header.all_categories')}</option>
               {safeCategories.map(category => (
                 <option key={category.id} value={category.id}>
                   {category.name}
@@ -547,7 +547,7 @@ export default function ScheduleHeader({
               disabled={!selectedCategoryId && filteredFunctions.length === 0}
               className="px-3 py-2 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#31BCFF] bg-white w-full disabled:bg-gray-100 disabled:cursor-not-allowed"
             >
-              <option value="">{selectedCategoryId ? 'All Functions' : 'Select category first'}</option>
+              <option value="">{selectedCategoryId ? t('header.all_functions') : t('header.select_category_first')}</option>
               {filteredFunctions.map(func => (
                 <option key={func.id} value={func.id}>
                   {func.name}
@@ -583,7 +583,7 @@ export default function ScheduleHeader({
                 onClick={onTodayClick}
                 className="px-4 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50 whitespace-nowrap bg-white"
               >
-                Today
+                {t('header.today')}
               </button>
 
               <div className="flex items-center gap-2 flex-wrap md:flex-nowrap">
@@ -624,7 +624,7 @@ export default function ScheduleHeader({
                   className="w-full sm:w-auto px-4 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50 bg-white flex items-center justify-center sm:justify-start gap-2"
                 >
                   <FunnelIcon className="w-4 h-4" />
-                  Filters
+                  {t('header.filters')}
                   {activeFilterCount > 0 && (
                     <span className="bg-[#31BCFF] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                       {activeFilterCount}
@@ -638,14 +638,14 @@ export default function ScheduleHeader({
                     className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-[600px] overflow-y-auto"
                   >
                     <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between z-10">
-                      <h3 className="font-semibold text-gray-900">Filters</h3>
+                      <h3 className="font-semibold text-gray-900">{t('header.filters')}</h3>
                       <div className="flex items-center gap-2">
                         {activeFilterCount > 0 && (
                           <button
                             onClick={clearAllFilters}
                             className="text-xs text-[#31BCFF] hover:text-[#28a8e6]"
                           >
-                            Clear all
+                            {t('header.clear_all')}
                           </button>
                         )}
                         <button onClick={() => setShowFilters(false)} className="text-gray-400 hover:text-gray-600">
@@ -657,10 +657,10 @@ export default function ScheduleHeader({
                     <div className="p-4 space-y-4">
                       {/* Employees Filter */}
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Employees</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">{t('header.employees')}</label>
                         <input
                           type="text"
-                          placeholder="Search employees..."
+                          placeholder={t('header.search_employees_placeholder')}
                           value={employeeSearchQuery}
                           onChange={(e) => setEmployeeSearchQuery(e.target.value)}
                           className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md mb-2 focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF]"
@@ -685,7 +685,7 @@ export default function ScheduleHeader({
                             ))
                           ) : (
                             <div className="px-3 py-2 text-sm text-gray-500 text-center">
-                              No employees found
+                              {t('header.no_employees_found')}
                             </div>
                           )}
                         </div>
@@ -693,7 +693,7 @@ export default function ScheduleHeader({
 
                   {/* Employee Groups Filter */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Employee Groups</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('header.employee_groups')}</label>
                     <div className="space-y-2 max-h-40 overflow-y-auto">
                       {safeEmployeeGroups.map(group => (
                         <label key={group.id} className="flex items-center cursor-pointer">
@@ -711,7 +711,7 @@ export default function ScheduleHeader({
 
                   {/* Shift Types Filter */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Shift Types</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('header.shift_types')}</label>
                     <div className="space-y-2 max-h-40 overflow-y-auto">
                       {safeShiftTypes.map(shiftType => (
                         <label key={shiftType.id} className="flex items-center cursor-pointer">
@@ -729,7 +729,7 @@ export default function ScheduleHeader({
 
                   {/* Status Filter */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('header.status')}</label>
                     <div className="space-y-2">
                       {shiftStatuses.map(status => (
                         <label key={status.value} className="flex items-center cursor-pointer">
@@ -747,10 +747,10 @@ export default function ScheduleHeader({
 
                   {/* Time Range Filter */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Shift Time</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('header.shift_time')}</label>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-xs text-gray-600 mb-1">From</label>
+                        <label className="block text-xs text-gray-600 mb-1">{t('header.time_from')}</label>
                         <input
                           type="time"
                           value={filters.timeFrom}
@@ -759,7 +759,7 @@ export default function ScheduleHeader({
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-600 mb-1">To</label>
+                        <label className="block text-xs text-gray-600 mb-1">{t('header.time_to')}</label>
                         <input
                           type="time"
                           value={filters.timeTo}

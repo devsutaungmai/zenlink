@@ -1,6 +1,6 @@
 {
   "title": "Stemplingsur - Oppmøteregistreringer",
-  "subtitle": "Spor og administrer ansattes oppmøte og arbeidstimer",
+  "subtitle": "Spor og administrer medarbeidernes oppmøte og arbeidstimer",
   "header": {
     "records_today": "Registreringer i dag",
     "currently_working": "Jobber nå",
@@ -8,7 +8,7 @@
     "select_date": "Velg dato"
   },
   "search": {
-    "placeholder": "Søk ansatte eller avdelinger...",
+    "placeholder": "Søk medarbeidere eller avdelinger...",
     "filter_label": "Filter:"
   },
   "filters": {
@@ -19,7 +19,7 @@
   "table": {
     "title": "Oppmøteregistreringer",
     "columns": {
-      "employee": "Ansatt",
+      "employee": "Medarbeider",
       "department": "Avdeling",
       "punch_in": "Inn-stempling",
       "punch_out": "Ut-stempling",

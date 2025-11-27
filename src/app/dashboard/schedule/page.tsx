@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { format, addDays, addWeeks, subWeeks, startOfWeek, endOfWeek, addMonths, subMonths, startOfMonth, endOfMonth } from 'date-fns'
 import { Employee, EmployeeGroup } from '@prisma/client'
 import { ClockIcon, UsersIcon, UserGroupIcon, Squares2X2Icon } from '@heroicons/react/24/outline'
+import { useTranslation } from 'react-i18next'
 
 import Swal from 'sweetalert2'
 import ScheduleHeader from '@/components/schedule/ScheduleHeader'
@@ -26,11 +27,20 @@ import {
   FunctionGroupedViewSkeleton 
 } from '@/components/skeletons/ScheduleSkeleton'
 
-const VIEW_TABS: Array<{ value: 'time' | 'employees' | 'groups' | 'functions'; label: string; description: string; icon: (props: React.ComponentProps<'svg'>) => JSX.Element }> = [
-  { value: 'time', label: 'Timeline', description: 'Chronological grid', icon: ClockIcon },
-  { value: 'employees', label: 'Employees', description: 'People-centric view', icon: UsersIcon },
-  { value: 'groups', label: 'Groups', description: 'Team allocations', icon: UserGroupIcon },
-  { value: 'functions', label: 'Functions', description: 'Role coverage', icon: Squares2X2Icon }
+type ViewTabValue = 'time' | 'employees' | 'groups' | 'functions'
+
+type ViewTabConfig = {
+  value: ViewTabValue
+  labelKey: string
+  descriptionKey: string
+  icon: (props: React.ComponentProps<'svg'>) => JSX.Element
+}
+
+const VIEW_TAB_CONFIG: ViewTabConfig[] = [
+  { value: 'time', labelKey: 'view_tabs.time.label', descriptionKey: 'view_tabs.time.description', icon: ClockIcon },
+  { value: 'employees', labelKey: 'view_tabs.employees.label', descriptionKey: 'view_tabs.employees.description', icon: UsersIcon },
+  { value: 'groups', labelKey: 'view_tabs.groups.label', descriptionKey: 'view_tabs.groups.description', icon: UserGroupIcon },
+  { value: 'functions', labelKey: 'view_tabs.functions.label', descriptionKey: 'view_tabs.functions.description', icon: Squares2X2Icon }
 ]
 
 export default function SchedulePage() {
@@ -66,6 +76,18 @@ export default function SchedulePage() {
     timeFrom: '',
     timeTo: ''
   })
+
+  const { t } = useTranslation('schedule')
+
+  const viewTabs = useMemo(
+    () =>
+      VIEW_TAB_CONFIG.map(tab => ({
+        ...tab,
+        label: t(tab.labelKey),
+        description: t(tab.descriptionKey)
+      })),
+    [t]
+  )
 
   // Filter shifts based on selected department, category, function, and filters
   const filteredShifts = useMemo(() => {
@@ -291,18 +313,26 @@ export default function SchedulePage() {
 
   const notifyEmployeeUnavailable = useCallback((employeeId: string, date: string) => {
     const employee = employees.find(emp => emp.id === employeeId)
-    const employeeName = employee ? `${employee.firstName} ${employee.lastName}` : 'This employee'
+    const employeeName = employee ? `${employee.firstName} ${employee.lastName}` : t('labels.this_employee')
     const status = getAvailabilityStatus(employeeId, date)
+    const formattedDate = format(new Date(date), 'MMM d, yyyy')
 
     Swal.fire({
       icon: 'info',
-      title: 'Employee unavailable',
+      title: t('alerts.employee_unavailable.title'),
       text: status?.note
-        ? `${employeeName} is unavailable on ${format(new Date(date), 'MMM d, yyyy')} (${status.note}).`
-        : `${employeeName} is unavailable on ${format(new Date(date), 'MMM d, yyyy')}.`,
+        ? t('alerts.employee_unavailable.with_note', {
+            name: employeeName,
+            date: formattedDate,
+            note: status.note
+          })
+        : t('alerts.employee_unavailable.without_note', {
+            name: employeeName,
+            date: formattedDate
+          }),
       confirmButtonColor: '#31BCFF'
     })
-  }, [employees, getAvailabilityStatus])
+  }, [employees, getAvailabilityStatus, t])
 
   const shouldPreventShiftCreation = useCallback((employeeId?: string, date?: string) => {
     if (!employeeId || !date) return false
@@ -433,13 +463,18 @@ export default function SchedulePage() {
       
       if (existingShift) {
         const employee = employees.find(emp => emp.id === formData.employeeId);
-        const employeeName = employee ? `${employee.firstName} ${employee.lastName}` : 'This employee';
-        
-        const conflictTitle = `Shift Conflict: ${employeeName}`;
-        const conflictMessage = `Overlaps with existing shift on ${formData.date} (${existingShift.startTime} - ${existingShift.endTime || 'Active'})`;
+        const employeeName = employee ? `${employee.firstName} ${employee.lastName}` : t('labels.this_employee');
+        const endLabel = existingShift.endTime || t('labels.active_shift')
+
+        const conflictTitle = t('alerts.shift_conflict.title', { name: employeeName });
+        const conflictMessage = t('alerts.shift_conflict.message', {
+          date: formData.date,
+          start: existingShift.startTime,
+          end: endLabel
+        });
 
         Swal.fire({
-          text: `${conflictTitle}: ${conflictMessage}`,
+          text: t('alerts.shift_conflict.toast', { title: conflictTitle, message: conflictMessage }),
           toast: true,
           position: 'top-end',
           showConfirmButton: false,
@@ -521,39 +556,55 @@ export default function SchedulePage() {
           if (overridable.length > 0) {
             setShowShiftModal(false);
 
-            const violationsList = overridable.map(violation => {
-              switch(violation.type) {
-                case 'MAX_HOURS_PER_DAY':
-                  return `• Shift duration: <strong>${violation.currentValue.toFixed(1)} hours</strong> (exceeds ${violation.allowedValue}h daily limit)`
-                case 'MAX_OVERTIME_PER_DAY':
-                  return `• Daily overtime: <strong>${violation.currentValue.toFixed(1)} hours</strong> (exceeds ${violation.allowedValue}h limit)`
-                case 'MAX_OVERTIME_PER_WEEK':
-                  return `• Weekly overtime: <strong>${violation.currentValue.toFixed(1)} hours</strong> (exceeds ${violation.allowedValue}h limit)`
-                case 'MISSING_BREAK':
-                  return `• Break requirement: <strong>${violation.currentValue} minutes</strong> (minimum ${violation.allowedValue} minutes required)`
-                default:
-                  return `• ${violation.message}`
-              }
-            }).join('<br>')
-            
-            const result = await Swal.fire({
-              title: 'Labor Law Violations Detected',
-              html: `
+            const violationsList = overridable
+              .map(violation => {
+                switch (violation.type) {
+                  case 'MAX_HOURS_PER_DAY':
+                    return t('labor_law.violations.max_hours_per_day', {
+                      current: violation.currentValue.toFixed(1),
+                      allowed: violation.allowedValue
+                    })
+                  case 'MAX_OVERTIME_PER_DAY':
+                    return t('labor_law.violations.max_overtime_per_day', {
+                      current: violation.currentValue.toFixed(1),
+                      allowed: violation.allowedValue
+                    })
+                  case 'MAX_OVERTIME_PER_WEEK':
+                    return t('labor_law.violations.max_overtime_per_week', {
+                      current: violation.currentValue.toFixed(1),
+                      allowed: violation.allowedValue
+                    })
+                  case 'MISSING_BREAK':
+                    return t('labor_law.violations.missing_break', {
+                      current: violation.currentValue,
+                      allowed: violation.allowedValue
+                    })
+                  default:
+                    return t('labor_law.violations.generic', { message: violation.message })
+                }
+              })
+              .join('<br>')
+
+            const confirmationHtml = `
                 <div style="text-align: left; margin: 16px 0;">
-                  <p style="margin-bottom: 12px;">This shift violates the following labor law requirements:</p>
+                  <p style="margin-bottom: 12px;">${t('labor_law.intro')}</p>
                   <div style="background-color: #fef3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 12px; margin: 12px 0;">
                     ${violationsList}
                   </div>
-                  <p style="margin-top: 16px;"><strong>Do you want to create this shift anyway?</strong></p>
-                  <p style="font-size: 14px; color: #6b7280; margin-top: 8px;">As an admin, you can override these restrictions if necessary.</p>
+                  <p style="margin-top: 16px;"><strong>${t('labor_law.override_question')}</strong></p>
+                  <p style="font-size: 14px; color: #6b7280; margin-top: 8px;">${t('labor_law.override_hint')}</p>
                 </div>
-              `,
+              `
+
+            const result = await Swal.fire({
+              title: t('labor_law.title'),
+              html: confirmationHtml,
               icon: 'warning',
               showCancelButton: true,
               confirmButtonColor: '#31BCFF',
               cancelButtonColor: '#6b7280',
-              confirmButtonText: 'Yes, Create Shift',
-              cancelButtonText: 'Cancel',
+              confirmButtonText: t('labor_law.confirm'),
+              cancelButtonText: t('labor_law.cancel'),
               reverseButtons: true,
               heightAuto: false,
               allowOutsideClick: false,
@@ -571,7 +622,7 @@ export default function SchedulePage() {
 
             const violationCount = overridable.length;
             Swal.fire({
-              text: `Admin override: Shift created despite ${violationCount} labor law violation${violationCount > 1 ? 's' : ''}`,
+              text: t('labor_law.override_toast', { count: violationCount }),
               toast: true,
               position: 'top-end',
               showConfirmButton: false,
@@ -604,6 +655,8 @@ export default function SchedulePage() {
     }
 
     setLoading(true);
+    const successToastKey = formData.id ? 'toasts.shift_updated' : 'toasts.shift_created'
+    const failureToastKey = formData.id ? 'toasts.shift_update_failed' : 'toasts.shift_create_failed'
     try {
       const method = formData.id ? 'PUT' : 'POST';
       const url = formData.id 
@@ -621,7 +674,7 @@ export default function SchedulePage() {
         setShowShiftModal(false);
         
         Swal.fire({
-          text: `Shift ${formData.id ? 'updated' : 'created'} successfully!`,
+          text: t(successToastKey),
           toast: true,
           position: 'top-end',
           showConfirmButton: false,
@@ -635,7 +688,7 @@ export default function SchedulePage() {
         const errorData = await res.json();
         
         Swal.fire({
-          text: errorData.error || `Failed to ${formData.id ? 'update' : 'create'} shift.`,
+          text: errorData.error || t(failureToastKey),
           toast: true,
           position: 'top-end',
           showConfirmButton: false,
@@ -647,10 +700,10 @@ export default function SchedulePage() {
         });
       }
     } catch (error) {
-      console.error('Error submitting shift form:', error);
+      console.error('Error submitting shift form:', error)
       
       Swal.fire({
-        text: `Failed to ${formData.id ? 'update' : 'create'} shift.`,
+        text: t(failureToastKey),
         toast: true,
         position: 'top-end',
         showConfirmButton: false,
@@ -659,9 +712,10 @@ export default function SchedulePage() {
         customClass: {
           popup: 'swal-toast-wide'
         }
-      });
+      })
+    } finally {
+      setLoading(false)
     }
-    setLoading(false);
   };
 
   const handleShiftDelete = async (shiftId: string) => {
@@ -674,14 +728,14 @@ export default function SchedulePage() {
       })
 
       if (!res.ok) {
-        throw new Error('Failed to delete shift')
+        throw new Error(t('toasts.shift_delete_failed'))
       }
 
       await fetchShifts()
       setShowShiftModal(false)
 
       Swal.fire({
-        text: 'Shift deleted successfully!',
+        text: t('toasts.shift_deleted'),
         toast: true,
         position: 'top-end',
         showConfirmButton: false,
@@ -694,7 +748,7 @@ export default function SchedulePage() {
     } catch (error) {
       console.error('Error deleting shift:', error)
       Swal.fire({
-        text: 'Failed to delete shift.',
+        text: t('toasts.shift_delete_failed'),
         toast: true,
         position: 'top-end',
         showConfirmButton: false,
@@ -947,9 +1001,9 @@ export default function SchedulePage() {
             <div
               className="flex md:hidden gap-2"
               role="tablist"
-              aria-label="Schedule view types (mobile)"
+              aria-label={t('view_tabs.aria_mobile')}
             >
-              {VIEW_TABS.map(tab => {
+              {viewTabs.map(tab => {
                 const isActive = scheduleViewType === tab.value
                 return (
                   <button
@@ -973,9 +1027,9 @@ export default function SchedulePage() {
             <div
               className="hidden md:flex w-full gap-2 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory"
               role="tablist"
-              aria-label="Schedule view types"
+              aria-label={t('view_tabs.aria_desktop')}
             >
-              {VIEW_TABS.map(tab => {
+              {viewTabs.map(tab => {
                 const isActive = scheduleViewType === tab.value
                 const Icon = tab.icon
                 return (

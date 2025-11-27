@@ -5,7 +5,8 @@
     "users": "Brukere",
     "categories": "Kategorier",
     "functions": "Funksjoner",
-    "employee_groups": "Ansattgrupper",
+    "employees": "Medarbeidere",
+    "employee_groups": "Medarbeidergrupper",
     "contracts": "Kontrakter",
     "documents": "Dokumenter",
     "schedule": "Tidsplan",
@@ -59,7 +60,7 @@
         "view_details": "Åpne stemplingsur",
         "default_role": "Teammedlem",
         "unscheduled_label": "Uplanlagt arbeid",
-        "active_admin": "Ansatte stemplet inn: {{count}}",
+        "active_admin": "Medarbeidere stemplet inn: {{count}}",
         "loading": "Laster oppmøte..."
       }
     },
@@ -68,7 +69,7 @@
       "subtitle": "Oppmøter",
       "empty": "Ingen oppmøteoppdateringer ennå.",
       "view_punch_clock": "Åpne stemplingsur",
-      "unknown_employee": "Ukjent ansatt",
+      "unknown_employee": "Ukjent medarbeider",
       "working_since": "Jobber siden {{time}}",
       "worked_window": "{{inTime}} - {{outTime}}",
       "punch_in": "Stemple inn",
@@ -83,7 +84,7 @@
       "empty": "Ingen vakter planlagt denne uken.",
       "range_label": "Uke {{start}} – {{end}}",
       "no_assignment": "Ingen tilknytning",
-      "unassigned_employee": "Ikke tildelt ansatt",
+      "unassigned_employee": "Ikke tildelt medarbeider",
       "status": {
         "SCHEDULED": "Planlagt",
         "WORKING": "I arbeid",
@@ -92,7 +93,7 @@
       }
     },
     "stats": {
-      "active_employees": "Aktive ansatte",
+      "active_employees": "Aktive medarbeidere",
       "shifts_in_progress": "Pågående vakter",
       "pending_approvals": "Avventer godkjenning",
       "hours_logged_this_week": "Timer logget denne uken"
@@ -114,22 +115,22 @@
     }
   },
   "employees": {
-    "title": "Ansatte",
-    "description": "Administrer organisasjonens ansatte og deres informasjon",
-    "search_placeholder": "Søk etter navn, ansattnummer...",
-    "add_employee": "Legg til ansatt",
-    "create_employee": "Opprett ansatt",
-    "edit_employee": "Rediger ansatt",
-    "delete_employee": "Slett ansatt",
-    "employee_details": "Ansattdetaljer",
-    "employee_number": "Ansattnummer",
+    "title": "Medarbeidere",
+    "description": "Administrer organisasjonens medarbeidere og deres informasjon",
+    "search_placeholder": "Søk etter navn, medarbeidernummer...",
+    "add_employee": "Legg til medarbeider",
+    "create_employee": "Opprett medarbeider",
+    "edit_employee": "Rediger medarbeider",
+    "delete_employee": "Slett medarbeider",
+    "employee_details": "Medarbeiderdetaljer",
+    "employee_number": "Medarbeidernummer",
     "first_name": "Fornavn",
     "last_name": "Etternavn",
     "email": "E-post",
     "phone": "Telefon",
     "mobile": "Mobil",
     "department": "Avdeling",
-    "employee_group": "Ansattgruppe",
+    "employee_group": "Medarbeidergruppe",
     "hire_date": "Ansettelsesdato",
     "status": "Status",
     "actions": "Handlinger",
@@ -141,10 +142,10 @@
     "save": "Lagre",
     "cancel": "Avbryt",
     "loading": "Laster...",
-    "no_employees": "Ingen ansatte funnet",
+    "no_employees": "Ingen medarbeidere funnet",
     "no_employees_message": "Prøv å justere søkeordene",
-    "get_started": "Kom i gang ved å legge til din første ansatte",
-    "add_first_employee": "Legg til første ansatte",
+    "get_started": "Kom i gang ved å legge til din første medarbeider",
+    "add_first_employee": "Legg til første medarbeider",
     "showing": "Viser {{current}} av {{total}}",
     "team_leader": "Teamleder",
     "no_group": "Ingen gruppe",
@@ -152,8 +153,8 @@
     "set_pin": "Sett PIN",
     "confirm_delete": "Er du sikker?",
     "delete_warning": "Du vil ikke kunne angre dette!",
-    "delete_success": "Ansatt har blitt slettet.",
-    "delete_error": "Kunne ikke slette ansatt.",
+    "delete_success": "Medarbeider har blitt slettet.",
+    "delete_error": "Kunne ikke slette medarbeider.",
     "pin_modal": {
       "title": "Sett PIN for {{name}}",
       "pin_label": "6-sifret PIN",
@@ -165,29 +166,29 @@
       "setting": "Setter PIN...",
       "invalid_pin": "PIN må være nøyaktig 6 siffer",
       "success": "PIN har blitt satt!",
-      "email_sent": "PIN-koden har blitt sendt til den ansattes e-postadresse.",
+      "email_sent": "PIN-koden har blitt sendt til medarbeiderens e-postadresse.",
       "error": "Kunne ikke sette PIN. Prøv igjen."
     },
     "edit_page": {
-      "title": "Rediger ansatt",
-      "back_to_employees": "Tilbake til ansatte",
+      "title": "Rediger medarbeider",
+      "back_to_employees": "Tilbake til medarbeidere",
       "try_again": "Prøv igjen",
-      "employee_info": "Administrer ansattinformasjon, skift, lønnsslipper og sykmelding",
+      "employee_info": "Administrer medarbeiderinformasjon, skift, lønnsslipper og sykmelding",
       "tabs": {
-        "details": "Ansattdetaljer",
+        "details": "Medarbeiderdetaljer",
         "shifts": "Skift",
         "payslips": "Lønnsslipper",
         "sick_leave": "Sykmelding"
       },
       "shifts_tab": {
-        "title": "Ansattes skift",
+        "title": "Medarbeiderens skift",
         "showing_for": "Viser skift for {{name}}",
         "filter_shifts": "Filtrer skift",
         "search_placeholder": "Søk skift...",
         "all_months": "Alle måneder",
         "clear_filters": "Fjern filtre",
         "no_shifts": "Ingen skift funnet",
-        "no_shifts_assigned": "Denne ansatte har ingen skift tildelt ennå.",
+        "no_shifts_assigned": "Denne medarbeideren har ingen skift tildelt ennå.",
         "no_shifts_filtered": "Ingen skift samsvarer med dine filtre. Prøv å justere søkekriteriene.",
         "table": {
           "date_time": "Dato og tid",
@@ -204,27 +205,27 @@
         }
       },
       "payslips_tab": {
-        "title": "Ansattes lønnsslipper",
+        "title": "Medarbeiderens lønnsslipper",
         "description": "Last ned og vis lønnsslipper",
         "archive_title": "Lønnslipparkiv",
-        "archive_description": "Få tilgang til og last ned lønnsslipper for denne ansatte"
+        "archive_description": "Få tilgang til og last ned lønnsslipper for denne medarbeideren"
       },
       "sick_leave_tab": {
         "title": "Sykmeldingsregistre",
         "description": "Vis og administrer sykmeldingsforespørsler",
         "no_records": "Ingen sykmeldingsregistre",
-        "no_records_description": "Denne ansatte har ingen sykmeldingsregistre ennå."
+        "no_records_description": "Denne medarbeideren har ingen sykmeldingsregistre ennå."
       }
     },
     "create_page": {
-      "title": "Opprett ny ansatt",
+      "title": "Opprett ny medarbeider",
       "loading": "Laster skjemadata...",
       "back_to_dashboard": "Tilbake til dashbord",
       "try_again": "Prøv igjen"
     },
     "table": {
-      "employee": "Ansatt",
-      "employee_no": "Ansatt nr.",
+      "employee": "Medarbeider",
+      "employee_no": "Medarbeider nr.",
       "department": "Avdeling",
       "group": "Gruppe",
       "contact": "Kontakt",
@@ -233,8 +234,8 @@
       "no_group": "Ingen gruppe",
       "send_invite": "Send invitasjon",
       "set_pin": "Sett PIN",
-      "edit_employee": "Rediger ansatt",
-      "delete_employee": "Slett ansatt"
+      "edit_employee": "Rediger medarbeider",
+      "delete_employee": "Slett medarbeider"
     },
     "invite_modal": {
       "title": "Send invitasjon",
@@ -253,13 +254,13 @@
       "female": "Kvinne",
       "other": "Annet",
       "social_security_no": "Personnummer",
-      "employee_number": "Ansattnummer",
+      "employee_number": "Medarbeidernummer",
       "date_of_hire": "Ansettelsesdato",
       "hours_per_month": "Timer per måned",
       "department": "Avdeling",
       "select_department": "Velg en avdeling",
-      "employee_group": "Ansattgruppe",
-      "select_employee_group": "Velg en ansattgruppe",
+      "employee_group": "Medarbeidergruppe",
+      "select_employee_group": "Velg en medarbeidergruppe",
       "no_group": "Ingen gruppe",
       "address": "Adresse",
       "mobile": "Mobil",
@@ -269,43 +270,43 @@
     }
   },
   "employee_groups": {
-    "title": "Ansattgrupper",
-    "description": "Administrer ansattgrupper og deres lønnsinnstillinger",
-    "create_group": "Opprett ansattgruppe",
-    "edit_group": "Rediger ansattgruppe",
-    "delete_group": "Slett ansattgruppe",
-    "search_placeholder": "Søk ansattgrupper...",
-    "showing": "Viser {{current}} av {{total}} ansattgrupper",
-    "no_groups_found": "Ingen ansattgrupper funnet",
+    "title": "Medarbeidergrupper",
+    "description": "Administrer medarbeidergrupper og deres lønnsinnstillinger",
+    "create_group": "Opprett medarbeidergruppe",
+    "edit_group": "Rediger medarbeidergruppe",
+    "delete_group": "Slett medarbeidergruppe",
+    "search_placeholder": "Søk medarbeidergrupper...",
+    "showing": "Viser {{current}} av {{total}} medarbeidergrupper",
+    "no_groups_found": "Ingen medarbeidergrupper funnet",
     "adjust_search": "Prøv å justere søkeordene",
-    "get_started": "Kom i gang ved å opprette din første ansattgruppe",
+    "get_started": "Kom i gang ved å opprette din første medarbeidergruppe",
     "create_first_group": "Opprett første gruppe",
     "confirm_delete": "Er du sikker?",
     "delete_warning": "Du vil ikke kunne angre dette!",
     "delete_confirm": "Ja, slett den!",
     "deleted": "Slettet!",
-    "delete_success": "Ansattgruppe har blitt slettet.",
-    "delete_error": "Kunne ikke slette ansattgruppe. Prøv igjen.",
-    "error_loading": "Kunne ikke laste ansattgrupper. Prøv igjen senere.",
+    "delete_success": "Medarbeidergruppe har blitt slettet.",
+    "delete_error": "Kunne ikke slette medarbeidergruppe. Prøv igjen.",
+    "error_loading": "Kunne ikke laste medarbeidergrupper. Prøv igjen senere.",
     "error_invalid_response": "Ugyldig responsformat fra server",
     "create_page": {
-      "title": "Opprett ny ansattgruppe",
-      "back_to_groups": "Tilbake til ansattgrupper",
+      "title": "Opprett ny medarbeidergruppe",
+      "back_to_groups": "Tilbake til medarbeidergrupper",
       "try_again": "Prøv igjen"
     },
     "edit_page": {
-      "title": "Rediger ansattgruppe",
-      "back_to_groups": "Tilbake til ansattgrupper",
+      "title": "Rediger medarbeidergruppe",
+      "back_to_groups": "Tilbake til medarbeidergrupper",
       "try_again": "Prøv igjen",
-      "loading": "Laster ansattgruppe...",
-      "error_not_found": "Ansattgruppe ikke funnet"
+      "loading": "Laster medarbeidergruppe...",
+      "error_not_found": "Medarbeidergruppe ikke funnet"
     },
     "table": {
       "group_name": "Gruppenavn",
       "wage_type": "Lønnstype",
       "hourly_wage": "Timelønn",
       "wage_shift": "Lønn/Skift",
-      "employees": "Ansatte"
+      "employees": "Medarbeidere"
     },
     "wage_types": {
       "hourly": "Timelønn",
@@ -329,17 +330,17 @@
     }
   },
   "availability": {
-    "title": "Ansattes tilgjengelighet",
-    "description": "Administrer og vis ansattes tilgjengelighet på tvers av alle avdelinger",
+    "title": "Medarbeidernes tilgjengelighet",
+    "description": "Administrer og vis medarbeidernes tilgjengelighet på tvers av alle avdelinger",
     "stats": {
-      "total_employees": "Totalt ansatte",
+      "total_employees": "Totalt antall medarbeidere",
       "available_today": "Tilgjengelige i dag",
       "unavailable_today": "Utilgjengelige i dag",
       "pending_requests": "Ventende forespørsler"
     },
     "filters": {
-      "search_placeholder": "Søk ansatte...",
-      "all_employees": "Alle ansatte",
+      "search_placeholder": "Søk medarbeidere...",
+      "all_employees": "Alle medarbeidere",
       "available_today": "Tilgjengelige i dag",
       "unavailable_today": "Utilgjengelige i dag",
       "all_departments": "Alle avdelinger"
@@ -349,7 +350,7 @@
       "list": "Liste"
     },
     "pagination": {
-      "showing": "Viser {{current}} av {{total}} ansatte",
+      "showing": "Viser {{current}} av {{total}} medarbeidere",
       "previous": "Forrige",
       "next": "Neste",
       "page_of": "Side {{current}} av {{total}}"
@@ -393,17 +394,17 @@
   },
   "punch_clock": {
     "title": "Stemplingsur",
-    "description": "Spor ansattes oppmøte og administrer skifttider",
+    "description": "Spor medarbeidernes oppmøte og administrer skifttider",
     "current_time": "Nåværende tid",
     "select_date": "Velg dato",
-    "search_placeholder": "Søk ansatte eller avdelinger...",
+    "search_placeholder": "Søk medarbeidere eller avdelinger...",
     "filters": {
       "show_all": "Vis alle",
       "clocked_in": "Stemplet inn",
       "clocked_out": "Stemplet ut",
       "on_break": "På pause"
     },
-    "employee_list": "Ansattliste",
+    "employee_list": "Medarbeiderliste",
     "department": "Avdeling",
     "status": "Status",
     "shift_time": "Skifttid",
@@ -412,18 +413,18 @@
     "clock_out": "Stemple ut",
     "start_break": "Start pause",
     "end_break": "Avslutt pause",
-    "no_employees": "Ingen ansatte funnet for valgt dato",
+    "no_employees": "Ingen medarbeidere funnet for valgt dato",
     "error": "Feil",
     "retry": "Prøv igjen"
   },
   "shifts": {
     "title": "Skiftoversikt",
-    "description": "Administrer ansattes skift og tidsplaner på tvers av alle avdelinger",
+    "description": "Administrer medarbeidernes skift og tidsplaner på tvers av alle avdelinger",
     "create_shift": "Opprett skift",
     "edit_shift": "Rediger skift",
     "delete_shift": "Slett skift",
     "shift_details": "Skiftdetaljer",
-    "search_placeholder": "Søk skift etter ansatt, avdeling eller type...",
+    "search_placeholder": "Søk skift etter medarbeider, avdeling eller type...",
     "showing": "Viser {{current}} av {{total}} skift",
     "showing_paginated": "Viser {{start}} til {{end}} av {{total}} skift ({{totalAll}} totalt)",
     "page_info": "Side {{current}} av {{total}}",
@@ -441,15 +442,15 @@
     "filters": {
       "all_departments": "Alle avdelinger",
       "all_groups": "Alle grupper",
-      "all_employees": "Alle ansatte",
+      "all_employees": "Alle medarbeidere",
       "select_department": "Velg avdeling",
       "select_group": "Velg gruppe",
-      "select_employees": "Velg ansatte",
+      "select_employees": "Velg medarbeidere",
       "clear_filters": "Fjern filtre",
       "apply_filters": "Bruk filtre"
     },
     "table": {
-      "employee": "Ansatt",
+      "employee": "Medarbeider",
       "date": "Dato",
       "time": "Tid",
       "type": "Type",
@@ -470,14 +471,14 @@
     "end_time": "Sluttid",
     "break_duration": "Pausevarighet",
     "notes": "Notater",
-    "employee": "Ansatt",
+    "employee": "Medarbeider",
     "date": "Dato",
     "duration": "Varighet",
     "shift_exchanges": "Skiftbytter",
     "view_exchanges": "Vis bytter",
     "exchange_shift": "Bytt skift",
-    "select_new_employee": "Velg den nye ansatte for dette skiftet",
-    "select_employee": "Velg ansatt",
+    "select_new_employee": "Velg den nye medarbeideren for dette skiftet",
+    "select_employee": "Velg medarbeider",
     "exchange_success": "Skift byttet vellykket!",
     "exchange_error": "Kunne ikke bytte skift. Prøv igjen.",
     "scheduling_conflict": "Planleggingskonflikt",
@@ -509,7 +510,7 @@
     "delete_department": "Slett avdeling",
     "search_placeholder": "Søk avdelinger...",
     "total_departments": "Totalt avdelinger: {{count}}",
-    "total_employees": "Totalt ansatte: {{count}}",
+    "total_employees": "Totalt antall medarbeidere: {{count}}",
     "name": "Navn",
     "number": "Nummer",
     "address": "Adresse",
@@ -538,8 +539,8 @@
     "save_department": "Lagre avdeling",
     "cancel": "Avbryt",
     "department_info": "Avdelingsinformasjon",
-    "employees_count": "{{count}} ansatt",
-    "employees_count_plural": "{{count}} ansatte",
+    "employees_count": "{{count}} medarbeider",
+    "employees_count_plural": "{{count}} medarbeidere",
     "errors": {
       "name_exists": "En avdeling med dette navnet finnes allerede i virksomheten.",
       "number_exists": "Dette avdelingsnummeret er allerede i bruk.",
@@ -549,13 +550,13 @@
   },
   "pending_requests": {
     "title": "Ventende forespørsler",
-    "description": "Gjennomgå og administrer ansattforespørsler",
+    "description": "Gjennomgå og administrer medarbeiderforespørsler",
     "tabs": {
       "swap_requests": "Bytteforespørsler",
       "shift_requests": "Skiftforespørsler"
     },
     "columns": {
-      "employee": "Ansatt",
+      "employee": "Medarbeider",
       "type": "Type",
       "details": "Detaljer",
       "date": "Dato",
@@ -620,7 +621,7 @@
     "filters": "Filtre",
     "shifts_overview": "Skiftoversikt",
     "a_list_of_all_shifts_in_your_organization": "En liste over alle skift i organisasjonen din",
-    "search_shifts": "Søk skift etter ansatt, avdeling eller type...",
+    "search_shifts": "Søk skift etter medarbeider, avdeling eller type...",
     "create_shift": "Opprett skift",
     "welcome_back": "Velkommen tilbake",
     "navigate": "Naviger"

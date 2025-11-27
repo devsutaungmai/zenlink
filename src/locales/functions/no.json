@@ -24,9 +24,9 @@
   "color_hex": "Hex fargekode",
   "business_wide": "Bedriftsomfattende",
   "total_functions": "Totalt funksjoner",
-  "total_employees": "Totalt ansatte",
+  "total_employees": "Totalt antall medarbeidere",
   "total_shifts": "Totalt skift",
-  "employees_count": "ansatte",
+  "employees_count": "medarbeidere",
   "shifts_count": "skift",
   "edit": "Rediger",
   "delete": "Slett",
@@ -55,5 +55,5 @@
   "back_to_functions": "Tilbake til funksjoner",
   "save_function": "Lagre funksjon",
   "saving": "Lagrer...",
-  "assigned_employees": "Tildelte ansatte"
+  "assigned_employees": "Tildelte medarbeidere"
 }
