@@ -5,10 +5,29 @@ import { useCurrency } from '@/shared/hooks/useCurrency'
 import { ShiftWithRelations } from '@/types/schedule'
 import { getShiftSegmentsForDate, ShiftSegment } from './utils'
 
+interface FunctionItem {
+  id: string
+  name: string
+  color?: string | null
+  categoryId?: string | null
+  category?: {
+    id: string
+    name: string
+    department?: {
+      id: string
+    } | null
+    departments?: Array<{
+      department: {
+        id: string
+      }
+    }>
+  } | null
+}
+
 interface DayFunctionsTimelineProps {
   date: Date
   shifts: ShiftWithRelations[]
-  functions: any[]
+  functions: FunctionItem[]
   onAddShift: (formData?: any) => void
   onEditShift: (shift: ShiftWithRelations) => void
 }
@@ -17,6 +36,8 @@ interface FunctionRowMeta {
   id: string
   displayName: string
   color?: string | null
+  categoryId?: string | null
+  departmentId?: string | null
 }
 
 const HOURS = Array.from({ length: 24 }, (_, hour) => hour)
@@ -101,7 +122,9 @@ export default function DayFunctionsTimeline({
     const rows: FunctionRowMeta[] = functions.map(func => ({
       id: func.id,
       displayName: func.name,
-      color: func.color
+      color: func.color,
+      categoryId: func.categoryId || func.category?.id || null,
+      departmentId: func.category?.department?.id || func.category?.departments?.[0]?.department?.id || null
     }))
 
     rows.sort((a, b) => a.displayName.localeCompare(b.displayName))
@@ -231,7 +254,9 @@ export default function DayFunctionsTimeline({
                         onAddShift({
                           date: formattedDate,
                           startTime,
-                          functionId: row.id
+                          functionId: row.id,
+                          categoryId: row.categoryId || undefined,
+                          departmentId: row.departmentId || undefined
                         })
                       }}
                       className="absolute z-30 w-7 h-7 rounded-full bg-white border border-[#31BCFF] text-[#31BCFF] flex items-center justify-center shadow-sm hover:bg-[#31BCFF] hover:text-white focus-visible:outline-none"

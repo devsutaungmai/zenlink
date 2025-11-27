@@ -16,6 +16,7 @@ import {
   AdjustmentsHorizontalIcon
 } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
+import { downloadBlob } from '@/shared/utils/download'
 
 interface Employee {
   id: string
@@ -284,14 +285,8 @@ export default function PayrollReportsPage() {
       .join('\n')
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `payroll-report-${reportData.dateRange.startDate}-to-${reportData.dateRange.endDate}.csv`
-    document.body.appendChild(a)
-    a.click()
-    window.URL.revokeObjectURL(url)
-    document.body.removeChild(a)
+    const filename = `payroll-report-${reportData.dateRange.startDate}-to-${reportData.dateRange.endDate}.csv`
+    downloadBlob(blob, filename)
 
     Swal.fire({
       title: 'Success!',

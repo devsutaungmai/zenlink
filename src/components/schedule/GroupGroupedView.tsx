@@ -141,12 +141,19 @@ export default function GroupGroupedView({
   }
 
   const dayCount = Math.max(weekDates.length, 1)
+  const isTwoWeekView = dayCount > 7
+  const baseColumnMinWidth = 220
+  const dayColumnMinWidth = 120
+  const desktopMinWidth = isTwoWeekView ? `${baseColumnMinWidth + dayCount * dayColumnMinWidth}px` : undefined
   const mobileGridStyle: React.CSSProperties = {
     gridTemplateColumns: `repeat(${dayCount}, minmax(0, 1fr))`,
-    minWidth: dayCount > 7 ? `${dayCount * 72}px` : undefined
+    minWidth: isTwoWeekView ? `${dayCount * 72}px` : undefined
   }
   const desktopGridStyle: React.CSSProperties = {
-    gridTemplateColumns: `1fr repeat(${dayCount}, minmax(0, 1fr))`
+    gridTemplateColumns: isTwoWeekView
+      ? `minmax(${baseColumnMinWidth}px, 1fr) repeat(${dayCount}, minmax(${dayColumnMinWidth}px, 1fr))`
+      : `1fr repeat(${dayCount}, minmax(0, 1fr))`,
+    minWidth: desktopMinWidth
   }
 
   return (
@@ -293,8 +300,8 @@ export default function GroupGroupedView({
       </div>
 
       {/* Desktop View - Original Grid Layout */}
-      <div className="hidden md:block">
-      <div className="min-w-full">
+      <div className="hidden md:block overflow-x-auto">
+      <div className="min-w-full" style={desktopMinWidth ? { minWidth: desktopMinWidth } : undefined}>
         {/* Header Row */}
         <div
           className="grid border-b bg-gray-50 sticky top-0"

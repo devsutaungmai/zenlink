@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { downloadBlob } from '@/shared/utils/download'
 
 const getCurrentDateISO = () => new Date().toISOString().split('T')[0]
 
@@ -770,12 +771,8 @@ export default function PunchClockPage() {
         .join('\n')
 
       const blob = new Blob([csvContent], { type: 'text/csv' })
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `attendance_${getDateRange()?.startDate || selectedDate}.csv`
-      a.click()
-      window.URL.revokeObjectURL(url)
+      const filename = `attendance_${getDateRange()?.startDate || selectedDate}.csv`
+      downloadBlob(blob, filename)
     } catch (error) {
       console.error('Error exporting CSV:', error)
       Swal.fire({
@@ -815,12 +812,8 @@ export default function PunchClockPage() {
       
       if (response.ok) {
         const blob = await response.blob()
-        const url = window.URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `attendance_${dateRange?.startDate || selectedDate}.pdf`
-        a.click()
-        window.URL.revokeObjectURL(url)
+        const filename = `attendance_${dateRange?.startDate || selectedDate}.pdf`
+        downloadBlob(blob, filename)
       } else {
         alert('Failed to export PDF')
       }
