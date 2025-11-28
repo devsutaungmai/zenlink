@@ -56,6 +56,12 @@ export async function GET(request: NextRequest) {
             }
           }
         },
+        employeeGroups: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
         _count: {
           select: {
             employees: true,
@@ -101,6 +107,14 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     const { name, color, categoryId } = body
+    const hasEmployeeGroupPayload = Object.prototype.hasOwnProperty.call(body, 'employeeGroupIds')
+    if (hasEmployeeGroupPayload && !Array.isArray(body.employeeGroupIds)) {
+      return NextResponse.json({ error: 'employeeGroupIds must be an array' }, { status: 400 })
+    }
+
+    const employeeGroupIds: string[] = hasEmployeeGroupPayload
+      ? (body.employeeGroupIds as string[]).filter((id) => typeof id === 'string' && id.trim().length > 0)
+      : []
 
     console.log('Creating function with data:', { name, color, categoryId, businessId })
 
@@ -119,11 +133,34 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Category not found' }, { status: 404 })
     }
 
+    const uniqueEmployeeGroupIds = Array.from(new Set(employeeGroupIds))
+
+    if (uniqueEmployeeGroupIds.length > 0) {
+      const validGroups = await prisma.employeeGroup.findMany({
+        where: {
+          id: { in: uniqueEmployeeGroupIds },
+          businessId
+        },
+        select: { id: true }
+      })
+
+      if (validGroups.length !== uniqueEmployeeGroupIds.length) {
+        return NextResponse.json({ error: 'One or more employee groups could not be found' }, { status: 404 })
+      }
+    }
+
     const functionItem = await prisma.departmentFunction.create({
       data: {
         name,
         color,
-        categoryId
+        categoryId,
+        ...(uniqueEmployeeGroupIds.length > 0
+          ? {
+              employeeGroups: {
+                connect: uniqueEmployeeGroupIds.map((groupId) => ({ id: groupId }))
+              }
+            }
+          : {})
       },
       include: {
         category: {
@@ -137,6 +174,12 @@ export async function POST(request: NextRequest) {
                 name: true
               }
             }
+          }
+        },
+        employeeGroups: {
+          select: {
+            id: true,
+            name: true
           }
         }
       }

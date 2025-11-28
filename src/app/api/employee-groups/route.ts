@@ -25,7 +25,7 @@ export async function GET() {
         businessId: businessId
       },
       include: {
-        function: {
+        functions: {
           select: {
             id: true,
             name: true,
@@ -69,34 +69,6 @@ export async function POST(request: Request) {
       )
     }
 
-    if (!data.functionId) {
-      return NextResponse.json(
-        { error: 'Function is required' },
-        { status: 400 }
-      )
-    }
-
-    const targetFunction = await prisma.departmentFunction.findFirst({
-      where: {
-        id: data.functionId,
-        category: {
-          businessId: user.businessId
-        }
-      },
-      include: {
-        category: {
-          select: { id: true, name: true }
-        }
-      }
-    })
-
-    if (!targetFunction) {
-      return NextResponse.json(
-        { error: 'Function not found for this business' },
-        { status: 404 }
-      )
-    }
-
     const employeeGroup = await prisma.employeeGroup.create({
       data: {
         name: data.name,
@@ -106,13 +78,10 @@ export async function POST(request: Request) {
         salaryCode: data.salaryCode || null,
         business: {
           connect: { id: user.businessId }
-        },
-        function: {
-          connect: { id: data.functionId }
         }
       },
       include: {
-        function: {
+        functions: {
           select: {
             id: true,
             name: true,
@@ -130,6 +99,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(employeeGroup)
   } catch (error) {
+    console.error('Failed to create employee group:', error)
     return NextResponse.json(
       { error: 'Failed to create employee group', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }

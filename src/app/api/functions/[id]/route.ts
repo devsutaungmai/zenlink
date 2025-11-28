@@ -61,6 +61,12 @@ export async function GET(
             }
           }
         },
+        employeeGroups: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
         _count: {
           select: {
             employees: true,
@@ -111,6 +117,15 @@ export async function PUT(
 
     const body = await request.json()
     const { name, color, categoryId } = body
+    const shouldSyncEmployeeGroups = Object.prototype.hasOwnProperty.call(body, 'employeeGroupIds')
+    if (shouldSyncEmployeeGroups && !Array.isArray(body.employeeGroupIds)) {
+      return NextResponse.json({ error: 'employeeGroupIds must be an array' }, { status: 400 })
+    }
+
+    const employeeGroupIds: string[] = shouldSyncEmployeeGroups
+      ? (body.employeeGroupIds as string[]).filter((id) => typeof id === 'string' && id.trim().length > 0)
+      : []
+    const uniqueEmployeeGroupIds = Array.from(new Set(employeeGroupIds))
 
     const existingFunction = await prisma.departmentFunction.findFirst({
       where: {
@@ -138,12 +153,33 @@ export async function PUT(
       }
     }
 
+    if (shouldSyncEmployeeGroups && uniqueEmployeeGroupIds.length > 0) {
+      const validGroups = await prisma.employeeGroup.findMany({
+        where: {
+          id: { in: uniqueEmployeeGroupIds },
+          businessId
+        },
+        select: { id: true }
+      })
+
+      if (validGroups.length !== uniqueEmployeeGroupIds.length) {
+        return NextResponse.json({ error: 'One or more employee groups could not be found' }, { status: 404 })
+      }
+    }
+
     const functionItem = await prisma.departmentFunction.update({
       where: { id },
       data: {
         name,
         color,
-        categoryId
+        categoryId,
+        ...(shouldSyncEmployeeGroups
+          ? {
+              employeeGroups: {
+                set: uniqueEmployeeGroupIds.map((groupId) => ({ id: groupId }))
+              }
+            }
+          : {})
       },
       include: {
         category: {
@@ -157,6 +193,12 @@ export async function PUT(
                 name: true
               }
             }
+          }
+        },
+        employeeGroups: {
+          select: {
+            id: true,
+            name: true
           }
         }
       }

@@ -1099,13 +1099,13 @@ export default function DashboardPage() {
             <h1 className="text-3xl font-bold text-slate-900">{t('dashboard.overview_title')}</h1>
           </div>
         </div> */}
-          <section className="mt-4 rounded-3xl bg-gradient-to-r from-[#1f3b73] via-[#1f5fdb] to-[#22a3ff] p-6 text-white shadow-[0_20px_60px_rgba(30,64,175,0.35)]">
-            <div className="inline-flex items-center gap-2 text-sm uppercase tracking-wide text-white/80">
-              <CheckCircleIcon className="h-4 w-4 text-white/80" />
-              <span>{t('dashboard.hero.caption')}</span>
-            </div>
-            <h2 className="mt-2 text-2xl font-semibold">{t('dashboard.hero.title')}</h2>
-            <p className="mt-2 max-w-2xl text-sm text-white/90">{t('dashboard.hero.description')}</p>
+        <section className="mt-4 rounded-3xl bg-gradient-to-r from-[#1f3b73] via-[#1f5fdb] to-[#22a3ff] px-4 py-4 sm:p-6 text-white shadow-[0_20px_60px_rgba(30,64,175,0.35)]">
+          <div className="inline-flex items-center gap-2 text-xs sm:text-sm uppercase tracking-wide text-white/80">
+            <CheckCircleIcon className="h-4 w-4 text-white/80" />
+            <span>{t('dashboard.hero.caption')}</span>
+          </div>
+          <h2 className="mt-1 text-xl sm:mt-2 sm:text-2xl font-semibold">{t('dashboard.hero.title')}</h2>
+          <p className="mt-1 max-w-2xl text-xs sm:text-sm text-white/90">{t('dashboard.hero.description')}</p>
         </section>
 
         <section className="mt-6 rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_20px_50px_rgba(15,23,42,0.08)]">

@@ -41,6 +41,10 @@ interface FunctionItem {
     name: string
     color?: string | null
   } | null
+  employeeGroups?: Array<{
+    id: string
+    name: string
+  }>
 }
 
 interface FilterOptions {
@@ -152,10 +156,25 @@ export default function ScheduleHeader({
     ? safeFunctions.filter(f => f.categoryId === selectedCategoryId)
     : safeFunctions
   
-  // Filter employees based on search query
+  const employeeGroupFilterIds = filters?.employeeGroupIds ?? []
+
+  // Filter employees based on search query and selected employee groups (if any)
   const filteredEmployees = safeEmployees.filter(employee => {
     const fullName = `${employee.firstName} ${employee.lastName}`.toLowerCase()
-    return fullName.includes(employeeSearchQuery.toLowerCase())
+    const matchesSearch = fullName.includes(employeeSearchQuery.toLowerCase())
+    if (!matchesSearch) {
+      return false
+    }
+
+    if (employeeGroupFilterIds.length === 0) {
+      return true
+    }
+
+    if (!employee.employeeGroupId) {
+      return false
+    }
+
+    return employeeGroupFilterIds.includes(employee.employeeGroupId)
   })
   
   const handleFilterChange = (key: keyof FilterOptions, value: any) => {

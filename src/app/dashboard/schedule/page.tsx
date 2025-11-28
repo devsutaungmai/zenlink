@@ -77,6 +77,47 @@ export default function SchedulePage() {
     timeTo: ''
   })
 
+  const applyFunctionGroupFilters = useCallback((functionId: string | null) => {
+    if (!functionId) {
+      return
+    }
+
+    const targetFunction = functions.find(func => func.id === functionId)
+    if (!targetFunction) {
+      return
+    }
+
+    const linkedGroupIds = Array.from(
+      new Set((targetFunction.employeeGroups ?? []).map((group: any) => group.id).filter(Boolean))
+    )
+
+    setFilters(prevFilters => {
+      if (linkedGroupIds.length === 0) {
+        return prevFilters
+      }
+
+      const groupsChanged =
+        linkedGroupIds.length !== prevFilters.employeeGroupIds.length ||
+        linkedGroupIds.some(id => !prevFilters.employeeGroupIds.includes(id))
+
+      if (!groupsChanged) {
+        return prevFilters
+      }
+
+      return {
+        ...prevFilters,
+        employeeGroupIds: linkedGroupIds
+      }
+    })
+  }, [functions])
+
+  useEffect(() => {
+    if (!selectedFunctionId) {
+      return
+    }
+    applyFunctionGroupFilters(selectedFunctionId)
+  }, [selectedFunctionId, applyFunctionGroupFilters])
+
   const { t } = useTranslation('schedule')
 
   const viewTabs = useMemo(
