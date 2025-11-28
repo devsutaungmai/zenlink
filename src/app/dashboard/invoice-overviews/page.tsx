@@ -31,6 +31,7 @@ import Link from "next/link"
 import { exportToPDF } from "@/shared/lib/invoiceHelper"
 import Swal from "sweetalert2"
 import RegisterPaymentDialog from "@/components/invoice/RegisterPaymentDialog"
+import CreditNoteDialog from "@/components/invoice/CreditNoteDialog"
 
 export enum InvoiceStatus {
     DRAFT = 'DRAFT',       // Not sent yet
@@ -79,76 +80,7 @@ export interface Invoice {
     sentAt?: Date | null
     paidAt?: Date | null
 }
-// Mock data for demonstration
-const mockInvoices = [
-    {
-        id: "1",
-        invoiceNo: "1000",
-        customer: "Marry Janes",
-        customerId: "10001",
-        project: "Ecommerce Proj...",
-        projectId: "1",
-        status: "Outstanding",
-        invoiceDate: "2025-11-20",
-        dueDate: "2025-12-04",
-        amountInclVAT: 720.0,
-        paid: 0.0,
-        outstanding: 720.0,
-        details: {
-            dateSent: "2025-11-20",
-            dueDate: "2025-12-04",
-            description: "Invoice sent",
-            sendingType: "Email",
-            email: "pyaephoo66@gmail.com",
-            amount: 720.0,
-        },
-    },
-    {
-        id: "2",
-        invoiceNo: "1001",
-        customer: "Marry Janes",
-        customerId: "10001",
-        project: "Ecommerce Proj...",
-        projectId: "1",
-        status: "Paid",
-        invoiceDate: "2025-11-20",
-        dueDate: "2025-12-04",
-        amountInclVAT: 800.0,
-        paid: 800.0,
-        outstanding: 0.0,
-        details: null,
-    },
-    {
-        id: "3",
-        invoiceNo: "1002",
-        customer: "Marry Janes",
-        customerId: "10001",
-        project: "",
-        projectId: "",
-        status: "Credited",
-        invoiceDate: "2025-11-20",
-        dueDate: "2025-12-04",
-        amountInclVAT: 700.0,
-        paid: 0.0,
-        outstanding: 0.0,
-        details: null,
-    },
-    {
-        id: "4",
-        invoiceNo: "1003",
-        customer: "Marry Janes",
-        customerId: "10001",
-        project: "",
-        projectId: "",
-        status: "Credit note",
-        invoiceDate: "2025-11-20",
-        dueDate: null,
-        amountInclVAT: -700.0,
-        paid: 0.0,
-        outstanding: 0.0,
-        details: null,
-    },
-]
+
 
 export default function InvoiceOverview() {
     const [invoices, setInvoices] = useState<Invoice[]>([])
@@ -164,11 +96,12 @@ export default function InvoiceOverview() {
     const [currentPage, setCurrentPage] = useState(1)
     const [itemsPerPage] = useState(10)
 
-    const totalPages = Math.ceil(mockInvoices.length / itemsPerPage)
+    const totalPages = Math.ceil(invoices.length / itemsPerPage)
     const startIndex = (currentPage - 1) * itemsPerPage
     const endIndex = startIndex + itemsPerPage
-    const paginatedInvoices = mockInvoices.slice(startIndex, endIndex)
-    const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+    const paginatedInvoices = invoices.slice(startIndex, endIndex)
+        const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] = useState<Invoice | null>(null);
+    const [selectedInvoiceForCredit, setSelectedInvoiceForCredit] = useState<Invoice | null>(null);
 
     useEffect(() => {
         fetchInvoices()
@@ -208,15 +141,15 @@ export default function InvoiceOverview() {
     }
 
     const selectedTotal = Array.from(selectedInvoices).reduce((sum, id) => {
-        const invoice = mockInvoices.find((inv) => inv.id === id)
-        return invoice ? sum + invoice.amountInclVAT : sum
+        const invoice = invoices.find((inv) => inv.id === id)
+        return invoice ? sum + Number(invoice.totalInclVAT) : sum
     }, 0)
 
     const toggleSelectAll = () => {
-        if (selectedInvoices.size === mockInvoices.length) {
+        if (selectedInvoices.size === invoices.length) {
             setSelectedInvoices(new Set())
         } else {
-            setSelectedInvoices(new Set(mockInvoices.map((inv) => inv.id)))
+            setSelectedInvoices(new Set(invoices.map((inv) => inv.id)))
         }
     }
 
@@ -429,7 +362,7 @@ export default function InvoiceOverview() {
                                     <th className="w-12 px-4 py-3">
                                         <input
                                             type="checkbox"
-                                            checked={selectedInvoices.size === mockInvoices.length && mockInvoices.length > 0}
+                                            checked={selectedInvoices.size === invoices.length && invoices.length > 0}
                                             onChange={toggleSelectAll}
                                             className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                                         />
@@ -522,7 +455,7 @@ export default function InvoiceOverview() {
                                             <td className="px-4 py-3 text-sm text-gray-900">{invoice.sentAt ? new Date(invoice.sentAt).getDate() : ""}</td>
                                             <td className="px-4 py-3 text-sm text-gray-900">{invoice.dueDate ? new Date(invoice.dueDate).getDate() : ""}</td>
                                             <td className="px-4 py-3 text-sm text-gray-900 text-right">{(invoice.totalInclVAT).toString()}</td>
-                                            <td className="px-4 py-3 text-sm text-gray-900 text-right">{invoice.status === "PAID" ? (invoice.totalInclVAT).toString():0.0}</td>
+                                            <td className="px-4 py-3 text-sm text-gray-900 text-right">{invoice.status === "PAID" ? (invoice.totalInclVAT).toString() : 0.0}</td>
                                             <td className="px-4 py-3 text-sm text-gray-900 text-right">{invoice.status === "PAID" ? 0.0 : (invoice.totalInclVAT).toString()}</td>
                                             <td className="px-2 py-3">
                                                 <button className="p-1 hover:bg-gray-200 rounded" onClick={() => handlePDf(invoice.id)}>
@@ -541,13 +474,12 @@ export default function InvoiceOverview() {
                                                             align="end"
                                                             className="min-w-[220px] bg-white rounded-lg shadow-lg border border-gray-200 p-1 z-50"
                                                         >
-                                                           {invoice.status !== "PAID" ? <DropdownMenu.Item className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2">
-                                                                <button
-                                                                    onClick={() => setShowPaymentDialog(true)}
-                                                                >
+                                                            {invoice.status !== "PAID" ? 
+                                                            <DropdownMenu.Item className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2"
+                                                             onSelect={() => setSelectedInvoiceForPayment(invoice)}>
+                                                               
                                                                     <CheckCircleIcon className="h-4 w-4" />
                                                                     Register payment
-                                                                </button>
                                                             </DropdownMenu.Item> : null}
                                                             {/* <DropdownMenu.Item className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2">
                                                                 <ClockIcon className="h-4 w-4" />
@@ -565,9 +497,10 @@ export default function InvoiceOverview() {
                                                                     <span className="text-base">📋</span>
                                                                     Copy invoice</Link>
                                                             </DropdownMenu.Item>
-                                                            <DropdownMenu.Item className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2">
-                                                                <span className="text-base">✓</span>
-                                                                Delete amount outstanding
+                                                            <DropdownMenu.Item className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2"
+                                                             onSelect={() => setSelectedInvoiceForCredit(invoice)}>
+                                                            <span className="text-base">✓</span>
+                                                                Credit Note
                                                             </DropdownMenu.Item>
                                                             {/* <DropdownMenu.Item className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2">
                                                                 <span className="text-base">✓</span>
@@ -625,14 +558,7 @@ export default function InvoiceOverview() {
                                                 </td>
                                             </tr>
                                         )}
-                                        <RegisterPaymentDialog
-                                            open={showPaymentDialog}
-                                            onOpenChange={setShowPaymentDialog}
-                                            paymentData={{customer: invoice.customer, invoiceId: invoice.id, amount: Number(invoice.totalInclVAT)}}
-                                        />
                                     </React.Fragment>
-
-
                                 ))}
                             </tbody>
                         </table>
@@ -694,30 +620,56 @@ export default function InvoiceOverview() {
                         <div className="px-4 py-4 flex items-center justify-end gap-12 text-sm">
                             <div className="flex items-center gap-2">
                                 <span className="text-gray-600">Number of invoices</span>
-                                <span className="font-semibold text-gray-900">{mockInvoices.length}</span>
+                                <span className="font-semibold text-gray-900">{invoices.length}</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <span className="text-gray-600">Total incl. VAT</span>
                                 <span className="font-semibold text-gray-900">
-                                    {mockInvoices.reduce((sum, inv) => sum + inv.amountInclVAT, 0).toFixed(2)}
+                                    {invoices.reduce((sum, inv) => sum + Number(inv.totalInclVAT), 0).toFixed(2)}
                                 </span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <span className="text-gray-600">Total paid</span>
                                 <span className="font-semibold text-gray-900">
-                                    {mockInvoices.reduce((sum, inv) => sum + inv.paid, 0).toFixed(2)}
+                                    {invoices.reduce((sum, inv) => sum + Number(inv.totalInclVAT), 0).toFixed(2)}
                                 </span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <span className="text-gray-600">Total outstanding</span>
                                 <span className="font-semibold text-gray-900">
-                                    {mockInvoices.reduce((sum, inv) => sum + inv.outstanding, 0).toFixed(2)}
+                                    {invoices.reduce((sum, inv) => sum + Number(inv.totalExclVAT), 0).toFixed(2)}
                                 </span>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+            {selectedInvoiceForPayment && (
+                <RegisterPaymentDialog
+                    open={true}
+                    onOpenChange={(open) => !open && setSelectedInvoiceForPayment(null)}
+                    paymentData={{
+                        customer: selectedInvoiceForPayment.customer,
+                        invoiceId: selectedInvoiceForPayment.id,
+                        amount: Number(selectedInvoiceForPayment.totalInclVAT)
+                    }}
+                    fetchInvoices={fetchInvoices}
+                />
+            )}
+
+            {selectedInvoiceForCredit && (
+                <CreditNoteDialog
+                    open={true}
+                    onOpenChange={(open) => !open && setSelectedInvoiceForCredit(null)}
+                    creditNoteData={{
+                        customer: selectedInvoiceForCredit.customer,
+                        invoiceId: selectedInvoiceForCredit.id,
+                        amount: Number(selectedInvoiceForCredit.totalInclVAT),
+                    }}
+                    fetchInvoices={fetchInvoices}
+                    
+                />
+            )}
         </div>
     )
 }

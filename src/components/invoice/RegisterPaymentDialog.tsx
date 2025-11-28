@@ -24,12 +24,15 @@ interface RegisterPaymentDialogProps {
         invoiceId: string;
         amount: number | null;
     }
+    fetchInvoices: () => Promise<void>; 
+
 }
 
 export default function RegisterPaymentDialog({
     open,
     onOpenChange,
-    paymentData
+    paymentData,
+    fetchInvoices
 }: RegisterPaymentDialogProps) {
     const router = useRouter()
 
@@ -73,9 +76,10 @@ export default function RegisterPaymentDialog({
             if (response.ok) {
                 onOpenChange(false);
                 // Refresh invoice list or show success message
+                await fetchInvoices();
+                router.refresh()
             }
-            router.push(`/dashboard/invoice-overviews`);
-            router.refresh()
+          
         } catch (error) {
             console.error('Failed to register payment:', error);
         }

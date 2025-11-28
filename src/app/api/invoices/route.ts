@@ -145,11 +145,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const invoiceNumber = await generateInvoiceNumber();
+    
+    console.log('Creating invoice with number:', invoiceNumber);
+
     
     // Create invoice with nested invoice line
     const invoice = await prisma.invoice.create({
       data: {
-        invoiceNumber: generateInvoiceNumber(businessId),
+        invoiceNumber: invoiceNumber,
         customerId,
         businessId,
         contactPersonId,

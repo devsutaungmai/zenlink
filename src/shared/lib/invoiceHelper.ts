@@ -54,11 +54,24 @@ export function calculateInvoiceTotals(
   }
 }
 
-export function generateInvoiceNumber(prefix: string = 'INV'): string {
+export async function generateInvoiceNumber() {
   const year = new Date().getFullYear()
-  const timestamp = Date.now()
-  return `${prefix}-${year}-${timestamp}`
+
+  const lastInvoice = await prisma.invoice.findFirst({
+    where: { invoiceNumber: { startsWith: `INV-${year}` } },
+    orderBy: { invoiceNumber: 'desc' }
+  })
+
+  let nextNumber = 1
+
+  if (lastInvoice) {
+    const parts = lastInvoice.invoiceNumber.split('-')
+    nextNumber = parseInt(parts[2]) + 1
+  }
+
+  return `INV-${year}-${String(nextNumber).padStart(6, '0')}`
 }
+
 
 export async function exportToPDF(invoiceId: string) {
   try {
@@ -125,6 +138,174 @@ export async function sendEmail(invoiceId: string) {
 }
 
 /**
+ * Create a credit note for an existing invoice
+ * This will:
+ * 1. Mark original invoice as CREDITED
+ * 2. Create new invoice with negative amounts (credit note)
+ * 3. Post credit note to ledger (reversed entries)
+ */
+export async function createCreditNote(params: {
+  originalInvoiceId: string;
+  reason?: string;
+  creditNoteDate?: Date;
+}) {
+  const { originalInvoiceId, reason, creditNoteDate = new Date() } = params;
+
+  // Fetch original invoice with all details
+  const originalInvoice = await prisma.invoice.findUnique({
+    where: { id: originalInvoiceId },
+    include: {
+      customer: true,
+      invoiceLines: {
+        include: {
+          product: true
+        }
+      },
+      project: true,
+      department: true
+    }
+  });
+
+  if (!originalInvoice) {
+    throw new Error('Original invoice not found');
+  }
+
+  // Validate invoice can be credited
+  if (originalInvoice.status === InvoiceStatus.DRAFT) {
+    throw new Error('Cannot credit a draft invoice');
+  }
+
+  if (originalInvoice.status === InvoiceStatus.CREDITED) {
+    throw new Error('Invoice has already been credited');
+  }
+
+  if (originalInvoice.status === InvoiceStatus.CREDIT_NOTE) {
+    throw new Error('Cannot credit a credit note');
+  }
+
+  // Generate credit note number
+  const creditNoteNumber = await generateCreditNoteNumber(originalInvoice.businessId);
+
+  let creditNote: any = null;
+
+  await prisma.$transaction(async (tx) => {
+    // 1. Update original invoice status to CREDITED
+    await tx.invoice.update({
+      where: { id: originalInvoiceId },
+      data: { 
+        status: InvoiceStatus.CREDITED,
+        updatedAt: new Date()
+      }
+    });
+
+    // 2. Create credit note (new invoice with negative amounts)
+    creditNote = await tx.invoice.create({
+      data: {
+        invoiceNumber: creditNoteNumber,
+        invoiceDate: creditNoteDate,
+        dueDate: creditNoteDate, // Credit notes don't have due dates
+        status: InvoiceStatus.CREDIT_NOTE,
+        
+        customerId: originalInvoice.customerId,
+        businessId: originalInvoice.businessId,
+        projectId: originalInvoice.projectId,
+        departmentId: originalInvoice.departmentId,
+        contactPersonId: originalInvoice.contactPersonId,
+        
+        // Negative amounts for credit note
+        totalExclVAT: -originalInvoice.totalExclVAT,
+        vatAmount: -originalInvoice.vatAmount,
+        vatPercentage: originalInvoice.vatPercentage,
+        totalInclVAT: -originalInvoice.totalInclVAT,
+        
+        // Link to original invoice
+        creditedInvoiceId: originalInvoiceId,
+        
+        notes: reason || `Kreditnota for faktura ${originalInvoice.invoiceNumber}`,
+        
+        invoiceLines: {
+          create: originalInvoice.invoiceLines.map(line => ({
+            productId: line.productId,
+            quantity: line.quantity, // Keep positive for display
+            pricePerUnit: line.pricePerUnit,
+            discountPercentage: line.discountPercentage,
+            
+            // Negative amounts for credit note
+            subtotal: -line.subtotal,
+            discountAmount: -line.discountAmount,
+            lineTotal: -line.lineTotal,
+            
+            productName: line.productName,
+            productNumber: line.productNumber,
+          }))
+        }
+      },
+      include: {
+        invoiceLines: {
+          include: {
+            product: {
+              include: {
+                salesAccount: {
+                  include: {
+                    ledgerAccount: true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+
+  });
+
+  // 3. Post credit note to ledger using the standard function
+    // The invoiceToLedgerPosting function will detect it's a credit note
+    // and automatically reverse the entries
+    if (!creditNote) {
+      throw new Error('Failed to create credit note');
+    }
+    await invoiceToLedgerPosting(creditNote.id);
+
+  return {
+    success: true,
+    creditNote,
+    message: `Credit note ${creditNoteNumber} created for invoice ${originalInvoice.invoiceNumber}`
+  };
+}
+
+/**
+ * Generate next credit note number
+ * Format: CN-YYYY-NNNN (e.g., CN-2025-0001)
+ */
+export async function generateCreditNoteNumber(businessId: string): Promise<string> {
+  const year = new Date().getFullYear();
+  const prefix = `CN-${year}-`;
+  
+  // Find last credit note for this year
+  const lastCreditNote = await prisma.invoice.findFirst({
+    where: {
+      businessId,
+      status: InvoiceStatus.CREDIT_NOTE,
+      invoiceNumber: {
+        startsWith: prefix
+      }
+    },
+    orderBy: {
+      invoiceNumber: 'desc'
+    }
+  });
+
+  let nextNumber = 1;
+  if (lastCreditNote) {
+    const lastNumber = parseInt(lastCreditNote.invoiceNumber.split('-')[2]);
+    nextNumber = lastNumber + 1;
+  }
+
+  return `${prefix}${nextNumber.toString().padStart(4, '0')}`;
+}
+
+/**
 * Post invoice to ledger when status changes to SENT
 * Creates entries for:
 * 1. DR 1500 (Accounts Receivable) / CR Sales Account (Revenue excl VAT)
@@ -159,7 +340,11 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
     throw new Error('Invoice not found');
   }
 
-  if (invoice.status !== InvoiceStatus.SENT) {
+  // Check if this is a credit note
+  const isCreditNote = invoice.status === InvoiceStatus.CREDIT_NOTE;
+
+  // For normal invoices, must be SENT status
+  if (!isCreditNote && invoice.status !== InvoiceStatus.SENT) {
     throw new Error('Invoice must be in SENT status to post to ledger');
   }
 
@@ -178,33 +363,28 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
 
   // Get standard accounts
   const accountsReceivable = await prisma.ledgerAccount.findFirst({
-    where: { accountNumber: 1500 }
+    where: { accountNumber: 1500, businessId }
   });
 
-   // Get VAT payable account (2740 - Utgående mva)
   const vatPayable = await prisma.ledgerAccount.findFirst({
-    where: { 
-      accountNumber: 2700  // Updated to 2740 as per Norwegian chart of accounts 
-    }
+    where: { accountNumber: 2700, businessId }
   });
 
-  if (!accountsReceivable) {
-    throw new Error('Required ledger account not found: 1500 (Kundefordringer)');
-  }
-
-  if (!vatPayable) {
-    throw new Error('Required ledger account not found: 2700 (Utgående mva)');
+  if (!accountsReceivable || !vatPayable) {
+    throw new Error('Required ledger accounts not found (1500, 2700)');
   }
 
   await prisma.$transaction(async (tx) => {
-    // Update invoice status to OUTSTANDING
-    await tx.invoice.update({
-      where: { id: invoice.id },
-      data: {
-        status: InvoiceStatus.OUTSTANDING,
-        sentAt: invoice.sentAt || new Date()
-      }
-    });
+    // Update invoice status (only for normal invoices, not credit notes)
+    if (!isCreditNote) {
+      await tx.invoice.update({
+        where: { id: invoice.id },
+        data: {
+          status: InvoiceStatus.OUTSTANDING,
+          sentAt: invoice.sentAt || new Date()
+        }
+      });
+    }
 
     for (const line of invoice.invoiceLines) {
       const salesAccount = line.product.salesAccount;
@@ -212,51 +392,87 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
         throw new Error(`Product ${line.productName} has no linked ledger account`);
       }
 
-      const lineTotal = parseFloat(line.lineTotal.toString());
+      const lineTotal = Math.abs(parseFloat(line.lineTotal.toString()));
 
-      // Entry: DR 1500 (Accounts Receivable) / CR 3000 Sales Account (Revenue excl VAT)
-      // One entry per product line
-      await tx.ledgerEntry.create({
-        data: {
-          businessId,
-          invoiceId: invoice.id,
-          documentDate,
-          postingDate,
-          debitAccountId: accountsReceivable.id,
-          creditAccountId: salesAccount.ledgerAccountId,
-          amount: lineTotal,
-          projectId: invoice.projectId,
-          departmentId: invoice.departmentId,
-          description: `Faktura nummer ${invoice.invoiceNumber} til ${invoice.customer?.customerName || 'customer'}`
-        }
-      });
+      if (isCreditNote) {
+        // CREDIT NOTE: DR Sales Account / CR 1500 (REVERSED)
+        await tx.ledgerEntry.create({
+          data: {
+            businessId,
+            invoiceId: invoice.id,
+            documentDate,
+            postingDate,
+            debitAccountId: salesAccount.ledgerAccountId,
+            creditAccountId: accountsReceivable.id,
+            amount: lineTotal,
+            projectId: invoice.projectId,
+            departmentId: invoice.departmentId,
+            description: `Kreditnota ${invoice.invoiceNumber}`
+          }
+        });
+      } else {
+        // NORMAL INVOICE: DR 1500 / CR Sales Account
+        await tx.ledgerEntry.create({
+          data: {
+            businessId,
+            invoiceId: invoice.id,
+            documentDate,
+            postingDate,
+            debitAccountId: accountsReceivable.id,
+            creditAccountId: salesAccount.ledgerAccountId,
+            amount: lineTotal,
+            projectId: invoice.projectId,
+            departmentId: invoice.departmentId,
+            description: `Faktura nummer ${invoice.invoiceNumber} til ${invoice.customer?.customerName || 'customer'}`
+          }
+        });
+      }
     }
 
-    // Entry: DR 1500 / CR VAT Account - Amount: invoice.vatAmount
-     const vatAmount = parseFloat(invoice.vatAmount.toString());
+    // VAT Entry
+    const vatAmount = Math.abs(parseFloat(invoice.vatAmount.toString()));
     
     if (vatAmount > 0) {
-      await tx.ledgerEntry.create({
-        data: {
-          businessId,
-          invoiceId: invoice.id,
-          documentDate,
-          postingDate,
-          debitAccountId: accountsReceivable.id,
-          creditAccountId: vatPayable.id,
-          amount: vatAmount,
-          projectId: invoice.projectId,
-          departmentId: invoice.departmentId,
-          description: `Faktura nummer ${invoice.invoiceNumber} til ${invoice.customer?.customerName || 'customer'} - MVA`
-        }
-      });
+      if (isCreditNote) {
+        // CREDIT NOTE: DR 2700 / CR 1500 (REVERSED)
+        await tx.ledgerEntry.create({
+          data: {
+            businessId,
+            invoiceId: invoice.id,
+            documentDate,
+            postingDate,
+            debitAccountId: vatPayable.id,
+            creditAccountId: accountsReceivable.id,
+            amount: vatAmount,
+            projectId: invoice.projectId,
+            departmentId: invoice.departmentId,
+            description: `Kreditnota ${invoice.invoiceNumber} - MVA`
+          }
+        });
+      } else {
+        // NORMAL INVOICE: DR 1500 / CR 2700
+        await tx.ledgerEntry.create({
+          data: {
+            businessId,
+            invoiceId: invoice.id,
+            documentDate,
+            postingDate,
+            debitAccountId: accountsReceivable.id,
+            creditAccountId: vatPayable.id,
+            amount: vatAmount,
+            projectId: invoice.projectId,
+            departmentId: invoice.departmentId,
+            description: `Faktura nummer ${invoice.invoiceNumber} - MVA`
+          }
+        });
+      }
     }
   });
 
   return {
     success: true,
-    message: `Invoice ${invoice.invoiceNumber} posted to ledger`,
-    entriesCreated: invoice.invoiceLines.length // One per product line (VAT will be added later)
+    message: `${isCreditNote ? 'Credit note' : 'Invoice'} ${invoice.invoiceNumber} posted to ledger`,
+    entriesCreated: invoice.invoiceLines.length + (Number(invoice.vatAmount) > 0 ? 1 : 0)
   };
 }
 
@@ -372,6 +588,7 @@ export async function generateLedgerReport(
         invoice: {
           select: {
             invoiceNumber: true,
+            status: true,
             customer: {
               select: { customerName: true }
             }
@@ -391,13 +608,21 @@ export async function generateLedgerReport(
       continue;
     }
 
+    //if it is normal debit like ASSET or EXPENSE (cash, bank, supplies, rent, etc)
     const isNormalDebit = account.type === 'ASSET' || account.type === 'EXPENSE';
     let runningBalance = openingBalance;
+
+    // console.log("ledger entries for account", account.accountNumber, entries);
 
     const ledgerEntries = entries.map(entry => {
       const amount = parseFloat(entry.amount.toString());
       const isDebit = entry.debitAccountId === account.id;
-      
+
+    // Account Type	      Normal Side	    Debit does…	  Credit does…
+    //ASSET / EXPENSE	    Debit	          Increase	    Decrease
+    //LIABILITY/EQUITY    Credit	        Decrease	    Increase
+    ///INCOME	
+
       // Calculate movement based on account type
       let movement = 0;
       if (isDebit) {

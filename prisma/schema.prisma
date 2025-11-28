@@ -894,6 +894,11 @@ model Invoice {
   contactPersonId String? @map("contact_person_id")
   contactPerson   ContactPerson? @relation(fields: [contactPersonId], references: [id], onDelete: SetNull)
 
+   // Credit note relationship
+  creditedInvoiceId String?   @map("credited_invoice_id")
+  creditedInvoice   Invoice?  @relation("CreditNotes", fields: [creditedInvoiceId], references: [id], onDelete: SetNull)
+  creditNotes       Invoice[] @relation("CreditNotes")
+
   // Summary calculations
   totalExclVAT  Decimal @map("total_excl_vat") @db.Decimal(10, 2)
   vatAmount     Decimal @map("vat_amount") @db.Decimal(10, 2)
@@ -963,6 +968,8 @@ enum InvoiceStatus {
   OVERDUE // Past due date
   CANCELLED // Cancelled
   OUTSTANDING //  sent and not paid yet
+  CREDITED        // Original invoice that was credited
+  CREDIT_NOTE     // Credit note issued
 
   @@map("invoice_status")
 }
