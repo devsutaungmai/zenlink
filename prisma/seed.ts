@@ -367,52 +367,7 @@ async function main() {
 
   ]);
 
-
   console.log('✓ Sales Accounts created');
-  console.log('Creating projects...');
-
-  const departments = await prisma.department.findMany({
-    where: { businessId: business.id },
-  });
-
-  const customers = await prisma.customer.findMany({
-    where: { businessId: business.id },
-  });
-
-  if (departments.length === 0 || customers.length === 0) {
-    console.log('No departments or customers found. Skipping projects.');
-    return;
-  }
-
-  console.log(`Found ${customers.length} customers`)
-
-  for (const customer of customers) {
-    // 2. Check if contact person already exists (avoid duplicate seeds)
-    const existingContact = await prisma.contactPerson.findFirst({
-      where: { customerId: customer.id },
-    })
-
-    if (existingContact) {
-      console.log(
-        `Skipping ${customer.customerName} — contact already exists`
-      )
-      continue
-    }
-
-    // 3. Create default contact
-    await prisma.contactPerson.create({
-      data: {
-        customerId: customer.id,
-        name: `${customer.customerName} Main Contact`,
-        title: 'Manager',
-        phoneNumber: '099-999-9999',
-        email: `contact+${customer.id.slice(0, 6)}@example.com`,
-        isPrimary: true,
-      },
-    })
-
-    console.log(`Created contact for ${customer.customerName}`)
-  }
 
   const categories = [
     { name: "Internal" },

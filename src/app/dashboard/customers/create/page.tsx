@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
 import CustomerPaymentTermComponent from '@/components/invoice/CustomerPaymentTerm'
+import CustomerContactComponent from '@/components/invoice/CustomerContact'
 
 export interface Department {
     id: string
@@ -17,6 +18,13 @@ export interface InvoicePaymentTerms {
     dueDateType: 'DAYS_AFTER' | 'FIXED_DATE',
     dueDateValue?: number,
     dueDateUnit: 'DAYS' | 'MONTHS'
+}
+
+export interface CustomerContact {
+    name: string
+    phoneNumber: string
+    email: string,
+    isPrimary: boolean
 }
 
 export default function CreateCustomersPage() {
@@ -40,7 +48,8 @@ export default function CreateCustomersPage() {
         deliveryAddressPostalCode: string
         deliveryAddressPostalAddress: string
         departmentId: string
-        customerPaymentTerm: InvoicePaymentTerms
+        customerPaymentTerm: InvoicePaymentTerms,
+        customerContacts?: CustomerContact[]
     }>({
         customerName: "",
         customerNumber: "",
@@ -59,7 +68,8 @@ export default function CreateCustomersPage() {
             dueDateType: "DAYS_AFTER",
             dueDateValue: 14,
             dueDateUnit: "DAYS"
-        }
+        },
+        customerContacts: []
     })
     useEffect(() => {
         fetchDepartments();
@@ -79,6 +89,7 @@ export default function CreateCustomersPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setLoading(true)
+        console.log('Submitting form data:', formData)
 
         try {
             const res = await fetch('/api/customers', {
@@ -368,10 +379,17 @@ export default function CreateCustomersPage() {
                                     'MONTHS'
                                 )
                             }
-                            console.log('Settings updated:', updatedPaymentTerm)
 
                             setFormData({ ...formData, customerPaymentTerm: updatedPaymentTerm })
                         }}
+                    />
+
+                    <CustomerContactComponent 
+                    defaultValues={formData.customerContacts}
+                    oncustomerContactsChange={(customerContacts)=>{
+                        setFormData({ ...formData, customerContacts: customerContacts});
+                        // console.log('FormData of Customer Contact:', formData);
+                    }}
                     />
 
                     {/* Form Actions */}

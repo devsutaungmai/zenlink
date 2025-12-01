@@ -83,7 +83,7 @@ export async function PUT(
     }
 
     const body = await request.json()
-    const { customerPaymentTerm, ...restData } = body
+    const { customerPaymentTerm,customerContacts, ...restData } = body
 
     // Check if customer exists
     const existingCustomer = await prisma.customer.findFirst({
@@ -145,6 +145,15 @@ export async function PUT(
       data: {
         ...restData,
         invoicepaymentTermsId: paymentTermsId,
+        contactPersons: { 
+          deleteMany: {},
+          create: (customerContacts || []).map((contact: any) => ({
+            name: contact.name,
+            phoneNumber: contact.phoneNumber,
+            email: contact.email,
+            isPrimary: contact.isPrimary,
+          }))
+        }
       }
     })
 

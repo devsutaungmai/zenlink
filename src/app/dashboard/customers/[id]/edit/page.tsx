@@ -8,6 +8,7 @@ import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
 import { Department, InvoicePaymentTerms } from '../../create/page'
 import CustomerPaymentTermComponent, { CustomerPaymentTermForComponent } from '@/components/invoice/CustomerPaymentTerm'
+import CustomerContactComponent, { CustomerContact } from '@/components/invoice/CustomerContact'
 
 export default function EditCustomersPage({ params }: { params: Promise<{ id: string }> }) {
     const resolvedParams = use(params)
@@ -36,7 +37,8 @@ export default function EditCustomersPage({ params }: { params: Promise<{ id: st
         deliveryAddressPostalCode: string
         deliveryAddressPostalAddress: string
         departmentId: string
-        customerPaymentTerm: InvoicePaymentTerms
+        customerPaymentTerm: InvoicePaymentTerms,
+        customerContacts?: CustomerContact[]
     }>({
         customerName: "",
         customerNumber: "",
@@ -55,7 +57,8 @@ export default function EditCustomersPage({ params }: { params: Promise<{ id: st
             dueDateType: "DAYS_AFTER",
             dueDateValue: 14,
             dueDateUnit: "DAYS"
-        }
+        },
+        customerContacts: []
     })
     useEffect(() => {
         fetchCustomer()
@@ -116,7 +119,8 @@ export default function EditCustomersPage({ params }: { params: Promise<{ id: st
                         dueDateType: data.InvoicePaymentTerms?.invoiceDueDateType || "DAYS_AFTER",
                         dueDateValue: data.InvoicePaymentTerms?.invoiceDueDateValue || 14,
                         dueDateUnit: data.InvoicePaymentTerms?.invoiceDueDateUnit || "DAYS"
-                    }
+                    },
+                    customerContacts: data.contactPersons || []
                 })
                 setPaymentTermDefaults(paymentTermForComponent)
             }
@@ -435,6 +439,14 @@ export default function EditCustomersPage({ params }: { params: Promise<{ id: st
                             setFormData({ ...formData, customerPaymentTerm: updatedPaymentTerm })
                         }}
                     />
+
+                     <CustomerContactComponent 
+                                        defaultValues={formData.customerContacts}
+                                        oncustomerContactsChange={(customerContacts)=>{
+                                            setFormData({ ...formData, customerContacts: customerContacts});
+                                            console.log('FormData of Customer Contact:', formData);
+                                        }}
+                                        />
 
                     {/* Form Actions */}
                     <div className="flex items-center justify-end gap-4 pt-6 border-t border-gray-200">

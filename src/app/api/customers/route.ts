@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     }
 
     const formData = await request.json()
-    const { customerName, customerNumber, customerPaymentTerm, ...restData } = formData
+    const { customerName, customerNumber, customerPaymentTerm,customerContacts, ...restData } = formData
 
     console.log('Creating customer with data:', JSON.stringify(formData))
 
@@ -110,6 +110,9 @@ export async function POST(request: NextRequest) {
         customerNumber,
         businessId,
         invoicepaymentTermsId: paymentTermsId,
+        contactPersons: { 
+          create: customerContacts || []
+        }
       }
     })
 
