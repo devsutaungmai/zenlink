@@ -70,6 +70,23 @@ export async function PUT(
 
     // Update employee and user in a transaction
     const result = await prisma.$transaction(async (tx) => {
+      // Handle department and employee group updates
+      const departmentIds = Array.isArray(data.departmentIds) ? data.departmentIds : [data.departmentId]
+      const employeeGroupIds = data.employeeGroupIds && Array.isArray(data.employeeGroupIds) && data.employeeGroupIds.length > 0
+        ? data.employeeGroupIds 
+        : data.employeeGroupId 
+          ? [data.employeeGroupId]
+          : []
+
+      // Delete existing department and employee group relationships
+      await tx.employeeDepartment.deleteMany({
+        where: { employeeId: params.id }
+      })
+
+      await tx.employeeEmployeeGroup.deleteMany({
+        where: { employeeId: params.id }
+      })
+
       // Update employee record
       const updatedEmployee = await tx.employee.update({
         where: { id: params.id },
@@ -87,14 +104,38 @@ export async function PUT(
           bankAccount: data.bankAccount,
           hoursPerMonth: parseFloat(data.hoursPerMonth) || 0,
           isTeamLeader: Boolean(data.isTeamLeader),
-          departmentId: data.departmentId,
-          employeeGroupId: data.employeeGroupId || null,
+          departmentId: departmentIds[0],
+          employeeGroupId: employeeGroupIds.length > 0 ? employeeGroupIds[0] : null,
           profilePhoto: data.profilePhoto !== undefined ? data.profilePhoto : currentEmployee.profilePhoto,
           salaryRate: data.salaryRate !== undefined ? (data.salaryRate ? parseFloat(data.salaryRate) : null) : currentEmployee.salaryRate,
+          departments: {
+            create: departmentIds.map((deptId: string, index: number) => ({
+              departmentId: deptId,
+              isPrimary: index === 0
+            }))
+          },
+          employeeGroups: employeeGroupIds.length > 0 
+            ? {
+                create: employeeGroupIds.map((groupId: string, index: number) => ({
+                  employeeGroupId: groupId,
+                  isPrimary: index === 0
+                }))
+              }
+            : undefined
         },
         include: {
           department: true,
-          employeeGroup: true
+          employeeGroup: true,
+          departments: {
+            include: {
+              department: true
+            }
+          },
+          employeeGroups: {
+            include: {
+              employeeGroup: true
+            }
+          }
         }
       })
 
@@ -242,7 +283,23 @@ export async function GET(
       where: { id: params.id },
       include: {
         department: true,
-        employeeGroup: true
+        employeeGroup: true,
+        departments: {
+          include: {
+            department: true
+          },
+          orderBy: {
+            isPrimary: 'desc'
+          }
+        },
+        employeeGroups: {
+          include: {
+            employeeGroup: true
+          },
+          orderBy: {
+            isPrimary: 'desc'
+          }
+        }
       }
     })
 

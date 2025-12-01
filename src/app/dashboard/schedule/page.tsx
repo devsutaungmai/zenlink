@@ -168,6 +168,51 @@ export default function SchedulePage() {
     })
   }, [shifts, filters, employees, selectedDepartmentId, selectedCategoryId, selectedFunctionId])
 
+  // Filter categories based on selected department
+  const filteredCategories = useMemo(() => {
+    if (!selectedDepartmentId) {
+      return categories
+    }
+    return categories.filter((category: any) => {
+      // Check if category has departments array (many-to-many)
+      if (category.departments && category.departments.length > 0) {
+        return category.departments.some((cd: any) => cd.department?.id === selectedDepartmentId || cd.departmentId === selectedDepartmentId)
+      }
+      // Fallback to old single department field
+      if (category.departmentId) {
+        return category.departmentId === selectedDepartmentId
+      }
+      // Business-wide categories (no department restriction)
+      return true
+    })
+  }, [categories, selectedDepartmentId])
+
+  // Filter functions based on filtered categories
+  const filteredFunctions = useMemo(() => {
+    if (!selectedDepartmentId) {
+      return functions
+    }
+    const filteredCategoryIds = filteredCategories.map((c: any) => c.id)
+    return functions.filter((fn: any) => filteredCategoryIds.includes(fn.categoryId))
+  }, [functions, filteredCategories, selectedDepartmentId])
+
+  // Filter employees based on selected department (using many-to-many relationship)
+  const filteredEmployees = useMemo(() => {
+    if (!selectedDepartmentId) {
+      return employees
+    }
+    return employees.filter((employee: any) => {
+      // Check new many-to-many departments relationship
+      if (employee.departments && employee.departments.length > 0) {
+        return employee.departments.some((ed: any) => 
+          ed.departmentId === selectedDepartmentId || ed.department?.id === selectedDepartmentId
+        )
+      }
+      // Fallback to old single departmentId field
+      return employee.departmentId === selectedDepartmentId
+    })
+  }, [employees, selectedDepartmentId])
+
   const startDate = useMemo(() => {
     if (viewMode === 'month') {
       return startOfMonth(currentDate)
@@ -896,10 +941,10 @@ export default function SchedulePage() {
         <WeekView
           weekDates={dates}
           shifts={filteredShifts}
-          employees={employees}
+          employees={filteredEmployees}
           employeeGroups={employeeGroups}
-          functions={functions}
-          categories={categories}
+          functions={filteredFunctions}
+          categories={filteredCategories}
           scheduleViewType={scheduleViewType}
           onEditShift={handleEditShift}
           isEmployeeUnavailable={isEmployeeUnavailableOnDate}
@@ -917,7 +962,7 @@ export default function SchedulePage() {
         <EmployeeGroupedView
           weekDates={dates}
           shifts={filteredShifts}
-          employees={employees}
+          employees={filteredEmployees}
           expandedGroups={expandedGroups}
           onToggleGroup={(groupId) => {
             const newExpanded = new Set(expandedGroups);
@@ -943,7 +988,7 @@ export default function SchedulePage() {
         <GroupGroupedView
           weekDates={dates}
           shifts={filteredShifts}
-          employees={employees}
+          employees={filteredEmployees}
           employeeGroups={employeeGroups}
           onEditShift={handleEditShift}
           selectedEmployeeId={selectedEmployeeId}
@@ -962,8 +1007,8 @@ export default function SchedulePage() {
         <FunctionGroupedView
           weekDates={dates}
           shifts={filteredShifts}
-          employees={employees}
-          functions={functions}
+          employees={filteredEmployees}
+          functions={filteredFunctions}
           onEditShift={handleEditShift}
           selectedEmployeeId={selectedEmployeeId}
           isEmployeeUnavailable={isEmployeeUnavailableOnDate}
@@ -980,10 +1025,10 @@ export default function SchedulePage() {
       <WeekView
         weekDates={dates}
         shifts={filteredShifts}
-        employees={employees}
+        employees={filteredEmployees}
         employeeGroups={employeeGroups}
-        functions={functions}
-        categories={categories}
+        functions={filteredFunctions}
+        categories={filteredCategories}
         scheduleViewType={scheduleViewType}
         onEditShift={handleEditShift}
         isEmployeeUnavailable={isEmployeeUnavailableOnDate}
@@ -1013,18 +1058,23 @@ export default function SchedulePage() {
           onNextWeek={viewMode === 'month' ? handleNextMonth : handleNextWeek}
           onTodayClick={handleTodayClick}
           onViewModeChange={setViewMode}
-          employees={employees}
+          employees={filteredEmployees}
           selectedEmployeeId={selectedEmployeeId}
           onEmployeeChange={handleEmployeeChange}
           departments={departments}
           employeeGroups={employeeGroups}
           shiftTypes={shiftTypes}
-          categories={categories}
-          functions={functions}
+          categories={filteredCategories}
+          functions={filteredFunctions}
           selectedDepartmentId={selectedDepartmentId}
           selectedCategoryId={selectedCategoryId}
           selectedFunctionId={selectedFunctionId}
-          onDepartmentChange={setSelectedDepartmentId}
+          onDepartmentChange={(deptId) => {
+            setSelectedDepartmentId(deptId)
+            // Clear category and function selections when department changes
+            setSelectedCategoryId(null)
+            setSelectedFunctionId(null)
+          }}
           onCategoryChange={setSelectedCategoryId}
           onFunctionChange={setSelectedFunctionId}
           filters={filters}
@@ -1137,7 +1187,7 @@ export default function SchedulePage() {
               <MonthView
                 currentDate={currentDate}
                 shifts={filteredShifts}
-                employees={employees}
+                employees={filteredEmployees}
                 onEditShift={handleEditShift}
                 isEmployeeUnavailable={isEmployeeUnavailableOnDate}
                 onUnavailableClick={notifyEmployeeUnavailable}
@@ -1151,7 +1201,7 @@ export default function SchedulePage() {
                 <DayView
                   selectedDate={selectedDate}
                   shifts={filteredShifts}
-                  employees={employees}
+                  employees={filteredEmployees}
                   onEditShift={handleEditShift}
                   onAddShift={(formData) => {
                     const defaultDate = format(selectedDate, 'yyyy-MM-dd')
@@ -1169,7 +1219,7 @@ export default function SchedulePage() {
                 <DayEmployeeTimeline
                   date={selectedDate}
                   shifts={filteredShifts}
-                  employees={employees}
+                  employees={filteredEmployees}
                   onEditShift={handleEditShift}
                   onAddShift={(data) => {
                     const payload = data ? { ...data } : {}
@@ -1197,7 +1247,7 @@ export default function SchedulePage() {
                 <DayFunctionsTimeline
                   date={selectedDate}
                   shifts={filteredShifts}
-                  functions={functions}
+                  functions={filteredFunctions}
                   onEditShift={handleEditShift}
                   onAddShift={(data) => {
                     const payload = data ? { ...data } : {}
@@ -1211,7 +1261,7 @@ export default function SchedulePage() {
                 <DayView
                   selectedDate={selectedDate}
                   shifts={filteredShifts}
-                  employees={employees}
+                  employees={filteredEmployees}
                   onEditShift={handleEditShift}
                   onAddShift={(formData) => {
                     const defaultDate = format(selectedDate, 'yyyy-MM-dd')

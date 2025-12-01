@@ -63,64 +63,95 @@ model Business {
 }
 
 model Employee {
-  id                  String               @id @default(cuid())
+  id                  String                    @id @default(cuid())
   userId              String
   firstName           String
   lastName            String
   birthday            DateTime
   sex                 Sex
-  socialSecurityNo    String?              @unique
+  socialSecurityNo    String?                   @unique
   address             String
   mobile              String
   employeeNo          String?
   bankAccount         String
   hoursPerMonth       Float?
   dateOfHire          DateTime
-  isTeamLeader        Boolean              @default(false)
-  departmentId        String
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
-  employeeGroupId     String?
-  email               String?              @unique
+  isTeamLeader        Boolean                   @default(false)
+  departmentId        String                    // Kept for backward compatibility
+  createdAt           DateTime                  @default(now())
+  updatedAt           DateTime                  @updatedAt
+  employeeGroupId     String?                   // Kept for backward compatibility
+  email               String?                   @unique
   profilePhoto        String?
   salaryRate          Float?
   attendances         Attendance[]
   availabilities      Availability[]
-  contractsAsPerson   Contract[]           @relation("ContractPerson")
+  contractsAsPerson   Contract[]                @relation("ContractPerson")
   contracts           Contract[]
-  department          Department           @relation(fields: [departmentId], references: [id])
-  employeeGroup       EmployeeGroup?       @relation("EmployeeToGroup", fields: [employeeGroupId], references: [id])
-  user                User                 @relation(fields: [userId], references: [id])
+  department          Department                @relation(fields: [departmentId], references: [id])
+  employeeGroup       EmployeeGroup?            @relation("EmployeeToGroup", fields: [employeeGroupId], references: [id])
+  user                User                      @relation(fields: [userId], references: [id])
   employeePayRules    EmployeePayRule[]
-  notifications       Notification[]       @relation("NotificationRecipient")
+  notifications       Notification[]            @relation("NotificationRecipient")
   payrollEntries      PayrollEntry[]
   shifts              Shift[]
-  fromShiftExchanges  ShiftExchange[]      @relation("FromEmployee")
-  toShiftExchanges    ShiftExchange[]      @relation("ToEmployee")
+  fromShiftExchanges  ShiftExchange[]           @relation("FromEmployee")
+  toShiftExchanges    ShiftExchange[]           @relation("ToEmployee")
   sickLeaves          SickLeave[]
   sickPayCalculations SickPayCalculation[]
   timeEntries         TimeEntry[]
   workPlans           WorkPlan[]
   functions           EmployeeFunction[]
+  departments         EmployeeDepartment[]      // Many-to-many relation
+  employeeGroups      EmployeeEmployeeGroup[]   // Many-to-many relation
+}
+
+model EmployeeDepartment {
+  id           String     @id @default(cuid())
+  employeeId   String
+  departmentId String
+  isPrimary    Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+  employee     Employee   @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, departmentId])
+  @@index([employeeId])
+  @@index([departmentId])
+}
+
+model EmployeeEmployeeGroup {
+  id              String        @id @default(cuid())
+  employeeId      String
+  employeeGroupId String
+  isPrimary       Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+  employee        Employee      @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employeeGroup   EmployeeGroup @relation(fields: [employeeGroupId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, employeeGroupId])
+  @@index([employeeId])
+  @@index([employeeGroupId])
 }
 
 model EmployeeGroup {
-  id                    String                 @id @default(cuid())
+  id                    String                   @id @default(cuid())
   name                  String
   hourlyWage            Float
   wagePerShift          Float
-  defaultWageType       WageType               @default(HOURLY)
+  defaultWageType       WageType                 @default(HOURLY)
   salaryCode            String?
-  createdAt             DateTime               @default(now())
-  updatedAt             DateTime               @default(now())
+  createdAt             DateTime                 @default(now())
+  updatedAt             DateTime                 @default(now())
   businessId            String
   contracts             Contract[]
   contractTemplates     ContractTemplate[]
-  employees             Employee[]             @relation("EmployeeToGroup")
-  business              Business               @relation(fields: [businessId], references: [id])
+  employees             Employee[]               @relation("EmployeeToGroup")
+  business              Business                 @relation(fields: [businessId], references: [id])
   functions             DepartmentFunction[]
   employeeGroupPayRules EmployeeGroupPayRule[]
   shifts                Shift[]
+  employeesMulti        EmployeeEmployeeGroup[]  // Many-to-many relation
 
   @@unique([name, businessId])
 }
@@ -167,6 +198,7 @@ model Department {
   categories         DepartmentCategory[]   // Old relation - kept for backward compatibility
   categoriesManyMany CategoryDepartment[]   // New many-to-many relation
   shifts             Shift[]
+  employeesMulti     EmployeeDepartment[]   // Many-to-many relation
 }
 
 model DepartmentCategory {

@@ -1,6 +1,7 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { DatePicker } from '@/components/ui/date-picker'
+import { MultiSelect } from '@/components/ui/multi-select'
 import { EmployeeFormData } from './types'
 
 interface EmploymentInfoSectionProps {
@@ -9,6 +10,8 @@ interface EmploymentInfoSectionProps {
   getFieldStyle: (fieldName: string) => string
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void
   onDateChange: (date: Date | null, fieldName: 'birthday' | 'dateOfHire') => void
+  onDepartmentsChange: (departmentIds: string[]) => void
+  onEmployeeGroupsChange: (employeeGroupIds: string[]) => void
   departments: Array<{ id: string; name: string }>
   employeeGroups: Array<{ id: string; name: string }>
   employeeNumberMode: 'manual' | 'automatic'
@@ -22,6 +25,8 @@ export function EmploymentInfoSection({
   getFieldStyle,
   onChange,
   onDateChange,
+  onDepartmentsChange,
+  onEmployeeGroupsChange,
   departments,
   employeeGroups,
   employeeNumberMode,
@@ -129,46 +134,26 @@ export function EmploymentInfoSection({
         )}
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          {t('employees.form.department')} <span className="text-red-500">*</span>
-        </label>
-        <select
-          name="departmentId"
-          value={formData.departmentId}
-          onChange={onChange}
-          className={getFieldStyle('departmentId')}
+      <div className="sm:col-span-2">
+        <MultiSelect
+          label={t('employees.form.department')}
+          options={departments}
+          selectedIds={formData.departmentIds}
+          onChange={onDepartmentsChange}
+          placeholder="Select departments..."
           required
-        >
-          <option value="">{t('employees.form.select_department')}</option>
-          {departments.map((dept) => (
-            <option key={dept.id} value={dept.id}>
-              {dept.name}
-            </option>
-          ))}
-        </select>
-        {validationErrors.departmentId && (
-          <p className="mt-1 text-sm text-red-500">{validationErrors.departmentId}</p>
-        )}
+          error={validationErrors.departmentId || validationErrors.departmentIds}
+        />
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          {t('employees.form.employee_group')}
-        </label>
-        <select
-          name="employeeGroupId"
-          value={formData.employeeGroupId || ''}
-          onChange={onChange}
-          className={getFieldStyle('employeeGroupId')}
-        >
-          <option value="">{t('employees.form.select_employee_group')}</option>
-          {employeeGroups.map((group) => (
-            <option key={group.id} value={group.id}>
-              {group.name}
-            </option>
-          ))}
-        </select>
+      <div className="sm:col-span-2">
+        <MultiSelect
+          label={t('employees.form.employee_group')}
+          options={employeeGroups}
+          selectedIds={formData.employeeGroupIds}
+          onChange={onEmployeeGroupsChange}
+          placeholder="Select employee groups..."
+        />
       </div>
 
       <div>

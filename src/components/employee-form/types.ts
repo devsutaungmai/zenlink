@@ -14,8 +14,10 @@ export interface EmployeeFormData {
   hoursPerMonth: number
   dateOfHire: Date
   isTeamLeader: boolean
-  departmentId: string
-  employeeGroupId?: string
+  departmentId: string // Keep for backward compatibility
+  departmentIds: string[] // New field for multiple departments
+  employeeGroupId?: string // Keep for backward compatibility
+  employeeGroupIds: string[] // New field for multiple employee groups
   email?: string
   profilePhoto?: string | null
   salaryRate?: number

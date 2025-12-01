@@ -403,14 +403,38 @@ export default function EmployeesPage() {
                 <MobileCardGrid columns={2}>
                   <MobileCardField
                     label={t('employees.table.department')}
-                    value={employee.department.name}
+                    value={
+                      <div className="flex flex-wrap gap-1">
+                        {employee.departments && employee.departments.length > 0 ? (
+                          employee.departments.map((dept: any) => (
+                            <span key={dept.departmentId} className="inline-flex items-center px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 text-xs">
+                              {dept.department.name}
+                            </span>
+                          ))
+                        ) : employee.department ? (
+                          employee.department.name
+                        ) : (
+                          <span className="text-gray-400 italic">No department</span>
+                        )}
+                      </div>
+                    }
                   />
                   <MobileCardField
                     label={t('employees.table.group')}
                     value={
-                      employee.employeeGroup?.name || (
-                        <span className="text-gray-400 italic">{t('employees.table.no_group')}</span>
-                      )
+                      <div className="flex flex-wrap gap-1">
+                        {employee.employeeGroups && employee.employeeGroups.length > 0 ? (
+                          employee.employeeGroups.map((grp: any) => (
+                            <span key={grp.employeeGroupId} className="inline-flex items-center px-2 py-0.5 rounded-md bg-green-50 text-green-700 text-xs">
+                              {grp.employeeGroup.name}
+                            </span>
+                          ))
+                        ) : employee.employeeGroup ? (
+                          employee.employeeGroup.name
+                        ) : (
+                          <span className="text-gray-400 italic">{t('employees.table.no_group')}</span>
+                        )}
+                      </div>
                     }
                   />
                 </MobileCardGrid>
@@ -534,12 +558,32 @@ export default function EmployeesPage() {
                         <div className="text-sm text-gray-900">{employee.employeeNo}</div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900">{employee.department.name}</div>
+                        <div className="flex flex-wrap gap-1">
+                          {employee.departments && employee.departments.length > 0 ? (
+                            employee.departments.map((dept: any) => (
+                              <span key={dept.departmentId} className="inline-flex items-center px-2 py-1 rounded-md bg-blue-50 text-blue-700 text-xs font-medium">
+                                {dept.department.name}
+                              </span>
+                            ))
+                          ) : employee.department ? (
+                            <span className="text-sm text-gray-900">{employee.department.name}</span>
+                          ) : (
+                            <span className="text-sm text-gray-400 italic">No department</span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900">
-                          {employee.employeeGroup?.name || (
-                            <span className="text-gray-400 italic">{t('employees.table.no_group')}</span>
+                        <div className="flex flex-wrap gap-1">
+                          {employee.employeeGroups && employee.employeeGroups.length > 0 ? (
+                            employee.employeeGroups.map((grp: any) => (
+                              <span key={grp.employeeGroupId} className="inline-flex items-center px-2 py-1 rounded-md bg-green-50 text-green-700 text-xs font-medium">
+                                {grp.employeeGroup.name}
+                              </span>
+                            ))
+                          ) : employee.employeeGroup ? (
+                            <span className="text-sm text-gray-900">{employee.employeeGroup.name}</span>
+                          ) : (
+                            <span className="text-sm text-gray-400 italic">{t('employees.table.no_group')}</span>
                           )}
                         </div>
                       </td>

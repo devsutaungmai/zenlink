@@ -77,6 +77,36 @@ export async function GET(request: Request) {
             id: true,
             name: true
           }
+        },
+        departments: {
+          select: {
+            departmentId: true,
+            isPrimary: true,
+            department: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          },
+          orderBy: {
+            isPrimary: 'desc'
+          }
+        },
+        employeeGroups: {
+          select: {
+            employeeGroupId: true,
+            isPrimary: true,
+            employeeGroup: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          },
+          orderBy: {
+            isPrimary: 'desc'
+          }
         }
       },
       orderBy: {
@@ -212,15 +242,43 @@ export async function POST(request: Request) {
         bankAccount: data.bankAccount,
         hoursPerMonth: parseFloat(data.hoursPerMonth) || 0,
         isTeamLeader: Boolean(data.isTeamLeader),
-        departmentId: data.departmentId,
-        employeeGroupId: data.employeeGroupId || null,
+        departmentId: Array.isArray(data.departmentIds) ? data.departmentIds[0] : data.departmentId,
+        employeeGroupId: Array.isArray(data.employeeGroupIds) ? data.employeeGroupIds[0] : (data.employeeGroupId || null),
         email: (!data.email || data.email === '') ? null : data.email, // Convert empty emails to null
         profilePhoto: data.profilePhoto || null,
         salaryRate: data.salaryRate ? parseFloat(data.salaryRate) : null,
+        departments: {
+          create: Array.isArray(data.departmentIds) 
+            ? data.departmentIds.map((deptId: string, index: number) => ({
+                departmentId: deptId,
+                isPrimary: index === 0
+              }))
+            : [{ departmentId: data.departmentId, isPrimary: true }]
+        },
+        employeeGroups: data.employeeGroupIds && Array.isArray(data.employeeGroupIds) && data.employeeGroupIds.length > 0
+          ? {
+              create: data.employeeGroupIds.map((groupId: string, index: number) => ({
+                employeeGroupId: groupId,
+                isPrimary: index === 0
+              }))
+            }
+          : data.employeeGroupId 
+            ? { create: [{ employeeGroupId: data.employeeGroupId, isPrimary: true }] }
+            : undefined
       },
       include: {
         department: true,
-        employeeGroup: true
+        employeeGroup: true,
+        departments: {
+          include: {
+            department: true
+          }
+        },
+        employeeGroups: {
+          include: {
+            employeeGroup: true
+          }
+        }
       }
     })
 

@@ -208,6 +208,27 @@ export default function EmployeeForm({
             getFieldStyle={getFieldStyle}
             onChange={handleChange}
             onDateChange={handleDateChange}
+            onDepartmentsChange={(departmentIds) => {
+              setFormData(prev => ({
+                ...prev,
+                departmentIds,
+                departmentId: departmentIds[0] || ''
+              }))
+              if (validationErrors.departmentId || validationErrors.departmentIds) {
+                setValidationErrors(prev => ({ 
+                  ...prev, 
+                  departmentId: '',
+                  departmentIds: ''
+                }))
+              }
+            }}
+            onEmployeeGroupsChange={(employeeGroupIds) => {
+              setFormData(prev => ({
+                ...prev,
+                employeeGroupIds,
+                employeeGroupId: employeeGroupIds[0] || undefined
+              }))
+            }}
             departments={departments}
             employeeGroups={employeeGroups}
             employeeNumberMode={employeeNumberMode}

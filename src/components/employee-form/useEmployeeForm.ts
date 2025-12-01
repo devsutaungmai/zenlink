@@ -42,10 +42,29 @@ export function useEmployeeForm({ initialData }: UseEmployeeFormProps) {
       dateOfHire: new Date(),
       isTeamLeader: false,
       departmentId: '',
+      departmentIds: [],
+      employeeGroupIds: [],
       email: '',
       profilePhoto: null,
       salaryRate: undefined,
       ...initialData
+    }
+
+    // Handle initial data for multi-select
+    if (initialData) {
+      // Convert existing departmentId to departmentIds array
+      if (initialData.departmentId && !initialData.departmentIds) {
+        baseData.departmentIds = [initialData.departmentId]
+      } else if (initialData.departmentIds) {
+        baseData.departmentIds = initialData.departmentIds
+      }
+
+      // Convert existing employeeGroupId to employeeGroupIds array
+      if (initialData.employeeGroupId && !initialData.employeeGroupIds) {
+        baseData.employeeGroupIds = [initialData.employeeGroupId]
+      } else if (initialData.employeeGroupIds) {
+        baseData.employeeGroupIds = initialData.employeeGroupIds
+      }
     }
 
     if (initialData?.mobile) {

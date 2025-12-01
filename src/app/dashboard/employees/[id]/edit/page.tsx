@@ -85,7 +85,16 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
           throw new Error('Failed to fetch required data')
         }
 
-        setEmployee(await employeeRes.json())
+        const employeeData = await employeeRes.json()
+        
+        // Map junction table data to arrays
+        const mappedEmployee = {
+          ...employeeData,
+          departmentIds: employeeData.departments?.map((d: any) => d.departmentId) || [],
+          employeeGroupIds: employeeData.employeeGroups?.map((g: any) => g.employeeGroupId) || []
+        }
+        
+        setEmployee(mappedEmployee)
         setDepartments(await deptsRes.json())
         setEmployeeGroups(await groupsRes.json())
         
