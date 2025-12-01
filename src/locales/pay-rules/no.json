@@ -28,10 +28,10 @@
     "calculateDaily": "Beregn overtid daglig (ikke avkrysset = ukentlig)"
   },
   "employeeGroupRates": {
-    "title": "Ansattegruppe-satser",
+    "title": "Medarbeidergruppe-satser",
     "addGroup": "Legg til gruppe",
-    "noGroups": "Ingen ansattegrupper konfigurert. Legg til grupper for å angi standardsatser.",
-    "selectEmployeeGroup": "Velg ansattegruppe",
+    "noGroups": "Ingen medarbeidergrupper konfigurert. Legg til grupper for å angi standardsatser.",
+    "selectEmployeeGroup": "Velg medarbeidergruppe",
     "baseRatePlaceholder": "Grunnsats"
   },
   "buttons": {

@@ -14,7 +14,7 @@ export async function GET(request: NextRequest, context: { params: { id: string 
       },
       include: {
         employees: true,
-        function: {
+        functions: {
           select: {
             id: true,
             name: true,
@@ -66,47 +66,15 @@ export async function PUT(
       )
     }
 
-    if (!rawData.functionId) {
-      return NextResponse.json(
-        { error: 'Function is required' },
-        { status: 400 }
-      )
-    }
-
-    const targetFunction = await prisma.departmentFunction.findFirst({
-      where: {
-        id: rawData.functionId,
-        category: {
-          businessId: user.businessId
-        }
-      },
-      include: {
-        category: {
-          select: {
-            id: true,
-            name: true
-          }
-        }
-      }
-    })
-
-    if (!targetFunction) {
-      return NextResponse.json(
-        { error: 'Function not found for this business' },
-        { status: 404 }
-      )
-    }
-
-    const data = {
+    const data: any = {
       name: rawData.name,
       hourlyWage: parseFloat(rawData.hourlyWage) || 0,
       wagePerShift: parseFloat(rawData.wagePerShift) || 0,
       defaultWageType: rawData.defaultWageType,
       salaryCode: rawData.salaryCode || null,
-      function: {
-        connect: { id: rawData.functionId }
-      }
     }
+
+    // function linkage is now managed via the functions <-> employee groups junction table
     
     const employeeGroup = await prisma.employeeGroup.update({
       where: { 
@@ -116,7 +84,7 @@ export async function PUT(
       data,
       include: {
         employees: true,
-        function: {
+        functions: {
           select: {
             id: true,
             name: true,

@@ -1,10 +1,38 @@
 {
   "title": "Tidsplan",
   "header": {
-    "all_employees": "Alle ansatte",
+    "all_employees": "Alle medarbeidere",
     "week": "Uke",
     "day": "Dag",
-    "today": "I dag"
+    "today": "I dag",
+    "all_departments": "Alle avdelinger",
+    "all_categories": "Alle kategorier",
+    "all_functions": "Alle funksjoner",
+    "select_category_first": "Velg kategori først",
+    "filters": "Filter",
+    "clear_all": "Fjern alle",
+    "employees": "Medarbeidere",
+    "search_employees_placeholder": "Søk etter medarbeidere...",
+    "no_employees_found": "Fant ingen medarbeidere",
+    "employee_groups": "Medarbeidergrupper",
+    "shift_types": "Skifttyper",
+    "status": "Status",
+    "shift_time": "Skifttid",
+    "time_from": "Fra",
+    "time_to": "Til",
+    "apply_filters": "Bruk filtre",
+    "view_modes": {
+      "week": "Uke",
+      "two_week": "To uker",
+      "month": "Måned",
+      "day": "Dag"
+    },
+    "statuses": {
+      "scheduled": "Planlagt",
+      "in_progress": "I gang",
+      "completed": "Fullført",
+      "cancelled": "Avlyst"
+    }
   },
   "week_view": {
     "today": "I dag",
@@ -13,7 +41,7 @@
   "day_view": {
     "today": "I dag",
     "shifts": "Skift", 
-    "loading_employee_data": "Laster ansattdata..."
+    "loading_employee_data": "Laster medarbeiderdata..."
   },
   "shift_card": {
     "unassigned": "Ikke tildelt",
@@ -24,8 +52,69 @@
     "success_updated": "Skift oppdatert!",
     "error_create": "Kunne ikke opprette skift.",
     "error_update": "Kunne ikke oppdatere skift.",
-    "error_fetching_employees": "Feil ved henting av ansatte:",
-    "error_fetching_groups": "Feil ved henting av ansattgrupper:",
+    "error_fetching_employees": "Feil ved henting av medarbeidere:",
+    "error_fetching_groups": "Feil ved henting av medarbeidergrupper:",
     "error_fetching_shifts": "Feil ved henting av skift:"
+  },
+  "view_tabs": {
+    "time": {
+      "label": "Tidslinje",
+      "description": "Kronologisk oversikt"
+    },
+    "employees": {
+      "label": "Medarbeidere",
+      "description": "Personfokusert visning"
+    },
+    "groups": {
+      "label": "Grupper",
+      "description": "Teamfordeling"
+    },
+    "functions": {
+      "label": "Funksjoner",
+      "description": "Rolledekning"
+    },
+    "aria_mobile": "Planvisninger (mobil)",
+    "aria_desktop": "Planvisninger"
+  },
+  "labels": {
+    "this_employee": "Denne medarbeideren",
+    "active_shift": "Aktiv"
+  },
+  "alerts": {
+    "employee_unavailable": {
+      "title": "Medarbeider utilgjengelig",
+      "with_note": "{{name}} er utilgjengelig på {{date}} ({{note}}).",
+      "without_note": "{{name}} er utilgjengelig på {{date}}."
+    },
+    "shift_conflict": {
+      "title": "Skiftkonflikt: {{name}}",
+      "message": "Overlapper med eksisterende skift {{date}} ({{start}} - {{end}})",
+      "toast": "{{title}}: {{message}}"
+    }
+  },
+  "labor_law": {
+    "title": "Brudd på arbeidsregler oppdaget",
+    "intro": "Dette skiftet bryter følgende arbeidslovkrav:",
+    "override_question": "Vil du opprette skiftet likevel?",
+    "override_hint": "Som administrator kan du overstyre disse begrensningene ved behov.",
+    "confirm": "Ja, opprett skift",
+    "cancel": "Avbryt",
+    "override_toast_one": "Administratoroverstyring: Skift opprettet til tross for {{count}} brudd på arbeidsregler",
+    "override_toast_other": "Administratoroverstyring: Skift opprettet til tross for {{count}} brudd på arbeidsregler",
+    "violations": {
+      "max_hours_per_day": "• Skiftlengde: <strong>{{current}} timer</strong> (overskrider daglig grense på {{allowed}} t)",
+      "max_overtime_per_day": "• Daglig overtid: <strong>{{current}} timer</strong> (overskrider grensen på {{allowed}} t)",
+      "max_overtime_per_week": "• Ukentlig overtid: <strong>{{current}} timer</strong> (overskrider grensen på {{allowed}} t)",
+      "missing_break": "• Pausekrav: <strong>{{current}} minutter</strong> (minimum {{allowed}} minutter kreves)",
+      "generic": "• {{message}}"
+    }
+  },
+  "toasts": {
+    "shift_created": "Skift opprettet!",
+    "shift_updated": "Skift oppdatert!",
+    "shift_create_failed": "Kunne ikke opprette skift.",
+    "shift_update_failed": "Kunne ikke oppdatere skift.",
+    "shift_deleted": "Skift slettet!",
+    "shift_delete_failed": "Kunne ikke slette skift."
   }
 }

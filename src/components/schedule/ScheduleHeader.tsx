@@ -41,6 +41,10 @@ interface FunctionItem {
     name: string
     color?: string | null
   } | null
+  employeeGroups?: Array<{
+    id: string
+    name: string
+  }>
 }
 
 interface FilterOptions {
@@ -55,11 +59,11 @@ interface FilterOptions {
 interface ScheduleHeaderProps {
   startDate: Date
   endDate: Date
-  viewMode: 'week' | 'day'
+  viewMode: 'week' | 'two-week' | 'day' | 'month'
   onPreviousWeek: () => void
   onNextWeek: () => void
   onTodayClick: () => void
-  onViewModeChange: (mode: 'week' | 'day') => void
+  onViewModeChange: (mode: 'week' | 'two-week' | 'day' | 'month') => void
   employees: Employee[]
   selectedEmployeeId: string | null
   onEmployeeChange: (employeeId: string | null) => void
@@ -152,10 +156,25 @@ export default function ScheduleHeader({
     ? safeFunctions.filter(f => f.categoryId === selectedCategoryId)
     : safeFunctions
   
-  // Filter employees based on search query
+  const employeeGroupFilterIds = filters?.employeeGroupIds ?? []
+
+  // Filter employees based on search query and selected employee groups (if any)
   const filteredEmployees = safeEmployees.filter(employee => {
     const fullName = `${employee.firstName} ${employee.lastName}`.toLowerCase()
-    return fullName.includes(employeeSearchQuery.toLowerCase())
+    const matchesSearch = fullName.includes(employeeSearchQuery.toLowerCase())
+    if (!matchesSearch) {
+      return false
+    }
+
+    if (employeeGroupFilterIds.length === 0) {
+      return true
+    }
+
+    if (!employee.employeeGroupId) {
+      return false
+    }
+
+    return employeeGroupFilterIds.includes(employee.employeeGroupId)
   })
   
   const handleFilterChange = (key: keyof FilterOptions, value: any) => {
@@ -203,10 +222,21 @@ export default function ScheduleHeader({
     (filters.timeTo ? 1 : 0)
   
   const shiftStatuses = [
-    { value: 'SCHEDULED', label: 'Scheduled' },
-    { value: 'IN_PROGRESS', label: 'In Progress' },
-    { value: 'COMPLETED', label: 'Completed' },
-    { value: 'CANCELLED', label: 'Cancelled' }
+    { value: 'SCHEDULED', label: t('header.statuses.scheduled') },
+    { value: 'IN_PROGRESS', label: t('header.statuses.in_progress') },
+    { value: 'COMPLETED', label: t('header.statuses.completed') },
+    { value: 'CANCELLED', label: t('header.statuses.cancelled') }
+  ]
+  const mobileViewModeOptions: Array<{ value: 'week' | 'month' | 'day'; label: string }> = [
+    { value: 'week', label: t('header.view_modes.week') },
+    { value: 'month', label: t('header.view_modes.month') },
+    { value: 'day', label: t('header.view_modes.day') }
+  ]
+  const viewModeOptions: Array<{ value: 'week' | 'two-week' | 'month' | 'day'; label: string }> = [
+    { value: 'week', label: t('header.view_modes.week') },
+    { value: 'two-week', label: t('header.view_modes.two_week') },
+    { value: 'month', label: t('header.view_modes.month') },
+    { value: 'day', label: t('header.view_modes.day') }
   ]
   
   return (
@@ -223,7 +253,7 @@ export default function ScheduleHeader({
             }}
             className="w-full px-3 py-2 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#31BCFF] bg-white"
           >
-            <option value="">All Departments</option>
+            <option value="">{t('header.all_departments')}</option>
             {safeDepartments.map(department => (
               <option key={department.id} value={department.id}>
                 {department.name}
@@ -243,7 +273,7 @@ export default function ScheduleHeader({
             }}
             className="w-full px-3 py-2 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#31BCFF] bg-white"
           >
-            <option value="">All Categories</option>
+            <option value="">{t('header.all_categories')}</option>
             {safeCategories.map(category => (
               <option key={category.id} value={category.id}>
                 {category.name}
@@ -260,7 +290,7 @@ export default function ScheduleHeader({
             disabled={!selectedCategoryId && filteredFunctions.length === 0}
             className="w-full px-3 py-2 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#31BCFF] bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
           >
-            <option value="">{selectedCategoryId ? 'All Functions' : 'Select category first'}</option>
+            <option value="">{selectedCategoryId ? t('header.all_functions') : t('header.select_category_first')}</option>
             {filteredFunctions.map(func => (
               <option key={func.id} value={func.id}>
                 {func.name}
@@ -292,14 +322,14 @@ export default function ScheduleHeader({
                 className="fixed inset-x-0 top-0 bottom-0 bg-white z-50 overflow-y-auto"
               >
                 <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between z-10">
-                  <h3 className="font-semibold text-gray-900">Filters</h3>
+                  <h3 className="font-semibold text-gray-900">{t('header.filters')}</h3>
                   <div className="flex items-center gap-3">
                     {activeFilterCount > 0 && (
                       <button
                         onClick={clearAllFilters}
                         className="text-sm text-[#31BCFF] hover:text-[#28a8e6]"
                       >
-                        Clear all
+                        {t('header.clear_all')}
                       </button>
                     )}
                     <button onClick={() => setShowFilters(false)} className="text-gray-400 hover:text-gray-600">
@@ -311,11 +341,11 @@ export default function ScheduleHeader({
                 <div className="p-4 space-y-4 pb-20">
                   {/* Employees Filter */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Employees</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('header.employees')}</label>
                     {/* Search Input */}
                     <input
                       type="text"
-                      placeholder="Search employees..."
+                      placeholder={t('header.search_employees_placeholder')}
                       value={employeeSearchQuery}
                       onChange={(e) => setEmployeeSearchQuery(e.target.value)}
                       className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md mb-2 focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF]"
@@ -337,7 +367,7 @@ export default function ScheduleHeader({
                         ))
                       ) : (
                         <div className="px-3 py-2.5 text-sm text-gray-500 text-center">
-                          No employees found
+                          {t('header.no_employees_found')}
                         </div>
                       )}
                     </div>
@@ -345,7 +375,7 @@ export default function ScheduleHeader({
 
                   {/* Employee Groups Filter */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Employee Groups</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('header.employee_groups')}</label>
                     <div className="space-y-2">
                       {safeEmployeeGroups.map(group => (
                         <label key={group.id} className="flex items-center cursor-pointer p-2 rounded hover:bg-gray-50 active:bg-gray-100">
@@ -363,7 +393,7 @@ export default function ScheduleHeader({
 
                   {/* Shift Types Filter */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Shift Types</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('header.shift_types')}</label>
                     <div className="space-y-2">
                       {safeShiftTypes.map(shiftType => (
                         <label key={shiftType.id} className="flex items-center cursor-pointer p-2 rounded hover:bg-gray-50 active:bg-gray-100">
@@ -381,7 +411,7 @@ export default function ScheduleHeader({
 
                   {/* Status Filter */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('header.status')}</label>
                     <div className="space-y-2">
                       {shiftStatuses.map(status => (
                         <label key={status.value} className="flex items-center cursor-pointer p-2 rounded hover:bg-gray-50 active:bg-gray-100">
@@ -399,10 +429,10 @@ export default function ScheduleHeader({
 
                   {/* Time Range Filter */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Shift Time</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('header.shift_time')}</label>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-xs text-gray-600 mb-1">From</label>
+                        <label className="block text-xs text-gray-600 mb-1">{t('header.time_from')}</label>
                         <input
                           type="time"
                           value={filters.timeFrom}
@@ -411,7 +441,7 @@ export default function ScheduleHeader({
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-600 mb-1">To</label>
+                        <label className="block text-xs text-gray-600 mb-1">{t('header.time_to')}</label>
                         <input
                           type="time"
                           value={filters.timeTo}
@@ -429,7 +459,7 @@ export default function ScheduleHeader({
                     onClick={() => setShowFilters(false)}
                     className="w-full bg-[#31BCFF] text-white py-3 rounded-md font-medium hover:bg-[#28a8e6]"
                   >
-                    Apply Filters
+                    {t('header.apply_filters')}
                   </button>
                 </div>
               </div>
@@ -437,13 +467,33 @@ export default function ScheduleHeader({
           </div>
         </div>
 
-        {/* Row 3: Date Navigation */}
+        {/* Row 3: View mode toggle */}
+        <div className="bg-white border border-gray-200 rounded-2xl p-1 flex gap-1 overflow-x-auto scrollbar-hide" role="tablist" aria-label="Schedule view modes">
+          {mobileViewModeOptions.map(option => {
+            const isActive = viewMode === option.value
+            return (
+              <button
+                key={`mobile-view-${option.value}`}
+                onClick={() => onViewModeChange(option.value)}
+                role="tab"
+                aria-selected={isActive}
+                className={`flex-1 whitespace-nowrap px-3 py-2 text-sm font-semibold rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#31BCFF] ${
+                  isActive ? 'bg-[#31BCFF] text-white shadow-sm' : 'bg-transparent text-gray-600'
+                }`}
+              >
+                {option.label}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Row 4: Date Navigation */}
         <div className="flex items-center justify-between">
           <button
             onClick={onTodayClick}
             className="px-4 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50 bg-white"
           >
-            Today
+            {t('header.today')}
           </button>
 
           <div className="flex items-center gap-2">
@@ -468,187 +518,201 @@ export default function ScheduleHeader({
         </div>
       </div>
 
-      {/* Desktop Layout - Horizontal */}
-      <div className="hidden md:flex items-center gap-3">
-        {/* Department Filter */}
-        <select
-          value={selectedDepartmentId || ""}
-          onChange={(e) => {
-            const value = e.target.value === "" ? null : e.target.value
-            onDepartmentChange(value)
-          }}
-          className="px-3 py-2 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#31BCFF] bg-white min-w-[160px]"
-        >
-          <option value="">All Departments</option>
-          {safeDepartments.map(department => (
-            <option key={department.id} value={department.id}>
-              {department.name}
-            </option>
-          ))}
-        </select>
-
-        {/* Category Filter */}
-        <select
-          value={selectedCategoryId || ""}
-          onChange={(e) => {
-            const value = e.target.value === "" ? null : e.target.value
-            onCategoryChange(value)
-            // Clear function selection when category changes
-            if (value !== selectedCategoryId) {
-              onFunctionChange(null)
-            }
-          }}
-          className="px-3 py-2 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#31BCFF] bg-white min-w-[160px]"
-        >
-          <option value="">All Categories</option>
-          {safeCategories.map(category => (
-            <option key={category.id} value={category.id}>
-              {category.name}
-            </option>
-          ))}
-        </select>
-
-        {/* Function Filter */}
-        <select
-          value={selectedFunctionId || ""}
-          onChange={(e) => {
-            const value = e.target.value === "" ? null : e.target.value
-            onFunctionChange(value)
-          }}
-          disabled={!selectedCategoryId && filteredFunctions.length === 0}
-          className="px-3 py-2 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#31BCFF] bg-white min-w-[160px] disabled:bg-gray-100 disabled:cursor-not-allowed"
-        >
-          <option value="">{selectedCategoryId ? 'All Functions' : 'Select category first'}</option>
-          {filteredFunctions.map(func => (
-            <option key={func.id} value={func.id}>
-              {func.name}
-            </option>
-          ))}
-        </select>
-
-        {/* Week Dropdown */}
-        <select
-          className="px-3 py-2 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#31BCFF] bg-white"
-        >
-          <option>Week</option>
-        </select>
-
-        {/* Today Button */}
-        <button
-          onClick={onTodayClick}
-          className="px-4 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50 whitespace-nowrap bg-white"
-        >
-          Today
-        </button>
-
-        {/* Navigation: Arrows and Date Range */}
-        <div className="flex items-center gap-2">
-          <button 
-            onClick={onPreviousWeek}
-            className="p-2 hover:bg-gray-100 rounded-md"
-          >
-            <ArrowLeftIcon className="h-4 w-4 text-gray-600" />
-          </button>
-          
-          <div className="px-3 py-2 text-sm text-gray-700 whitespace-nowrap">
-            {format(startDate, 'MMM d')} - {format(endDate, 'MMM d')}
-          </div>
-          
-          <button 
-            onClick={onNextWeek}
-            className="p-2 hover:bg-gray-100 rounded-md"
-          >
-            <ArrowRightIcon className="h-4 w-4 text-gray-600" />
-          </button>
-        </div>
-
-        {/* Spacer */}
-        <div className="flex-1"></div>
-
-        {/* Right side actions - Templates, Tools, Filters, Publish */}
-        <div className="flex items-center gap-2">
-          <button className="p-2 hover:bg-gray-100 rounded-md">
-            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-            </svg>
-          </button>
-
-          {/* Filters Button with Dropdown - Desktop */}
-          <div className="relative">
-            <button 
-              onClick={() => setShowFilters(!showFilters)}
-              className="px-4 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50 bg-white flex items-center gap-2"
+      {/* Desktop Layout - Responsive */}
+      <div className="hidden md:block">
+        <div className="space-y-4">
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+            <select
+              value={selectedDepartmentId || ""}
+              onChange={(e) => {
+                const value = e.target.value === "" ? null : e.target.value
+                onDepartmentChange(value)
+              }}
+              className="px-3 py-2 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#31BCFF] bg-white w-full"
             >
-              <FunnelIcon className="w-4 h-4" />
-              Filters
-              {activeFilterCount > 0 && (
-                <span className="bg-[#31BCFF] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                  {activeFilterCount}
-                </span>
-              )}
-            </button>
+              <option value="">{t('header.all_departments')}</option>
+              {safeDepartments.map(department => (
+                <option key={department.id} value={department.id}>
+                  {department.name}
+                </option>
+              ))}
+            </select>
 
-            {/* Filter Dropdown - Desktop */}
-            {showFilters && (
-              <div 
-                ref={filterDropdownRef}
-                className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-[600px] overflow-y-auto"
-              >
-                <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between z-10">
-                  <h3 className="font-semibold text-gray-900">Filters</h3>
-                  <div className="flex items-center gap-2">
-                    {activeFilterCount > 0 && (
-                      <button
-                        onClick={clearAllFilters}
-                        className="text-xs text-[#31BCFF] hover:text-[#28a8e6]"
-                      >
-                        Clear all
-                      </button>
-                    )}
-                    <button onClick={() => setShowFilters(false)} className="text-gray-400 hover:text-gray-600">
-                      <XMarkIcon className="w-5 h-5" />
+            <select
+              value={selectedCategoryId || ""}
+              onChange={(e) => {
+                const value = e.target.value === "" ? null : e.target.value
+                onCategoryChange(value)
+                if (value !== selectedCategoryId) {
+                  onFunctionChange(null)
+                }
+              }}
+              className="px-3 py-2 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#31BCFF] bg-white w-full"
+            >
+              <option value="">{t('header.all_categories')}</option>
+              {safeCategories.map(category => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={selectedFunctionId || ""}
+              onChange={(e) => {
+                const value = e.target.value === "" ? null : e.target.value
+                onFunctionChange(value)
+              }}
+              disabled={!selectedCategoryId && filteredFunctions.length === 0}
+              className="px-3 py-2 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#31BCFF] bg-white w-full disabled:bg-gray-100 disabled:cursor-not-allowed"
+            >
+              <option value="">{selectedCategoryId ? t('header.all_functions') : t('header.select_category_first')}</option>
+              {filteredFunctions.map(func => (
+                <option key={func.id} value={func.id}>
+                  {func.name}
+                </option>
+              ))}
+            </select>
+
+            <div className="w-full">
+              <div className="grid grid-cols-2 sm:grid-cols-4 rounded-xl border border-gray-300 bg-white overflow-hidden">
+                {viewModeOptions.map((option, index) => {
+                  const isActive = viewMode === option.value
+                  return (
+                    <button
+                      key={`desktop-view-${option.value}`}
+                      onClick={() => onViewModeChange(option.value)}
+                      className={`px-3 py-2 text-sm font-semibold transition-colors ${
+                        index === 0 ? '' : 'border-l border-gray-200'
+                      } ${
+                        isActive ? 'bg-[#31BCFF] text-white' : 'text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      {option.label}
                     </button>
-                  </div>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                onClick={onTodayClick}
+                className="px-4 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50 whitespace-nowrap bg-white"
+              >
+                {t('header.today')}
+              </button>
+
+              <div className="flex items-center gap-2 flex-wrap md:flex-nowrap">
+                <button
+                  onClick={onPreviousWeek}
+                  className="p-2 hover:bg-gray-100 rounded-md border border-gray-200"
+                >
+                  <ArrowLeftIcon className="h-4 w-4 text-gray-600" />
+                </button>
+
+                <div className="px-3 py-2 text-sm text-gray-800 bg-white rounded-md min-w-[180px] text-center border border-gray-200">
+                  {viewMode === 'month'
+                    ? format(startDate, 'MMMM yyyy')
+                    : viewMode === 'day'
+                      ? format(startDate, 'EEEE, MMM d')
+                      : `${format(startDate, 'MMM d')} - ${format(endDate, 'MMM d')}`}
                 </div>
 
-                <div className="p-4 space-y-4">
-                  {/* Employees Filter */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Employees</label>
-                    {/* Search Input */}
-                    <input
-                      type="text"
-                      placeholder="Search employees..."
-                      value={employeeSearchQuery}
-                      onChange={(e) => setEmployeeSearchQuery(e.target.value)}
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md mb-2 focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF]"
-                    />
-                    <div className="max-h-40 overflow-y-auto border border-gray-200 rounded-md">
-                      {filteredEmployees.length > 0 ? (
-                        filteredEmployees.map(employee => (
-                          <label key={employee.id} className="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={filters.employeeIds.includes(employee.id)}
-                              onChange={() => toggleEmployeeFilter(employee.id)}
-                              className="rounded border-gray-300 text-[#31BCFF] focus:ring-[#31BCFF]"
-                            />
-                            <span className="ml-2 text-sm text-gray-700">
-                              {employee.firstName} {employee.lastName}
-                            </span>
-                          </label>
-                        ))
-                      ) : (
-                        <div className="px-3 py-2 text-sm text-gray-500 text-center">
-                          No employees found
-                        </div>
-                      )}
+                <button
+                  onClick={onNextWeek}
+                  className="p-2 hover:bg-gray-100 rounded-md border border-gray-200"
+                >
+                  <ArrowRightIcon className="h-4 w-4 text-gray-600" />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 justify-end">
+              <button className="p-2 hover:bg-gray-100 rounded-md border border-gray-200">
+                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                </svg>
+              </button>
+
+              <div className="relative w-full sm:w-auto">
+                <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="w-full sm:w-auto px-4 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50 bg-white flex items-center justify-center sm:justify-start gap-2"
+                >
+                  <FunnelIcon className="w-4 h-4" />
+                  {t('header.filters')}
+                  {activeFilterCount > 0 && (
+                    <span className="bg-[#31BCFF] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </button>
+
+                {showFilters && (
+                  <div
+                    ref={filterDropdownRef}
+                    className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-[600px] overflow-y-auto"
+                  >
+                    <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between z-10">
+                      <h3 className="font-semibold text-gray-900">{t('header.filters')}</h3>
+                      <div className="flex items-center gap-2">
+                        {activeFilterCount > 0 && (
+                          <button
+                            onClick={clearAllFilters}
+                            className="text-xs text-[#31BCFF] hover:text-[#28a8e6]"
+                          >
+                            {t('header.clear_all')}
+                          </button>
+                        )}
+                        <button onClick={() => setShowFilters(false)} className="text-gray-400 hover:text-gray-600">
+                          <XMarkIcon className="w-5 h-5" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
+
+                    <div className="p-4 space-y-4">
+                      {/* Employees Filter */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">{t('header.employees')}</label>
+                        <input
+                          type="text"
+                          placeholder={t('header.search_employees_placeholder')}
+                          value={employeeSearchQuery}
+                          onChange={(e) => setEmployeeSearchQuery(e.target.value)}
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md mb-2 focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF]"
+                        />
+                        <div className="max-h-40 overflow-y-auto border border-gray-200 rounded-md">
+                          {filteredEmployees.length > 0 ? (
+                            filteredEmployees.map(employee => (
+                              <label
+                                key={employee.id}
+                                className="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={filters.employeeIds.includes(employee.id)}
+                                  onChange={() => toggleEmployeeFilter(employee.id)}
+                                  className="rounded border-gray-300 text-[#31BCFF] focus:ring-[#31BCFF]"
+                                />
+                                <span className="ml-2 text-sm text-gray-700">
+                                  {employee.firstName} {employee.lastName}
+                                </span>
+                              </label>
+                            ))
+                          ) : (
+                            <div className="px-3 py-2 text-sm text-gray-500 text-center">
+                              {t('header.no_employees_found')}
+                            </div>
+                          )}
+                        </div>
+                      </div>
 
                   {/* Employee Groups Filter */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Employee Groups</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('header.employee_groups')}</label>
                     <div className="space-y-2 max-h-40 overflow-y-auto">
                       {safeEmployeeGroups.map(group => (
                         <label key={group.id} className="flex items-center cursor-pointer">
@@ -666,7 +730,7 @@ export default function ScheduleHeader({
 
                   {/* Shift Types Filter */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Shift Types</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('header.shift_types')}</label>
                     <div className="space-y-2 max-h-40 overflow-y-auto">
                       {safeShiftTypes.map(shiftType => (
                         <label key={shiftType.id} className="flex items-center cursor-pointer">
@@ -684,7 +748,7 @@ export default function ScheduleHeader({
 
                   {/* Status Filter */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('header.status')}</label>
                     <div className="space-y-2">
                       {shiftStatuses.map(status => (
                         <label key={status.value} className="flex items-center cursor-pointer">
@@ -702,10 +766,10 @@ export default function ScheduleHeader({
 
                   {/* Time Range Filter */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Shift Time</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('header.shift_time')}</label>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-xs text-gray-600 mb-1">From</label>
+                        <label className="block text-xs text-gray-600 mb-1">{t('header.time_from')}</label>
                         <input
                           type="time"
                           value={filters.timeFrom}
@@ -714,7 +778,7 @@ export default function ScheduleHeader({
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-600 mb-1">To</label>
+                        <label className="block text-xs text-gray-600 mb-1">{t('header.time_to')}</label>
                         <input
                           type="time"
                           value={filters.timeTo}
@@ -731,5 +795,7 @@ export default function ScheduleHeader({
         </div>
       </div>
     </div>
+  </div>
+</div>
   )
 }

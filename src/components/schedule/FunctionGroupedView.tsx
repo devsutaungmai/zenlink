@@ -9,6 +9,7 @@ import ShiftsModal from './ShiftsModal'
 interface FunctionItem {
   id: string
   name: string
+  color?: string | null
   categoryId?: string | null
   category?: {
     id: string
@@ -152,13 +153,29 @@ export default function FunctionGroupedView({
     })
   }
 
+  const dayCount = Math.max(weekDates.length, 1)
+  const isTwoWeekView = dayCount > 7
+  const baseColumnMinWidth = 220
+  const dayColumnMinWidth = 120
+  const desktopMinWidth = isTwoWeekView ? `${baseColumnMinWidth + dayCount * dayColumnMinWidth}px` : undefined
+  const mobileGridStyle: React.CSSProperties = {
+    gridTemplateColumns: `repeat(${dayCount}, minmax(0, 1fr))`,
+    minWidth: isTwoWeekView ? `${dayCount * 72}px` : undefined
+  }
+  const desktopGridStyle: React.CSSProperties = {
+    gridTemplateColumns: isTwoWeekView
+      ? `minmax(${baseColumnMinWidth}px, 1fr) repeat(${dayCount}, minmax(${dayColumnMinWidth}px, 1fr))`
+      : `1fr repeat(${dayCount}, minmax(0, 1fr))`,
+    minWidth: desktopMinWidth
+  }
+
   return (
     <div className="overflow-hidden">
       {/* Mobile View - Grid Layout */}
       <div className="md:hidden bg-gray-50">
         {/* Week Days Header - Perfectly aligned with grid */}
-        <div className="bg-white sticky top-0 z-10 border-b shadow-sm">
-          <div className="grid grid-cols-7 gap-0">
+        <div className="bg-white sticky top-0 z-10 border-b shadow-sm overflow-x-auto">
+          <div className="grid gap-0" style={mobileGridStyle}>
             {weekDates.map((date, i) => {
               const isToday = new Date().toDateString() === date.toDateString()
               return (
@@ -191,9 +208,13 @@ export default function FunctionGroupedView({
                   {/* Function Header */}
                   <div className="flex items-center justify-between px-3 py-2.5 border-b bg-gray-50">
                     <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                      <div className="w-9 h-9 rounded-full bg-[#31BCFF] flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
-                        {fn.name.substring(0, 2).toUpperCase()}
-                      </div>
+                      {fn.color ? (
+                        <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: fn.color }} />
+                      ) : (
+                        <div className="w-9 h-9 rounded-full bg-[#31BCFF] flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+                          {fn.name.substring(0, 2).toUpperCase()}
+                        </div>
+                      )}
                       <div className="flex-1 min-w-0">
                         <div className="font-medium text-sm text-gray-900 truncate">
                           {fn.name}
@@ -212,7 +233,8 @@ export default function FunctionGroupedView({
                   </div>
 
                   {/* Day Grid - Exactly 7 columns matching header */}
-                  <div className="grid grid-cols-7 gap-0 p-3">
+                  <div className="overflow-x-auto">
+                    <div className="grid gap-0 p-3" style={mobileGridStyle}>
                     {weekDates.map((date, dayIndex) => {
                       const formattedDate = format(date, 'yyyy-MM-dd')
                       const dayShifts = getFunctionShifts(fn.id, date)
@@ -253,15 +275,18 @@ export default function FunctionGroupedView({
                               </button>
                             ) : (
                               <div className="w-full h-full flex flex-col">
-                                {dayShifts.slice(0, 1).map(shift => (
+                                {dayShifts.slice(0, 1).map(shift => {
+                                  const shiftColor = shift.function?.color || (
+                                    shift.status === 'CANCELLED' ? '#ef4444' :
+                                    shift.status === 'WORKING' ? '#3b82f6' :
+                                    '#31BCFF'
+                                  )
+                                  return (
                                   <button
                                     key={shift.id}
                                     onClick={() => onEditShift(shift)}
-                                    className={`w-full flex-1 rounded-xl text-white font-medium flex flex-col items-center justify-center gap-0.5 transition-all active:scale-95 ${
-                                      shift.status === 'CANCELLED' ? 'bg-red-500' :
-                                      shift.status === 'WORKING' ? 'bg-blue-500' :
-                                      'bg-[#31BCFF]'
-                                    }`}
+                                    className="w-full flex-1 rounded-xl text-white font-medium flex flex-col items-center justify-center gap-0.5 transition-all active:scale-95"
+                                    style={{ backgroundColor: shiftColor }}
                                   >
                                     <span className="text-xs leading-tight">
                                       {shift.startTime.substring(0, 5)}
@@ -272,7 +297,8 @@ export default function FunctionGroupedView({
                                       </span>
                                     )}
                                   </button>
-                                ))}
+                                  )
+                                })}
                                 {dayShifts.length > 1 && (
                                   <button 
                                     onClick={() => handleShowMoreShifts(dayShifts, date, fn.name)}
@@ -287,6 +313,7 @@ export default function FunctionGroupedView({
                         </div>
                       )
                     })}
+                    </div>
                   </div>
                 </div>
               )
@@ -296,10 +323,13 @@ export default function FunctionGroupedView({
       </div>
 
       {/* Desktop View - Original Grid Layout */}
-      <div className="hidden md:block overflow-auto">
-      <div className="min-w-full">
+      <div className="hidden md:block overflow-x-auto">
+      <div className="min-w-full" style={desktopMinWidth ? { minWidth: desktopMinWidth } : undefined}>
         {/* Header Row */}
-        <div className="grid grid-cols-[1fr_repeat(7,minmax(140px,1fr))] border-b bg-gray-50 sticky top-0">
+        <div
+          className="grid border-b bg-gray-50 sticky top-0"
+          style={desktopGridStyle}
+        >
           <div className="p-3 font-medium text-sm border-r"></div>
           {weekDates.map((date, i) => {
             const isToday = new Date().toDateString() === date.toDateString();
@@ -326,13 +356,22 @@ export default function FunctionGroupedView({
           const functionShiftsCount = shifts.filter(s => s.functionId === fn.id).length;
           
           return (
-            <div key={fn.id} className="grid grid-cols-[1fr_repeat(7,minmax(140px,1fr))] border-b hover:bg-gray-50">
+            <div
+              key={fn.id}
+              className="grid border-b hover:bg-gray-50"
+              style={desktopGridStyle}
+            >
               <div className="p-3 border-r">
-                <div className="font-medium text-sm text-gray-900">
-                  {fn.name}
-                  {fn.category && (
-                    <span className="ml-2 text-xs font-normal text-gray-500">• {fn.category.name}</span>
+                <div className="flex items-center gap-2">
+                  {fn.color && (
+                    <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: fn.color }} />
                   )}
+                  <div className="font-medium text-sm text-gray-900">
+                    {fn.name}
+                    {fn.category && (
+                      <span className="ml-2 text-xs font-normal text-gray-500">• {fn.category.name}</span>
+                    )}
+                  </div>
                 </div>
                 <div className="text-xs text-gray-500 mt-0.5">
                   {getFunctionTotalHours(fn.id)} / {currencySymbol} 0.00 / {functionShiftsCount} Shift{functionShiftsCount !== 1 ? 's' : ''}
@@ -378,6 +417,7 @@ export default function FunctionGroupedView({
                       <>
                         {dayShifts.slice(0, 2).map((shift, shiftIndex) => {
                           const employee = employees.find(emp => emp.id === shift.employeeId);
+                          const shiftColor = shift.function?.color || '#31BCFF'
                           
                           return (
                             <div
@@ -385,11 +425,11 @@ export default function FunctionGroupedView({
                               onClick={() => onEditShift(shift)}
                               className="mb-1 cursor-pointer"
                             >
-                              <div className="rounded p-2 text-xs border bg-red-100 border-red-300">
-                                <div className="font-medium text-gray-900">
+                              <div className="rounded p-2 text-xs border text-white font-medium" style={{ backgroundColor: shiftColor, borderColor: shiftColor }}>
+                                <div className="font-medium">
                                   {employee ? `${employee.firstName} ${employee.lastName}` : 'Unknown'}
                                 </div>
-                                <div className="text-gray-700 mt-0.5">
+                                <div className="mt-0.5 opacity-90">
                                   {shift.startTime} - {shift.endTime || 'Active'}
                                 </div>
                               </div>

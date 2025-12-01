@@ -123,17 +123,15 @@ model EmployeeGroup {
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @default(now())
   businessId            String
-  functionId            String?
   contracts             Contract[]
   contractTemplates     ContractTemplate[]
   employees             Employee[]             @relation("EmployeeToGroup")
   business              Business               @relation(fields: [businessId], references: [id])
-  function              DepartmentFunction?    @relation(fields: [functionId], references: [id])
+  functions             DepartmentFunction[]
   employeeGroupPayRules EmployeeGroupPayRule[]
   shifts                Shift[]
 
   @@unique([name, businessId])
-  @@index([functionId])
 }
 
 model Contract {

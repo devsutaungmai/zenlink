@@ -93,14 +93,14 @@
     },
     "access_setting": {
       "title": "Stemplingsur – Tilgang",
-      "description": "Konfigurer hvor ansatte kan registrere inn- og utstempling.",
+      "description": "Konfigurer hvor medarbeidere kan registrere inn- og utstempling.",
       "access_restrictions": {
         "title": "Tilgangsbegrensninger",
-        "description": "Aktiver at ansatte kan stemplere inn og ut fra enheten.",
+        "description": "Aktiver at medarbeidere kan stemplere inn og ut fra enheten.",
         "options": {
           "anywhere": {
             "label": "Hvor som helst",
-            "description": "Ansatte kan stemplere inn/ut fra hvilken som helst lokasjon"
+            "description": "Medarbeidere kan stemplere inn/ut fra hvilken som helst lokasjon"
           },
           "specific_locations": {
             "label": "Bestemte lokasjoner",
@@ -123,15 +123,15 @@
         },
         "specific_departments": {
           "title": "Tillatte avdelinger",
-          "empty_message": "Ingen avdelinger valgt. Ansatte vil ikke kunne bruke stemplingsuret.",
+          "empty_message": "Ingen avdelinger valgt. Medarbeidere vil ikke kunne bruke stemplingsuret.",
           "tooltip": "Velg avdelinger som får bruke stemplingsursystemet.",
-          "example": "f.eks. IT-avdeling (3 ansatte)"
+          "example": "f.eks. IT-avdeling (3 medarbeidere)"
         }
       },
       "allowed_locations": {
         "title": "Tillatte lokasjoner",
-        "description": "Legg til lokasjoner der ansatte kan stemplere inn/ut.",
-        "empty_message": "Ingen lokasjoner konfigurert. Ansatte kan ikke stemplere inn/ut før du legger til minst én lokasjon.",
+        "description": "Legg til lokasjoner der medarbeidere kan stemplere inn/ut.",
+        "empty_message": "Ingen lokasjoner konfigurert. Medarbeidere kan ikke stemplere inn/ut før du legger til minst én lokasjon.",
         "no_location_text": "Ingen lokasjoner lagt til",
         "radius_label": "Radius",
         "gps_enabled": "GPS aktivert",
@@ -139,9 +139,9 @@
         "unknown_department": "Ukjent",
         "all_departments_allowed": "Alle avdelinger tillatt",
         "warning_title": "Ingen lokasjoner konfigurert",
-        "no_departments_warning": "Ingen avdelinger valgt. Ansatte vil ikke kunne bruke stemplingsuret.",
-        "employees": "ansatte",
-        "employee": "ansatt",
+        "no_departments_warning": "Ingen avdelinger valgt. Medarbeidere vil ikke kunne bruke stemplingsuret.",
+        "employees": "medarbeidere",
+        "employee": "medarbeider",
         "buttons": {
           "add_with_map": "Legg til med kart",
           "add_manually": "Legg til manuelt"
@@ -153,10 +153,10 @@
           "address": "Adresse",
           "address_placeholder": "Skriv inn full adresse",
           "radius": "Radius (meter)",
-          "radius_hint": "Ansatte må være innenfor denne avstanden for å kunne stemplere inn/ut",
+          "radius_hint": "Medarbeidere må være innenfor denne avstanden for å kunne stemplere inn/ut",
           "departments": "Avdelinger (valgfritt)",
           "departments_hint": "Velg hvilke avdelinger som kan stemplere fra denne lokasjonen. La stå tomt for alle avdelinger.",
-          "employees_count": "ansatte",
+          "employees_count": "medarbeidere",
           "no_departments": "Ingen avdelinger tilgjengelig",
           "add_button": "Legg til lokasjon",
           "cancel_button": "Avbryt"
@@ -229,7 +229,7 @@
   },
   "people": {
     "title": "Personell",
-    "description": "Administrer ansattkontrakter og regler",
+    "description": "Administrer medarbeiderkontrakter og regler",
     "menu": {
       "general": {
         "title": "Generelt",
@@ -261,9 +261,9 @@
     },
     "contract_setup_setting": {
       "title": "Opprett kontraktsmal",
-      "description": "Opprett gjenbrukbare kontraktsmaler for ulike ansattgrupper",
-      "employee_group_label": "Ansattgruppe",
-      "employee_group_placeholder": "Velg en ansattgruppe",
+      "description": "Opprett gjenbrukbare kontraktsmaler for ulike medarbeidergrupper",
+      "employee_group_label": "Medarbeidergruppe",
+      "employee_group_placeholder": "Velg en medarbeidergruppe",
       "template_name_label": "Malnavn",
       "template_name_placeholder": "f.eks. Standard arbeidskontrakt",
       "company_logo_label": "Firma-logo",
@@ -281,7 +281,7 @@
       },
       "contract_body_label": "Kontraktsinnhold",
       "contract_body_placeholder": "Skriv inn kontraktsteksten her. Du kan bruke variabler som {{employee_name}}, {{start_date}}, {{salary}}, osv.",
-      "variables_hint": "Bruk variabler i doble krøllparenteser som {{employee_name}}, {{start_date}}, {{department}} for automatisk utfylling av ansattdata",
+      "variables_hint": "Bruk variabler i doble krøllparenteser som {{employee_name}}, {{start_date}}, {{department}} for automatisk utfylling av medarbeiderdata",
       "required": "*",
       "remove": "Fjern",
       "loading": "Oppretter...",
@@ -292,7 +292,7 @@
       "existing_templates": {
         "title": "Eksisterende kontraktsmaler",
         "description": "Administrer kontraktsmalene dine",
-        "employee_group": "Ansattgruppe",
+        "employee_group": "Medarbeidergruppe",
         "created": "Opprettet",
         "logo": "Logo",
         "buttons": {
@@ -411,7 +411,7 @@
   },
   "statistics": {
     "title": "Bedriftsstatistikk",
-    "total_employees": "Totalt antall ansatte",
+    "total_employees": "Totalt antall medarbeidere",
     "current_currency": "Gjeldende valuta"
   },
   "buttons": {

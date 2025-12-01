@@ -50,6 +50,15 @@ export default function WeekView({
   const [dragEndHour, setDragEndHour] = useState<number | null>(null)
   const [dragDate, setDragDate] = useState<Date | null>(null)
 
+  const dayCount = Math.max(weekDates.length, 1)
+  const mobileGridStyle: React.CSSProperties = {
+    gridTemplateColumns: `repeat(${dayCount}, minmax(0, 1fr))`,
+    minWidth: dayCount > 7 ? `${dayCount * 72}px` : undefined
+  }
+  const desktopGridStyle: React.CSSProperties = {
+    gridTemplateColumns: `60px repeat(${dayCount}, minmax(0, 1fr))`
+  }
+
   // Horizontal scroll handlers
   const handleMouseDown = (e: React.MouseEvent) => {
     // Don't start dragging if clicking on a shift card
@@ -246,8 +255,8 @@ export default function WeekView({
       {/* Mobile View - Grid Layout like image */}
       <div className="md:hidden bg-gray-50">
         {/* Week Days Header - Perfectly aligned with grid */}
-        <div className="bg-white sticky top-0 z-10 border-b shadow-sm">
-          <div className="grid grid-cols-7 gap-0">
+        <div className="bg-white sticky top-0 z-10 border-b shadow-sm overflow-x-auto">
+          <div className="grid gap-0" style={mobileGridStyle}>
             {weekDates.map((date, i) => {
               const isToday = new Date().toDateString() === date.toDateString()
               return (
@@ -306,7 +315,8 @@ export default function WeekView({
                   </div>
 
                   {/* Day Grid - Exactly 7 columns matching header */}
-                  <div className="grid grid-cols-7 gap-0 p-3">
+                  <div className="overflow-x-auto">
+                    <div className="grid gap-0 p-3" style={mobileGridStyle}>
                     {weekDates.map((date, dayIndex) => {
                       const formattedDate = format(date, 'yyyy-MM-dd')
                       const dayShifts = employeeShifts.filter(shift => {
@@ -377,6 +387,7 @@ export default function WeekView({
                         </div>
                       )
                     })}
+                    </div>
                   </div>
                 </div>
               )
@@ -399,14 +410,17 @@ export default function WeekView({
       {/* Desktop View - Original Grid Layout */}
       <div 
         ref={weekScrollableRef}
-        className="hidden md:block overflow-x-auto"
+        className="hidden md:block"
         onMouseDown={handleMouseDown}
         onMouseUp={handleMouseUp}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseUp}
       >
         <div>
-          <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b min-w-full">
+          <div
+            className="grid border-b"
+            style={desktopGridStyle}
+          >
             <HourColumn />
             
             {weekDates.map((date, i) => {

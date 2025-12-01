@@ -34,6 +34,7 @@ import {
   MobileCardActions,
   Badge,
 } from "@/components/MobileCardList"
+import { downloadBlob } from '@/shared/utils/download'
 
 interface Contract {
   id: string
@@ -249,7 +250,8 @@ export default function ContractsPage() {
         }
       });
 
-      const response = await fetch(`/api/contracts/${id}/download`);
+      const downloadUrl = `/api/contracts/${id}/download`;
+      const response = await fetch(downloadUrl);
       
       if (!response.ok) {
         throw new Error('Failed to generate PDF');
@@ -268,14 +270,7 @@ export default function ContractsPage() {
 
       // Create blob and download
       const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      downloadBlob(blob, filename);
 
       // Close loading and show success
       Swal.close();

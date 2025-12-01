@@ -4,7 +4,35 @@
     "all_employees": "Alle Mitarbeiter",
     "week": "Woche",
     "day": "Tag",
-    "today": "Heute"
+    "today": "Heute",
+    "all_departments": "Alle Abteilungen",
+    "all_categories": "Alle Kategorien",
+    "all_functions": "Alle Funktionen",
+    "select_category_first": "Kategorie zuerst auswählen",
+    "filters": "Filter",
+    "clear_all": "Alle zurücksetzen",
+    "employees": "Mitarbeiter",
+    "search_employees_placeholder": "Mitarbeiter suchen...",
+    "no_employees_found": "Keine Mitarbeiter gefunden",
+    "employee_groups": "Mitarbeitergruppen",
+    "shift_types": "Schichttypen",
+    "status": "Status",
+    "shift_time": "Schichtzeit",
+    "time_from": "Von",
+    "time_to": "Bis",
+    "apply_filters": "Filter anwenden",
+    "view_modes": {
+      "week": "Woche",
+      "two_week": "Zwei Wochen",
+      "month": "Monat",
+      "day": "Tag"
+    },
+    "statuses": {
+      "scheduled": "Geplant",
+      "in_progress": "In Bearbeitung",
+      "completed": "Abgeschlossen",
+      "cancelled": "Abgesagt"
+    }
   },
   "week_view": {
     "today": "Heute",
@@ -27,5 +55,66 @@
     "error_fetching_employees": "Fehler beim Abrufen der Mitarbeiter:",
     "error_fetching_groups": "Fehler beim Abrufen der Mitarbeitergruppen:",
     "error_fetching_shifts": "Fehler beim Abrufen der Schichten:"
+  },
+  "view_tabs": {
+    "time": {
+      "label": "Zeitleiste",
+      "description": "Chronologischer Überblick"
+    },
+    "employees": {
+      "label": "Mitarbeiter",
+      "description": "Personenzentrierte Ansicht"
+    },
+    "groups": {
+      "label": "Gruppen",
+      "description": "Teamzuordnungen"
+    },
+    "functions": {
+      "label": "Funktionen",
+      "description": "Rollenabdeckung"
+    },
+    "aria_mobile": "Zeitplanansichten (Mobil)",
+    "aria_desktop": "Zeitplanansichten"
+  },
+  "labels": {
+    "this_employee": "Dieser Mitarbeiter",
+    "active_shift": "Aktiv"
+  },
+  "alerts": {
+    "employee_unavailable": {
+      "title": "Mitarbeiter nicht verfügbar",
+      "with_note": "{{name}} ist am {{date}} nicht verfügbar ({{note}}).",
+      "without_note": "{{name}} ist am {{date}} nicht verfügbar."
+    },
+    "shift_conflict": {
+      "title": "Schichtkonflikt: {{name}}",
+      "message": "Überschneidet sich mit bestehender Schicht am {{date}} ({{start}} - {{end}})",
+      "toast": "{{title}}: {{message}}"
+    }
+  },
+  "labor_law": {
+    "title": "Verstöße gegen Arbeitsrecht erkannt",
+    "intro": "Diese Schicht verstößt gegen die folgenden arbeitsrechtlichen Anforderungen:",
+    "override_question": "Möchten Sie diese Schicht trotzdem erstellen?",
+    "override_hint": "Als Administrator können Sie diese Einschränkungen bei Bedarf überstimmen.",
+    "confirm": "Ja, Schicht erstellen",
+    "cancel": "Abbrechen",
+    "override_toast_one": "Administrator-Überschreibung: Schicht trotz {{count}} arbeitsrechtlichem Verstoß erstellt",
+    "override_toast_other": "Administrator-Überschreibung: Schicht trotz {{count}} arbeitsrechtlicher Verstöße erstellt",
+    "violations": {
+      "max_hours_per_day": "• Schichtdauer: <strong>{{current}} Stunden</strong> (überschreitet tägliches Limit von {{allowed}} Std.)",
+      "max_overtime_per_day": "• Tägliche Überstunden: <strong>{{current}} Stunden</strong> (überschreitet Limit von {{allowed}} Std.)",
+      "max_overtime_per_week": "• Wöchentliche Überstunden: <strong>{{current}} Stunden</strong> (überschreitet Limit von {{allowed}} Std.)",
+      "missing_break": "• Pausenanforderung: <strong>{{current}} Minuten</strong> (mindestens {{allowed}} Minuten erforderlich)",
+      "generic": "• {{message}}"
+    }
+  },
+  "toasts": {
+    "shift_created": "Schicht erfolgreich erstellt!",
+    "shift_updated": "Schicht erfolgreich aktualisiert!",
+    "shift_create_failed": "Schicht konnte nicht erstellt werden.",
+    "shift_update_failed": "Schicht konnte nicht aktualisiert werden.",
+    "shift_deleted": "Schicht erfolgreich gelöscht!",
+    "shift_delete_failed": "Schicht konnte nicht gelöscht werden."
   }
 }

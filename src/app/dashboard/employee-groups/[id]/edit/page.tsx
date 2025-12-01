@@ -4,8 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import { ChevronLeftIcon } from '@heroicons/react/24/outline'
-import EmployeeGroupForm from '@/components/EmployeeGroupForm'
-import { WageType, EmployeeGroupFormData } from '@/components/EmployeeGroupForm'
+import EmployeeGroupForm, { EmployeeGroupFormData } from '@/components/EmployeeGroupForm'
 
 interface EmployeeGroup extends EmployeeGroupFormData {
   id: string
@@ -32,7 +31,6 @@ export default function EditEmployeeGroupPage({ params }: { params: Promise<{ id
           hourlyWage: data.hourlyWage,
           wagePerShift: data.wagePerShift,
           defaultWageType: data.defaultWageType,
-          functionId: data.functionId || data.function?.id || ''
         }
         setEmployeeGroup(mapped)
       } catch (error) {

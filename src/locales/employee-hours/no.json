@@ -8,8 +8,8 @@
     "title": "Vi klarte ikke å laste timene dine"
   },
   "accessDenied": {
-    "title": "Kun for ansatte",
-    "description": "Bytt til en ansattkonto for å se arbeidstimer."
+    "title": "Kun for medarbeidere",
+    "description": "Bytt til en medarbeiderkonto for å se arbeidstimer."
   },
   "quickRanges": {
     "today": "I dag",

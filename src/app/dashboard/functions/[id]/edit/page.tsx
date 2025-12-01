@@ -29,6 +29,18 @@ interface Function {
   color?: string | null
   categoryId: string
   category: Category
+  employeeGroups?: Array<{
+    id: string
+    name: string
+  }>
+}
+
+interface EmployeeGroupOption {
+  id: string
+  name: string
+  _count?: {
+    employees: number
+  }
 }
 
 export default function EditFunctionPage({
@@ -41,6 +53,8 @@ export default function EditFunctionPage({
   const { t } = useTranslation('functions')
   const [loading, setLoading] = useState(false)
   const [categories, setCategories] = useState<Category[]>([])
+  const [employeeGroups, setEmployeeGroups] = useState<EmployeeGroupOption[]>([])
+  const [selectedEmployeeGroupIds, setSelectedEmployeeGroupIds] = useState<string[]>([])
   const [formData, setFormData] = useState({
     name: '',
     color: '#3B82F6',
@@ -50,7 +64,12 @@ export default function EditFunctionPage({
   useEffect(() => {
     fetchCategories()
     fetchFunction()
+    fetchEmployeeGroups()
   }, [])
+
+  useEffect(() => {
+    setSelectedEmployeeGroupIds((prev) => prev.filter((id) => employeeGroups.some((group) => group.id === id)))
+  }, [employeeGroups])
 
   const fetchCategories = async () => {
     try {
@@ -74,6 +93,7 @@ export default function EditFunctionPage({
           color: data.color || '#3B82F6',
           categoryId: data.categoryId
         })
+        setSelectedEmployeeGroupIds(data.employeeGroups?.map((group) => group.id) || [])
       } else {
         await Swal.fire({
           title: t('error'),
@@ -119,7 +139,10 @@ export default function EditFunctionPage({
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          ...formData,
+          employeeGroupIds: selectedEmployeeGroupIds
+        })
       })
 
       if (response.ok) {
@@ -149,6 +172,36 @@ export default function EditFunctionPage({
       })
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchEmployeeGroups = async () => {
+    try {
+      const response = await fetch('/api/employee-groups')
+      if (response.ok) {
+        const data = await response.json()
+        setEmployeeGroups(data)
+      }
+    } catch (error) {
+      console.error('Error fetching employee groups:', error)
+    }
+  }
+
+  const toggleEmployeeGroup = (groupId: string) => {
+    setSelectedEmployeeGroupIds((prev) =>
+      prev.includes(groupId)
+        ? prev.filter((id) => id !== groupId)
+        : [...prev, groupId]
+    )
+  }
+
+  const allEmployeeGroupsSelected = employeeGroups.length > 0 && selectedEmployeeGroupIds.length === employeeGroups.length
+
+  const handleToggleAllEmployeeGroups = () => {
+    if (allEmployeeGroupsSelected) {
+      setSelectedEmployeeGroupIds([])
+    } else {
+      setSelectedEmployeeGroupIds(employeeGroups.map((group) => group.id))
     }
   }
 
@@ -256,6 +309,71 @@ export default function EditFunctionPage({
             </div>
             <p className="mt-1 text-sm text-gray-500">
               {t('color_helper')}
+            </p>
+          </div>
+
+          {/* Employee Groups */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {t('employee_groups_label', { defaultValue: 'Employee Groups' })}
+              <span className="text-gray-500 text-xs ml-1">
+                {t('employee_groups_optional', { defaultValue: '(optional)' })}
+              </span>
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-60 overflow-y-auto border border-gray-300 rounded-xl p-4 bg-white/70 backdrop-blur-sm">
+              {employeeGroups.length === 0 ? (
+                <div className="text-sm text-gray-500 col-span-full">
+                  {t('employee_groups_empty', { defaultValue: 'No employee groups available yet.' })}
+                </div>
+              ) : (
+                <>
+                  <label className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors col-span-full sm:col-span-2 lg:col-span-3">
+                    <input
+                      type="checkbox"
+                      checked={allEmployeeGroupsSelected}
+                      onChange={handleToggleAllEmployeeGroups}
+                      className="h-4 w-4 text-[#31BCFF] border-gray-300 rounded focus:ring-[#31BCFF]"
+                    />
+                    <span className="text-sm font-medium text-gray-700">
+                      {t('employee_groups_select_all', { defaultValue: 'Select all groups' })}
+                    </span>
+                  </label>
+                  {employeeGroups.map((group) => (
+                    <label
+                      key={group.id}
+                      className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedEmployeeGroupIds.includes(group.id)}
+                        onChange={() => toggleEmployeeGroup(group.id)}
+                        className="h-4 w-4 text-[#31BCFF] border-gray-300 rounded focus:ring-[#31BCFF]"
+                      />
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{group.name}</p>
+                        <p className="text-xs text-gray-500">
+                          {t('employee_groups_employee_count', {
+                            defaultValue: '{{count}} employees',
+                            count: group._count?.employees ?? 0
+                          })}
+                        </p>
+                      </div>
+                    </label>
+                  ))}
+                </>
+              )}
+            </div>
+            <div className="mt-2 text-xs text-gray-500">
+              {allEmployeeGroupsSelected
+                ? t('employee_groups_selected_all', { defaultValue: 'All groups selected' })
+                : t('employee_groups_selected_count', {
+                    defaultValue: 'Selected {{count}} of {{total}} groups',
+                    count: selectedEmployeeGroupIds.length,
+                    total: employeeGroups.length
+                  })}
+            </div>
+            <p className="mt-1 text-sm text-gray-500">
+              {t('employee_groups_helper', { defaultValue: 'Link this function to the groups that should inherit it.' })}
             </p>
           </div>
 

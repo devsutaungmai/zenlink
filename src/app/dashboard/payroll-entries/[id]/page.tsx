@@ -16,6 +16,7 @@ import {
   DocumentArrowDownIcon,
 } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
+import { downloadBlob } from '@/shared/utils/download'
 
 interface PayrollEntry {
   id: string
@@ -147,21 +148,17 @@ export default function PayrollEntryViewPage({ params }: { params: Promise<{ id:
 
   const handleDownloadPayslip = async () => {
     try {
-      const response = await fetch(`/api/payroll-entries/${entryId}/payslip`)
+      const downloadUrl = `/api/payroll-entries/${entryId}/payslip`
+      const filename = `payslip_${entry?.employee.firstName}_${entry?.employee.lastName}_${entry?.payrollPeriod.name}.pdf`
+
+      const response = await fetch(downloadUrl)
       
       if (!response.ok) {
         throw new Error('Failed to generate payslip')
       }
 
       const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `payslip_${entry?.employee.firstName}_${entry?.employee.lastName}_${entry?.payrollPeriod.name}.pdf`
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
+      downloadBlob(blob, filename)
 
       Swal.fire({
         toast: true,

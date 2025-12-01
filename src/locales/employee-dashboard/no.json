@@ -26,8 +26,8 @@
   },
   "profile": {
     "title": "Profil",
-    "employee": "Ansatt",
-    "employee_id": "Ansatt-ID:",
+    "employee": "Medarbeider",
+    "employee_id": "Medarbeider-ID:",
     "department": "Avdeling:",
     "group": "Gruppe:"
   },
@@ -76,7 +76,7 @@
     "spinner": "Laster..."
   },
   "errors": {
-    "failed_to_load": "Kunne ikke laste ansattdata",
+    "failed_to_load": "Kunne ikke laste medarbeiderdata",
     "return_to_login": "Tilbake til innlogging",
     "failed_clock_in": "Kunne ikke stemple inn",
     "failed_clock_out": "Kunne ikke stemple ut",

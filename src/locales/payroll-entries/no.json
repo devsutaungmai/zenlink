@@ -1,9 +1,9 @@
 {
   "title": "Lønnsoppføringer",
-  "subtitle": "Administrer ansattes lønnsoppføringer og beregninger",
+  "subtitle": "Administrer medarbeidernes lønnsoppføringer og beregninger",
   "create_entry": "Opprett Oppføring",
   "create_first_entry": "Opprett Første Oppføring",
-  "search_placeholder": "Søk etter ansattnavn, nummer eller periode...",
+  "search_placeholder": "Søk etter medarbeidernavn, nummer eller periode...",
   "filters": {
     "all_status": "All Status",
     "all_periods": "Alle Perioder"
@@ -14,7 +14,7 @@
     "paid": "Betalt"
   },
   "table": {
-    "employee": "Ansatt",
+    "employee": "Medarbeider",
     "period": "Periode",
     "hours": "Timer",
     "gross_pay": "Bruttolønn",

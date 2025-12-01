@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { DocumentDuplicateIcon, EyeIcon, ArrowDownTrayIcon, CheckCircleIcon, XCircleIcon, ClockIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { downloadBlob } from '@/shared/utils/download'
 
 interface Contract {
   id: string
@@ -39,7 +40,8 @@ export function ContractsTabContent({
     try {
       setDownloading(contract.id)
       
-      const response = await fetch(`/api/contracts/${contract.id}/download`)
+      const downloadUrl = `/api/contracts/${contract.id}/download`
+      const response = await fetch(downloadUrl)
       
       if (!response.ok) {
         throw new Error('Failed to generate PDF')
@@ -56,14 +58,7 @@ export function ContractsTabContent({
       }
 
       const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = filename
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
+      downloadBlob(blob, filename)
     } catch (error) {
       console.error('Error downloading contract:', error)
       alert('Failed to download contract. Please try again.')
