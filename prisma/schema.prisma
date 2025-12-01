@@ -53,6 +53,7 @@ model Business {
   departments              Department[]
   employeeGroups           EmployeeGroup[]
   invitations              Invitation[]
+  laborLawSettings         LaborLawSettings[]
   payRules                 PayRule[]
   payrollPeriods           PayrollPeriod[]
   punchClockAccessSettings PunchClockAccessSettings? @relation("PunchClockAccessSettings")
@@ -663,6 +664,29 @@ model ShiftTypeConfig {
   shifts              Shift[]
 
   @@unique([name, businessId])
+  @@index([businessId, isActive])
+}
+
+model LaborLawSettings {
+  id                      String   @id @default(cuid())
+  businessId              String
+  countryCode             String
+  maxHoursPerDay          Float    @default(9)
+  maxHoursPerWeek         Float    @default(40)
+  maxOvertimePerDay       Float    @default(4)
+  maxOvertimePerWeek      Float    @default(10)
+  maxConsecutiveDays      Int      @default(6)
+  minRestHoursBetweenShifts Float  @default(11)
+  longShiftThreshold      Float    @default(5.5)
+  minBreakForLongShifts   Int      @default(30)
+  overtimeThreshold       Float    @default(9)
+  isActive                Boolean  @default(true)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+  business                Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, countryCode])
+  @@index([businessId])
   @@index([businessId, isActive])
 }
 

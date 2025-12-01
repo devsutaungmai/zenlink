@@ -46,33 +46,31 @@ export interface ShiftData {
   employeeId: string
 }
 
-// Default labor law rules (can be customized per country/region)
 export const DEFAULT_LABOR_RULES: LaborLawRules = {
-  maxHoursPerDay: 10,
+  maxHoursPerDay: 9,
   minRestHoursBetweenShifts: 11,
   maxConsecutiveDays: 6,
-  maxHoursPerWeek: 48,
-  minBreakForLongShifts: 30, // 30 minutes
-  longShiftThreshold: 6, // 6+ hours require break
-  overtimeThreshold: 8, // Regular hours before overtime
+  maxHoursPerWeek: 40,
+  minBreakForLongShifts: 30,
+  longShiftThreshold: 5.5,
+  overtimeThreshold: 9,
   maxOvertimePerDay: 4,
-  maxOvertimePerWeek: 12
+  maxOvertimePerWeek: 10
 }
 
-// Country-specific rules
 export const COUNTRY_RULES: Record<string, LaborLawRules> = {
-  'NO': { // Norway
+  'NO': {
     maxHoursPerDay: 9,
-    minRestHoursBetweenShifts: 11,
-    maxConsecutiveDays: 6,             // approximate/default
+    overtimeThreshold: 9,
+    maxOvertimePerDay: 4,
     maxHoursPerWeek: 40,
-    minBreakForLongShifts: 30,         // total break at least 30 min if ≥8h
-    longShiftThreshold: 8,             // define “long shift” as ≥8h
-    overtimeThreshold: 8,              // hours beyond threshold per day count as overtime
-    maxOvertimePerDay: 2,              // reasonable default (law uses averages, so pick a value)
-    maxOvertimePerWeek: 10             // reasonable default approximate
+    maxOvertimePerWeek: 10,
+    maxConsecutiveDays: 6,
+    minRestHoursBetweenShifts: 11,
+    minBreakForLongShifts: 30,
+    longShiftThreshold: 5.5
   },
-  'TH': { // Thailand
+  'TH': {
     maxHoursPerDay: 8,
     minRestHoursBetweenShifts: 11,
     maxConsecutiveDays: 6,
@@ -83,7 +81,7 @@ export const COUNTRY_RULES: Record<string, LaborLawRules> = {
     maxOvertimePerDay: 4,
     maxOvertimePerWeek: 36
   },
-  'US': { // United States
+  'US': {
     maxHoursPerDay: 12,
     minRestHoursBetweenShifts: 8,
     maxConsecutiveDays: 7,
@@ -94,7 +92,7 @@ export const COUNTRY_RULES: Record<string, LaborLawRules> = {
     maxOvertimePerDay: 8,
     maxOvertimePerWeek: 20
   },
-  'GB': { // United Kingdom
+  'GB': {
     maxHoursPerDay: 11,
     minRestHoursBetweenShifts: 11,
     maxConsecutiveDays: 6,
@@ -105,7 +103,7 @@ export const COUNTRY_RULES: Record<string, LaborLawRules> = {
     maxOvertimePerDay: 6,
     maxOvertimePerWeek: 16
   },
-  'DE': { // Germany
+  'DE': {
     maxHoursPerDay: 10,
     minRestHoursBetweenShifts: 11,
     maxConsecutiveDays: 6,
@@ -567,5 +565,8 @@ export function separateViolations(violations: LaborLawViolation[]) {
   return { overridable, nonOverridable }
 }
 
-// Export singleton instance with default rules
-export const laborLawValidator = new LaborLawValidator()
+export const laborLawValidator = new LaborLawValidator('NO')
+
+export function updateLaborLawValidatorRules(rules: Partial<LaborLawRules>): void {
+  laborLawValidator.updateRules(rules)
+}
