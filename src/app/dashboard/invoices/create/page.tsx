@@ -8,8 +8,11 @@ import { ArrowLeftIcon, ArrowDownIcon } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
 import { Contact } from 'lucide-react'
 import { useInvoiceSettings } from '@/shared/hooks/useInvoiceSettings'
-import { exportToPDF, sendEmail } from '@/shared/lib/invoiceHelper'
+import { calculateInvoiceTotals, exportToPDF, sendEmail } from '@/shared/lib/invoiceHelper'
 import { Decimal } from '@prisma/client/runtime/library'
+import InvoiceSummaryCalculation from '@/components/invoice/InvoiceSummaryCalculation'
+import { se } from 'date-fns/locale'
+import { set } from 'zod'
 
 export interface Customer {
     id: string
@@ -106,6 +109,7 @@ export default function CreateInvoicePage() {
     })
     const [emailSendLoading, setEmailSendLoading] = useState(false);
     const { settings } = useInvoiceSettings();
+    const [netTotals, setNetTotals] = useState<Number[]>([]);
 
     useEffect(() => {
         fetchCustomers()
@@ -282,6 +286,7 @@ export default function CreateInvoicePage() {
         console.log("Deleting....")
         const updatedInvoices = formData.invoiceLines.filter((_, i) => i !== index);
         setFormData(prev => ({ ...prev, invoiceLines: updatedInvoices }));
+        setNetTotals((prevNetTotals) => prevNetTotals.filter((_, i) => i !== index));
     }
 
     const handleNewOrderLine = () => {
@@ -297,6 +302,7 @@ export default function CreateInvoicePage() {
                 }
             ]
         }))
+        setNetTotals((prevNetTotals) => ([...prevNetTotals, 0]));
     }
 
     const handleCopyOrderLine = (copiedInvoiceLine: InvoiceLine) => {
@@ -312,14 +318,30 @@ export default function CreateInvoicePage() {
                 }
             ]
         }))
+        setNetTotals((prevNetTotals) => ([...prevNetTotals, 0]));
     }
-  
+
+    const updateLineTotal = (index: number) => {
+        const line = formData.invoiceLines[index];
+
+        const qty = Number(line.quantity) || 0;
+        const price = Number(line.pricePerUnit) || 0;
+        const discount = Number(line.discountPercentage) || 0;
+
+        const { totalExclVAT } = calculateInvoiceTotals(qty, price, discount, 25);
+        setNetTotals((prevNetTotals) => {
+            const newNetTotals = [...prevNetTotals];    
+            newNetTotals[index] = totalExclVAT;
+            return newNetTotals;
+        });
+    };
+
 
     const handleSubmit = async (action: 'save' | 'print' | 'send_invoice_with_email' | 'send_invoice_without_email') => {
         setLoading(true)
         const invoiceStatus = action === "send_invoice_with_email" || action === "send_invoice_without_email" ? "SENT" : "DRAFT";
         let { seller, ...filteredData } = formData
-        filteredData = {...filteredData,status: invoiceStatus}
+        filteredData = { ...filteredData, status: invoiceStatus }
         // console.log("FormData ===>" + JSON.stringify(filteredData));
         try {
             const res = await fetch('/api/invoices', {
@@ -413,7 +435,7 @@ export default function CreateInvoicePage() {
 
             {/* Form Container */}
             <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg p-6">
-                <form onSubmit={(e) => {e.preventDefault();handleSubmit('save'); }} className="space-y-6">
+                <form onSubmit={(e) => { e.preventDefault(); handleSubmit('save'); }} className="space-y-6">
                     <div className="bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-xl border border-slate-200 p-6">
                         <h2 className="text-lg font-semibold text-gray-900 mb-4">Customer Information</h2>
 
@@ -577,6 +599,21 @@ export default function CreateInvoicePage() {
                         </div>
                     </div>}
 
+                    {/* Notes Section */}
+                    <div>
+                        <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
+                            Additional Notes
+                        </label>
+                        <textarea
+                            id="notes"
+                            value={formData.notes || ""}
+                            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                            className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                            placeholder="Enter any additional notes"
+                            rows={3}
+                        />
+                    </div>
+
                     <div className="bg-gradient-to-br rounded-xl border p-6">
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-lg font-semibold text-gray-900 mb-4">Order Lines</h2>
@@ -587,7 +624,7 @@ export default function CreateInvoicePage() {
                             >New Order Line</button>
                         </div>
                         {formData.invoiceLines.map((line, index) => (
-                            <div className="grid grid-cols-1 md:grid-cols-6 gap-6" key={index}>
+                            <div className="grid grid-cols-1 md:grid-cols-7 gap-8" key={index}>
                                 <div>
                                     <label htmlFor="productId" className="block text-sm font-medium text-gray-700 mb-2">
                                         Product *
@@ -625,6 +662,8 @@ export default function CreateInvoicePage() {
                                             const updatedLines = [...formData.invoiceLines];
                                             updatedLines[index].quantity = parseFloat(e.target.value);
                                             setFormData({ ...formData, invoiceLines: updatedLines })
+                                            updateLineTotal(index);
+
                                         }}
                                         className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
                                         placeholder="Enter quantity"
@@ -645,6 +684,7 @@ export default function CreateInvoicePage() {
                                             const updatedLines = [...formData.invoiceLines];
                                             updatedLines[index].pricePerUnit = parseFloat(e.target.value);
                                             setFormData({ ...formData, invoiceLines: updatedLines })
+                                            updateLineTotal(index);
                                         }}
                                         className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
                                         placeholder="Enter price per unit"
@@ -683,53 +723,55 @@ export default function CreateInvoicePage() {
                                                 const updatedLines = [...formData.invoiceLines];
                                                 updatedLines[index].discountPercentage = parseFloat(e.target.value);
                                                 setFormData({ ...formData, invoiceLines: updatedLines })
+                                                updateLineTotal(index);
                                             }}
                                             className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
                                             placeholder="Enter discount percentage"
                                         />
                                     </div>
                                 }
-                               <div className='items-end flex space-x-4 mb-3 '>
-                                 <button
-                                    type='button'
-                                    onClick={() => deleteInvoiceLine(index)}
-                                >
-                                    <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                    </svg>
-                                    
-                                </button>
-                                 <button
-                                    type='button'
-                                    onClick={() => handleCopyOrderLine(line)}
-                                >
-                                    <svg className="w-8 h-8 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2h-6a2 2 0 01-2-2V7z" />
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H7a2 2 0 00-2 2v7a2 2 0 002 2h7a2 2 0 002-2v-1" />
-                                    </svg>
-                                    
-                                </button>
-                                
-                               </div>
-                               
+                                <div>
+                                    <label htmlFor="netTotal" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Net Total
+                                    </label>
+                                    <input
+                                        type="number"
+                                        id="netTotal"
+                                        required
+                                        step="0.01"
+                                        value={(netTotals[index] || 0).toFixed(2)}
+                                        disabled
+                                        className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                                    />
+                                </div>
+                                <div className='items-end flex space-x-4 mb-3 '>
+                                    <button
+                                        type='button'
+                                        onClick={() => deleteInvoiceLine(index)}
+                                    >
+                                        <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+
+                                    </button>
+                                    <button
+                                        type='button'
+                                        onClick={() => handleCopyOrderLine(line)}
+                                    >
+                                        <svg className="w-8 h-8 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2h-6a2 2 0 01-2-2V7z" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H7a2 2 0 00-2 2v7a2 2 0 002 2h7a2 2 0 002-2v-1" />
+                                        </svg>
+
+                                    </button>
+
+                                </div>
+
                             </div>
                         ))}
                     </div>
-
-                    {/* Notes Section */}
-                    <div>
-                        <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
-                            Additional Notes
-                        </label>
-                        <textarea
-                            id="notes"
-                            value={formData.notes || ""}
-                            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                            className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                            placeholder="Enter any additional notes"
-                            rows={3}
-                        />
-                    </div>
+                    {/* Summary Calculation */}
+                    <InvoiceSummaryCalculation invoiceLines={formData.invoiceLines} />
 
                     {/* Form Actions */}
                     <div className="flex items-center justify-end gap-4 pt-6 border-t border-gray-200">
@@ -774,7 +816,7 @@ export default function CreateInvoicePage() {
                                     </button>
                                     <button
                                         type="button"
-                                        onClick={() => handleSubmit('send_invoice_without_email') }
+                                        onClick={() => handleSubmit('send_invoice_without_email')}
                                         disabled={loading}
                                         className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
@@ -785,7 +827,7 @@ export default function CreateInvoicePage() {
                                     </button>
                                     <button
                                         type="button"
-                                        onClick={() => handleSubmit('send_invoice_with_email') }
+                                        onClick={() => handleSubmit('send_invoice_with_email')}
                                         disabled={loading}
                                         className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
