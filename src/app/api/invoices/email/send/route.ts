@@ -3,6 +3,7 @@ import nodemailer from 'nodemailer';
 import { prisma } from '@/shared/lib/prisma';
 import { getCurrentUser } from '@/shared/lib/auth';
 import { calculateInvoiceTotals, getBusinessId } from '@/shared/lib/invoiceHelper';
+import { launchBrowser } from '@/shared/lib/puppeteer-config';
 
 export async function POST(req: Request) {
   try {
@@ -16,11 +17,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const {invoiceId} = await req.json();
+    const { invoiceId } = await req.json();
 
-    if (!invoiceId ) {
+    if (!invoiceId) {
       return NextResponse.json(
-        { error: 'Invoice ID and recipient email are required' },
+        { error: 'Invoice ID is required' },
         { status: 400 }
       );
     }
@@ -46,13 +47,15 @@ export async function POST(req: Request) {
     if (!invoice) {
       return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
     }
-     // Check if customer has an email
+
+    // Check if customer has an email
     if (!invoice.customer.email) {
       return NextResponse.json(
         { error: 'Customer email not found. Please add an email address to the customer.' },
         { status: 400 }
       );
     }
+
     // Prepare invoice lines data with calculations
     let totalExclVAT = 0;
     let totalVatAmount = 0;
@@ -85,7 +88,7 @@ export async function POST(req: Request) {
         Number(pricePerUnit),
         Number(discountPercentage)
       );
-      
+
       totalExclVAT += calculations.totalExclVAT;
       totalVatAmount += calculations.vatAmount;
       totalIncVAT += calculations.totalInclVAT;
@@ -119,116 +122,327 @@ export async function POST(req: Request) {
       });
     };
 
-    // Generate invoice rows HTML
+    // Generate invoice rows HTML for PDF
     const invoiceRowsHtml = invoiceLinesData.map((line: any) => {
       return `
         <tr>
-          <td style="padding: 12px 8px; border-bottom: 1px solid #e9e9e9;">${line.productName}</td>
-          <td style="padding: 12px 8px; border-bottom: 1px solid #e9e9e9; text-align: center;">${line.quantity}</td>
-          <td style="padding: 12px 8px; border-bottom: 1px solid #e9e9e9; text-align: center;">Stk</td>
-          <td style="padding: 12px 8px; border-bottom: 1px solid #e9e9e9; text-align: right;">${formatCurrency(line.pricePerUnit)}</td>
-          <td style="padding: 12px 8px; border-bottom: 1px solid #e9e9e9; text-align: center;">${line.discountPercentage || 0}%</td>
-          <td style="padding: 12px 8px; border-bottom: 1px solid #e9e9e9; text-align: center;">${line.vatPercentage}%</td>
-          <td style="padding: 12px 8px; border-bottom: 1px solid #e9e9e9; text-align: right;">${formatCurrency(line.netAmount)}</td>
-          <td style="padding: 12px 8px; border-bottom: 1px solid #e9e9e9; text-align: right;">${formatCurrency(line.totalAmount)}</td>
+          <td>${line.productName}</td>
+          <td class="text-center">${line.quantity}</td>
+          <td class="text-center">Stk</td>
+          <td class="text-right">${formatCurrency(line.pricePerUnit)}</td>
+          <td class="text-center">${line.discountPercentage || 0} %</td>
+          <td class="text-center">${line.vatPercentage} %</td>
+          <td class="text-right">${formatCurrency(line.netAmount)}</td>
+          <td class="text-right">${formatCurrency(line.totalAmount)}</td>
         </tr>
       `;
     }).join('');
 
-    // Create email HTML
-    const emailHtml = `
-      <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; color: #333;">
-        <!-- Header Section -->
-        <div style="background-color: #0B78C7; padding: 20px; text-align: center;">
-          <h1 style="color: white; margin: 0;">Invoice</h1>
+    // Generate PDF HTML content
+    const pdfHtmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Faktura ${invoice.invoiceNumber || invoice.id}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 10pt;
+            color: #000;
+            padding: 40px;
+            line-height: 1.4;
+        }
+        
+        .invoice-header {
+            display: table;
+            width: 100%;
+            margin-bottom: 30px;
+        }
+        
+        .company-info {
+            display: table-cell;
+            width: 70%;
+            vertical-align: top;
+        }
+        
+        .company-info p {
+            margin: 1px 0;
+            font-size: 9pt;
+        }
+        
+        .logo-section {
+            display: table-cell;
+            width: 30%;
+            text-align: right;
+            vertical-align: top;
+        }
+        
+        .invoice-details {
+            display: table;
+            width: 100%;
+            margin-bottom: 25px;
+            border-top: 1px solid #000;
+            padding-top: 15px;
+        }
+        
+        .customer-info {
+            display: table-cell;
+            width: 50%;
+            vertical-align: top;
+            padding-right: 20px;
+        }
+        
+        .customer-info p {
+            margin: 1px 0;
+            font-size: 9pt;
+        }
+        
+        .invoice-meta {
+            display: table-cell;
+            width: 50%;
+            vertical-align: top;
+        }
+        
+        .meta-table {
+            width: 100%;
+        }
+        
+        .meta-table td {
+            padding: 2px 0;
+            font-size: 9pt;
+        }
+        
+        .meta-table td:first-child {
+            width: 50%;
+        }
+        
+        .meta-table td:last-child {
+            text-align: right;
+        }
+        
+        .invoice-number-row {
+            padding-top: 8px !important;
+            border-top: 1px solid #ccc;
+        }
+        
+        .invoice-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        .invoice-table th {
+            background-color: #0B78C7;
+            padding: 8px 6px;
+            text-align: left;
+            font-size: 8pt;
+            font-weight: bold;
+            border-top: 1px solid #000;
+            border-bottom: 1px solid #000;
+            text-transform: uppercase;
+            color: white;
+        }
+        
+        .invoice-table td {
+            padding: 8px 6px;
+            font-size: 9pt;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .invoice-table tbody tr:last-child td {
+            border-bottom: 1px solid #000;
+        }
+        
+        .text-right {
+            text-align: right !important;
+        }
+        
+        .text-center {
+            text-align: center !important;
+        }
+        
+        .summary-section {
+            margin-top: 30px;
+            float: right;
+            width: 280px;
+        }
+        
+        .summary-table {
+            width: 100%;
+        }
+        
+        .summary-table td {
+            padding: 6px 0;
+            font-size: 10pt;
+        }
+        
+        .summary-table td:last-child {
+            text-align: right;
+            padding-left: 20px;
+        }
+        
+        .summary-total {
+            border-top: 1px solid #000;
+            font-weight: bold;
+            padding-top: 10px !important;
+        }
+        
+        .clearfix {
+            clear: both;
+        }
+        
+        hr {
+          border: none;
+          border-top: 2px solid #0B78C7;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="invoice-header">
+        <div class="company-info">
+            <p><strong>${invoice.business?.name || '[Firmanavn]'}</strong></p>
+            <p>Org.nr.: [Organisasjonsnr]</p>
+            <p>Foretaksregisteret</p>
+            <p>Telefon: [Telefon]</p>
+            <p>Mailadresse: [Mailadresse]</p>
+            <p>Web: [Web]</p>
         </div>
+         <div class="logo-section">
+            <p>[Logo]</p>
+        </div>
+    </div>
 
-        <!-- Content -->
-        <div style="padding: 30px; border: 1px solid #e9e9e9; border-top: none;">
-          <!-- Invoice Info -->
-          <div style="margin-bottom: 30px;">
-            <table style="width: 100%; border-collapse: collapse;">
-              <tr>
-                <td style="width: 50%; vertical-align: top; padding-right: 20px;">
-                  <h3 style="margin: 0 0 10px 0; color: #333;">Kunde:</h3>
-                  <p style="margin: 3px 0;"><strong>${invoice.customer.customerName}</strong></p>
-                  <p style="margin: 3px 0;">${invoice.customer.address || ''}</p>
-                  <p style="margin: 3px 0;">${invoice.customer.postalCode || ''}</p>
-                  <p style="margin: 3px 0;">Org.nr.: ${invoice.customer.organizationNumber || ''}</p>
-                  <p style="margin: 3px 0;">Kundenummer: ${invoice.customer.customerNumber || ''}</p>
-                </td>
-                <td style="width: 50%; vertical-align: top;">
-                  <h3 style="margin: 0 0 10px 0; color: #333;">Fakturadetaljer:</h3>
-                  <table style="width: 100%;">
-                    <tr>
-                      <td style="padding: 3px 0;"><strong>Fakturanummer:</strong></td>
-                      <td style="padding: 3px 0; text-align: right;">${invoice.invoiceNumber || invoice.id}</td>
-                    </tr>
-                    <tr>
-                      <td style="padding: 3px 0;">Fakturadato:</td>
-                      <td style="padding: 3px 0; text-align: right;">${formatDate(invoice.createdAt)}</td>
-                    </tr>
-                    <tr>
-                      <td style="padding: 3px 0;">Forfallsdato:</td>
-                      <td style="padding: 3px 0; text-align: right;">${formatDate(new Date(invoice.createdAt.getTime() + 14 * 24 * 60 * 60 * 1000))}</td>
-                    </tr>
-                  </table>
-                </td>
-              </tr>
+    <!-- Invoice Details -->
+    <div class="invoice-details">
+        <div class="customer-info">
+            <p><strong>${invoice.customer.customerName}</strong></p>
+            <p>${invoice.customer.address || '[Firmaadresse]'}</p>
+            <p>${invoice.customer.postalCode || '[Firmapostnummer]'} </p>
+            <p>Org. nr.: ${invoice.customer.organizationNumber || '[Organisasjonsnr.]'}</p>
+            <p style="margin-top: 8px;">Deres ref.: ${invoice.customer.customerNumber || '[Referanse]'}</p>
+        </div>
+        
+        <div class="invoice-meta">
+            <table class="meta-table">
+                <tr>
+                    <td>Fakturadato:</td>
+                    <td>${formatDate(invoice.createdAt)}</td>
+                </tr>
+                <tr>
+                    <td>Forfallsdato:</td>
+                    <td>${formatDate(new Date(invoice.createdAt.getTime() + 14 * 24 * 60 * 60 * 1000))}</td>
+                </tr>
+                <tr>
+                    <td>Bankkonto:</td>
+                    <td>[Bankkontonummer]</td>
+                </tr>
+                <tr>
+                    <td>Kundenummer:</td>
+                    <td>${invoice.customer.customerNumber || '[Kundenummer]'}</td>
+                </tr>
+                <tr>
+                    <td>Kid:</td>
+                    <td>[Kid]</td>
+                </tr>
+                <tr>
+                    <td>Vår ref.:</td>
+                    <td>[Vår referanse]</td>
+                </tr>
+                <tr class="invoice-number-row">
+                    <td><strong>Fakturanummer:</strong></td>
+                    <td><strong>${invoice.invoiceNumber || invoice.id}</strong></td>
+                </tr>
             </table>
-          </div>
-
-          <!-- Invoice Table -->
-          <table style="width: 100%; border-collapse: collapse; margin: 30px 0;">
-            <thead>
-              <tr style="background-color: #0B78C7; color: white;">
-                <th style="padding: 12px 8px; text-align: left; font-size: 11px; text-transform: uppercase;">Beskrivelse</th>
-                <th style="padding: 12px 8px; text-align: center; font-size: 11px; text-transform: uppercase;">Antall</th>
-                <th style="padding: 12px 8px; text-align: center; font-size: 11px; text-transform: uppercase;">Enhet</th>
-                <th style="padding: 12px 8px; text-align: right; font-size: 11px; text-transform: uppercase;">Enhetspris</th>
-                <th style="padding: 12px 8px; text-align: center; font-size: 11px; text-transform: uppercase;">Rabatt</th>
-                <th style="padding: 12px 8px; text-align: center; font-size: 11px; text-transform: uppercase;">Mva</th>
-                <th style="padding: 12px 8px; text-align: right; font-size: 11px; text-transform: uppercase;">Nettobeløp</th>
-                <th style="padding: 12px 8px; text-align: right; font-size: 11px; text-transform: uppercase;">Beløp ink mva</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${invoiceRowsHtml}
-            </tbody>
-          </table>
-
-          <!-- Summary -->
-          <div style="margin-top: 30px; text-align: right;">
-            <table style="margin-left: auto; width: 300px; border-collapse: collapse;">
-              <tr>
-                <td style="padding: 8px 0; border-top: 1px solid #e9e9e9;">SUM</td>
-                <td style="padding: 8px 0; text-align: right; border-top: 1px solid #e9e9e9;">kr ${formatCurrency(totalExclVAT)}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0;">MVA (${invoice.vatPercentage}%)</td>
-                <td style="padding: 8px 0; text-align: right;">kr ${formatCurrency(totalVatAmount)}</td>
-              </tr>
-              <tr>
-                <td style="padding: 12px 0; border-top: 2px solid #333; font-weight: bold; font-size: 16px;">Sum å betale</td>
-                <td style="padding: 12px 0; text-align: right; border-top: 2px solid #333; font-weight: bold; font-size: 16px;">kr ${formatCurrency(totalIncVAT)}</td>
-              </tr>
-            </table>
-          </div>
-
-          <!-- Additional Info -->
-          <div style="margin-top: 40px; padding: 20px; background-color: #f9f9f9; border-radius: 4px;">
-            <p style="margin: 5px 0; font-size: 14px;">Betalingsinformasjon:</p>
-            <p style="margin: 5px 0; font-size: 14px;">Bankkonto: [Bankkontonummer]</p>
-            <p style="margin: 5px 0; font-size: 14px;">Ved spørsmål, kontakt oss på: ${invoice.business?.name || '[Firmanavn]'}</p>
-          </div>
         </div>
+    </div>
 
-        <!-- Footer -->
-        <div style="text-align: center; padding: 20px; color: #666; font-size: 12px;">
-          <p>© 2024 ${invoice.business?.name || 'Zen Link'}. All rights reserved.</p>
-        </div>
-      </div>
+    <!-- Invoice Table -->
+    <table class="invoice-table">
+        <thead>
+            <tr>
+                <th style="width: 35%;">Beskrivelse</th>
+                <th class="text-center" style="width: 8%;">Antall</th>
+                <th class="text-center" style="width: 8%;">Enhet</th>
+                <th class="text-right" style="width: 13%;">Enhetspris</th>
+                <th class="text-center" style="width: 8%;">Rabatt</th>
+                <th class="text-center" style="width: 8%;">Mva</th>
+                <th class="text-center" style="width: 8%;">Nettobeløp</th>
+                <th class="text-right" style="width: 15%;">Beløp ink mva</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${invoiceRowsHtml}
+        </tbody>
+    </table>
+
+    <!-- Summary -->
+    <div class="summary-section">
+        <table class="summary-table">
+            <tr>
+                <td>SUM</td>
+                <td>kr ${formatCurrency(totalExclVAT)}</td>
+            </tr>
+            <tr>
+                <td>MVA (${invoice.vatPercentage}%)</td>
+                <td>kr ${formatCurrency(totalVatAmount)}</td>
+            </tr>
+            <tr class="summary-total">
+                <td>Sum å betale</td>
+                <td>kr ${formatCurrency(totalIncVAT)}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="clearfix"></div>
+    <hr/>
+</body>
+</html>
     `;
+
+    // Generate PDF
+    let pdfBuffer: Buffer;
+    const browser = await launchBrowser();
+
+    try {
+      const page = await browser.newPage();
+      await page.setContent(pdfHtmlContent, { waitUntil: 'networkidle0' });
+
+      const pdf = await page.pdf({
+        format: 'A4',
+        printBackground: true,
+        margin: {
+          top: '20mm',
+          right: '15mm',
+          bottom: '20mm',
+          left: '15mm'
+        }
+      });
+
+      pdfBuffer = Buffer.from(pdf);
+      await browser.close();
+    } catch (error) {
+      await browser.close();
+      throw error;
+    }
+
+    // Create simple email text body (Norwegian)
+    const emailBody = `
+Du har mottatt en faktura fra ${invoice.business?.name || 'Zen Link'}. Se vedlegg.
+
+Spørsmål vedrørende fakturaen rettes til ${invoice.business?.name || 'Zen Link'}. Hvis du ønsker en skriftlig faktura til regnskap e.l., så kan du ta en utskrift av fakturaen fra nettleseren.
+
+Hvis du har spørsmål, så kan du svare på denne e-posten eller sende en e-post til ${process.env.FROM_EMAIL || process.env.GMAIL_USER || 'zenlinkdev@gmail.com'}.
+
+Denne e-posten er sendt fra økonomisystemet Zenlink (www.zenlink.no).
+    `.trim();
 
     // Setup nodemailer transporter
     const transporter = nodemailer.createTransport({
@@ -254,18 +468,27 @@ export async function POST(req: Request) {
       throw new Error(`Email service unavailable: ${verifyError instanceof Error ? verifyError.message : 'Unknown error'}`);
     }
 
-    // Send email
+    const filename = `Faktura-${invoice.invoiceNumber || invoice.id}.pdf`;
+
+    // Send email with PDF attachment
     const info = await transporter.sendMail({
       from: `"${invoice.business?.name || 'Zen Link'}" <${process.env.FROM_EMAIL || process.env.GMAIL_USER || 'zenlinkdev@gmail.com'}>`,
       to: invoice.customer.email,
       subject: `Faktura ${invoice.invoiceNumber || invoice.id} fra ${invoice.business?.name || 'Zen Link'}`,
-      html: emailHtml,
+      text: emailBody,
+      attachments: [
+        {
+          filename: filename,
+          content: pdfBuffer,
+          contentType: 'application/pdf'
+        }
+      ]
     });
 
-    console.log('Invoice email sent: %s', info.messageId);
+    console.log('Invoice email sent with PDF attachment: %s', info.messageId);
 
     return NextResponse.json({
-      message: 'Invoice email sent successfully',
+      message: 'Invoice email sent successfully with PDF attachment',
       messageId: info.messageId
     });
 

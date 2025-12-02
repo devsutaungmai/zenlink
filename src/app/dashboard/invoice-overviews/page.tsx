@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/pagination"
 import { Decimal } from "@prisma/client/runtime/library"
 import Link from "next/link"
-import { exportToPDF } from "@/shared/lib/invoiceHelper"
+import { exportToPDF, sendEmail } from "@/shared/lib/invoiceHelper"
 import Swal from "sweetalert2"
 import RegisterPaymentDialog from "@/components/invoice/RegisterPaymentDialog"
 import CreditNoteDialog from "@/components/invoice/CreditNoteDialog"
@@ -100,7 +100,7 @@ export default function InvoiceOverview() {
     const startIndex = (currentPage - 1) * itemsPerPage
     const endIndex = startIndex + itemsPerPage
     const paginatedInvoices = invoices.slice(startIndex, endIndex)
-        const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] = useState<Invoice | null>(null);
+    const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] = useState<Invoice | null>(null);
     const [selectedInvoiceForCredit, setSelectedInvoiceForCredit] = useState<Invoice | null>(null);
 
     useEffect(() => {
@@ -206,7 +206,9 @@ export default function InvoiceOverview() {
         }
     }
 
-
+    const handleSendEmail = async (invoiceId: string) => {
+        await sendEmail(invoiceId);
+    }
     return (
 
 
@@ -463,6 +465,27 @@ export default function InvoiceOverview() {
                                                 </button>
                                             </td>
                                             <td className="px-2 py-3">
+                                                <button
+                                                    onClick={() => handleSendEmail(invoice.id)}
+                                                    className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
+                                                >
+                                                    <svg
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        fill="none"
+                                                        viewBox="0 0 24 24"
+                                                        strokeWidth={1.5}
+                                                        stroke="currentColor"
+                                                        className="w-4 h-4"
+                                                    >
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25H4.5a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"
+                                                        />
+                                                    </svg>
+                                                </button>
+                                            </td>
+                                            <td className="px-2 py-3">
                                                 <DropdownMenu.Root>
                                                     <DropdownMenu.Trigger asChild>
                                                         <button className="p-1 hover:bg-gray-200 rounded">
@@ -474,13 +497,13 @@ export default function InvoiceOverview() {
                                                             align="end"
                                                             className="min-w-[220px] bg-white rounded-lg shadow-lg border border-gray-200 p-1 z-50"
                                                         >
-                                                            {invoice.status !== "PAID" ? 
-                                                            <DropdownMenu.Item className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2"
-                                                             onSelect={() => setSelectedInvoiceForPayment(invoice)}>
-                                                               
+                                                            {invoice.status !== "PAID" ?
+                                                                <DropdownMenu.Item className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2"
+                                                                    onSelect={() => setSelectedInvoiceForPayment(invoice)}>
+
                                                                     <CheckCircleIcon className="h-4 w-4" />
                                                                     Register payment
-                                                            </DropdownMenu.Item> : null}
+                                                                </DropdownMenu.Item> : null}
                                                             {/* <DropdownMenu.Item className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2">
                                                                 <ClockIcon className="h-4 w-4" />
                                                                 Payment follow-up
@@ -498,8 +521,8 @@ export default function InvoiceOverview() {
                                                                     Copy invoice</Link>
                                                             </DropdownMenu.Item>
                                                             <DropdownMenu.Item className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2"
-                                                             onSelect={() => setSelectedInvoiceForCredit(invoice)}>
-                                                            <span className="text-base">✓</span>
+                                                                onSelect={() => setSelectedInvoiceForCredit(invoice)}>
+                                                                <span className="text-base">✓</span>
                                                                 Credit Note
                                                             </DropdownMenu.Item>
                                                             {/* <DropdownMenu.Item className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2">
@@ -667,7 +690,7 @@ export default function InvoiceOverview() {
                         amount: Number(selectedInvoiceForCredit.totalInclVAT),
                     }}
                     fetchInvoices={fetchInvoices}
-                    
+
                 />
             )}
         </div>

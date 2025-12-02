@@ -637,7 +637,7 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                             {/* Dropdown Menu */}
                             {showDropdown && (
                                 <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-200 py-2 z-10">
-                                    {/* <button
+                                    <button
                                         type="button"
                                         onClick={(e) => { handleSubmit(e, 'print') }}
                                         disabled={loading}
@@ -646,8 +646,8 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                                         <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                                         </svg>
-                                        <span className="text-gray-700 font-medium">Print</span>
-                                    </button> */}
+                                        <span className="text-gray-700 font-medium">Preview(PDF)</span>
+                                    </button>
                                     <button
                                         type="button"
                                         onClick={(e) => {handleSubmit(e,'send_invoice_without_email') }}
