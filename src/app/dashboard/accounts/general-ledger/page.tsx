@@ -55,10 +55,12 @@ export default function GeneralLedger({ businessId }: { businessId: string }) {
   const [activeTab, setActiveTab] = useState<"all" | "open">("all")
   const [accountData, setAccountData] = useState<AccountGroup[]>([])
   const [loading, setLoading] = useState(true)
+  const today = new Date();
+
   const [dateRange, setDateRange] = useState({
-    startDate: '2025-11-26',
-    endDate: '2025-11-30'
-  })
+    startDate: new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split("T")[0],
+    endDate: today.toISOString().split("T")[0]
+  });
 
   // Fetch ledger data
   useEffect(() => {
@@ -76,7 +78,7 @@ export default function GeneralLedger({ businessId }: { businessId: string }) {
       })
 
       const response = await fetch(`/api/ledger/report?${params}`)
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch ledger data')
       }
@@ -227,17 +229,17 @@ export default function GeneralLedger({ businessId }: { businessId: string }) {
               {dateRange.startDate} - {dateRange.endDate}
             </span>
             <div className="flex gap-1">
-              <Button 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                variant="ghost"
+                size="icon"
                 className="h-6 w-6"
                 onClick={() => moveDateRange('prev')}
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <Button 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                variant="ghost"
+                size="icon"
                 className="h-6 w-6"
                 onClick={() => moveDateRange('next')}
               >
@@ -372,7 +374,7 @@ function AccountSection({
           </td>
           <td className="border-r border-border p-3 text-sm">{entry.date}</td>
           <td className="max-w-md truncate border-r border-border p-3 text-sm">{entry.description}</td>
-          <td className="border-r border-border p-3 text-sm">{account.code === "3200" ? entry.vatCode: ""}</td>
+          <td className="border-r border-border p-3 text-sm">{account.code === "3200" ? entry.vatCode : ""}</td>
           <td className="border-r border-border p-3 text-sm col-span-2">{entry.currency}</td>
           <td className="text-right font-medium border-r border-border p-3 text-sm tabular-nums">
             {entry.amount.toFixed(2)}
