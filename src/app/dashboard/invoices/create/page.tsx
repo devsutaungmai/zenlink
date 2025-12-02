@@ -305,7 +305,7 @@ export default function CreateInvoicePage() {
         setNetTotals((prevNetTotals) => ([...prevNetTotals, 0]));
     }
 
-    const handleCopyOrderLine = (copiedInvoiceLine: InvoiceLine) => {
+    const handleCopyOrderLine = (copiedInvoiceLine: InvoiceLine,netTotal: number) => {
         setFormData((prev: InvoiceFormData) => ({
             ...prev,
             invoiceLines: [
@@ -318,7 +318,8 @@ export default function CreateInvoicePage() {
                 }
             ]
         }))
-        setNetTotals((prevNetTotals) => ([...prevNetTotals, 0]));
+        setNetTotals((prevNetTotals) => ([...prevNetTotals, netTotal]));
+ 
     }
 
     const updateLineTotal = (index: number) => {
@@ -624,7 +625,7 @@ export default function CreateInvoicePage() {
                             >New Order Line</button>
                         </div>
                         {formData.invoiceLines.map((line, index) => (
-                            <div className="grid grid-cols-1 md:grid-cols-7 gap-8" key={index}>
+                            <div className="grid grid-cols-1 md:grid-cols-7 gap-10" key={index}>
                                 <div>
                                     <label htmlFor="productId" className="block text-sm font-medium text-gray-700 mb-2">
                                         Product *
@@ -756,7 +757,7 @@ export default function CreateInvoicePage() {
                                     </button>
                                     <button
                                         type='button'
-                                        onClick={() => handleCopyOrderLine(line)}
+                                        onClick={() => handleCopyOrderLine(line,Number(netTotals[index]))}
                                     >
                                         <svg className="w-8 h-8 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2h-6a2 2 0 01-2-2V7z" />

@@ -9,7 +9,9 @@ import Swal from 'sweetalert2'
 import { ContactPerson, InvoiceFormData, InvoiceLine, Project } from '../../create/page'
 import { Department } from '@prisma/client'
 import { useInvoiceSettings } from '@/shared/hooks/useInvoiceSettings'
-import { exportToPDF, sendEmail } from '@/shared/lib/invoiceHelper'
+import { calculateInvoiceTotals, exportToPDF, sendEmail } from '@/shared/lib/invoiceHelper'
+import InvoiceSummaryCalculation from '@/components/invoice/InvoiceSummaryCalculation'
+import { set } from 'zod'
 
 interface Customer {
     id: string
@@ -46,10 +48,11 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
         departmentId: '',
         seller: '',
         invoiceLines: [],
-        status:'',
+        status: '',
         notes: ''
     })
     const { settings } = useInvoiceSettings()
+    const [netTotals, setNetTotals] = useState<Number[]>([]);
 
     useEffect(() => {
         fetchCustomers()
@@ -69,6 +72,7 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                 paidAt: paidDate.toISOString().split('T')[0]
             }))
         }
+        
     }, [formData.sentAt, formData.dueDay])
 
     const fetchCustomers = async () => {
@@ -137,6 +141,13 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                     status: data.status || '',
                     notes: data.notes || ''
                 })
+                setNetTotals(data.invoiceLines.map((line: InvoiceLine) => {
+                    const qty = Number(line.quantity) || 0;
+                    const price = Number(line.pricePerUnit) || 0;
+                    const discount = Number(line.discountPercentage) || 0;
+                    const { totalExclVAT } = calculateInvoiceTotals(qty, price, discount, 25);
+                    return totalExclVAT;
+                }) );
             }
         } catch (error) {
             console.error('Error fetching invoice:', error)
@@ -154,6 +165,7 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
         console.log("Deleting....")
         const updatedInvoices = formData.invoiceLines.filter((_, i) => i !== index);
         setFormData(prev => ({ ...prev, invoiceLines: updatedInvoices }));
+        setNetTotals((prevNetTotals) => prevNetTotals.filter((_, i) => i !== index));
     }
 
     const handleNewOrderLine = () => {
@@ -169,9 +181,10 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                 }
             ]
         }))
+        setNetTotals((prevNetTotals) => ([...prevNetTotals, 0]));
     }
 
-    const handleCopyOrderLine = (copiedInvoiceLine: InvoiceLine) => {
+    const handleCopyOrderLine = (copiedInvoiceLine: InvoiceLine,netTotal: number) => {
         setFormData((prev: InvoiceFormData) => ({
             ...prev,
             invoiceLines: [
@@ -184,14 +197,30 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                 }
             ]
         }))
+        setNetTotals((prevNetTotals) => ([...prevNetTotals, netTotal]));
     }
 
-    const handleSubmit = async (e: React.FormEvent, action: 'update' |'print' | 'send_invoice_with_email'| 'send_invoice_without_email') => {
+    const updateLineTotal= (index:number)=>{
+        const line = formData.invoiceLines[index];
+
+        const qty = Number(line.quantity) || 0;
+        const price = Number(line.pricePerUnit) || 0;
+        const discount = Number(line.discountPercentage) || 0;
+
+        const { totalExclVAT } = calculateInvoiceTotals(qty, price, discount, 25);
+        setNetTotals((prevNetTotals) => {
+            const newNetTotals = [...prevNetTotals];    
+            newNetTotals[index] = totalExclVAT;
+            return newNetTotals;
+        });
+    };
+
+    const handleSubmit = async (e: React.FormEvent, action: 'update' | 'print' | 'send_invoice_with_email' | 'send_invoice_without_email') => {
         e.preventDefault()
         setLoading(true)
         const invoiceStatus = action === "send_invoice_with_email" || action === "send_invoice_without_email" ? "SENT" : "DRAFT";
         let { seller, ...filteredData } = formData
-        filteredData ={...filteredData,status: invoiceStatus}
+        filteredData = { ...filteredData, status: invoiceStatus }
         // console.log("Submitting data:", filteredData);
         try {
             const res = await fetch(`/api/invoices/${resolvedParams.id}`, {
@@ -285,7 +314,7 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
 
             {/* Form Container */}
             <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg p-6">
-                <form onSubmit={(e) => handleSubmit(e,'update')} className="space-y-6">
+                <form onSubmit={(e) => handleSubmit(e, 'update')} className="space-y-6">
                     <div className="bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-xl border border-slate-200 p-6">
                         <h2 className="text-lg font-semibold text-gray-900 mb-4">Customer Information</h2>
 
@@ -451,18 +480,33 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                         </div>
                     </div>}
 
+                    {/* Notes Section */}
+                    <div>
+                        <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
+                            Additional Notes
+                        </label>
+                        <textarea
+                            id="notes"
+                            value={formData.notes || ""}
+                            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                            className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                            placeholder="Enter any additional notes"
+                            rows={3}
+                        />
+                    </div>
+
+
                     <div className="bg-gradient-to-br rounded-xl border p-6">
-                        <div className="flex justify-between">
+                          <div className="flex justify-between items-center mb-4">
                             <h2 className="text-lg font-semibold text-gray-900 mb-4">Order Lines</h2>
                             <button
                                 type="button"
                                 onClick={handleNewOrderLine}
                                 disabled={loading}
-                                className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
                             >New Order Line</button>
                         </div>
                         {formData.invoiceLines.map((line, index) => (
-                            <div className="grid grid-cols-1 md:grid-cols-6 gap-6" key={index}>
+                            <div className="grid grid-cols-1 md:grid-cols-7 gap-10" key={index}>
                                 <div>
                                     <label htmlFor="productId" className="block text-sm font-medium text-gray-700 mb-2">
                                         Product *
@@ -500,6 +544,7 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                                             const updatedLines = [...formData.invoiceLines];
                                             updatedLines[index].quantity = parseFloat(e.target.value);
                                             setFormData({ ...formData, invoiceLines: updatedLines })
+                                            updateLineTotal(index);
                                         }}
                                         className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
                                         placeholder="Enter quantity"
@@ -520,6 +565,7 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                                             const updatedLines = [...formData.invoiceLines];
                                             updatedLines[index].pricePerUnit = parseFloat(e.target.value);
                                             setFormData({ ...formData, invoiceLines: updatedLines })
+                                            updateLineTotal(index);
                                         }}
                                         className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
                                         placeholder="Enter price per unit"
@@ -559,13 +605,29 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                                                 const updatedLines = [...formData.invoiceLines];
                                                 updatedLines[index].discountPercentage = parseFloat(e.target.value);
                                                 setFormData({ ...formData, invoiceLines: updatedLines })
+                                                updateLineTotal(index);
                                             }}
                                             className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
                                             placeholder="Enter discount percentage"
                                         />
                                     </div>
                                 }
-                                <div className=''>
+
+                                 <div>
+                                    <label htmlFor="netTotal" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Net Total
+                                    </label>
+                                    <input
+                                        type="number"
+                                        id="netTotal"
+                                        required
+                                        step="0.01"
+                                        value={(netTotals[index] || 0).toFixed(2)}
+                                        disabled
+                                        className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                                    />
+                                </div>
+                                <div className='items-end flex space-x-4 mb-3'>
                                     <button
                                         type='button'
                                         onClick={() => deleteInvoiceLine(index)}
@@ -577,7 +639,7 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                                     </button>
                                     <button
                                         type='button'
-                                        onClick={() => handleCopyOrderLine(line)}
+                                        onClick={() => handleCopyOrderLine(line,Number(netTotals[index] || 0))}
                                     >
                                         <svg className="w-8 h-8 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2h-6a2 2 0 01-2-2V7z" />
@@ -592,20 +654,9 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                         ))}
                     </div>
 
-                    {/* Notes Section */}
-                    <div>
-                        <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
-                            Additional Notes
-                        </label>
-                        <textarea
-                            id="notes"
-                            value={formData.notes || ""}
-                            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                            className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                            placeholder="Enter any additional notes"
-                            rows={3}
-                        />
-                    </div>
+                    {/* Summary Calculation */}
+                    <InvoiceSummaryCalculation invoiceLines={formData.invoiceLines} />
+
 
                     {/* Form Actions */}
                     <div className="flex items-center justify-end gap-4 pt-6 border-t border-gray-200">
@@ -650,7 +701,7 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                                     </button>
                                     <button
                                         type="button"
-                                        onClick={(e) => {handleSubmit(e,'send_invoice_without_email') }}
+                                        onClick={(e) => { handleSubmit(e, 'send_invoice_without_email') }}
                                         disabled={loading}
                                         className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
@@ -662,7 +713,7 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
 
                                     <button
                                         type="button"
-                                        onClick={(e) => {handleSubmit(e,'send_invoice_with_email') }}
+                                        onClick={(e) => { handleSubmit(e, 'send_invoice_with_email') }}
                                         disabled={loading}
                                         className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
