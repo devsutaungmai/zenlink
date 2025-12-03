@@ -59,6 +59,7 @@ model Business {
   punchClockAccessSettings PunchClockAccessSettings? @relation("PunchClockAccessSettings")
   punchClockProfiles       PunchClockProfile[]
   salaryCodes              SalaryCode[]
+  scheduleTemplates        ScheduleTemplate[]
   shiftTypes               ShiftTypeConfig[]
   users                    User[]
 }
@@ -688,6 +689,45 @@ model LaborLawSettings {
   @@unique([businessId, countryCode])
   @@index([businessId])
   @@index([businessId, isActive])
+}
+
+model ScheduleTemplate {
+  id         String                  @id @default(cuid())
+  name       String
+  length     ScheduleTemplateLength
+  businessId String
+  createdAt  DateTime                @default(now())
+  updatedAt  DateTime                @updatedAt
+  business   Business                @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  shifts     ScheduleTemplateShift[]
+
+  @@index([businessId])
+}
+
+model ScheduleTemplateShift {
+  id              String           @id @default(cuid())
+  templateId      String
+  dayIndex        Int
+  startTime       String
+  endTime         String?
+  employeeId      String?
+  employeeGroupId String?
+  functionId      String?
+  departmentId    String?
+  categoryId      String?
+  note            String?
+  breakMinutes    Int?
+  breakPaid       Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  template        ScheduleTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@index([templateId])
+}
+
+enum ScheduleTemplateLength {
+  week
+  day
 }
 
 enum WageType {

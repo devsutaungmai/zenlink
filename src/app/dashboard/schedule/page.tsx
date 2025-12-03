@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next'
 
 import Swal from 'sweetalert2'
 import ScheduleHeader from '@/components/schedule/ScheduleHeader'
+import CreateTemplateModal from '@/components/schedule/CreateTemplateModal'
 import WeekView from '@/components/schedule/WeekView'
 import DayView from '@/components/schedule/DayView'
 import DayEmployeeTimeline from '@/components/schedule/DayEmployeeTimeline'
@@ -45,6 +46,7 @@ const VIEW_TAB_CONFIG: ViewTabConfig[] = [
 
 export default function SchedulePage() {
   const [showShiftModal, setShowShiftModal] = useState(false)
+  const [showCreateTemplateModal, setShowCreateTemplateModal] = useState(false)
   const [shiftInitialData, setShiftInitialData] = useState<any>(null)
   const [modalViewType, setModalViewType] = useState<'week' | 'day' | 'month'>('week')
 
@@ -933,6 +935,30 @@ export default function SchedulePage() {
     setSelectedEmployeeId(employeeId);
   }
 
+  const handleTemplateAction = (action: 'create' | 'save' | 'edit' | 'apply' | 'copy-week') => {
+    switch (action) {
+      case 'create':
+        setShowCreateTemplateModal(true)
+        break
+      case 'save':
+        // TODO: Implement save as template
+        console.log('Save as template')
+        break
+      case 'edit':
+        // TODO: Implement edit template
+        console.log('Edit template')
+        break
+      case 'apply':
+        // TODO: Implement apply template
+        console.log('Apply template')
+        break
+      case 'copy-week':
+        // TODO: Implement copy week
+        console.log('Copy week')
+        break
+    }
+  }
+
   const isWeekBasedView = viewMode === 'week' || viewMode === 'two-week'
 
   const renderWeekScopedContent = (dates: Date[]) => {
@@ -1081,6 +1107,7 @@ export default function SchedulePage() {
           onFiltersChange={setFilters}
           scheduleViewType={scheduleViewType}
           onScheduleViewTypeChange={setScheduleViewType}
+          onTemplateAction={handleTemplateAction}
         />
       </div>
 
@@ -1291,6 +1318,11 @@ export default function SchedulePage() {
           onDelete={handleShiftDelete}
           viewType={modalViewType}
           loading={loading}
+        />
+
+        <CreateTemplateModal
+          isOpen={showCreateTemplateModal}
+          onClose={() => setShowCreateTemplateModal(false)}
         />
       </div>
   )
