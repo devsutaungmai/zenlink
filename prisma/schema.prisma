@@ -844,6 +844,8 @@ model LedgerEntry {
   invoiceId      String?     @map("invoice_id")
   invoice        Invoice?    @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
+  entryType      LedgerEntryType  @default(INVOICE_POST) @map("entry_type")
+
   documentDate   DateTime?   @map("document_date")
   postingDate    DateTime?   @map("posting_date")
   amount         Decimal     @db.Decimal(10, 2)
@@ -870,6 +872,13 @@ model LedgerEntry {
   updatedAt      DateTime     @updatedAt      @map("updated_at")
 
   @@map("ledger_entries")
+}
+
+enum LedgerEntryType {
+  INVOICE_POST           // When invoice is sent (group for 1500)
+  PAYMENT_RECEIVED       // When customer pays (don't group for 1500)
+  CREDIT_NOTE            // When credit note is issued (group for 1500)
+  MANUAL_ADJUSTMENT      // Manual entries
 }
 
 model Invoice {

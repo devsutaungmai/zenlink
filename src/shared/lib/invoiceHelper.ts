@@ -1,7 +1,7 @@
 import { getCurrentUserOrEmployee } from '@/shared/lib/auth'
 import Swal from 'sweetalert2'
 import { prisma } from './prisma'
-import { InvoiceStatus, Prisma } from '@prisma/client'
+import { InvoiceStatus, LedgerEntryType, Prisma } from '@prisma/client'
 
 export interface InvoiceCalculation {
   subtotal: number
@@ -398,6 +398,7 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
         // CREDIT NOTE: DR Sales Account / CR 1500 (REVERSED)
         await tx.ledgerEntry.create({
           data: {
+            entryType: LedgerEntryType.CREDIT_NOTE, 
             businessId,
             invoiceId: invoice.id,
             documentDate,
@@ -414,6 +415,7 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
         // NORMAL INVOICE: DR 1500 / CR Sales Account
         await tx.ledgerEntry.create({
           data: {
+            entryType: LedgerEntryType.INVOICE_POST,
             businessId,
             invoiceId: invoice.id,
             documentDate,
@@ -437,6 +439,7 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
         // CREDIT NOTE: DR 2700 / CR 1500 (REVERSED)
         await tx.ledgerEntry.create({
           data: {
+            entryType: LedgerEntryType.CREDIT_NOTE, 
             businessId,
             invoiceId: invoice.id,
             documentDate,
@@ -453,6 +456,7 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
         // NORMAL INVOICE: DR 1500 / CR 2700
         await tx.ledgerEntry.create({
           data: {
+            entryType: LedgerEntryType.INVOICE_POST, 
             businessId,
             invoiceId: invoice.id,
             documentDate,
@@ -476,10 +480,11 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
   };
 }
 
+
 /**
- * Calculate account balance for a given date range
- * Opening balance = all movements before startDate
- * Closing balance = opening + movements in period
+ * Calculate TRUE account balance using proper accounting principles
+ * ASSET/EXPENSE: Debit increases balance, Credit decreases
+ * LIABILITY/EQUITY/INCOME: Credit increases balance, Debit decreases
  */
 export async function getAccountBalance(
   accountId: string,
@@ -518,16 +523,17 @@ export async function getAccountBalance(
 
   let balance = 0;
 
+  // Use proper accounting rules for balance calculation
+  const isNormalDebit = account.type === 'ASSET' || account.type === 'EXPENSE';
+
   for (const entry of entries) {
     const amount = parseFloat(entry.amount.toString());
-    
-    // For ASSET and EXPENSE accounts: Debit increases, Credit decreases
-    // For LIABILITY, EQUITY, INCOME accounts: Credit increases, Debit decreases
-    const isNormalDebit = account.type === 'ASSET' || account.type === 'EXPENSE';
-    
+
     if (entry.debitAccountId === accountId) {
+      // This account was debited
       balance += isNormalDebit ? amount : -amount;
     } else if (entry.creditAccountId === accountId) {
+      // This account was credited
       balance += isNormalDebit ? -amount : amount;
     }
   }
@@ -535,17 +541,17 @@ export async function getAccountBalance(
   return balance;
 }
 
+
 /**
- * Generate ledger report with opening/closing balances 
- * Returns data formatted for the GeneralLedger component
+ * Generate ledger report matching Tripletex display format
+ * Groups account 1500 ONLY for INVOICE_POST and CREDIT_NOTE types
  */
 export async function generateLedgerReport(
   businessId: string,
   startDate: Date,
   endDate: Date,
-  accountNumbers?: number[] // Optional: filter specific accounts
+  accountNumbers?: number[]
 ) {
-  // Get all accounts or specific accounts
   const whereClause: any = { businessId, isActive: true };
   if (accountNumbers && accountNumbers.length > 0) {
     whereClause.accountNumber = { in: accountNumbers };
@@ -559,7 +565,7 @@ export async function generateLedgerReport(
   const accountGroups = [];
 
   for (const account of accounts) {
-    // Calculate opening balance (all entries before start date)
+    // Calculate opening balance using PROPER ACCOUNTING PRINCIPLES
     const dayBeforeStart = new Date(startDate);
     dayBeforeStart.setDate(dayBeforeStart.getDate() - 1);
     dayBeforeStart.setHours(23, 59, 59, 999);
@@ -590,7 +596,10 @@ export async function generateLedgerReport(
             invoiceNumber: true,
             status: true,
             customer: {
-              select: { customerName: true }
+              select: { 
+                id: true,
+                customerName: true 
+              }
             }
           }
         },
@@ -608,51 +617,178 @@ export async function generateLedgerReport(
       continue;
     }
 
-    //if it is normal debit like ASSET or EXPENSE (cash, bank, supplies, rent, etc)
+    // For calculating running balance, use PROPER ACCOUNTING
     const isNormalDebit = account.type === 'ASSET' || account.type === 'EXPENSE';
     let runningBalance = openingBalance;
 
-    // console.log("ledger entries for account", account.accountNumber, entries);
+    // Group 1500 entries ONLY for INVOICE_POST and CREDIT_NOTE
+    const shouldGroupByInvoice = account.accountNumber === 1500;
 
-    const ledgerEntries = entries.map(entry => {
-      const amount = parseFloat(entry.amount.toString());
-      const isDebit = entry.debitAccountId === account.id;
+    let ledgerEntries;
 
-    // Account Type	      Normal Side	    Debit does…	  Credit does…
-    //ASSET / EXPENSE	    Debit	          Increase	    Decrease
-    //LIABILITY/EQUITY    Credit	        Decrease	    Increase
-    ///INCOME	
+    if (shouldGroupByInvoice) {
+      // Separate entries into grouped and ungrouped
+      const groupedMap = new Map<string, {
+        invoiceId: string | null;
+        voucherNo: string;
+        date: Date;
+        description: string;
+        displayAmount: number;
+        trueMovement: number;
+      }>();
 
-      // Calculate movement based on account type
-      let movement = 0;
-      if (isDebit) {
-        movement = isNormalDebit ? amount : -amount;
-      } else {
-        movement = isNormalDebit ? -amount : amount;
+      const allEntriesForDisplay: Array<{
+        type: 'grouped' | 'ungrouped';
+        date: Date;
+        data: any;
+      }> = [];
+
+      for (const entry of entries) {
+        const amount = parseFloat(entry.amount.toString());
+        const isDebit = entry.debitAccountId === account.id;
+
+        // Calculate TRUE movement using accounting principles
+        const trueMovement = isDebit
+          ? (isNormalDebit ? amount : -amount)
+          : (isNormalDebit ? -amount : amount);
+
+        // Calculate DISPLAY amount (Tripletex: Debit = +, Credit = -)
+        const displayAmount = isDebit ? amount : -amount;
+
+        // Group INVOICE_POST and CREDIT_NOTE only
+        if (
+          entry.entryType === LedgerEntryType.INVOICE_POST ||
+          entry.entryType === LedgerEntryType.CREDIT_NOTE
+        ) {
+          const groupKey = entry.invoiceId || `no-invoice-${entry.id}`;
+          const voucherNo = entry.invoice?.invoiceNumber || `V-${entry.id.slice(-8)}`;
+          const customerName = entry.invoice?.customer?.customerName || '';
+          const customerId = entry.invoice?.customer?.id || '';
+
+          if (!groupedMap.has(groupKey)) {
+            groupedMap.set(groupKey, {
+              invoiceId: entry.invoiceId,
+              voucherNo,
+              date: entry.postingDate || new Date(),
+              description: entry.invoiceId
+                ? `Faktura nummer ${voucherNo} til ${customerName} (${customerId})`
+                : entry.description || '',
+              displayAmount: displayAmount,
+              trueMovement: trueMovement
+            });
+          } else {
+            const group = groupedMap.get(groupKey)!;
+            group.displayAmount += displayAmount;
+            group.trueMovement += trueMovement;
+          }
+        } else {
+          // Don't group PAYMENT_RECEIVED, etc.
+          allEntriesForDisplay.push({
+            type: 'ungrouped',
+            date: entry.postingDate || new Date(),
+            data: {
+              entry,
+              displayAmount,
+              trueMovement
+            }
+          });
+        }
       }
-      
-      runningBalance += movement;
 
-      // Generate voucher number from invoice or entry ID
-      const voucherNo = entry.invoice?.invoiceNumber || `V-${entry.id.slice(-8)}`;
+      // Add grouped entries to display list
+      groupedMap.forEach((group) => {
+        allEntriesForDisplay.push({
+          type: 'grouped',
+          date: group.date,
+          data: group
+        });
+      });
 
-      return {
-        id: entry.id,
-        closed: true, // You can add logic to determine if entry is closed
-        voucherNo,
-        date: entry.postingDate?.toISOString().split('T')[0] || '',
-        description: entry.description || '',
-        vatCode: '25%', // Add VAT code logic if needed
-        currency: undefined, // Add currency if you support multi-currency
-        amount: isDebit ? amount : -amount, // Show as signed amount
-        hasAttachment: false // Add attachment logic if needed
-      };
-    });
+      // Sort all entries by date
+      allEntriesForDisplay.sort((a, b) => a.date.getTime() - b.date.getTime());
+
+      // Build ledger entries with running balance
+      ledgerEntries = allEntriesForDisplay.map((item) => {
+        if (item.type === 'grouped') {
+          const group = item.data;
+          runningBalance += group.trueMovement;
+
+          return {
+            id: group.invoiceId || `grouped-${group.date.getTime()}`,
+            closed: true,
+            voucherNo: group.voucherNo,
+            date: group.date.toISOString().split('T')[0],
+            description: group.description,
+            vatCode: undefined,
+            currency: undefined,
+            amount: group.displayAmount,
+            balance: runningBalance,
+            hasAttachment: false
+          };
+        } else {
+          // Ungrouped entry
+          const { entry, displayAmount, trueMovement } = item.data;
+          runningBalance += trueMovement;
+
+          const voucherNo = entry.invoice?.invoiceNumber || `V-${entry.id.slice(-8)}`;
+
+          return {
+            id: entry.id,
+            closed: true,
+            voucherNo,
+            date: entry.postingDate?.toISOString().split('T')[0] || '',
+            description: entry.description || '',
+            vatCode: undefined,
+            currency: undefined,
+            amount: displayAmount,
+            balance: runningBalance,
+            hasAttachment: false
+          };
+        }
+      });
+    } else {
+      // For non-1500 accounts: Show all entries individually
+      ledgerEntries = entries.map(entry => {
+        const amount = parseFloat(entry.amount.toString());
+        const isDebit = entry.debitAccountId === account.id;
+
+        // TRUE movement (accounting rules)
+        const trueMovement = isDebit
+          ? (isNormalDebit ? amount : -amount)
+          : (isNormalDebit ? -amount : amount);
+
+        // DISPLAY amount (Tripletex: Debit = +, Credit = -)
+        const displayAmount = isDebit ? amount : -amount;
+
+        runningBalance += trueMovement;
+
+        const voucherNo = entry.invoice?.invoiceNumber || `V-${entry.id.slice(-8)}`;
+
+        const isVATEntry = 
+          entry.creditAccount?.accountNumber === 2740 || 
+          entry.debitAccount?.accountNumber === 2740;
+
+        return {
+          id: entry.id,
+          closed: true,
+          voucherNo,
+          date: entry.postingDate?.toISOString().split('T')[0] || '',
+          description: entry.description || '',
+          vatCode: isVATEntry ? '3' : undefined,
+          vatName: isVATEntry ? 'Output VAT, high rate' : undefined,
+          currency: undefined,
+          amount: displayAmount,
+          balance: runningBalance,
+          hasAttachment: false
+        };
+      });
+    }
 
     accountGroups.push({
       id: account.id,
       code: account.accountNumber.toString(),
       name: account.name,
+      type: account.type,
       openingBalance,
       closingBalance: runningBalance,
       entries: ledgerEntries
@@ -668,3 +804,5 @@ export async function generateLedgerReport(
     totalBalance: accountGroups.reduce((sum, acc) => sum + acc.closingBalance, 0)
   };
 }
+
+

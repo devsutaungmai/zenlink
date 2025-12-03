@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient, Prisma, LedgerEntryType } from '@prisma/client';
 import { getBusinessId } from '@/shared/lib/invoiceHelper';
 
 const prisma = new PrismaClient();
@@ -55,6 +55,7 @@ async function customerPaid(params: {
 
         await tx.ledgerEntry.create({
             data: {
+                entryType:LedgerEntryType.PAYMENT_RECEIVED,
                 invoiceId: invoice.id,
                 documentDate: paymentDate,
                 postingDate: new Date(),
