@@ -17,8 +17,12 @@ import {
   Copy,
   ChevronDown,
   Check,
+  FileSpreadsheet,
+  FileText,
+  FileDown,
 } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
 
 interface LedgerEntry {
   id: string
@@ -61,6 +65,7 @@ export default function GeneralLedger({ businessId }: { businessId: string }) {
     startDate: new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split("T")[0],
     endDate: today.toISOString().split("T")[0]
   });
+  const [downloading, setDownloading] = useState(false)
 
   // Fetch ledger data
   useEffect(() => {
@@ -139,6 +144,45 @@ export default function GeneralLedger({ businessId }: { businessId: string }) {
   }
 
   const totalEntries = accountData.reduce((sum, acc) => sum + acc.entries.length, 0)
+
+  // Download function
+  const handleDownload = async (format: 'excel' | 'pdf' | 'csv') => {
+    setDownloading(true)
+    try {
+      const params = new URLSearchParams({
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate,
+        format: format
+      })
+
+      const response = await fetch(`/api/ledger/report/download?${params}`)
+
+      if (!response.ok) {
+        throw new Error('Failed to download')
+      }
+
+      // Get filename from Content-Disposition header
+      const contentDisposition = response.headers.get('Content-Disposition')
+      const filenameMatch = contentDisposition?.match(/filename="(.+)"/)
+      const filename = filenameMatch ? filenameMatch[1] : `general-ledger.${format}`
+
+      // Download file
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    } catch (error) {
+      console.error('Download error:', error)
+      alert('Failed to download file')
+    } finally {
+      setDownloading(false)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -248,9 +292,42 @@ export default function GeneralLedger({ businessId }: { businessId: string }) {
             </div>
           </div>
 
-          <Button variant="ghost" size="icon">
-            <Download className="h-5 w-5" />
-          </Button>
+          {/* Download Dropdown */}
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger asChild>
+              <Button variant="ghost" size="icon" disabled={downloading}>
+                <Download className="h-5 w-5" />
+              </Button>
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Portal>
+              <DropdownMenu.Content
+                className="min-w-[200px] bg-white rounded-lg shadow-lg border border-gray-200 p-1 z-50"
+                sideOffset={5}
+              >
+                <DropdownMenu.Item
+                  className="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer hover:bg-gray-100 rounded outline-none"
+                  onSelect={() => handleDownload('excel')}
+                >
+                  <FileSpreadsheet className="h-4 w-4 text-green-600" />
+                  <span>Download as Excel</span>
+                </DropdownMenu.Item>
+                <DropdownMenu.Item
+                  className="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer hover:bg-gray-100 rounded outline-none"
+                  onSelect={() => handleDownload('pdf')}
+                >
+                  <FileText className="h-4 w-4 text-red-600" />
+                  <span>Download as PDF</span>
+                </DropdownMenu.Item>
+                <DropdownMenu.Item
+                  className="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer hover:bg-gray-100 rounded outline-none"
+                  onSelect={() => handleDownload('csv')}
+                >
+                  <FileDown className="h-4 w-4 text-blue-600" />
+                  <span>Download as CSV</span>
+                </DropdownMenu.Item>
+              </DropdownMenu.Content>
+            </DropdownMenu.Portal>
+          </DropdownMenu.Root>
 
           <Button variant="ghost" size="icon">
             <Settings className="h-5 w-5" />
