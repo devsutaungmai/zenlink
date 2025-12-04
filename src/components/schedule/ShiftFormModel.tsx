@@ -33,6 +33,8 @@ export default function ShiftFormModal({
   viewType,
   loading
 }: ShiftFormModalProps) {
+  const formKey = initialData?.id || 'new-shift'
+  
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent>
@@ -42,6 +44,7 @@ export default function ShiftFormModal({
           </DialogTitle>
         </DialogHeader>
         <ShiftForm
+          key={formKey}
           initialData={initialData}
           employees={employees}
           employeeGroups={employeeGroups}

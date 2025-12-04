@@ -71,12 +71,12 @@ export default function TemplatesDropdown({ onAction }: TemplatesDropdownProps) 
       label: t('templates.apply', 'Apply Template'),
       description: t('templates.apply_desc', 'Apply a template to current week')
     },
-    {
-      action: 'copy-week' as TemplateAction,
-      icon: ClipboardDocumentIcon,
-      label: t('templates.copy_week', 'Copy Week'),
-      description: t('templates.copy_week_desc', 'Copy shifts from another week')
-    }
+    // {
+    //   action: 'copy-week' as TemplateAction,
+    //   icon: ClipboardDocumentIcon,
+    //   label: t('templates.copy_week', 'Copy Week'),
+    //   description: t('templates.copy_week_desc', 'Copy shifts from another week')
+    // }
   ]
 
   return (

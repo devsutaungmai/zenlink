@@ -1,0 +1,265 @@
+'use client'
+
+import { useTranslation } from 'react-i18next'
+import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline'
+
+interface TemplateShift {
+  id: string
+  dayIndex: number
+  startTime: string
+  endTime: string | null
+  employeeGroupId?: string | null
+  functionId?: string | null
+  note?: string | null
+  breakMinutes?: number
+  breakPaid?: boolean
+}
+
+interface EmployeeGroup {
+  id: string
+  name: string
+}
+
+interface FunctionItem {
+  id: string
+  name: string
+  color?: string | null
+}
+
+interface TemplateDayFunctionViewProps {
+  shifts: TemplateShift[]
+  employeeGroups: EmployeeGroup[]
+  functions: FunctionItem[]
+  onAddShift: (dayIndex: number, formData?: any) => void
+  onEditShift: (shift: TemplateShift) => void
+  onDeleteShift: (shiftId: string) => void
+}
+
+export default function TemplateDayFunctionView({
+  shifts,
+  employeeGroups,
+  functions,
+  onAddShift,
+  onEditShift,
+  onDeleteShift
+}: TemplateDayFunctionViewProps) {
+  const { t } = useTranslation('schedule')
+  
+  const getFunctionShifts = (functionId: string) => {
+    return shifts.filter(shift => shift.functionId === functionId)
+  }
+
+  const getFunctionTotalHours = (functionId: string) => {
+    const functionShifts = shifts.filter(s => s.functionId === functionId)
+    let totalMinutes = 0
+    
+    functionShifts.forEach(shift => {
+      if (shift.endTime) {
+        const [startHour, startMin] = shift.startTime.split(':').map(Number)
+        const [endHour, endMin] = shift.endTime.split(':').map(Number)
+        const startMinutes = startHour * 60 + startMin
+        let endMinutes = endHour * 60 + endMin
+        
+        if (endMinutes < startMinutes) {
+          endMinutes += 24 * 60
+        }
+        
+        totalMinutes += (endMinutes - startMinutes)
+      }
+    })
+    
+    const hours = Math.floor(totalMinutes / 60)
+    const minutes = totalMinutes % 60
+    return `${hours}h ${minutes}m`
+  }
+
+  const getGroupName = (groupId: string | null | undefined) => {
+    if (!groupId) return null
+    const group = employeeGroups.find(g => g.id === groupId)
+    return group?.name
+  }
+
+  return (
+    <div className="overflow-hidden bg-white rounded-xl border border-gray-200">
+      {/* Mobile View */}
+      <div className="md:hidden bg-gray-50">
+        <div className="p-3 space-y-3">
+          {functions.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <p className="text-sm">{t('templates.no_functions_found', 'No functions found')}</p>
+            </div>
+          ) : (
+            functions.map((fn) => {
+              const functionShifts = getFunctionShifts(fn.id)
+              const functionShiftsCount = functionShifts.length
+              
+              return (
+                <div key={fn.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+                  <div className="flex items-center justify-between px-3 py-2.5 border-b bg-gray-50">
+                    <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                      {fn.color ? (
+                        <div className="w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0" style={{ backgroundColor: fn.color }}>
+                          {fn.name.substring(0, 2).toUpperCase()}
+                        </div>
+                      ) : (
+                        <div className="w-9 h-9 rounded-full bg-[#31BCFF] flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+                          {fn.name.substring(0, 2).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm text-gray-900 truncate">
+                          {fn.name}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {getFunctionTotalHours(fn.id)} / {t('templates.shifts_count', { count: functionShiftsCount, defaultValue: functionShiftsCount === 1 ? '1 shift' : `${functionShiftsCount} shifts` })}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-3">
+                    {functionShifts.length === 0 ? (
+                      <button
+                        onClick={() => onAddShift(0, { functionId: fn.id })}
+                        className="w-full py-4 border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 border-gray-300 hover:border-[#31BCFF] hover:bg-blue-50"
+                      >
+                        <PlusIcon className="w-6 h-6 text-[#31BCFF]" />
+                        <span className="text-xs text-gray-500">{t('templates.add_shift', 'Add Shift')}</span>
+                      </button>
+                    ) : (
+                      <div className="space-y-2">
+                        {functionShifts.map(shift => {
+                          const groupName = getGroupName(shift.employeeGroupId)
+                          
+                          return (
+                            <div
+                              key={shift.id}
+                              onClick={() => onEditShift(shift)}
+                              className="rounded-lg p-3 text-white cursor-pointer relative group"
+                              style={{ backgroundColor: fn.color || '#31BCFF' }}
+                            >
+                              <div className="font-medium text-sm">
+                                {shift.startTime} - {shift.endTime || t('templates.open', 'Open')}
+                              </div>
+                              {groupName && (
+                                <div className="text-xs opacity-90 mt-0.5">{groupName}</div>
+                              )}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  onDeleteShift(shift.id)
+                                }}
+                                className="absolute top-1 right-1 w-6 h-6 bg-white/20 hover:bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <TrashIcon className="w-3 h-3 text-white" />
+                              </button>
+                            </div>
+                          )
+                        })}
+                        <button
+                          onClick={() => onAddShift(0, { functionId: fn.id })}
+                          className="w-full text-xs text-center text-[#31BCFF] font-semibold py-2 px-2 bg-blue-50 hover:bg-blue-100 rounded-lg transition-all active:scale-95"
+                        >
+                          + {t('templates.add', 'Add')}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })
+          )}
+        </div>
+      </div>
+
+      {/* Desktop View */}
+      <div className="hidden md:block">
+        <div className="min-w-full">
+          <div className="grid grid-cols-[220px_1fr] border-b bg-gray-50 sticky top-0">
+            <div className="p-3 font-medium text-sm border-r">{t('templates.function', 'Function')}</div>
+            <div className="p-3 font-medium text-sm">{t('templates.shifts', 'Shifts')}</div>
+          </div>
+
+          {functions.map(fn => {
+            const functionShifts = getFunctionShifts(fn.id)
+            const functionShiftsCount = functionShifts.length
+            
+            return (
+              <div
+                key={fn.id}
+                className="grid grid-cols-[220px_1fr] border-b hover:bg-gray-50"
+              >
+                <div className="p-3 border-r">
+                  <div className="flex items-center gap-2">
+                    {fn.color && (
+                      <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: fn.color }} />
+                    )}
+                    <div className="font-medium text-sm text-gray-900">
+                      {fn.name}
+                    </div>
+                  </div>
+                  <div className="text-xs text-gray-500 mt-0.5">
+                    {getFunctionTotalHours(fn.id)} / {t('templates.shifts_count', { count: functionShiftsCount, defaultValue: functionShiftsCount === 1 ? '1 shift' : `${functionShiftsCount} shifts` })}
+                  </div>
+                </div>
+                
+                <div className="p-2 relative min-h-[80px] group">
+                  {functionShifts.length === 0 ? (
+                    <button
+                      onClick={() => onAddShift(0, { functionId: fn.id })}
+                      className="w-full h-full min-h-[76px] border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-1 transition-all opacity-0 group-hover:opacity-100 border-gray-300 hover:border-[#31BCFF] hover:bg-blue-50"
+                    >
+                      <PlusIcon className="w-5 h-5 text-[#31BCFF]" />
+                      <span className="text-xs text-gray-500">{t('templates.add_shift', 'Add Shift')}</span>
+                    </button>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {functionShifts.map(shift => {
+                        const groupName = getGroupName(shift.employeeGroupId)
+                        
+                        return (
+                          <div
+                            key={shift.id}
+                            className="cursor-pointer group/shift relative"
+                          >
+                            <div 
+                              onClick={() => onEditShift(shift)}
+                              className="rounded p-2 text-xs text-white font-medium min-w-[120px]"
+                              style={{ backgroundColor: fn.color || '#31BCFF' }}
+                            >
+                              <div className="font-medium">
+                                {shift.startTime} - {shift.endTime || t('templates.open', 'Open')}
+                              </div>
+                              {groupName && (
+                                <div className="mt-0.5 opacity-90">{groupName}</div>
+                              )}
+                            </div>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                onDeleteShift(shift.id)
+                              }}
+                              className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover/shift:opacity-100 transition-opacity shadow-sm"
+                            >
+                              <TrashIcon className="w-3 h-3" />
+                            </button>
+                          </div>
+                        )
+                      })}
+                      <button
+                        onClick={() => onAddShift(0, { functionId: fn.id })}
+                        className="w-8 h-8 border border-[#31BCFF] bg-white rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 shadow-sm hover:bg-[#31BCFF] hover:text-white self-center"
+                      >
+                        <PlusIcon className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}

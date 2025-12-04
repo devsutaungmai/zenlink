@@ -15,7 +15,9 @@ import {
 import TemplateEmployeeGroupedView from '@/components/schedule/template/TemplateEmployeeGroupedView'
 import TemplateGroupGroupedView from '@/components/schedule/template/TemplateGroupGroupedView'
 import TemplateFunctionGroupedView from '@/components/schedule/template/TemplateFunctionGroupedView'
-import TemplateDayView from '@/components/schedule/template/TemplateDayView'
+import TemplateDayEmployeeView from '@/components/schedule/template/TemplateDayEmployeeView'
+import TemplateDayGroupView from '@/components/schedule/template/TemplateDayGroupView'
+import TemplateDayFunctionView from '@/components/schedule/template/TemplateDayFunctionView'
 import TemplateShiftModal from '@/components/schedule/template/TemplateShiftModal'
 
 interface TemplateShift {
@@ -110,7 +112,7 @@ export default function TemplateEditorPage() {
   const [viewType, setViewType] = useState<ViewType>('groups')
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
 
-  const baseDate = startOfWeek(new Date(), { weekStartsOn: 1 })
+  const baseDate = startOfWeek(new Date(), { weekStartsOn: 0 })
   const weekDates = Array.from({ length: 7 }, (_, i) => addDays(baseDate, i))
 
   const viewTabs = useMemo(() => 
@@ -362,6 +364,50 @@ export default function TemplateEditorPage() {
     }
   }
 
+  const renderDayView = () => {
+    if (!template) return null
+
+    const dayShifts = template.shifts.filter(s => s.dayIndex === 0)
+
+    switch (viewType) {
+      case 'employees':
+        return (
+          <TemplateDayEmployeeView
+            shifts={dayShifts}
+            employees={employees}
+            functions={functions}
+            onAddShift={handleAddShift}
+            onEditShift={handleEditShift}
+            onDeleteShift={handleDeleteShift}
+          />
+        )
+      case 'groups':
+        return (
+          <TemplateDayGroupView
+            shifts={dayShifts}
+            employeeGroups={employeeGroups}
+            functions={functions}
+            onAddShift={handleAddShift}
+            onEditShift={handleEditShift}
+            onDeleteShift={handleDeleteShift}
+          />
+        )
+      case 'functions':
+        return (
+          <TemplateDayFunctionView
+            shifts={dayShifts}
+            employeeGroups={employeeGroups}
+            functions={functions}
+            onAddShift={handleAddShift}
+            onEditShift={handleEditShift}
+            onDeleteShift={handleDeleteShift}
+          />
+        )
+      default:
+        return null
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -472,74 +518,60 @@ export default function TemplateEditorPage() {
         </div>
       </div>
 
-      {/* View Type Tabs - Only show for week templates */}
-      {template.length === 'week' && (
-        <div className="bg-white border-b px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col gap-3 py-3">
-            {/* Mobile tabs */}
-            <div className="flex md:hidden gap-2" role="tablist">
-              {viewTabs.map(tab => {
-                const isActive = viewType === tab.value
-                return (
-                  <button
-                    key={`mobile-${tab.value}`}
-                    onClick={() => setViewType(tab.value)}
-                    role="tab"
-                    aria-selected={isActive}
-                    className={`flex-1 rounded-xl border px-2 py-2 text-[11px] font-semibold uppercase tracking-wide transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#31BCFF] focus-visible:ring-offset-2 ${
-                      isActive
-                        ? 'border-[#31BCFF] bg-[#31BCFF]/10 text-[#0B5CAB]'
-                        : 'border-gray-200 bg-white text-gray-500'
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                )
-              })}
-            </div>
+      {/* View Type Tabs */}
+      <div className="bg-white border-b px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col gap-3 py-3">
+          {/* Mobile tabs */}
+          <div className="flex md:hidden gap-2" role="tablist">
+            {viewTabs.map(tab => {
+              const isActive = viewType === tab.value
+              return (
+                <button
+                  key={`mobile-${tab.value}`}
+                  onClick={() => setViewType(tab.value)}
+                  role="tab"
+                  aria-selected={isActive}
+                  className={`flex-1 rounded-xl border px-2 py-2 text-[11px] font-semibold uppercase tracking-wide transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#31BCFF] focus-visible:ring-offset-2 ${
+                    isActive
+                      ? 'border-[#31BCFF] bg-[#31BCFF]/10 text-[#0B5CAB]'
+                      : 'border-gray-200 bg-white text-gray-500'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              )
+            })}
+          </div>
 
-            {/* Desktop tabs */}
-            <div className="hidden md:flex gap-2" role="tablist">
-              {viewTabs.map(tab => {
-                const Icon = tab.icon
-                const isActive = viewType === tab.value
-                return (
-                  <button
-                    key={`desktop-${tab.value}`}
-                    onClick={() => setViewType(tab.value)}
-                    role="tab"
-                    aria-selected={isActive}
-                    className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#31BCFF] focus-visible:ring-offset-2 ${
-                      isActive
-                        ? 'border-[#31BCFF] bg-[#31BCFF]/10 text-[#0B5CAB]'
-                        : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    {tab.label}
-                  </button>
-                )
-              })}
-            </div>
+          {/* Desktop tabs */}
+          <div className="hidden md:flex gap-2" role="tablist">
+            {viewTabs.map(tab => {
+              const Icon = tab.icon
+              const isActive = viewType === tab.value
+              return (
+                <button
+                  key={`desktop-${tab.value}`}
+                  onClick={() => setViewType(tab.value)}
+                  role="tab"
+                  aria-selected={isActive}
+                  className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#31BCFF] focus-visible:ring-offset-2 ${
+                    isActive
+                      ? 'border-[#31BCFF] bg-[#31BCFF]/10 text-[#0B5CAB]'
+                      : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  {tab.label}
+                </button>
+              )
+            })}
           </div>
         </div>
-      )}
+      </div>
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
-        {template.length === 'week' ? (
-          renderWeekView()
-        ) : (
-          <TemplateDayView
-            date={baseDate}
-            shifts={template.shifts.filter(s => s.dayIndex === 0)}
-            employeeGroups={employeeGroups}
-            functions={functions}
-            onAddShift={(formData?: any) => handleAddShift(0, formData)}
-            onEditShift={handleEditShift}
-            onDeleteShift={handleDeleteShift}
-          />
-        )}
+        {template.length === 'week' ? renderWeekView() : renderDayView()}
       </main>
 
       <TemplateShiftModal

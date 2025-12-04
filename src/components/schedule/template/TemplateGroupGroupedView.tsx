@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 import { format } from 'date-fns'
 import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline'
 
@@ -46,6 +47,7 @@ export default function TemplateGroupGroupedView({
   onEditShift,
   onDeleteShift
 }: TemplateGroupGroupedViewProps) {
+  const { t } = useTranslation('schedule')
   
   const getGroupShifts = (groupId: string, dayIndex: number) => {
     return shifts.filter(shift => shift.employeeGroupId === groupId && shift.dayIndex === dayIndex)
@@ -93,7 +95,7 @@ export default function TemplateGroupGroupedView({
     gridTemplateColumns: `repeat(${dayCount}, minmax(0, 1fr))`
   }
   const desktopGridStyle: React.CSSProperties = {
-    gridTemplateColumns: `220px repeat(${dayCount}, minmax(120px, 1fr))`
+    gridTemplateColumns: `minmax(160px, 200px) repeat(${dayCount}, minmax(0, 1fr))`
   }
 
   return (
@@ -104,12 +106,9 @@ export default function TemplateGroupGroupedView({
         <div className="bg-white sticky top-0 z-10 border-b shadow-sm overflow-x-auto">
           <div className="grid gap-0" style={mobileGridStyle}>
             {weekDates.map((date, i) => (
-              <div key={i} className="text-center py-3 border-r last:border-r-0">
-                <div className="text-xs font-medium mb-0.5 text-gray-500">
+              <div key={i} className="text-center py-2 border-r last:border-r-0">
+                <div className="text-[10px] font-medium text-gray-700">
                   {format(date, 'EEE')}
-                </div>
-                <div className="text-xl font-bold text-gray-900">
-                  {format(date, 'd')}
                 </div>
               </div>
             ))}
@@ -120,7 +119,7 @@ export default function TemplateGroupGroupedView({
         <div className="p-3 space-y-3">
           {employeeGroups.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              <p className="text-sm">No groups found</p>
+              <p className="text-sm">{t('templates.no_groups_found', 'No groups found')}</p>
             </div>
           ) : (
             employeeGroups.map((group) => {
@@ -139,7 +138,7 @@ export default function TemplateGroupGroupedView({
                           {group.name}
                         </div>
                         <div className="text-xs text-gray-500">
-                          {getGroupTotalHours(group.id)} / {groupShiftsCount} Shift{groupShiftsCount !== 1 ? 's' : ''}
+                          {getGroupTotalHours(group.id)} / {t('templates.shifts_count', { count: groupShiftsCount, defaultValue: groupShiftsCount === 1 ? '1 shift' : `${groupShiftsCount} shifts` })}
                         </div>
                       </div>
                     </div>
@@ -184,7 +183,7 @@ export default function TemplateGroupGroupedView({
                                     onClick={() => onAddShift(dayIndex, { employeeGroupId: group.id })}
                                     className="w-full text-xs text-center text-[#31BCFF] font-semibold py-1 px-2 bg-blue-50 hover:bg-blue-100 rounded transition-all active:scale-95"
                                   >
-                                    + Add
+                                    + {t('templates.add', 'Add')}
                                   </button>
                                 </div>
                               )}
@@ -202,15 +201,15 @@ export default function TemplateGroupGroupedView({
       </div>
 
       {/* Desktop View - Original Grid Layout */}
-      <div className="hidden md:block overflow-x-auto">
-        <div className="min-w-full">
+      <div className="hidden md:block">
+        <div>
           {/* Header Row */}
           <div className="grid border-b bg-gray-50 sticky top-0" style={desktopGridStyle}>
-            <div className="p-3 font-medium text-sm border-r">Group</div>
+            <div className="p-3 font-medium text-sm border-r">{t('templates.group', 'Group')}</div>
             {weekDates.map((date, i) => (
               <div key={i} className="p-2 text-center border-r">
                 <div className="text-xs font-semibold text-gray-900">
-                  {format(date, 'EEE, MMM d')}
+                  {format(date, 'EEEE')}
                 </div>
               </div>
             ))}
@@ -227,7 +226,7 @@ export default function TemplateGroupGroupedView({
                     {group.name}
                   </div>
                   <div className="text-xs text-gray-500 mt-0.5">
-                    {getGroupTotalHours(group.id)} / {groupShiftsCount} Shift{groupShiftsCount !== 1 ? 's' : ''}
+                    {getGroupTotalHours(group.id)} / {t('templates.shifts_count', { count: groupShiftsCount, defaultValue: groupShiftsCount === 1 ? '1 shift' : `${groupShiftsCount} shifts` })}
                   </div>
                 </div>
                 
@@ -242,7 +241,7 @@ export default function TemplateGroupGroupedView({
                           className="w-full h-full min-h-[76px] border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-1 transition-all opacity-0 group-hover:opacity-100 border-gray-300 hover:border-[#31BCFF] hover:bg-blue-50"
                         >
                           <PlusIcon className="w-5 h-5 text-[#31BCFF]" />
-                          <span className="text-xs text-gray-500">Add Shift</span>
+                          <span className="text-xs text-gray-500">{t('templates.add_shift', 'Add Shift')}</span>
                         </button>
                       ) : (
                         <>
@@ -261,10 +260,10 @@ export default function TemplateGroupGroupedView({
                                   style={{ backgroundColor: shiftColor }}
                                 >
                                   <div className="font-medium">
-                                    {functionName || 'No Function'}
+                                    {functionName || t('templates.no_function', 'No Function')}
                                   </div>
                                   <div className="mt-0.5 opacity-90">
-                                    {shift.startTime} - {shift.endTime || 'Open'}
+                                    {shift.startTime} - {shift.endTime || t('templates.open', 'Open')}
                                   </div>
                                 </div>
                                 <button

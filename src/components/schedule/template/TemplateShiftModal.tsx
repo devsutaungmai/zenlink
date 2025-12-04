@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 
@@ -88,6 +88,9 @@ export default function TemplateShiftModal({
   const [breakMinutes, setBreakMinutes] = useState<number | ''>('')
   const [breakPaid, setBreakPaid] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  
+  // Store the original pre-selected employee ID to prevent it from being cleared
+  const preSelectedEmployeeIdRef = useRef<string | null>(null)
   
   // Cascading dropdowns state
   const [departmentId, setDepartmentId] = useState('')
@@ -194,6 +197,8 @@ export default function TemplateShiftModal({
       setDepartmentId(initialData.departmentId || '')
       setCategoryId(initialData.categoryId || '')
       setIsInitialLoad(true)
+      // Store the pre-selected employee ID in ref so it persists
+      preSelectedEmployeeIdRef.current = initialData.employeeId || null
     } else {
       // Default values matching ShiftForm
       setStartTime('09:00')
@@ -207,6 +212,7 @@ export default function TemplateShiftModal({
       setDepartmentId('')
       setCategoryId('')
       setIsInitialLoad(true)
+      preSelectedEmployeeIdRef.current = null
     }
   }, [initialData])
 
@@ -294,16 +300,16 @@ export default function TemplateShiftModal({
     return targetFunction.employeeGroups
   }, [functionId, filteredFunctions, functions])
 
-  // Check if employee is pre-selected from view (locked mode)
-  const isEmployeePreSelected = Boolean(initialData?.employeeId)
-  const isEmployeeGroupPreSelected = Boolean(initialData?.employeeGroupId && !initialData?.employeeId)
-  const isFunctionPreSelected = Boolean(initialData?.functionId && !initialData?.employeeId && !initialData?.employeeGroupId)
+  // Check if employee is pre-selected from view (locked mode) - use ref to ensure stability
+  const isEmployeePreSelected = Boolean(preSelectedEmployeeIdRef.current)
+  const isEmployeeGroupPreSelected = Boolean(initialData?.employeeGroupId && !preSelectedEmployeeIdRef.current)
+  const isFunctionPreSelected = Boolean(initialData?.functionId && !preSelectedEmployeeIdRef.current && !initialData?.employeeGroupId)
 
-  // Get the pre-selected employee's data for filtering
+  // Get the pre-selected employee's data for filtering - use ref for stable ID
   const preSelectedEmployee = useMemo(() => {
-    if (!initialData?.employeeId) return null
-    return employees.find(emp => emp.id === initialData.employeeId)
-  }, [initialData?.employeeId, employees])
+    if (!preSelectedEmployeeIdRef.current) return null
+    return employees.find(emp => emp.id === preSelectedEmployeeIdRef.current)
+  }, [preSelectedEmployeeIdRef.current, employees])
 
   // Get the pre-selected function's data for filtering
   const preSelectedFunction = useMemo(() => {
@@ -404,6 +410,11 @@ export default function TemplateShiftModal({
 
   // Filter employees based on function and employee group
   const filteredEmployees = useMemo(() => {
+    // If employee is pre-selected, always include them in the list
+    if (isEmployeePreSelected && preSelectedEmployee) {
+      return [preSelectedEmployee]
+    }
+    
     if (functionId) {
       if (!resolvedLinkedGroupId) {
         return []
@@ -414,7 +425,7 @@ export default function TemplateShiftModal({
       return employees.filter(emp => emp.employeeGroupId === employeeGroupId)
     }
     return employees
-  }, [employees, functionId, employeeGroupId, resolvedLinkedGroupId])
+  }, [employees, functionId, employeeGroupId, resolvedLinkedGroupId, isEmployeePreSelected, preSelectedEmployee])
 
   // Available employee group options based on function and employee context
   const availableEmployeeGroupOptions = useMemo(() => {
@@ -447,25 +458,31 @@ export default function TemplateShiftModal({
     }
   }, [functionId, linkedFunctionGroups, employeeGroupId])
 
-  // Clear employee if not in filtered list
+  // Clear employee if not in filtered list (but never clear if employee is pre-selected)
   useEffect(() => {
+    // Never clear employee if it was pre-selected from the view
+    if (isEmployeePreSelected) return
+    
     if (employeeId && filteredEmployees.length > 0) {
       const employeeValid = filteredEmployees.some(emp => emp.id === employeeId)
       if (!employeeValid) {
         setEmployeeId('')
       }
     }
-  }, [employeeId, filteredEmployees])
+  }, [employeeId, filteredEmployees, isEmployeePreSelected])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
 
+    // Use the ref value if employee was pre-selected (ensures we send correct ID)
+    const finalEmployeeId = preSelectedEmployeeIdRef.current || employeeId || null
+
     try {
       await onSave({
         startTime,
         endTime: endTime || null,
-        employeeId: employeeId || null,
+        employeeId: finalEmployeeId,
         employeeGroupId: employeeGroupId || null,
         functionId: functionId || null,
         departmentId: departmentId || null,
@@ -709,10 +726,13 @@ export default function TemplateShiftModal({
               disabled={isEmployeePreSelected || (functionId ? !resolvedLinkedGroupId || filteredEmployees.length === 0 : false)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] outline-none disabled:bg-gray-100"
             >
-              <option value="">
-                {isEmployeePreSelected
-                  ? `${preSelectedEmployee?.firstName} ${preSelectedEmployee?.lastName}`
-                  : functionId
+              {isEmployeePreSelected ? (
+                <option value={employeeId}>
+                  {preSelectedEmployee?.firstName} {preSelectedEmployee?.lastName}
+                </option>
+              ) : (
+                <option value="">
+                  {functionId
                     ? activeLinkedGroup
                       ? filteredEmployees.length > 0
                         ? `Select an employee from ${activeLinkedGroup.name}`
@@ -721,8 +741,9 @@ export default function TemplateShiftModal({
                         ? 'Select an employee group first'
                         : 'Link this function to an employee group'
                     : t('shift_form.select_employee', 'Select employee (optional)')}
-              </option>
-              {filteredEmployees.map((employee) => (
+                </option>
+              )}
+              {!isEmployeePreSelected && filteredEmployees.map((employee) => (
                 <option key={employee.id} value={employee.id}>
                   {employee.firstName} {employee.lastName} {employee.employeeNo && `(${employee.employeeNo})`}
                 </option>

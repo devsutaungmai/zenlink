@@ -9,6 +9,9 @@ import { useTranslation } from 'react-i18next'
 import Swal from 'sweetalert2'
 import ScheduleHeader from '@/components/schedule/ScheduleHeader'
 import CreateTemplateModal from '@/components/schedule/CreateTemplateModal'
+import SelectTemplateModal from '@/components/schedule/template/SelectTemplateModal'
+import ApplyTemplateModal from '@/components/schedule/template/ApplyTemplateModal'
+import SaveAsTemplateModal from '@/components/schedule/template/SaveAsTemplateModal'
 import WeekView from '@/components/schedule/WeekView'
 import DayView from '@/components/schedule/DayView'
 import DayEmployeeTimeline from '@/components/schedule/DayEmployeeTimeline'
@@ -47,6 +50,10 @@ const VIEW_TAB_CONFIG: ViewTabConfig[] = [
 export default function SchedulePage() {
   const [showShiftModal, setShowShiftModal] = useState(false)
   const [showCreateTemplateModal, setShowCreateTemplateModal] = useState(false)
+  const [showSelectTemplateModal, setShowSelectTemplateModal] = useState(false)
+  const [showApplyTemplateModal, setShowApplyTemplateModal] = useState(false)
+  const [showSaveAsTemplateModal, setShowSaveAsTemplateModal] = useState(false)
+  const [selectTemplateMode, setSelectTemplateMode] = useState<'edit' | 'apply'>('edit')
   const [shiftInitialData, setShiftInitialData] = useState<any>(null)
   const [modalViewType, setModalViewType] = useState<'week' | 'day' | 'month'>('week')
 
@@ -941,16 +948,14 @@ export default function SchedulePage() {
         setShowCreateTemplateModal(true)
         break
       case 'save':
-        // TODO: Implement save as template
-        console.log('Save as template')
+        setShowSaveAsTemplateModal(true)
         break
       case 'edit':
-        // TODO: Implement edit template
-        console.log('Edit template')
+        setSelectTemplateMode('edit')
+        setShowSelectTemplateModal(true)
         break
       case 'apply':
-        // TODO: Implement apply template
-        console.log('Apply template')
+        setShowApplyTemplateModal(true)
         break
       case 'copy-week':
         // TODO: Implement copy week
@@ -1323,6 +1328,112 @@ export default function SchedulePage() {
         <CreateTemplateModal
           isOpen={showCreateTemplateModal}
           onClose={() => setShowCreateTemplateModal(false)}
+        />
+
+        <SelectTemplateModal
+          isOpen={showSelectTemplateModal}
+          onClose={() => setShowSelectTemplateModal(false)}
+          mode={selectTemplateMode}
+          onApply={(templateId) => {
+            // TODO: Implement apply template logic
+            console.log('Apply template:', templateId)
+          }}
+        />
+
+        <ApplyTemplateModal
+          isOpen={showApplyTemplateModal}
+          onClose={() => setShowApplyTemplateModal(false)}
+          currentWeekStart={startOfWeek(currentDate, { weekStartsOn: 0 })}
+          onApply={async (data) => {
+            try {
+              const response = await fetch(`/api/schedule-templates/${data.templateId}/apply`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  applyToDate: data.applyToDate.toISOString(),
+                  existingShiftsOption: data.existingShiftsOption
+                })
+              })
+
+              if (!response.ok) {
+                const errorData = await response.json()
+                throw new Error(errorData.error || 'Failed to apply template')
+              }
+
+              const result = await response.json()
+              
+              Swal.fire({
+                icon: 'success',
+                title: 'Template Applied',
+                text: result.message || `Successfully applied ${result.shiftsCreated} shifts`,
+                timer: 2500,
+                showConfirmButton: false
+              })
+
+              // Refresh shifts after applying
+              fetchShifts()
+            } catch (error) {
+              console.error('Error applying template:', error)
+              Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: error instanceof Error ? error.message : 'Failed to apply template'
+              })
+            }
+          }}
+        />
+
+        <SaveAsTemplateModal
+          isOpen={showSaveAsTemplateModal}
+          onClose={() => setShowSaveAsTemplateModal(false)}
+          shifts={shifts}
+          weekStart={startOfWeek(currentDate, { weekStartsOn: 0 })}
+          onSave={async (templateName) => {
+            const weekStartDate = startOfWeek(currentDate, { weekStartsOn: 0 })
+            
+            const response = await fetch('/api/schedule-templates/save-from-schedule', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                name: templateName,
+                weekStart: weekStartDate.toISOString(),
+                shifts: shifts.map(shift => ({
+                  id: shift.id,
+                  date: typeof shift.date === 'string' ? shift.date : shift.date.toISOString(),
+                  startTime: shift.startTime,
+                  endTime: shift.endTime,
+                  employeeId: shift.employeeId,
+                  employeeGroupId: shift.employeeGroupId,
+                  functionId: shift.functionId,
+                  departmentId: shift.departmentId,
+                  note: shift.note,
+                  breakPaid: shift.breakPaid
+                }))
+              })
+            })
+
+            if (!response.ok) {
+              const errorData = await response.json()
+              throw new Error(errorData.error || 'Failed to save template')
+            }
+
+            const result = await response.json()
+            
+            Swal.fire({
+              icon: 'success',
+              title: t('templates.saved', 'Template Saved'),
+              text: t('templates.saved_message', 'Template "{{name}}" saved with {{count}} shifts', { 
+                name: templateName, 
+                count: result.template.shiftsCount 
+              }),
+              timer: 2500,
+              showConfirmButton: false
+            })
+          }}
         />
       </div>
   )

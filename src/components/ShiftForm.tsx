@@ -458,21 +458,37 @@ export default function ShiftForm({
   }, [formData.functionId, formData.employeeGroupId, linkedFunctionGroups, singleLinkedFunctionGroup])
 
   const filteredEmployees = React.useMemo(() => {
+    const currentEmployee = formData.employeeId 
+      ? safeEmployees.find(emp => emp.id === formData.employeeId)
+      : null;
+
     if (formData.functionId) {
       if (!resolvedLinkedGroupId) {
-        return []
+        return currentEmployee ? [currentEmployee] : []
       }
-      return safeEmployees.filter(emp => emp.employeeGroupId === resolvedLinkedGroupId)
+      const filtered = safeEmployees.filter(emp => emp.employeeGroupId === resolvedLinkedGroupId)
+      if (currentEmployee && !filtered.some(emp => emp.id === currentEmployee.id)) {
+        return [currentEmployee, ...filtered]
+      }
+      return filtered
     }
 
     if (formData.employeeGroupId) {
-      return safeEmployees.filter(emp => emp.employeeGroupId === formData.employeeGroupId)
+      const filtered = safeEmployees.filter(emp => emp.employeeGroupId === formData.employeeGroupId)
+      if (currentEmployee && !filtered.some(emp => emp.id === currentEmployee.id)) {
+        return [currentEmployee, ...filtered]
+      }
+      return filtered
     }
 
     return safeEmployees
-  }, [safeEmployees, formData.functionId, formData.employeeGroupId, resolvedLinkedGroupId])
+  }, [safeEmployees, formData.functionId, formData.employeeGroupId, formData.employeeId, resolvedLinkedGroupId])
 
-  const employeeSelectDisabled = isEmployee || (formData.functionId ? !resolvedLinkedGroupId || filteredEmployees.length === 0 : false)
+  const employeeSelectDisabled = isEmployee || Boolean(
+    !formData.employeeId &&
+    formData.functionId && 
+    (!resolvedLinkedGroupId || filteredEmployees.length === 0)
+  )
   const employeeGroupSelectDisabled = isEmployee || (formData.functionId ? linkedFunctionGroups.length === 1 : false)
 
   const availableEmployeeGroupOptions = formData.functionId
@@ -486,13 +502,23 @@ export default function ShiftForm({
       return
     }
 
+    if (linkedFunctionGroups.length === 0 && loadingFunctions) {
+      return
+    }
+
+    if (linkedFunctionGroups.length === 0 && initialData?.employeeId && functions.length === 0) {
+      return
+    }
+
     if (linkedFunctionGroups.length === 0) {
       if (formData.employeeGroupId || formData.employeeId) {
-        setFormData(prev => ({
-          ...prev,
-          employeeGroupId: undefined,
-          employeeId: undefined,
-        }))
+        if (!initialData?.employeeId || formData.employeeId !== initialData.employeeId) {
+          setFormData(prev => ({
+            ...prev,
+            employeeGroupId: undefined,
+            employeeId: undefined,
+          }))
+        }
       }
       return
     }
@@ -519,6 +545,17 @@ export default function ShiftForm({
     const hasValidGroupSelection = formData.employeeGroupId && validGroupIds.includes(formData.employeeGroupId)
 
     if (!hasValidGroupSelection) {
+      if (initialData?.employeeId && formData.employeeId === initialData.employeeId) {
+        const employee = safeEmployees.find(emp => emp.id === formData.employeeId)
+        if (employee?.employeeGroupId && validGroupIds.includes(employee.employeeGroupId)) {
+          setFormData(prev => ({
+            ...prev,
+            employeeGroupId: employee.employeeGroupId || undefined,
+          }))
+          return
+        }
+      }
+      
       if (formData.employeeGroupId || formData.employeeId) {
         setFormData(prev => ({
           ...prev,
@@ -541,7 +578,7 @@ export default function ShiftForm({
         }))
       }
     }
-  }, [formData.functionId, formData.employeeGroupId, formData.employeeId, linkedFunctionGroups, safeEmployees])
+  }, [formData.functionId, formData.employeeGroupId, formData.employeeId, linkedFunctionGroups, safeEmployees, loadingFunctions, initialData?.employeeId, functions.length])
 
 
   useEffect(() => {
@@ -1094,15 +1131,17 @@ export default function ShiftForm({
                 required={!!formData.functionId}
               >
                 <option value="">
-                  {formData.functionId
-                    ? activeLinkedGroup
-                      ? filteredEmployees.length > 0
-                        ? `Select an employee from ${activeLinkedGroup.name}`
-                        : `No eligible employees in ${activeLinkedGroup.name}`
-                      : linkedFunctionGroups.length > 1
-                        ? 'Select an employee group first'
-                        : 'Link this function to an employee group'
-                    : 'Select an employee (optional)'}
+                  {formData.employeeId 
+                    ? 'Select an employee'
+                    : formData.functionId
+                      ? activeLinkedGroup
+                        ? filteredEmployees.length > 0
+                          ? `Select an employee from ${activeLinkedGroup.name}`
+                          : `No eligible employees in ${activeLinkedGroup.name}`
+                        : linkedFunctionGroups.length > 1
+                          ? 'Select an employee group first'
+                          : 'Link this function to an employee group'
+                      : 'Select an employee (optional)'}
                 </option>
                 {filteredEmployees.map((employee) => (
                   <option key={employee.id} value={employee.id}>
@@ -1111,19 +1150,21 @@ export default function ShiftForm({
                 ))}
               </select>
               <p
-                className={`mt-1 text-xs ${formData.functionId && (!activeLinkedGroup || filteredEmployees.length === 0) ? 'text-red-500' : 'text-gray-500'}`}
+                className={`mt-1 text-xs ${formData.functionId && !formData.employeeId && (!activeLinkedGroup || filteredEmployees.length === 0) ? 'text-red-500' : 'text-gray-500'}`}
               >
-                {formData.functionId
-                  ? activeLinkedGroup
-                    ? filteredEmployees.length > 0
-                      ? `Only employees in ${activeLinkedGroup.name} can be assigned.`
-                      : `No employees currently belong to ${activeLinkedGroup.name}.`
-                    : linkedFunctionGroups.length > 1
-                      ? 'Select an employee group to view eligible employees.'
-                      : 'Link this function to an employee group to assign employees.'
-                  : formData.employeeGroupId
-                    ? 'Only employees in the selected employee group are shown.'
-                    : 'All employees in the business are shown.'}
+                {formData.employeeId
+                  ? 'Currently assigned employee is shown.'
+                  : formData.functionId
+                    ? activeLinkedGroup
+                      ? filteredEmployees.length > 0
+                        ? `Only employees in ${activeLinkedGroup.name} can be assigned.`
+                        : `No employees currently belong to ${activeLinkedGroup.name}.`
+                      : linkedFunctionGroups.length > 1
+                        ? 'Select an employee group to view eligible employees.'
+                        : 'Link this function to an employee group to assign employees.'
+                    : formData.employeeGroupId
+                      ? 'Only employees in the selected employee group are shown.'
+                      : 'All employees in the business are shown.'}
               </p>
             </div>
           )}

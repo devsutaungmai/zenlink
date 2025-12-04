@@ -13,7 +13,9 @@ export async function GET(request: NextRequest) {
     const templates = await prisma.scheduleTemplate.findMany({
       where: { businessId },
       include: {
-        shifts: true
+        _count: {
+          select: { shifts: true }
+        }
       },
       orderBy: { updatedAt: 'desc' }
     })
