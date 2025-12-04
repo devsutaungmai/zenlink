@@ -24,7 +24,7 @@ interface RegisterPaymentDialogProps {
         invoiceId: string;
         amount: number | null;
     }
-    fetchInvoices: () => Promise<void>; 
+    fetchInvoices: () => Promise<void>;
 
 }
 
@@ -79,7 +79,7 @@ export default function RegisterPaymentDialog({
                 await fetchInvoices();
                 router.refresh()
             }
-          
+
         } catch (error) {
             console.error('Failed to register payment:', error);
         }
@@ -89,120 +89,94 @@ export default function RegisterPaymentDialog({
         <Dialog.Root open={open} onOpenChange={onOpenChange}>
             <Dialog.Portal>
                 <Dialog.Overlay className="fixed inset-0 bg-black/40" />
-
-                <Dialog.Content
-                    className="
-            fixed top-[50%] left-[50%] -translate-x-[50%] -translate-y-[50%]
-            w-full max-w-3xl rounded-xl bg-white shadow-lg p-6
-          "
-                >
+                <Dialog.Content className="fixed left-[50%] top-[50%] -translate-x-[50%] -translate-y-[50%] w-[calc(100%-2rem)] max-w-sm sm:max-w-lg md:max-w-3xl rounded-xl bg-white shadow-lg p-4 sm:p-6 md:p-8 max-h-[90vh] overflow-y-auto">
                     {/* Header */}
-                    <div className="flex items-center justify-between mb-6">
-                        <Dialog.Title className="text-2xl font-semibold text-gray-800">
+                    <div className="flex items-center justify-between mb-4 sm:mb-6">
+                        <Dialog.Title className="text-xl sm:text-2xl md:text-2xl font-semibold text-gray-800">
                             Register payment
                         </Dialog.Title>
 
                         <Dialog.Close asChild>
                             <button className="p-2 rounded-lg hover:bg-gray-100">
-                                <X size={22} />
+                                <X size={20} className="sm:w-6 sm:h-6" />
                             </button>
                         </Dialog.Close>
                     </div>
 
+                    {/* Responsive grid layout */}
+                    <div className="border rounded-lg p-4 sm:p-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+                            {/* Customer */}
+                            <div className="flex flex-col">
+                                <label className="text-xs sm:text-sm font-medium text-gray-600 mb-2">Customer</label>
+                                <div className="text-sm sm:text-base text-gray-800 py-2 px-3 bg-gray-50 rounded-md">
+                                    {payment.customer?.customerName}
+                                </div>
+                            </div>
 
-                    {/* Table */}
-                    <div className="border rounded-lg overflow-hidden">
-                        <table className="w-full">
-                            <thead className="bg-gray-100 text-gray-600 font-medium">
-                                <tr>
-                                    <th className="text-left px-4 py-3">Customer</th>
-                                    <th className="text-left px-4 py-3">Date</th>
-                                    <th className="text-left px-4 py-3">Payment type</th>
-                                    <th className="text-left px-4 py-3">Received amount</th>
-                                    <th className="text-right px-4 py-3"></th>
-                                </tr>
-                            </thead>
+                            {/* Date */}
+                            <div className="flex flex-col">
+                                <label className="text-xs sm:text-sm font-medium text-gray-600 mb-2">Date</label>
+                                <div className="flex items-center gap-2 border px-2 sm:px-3 py-2 rounded-md">
+                                    <input
+                                        type="date"
+                                        value={payment.date || ""}
+                                        onChange={(e) => setPayment({ ...payment, date: e.target.value })}
+                                        className="bg-transparent outline-none flex-1 text-xs sm:text-sm"
+                                    />
+                                    <Calendar size={16} className="text-gray-600" />
+                                </div>
+                            </div>
 
-                            <tbody>
-                                <tr className="border-t">
-                                    {/* Info */}
-                                    <td className="px-4 py-4">
-                                        <div className="text-gray-600 text-sm">{payment.customer?.customerName}</div>
-                                    </td>
+                            {/* Payment type */}
+                            <div className="flex flex-col">
+                                <label className="text-xs sm:text-sm font-medium text-gray-600 mb-2">Payment type</label>
+                                <div className="flex items-center justify-between border px-2 sm:px-3 py-2 rounded-md">
+                                    <select
+                                        value={payment.paymentMethod ?? ""}
+                                        onChange={(e) => setPayment({ ...payment, paymentMethod: e.target.value })}
+                                        className="bg-transparent outline-none appearance-none flex-1 text-xs sm:text-sm"
+                                    >
+                                        <option value="">Select</option>
+                                        {paymentMethods.map((m) => (
+                                            <option key={m.id} value={m.id}>
+                                                {m.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <ChevronDown size={16} className="text-gray-600" />
+                                </div>
+                            </div>
 
-                                    {/* Date */}
-                                    <td className="px-4 py-4">
-                                        <div className="flex items-center gap-2 border px-3 py-2 rounded-md w-[140px]">
-                                            <input
-                                                type="date"
-                                                value={payment.date || ""}
-                                                onChange={(e) =>
-                                                    setPayment({ ...payment, date: e.target.value })
-                                                }
-                                                className="bg-transparent outline-none text-sm w-full"
-                                            />
-                                            <Calendar size={18} className="text-gray-600" />
-                                        </div>
-                                    </td>
-
-                                    {/* Payment type */}
-                                    <td className="px-4 py-4">
-                                        <div className="flex items-center justify-between border px-3 py-2 rounded-md w-[160px]">
-                                            <select
-                                                value={payment.paymentMethod ?? ""}
-                                                onChange={(e) => setPayment({ ...payment, paymentMethod: e.target.value })}
-                                                className="bg-transparent outline-none text-sm w-full appearance-none pr-6"
-                                            >
-                                                <option value="">Select</option>
-                                                {paymentMethods.map((m) => (
-                                                    <option key={m.id} value={m.id}>
-                                                        {m.name}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                            <ChevronDown size={18} className="text-gray-600" />
-                                        </div>
-                                    </td>
-
-                                    {/* Amount */}
-                                    <td className="px-4 py-4">
-                                        <input
-                                            type="number"
-                                            value={payment.amount}
-                                            onChange={(e) =>
-                                                setPayment({ ...payment, amount: parseFloat(e.target.value) })
-                                            }
-                                            className="w-[80px] border px-3 py-2 rounded-md text-sm"
-                                        />
-                                    </td>
-
-                                    {/* Delete */}
-                                    {/* <td className="px-4 py-4 text-right">
-                                            <button
-                                                onClick={() => removePayment(index)}
-                                                className="p-2 text-gray-700 hover:bg-gray-100 rounded-md"
-                                            >
-                                                <Trash2 size={20} />
-                                            </button>
-                                        </td> */}
-                                </tr>
-                            </tbody>
-                        </table>
+                            {/* Amount */}
+                            <div className="flex flex-col">
+                                <label className="text-xs sm:text-sm font-medium text-gray-600 mb-2">Received amount</label>
+                                <input
+                                    type="number"
+                                    value={payment.amount}
+                                    onChange={(e) => setPayment({ ...payment, amount: Number.parseFloat(e.target.value) })}
+                                    className="border px-3 py-2 rounded-md text-xs sm:text-sm"
+                                />
+                            </div>
+                        </div>
                     </div>
 
                     {/* Footer */}
-                    <div className="flex justify-between items-center mt-6">
-                        <button onClick={handleSubmit} className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-4 sm:mt-6">
+                        <button
+                            onClick={handleSubmit}
+                            className="w-full sm:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-sm"
+                        >
                             Register payment
                         </button>
 
-                        <div className="text-right">
-                            <div className="text-gray-500">Total</div>
-                            <div className="text-2xl font-semibold">{payment.amount.toFixed(2)}</div>
+                        <div className="text-right w-full sm:w-auto">
+                            <div className="text-gray-500 text-xs sm:text-sm">Total</div>
+                            <div className="text-xl sm:text-2xl font-semibold">{payment.amount.toFixed(2)}</div>
                         </div>
                     </div>
                 </Dialog.Content>
             </Dialog.Portal>
         </Dialog.Root>
-    );
+    )
 }

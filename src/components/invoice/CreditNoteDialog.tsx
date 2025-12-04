@@ -71,33 +71,36 @@ export default function CreditNoteDialog({ open, onOpenChange ,creditNoteData, f
       console.error("Failed to create credit note:", error)
     }
   }
-
-  return (
+ return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/40" />
-        <Dialog.Content className="fixed top-[54%] left-[50%] -translate-x-[50%] -translate-y-[50%] w-full max-w-2xl rounded-xl bg-white shadow-lg p-8">
+        <Dialog.Content className="fixed left-[50%] top-[50%] -translate-x-[50%] -translate-y-[50%] w-[calc(100%-2rem)] max-w-sm sm:max-w-lg md:max-w-2xl rounded-xl bg-white shadow-lg p-4 sm:p-6 md:p-8 max-h-[90vh] overflow-y-auto">
           {/* Header */}
-          <div className="flex items-center justify-between mb-1">
-            <Dialog.Title className="text-3xl font-semibold text-gray-900">Credit note</Dialog.Title>
+          <div className="flex items-center justify-between mb-4 sm:mb-6 md:mb-8">
+            <Dialog.Title className="text-xl sm:text-2xl md:text-3xl font-semibold text-gray-900">
+              Credit note
+            </Dialog.Title>
             <Dialog.Close asChild>
               <button className="p-2 rounded-lg hover:bg-gray-100">
-                <X size={24} />
+                <X size={20} className="sm:w-6 sm:h-6" />
               </button>
             </Dialog.Close>
           </div>
 
           {/* Customer & Invoice Info */}
-          <div className="mb-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-1">{creditNote.customer?.customerName}</h3>
-            <p className="text-gray-600 text-sm">Invoice #{creditNote.invoiceId}</p>
+          <div className="mb-6 sm:mb-8 md:mb-8">
+            <h3 className="text-base sm:text-lg md:text-lg font-semibold text-gray-900 mb-1">
+              {creditNote.customer?.customerName}
+            </h3>
+            <p className="text-gray-600 text-xs sm:text-sm">Invoice #{creditNote.invoiceId}</p>
           </div>
 
           {/* Form Fields */}
-          <div className="space-y-6 mb-8">
+          <div className="space-y-4 sm:space-y-6 mb-6 sm:mb-8">
             {/* Date */}
             <div>
-              <label className="block text-gray-900 font-medium text-sm mb-2">Date</label>
+              <label className="block text-gray-900 font-medium text-xs sm:text-sm mb-2">Date</label>
               <div className="flex items-center gap-2 border border-gray-300 px-3 py-2 rounded-md w-fit">
                 <input
                   type="date"
@@ -108,75 +111,15 @@ export default function CreditNoteDialog({ open, onOpenChange ,creditNoteData, f
                       date: e.target.value,
                     })
                   }
-                  className="bg-transparent outline-none text-sm w-40"
+                  className="bg-transparent outline-none text-xs sm:text-sm w-32 sm:w-40"
                 />
-                <Calendar size={18} className="text-gray-600" />
+                <Calendar size={16} className="sm:w-[18px] sm:h-[18px] text-gray-600" />
               </div>
             </div>
 
-            {/* Sending Type */}
-            {/* <div>
-              <label className="block text-gray-900 font-medium text-sm mb-3">Sending type</label>
-              <div className="flex items-center gap-8">
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="sendingType"
-                    value="email"
-                    checked={creditNote.sendingType === "email"}
-                    onChange={(e) =>
-                      setCreditNote({
-                        ...creditNote,
-                        sendingType: "email",
-                      })
-                    }
-                    className="w-5 h-5 accent-blue-600"
-                  />
-                  <span className="text-gray-700 text-sm font-medium">Email</span>
-                </label>
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="sendingType"
-                    value="no-send"
-                    checked={creditNote.sendingType === "no-send"}
-                    onChange={(e) =>
-                      setCreditNote({
-                        ...creditNote,
-                        sendingType: "no-send",
-                      })
-                    }
-                    className="w-5 h-5 accent-blue-600"
-                  />
-                  <span className="text-gray-700 text-sm font-medium">Do not send</span>
-                </label>
-              </div>
-            </div> */}
-
-            {/* Email Address - Only show if Email is selected */}
-            {/* {creditNote.sendingType === "email" && (
-              <div>
-                <label className="block text-gray-900 font-medium text-sm mb-2">
-                  Email address <span className="text-red-600">*</span>
-                </label>
-                <input
-                  type="email"
-                  value={creditNote.emailAddress}
-                  onChange={(e) =>
-                    setCreditNote({
-                      ...creditNote,
-                      emailAddress: e.target.value,
-                    })
-                  }
-                  placeholder="pyaephoo66@gmail.com"
-                  className="w-full border border-gray-300 px-4 py-3 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
-                />
-              </div>
-            )} */}
-
             {/* Comment */}
             <div>
-              <label className="block text-gray-900 font-medium text-sm mb-2">Comment</label>
+              <label className="block text-gray-900 font-medium text-xs sm:text-sm mb-2">Comment</label>
               <textarea
                 value={creditNote.comment}
                 onChange={(e) =>
@@ -186,31 +129,33 @@ export default function CreditNoteDialog({ open, onOpenChange ,creditNoteData, f
                   })
                 }
                 placeholder="Add any notes or comments here..."
-                className="w-full border border-gray-300 px-4 py-3 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 resize-none h-32"
+                className="w-full border border-gray-300 px-4 py-3 rounded-md text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 resize-none h-24 sm:h-32"
               />
             </div>
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between pt-6 border-t border-gray-200">
-            <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-4 sm:pt-6 border-t border-gray-200">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
               <button
                 onClick={handleSubmit}
-                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
+                className="w-full sm:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors text-sm"
               >
                 Send credit note
               </button>
               <Dialog.Close asChild>
-                <button className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-colors">
+                <button className="w-full sm:w-auto px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-colors text-sm">
                   Cancel
                 </button>
               </Dialog.Close>
             </div>
 
             {/* Amount Display */}
-            <div className="text-right">
-              <p className="text-gray-600 text-sm mb-1">Amount</p>
-              <p className="text-2xl font-semibold text-gray-900">NOK -{Math.abs(creditNote.amount).toFixed(2)}</p>
+            <div className="text-right w-full sm:w-auto">
+              <p className="text-gray-600 text-xs sm:text-sm mb-1">Amount</p>
+              <p className="text-xl sm:text-2xl font-semibold text-gray-900">
+                NOK -{Math.abs(creditNote.amount).toFixed(2)}
+              </p>
             </div>
           </div>
         </Dialog.Content>
