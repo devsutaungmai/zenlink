@@ -20,9 +20,11 @@ import {
   FileSpreadsheet,
   FileText,
   FileDown,
+  ChevronUp,
 } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
+import { on } from "events"
 
 interface LedgerEntry {
   id: string
@@ -66,6 +68,7 @@ export default function GeneralLedger({ businessId }: { businessId: string }) {
     endDate: today.toISOString().split("T")[0]
   });
   const [downloading, setDownloading] = useState(false)
+  const [expandedAccounts, setExpandedAccounts] = useState<Set<string>>(new Set())
 
   // Fetch ledger data
   useEffect(() => {
@@ -122,6 +125,16 @@ export default function GeneralLedger({ businessId }: { businessId: string }) {
       accountEntryIds.forEach((id) => newSelected.add(id))
     }
     setSelectedEntries(newSelected)
+  }
+
+  const toggleAccountExpansion = (accountId: string) => {
+    const newExpanded = new Set(expandedAccounts)
+    if (newExpanded.has(accountId)) {
+      newExpanded.delete(accountId)
+    } else {
+      newExpanded.add(accountId)
+    }
+    setExpandedAccounts(newExpanded)
   }
 
   const moveDateRange = (direction: 'prev' | 'next') => {
@@ -187,166 +200,166 @@ export default function GeneralLedger({ businessId }: { businessId: string }) {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-border bg-background px-6 py-4">
+      <header className="border-b border-border bg-background px-4 py-3 sm:px-6 sm:py-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-medium text-foreground">General ledger</h1>
-          <Button variant="ghost" size="icon">
-            <MoreVertical className="h-5 w-5" />
+          <h1 className="text-xl font-medium text-foreground sm:text-2xl">General ledger</h1>
+          <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-10 sm:w-10">
+            <MoreVertical className="h-4 w-4 sm:h-5 sm:w-5" />
           </Button>
         </div>
       </header>
 
-      {/* Filter Bar */}
-      <div className="border-b border-border bg-background px-6 py-4">
-        <div className="flex items-center gap-3">
-          <Button variant="outline" className="gap-2 bg-transparent">
-            <Filter className="h-4 w-4 text-blue-600" />
-            <span className="text-blue-600">Filters</span>
-          </Button>
+      <div className="border-b border-border bg-background px-4 py-3 sm:px-6 sm:py-4">
+        <div className="flex flex-col lg:flex-row gap-3 sm:gap-4">
+          {/* Top Row - Filters and Search */}
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+            <Button variant="outline" className="gap-2 bg-transparent w-full sm:w-auto">
+              <Filter className="h-4 w-4 text-blue-600" />
+              <span className="text-blue-600 text-sm sm:text-base">Filters</span>
+            </Button>
 
-          <div className="relative flex-1 max-w-xs">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder="Search" className="pl-9" />
-          </div>
-
-          <SelectPrimitive.Root defaultValue="all">
-            <SelectPrimitive.Trigger className="inline-flex items-center justify-between gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-muted w-[180px]">
-              <SelectPrimitive.Value />
-              <SelectPrimitive.Icon>
-                <ChevronDown className="h-4 w-4 opacity-50" />
-              </SelectPrimitive.Icon>
-            </SelectPrimitive.Trigger>
-            <SelectPrimitive.Portal>
-              <SelectPrimitive.Content className="overflow-hidden bg-background rounded-md border border-border shadow-lg">
-                <SelectPrimitive.Viewport className="p-1">
-                  <SelectPrimitive.Item
-                    value="all"
-                    className="relative flex items-center gap-2 px-8 py-2 text-sm rounded-sm cursor-pointer hover:bg-muted focus:bg-muted outline-none"
-                  >
-                    <SelectPrimitive.ItemIndicator className="absolute left-2">
-                      <Check className="h-4 w-4" />
-                    </SelectPrimitive.ItemIndicator>
-                    <SelectPrimitive.ItemText>All accounts</SelectPrimitive.ItemText>
-                  </SelectPrimitive.Item>
-                  <SelectPrimitive.Item
-                    value="assets"
-                    className="relative flex items-center gap-2 px-8 py-2 text-sm rounded-sm cursor-pointer hover:bg-muted focus:bg-muted outline-none"
-                  >
-                    <SelectPrimitive.ItemIndicator className="absolute left-2">
-                      <Check className="h-4 w-4" />
-                    </SelectPrimitive.ItemIndicator>
-                    <SelectPrimitive.ItemText>Assets</SelectPrimitive.ItemText>
-                  </SelectPrimitive.Item>
-                  <SelectPrimitive.Item
-                    value="liabilities"
-                    className="relative flex items-center gap-2 px-8 py-2 text-sm rounded-sm cursor-pointer hover:bg-muted focus:bg-muted outline-none"
-                  >
-                    <SelectPrimitive.ItemIndicator className="absolute left-2">
-                      <Check className="h-4 w-4" />
-                    </SelectPrimitive.ItemIndicator>
-                    <SelectPrimitive.ItemText>Liabilities</SelectPrimitive.ItemText>
-                  </SelectPrimitive.Item>
-                </SelectPrimitive.Viewport>
-              </SelectPrimitive.Content>
-            </SelectPrimitive.Portal>
-          </SelectPrimitive.Root>
-
-          <TabsPrimitive.Root value={activeTab} onValueChange={(value) => setActiveTab(value as "all" | "open")}>
-            <TabsPrimitive.List className="inline-flex items-center rounded-lg border border-border bg-background">
-              <TabsPrimitive.Trigger
-                value="all"
-                className="px-4 py-2 text-sm font-medium transition-colors data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600 data-[state=inactive]:text-foreground hover:bg-muted rounded-l-lg"
-              >
-                All entries
-              </TabsPrimitive.Trigger>
-              <TabsPrimitive.Trigger
-                value="open"
-                className="px-4 py-2 text-sm font-medium transition-colors data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600 data-[state=inactive]:text-foreground hover:bg-muted rounded-r-lg"
-              >
-                Open entries
-              </TabsPrimitive.Trigger>
-            </TabsPrimitive.List>
-          </TabsPrimitive.Root>
-
-          <div className="flex items-center gap-2 rounded-lg border border-border px-4 py-2">
-            <span className="text-sm text-foreground">
-              {dateRange.startDate} - {dateRange.endDate}
-            </span>
-            <div className="flex gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6"
-                onClick={() => moveDateRange('prev')}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6"
-                onClick={() => moveDateRange('next')}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input placeholder="Search" className="pl-9 text-sm" />
             </div>
           </div>
 
-          {/* Download Dropdown */}
-          <DropdownMenu.Root>
-            <DropdownMenu.Trigger asChild>
-              <Button variant="ghost" size="icon" disabled={downloading}>
-                <Download className="h-5 w-5" />
-              </Button>
-            </DropdownMenu.Trigger>
-            <DropdownMenu.Portal>
-              <DropdownMenu.Content
-                className="min-w-[200px] bg-white rounded-lg shadow-lg border border-gray-200 p-1 z-50"
-                sideOffset={5}
-              >
-                <DropdownMenu.Item
-                  className="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer hover:bg-gray-100 rounded outline-none"
-                  onSelect={() => handleDownload('excel')}
-                >
-                  <FileSpreadsheet className="h-4 w-4 text-green-600" />
-                  <span>Download as Excel</span>
-                </DropdownMenu.Item>
-                <DropdownMenu.Item
-                  className="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer hover:bg-gray-100 rounded outline-none"
-                  onSelect={() => handleDownload('pdf')}
-                >
-                  <FileText className="h-4 w-4 text-red-600" />
-                  <span>Download as PDF</span>
-                </DropdownMenu.Item>
-                <DropdownMenu.Item
-                  className="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer hover:bg-gray-100 rounded outline-none"
-                  onSelect={() => handleDownload('csv')}
-                >
-                  <FileDown className="h-4 w-4 text-blue-600" />
-                  <span>Download as CSV</span>
-                </DropdownMenu.Item>
-              </DropdownMenu.Content>
-            </DropdownMenu.Portal>
-          </DropdownMenu.Root>
+          {/* Second Row - Select, Tabs, and Date Range */}
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+            <SelectPrimitive.Root defaultValue="all">
+              <SelectPrimitive.Trigger className="inline-flex items-center justify-between gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-muted w-full sm:w-[180px]">
+                <SelectPrimitive.Value />
+                <SelectPrimitive.Icon>
+                  <ChevronDown className="h-4 w-4 opacity-50" />
+                </SelectPrimitive.Icon>
+              </SelectPrimitive.Trigger>
+              <SelectPrimitive.Portal>
+                <SelectPrimitive.Content className="overflow-hidden bg-background rounded-md border border-border shadow-lg">
+                  <SelectPrimitive.Viewport className="p-1">
+                    <SelectPrimitive.Item
+                      value="all"
+                      className="relative flex items-center gap-2 px-8 py-2 text-sm rounded-sm cursor-pointer hover:bg-muted focus:bg-muted outline-none"
+                    >
+                      <SelectPrimitive.ItemIndicator className="absolute left-2">
+                        <Check className="h-4 w-4" />
+                      </SelectPrimitive.ItemIndicator>
+                      <SelectPrimitive.ItemText>All accounts</SelectPrimitive.ItemText>
+                    </SelectPrimitive.Item>
+                    <SelectPrimitive.Item
+                      value="assets"
+                      className="relative flex items-center gap-2 px-8 py-2 text-sm rounded-sm cursor-pointer hover:bg-muted focus:bg-muted outline-none"
+                    >
+                      <SelectPrimitive.ItemIndicator className="absolute left-2">
+                        <Check className="h-4 w-4" />
+                      </SelectPrimitive.ItemIndicator>
+                      <SelectPrimitive.ItemText>Assets</SelectPrimitive.ItemText>
+                    </SelectPrimitive.Item>
+                    <SelectPrimitive.Item
+                      value="liabilities"
+                      className="relative flex items-center gap-2 px-8 py-2 text-sm rounded-sm cursor-pointer hover:bg-muted focus:bg-muted outline-none"
+                    >
+                      <SelectPrimitive.ItemIndicator className="absolute left-2">
+                        <Check className="h-4 w-4" />
+                      </SelectPrimitive.ItemIndicator>
+                      <SelectPrimitive.ItemText>Liabilities</SelectPrimitive.ItemText>
+                    </SelectPrimitive.Item>
+                  </SelectPrimitive.Viewport>
+                </SelectPrimitive.Content>
+              </SelectPrimitive.Portal>
+            </SelectPrimitive.Root>
 
-          <Button variant="ghost" size="icon">
-            <Settings className="h-5 w-5" />
-          </Button>
+            <TabsPrimitive.Root value={activeTab} onValueChange={(value) => setActiveTab(value as "all" | "open")}>
+              <TabsPrimitive.List className="inline-flex items-center rounded-lg border border-border bg-background w-full sm:w-auto">
+                <TabsPrimitive.Trigger
+                  value="all"
+                  className="flex-1 sm:flex-none px-3 py-2 text-xs sm:text-sm font-medium transition-colors data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600 data-[state=inactive]:text-foreground hover:bg-muted rounded-l-lg"
+                >
+                  All entries
+                </TabsPrimitive.Trigger>
+                <TabsPrimitive.Trigger
+                  value="open"
+                  className="flex-1 sm:flex-none px-3 py-2 text-xs sm:text-sm font-medium transition-colors data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600 data-[state=inactive]:text-foreground hover:bg-muted rounded-r-lg"
+                >
+                  Open entries
+                </TabsPrimitive.Trigger>
+              </TabsPrimitive.List>
+            </TabsPrimitive.Root>
+          </div>
+
+          {/* Third Row - Date Range and Actions */}
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2 rounded-lg border border-border px-2 py-2 sm:px-4 flex-1 sm:flex-none">
+              <span className="text-xs sm:text-sm text-foreground truncate">
+                {dateRange.startDate} - {dateRange.endDate}
+              </span>
+              <div className="flex gap-1 ml-auto">
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveDateRange("prev")}>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveDateRange("next")}>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Download and Settings - Icon Buttons */}
+            <div className="flex items-center gap-2 justify-end">
+              <DropdownMenu.Root>
+                <DropdownMenu.Trigger asChild>
+                  <Button variant="ghost" size="icon" disabled={downloading} className="h-8 w-8 sm:h-10 sm:w-10">
+                    <Download className="h-4 w-4 sm:h-5 sm:w-5" />
+                  </Button>
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Portal>
+                  <DropdownMenu.Content
+                    className="min-w-[200px] bg-white rounded-lg shadow-lg border border-gray-200 p-1 z-50"
+                    sideOffset={5}
+                  >
+                    <DropdownMenu.Item
+                      className="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer hover:bg-gray-100 rounded outline-none"
+                      onSelect={() => handleDownload("excel")}
+                    >
+                      <FileSpreadsheet className="h-4 w-4 text-green-600" />
+                      <span>Excel</span>
+                    </DropdownMenu.Item>
+                    <DropdownMenu.Item
+                      className="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer hover:bg-gray-100 rounded outline-none"
+                      onSelect={() => handleDownload("pdf")}
+                    >
+                      <FileText className="h-4 w-4 text-red-600" />
+                      <span>PDF</span>
+                    </DropdownMenu.Item>
+                    <DropdownMenu.Item
+                      className="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer hover:bg-gray-100 rounded outline-none"
+                      onSelect={() => handleDownload("csv")}
+                    >
+                      <FileDown className="h-4 w-4 text-blue-600" />
+                      <span>CSV</span>
+                    </DropdownMenu.Item>
+                  </DropdownMenu.Content>
+                </DropdownMenu.Portal>
+              </DropdownMenu.Root>
+
+              <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-10 sm:w-10">
+                <Settings className="h-4 w-4 sm:h-5 sm:w-5" />
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="px-6 py-4">
+      <div className="px-4 py-3 sm:px-6 sm:py-4">
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="text-muted-foreground">Loading ledger data...</div>
+            <div className="text-muted-foreground text-sm">Loading ledger data...</div>
           </div>
         ) : accountData.length === 0 ? (
           <div className="flex items-center justify-center py-12">
-            <div className="text-muted-foreground">No ledger entries found for this period</div>
+            <div className="text-muted-foreground text-sm">No ledger entries found for this period</div>
           </div>
         ) : (
           <>
-            <div className="border border-border rounded-lg overflow-hidden">
+            <div className="hidden md:block border border-border rounded-lg overflow-auto">
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="border-b border-border bg-muted/30">
@@ -371,23 +384,42 @@ export default function GeneralLedger({ businessId }: { businessId: string }) {
                       selectedEntries={selectedEntries}
                       toggleEntry={toggleEntry}
                       toggleAccount={toggleAccount}
+                      isMobile={false}
+                      isExpanded={false}
+                      onToggleExpand={() => { }}
                     />
                   ))}
                 </tbody>
               </table>
             </div>
 
+            <div className="md:hidden space-y-4">
+              {accountData.map((account) => (
+                <MobileAccountSection
+                  key={account.id}
+                  account={account}
+                  selectedEntries={selectedEntries}
+                  toggleEntry={toggleEntry}
+                  toggleAccount={toggleAccount}
+                  isExpanded={expandedAccounts.has(account.id)}
+                  onToggleExpand={() => toggleAccountExpansion(account.id)}
+                />
+              ))}
+            </div>
+
             {/* Pagination */}
-            <div className="mt-4 flex items-center justify-end gap-2">
-              <span className="text-sm text-muted-foreground">
+            <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <span className="text-xs sm:text-sm text-muted-foreground">
                 1 - {totalEntries} of {totalEntries}
               </span>
-              <Button variant="outline" size="icon" className="h-8 w-8 bg-transparent">
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Button variant="outline" size="icon" className="h-8 w-8 bg-transparent">
-                <ChevronRight className="h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="icon" className="h-8 w-8 bg-transparent">
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="icon" className="h-8 w-8 bg-transparent">
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </>
         )}
@@ -401,29 +433,33 @@ function AccountSection({
   selectedEntries,
   toggleEntry,
   toggleAccount,
+  isMobile,
+  isExpanded,
+  onToggleExpand,
 }: {
   account: AccountGroup
   selectedEntries: Set<string>
   toggleEntry: (id: string) => void
   toggleAccount: (accountId: string) => void
+  isMobile: boolean
+  isExpanded: boolean
+  onToggleExpand: () => void
 }) {
   const allSelected = account.entries.length > 0 && account.entries.every((e) => selectedEntries.has(e.id))
 
   return (
     <>
-      {/* Account Header */}
       <tr className="bg-muted/30 border-b border-border">
         <td className="border-r border-border p-3">
           <Checkbox checked={allSelected} onCheckedChange={() => toggleAccount(account.id)} />
         </td>
         <td colSpan={9} className="p-3">
-          <span className="font-semibold text-blue-600">
+          <span className="font-semibold text-blue-600 text-sm sm:text-base">
             {account.code} {account.name}
           </span>
         </td>
       </tr>
 
-      {/* Opening Balance */}
       <tr className="border-b border-border">
         <td className="border-r border-border p-3"></td>
         <td colSpan={6} className="border-border p-3 text-sm">
@@ -433,10 +469,8 @@ function AccountSection({
           {account.openingBalance.toFixed(2)}
         </td>
         <td className="p-3"></td>
-
       </tr>
 
-      {/* Entries */}
       {account.entries.map((entry) => (
         <tr key={entry.id} className="border-b border-border hover:bg-muted/30">
           <td className="border-r border-border p-3">
@@ -452,7 +486,7 @@ function AccountSection({
           <td className="border-r border-border p-3 text-sm">{entry.date}</td>
           <td className="max-w-md truncate border-r border-border p-3 text-sm">{entry.description}</td>
           <td className="border-r border-border p-3 text-sm">{account.code === "3200" ? entry.vatCode : ""}</td>
-          <td className="border-r border-border p-3 text-sm col-span-2">{entry.currency}</td>
+          <td className="border-r border-border p-3 text-sm">{entry.currency}</td>
           <td className="text-right font-medium border-r border-border p-3 text-sm tabular-nums">
             {entry.amount.toFixed(2)}
           </td>
@@ -464,7 +498,6 @@ function AccountSection({
         </tr>
       ))}
 
-      {/* Closing Balance */}
       <tr className="border-b-2 border-border">
         <td className="border-r border-border p-3"></td>
         <td colSpan={6} className="border-border p-3 text-sm">
@@ -476,5 +509,125 @@ function AccountSection({
         <td className="p-3"></td>
       </tr>
     </>
+  )
+}
+
+function MobileAccountSection({
+  account,
+  selectedEntries,
+  toggleEntry,
+  toggleAccount,
+  isExpanded,
+  onToggleExpand,
+}: {
+  account: AccountGroup
+  selectedEntries: Set<string>
+  toggleEntry: (id: string) => void
+  toggleAccount: (accountId: string) => void
+  isExpanded: boolean
+  onToggleExpand: () => void
+}) {
+  const allSelected = account.entries.length > 0 && account.entries.every((e) => selectedEntries.has(e.id))
+
+  return (
+    <div className="border border-border rounded-lg overflow-hidden bg-background">
+      {/* Account Header */}
+      <div className="bg-muted/30 border-b border-border p-3 sm:p-4">
+        <div className="flex items-center gap-3">
+          <Checkbox checked={allSelected} onCheckedChange={() => toggleAccount(account.id)} />
+          <button onClick={onToggleExpand} className="flex-1 text-left flex items-center justify-between">
+            <div className="flex flex-col gap-1 min-w-0">
+              <span className="font-semibold text-blue-600 text-sm sm:text-base truncate">{account.code}</span>
+              <span className="text-xs sm:text-sm text-muted-foreground truncate">{account.name}</span>
+            </div>
+            {isExpanded ? (
+              <ChevronUp className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            )}
+          </button>
+        </div>
+
+        {/* Summary info when collapsed */}
+        {!isExpanded && (
+          <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
+            <div>
+              <span className="text-muted-foreground">Opening</span>
+              <p className="font-medium">{account.openingBalance.toFixed(2)}</p>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Entries</span>
+              <p className="font-medium">{account.entries.length}</p>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Closing</span>
+              <p className="font-medium">{account.closingBalance.toFixed(2)}</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Expanded content */}
+      {isExpanded && (
+        <div className="divide-y divide-border">
+          {/* Opening Balance */}
+          <div className="p-3 sm:p-4 bg-background/50">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Opening balance</span>
+              <span className="font-medium text-sm tabular-nums">{account.openingBalance.toFixed(2)}</span>
+            </div>
+          </div>
+
+          {/* Entries */}
+          {account.entries.map((entry) => (
+            <div key={entry.id} className="p-3 sm:p-4 hover:bg-muted/30 transition-colors">
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  checked={selectedEntries.has(entry.id)}
+                  onCheckedChange={() => toggleEntry(entry.id)}
+                  className="mt-1"
+                />
+                <div className="flex-1 min-w-0">
+                  {/* Top row - Status and Voucher */}
+                  <div className="flex items-center gap-2 mb-2">
+                    {entry.hasAttachment && <Paperclip className="h-3 w-3 text-muted-foreground flex-shrink-0" />}
+                    <span className="text-xs font-medium text-blue-600">{entry.voucherNo}</span>
+                    {entry.closed && <span className="text-xs px-2 py-1 bg-blue-50 text-blue-600 rounded">Closed</span>}
+                  </div>
+
+                  {/* Date */}
+                  <p className="text-xs text-muted-foreground mb-1">{entry.date}</p>
+
+                  {/* Description */}
+                  <p className="text-sm text-foreground mb-2 line-clamp-2">{entry.description}</p>
+
+                  {/* VAT and Currency */}
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
+                    {account.code === "3200" && entry.vatCode && <span>{entry.vatCode}</span>}
+                    {entry.currency && <span>{entry.currency}</span>}
+                  </div>
+
+                  {/* Amount and Copy button */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium tabular-nums">{entry.amount.toFixed(2)}</span>
+                    <Button variant="ghost" size="icon" className="h-7 w-7">
+                      <Copy className="h-3 w-3 text-muted-foreground" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {/* Closing Balance */}
+          <div className="p-3 sm:p-4 bg-muted/20 font-medium border-t-2 border-border">
+            <div className="flex items-center justify-between">
+              <span className="text-sm">Closing balance</span>
+              <span className="text-sm tabular-nums">{account.closingBalance.toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }

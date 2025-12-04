@@ -789,7 +789,7 @@ export default function CreateInvoicePage() {
                                 disabled={loading}
                                 className="px-6 py-3 rounded-l-xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                             >
-                                {loading ? 'Creating...' : 'Create Invoice (Draft)'}
+                                {loading ? 'Creating...' : 'Create Invoice'}
                             </button>
 
                             <button
@@ -803,7 +803,7 @@ export default function CreateInvoicePage() {
 
                             {/* Dropdown Menu */}
                             {showDropdown && (
-                                <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-200 py-2 z-10">
+                                <div className="absolute right-0 bottom-full mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-200 py-2 z-10">
                                     <button
                                         type="button"
                                         onClick={(e) => { e.preventDefault(); handleSubmit('print') }}

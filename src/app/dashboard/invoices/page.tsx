@@ -448,7 +448,7 @@ export default function InvoicesPage() {
                 </div>
             ) : (
                 <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg overflow-hidden">
-                    <div className="overflow-x-auto">
+                    <div className="hidden md:block overflow-x-auto">
                         <table className="w-full">
                             <thead className="bg-gray-50/80">
                                 <tr>
@@ -518,36 +518,36 @@ export default function InvoicesPage() {
 
                                             </div>
                                         </td>
-                                    <td className="px-6 py-4">
-                                        {invoice.status === InvoiceStatus.DRAFT ? (
-                                            <div className="flex items-center justify-end gap-2">
-                                                <Link
-                                                    href={`/dashboard/invoices/${invoice.id}/edit`}
-                                                    className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
-                                                    title="Edit Invoice"
-                                                >
-                                                    <PencilIcon className="h-4 w-4" />
-                                                </Link>
-                                                <button
-                                                    onClick={() => handleDelete(invoice.id, invoice.invoiceNumber)}
-                                                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                                                    title={t('employee_groups.delete_group')}
-                                                >
-                                                    <TrashIcon className="h-4 w-4" />
-                                                </button>
-                                            </div>
-                                        ) :
-                                        (
-                                            <button
-                                                    onClick={() => handleDelete(invoice.id, invoice.invoiceNumber)}
-                                                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                                                    title={t('employee_groups.delete_group')}
-                                                >
-                                                    <TrashIcon className="h-4 w-4" />
-                                                </button>
-                                        )
-                                        }
-                                    </td>
+                                        <td className="px-6 py-4">
+                                            {invoice.status === InvoiceStatus.DRAFT ? (
+                                                <div className="flex items-center justify-end gap-2">
+                                                    <Link
+                                                        href={`/dashboard/invoices/${invoice.id}/edit`}
+                                                        className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
+                                                        title="Edit Invoice"
+                                                    >
+                                                        <PencilIcon className="h-4 w-4" />
+                                                    </Link>
+                                                    <button
+                                                        onClick={() => handleDelete(invoice.id, invoice.invoiceNumber)}
+                                                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                                                        title={t('employee_groups.delete_group')}
+                                                    >
+                                                        <TrashIcon className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                            ) :
+                                                (
+                                                    <button
+                                                        onClick={() => handleDelete(invoice.id, invoice.invoiceNumber)}
+                                                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                                                        title={t('employee_groups.delete_group')}
+                                                    >
+                                                        <TrashIcon className="h-4 w-4" />
+                                                    </button>
+                                                )
+                                            }
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -607,6 +607,130 @@ export default function InvoicesPage() {
                             </Pagination>
                         </div>
                     )}
+
+                      {/* Mobile Cards  */}
+                    <div className="md:hidden space-y-4">
+                        {paginatedInvoices.map((invoice) => (
+                            <div
+                                key={invoice.id}
+                                className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg overflow-hidden hover:shadow-xl transition-all duration-200"
+                            >
+                                {/* Card Header */}
+                                <div className="p-4 bg-gradient-to-r from-gray-50 to-blue-50/30">
+                                    <div className="flex items-start justify-between mb-3">
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2 flex-wrap mb-2">
+                                                <span className="text-base font-bold text-gray-900">
+                                                    {invoice.invoiceNumber}
+                                                </span>
+                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                    {invoice.status}
+                                                </span>
+                                            </div>
+                                            <p className="text-sm text-gray-600">
+                                                {invoice.customer?.customerName}
+                                            </p>
+                                            {invoice.product && (
+                                                <p className="text-xs text-blue-600 mt-1">
+                                                    📦 {invoice.product.productName}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                </div>
+
+                                {/* Card Body */}
+                                <div className="p-4 space-y-3">
+                                    {/* Date Information */}
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="bg-gray-50 rounded-lg p-3">
+                                            <div className="text-xs text-gray-500 mb-1">Invoice Date</div>
+                                            <div className="text-sm font-medium text-gray-900">
+                                                {new Date(invoice.invoiceDate).toLocaleDateString()}
+                                            </div>
+                                        </div>
+                                        <div className="bg-gray-50 rounded-lg p-3">
+                                            <div className="text-xs text-gray-500 mb-1">Due Date</div>
+                                            <div className="text-sm font-medium text-gray-900">
+                                                {invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : '-'}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Financial Breakdown */}
+                                    <div className="bg-blue-50/50 rounded-lg p-3 space-y-2">
+                                        <div className="flex items-center justify-between text-sm">
+                                            <span className="text-gray-600">Total Excl VAT</span>
+                                            <span className="font-medium text-gray-900">
+                                                {currencySymbol}{Number(invoice.totalExclVAT).toFixed(2)}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center justify-between text-sm">
+                                            <span className="text-gray-600">VAT Amount</span>
+                                            <span className="font-medium text-gray-900">
+                                                {currencySymbol}{Number(invoice.vatAmount).toFixed(2)}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center justify-between text-sm pt-2 border-t border-blue-200">
+                                            <span className="font-semibold text-gray-900">Total Incl VAT</span>
+                                            <span className="font-bold text-gray-900">
+                                                {currencySymbol}{Number(invoice.totalInclVAT).toFixed(2)}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Notes */}
+                                    {invoice.notes && (
+                                        <div className="bg-gray-50 rounded-lg p-3">
+                                            <div className="text-xs text-gray-500 mb-1">Notes</div>
+                                            <div className="text-sm text-gray-900">{invoice.notes}</div>
+                                        </div>
+                                    )}
+
+                                    {/* Payment Info */}
+                                    {invoice.paidAt && (
+                                        <div className="bg-green-50 rounded-lg p-3">
+                                            <div className="text-xs text-gray-500 mb-1">Paid On</div>
+                                            <div className="text-sm font-medium text-green-700">
+                                                {new Date(invoice.paidAt).toLocaleDateString()}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Action Buttons */}
+                                    <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-200">
+                                        {invoice.status === InvoiceStatus.DRAFT ? (
+                                            <>
+                                                <Link
+                                                    href={`/dashboard/invoices/${invoice.id}/edit`}
+                                                    className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                                                    title="Edit Invoice"
+                                                >
+                                                    <PencilIcon className="h-5 w-5" />
+                                                </Link>
+                                                <button
+                                                    onClick={() => handleDelete(invoice.id, invoice.invoiceNumber)}
+                                                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                                                    title={t('employee_groups.delete_group')}
+                                                >
+                                                    <TrashIcon className="h-5 w-5" />
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <button
+                                                onClick={() => handleDelete(invoice.id, invoice.invoiceNumber)}
+                                                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                                                title={t('employee_groups.delete_group')}
+                                            >
+                                                <TrashIcon className="h-5 w-5" />
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
         </div>
