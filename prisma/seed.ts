@@ -210,55 +210,55 @@ async function main() {
   console.log('✓ Units created');
 
   // Create Product Groups
-  // const productGroups = await Promise.all([
-  //   prisma.productGroup.upsert({
-  //     where: { code: 'ELEC' },
-  //     update: {},
-  //     create: {
-  //       name: 'Electronics',
-  //       code: 'ELEC',
-  //       description: 'Electronic devices and accessories',
-  //     },
-  //   }),
-  //   prisma.productGroup.upsert({
-  //     where: { code: 'FOOD' },
-  //     update: {},
-  //     create: {
-  //       name: 'Food & Beverages',
-  //       code: 'FOOD',
-  //       description: 'Food items and drinks',
-  //     },
-  //   }),
-  //   prisma.productGroup.upsert({
-  //     where: { code: 'FURN' },
-  //     update: {},
-  //     create: {
-  //       name: 'Furniture',
-  //       code: 'FURN',
-  //       description: 'Furniture and home accessories',
-  //     },
-  //   }),
-  //   prisma.productGroup.upsert({
-  //     where: { code: 'CLTH' },
-  //     update: {},
-  //     create: {
-  //       name: 'Clothing',
-  //       code: 'CLTH',
-  //       description: 'Apparel and fashion items',
-  //     },
-  //   }),
-  //   prisma.productGroup.upsert({
-  //     where: { code: 'STAT' },
-  //     update: {},
-  //     create: {
-  //       name: 'Stationery',
-  //       code: 'STAT',
-  //       description: 'Office and school supplies',
-  //     },
-  //   }),
-  // ]);
+  const productGroups = await Promise.all([
+    prisma.productGroup.upsert({
+      where: { code: 'ELEC' },
+      update: {},
+      create: {
+        name: 'Electronics',
+        code: 'ELEC',
+        description: 'Electronic devices and accessories',
+      },
+    }),
+    prisma.productGroup.upsert({
+      where: { code: 'FOOD' },
+      update: {},
+      create: {
+        name: 'Food & Beverages',
+        code: 'FOOD',
+        description: 'Food items and drinks',
+      },
+    }),
+    prisma.productGroup.upsert({
+      where: { code: 'FURN' },
+      update: {},
+      create: {
+        name: 'Furniture',
+        code: 'FURN',
+        description: 'Furniture and home accessories',
+      },
+    }),
+    prisma.productGroup.upsert({
+      where: { code: 'CLTH' },
+      update: {},
+      create: {
+        name: 'Clothing',
+        code: 'CLTH',
+        description: 'Apparel and fashion items',
+      },
+    }),
+    prisma.productGroup.upsert({
+      where: { code: 'STAT' },
+      update: {},
+      create: {
+        name: 'Stationery',
+        code: 'STAT',
+        description: 'Office and school supplies',
+      },
+    }),
+  ]);
 
-  // console.log('✓ Product Groups created');
+  console.log('✓ Product Groups created');
 
   console.log('Creating sales accounts...');
   // Create Ledger Accounts (must come before SalesAccounts)
