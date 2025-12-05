@@ -12,11 +12,11 @@ interface Category {
   name: string
   description?: string | null
   color?: string | null
-  departmentId: string
-  department: {
+  departmentId?: string | null
+  department?: {
     id: string
     name: string
-  }
+  } | null
   departments?: Array<{
     id: string
     department: {
@@ -128,7 +128,8 @@ export default function CategoriesPage() {
 
   const filteredCategories = categories.filter(category =>
     category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    category.department.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    category.department?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    category.departments?.some(d => d.department?.name?.toLowerCase().includes(searchTerm.toLowerCase())) ||
     category.description?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 

@@ -1,0 +1,361 @@
+'use client'
+
+import { useState, useEffect, use } from 'react'
+import { useRouter } from 'next/navigation'
+import { useTranslation } from 'react-i18next'
+import { 
+  ArrowLeftIcon,
+  CheckIcon,
+  ExclamationTriangleIcon
+} from '@heroicons/react/24/outline'
+
+interface PermissionInfo {
+  code: string
+  name: string
+  description: string
+  category: string
+}
+
+interface PermissionsByCategory {
+  [category: string]: PermissionInfo[]
+}
+
+interface Role {
+  id: string
+  name: string
+  description: string | null
+  isSystem: boolean
+  isDefault: boolean
+  permissions: { permission: { code: string } }[]
+  _count?: { users: number }
+}
+
+export default function EditRolePage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params)
+  const { t } = useTranslation()
+  const router = useRouter()
+  const [loading, setLoading] = useState(false)
+  const [loadingRole, setLoadingRole] = useState(true)
+  const [loadingPermissions, setLoadingPermissions] = useState(true)
+  const [permissionsByCategory, setPermissionsByCategory] = useState<PermissionsByCategory>({})
+  const [role, setRole] = useState<Role | null>(null)
+  
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    permissions: [] as string[]
+  })
+
+  useEffect(() => {
+    fetchPermissions()
+    fetchRole()
+  }, [resolvedParams.id])
+
+  const fetchPermissions = async () => {
+    try {
+      const res = await fetch('/api/permissions')
+      if (!res.ok) throw new Error('Failed to fetch permissions')
+      const data = await res.json()
+      setPermissionsByCategory(data.byCategory)
+    } catch (err) {
+      console.error('Error fetching permissions:', err)
+    } finally {
+      setLoadingPermissions(false)
+    }
+  }
+
+  const fetchRole = async () => {
+    try {
+      const res = await fetch(`/api/roles/${resolvedParams.id}`)
+      if (!res.ok) throw new Error('Failed to fetch role')
+      const data = await res.json()
+      setRole(data)
+      setFormData({
+        name: data.name,
+        description: data.description || '',
+        permissions: data.permissions.map((p: any) => p.permission.code)
+      })
+    } catch (err) {
+      console.error('Error fetching role:', err)
+      alert('Failed to load role')
+      router.push('/dashboard/roles')
+    } finally {
+      setLoadingRole(false)
+    }
+  }
+
+  const togglePermission = (code: string) => {
+    setFormData(prev => ({
+      ...prev,
+      permissions: prev.permissions.includes(code)
+        ? prev.permissions.filter(p => p !== code)
+        : [...prev.permissions, code]
+    }))
+  }
+
+  const toggleCategory = (category: string) => {
+    const categoryPermissions = permissionsByCategory[category]?.map(p => p.code) || []
+    const allSelected = categoryPermissions.every(p => formData.permissions.includes(p))
+    
+    if (allSelected) {
+      setFormData(prev => ({
+        ...prev,
+        permissions: prev.permissions.filter(p => !categoryPermissions.includes(p))
+      }))
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        permissions: [...new Set([...prev.permissions, ...categoryPermissions])]
+      }))
+    }
+  }
+
+  const selectAll = () => {
+    const allPermissions = Object.values(permissionsByCategory)
+      .flat()
+      .map(p => p.code)
+    setFormData(prev => ({ ...prev, permissions: allPermissions }))
+  }
+
+  const deselectAll = () => {
+    setFormData(prev => ({ ...prev, permissions: [] }))
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+
+    try {
+      const res = await fetch(`/api/roles/${resolvedParams.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Failed to update role')
+      }
+
+      router.push('/dashboard/roles')
+    } catch (err: any) {
+      alert(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const isCategoryFullySelected = (category: string) => {
+    const categoryPermissions = permissionsByCategory[category]?.map(p => p.code) || []
+    return categoryPermissions.length > 0 && categoryPermissions.every(p => formData.permissions.includes(p))
+  }
+
+  const isCategoryPartiallySelected = (category: string) => {
+    const categoryPermissions = permissionsByCategory[category]?.map(p => p.code) || []
+    const selectedCount = categoryPermissions.filter(p => formData.permissions.includes(p)).length
+    return selectedCount > 0 && selectedCount < categoryPermissions.length
+  }
+
+  if (loadingRole || loadingPermissions) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#31BCFF]"></div>
+      </div>
+    )
+  }
+
+  if (!role) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-500">{t('roles.roleNotFound', 'Role not found')}</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-4">
+        <button
+          onClick={() => router.back()}
+          className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+        >
+          <ArrowLeftIcon className="w-5 h-5" />
+        </button>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {t('roles.editRole', 'Edit Role')}
+          </h1>
+          <p className="mt-1 text-sm text-gray-500">
+            {t('roles.editRoleDescription', 'Modify role permissions and details')}
+          </p>
+        </div>
+      </div>
+
+      {/* System Role Warning */}
+      {role.isSystem && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-start gap-3">
+          <ExclamationTriangleIcon className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-medium text-yellow-800">
+              {t('roles.systemRoleWarning', 'System Role')}
+            </p>
+            <p className="text-sm text-yellow-700 mt-1">
+              {t('roles.systemRoleWarningDescription', 'This is a system role. You can modify its permissions, but the role cannot be deleted.')}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Users using this role */}
+      {role._count && role._count.users > 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p className="text-sm text-blue-800">
+            {t('roles.usersCount', '{{count}} user(s) are assigned to this role. Changes will affect all of them.', { count: role._count.users })}
+          </p>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Role Details */}
+        <div className="bg-white shadow rounded-lg p-6">
+          <h2 className="text-lg font-medium text-gray-900 mb-4">
+            {t('roles.roleDetails', 'Role Details')}
+          </h2>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {t('roles.roleName', 'Role Name')} *
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.name}
+                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#31BCFF] focus:border-transparent"
+                placeholder={t('roles.roleNamePlaceholder', 'e.g., Supervisor')}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {t('roles.roleDescription', 'Description')}
+              </label>
+              <input
+                type="text"
+                value={formData.description}
+                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#31BCFF] focus:border-transparent"
+                placeholder={t('roles.roleDescriptionPlaceholder', 'Brief description of this role')}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Permissions */}
+        <div className="bg-white shadow rounded-lg p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-medium text-gray-900">
+              {t('roles.permissions', 'Permissions')}
+            </h2>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={selectAll}
+                className="px-3 py-1 text-sm text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-colors"
+              >
+                {t('roles.selectAll', 'Select All')}
+              </button>
+              <button
+                type="button"
+                onClick={deselectAll}
+                className="px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                {t('roles.deselectAll', 'Deselect All')}
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            {Object.entries(permissionsByCategory).map(([category, permissions]) => (
+              <div key={category} className="border border-gray-200 rounded-lg overflow-hidden">
+                {/* Category Header */}
+                <div 
+                  className="flex items-center justify-between px-4 py-3 bg-gray-50 cursor-pointer hover:bg-gray-100"
+                  onClick={() => toggleCategory(category)}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                      isCategoryFullySelected(category)
+                        ? 'bg-[#31BCFF] border-[#31BCFF]'
+                        : isCategoryPartiallySelected(category)
+                        ? 'bg-[#31BCFF]/50 border-[#31BCFF]'
+                        : 'border-gray-300'
+                    }`}>
+                      {isCategoryFullySelected(category) && (
+                        <CheckIcon className="w-3 h-3 text-white" />
+                      )}
+                      {isCategoryPartiallySelected(category) && (
+                        <div className="w-2 h-0.5 bg-white"></div>
+                      )}
+                    </div>
+                    <span className="font-medium text-gray-900">{category}</span>
+                  </div>
+                  <span className="text-sm text-gray-500">
+                    {permissions.filter(p => formData.permissions.includes(p.code)).length} / {permissions.length}
+                  </span>
+                </div>
+
+                {/* Permissions Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 p-4">
+                  {permissions.map((permission) => (
+                    <label
+                      key={permission.code}
+                      className={`flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
+                        formData.permissions.includes(permission.code)
+                          ? 'bg-blue-50 border border-[#31BCFF]'
+                          : 'bg-gray-50 border border-transparent hover:bg-gray-100'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={formData.permissions.includes(permission.code)}
+                        onChange={() => togglePermission(permission.code)}
+                        className="mt-0.5 w-4 h-4 text-[#31BCFF] border-gray-300 rounded focus:ring-[#31BCFF]"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900">
+                          {permission.name}
+                        </p>
+                        <p className="text-xs text-gray-500 truncate">
+                          {permission.description}
+                        </p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center justify-end gap-3">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+          >
+            {t('common.cancel', 'Cancel')}
+          </button>
+          <button
+            type="submit"
+            disabled={loading || !formData.name}
+            className="px-4 py-2 text-sm font-medium text-white bg-[#31BCFF] rounded-lg hover:bg-[#00A3FF] disabled:opacity-50"
+          >
+            {loading ? t('common.saving', 'Saving...') : t('roles.saveChanges', 'Save Changes')}
+          </button>
+        </div>
+      </form>
+    </div>
+  )
+}

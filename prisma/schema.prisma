@@ -8,19 +8,66 @@ datasource db {
 }
 
 model User {
-  id                 String              @id @default(cuid())
-  email              String              @unique
-  password           String
-  firstName          String
-  lastName           String
-  role               String              @default("USER")
-  businessId         String
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
-  pin                String?
-  employees          Employee[]
-  business           Business            @relation(fields: [businessId], references: [id])
+  id                  String              @id @default(cuid())
+  email               String              @unique
+  password            String
+  firstName           String
+  lastName            String
+  roleId              String?
+  assignedRole        Role?               @relation(fields: [roleId], references: [id])
+  role                String              @default("USER") // Legacy role field
+  businessId          String
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  pin                 String?
+  employees           Employee[]
+  business            Business            @relation(fields: [businessId], references: [id])
   passwordResetTokens PasswordResetToken[]
+
+  @@index([roleId])
+}
+
+// Role model - admin can create custom roles
+model Role {
+  id          String           @id @default(cuid())
+  name        String           // e.g., "Admin", "Manager", "Employee"
+  description String?
+  isSystem    Boolean          @default(false) // System roles can't be deleted
+  isDefault   Boolean          @default(false) // Default role for new employees
+  businessId  String
+  business    Business         @relation(fields: [businessId], references: [id])
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  users       User[]
+  permissions RolePermission[]
+
+  @@unique([name, businessId])
+  @@index([businessId])
+}
+
+// Permission model - defines all available permissions
+model Permission {
+  id          String           @id @default(cuid())
+  code        String           @unique // e.g., "employees.view", "employees.create"
+  name        String           // Human readable name
+  description String?
+  category    String           // e.g., "Employees", "Schedule", "Reports"
+  createdAt   DateTime         @default(now())
+  roles       RolePermission[]
+}
+
+// Junction table for Role-Permission many-to-many relationship
+model RolePermission {
+  id           String     @id @default(cuid())
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
 }
 
 model PasswordResetToken {
@@ -58,6 +105,7 @@ model Business {
   payrollPeriods           PayrollPeriod[]
   punchClockAccessSettings PunchClockAccessSettings? @relation("PunchClockAccessSettings")
   punchClockProfiles       PunchClockProfile[]
+  roles                    Role[]
   salaryCodes              SalaryCode[]
   scheduleTemplates        ScheduleTemplate[]
   shiftTypes               ShiftTypeConfig[]
@@ -735,7 +783,8 @@ enum WageType {
   PER_SHIFT
 }
 
-enum Role {
+// Legacy user role enum - kept for backward compatibility with legacyRole field
+enum LegacyUserRole {
   ADMIN
   HR_ADMIN
   KONTO_ADMIN
