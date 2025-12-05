@@ -447,7 +447,7 @@ function AccountSection({
 }) {
   const allSelected = account.entries.length > 0 && account.entries.every((e) => selectedEntries.has(e.id))
 
-  return (
+  return account.entries.length > 0 ? (
     <>
       <tr className="bg-muted/30 border-b border-border">
         <td className="border-r border-border p-3">
@@ -459,57 +459,58 @@ function AccountSection({
           </span>
         </td>
       </tr>
-
-      <tr className="border-b border-border">
-        <td className="border-r border-border p-3"></td>
-        <td colSpan={6} className="border-border p-3 text-sm">
-          Opening balance
-        </td>
-        <td className="text-right font-medium border-border p-3 text-sm tabular-nums">
-          {account.openingBalance.toFixed(2)}
-        </td>
-        <td className="p-3"></td>
-      </tr>
-
-      {account.entries.map((entry) => (
-        <tr key={entry.id} className="border-b border-border hover:bg-muted/30">
-          <td className="border-r border-border p-3">
-            <Checkbox checked={selectedEntries.has(entry.id)} onCheckedChange={() => toggleEntry(entry.id)} />
+    
+        <tr className="border-b border-border">
+          <td className="border-r border-border p-3"></td>
+          <td colSpan={6} className="border-border p-3 text-sm">
+            Opening balance
           </td>
-          <td className="border-r border-border p-3">
-            {entry.hasAttachment && <Paperclip className="h-4 w-4 text-muted-foreground" />}
-            <span className="text-blue-600 hover:underline cursor-pointer text-sm">{entry.closed ? "Closed" : ""}</span>
+          <td className="text-right font-medium border-border p-3 text-sm tabular-nums">
+            {account.openingBalance.toFixed(2)}
           </td>
-          <td className="border-r border-border p-3">
-            <span className="text-blue-600 hover:underline cursor-pointer text-sm">{entry.voucherNo}</span>
-          </td>
-          <td className="border-r border-border p-3 text-sm">{entry.date}</td>
-          <td className="max-w-md truncate border-r border-border p-3 text-sm">{entry.description}</td>
-          <td className="border-r border-border p-3 text-sm">{account.code === "3200" ? entry.vatCode : ""}</td>
-          <td className="border-r border-border p-3 text-sm">{entry.currency}</td>
-          <td className="text-right font-medium border-r border-border p-3 text-sm tabular-nums">
-            {entry.amount.toFixed(2)}
-          </td>
-          <td className="p-3">
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <Copy className="h-4 w-4 text-muted-foreground" />
-            </Button>
-          </td>
+          <td className="p-3"></td>
         </tr>
-      ))}
 
-      <tr className="border-b-2 border-border">
-        <td className="border-r border-border p-3"></td>
-        <td colSpan={6} className="border-border p-3 text-sm">
-          Closing balance
-        </td>
-        <td className="text-right font-medium border-border p-3 text-sm tabular-nums">
-          {account.closingBalance.toFixed(2)}
-        </td>
-        <td className="p-3"></td>
-      </tr>
+        {account.entries.map((entry) => (
+          <tr key={entry.id} className="border-b border-border hover:bg-muted/30">
+            <td className="border-r border-border p-3">
+              <Checkbox checked={selectedEntries.has(entry.id)} onCheckedChange={() => toggleEntry(entry.id)} />
+            </td>
+            <td className="border-r border-border p-3">
+              {entry.hasAttachment && <Paperclip className="h-4 w-4 text-muted-foreground" />}
+              <span className="text-blue-600 hover:underline cursor-pointer text-sm">{entry.closed ? "Closed" : ""}</span>
+            </td>
+            <td className="border-r border-border p-3">
+              <span className="text-blue-600 hover:underline cursor-pointer text-sm">{entry.voucherNo}</span>
+            </td>
+            <td className="border-r border-border p-3 text-sm">{entry.date}</td>
+            <td className="max-w-md truncate border-r border-border p-3 text-sm">{entry.description}</td>
+            <td className="border-r border-border p-3 text-sm">{account.code === "3200" ? entry.vatCode : ""}</td>
+            <td className="border-r border-border p-3 text-sm">{entry.currency}</td>
+            <td className="text-right font-medium border-r border-border p-3 text-sm tabular-nums">
+              {entry.amount.toFixed(2)}
+            </td>
+            <td className="p-3">
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <Copy className="h-4 w-4 text-muted-foreground" />
+              </Button>
+            </td>
+          </tr>
+        ))}
+
+        <tr className="border-b-2 border-border">
+          <td className="border-r border-border p-3"></td>
+          <td colSpan={6} className="border-border p-3 text-sm">
+            Closing balance
+          </td>
+          <td className="text-right font-medium border-border p-3 text-sm tabular-nums">
+            {account.closingBalance.toFixed(2)}
+          </td>
+          <td className="p-3"></td>
+        </tr>
+      
     </>
-  )
+  ) : null
 }
 
 function MobileAccountSection({
@@ -529,7 +530,7 @@ function MobileAccountSection({
 }) {
   const allSelected = account.entries.length > 0 && account.entries.every((e) => selectedEntries.has(e.id))
 
-  return (
+  return account.entries.length > 0 ? (
     <div className="border border-border rounded-lg overflow-hidden bg-background">
       {/* Account Header */}
       <div className="bg-muted/30 border-b border-border p-3 sm:p-4">
@@ -629,5 +630,5 @@ function MobileAccountSection({
         </div>
       )}
     </div>
-  )
+  ): null
 }

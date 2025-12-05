@@ -304,10 +304,10 @@ async function main() {
       }
     }),
     prisma.ledgerAccount.upsert({
-      where: { accountNumber: 2740 },
+      where: { accountNumber: 2700 },
       update: {},
       create: {
-        accountNumber: 2740,
+        accountNumber: 2700,
         name: "VAT settlement account",
         type: "LIABILITY",
         businessId: business.id,
