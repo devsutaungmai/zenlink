@@ -536,16 +536,7 @@ export default function InvoicesPage() {
                                                         <TrashIcon className="h-4 w-4" />
                                                     </button>
                                                 </div>
-                                            ) :
-                                                (
-                                                    <button
-                                                        onClick={() => handleDelete(invoice.id, invoice.invoiceNumber)}
-                                                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                                                        title={t('employee_groups.delete_group')}
-                                                    >
-                                                        <TrashIcon className="h-4 w-4" />
-                                                    </button>
-                                                )
+                                            ) : ""
                                             }
                                         </td>
                                     </tr>
