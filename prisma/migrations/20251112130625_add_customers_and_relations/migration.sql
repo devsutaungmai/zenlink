@@ -72,12 +72,6 @@ CREATE UNIQUE INDEX "customers_customer_number_key" ON "customers"("customer_num
 -- CreateIndex
 CREATE UNIQUE INDEX "payment_terms_customer_id_key" ON "payment_terms"("customer_id");
 
--- CreateIndex
--- CREATE INDEX "Shift_date_idx" ON "Shift"("date");
-
--- CreateIndex
-CREATE INDEX "Shift_employeeId_idx" ON "Shift"("employeeId");
-
 -- AddForeignKey
 ALTER TABLE "Department" ADD CONSTRAINT "Department_customer_id_fkey" FOREIGN KEY ("customer_id") REFERENCES "customers"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
