@@ -23,12 +23,11 @@ async function customerPaid(params: {
         if (invoice.status !== 'OUTSTANDING') throw new Error('Invoice must be OUTSTANDING to receive payment');
 
         const accountsReceivable = await tx.ledgerAccount.findFirst({
-            where: { businessId, accountNumber: 1500 }
+            where: {accountNumber: 1500 }
         });
 
         const paymentAccount = await tx.ledgerAccount.findFirst({
             where: {
-                businessId,
                 accountNumber: paymentMethod === 'BANK' ? 1900 : 1920
             }
         });

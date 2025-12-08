@@ -278,15 +278,14 @@ export async function createCreditNote(params: {
  * Generate next credit note number
  * Format: CN-YYYY-NNNN (e.g., CN-2025-0001)
  */
-export async function generateCreditNoteNumber(businessId: string): Promise<string> {
+async function generateCreditNoteNumber(businessId: string): Promise<string> {
   const year = new Date().getFullYear();
   const prefix = `CN-${year}-`;
   
-  // Find last credit note for this year
+  // Find the highest credit note number for this year and business
   const lastCreditNote = await prisma.invoice.findFirst({
     where: {
       businessId,
-      status: InvoiceStatus.CREDIT_NOTE,
       invoiceNumber: {
         startsWith: prefix
       }
@@ -297,12 +296,46 @@ export async function generateCreditNoteNumber(businessId: string): Promise<stri
   });
 
   let nextNumber = 1;
-  if (lastCreditNote) {
-    const lastNumber = parseInt(lastCreditNote.invoiceNumber.split('-')[2]);
-    nextNumber = lastNumber + 1;
+  
+  if (lastCreditNote && lastCreditNote.invoiceNumber) {
+    try {
+      // Extract the number part (e.g., "CN-2025-0001" -> "0001")
+      const parts = lastCreditNote.invoiceNumber.split('-');
+      if (parts.length === 3) {
+        const lastNumber = parseInt(parts[2]);
+        if (!isNaN(lastNumber)) {
+          nextNumber = lastNumber + 1;
+        }
+      }
+    } catch (error) {
+      console.error('Error parsing credit note number:', error);
+      // Fall back to nextNumber = 1
+    }
   }
 
-  return `${prefix}${nextNumber.toString().padStart(4, '0')}`;
+  // Keep trying until we find a unique number (in case of race conditions)
+  let attempts = 0;
+  const maxAttempts = 10;
+  
+  while (attempts < maxAttempts) {
+    const candidateNumber = `${prefix}${nextNumber.toString().padStart(4, '0')}`;
+    
+    // Check if this number already exists
+    const existing = await prisma.invoice.findUnique({
+      where: {
+        invoiceNumber: candidateNumber
+      }
+    });
+    
+    if (!existing) {
+      return candidateNumber;
+    }
+    
+    nextNumber++;
+    attempts++;
+  }
+  
+  throw new Error('Failed to generate unique credit note number after multiple attempts');
 }
 
 /**
@@ -552,7 +585,8 @@ export async function generateLedgerReport(
   endDate: Date,
   accountNumbers?: number[]
 ) {
-  const whereClause: any = { businessId, isActive: true };
+  // const whereClause: any = { businessId, isActive: true };
+  const whereClause: any = {};
   if (accountNumbers && accountNumbers.length > 0) {
     whereClause.accountNumber = { in: accountNumbers };
   }
