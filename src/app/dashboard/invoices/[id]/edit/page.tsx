@@ -341,7 +341,7 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                                 </select>
                                 <p className="text-xs mt-2 text-blue-400">Customer is already assigned </p>
                             </div>
-                            {settings.showContactPerson && <div>
+                           <div>
                                 <label htmlFor="contactPersonId" className="block text-sm font-medium text-gray-700 mb-2">
                                     Contact Name *
                                 </label>
@@ -359,7 +359,7 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                                         </option>
                                     ))}
                                 </select>
-                            </div>}
+                            </div>
                         </div>
 
                         {settings.showPaymentTerms &&
@@ -506,7 +506,7 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                             >New Order Line</button>
                         </div>
                         {formData.invoiceLines.map((line, index) => (
-                            <div className="grid grid-cols-1 md:grid-cols-7 gap-10" key={index}>
+                            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-10" key={index}>
                                 <div>
                                     <label htmlFor="productId" className="block text-sm font-medium text-gray-700 mb-2">
                                         Product *
@@ -591,7 +591,7 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                                 {settings.showDiscount &&
                                     <div>
                                         <label htmlFor="discountPercentage" className="block text-sm font-medium text-gray-700 mb-2">
-                                            Discount Percentage *
+                                            Discount(%) *
                                         </label>
                                         <input
                                             type="number"

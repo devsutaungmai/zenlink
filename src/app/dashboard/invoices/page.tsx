@@ -63,7 +63,7 @@ export interface Invoice {
 
 export default function InvoicesPage() {
     const { t } = useTranslation()
-    const { currencySymbol } = useCurrency()
+    // const { currencySymbol } = useCurrency()
     const [invoices, setInvoices] = useState<Invoice[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -340,7 +340,7 @@ export default function InvoicesPage() {
                                         </label>
                                     </div>
 
-                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                                    {/* <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
                                         <input
                                             type="checkbox"
                                             id="showContactPerson"
@@ -353,7 +353,7 @@ export default function InvoicesPage() {
                                         <label htmlFor="showContactPerson" className="text-base font-medium cursor-pointer flex-1">
                                             Contact Person
                                         </label>
-                                    </div>
+                                    </div> */}
 
                                     <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
                                         <input
@@ -503,18 +503,18 @@ export default function InvoicesPage() {
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="text-sm text-gray-900">
-                                                {currencySymbol}{Number(invoice?.totalExclVAT ?? 0).toFixed(2)}
+                                                {Number(invoice?.totalExclVAT ?? 0).toFixed(2)}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="text-sm text-gray-900">
-                                                {currencySymbol}{Number(invoice?.vatAmount ?? 0).toFixed(2)}
+                                                {Number(invoice?.vatAmount ?? 0).toFixed(2)}
 
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="text-sm font-medium text-gray-900">
-                                                {currencySymbol}{Number(invoice?.totalInclVAT ?? 0).toFixed(2)}
+                                                {Number(invoice?.totalInclVAT ?? 0).toFixed(2)}
 
                                             </div>
                                         </td>
@@ -654,19 +654,19 @@ export default function InvoicesPage() {
                                         <div className="flex items-center justify-between text-sm">
                                             <span className="text-gray-600">Total Excl VAT</span>
                                             <span className="font-medium text-gray-900">
-                                                {currencySymbol}{Number(invoice.totalExclVAT).toFixed(2)}
+                                                {Number(invoice.totalExclVAT).toFixed(2)}
                                             </span>
                                         </div>
                                         <div className="flex items-center justify-between text-sm">
                                             <span className="text-gray-600">VAT Amount</span>
                                             <span className="font-medium text-gray-900">
-                                                {currencySymbol}{Number(invoice.vatAmount).toFixed(2)}
+                                               {Number(invoice.vatAmount).toFixed(2)}
                                             </span>
                                         </div>
                                         <div className="flex items-center justify-between text-sm pt-2 border-t border-blue-200">
                                             <span className="font-semibold text-gray-900">Total Incl VAT</span>
                                             <span className="font-bold text-gray-900">
-                                                {currencySymbol}{Number(invoice.totalInclVAT).toFixed(2)}
+                                                {Number(invoice.totalInclVAT).toFixed(2)}
                                             </span>
                                         </div>
                                     </div>

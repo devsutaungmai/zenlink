@@ -461,7 +461,7 @@ export default function CreateInvoicePage() {
                                 </select>
                             </div>
 
-                            {settings.showContactPerson && <div>
+                          <div>
                                 <label htmlFor="contactPersonId" className="block text-sm font-medium text-gray-700 mb-2">
                                     Contact Name *
                                 </label>
@@ -472,14 +472,14 @@ export default function CreateInvoicePage() {
                                     onChange={(e) => setFormData({ ...formData, contactPersonId: e.target.value })}
                                     className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
                                 >
-                                    <option value="">Select Project</option>
+                                    <option value="">Select Contact Name</option>
                                     {contacts.map((contact) => (
                                         <option key={contact.id} value={contact.id}>
                                             {contact.name}
                                         </option>
                                     ))}
                                 </select>
-                            </div>}
+                            </div>
                         </div>
 
                         {settings.showPaymentTerms &&
@@ -625,7 +625,7 @@ export default function CreateInvoicePage() {
                             >New Order Line</button>
                         </div>
                         {formData.invoiceLines.map((line, index) => (
-                            <div className="grid grid-cols-1 md:grid-cols-7 gap-10" key={index}>
+                            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-10" key={index}>
                                 <div>
                                     <label htmlFor="productId" className="block text-sm font-medium text-gray-700 mb-2">
                                         Product *
@@ -710,7 +710,7 @@ export default function CreateInvoicePage() {
                                 {settings.showDiscount &&
                                     <div>
                                         <label htmlFor="discountPercentage" className="block text-sm font-medium text-gray-700 mb-2">
-                                            Discount Percentage *
+                                            Discount(%) *
                                         </label>
                                         <input
                                             type="number"
