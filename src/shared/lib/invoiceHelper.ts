@@ -363,11 +363,11 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
 
   // Get standard accounts
   const accountsReceivable = await prisma.ledgerAccount.findFirst({
-    where: { accountNumber: 1500, businessId }
+    where: { accountNumber: 1500 }
   });
 
   const vatPayable = await prisma.ledgerAccount.findFirst({
-    where: { accountNumber: 2700, businessId }
+    where: { accountNumber: 2700 }
   });
 
   if (!accountsReceivable || !vatPayable) {
