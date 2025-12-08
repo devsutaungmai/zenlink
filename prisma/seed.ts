@@ -1,6 +1,6 @@
-// import { InvoiceDueDateType, PaymentTimeUnit, PrismaClient } from '@prisma/client'
+import { InvoiceDueDateType, PaymentTimeUnit, PrismaClient } from '@prisma/client'
 
-// const prisma = new PrismaClient()
+const prisma = new PrismaClient()
 
 // async function main() {
 //   // First, get the first business to use as default
