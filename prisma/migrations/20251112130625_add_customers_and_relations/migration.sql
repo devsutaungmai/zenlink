@@ -73,7 +73,7 @@ CREATE UNIQUE INDEX "customers_customer_number_key" ON "customers"("customer_num
 CREATE UNIQUE INDEX "payment_terms_customer_id_key" ON "payment_terms"("customer_id");
 
 -- CreateIndex
-CREATE INDEX "Shift_date_idx" ON "Shift"("date");
+-- CREATE INDEX "Shift_date_idx" ON "Shift"("date");
 
 -- CreateIndex
 CREATE INDEX "Shift_employeeId_idx" ON "Shift"("employeeId");
