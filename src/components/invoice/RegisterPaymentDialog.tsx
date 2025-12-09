@@ -25,14 +25,17 @@ interface RegisterPaymentDialogProps {
         amount: number | null;
     }
     fetchInvoices: () => Promise<void>;
-
+    loadingPayment: boolean
+    setLoadingPayment: (loadingPayment: boolean) => void
 }
 
 export default function RegisterPaymentDialog({
     open,
     onOpenChange,
     paymentData,
-    fetchInvoices
+    fetchInvoices,
+    loadingPayment,
+    setLoadingPayment
 }: RegisterPaymentDialogProps) {
     const router = useRouter()
 
@@ -62,6 +65,7 @@ export default function RegisterPaymentDialog({
 
     const handleSubmit = async () => {
         try {
+            setLoadingPayment(true)
             const response = await fetch(`/api/invoices/${payment.invoiceId}/customer/paid`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -74,6 +78,7 @@ export default function RegisterPaymentDialog({
             });
 
             if (response.ok) {
+                setLoadingPayment(false);
                 onOpenChange(false);
                 // Refresh invoice list or show success message
                 await fetchInvoices();
@@ -86,7 +91,10 @@ export default function RegisterPaymentDialog({
     };
 
     return (
-        <Dialog.Root open={open} onOpenChange={onOpenChange}>
+        <Dialog.Root open={open} onOpenChange={(isOpen) => {
+            if (loadingPayment) return;
+            onOpenChange(isOpen);
+        }}>
             <Dialog.Portal>
                 <Dialog.Overlay className="fixed inset-0 bg-black/40" />
                 <Dialog.Content className="fixed left-[50%] top-[50%] -translate-x-[50%] -translate-y-[50%] w-[calc(100%-2rem)] max-w-sm sm:max-w-lg md:max-w-3xl rounded-xl bg-white shadow-lg p-4 sm:p-6 md:p-8 max-h-[90vh] overflow-y-auto">
@@ -167,7 +175,7 @@ export default function RegisterPaymentDialog({
                             onClick={handleSubmit}
                             className="w-full sm:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-sm"
                         >
-                            Register payment
+                            {loadingPayment ? 'Registering payment' : 'Register payment'}
                         </button>
 
                         <div className="text-right w-full sm:w-auto">

@@ -200,9 +200,11 @@ export default function CreateInvoicePage() {
             const res = await fetch('/api/products')
             if (res.ok) {
                 const data = await res.json()
-                setProducts(data)
-                if (data.length > 0) {
-                    setFormData(prev => ({ ...prev, productGroupId: data[0].id }))
+                // Keep only active products
+                const activeProducts = Array.isArray(data) ? data.filter((product: any) => product.active === true) : []
+                setProducts(activeProducts)
+                if (activeProducts.length > 0) {
+                    setFormData(prev => ({ ...prev, productGroupId: activeProducts[0].id }))
                 }
             }
         } catch (error) {

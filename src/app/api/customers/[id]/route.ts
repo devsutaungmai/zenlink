@@ -31,7 +31,10 @@ export async function GET(
       include:{
         contactPersons: true,
         InvoicePaymentTerms: true,
-        projects: true,
+        projects: {
+          where:{active: true},
+          select: { id: true, name: true, active: true } 
+        },
         department:true,
         business:{
           select:{

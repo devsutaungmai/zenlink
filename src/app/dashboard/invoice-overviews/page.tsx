@@ -103,6 +103,7 @@ export default function InvoiceOverview() {
     const paginatedInvoices = invoices.slice(startIndex, endIndex)
     const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] = useState<Invoice | null>(null)
     const [selectedInvoiceForCredit, setSelectedInvoiceForCredit] = useState<Invoice | null>(null)
+    const [loadingPayment, setLoadingPayment] = useState<boolean>(false);
 
     useEffect(() => {
         fetchInvoices()
@@ -514,7 +515,7 @@ export default function InvoiceOverview() {
                                                                             Copy invoice
                                                                         </Link>
                                                                     </DropdownMenu.Item>
-                                                                    {(invoice.status !== InvoiceStatus.CREDIT_NOTE && invoice.status !== InvoiceStatus.CREDITED ) ?
+                                                                    {(invoice.status !== InvoiceStatus.CREDIT_NOTE && invoice.status !== InvoiceStatus.CREDITED) ?
                                                                         <DropdownMenu.Item
                                                                             className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2"
                                                                             onSelect={() => setSelectedInvoiceForCredit(invoice)}
@@ -789,7 +790,7 @@ export default function InvoiceOverview() {
                                                     >
                                                         <span className="text-base">✓</span>
                                                         Credit Note
-                                                    </DropdownMenu.Item>: null}
+                                                    </DropdownMenu.Item> : null}
                                             </DropdownMenu.Content>
                                         </DropdownMenu.Portal>
                                     </DropdownMenu.Root>}
@@ -882,13 +883,19 @@ export default function InvoiceOverview() {
             {selectedInvoiceForPayment && (
                 <RegisterPaymentDialog
                     open={true}
-                    onOpenChange={(open) => !open && setSelectedInvoiceForPayment(null)}
+                    onOpenChange={(open) => {
+                        if (!open && !loadingPayment) {
+                            setSelectedInvoiceForPayment(null);
+                        }
+                    }}
                     paymentData={{
                         customer: selectedInvoiceForPayment.customer,
                         invoiceId: selectedInvoiceForPayment.id,
                         amount: Number(selectedInvoiceForPayment.totalInclVAT),
                     }}
                     fetchInvoices={fetchInvoices}
+                    loadingPayment={loadingPayment}
+                    setLoadingPayment={setLoadingPayment}
                 />
             )}
 
