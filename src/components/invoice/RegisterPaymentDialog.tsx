@@ -173,14 +173,31 @@ export default function RegisterPaymentDialog({
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-4 sm:mt-6">
                         <button
                             onClick={handleSubmit}
-                            className="w-full sm:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-sm"
+                            disabled={loadingPayment}
+                            className={`w-full sm:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-sm flex items-center justify-center ${loadingPayment ? "opacity-60 cursor-not-allowed" : ""}`}
                         >
-                            {loadingPayment ? 'Registering payment' : 'Register payment'}
+                            {loadingPayment && (
+                                <svg
+                                    className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    aria-hidden="true"
+                                >
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                </svg>
+                            )}
+                            {loadingPayment ? "Registering payment..." : "Register payment"}
                         </button>
 
                         <div className="text-right w-full sm:w-auto">
                             <div className="text-gray-500 text-xs sm:text-sm">Total</div>
-                            <div className="text-xl sm:text-2xl font-semibold">{payment.amount.toFixed(2)}</div>
+                            {loadingPayment ? (
+                                <div className="h-6 w-24 rounded bg-gray-200 animate-pulse mt-1" />
+                            ) : (
+                                <div className="text-xl sm:text-2xl font-semibold mt-1">{payment.amount.toFixed(2)}</div>
+                            )}
                         </div>
                     </div>
                 </Dialog.Content>
