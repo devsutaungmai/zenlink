@@ -3,7 +3,8 @@ import nodemailer from 'nodemailer';
 import { prisma } from '@/shared/lib/prisma';
 import { getCurrentUser } from '@/shared/lib/auth';
 import { calculateInvoiceTotals, getBusinessId } from '@/shared/lib/invoiceHelper';
-import { launchBrowser } from '@/shared/lib/puppeteer-config';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export async function POST(req: Request) {
   try {
@@ -17,9 +18,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { invoiceId } = await req.json();
+    const {invoiceId} = await req.json();
 
-    if (!invoiceId) {
+    if (!invoiceId ) {
       return NextResponse.json(
         { error: 'Invoice ID is required' },
         { status: 400 }
@@ -88,7 +89,7 @@ export async function POST(req: Request) {
         Number(pricePerUnit),
         Number(discountPercentage)
       );
-
+      
       totalExclVAT += calculations.totalExclVAT;
       totalVatAmount += calculations.vatAmount;
       totalIncVAT += calculations.totalInclVAT;
@@ -122,316 +123,149 @@ export async function POST(req: Request) {
       });
     };
 
-    // Generate invoice rows HTML for PDF
-    const invoiceRowsHtml = invoiceLinesData.map((line: any) => {
-      return `
-        <tr>
-          <td>${line.productName}</td>
-          <td class="text-center">${line.quantity}</td>
-          <td class="text-center">Stk</td>
-          <td class="text-right">${formatCurrency(line.pricePerUnit)}</td>
-          <td class="text-center">${line.discountPercentage || 0} %</td>
-          <td class="text-center">${line.vatPercentage} %</td>
-          <td class="text-right">${formatCurrency(line.netAmount)}</td>
-          <td class="text-right">${formatCurrency(line.totalAmount)}</td>
-        </tr>
-      `;
-    }).join('');
+    // Generate PDF using jsPDF
+    const doc = new jsPDF('p', 'mm', 'a4');
+    
+    // Header - Company Info (Left)
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text(invoice.business?.name || '[Firmanavn]', 14, 15);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Org.nr.: [Organisasjonsnr]', 14, 20);
+    doc.text('Telefon: [Telefon]', 14, 25);
+    doc.text('Mailadresse: [Mailadresse]', 14, 30);
+    doc.text('Web: [Web]', 14, 35);
 
-    // Generate PDF HTML content
-    const pdfHtmlContent = `
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>Faktura ${invoice.invoiceNumber || invoice.id}</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: Arial, sans-serif;
-            font-size: 10pt;
-            color: #000;
-            padding: 40px;
-            line-height: 1.4;
-        }
-        
-        .invoice-header {
-            display: table;
-            width: 100%;
-            margin-bottom: 30px;
-        }
-        
-        .company-info {
-            display: table-cell;
-            width: 70%;
-            vertical-align: top;
-        }
-        
-        .company-info p {
-            margin: 1px 0;
-            font-size: 9pt;
-        }
-        
-        .logo-section {
-            display: table-cell;
-            width: 30%;
-            text-align: right;
-            vertical-align: top;
-        }
-        
-        .invoice-details {
-            display: table;
-            width: 100%;
-            margin-bottom: 25px;
-            border-top: 1px solid #000;
-            padding-top: 15px;
-        }
-        
-        .customer-info {
-            display: table-cell;
-            width: 50%;
-            vertical-align: top;
-            padding-right: 20px;
-        }
-        
-        .customer-info p {
-            margin: 1px 0;
-            font-size: 9pt;
-        }
-        
-        .invoice-meta {
-            display: table-cell;
-            width: 50%;
-            vertical-align: top;
-        }
-        
-        .meta-table {
-            width: 100%;
-        }
-        
-        .meta-table td {
-            padding: 2px 0;
-            font-size: 9pt;
-        }
-        
-        .meta-table td:first-child {
-            width: 50%;
-        }
-        
-        .meta-table td:last-child {
-            text-align: right;
-        }
-        
-        .invoice-number-row {
-            padding-top: 8px !important;
-            border-top: 1px solid #ccc;
-        }
-        
-        .invoice-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-        }
-        
-        .invoice-table th {
-            background-color: #0B78C7;
-            padding: 8px 6px;
-            text-align: left;
-            font-size: 8pt;
-            font-weight: bold;
-            border-top: 1px solid #000;
-            border-bottom: 1px solid #000;
-            text-transform: uppercase;
-            color: white;
-        }
-        
-        .invoice-table td {
-            padding: 8px 6px;
-            font-size: 9pt;
-            border-bottom: 1px solid #ddd;
-        }
-        
-        .invoice-table tbody tr:last-child td {
-            border-bottom: 1px solid #000;
-        }
-        
-        .text-right {
-            text-align: right !important;
-        }
-        
-        .text-center {
-            text-align: center !important;
-        }
-        
-        .summary-section {
-            margin-top: 30px;
-            float: right;
-            width: 280px;
-        }
-        
-        .summary-table {
-            width: 100%;
-        }
-        
-        .summary-table td {
-            padding: 6px 0;
-            font-size: 10pt;
-        }
-        
-        .summary-table td:last-child {
-            text-align: right;
-            padding-left: 20px;
-        }
-        
-        .summary-total {
-            border-top: 1px solid #000;
-            font-weight: bold;
-            padding-top: 10px !important;
-        }
-        
-        .clearfix {
-            clear: both;
-        }
-        
-        hr {
-          border: none;
-          border-top: 2px solid #0B78C7;
-        }
-    </style>
-</head>
-<body>
-    <!-- Header -->
-    <div class="invoice-header">
-        <div class="company-info">
-            <p><strong>${invoice.business?.name || '[Firmanavn]'}</strong></p>
-            <p>Org.nr.: [Organisasjonsnr]</p>
-            <p>Foretaksregisteret</p>
-            <p>Telefon: [Telefon]</p>
-            <p>Mailadresse: [Mailadresse]</p>
-            <p>Web: [Web]</p>
-        </div>
-         <div class="logo-section">
-            <p>[Logo]</p>
-        </div>
-    </div>
+    // Logo placeholder (Right)
+    doc.text('[Logo]', 180, 15);
 
-    <!-- Invoice Details -->
-    <div class="invoice-details">
-        <div class="customer-info">
-            <p><strong>${invoice.customer.customerName}</strong></p>
-            <p>${invoice.customer.address || '[Firmaadresse]'}</p>
-            <p>${invoice.customer.postalCode || '[Firmapostnummer]'} </p>
-            <p>Org. nr.: ${invoice.customer.organizationNumber || '[Organisasjonsnr.]'}</p>
-            <p style="margin-top: 8px;">Deres ref.: ${invoice.customer.customerNumber || '[Referanse]'}</p>
-        </div>
-        
-        <div class="invoice-meta">
-            <table class="meta-table">
-                <tr>
-                    <td>Fakturadato:</td>
-                    <td>${formatDate(invoice.createdAt)}</td>
-                </tr>
-                <tr>
-                    <td>Forfallsdato:</td>
-                    <td>${formatDate(new Date(invoice.createdAt.getTime() + 14 * 24 * 60 * 60 * 1000))}</td>
-                </tr>
-                <tr>
-                    <td>Bankkonto:</td>
-                    <td>[Bankkontonummer]</td>
-                </tr>
-                <tr>
-                    <td>Kundenummer:</td>
-                    <td>${invoice.customer.customerNumber || '[Kundenummer]'}</td>
-                </tr>
-                <tr>
-                    <td>Kid:</td>
-                    <td>[Kid]</td>
-                </tr>
-                <tr>
-                    <td>Vår ref.:</td>
-                    <td>[Vår referanse]</td>
-                </tr>
-                <tr class="invoice-number-row">
-                    <td><strong>Fakturanummer:</strong></td>
-                    <td><strong>${invoice.invoiceNumber || invoice.id}</strong></td>
-                </tr>
-            </table>
-        </div>
-    </div>
+    // Horizontal line
+    doc.setLineWidth(0.5);
+    doc.line(14, 42, 196, 42);
 
-    <!-- Invoice Table -->
-    <table class="invoice-table">
-        <thead>
-            <tr>
-                <th style="width: 35%;">Beskrivelse</th>
-                <th class="text-center" style="width: 8%;">Antall</th>
-                <th class="text-center" style="width: 8%;">Enhet</th>
-                <th class="text-right" style="width: 13%;">Enhetspris</th>
-                <th class="text-center" style="width: 8%;">Rabatt</th>
-                <th class="text-center" style="width: 8%;">Mva</th>
-                <th class="text-center" style="width: 8%;">Nettobeløp</th>
-                <th class="text-right" style="width: 15%;">Beløp ink mva</th>
-            </tr>
-        </thead>
-        <tbody>
-            ${invoiceRowsHtml}
-        </tbody>
-    </table>
+    // Customer Info (Left) & Invoice Details (Right)
+    let yPos = 50;
+    
+    // Customer section
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Kunde:', 14, yPos);
+    doc.setFont('helvetica', 'normal');
+    doc.text(invoice.customer.customerName, 14, yPos + 5);
+    doc.text(invoice.customer.address || '[Firmaadresse]', 14, yPos + 10);
+    doc.text(invoice.customer.postalCode || '[Firmapostnummer]', 14, yPos + 15);
+    doc.text(`Org. nr.: ${invoice.customer.organizationNumber || '[Organisasjonsnr.]'}`, 14, yPos + 20);
+    doc.text(`Kundenummer: ${invoice.customer.customerNumber || '[Referanse]'}`, 14, yPos + 25);
 
-    <!-- Summary -->
-    <div class="summary-section">
-        <table class="summary-table">
-            <tr>
-                <td>SUM</td>
-                <td>kr ${formatCurrency(totalExclVAT)}</td>
-            </tr>
-            <tr>
-                <td>MVA (${invoice.vatPercentage}%)</td>
-                <td>kr ${formatCurrency(totalVatAmount)}</td>
-            </tr>
-            <tr class="summary-total">
-                <td>Sum å betale</td>
-                <td>kr ${formatCurrency(totalIncVAT)}</td>
-            </tr>
-        </table>
-    </div>
+    // Invoice details (Right side)
+    const rightX = 120;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Fakturadato:', rightX, yPos);
+    doc.setFont('helvetica', 'normal');
+    doc.text(formatDate(invoice.createdAt), 170, yPos, { align: 'right' });
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text('Forfallsdato:', rightX, yPos + 5);
+    doc.setFont('helvetica', 'normal');
+    doc.text(formatDate(new Date(invoice.createdAt.getTime() + 14 * 24 * 60 * 60 * 1000)), 170, yPos + 5, { align: 'right' });
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text('Bankkonto:', rightX, yPos + 10);
+    doc.setFont('helvetica', 'normal');
+    doc.text('[Bankkontonummer]', 173, yPos + 10, { align: 'right' });
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text('Kundenummer:', rightX, yPos + 15);
+    doc.setFont('helvetica', 'normal');
+    doc.text(invoice.customer.customerNumber || '[Kundenummer]', 170, yPos + 15, { align: 'right' });
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text('Kid:', rightX, yPos + 20);
+    doc.setFont('helvetica', 'normal');
+    doc.text('[Kid]', 170, yPos + 20, { align: 'right' });
 
-    <div class="clearfix"></div>
-    <hr/>
-</body>
-</html>
-    `;
+    // Invoice number (highlighted)
+    doc.setLineWidth(0.3);
+    doc.line(rightX, yPos + 23, 196, yPos + 23);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Fakturanummer:', rightX, yPos + 28);
+    doc.text(invoice.invoiceNumber || invoice.id, 173, yPos + 28, { align: 'right' });
 
-    // Generate PDF
-    let pdfBuffer: Buffer;
-    const browser = await launchBrowser();
+    // Invoice items table
+    const tableData = invoiceLinesData.map((line: any) => [
+      line.productName,
+      line.quantity.toString(),
+      'Stk',
+      formatCurrency(line.pricePerUnit),
+      `${line.discountPercentage || 0}%`,
+      `${line.vatPercentage}%`,
+      formatCurrency(line.netAmount),
+      formatCurrency(line.totalAmount)
+    ]);
 
-    try {
-      const page = await browser.newPage();
-      await page.setContent(pdfHtmlContent, { waitUntil: 'networkidle0' });
+    autoTable(doc, {
+      startY: yPos + 35,
+      head: [[
+        'Beskrivelse',
+        'Antall',
+        'Enhet',
+        'Enhetspris',
+        'Rabatt',
+        'Mva',
+        'Nettobeløp',
+        'Beløp ink mva'
+      ]],
+      body: tableData,
+      theme: 'grid',
+      styles: {
+        fontSize: 8,
+        cellPadding: 3,
+      },
+      headStyles: {
+        fillColor: [11, 120, 199], // #0B78C7
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        fontSize: 8,
+      },
+      columnStyles: {
+        0: { cellWidth: 50 },
+        1: { halign: 'center', cellWidth: 15 },
+        2: { halign: 'center', cellWidth: 15 },
+        3: { halign: 'right', cellWidth: 22 },
+        4: { halign: 'center', cellWidth: 15 },
+        5: { halign: 'center', cellWidth: 15 },
+        6: { halign: 'right', cellWidth: 25 },
+        7: { halign: 'right', cellWidth: 25 },
+      },
+    });
 
-      const pdf = await page.pdf({
-        format: 'A4',
-        printBackground: true,
-        margin: {
-          top: '20mm',
-          right: '15mm',
-          bottom: '20mm',
-          left: '15mm'
-        }
-      });
+    // Summary section
+    const finalY = (doc as any).lastAutoTable.finalY + 10;
+    const summaryX = 120;
+    
+    doc.setFontSize(10);
+    doc.text('SUM', summaryX, finalY);
+    doc.text(`kr ${formatCurrency(totalExclVAT)}`, 196, finalY, { align: 'right' });
+    
+    doc.text(`MVA (${invoice.vatPercentage}%)`, summaryX, finalY + 5);
+    doc.text(`kr ${formatCurrency(totalVatAmount)}`, 196, finalY + 5, { align: 'right' });
+    
+    // Total line
+    doc.setLineWidth(0.5);
+    doc.line(summaryX, finalY + 8, 196, finalY + 8);
+    
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text('Sum å betale', summaryX, finalY + 13);
+    doc.text(`kr ${formatCurrency(totalIncVAT)}`, 196, finalY + 13, { align: 'right' });
 
-      pdfBuffer = Buffer.from(pdf);
-      await browser.close();
-    } catch (error) {
-      await browser.close();
-      throw error;
-    }
+    // Footer line
+    doc.setLineWidth(0.5);
+    doc.line(14, finalY + 20, 196, finalY + 20);
+
+    // Get PDF as buffer
+    const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
 
     // Create simple email text body (Norwegian)
     const emailBody = `
