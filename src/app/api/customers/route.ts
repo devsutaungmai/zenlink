@@ -39,13 +39,13 @@ export async function POST(request: NextRequest) {
   try {
     const user = await requireAuth()
     const auth = await getCurrentUserOrEmployee()
-    
+
     if (!auth) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     let businessId: string
-    
+
     if (auth.type === 'user') {
       businessId = (auth.data as any).businessId
     } else {
@@ -61,12 +61,17 @@ export async function POST(request: NextRequest) {
     }
 
     const formData = await request.json()
-    const { customerName, customerNumber, customerPaymentTerm,customerContacts, ...restData } = formData
+    const { customerName, customerNumber, customerPaymentTerm, customerContacts, ...restData } = formData
 
     console.log('Creating customer with data:', JSON.stringify(formData))
 
     if (!customerName || !customerNumber) {
       return NextResponse.json({ error: 'CustomerName and CustomerNumber are required' }, { status: 400 })
+    }
+    if (restData.discountPercentage === "" || restData.discountPercentage === null || restData.discountPercentage === undefined) {
+      restData.discountPercentage = 0
+    } else {
+      restData.discountPercentage = Number(restData.discountPercentage)
     }
 
     // Handle InvoicePaymentTerms
@@ -106,25 +111,33 @@ export async function POST(request: NextRequest) {
     const customer = await prisma.customer.create({
       data: {
         ...restData,
+        discountPercentage:
+          !restData.discountPercentage ? 0 : Number(restData.discountPercentage),
         customerName,
         customerNumber,
         businessId,
         invoicepaymentTermsId: paymentTermsId,
-        contactPersons: { 
+        contactPersons: {
           create: customerContacts || []
         }
       }
     })
 
     return NextResponse.json(customer, { status: 201 })
-    
+
   } catch (error: any) {
     console.error('Error creating customer:', error)
-    
+
     if (error.code === 'P2002') {
       return NextResponse.json({ error: 'Customer number already exists' }, { status: 409 })
     }
-    
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+
+    return NextResponse.json({
+      message: error.message,
+      stack: error.stack,
+      code: error.code,
+      meta: error.meta,
+    },
+      { status: 500 })
   }
 }

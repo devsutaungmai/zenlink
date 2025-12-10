@@ -58,12 +58,12 @@ export async function POST(request: NextRequest) {
     }
 
     const formData = await request.json()
-    const { productNumber, productName, salesPrice, costPrice } = formData
+    const { productNumber, productName, salesPrice } = formData
 
     console.log('Creating product with data:', JSON.stringify(formData))
 
-    if (!productNumber || !productName || !salesPrice || !costPrice) {
-      return NextResponse.json({ error: 'ProductName and ProductNumber and salesPrice and costPrice are required' }, { status: 400 })
+    if (!productNumber || !productName || !salesPrice ) {
+      return NextResponse.json({ error: 'ProductName and ProductNumber and salesPrice are required' }, { status: 400 })
     }
 
     const product = await prisma.product.create({

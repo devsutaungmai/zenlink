@@ -28,16 +28,16 @@ export async function GET(
         id: id,
         businessId: businessId
       },
-      include:{
+      include: {
         contactPersons: true,
         InvoicePaymentTerms: true,
         projects: {
-          where:{active: true},
-          select: { id: true, name: true, active: true } 
+          where: { active: true },
+          select: { id: true, name: true, active: true }
         },
-        department:true,
-        business:{
-          select:{
+        department: true,
+        business: {
+          select: {
             name: true
           }
         }
@@ -64,13 +64,13 @@ export async function PUT(
   try {
     const { id } = await params
     const auth = await getCurrentUserOrEmployee()
-    
+
     if (!auth) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     let businessId: string
-    
+
     if (auth.type === 'user') {
       businessId = (auth.data as any).businessId
     } else {
@@ -86,7 +86,13 @@ export async function PUT(
     }
 
     const body = await request.json()
-    const { customerPaymentTerm,customerContacts, ...restData } = body
+    const { customerPaymentTerm, customerContacts, ...restData } = body
+
+    if (restData.discountPercentage === "" || restData.discountPercentage === null || restData.discountPercentage === undefined) {
+      restData.discountPercentage = 0
+    } else {
+      restData.discountPercentage = Number(restData.discountPercentage)
+    }
 
     // Check if customer exists
     const existingCustomer = await prisma.customer.findFirst({
@@ -117,11 +123,11 @@ export async function PUT(
         paymentTermsId = existingPaymentTerm.id
         console.log('Using existing payment term:', paymentTermsId)
         await prisma.invoicePaymentTerms.update({
-          where:{
+          where: {
             id: paymentTermsId,
             businessId: businessId
           },
-          data:{
+          data: {
             invoiceDueDateType: customerPaymentTerm.dueDateType,
             invoiceDueDateValue: customerPaymentTerm.dueDateValue,
             invoiceDueDateUnit: customerPaymentTerm.dueDateUnit,
@@ -148,7 +154,7 @@ export async function PUT(
       data: {
         ...restData,
         invoicepaymentTermsId: paymentTermsId,
-        contactPersons: { 
+        contactPersons: {
           deleteMany: {},
           create: (customerContacts || []).map((contact: any) => ({
             name: contact.name,
@@ -161,14 +167,14 @@ export async function PUT(
     })
 
     return NextResponse.json(customer)
-    
+
   } catch (error: any) {
     console.error('Error updating customer:', error)
-    
+
     if (error.code === 'P2002') {
       return NextResponse.json({ error: 'Customer number already exists' }, { status: 409 })
     }
-    
+
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

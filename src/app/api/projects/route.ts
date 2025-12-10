@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
       },
       include:{
         customer: true,
+        category: true
       },
       orderBy: {
         name: 'asc',

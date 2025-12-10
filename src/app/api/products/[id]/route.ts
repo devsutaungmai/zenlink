@@ -80,6 +80,11 @@ export async function PUT(
     if (!existingProduct) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 })
     }
+    const { productNumber, productName, salesPrice } = body
+
+    if (!productNumber || !productName || !salesPrice) {
+      return NextResponse.json({ error: 'ProductName and ProductNumber and salesPrice are required' }, { status: 400 })
+    }
 
 
     const product = await prisma.product.update({

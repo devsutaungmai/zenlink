@@ -418,7 +418,8 @@ export default function InvoiceOverview() {
                                             </td>
                                             <td className="px-4 py-3">
                                                 <span className="text-sm font-medium text-blue-600 hover:underline cursor-pointer">
-                                                    {invoice.invoiceNumber}
+                                                    {invoice.status !== InvoiceStatus.DRAFT ? invoice.invoiceNumber : "-"}
+
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3">
@@ -474,8 +475,8 @@ export default function InvoiceOverview() {
                                                             onClick={() => handleSendEmail(invoice.id)}
                                                             disabled={loadingEmail[invoice.id]}
                                                             className={`p-2 rounded-lg transition-all duration-200 ${loadingEmail[invoice.id]
-                                                                    ? 'text-gray-300 bg-gray-50 cursor-not-allowed'
-                                                                    : 'text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50'
+                                                                ? 'text-gray-300 bg-gray-50 cursor-not-allowed'
+                                                                : 'text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50'
                                                                 }`}
                                                         >
                                                             {loadingEmail[invoice.id] ? (
@@ -688,7 +689,10 @@ export default function InvoiceOverview() {
                                             onChange={() => toggleSelectInvoice(invoice.id)}
                                             className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mt-1"
                                         />
-                                        <h3 className="font-semibold text-blue-600 text-sm">{invoice.invoiceNumber}</h3>
+                                        <h3 className="font-semibold text-blue-600 text-sm">
+                                            {invoice.status !== InvoiceStatus.DRAFT ? invoice.invoiceNumber : "-"}
+
+                                        </h3>
                                     </div>
                                     <p className="text-xs text-gray-600 ml-6">{invoice.customer?.customerName}</p>
                                 </div>
@@ -742,8 +746,8 @@ export default function InvoiceOverview() {
                                             onClick={() => handleSendEmail(invoice.id)}
                                             disabled={loadingEmail[invoice.id]}
                                             className={`p-2 rounded-lg transition-all duration-200 ${loadingEmail[invoice.id]
-                                                    ? 'text-gray-300 bg-gray-50 cursor-not-allowed'
-                                                    : 'text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50'
+                                                ? 'text-gray-300 bg-gray-50 cursor-not-allowed'
+                                                : 'text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50'
                                                 }`}
                                         >
                                             {loadingEmail[invoice.id] ? (

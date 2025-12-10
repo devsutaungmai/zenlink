@@ -224,7 +224,6 @@ export default function CreateProductPage() {
             <input
               type="number"
               id="costPrice"
-              required
               value={formData.costPrice || ""}
               onChange={(e) => setFormData({ ...formData, costPrice: parseFloat(e.target.value) })}
               className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
