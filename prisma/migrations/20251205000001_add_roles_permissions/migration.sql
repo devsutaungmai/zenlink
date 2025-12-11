@@ -1,7 +1,13 @@
--- Rename the old Role enum to LegacyUserRole (if it exists)
+-- Rename the old Role enum to LegacyUserRole (only if it's an ENUM type, not a table row type)
 DO $$
 BEGIN
-    IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'Role') THEN
+    IF EXISTS (
+        SELECT 1 FROM pg_type t
+        JOIN pg_catalog.pg_namespace n ON n.oid = t.typnamespace
+        WHERE t.typname = 'Role' 
+        AND t.typtype = 'e'  -- 'e' means enum type
+        AND n.nspname = 'public'
+    ) THEN
         ALTER TYPE "Role" RENAME TO "LegacyUserRole";
     END IF;
 END $$;
@@ -66,17 +72,37 @@ ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "roleId" TEXT;
 -- CreateIndex
 CREATE INDEX IF NOT EXISTS "User_roleId_idx" ON "User"("roleId");
 
--- AddForeignKey
-ALTER TABLE "User" ADD CONSTRAINT "User_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "Role"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+-- AddForeignKey (if not exists)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'User_roleId_fkey') THEN
+        ALTER TABLE "User" ADD CONSTRAINT "User_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "Role"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+    END IF;
+END $$;
 
--- AddForeignKey
-ALTER TABLE "Role" ADD CONSTRAINT "Role_businessId_fkey" FOREIGN KEY ("businessId") REFERENCES "Business"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+-- AddForeignKey (if not exists)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'Role_businessId_fkey') THEN
+        ALTER TABLE "Role" ADD CONSTRAINT "Role_businessId_fkey" FOREIGN KEY ("businessId") REFERENCES "Business"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+    END IF;
+END $$;
 
--- AddForeignKey
-ALTER TABLE "RolePermission" ADD CONSTRAINT "RolePermission_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "Role"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+-- AddForeignKey (if not exists)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'RolePermission_roleId_fkey') THEN
+        ALTER TABLE "RolePermission" ADD CONSTRAINT "RolePermission_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "Role"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    END IF;
+END $$;
 
--- AddForeignKey
-ALTER TABLE "RolePermission" ADD CONSTRAINT "RolePermission_permissionId_fkey" FOREIGN KEY ("permissionId") REFERENCES "Permission"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+-- AddForeignKey (if not exists)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'RolePermission_permissionId_fkey') THEN
+        ALTER TABLE "RolePermission" ADD CONSTRAINT "RolePermission_permissionId_fkey" FOREIGN KEY ("permissionId") REFERENCES "Permission"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    END IF;
+END $$;
 
 -- CreateTable LaborLawSettings (if not exists)
 CREATE TABLE IF NOT EXISTS "LaborLawSettings" (
@@ -108,8 +134,13 @@ CREATE INDEX IF NOT EXISTS "LaborLawSettings_businessId_idx" ON "LaborLawSetting
 -- CreateIndex
 CREATE INDEX IF NOT EXISTS "LaborLawSettings_businessId_isActive_idx" ON "LaborLawSettings"("businessId", "isActive");
 
--- AddForeignKey
-ALTER TABLE "LaborLawSettings" ADD CONSTRAINT "LaborLawSettings_businessId_fkey" FOREIGN KEY ("businessId") REFERENCES "Business"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+-- AddForeignKey (if not exists)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'LaborLawSettings_businessId_fkey') THEN
+        ALTER TABLE "LaborLawSettings" ADD CONSTRAINT "LaborLawSettings_businessId_fkey" FOREIGN KEY ("businessId") REFERENCES "Business"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    END IF;
+END $$;
 
 -- CreateTable ScheduleTemplate (if not exists)
 CREATE TABLE IF NOT EXISTS "ScheduleTemplate" (
@@ -126,8 +157,13 @@ CREATE TABLE IF NOT EXISTS "ScheduleTemplate" (
 -- CreateIndex
 CREATE INDEX IF NOT EXISTS "ScheduleTemplate_businessId_idx" ON "ScheduleTemplate"("businessId");
 
--- AddForeignKey
-ALTER TABLE "ScheduleTemplate" ADD CONSTRAINT "ScheduleTemplate_businessId_fkey" FOREIGN KEY ("businessId") REFERENCES "Business"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+-- AddForeignKey (if not exists)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'ScheduleTemplate_businessId_fkey') THEN
+        ALTER TABLE "ScheduleTemplate" ADD CONSTRAINT "ScheduleTemplate_businessId_fkey" FOREIGN KEY ("businessId") REFERENCES "Business"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    END IF;
+END $$;
 
 -- CreateTable ScheduleTemplateShift (if not exists)
 CREATE TABLE IF NOT EXISTS "ScheduleTemplateShift" (
@@ -145,8 +181,13 @@ CREATE TABLE IF NOT EXISTS "ScheduleTemplateShift" (
 -- CreateIndex
 CREATE INDEX IF NOT EXISTS "ScheduleTemplateShift_templateId_idx" ON "ScheduleTemplateShift"("templateId");
 
--- AddForeignKey
-ALTER TABLE "ScheduleTemplateShift" ADD CONSTRAINT "ScheduleTemplateShift_templateId_fkey" FOREIGN KEY ("templateId") REFERENCES "ScheduleTemplate"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+-- AddForeignKey (if not exists)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'ScheduleTemplateShift_templateId_fkey') THEN
+        ALTER TABLE "ScheduleTemplateShift" ADD CONSTRAINT "ScheduleTemplateShift_templateId_fkey" FOREIGN KEY ("templateId") REFERENCES "ScheduleTemplate"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    END IF;
+END $$;
 
 -- CreateTable RoleDepartment (if not exists)
 CREATE TABLE IF NOT EXISTS "RoleDepartment" (
@@ -167,11 +208,21 @@ CREATE INDEX IF NOT EXISTS "RoleDepartment_roleId_idx" ON "RoleDepartment"("role
 -- CreateIndex
 CREATE INDEX IF NOT EXISTS "RoleDepartment_departmentId_idx" ON "RoleDepartment"("departmentId");
 
--- AddForeignKey
-ALTER TABLE "RoleDepartment" ADD CONSTRAINT "RoleDepartment_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "Role"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+-- AddForeignKey (if not exists)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'RoleDepartment_roleId_fkey') THEN
+        ALTER TABLE "RoleDepartment" ADD CONSTRAINT "RoleDepartment_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "Role"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    END IF;
+END $$;
 
--- AddForeignKey
-ALTER TABLE "RoleDepartment" ADD CONSTRAINT "RoleDepartment_departmentId_fkey" FOREIGN KEY ("departmentId") REFERENCES "Department"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+-- AddForeignKey (if not exists)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'RoleDepartment_departmentId_fkey') THEN
+        ALTER TABLE "RoleDepartment" ADD CONSTRAINT "RoleDepartment_departmentId_fkey" FOREIGN KEY ("departmentId") REFERENCES "Department"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    END IF;
+END $$;
 
 -- CreateTable EmployeeRole (if not exists)
 CREATE TABLE IF NOT EXISTS "EmployeeRole" (
@@ -193,8 +244,18 @@ CREATE INDEX IF NOT EXISTS "EmployeeRole_employeeId_idx" ON "EmployeeRole"("empl
 -- CreateIndex
 CREATE INDEX IF NOT EXISTS "EmployeeRole_roleId_idx" ON "EmployeeRole"("roleId");
 
--- AddForeignKey
-ALTER TABLE "EmployeeRole" ADD CONSTRAINT "EmployeeRole_employeeId_fkey" FOREIGN KEY ("employeeId") REFERENCES "Employee"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+-- AddForeignKey (if not exists)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'EmployeeRole_employeeId_fkey') THEN
+        ALTER TABLE "EmployeeRole" ADD CONSTRAINT "EmployeeRole_employeeId_fkey" FOREIGN KEY ("employeeId") REFERENCES "Employee"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    END IF;
+END $$;
 
--- AddForeignKey
-ALTER TABLE "EmployeeRole" ADD CONSTRAINT "EmployeeRole_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "Role"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+-- AddForeignKey (if not exists)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'EmployeeRole_roleId_fkey') THEN
+        ALTER TABLE "EmployeeRole" ADD CONSTRAINT "EmployeeRole_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "Role"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    END IF;
+END $$;
