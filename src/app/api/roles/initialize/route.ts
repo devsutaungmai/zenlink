@@ -3,7 +3,7 @@ import { prisma } from '@/shared/lib/prisma'
 import { getCurrentUser } from '@/shared/lib/auth'
 import { PERMISSION_INFO, DEFAULT_ROLES } from '@/shared/lib/permissions'
 
-export const maxDuration = 30 // Allow up to 30 seconds for this endpoint
+export const maxDuration = 60
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,41 +15,35 @@ export async function POST(request: NextRequest) {
 
     const allPermissions = Object.values(PERMISSION_INFO)
     
-    // Batch upsert permissions using a transaction for better performance
-    await prisma.$transaction(
-      allPermissions.map((perm) =>
-        prisma.permission.upsert({
-          where: { code: perm.code },
-          update: {
-            name: perm.name,
-            description: perm.description,
-            category: perm.category
-          },
-          create: {
-            code: perm.code,
-            name: perm.name,
-            description: perm.description,
-            category: perm.category
-          }
-        })
-      ),
-      { timeout: 25000 } // 25 second timeout for transaction
-    )
+    // Use createMany with skipDuplicates for faster bulk insert
+    await prisma.permission.createMany({
+      data: allPermissions.map((perm) => ({
+        code: perm.code,
+        name: perm.name,
+        description: perm.description,
+        category: perm.category
+      })),
+      skipDuplicates: true
+    })
 
-    // Create default roles if they don't exist
-    const createdRoles = []
-    for (const [key, roleData] of Object.entries(DEFAULT_ROLES)) {
-      try {
-        const existingRole = await prisma.role.findUnique({
-          where: {
-            name_businessId: {
-              name: roleData.name,
-              businessId: currentUser.businessId
+    // Create roles in parallel for better performance
+    const roleEntries = Object.entries(DEFAULT_ROLES)
+    const roleResults = await Promise.all(
+      roleEntries.map(async ([key, roleData]) => {
+        try {
+          const existingRole = await prisma.role.findUnique({
+            where: {
+              name_businessId: {
+                name: roleData.name,
+                businessId: currentUser.businessId
+              }
             }
-          }
-        })
+          })
 
-        if (!existingRole) {
+          if (existingRole) {
+            return existingRole
+          }
+
           const role = await prisma.role.create({
             data: {
               name: roleData.name,
@@ -64,32 +58,24 @@ export async function POST(request: NextRequest) {
                   }
                 }))
               }
-            },
-            include: {
-              permissions: {
-                include: {
-                  permission: true
-                }
-              }
             }
           })
-          createdRoles.push(role)
-        } else {
-          createdRoles.push(existingRole)
+          return role
+        } catch (err: any) {
+          if (err.code === 'P2002') {
+            console.log(`Role ${roleData.name} already exists, skipping...`)
+            return null
+          }
+          throw err
         }
-      } catch (err: any) {
-        // Handle race condition - role might have been created by another request
-        if (err.code === 'P2002') {
-          console.log(`Role ${roleData.name} already exists, skipping...`)
-          continue
-        }
-        throw err
-      }
-    }
+      })
+    )
+
+    const createdRoles = roleResults.filter(Boolean)
 
     return NextResponse.json({
       success: true,
-      message: `Created ${createdRoles.length} default roles`,
+      message: `Initialized ${createdRoles.length} roles`,
       roles: createdRoles
     })
   } catch (error: any) {
