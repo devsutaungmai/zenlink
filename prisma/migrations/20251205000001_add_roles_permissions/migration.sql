@@ -1,3 +1,11 @@
+-- Rename the old Role enum to LegacyUserRole (if it exists)
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'Role') THEN
+        ALTER TYPE "Role" RENAME TO "LegacyUserRole";
+    END IF;
+END $$;
+
 -- CreateTable
 CREATE TABLE IF NOT EXISTS "Role" (
     "id" TEXT NOT NULL,
