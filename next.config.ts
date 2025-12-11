@@ -32,6 +32,9 @@ const nextConfig: NextConfig = {
     return config
   },
 
+  // Turbopack config (Next.js 16+ uses Turbopack by default)
+  turbopack: {},
+
   experimental: {
     optimizePackageImports: [
       'lucide-react', 
