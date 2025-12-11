@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { ClockIcon, CalendarIcon, ChartBarIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
 import { useUser } from '@/shared/lib/useUser'
 import { useTranslation } from 'react-i18next'
+import { usePermissions } from '@/shared/lib/usePermissions'
+import { PERMISSIONS } from '@/shared/lib/permissions'
 
 interface AttendanceEntry {
   id: string
@@ -97,6 +99,7 @@ const formatRangeDisplay = (start: string, end: string) => {
 export default function EmployeeHoursPage() {
   const { user, loading: userLoading } = useUser()
   const { t } = useTranslation('employee-hours')
+  const { hasPermission, loading: permissionsLoading } = usePermissions()
   const [hoursData, setHoursData] = useState<HoursData | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -219,7 +222,10 @@ export default function EmployeeHoursPage() {
       ]
     : []
 
-  if (userLoading) {
+  const canViewOwnHours = hasPermission(PERMISSIONS.ATTENDANCE_VIEW_OWN_HOURS)
+  const hasEmployeeRecord = Boolean(user?.employee)
+
+  if (userLoading || permissionsLoading) {
     return (
       <div className="px-4 py-6 sm:px-6 lg:px-8">
         <div className="space-y-6 animate-pulse">
@@ -234,7 +240,7 @@ export default function EmployeeHoursPage() {
     )
   }
 
-  if (user?.role !== 'EMPLOYEE') {
+  if (!canViewOwnHours || !hasEmployeeRecord) {
     return (
       <div className="px-4 py-6 sm:px-6 lg:px-8">
         <div className="text-center">

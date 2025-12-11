@@ -9,7 +9,7 @@ export async function PATCH(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const params = await context.params
+    const { id } = await context.params
     
     const user = await requireAuth()
     if (user.role !== 'ADMIN') {
@@ -29,7 +29,7 @@ export async function PATCH(
     }
 
     const employee = await prisma.employee.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { user: true }
     })
 

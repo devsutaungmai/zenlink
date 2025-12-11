@@ -1,20 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/shared/lib/prisma'
 import { requireAuth, getCurrentUserOrEmployee } from '@/shared/lib/auth'
+import { hasAnyServerPermission } from '@/shared/lib/serverPermissions'
+import { PERMISSIONS } from '@/shared/lib/permissions'
 
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const params = await context.params
+    const { id } = await context.params
     const auth = await getCurrentUserOrEmployee()
     if (!auth) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const sickLeave = await prisma.sickLeave.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         employee: {
           select: {
@@ -73,12 +75,26 @@ export async function PUT(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const params = await context.params
+    const { id } = await context.params
     const user = await requireAuth()
     const data = await request.json()
 
+    // If approving, check approval permission
+    if (data.approved !== undefined) {
+      const canApprove = await hasAnyServerPermission([
+        PERMISSIONS.SICK_LEAVE_APPROVE
+      ])
+      
+      if (!canApprove) {
+        return NextResponse.json(
+          { error: 'You do not have permission to approve sick leaves' },
+          { status: 403 }
+        )
+      }
+    }
+
     const existingSickLeave = await prisma.sickLeave.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         employee: {
           select: {
@@ -117,7 +133,7 @@ export async function PUT(
     }
 
     const updatedSickLeave = await prisma.sickLeave.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         startDate: data.startDate ? new Date(data.startDate) : undefined,
         endDate: data.endDate ? new Date(data.endDate) : undefined,
@@ -152,11 +168,11 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const params = await context.params
+    const { id } = await context.params
     const user = await requireAuth()
 
     const existingSickLeave = await prisma.sickLeave.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         employee: {
           select: {
@@ -194,7 +210,7 @@ export async function DELETE(
     }
 
     await prisma.sickLeave.delete({
-      where: { id: params.id }
+      where: { id }
     })
 
     return NextResponse.json({ message: 'Sick leave deleted successfully' })

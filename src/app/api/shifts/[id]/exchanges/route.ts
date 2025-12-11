@@ -8,10 +8,11 @@ export async function GET(
 ) {
   try {
     const params = await context.params
+    const { id } = params
     const user = await requireAuth()
     
     const exchanges = await prisma.shiftExchange.findMany({
-      where: { shiftId: params.id },
+      where: { shiftId: id },
       include: {
         fromEmployee: {
           select: {
@@ -51,6 +52,7 @@ export async function POST(
 ) {
   try {
     const params = await context.params
+    const { id } = params
     const user = await requireAuth()
     const { toEmployeeId, reason } = await req.json()
 
@@ -62,7 +64,7 @@ export async function POST(
     }
 
     const shift = await prisma.shift.findUnique({
-      where: { id: params.id },
+      where: { id: id },
       include: { employee: true },
     })
 
@@ -82,7 +84,7 @@ export async function POST(
 
     const existingExchange = await prisma.shiftExchange.findFirst({
       where: {
-        shiftId: params.id,
+        shiftId: id,
         status: 'PENDING',
       },
     })
@@ -96,7 +98,7 @@ export async function POST(
 
     const exchange = await prisma.shiftExchange.create({
       data: {
-        shiftId: params.id,
+        shiftId: id,
         fromEmployeeId: shift.employeeId,
         toEmployeeId,
         type: 'SWAP',

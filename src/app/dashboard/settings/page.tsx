@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { 
@@ -22,113 +22,146 @@ import BusinessInfoSettings from '@/components/BusinessInfoSettings'
 import ContractTemplateForm from '@/components/ContractTemplateForm'
 import ShiftTypeSettings from '@/components/ShiftTypeSettings'
 import { useTranslation } from 'react-i18next'
+import { usePermissions } from '@/shared/lib/usePermissions'
+import { PERMISSIONS } from '@/shared/lib/permissions'
+
+interface SettingSubmenu {
+  id: string
+  name: string
+  description: string
+  component?: React.ComponentType
+}
+
+interface SettingSection {
+  id: string
+  name: string
+  description: string
+  icon: React.ComponentType<{ className?: string }>
+  component?: React.ComponentType
+  hasSubmenus?: boolean
+  submenus?: SettingSubmenu[]
+  disabled?: boolean
+  href?: string
+}
 
 export default function SettingsPage() {
   const router = useRouter()
-  const [activeSection, setActiveSection] = useState<string>('labor-laws')
+  const [activeSection, setActiveSection] = useState<string>('profile')
   const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set(['people']))
   const { t } = useTranslation('settings')
+  const { hasPermission, loading: permissionsLoading } = usePermissions()
   
-  const settingSections = [
-    {
-      id: 'labor-laws',
-      name: t('labor.title'),
-      description: t('labor.description'),
-      icon: ShieldCheckIcon,
-      component: LaborLawSettings
-    },
-    {
-      id: 'punch-clock',
-      name: t('punch_clock.title'),
-      description: t('punch_clock.description'),
-      icon: ClockIcon,
-      hasSubmenus: true,
-      submenus: [
-        {
-          id: 'punch-clock-access',
-          name: t('punch_clock.menu.access.title'),
-          description: t('punch_clock.menu.access.description'),
-          component: PunchClockAccessSettings
-        },
-        {
-          id: 'punch-clock-general',
-          name: t('punch_clock.menu.general.title'),
-          description: t('punch_clock.menu.general.description')
-        },
-        {
-          id: 'punch-clock-profiles',
-          name: t('punch_clock.menu.profiles.title'),
-          description: t('punch_clock.menu.profiles.description'),
-          component: PunchClockProfiles
-        },
-        {
-          id: 'punch-clock-advance',
-          name: t('punch_clock.menu.advance.title'),
-          description: t('punch_clock.menu.advance.description')
-        }
-      ]
-    },
-    {
-      id: 'people',
-      name: t('people.title'),
-      description: t('people.description'),
-      icon: UsersIcon,
-      hasSubmenus: true,
-      submenus: [
-        {
-          id: 'people-general',
-          name: t('people.menu.general.title'),
-          description: t('people.menu.general.description')
-        },
-        {
-          id: 'people-contract-rules',
-          name: t('people.menu.contract_rules.title'),
-          description: t('people.menu.contract_rules.description')
-        },
-        {
-          id: 'people-contract-setup',
-          name: t('people.menu.contract_setup.title'),
-          description: t('people.menu.contract_setup.description'),
-          component: ContractTemplateForm
-        }
-      ]
-    },
-    {
-      id: 'notifications',
-      name: t('people.menu.notifications.title'),
-      description:  t('people.menu.notifications.description'),
-      icon: BellIcon,
-      disabled: true
-    },
-    {
+  const canManageContractTemplates = hasPermission(PERMISSIONS.CONTRACT_TEMPLATES_MANAGE)
+  const canManageLaborLaw = hasPermission(PERMISSIONS.SETTINGS_LABOR_LAW)
+  const canManagePunchClock = hasPermission(PERMISSIONS.PUNCH_CLOCK_SETTINGS)
+  const canManageBusiness = hasPermission(PERMISSIONS.SETTINGS_BUSINESS)
+  const canManageShiftTypes = hasPermission(PERMISSIONS.SETTINGS_SHIFT_TYPES)
+  
+  const settingSections = useMemo((): SettingSection[] => {
+    const sections: SettingSection[] = []
+    
+    if (canManageLaborLaw) {
+      sections.push({
+        id: 'labor-laws',
+        name: t('labor.title'),
+        description: t('labor.description'),
+        icon: ShieldCheckIcon,
+        component: LaborLawSettings
+      })
+    }
+    
+    if (canManagePunchClock) {
+      sections.push({
+        id: 'punch-clock',
+        name: t('punch_clock.title'),
+        description: t('punch_clock.description'),
+        icon: ClockIcon,
+        hasSubmenus: true,
+        submenus: [
+          {
+            id: 'punch-clock-access',
+            name: t('punch_clock.menu.access.title'),
+            description: t('punch_clock.menu.access.description'),
+            component: PunchClockAccessSettings
+          },
+          {
+            id: 'punch-clock-general',
+            name: t('punch_clock.menu.general.title'),
+            description: t('punch_clock.menu.general.description')
+          },
+          {
+            id: 'punch-clock-profiles',
+            name: t('punch_clock.menu.profiles.title'),
+            description: t('punch_clock.menu.profiles.description'),
+            component: PunchClockProfiles
+          },
+          {
+            id: 'punch-clock-advance',
+            name: t('punch_clock.menu.advance.title'),
+            description: t('punch_clock.menu.advance.description')
+          }
+        ]
+      })
+    }
+    
+    if (canManageContractTemplates) {
+      sections.push({
+        id: 'people',
+        name: t('people.title'),
+        description: t('people.description'),
+        icon: UsersIcon,
+        hasSubmenus: true,
+        submenus: [
+          {
+            id: 'people-general',
+            name: t('people.menu.general.title'),
+            description: t('people.menu.general.description')
+          },
+          {
+            id: 'people-contract-rules',
+            name: t('people.menu.contract_rules.title'),
+            description: t('people.menu.contract_rules.description')
+          },
+          {
+            id: 'people-contract-setup',
+            name: t('people.menu.contract_setup.title'),
+            description: t('people.menu.contract_setup.description'),
+            component: ContractTemplateForm
+          }
+        ]
+      })
+    }
+    
+    sections.push({
       id: 'profile',
       name: t('profile.menu.title'),
       description: t('profile.menu.description'),
       icon: UserCircleIcon,
       href: '/dashboard/profile'
-    },
-    {
-      id: 'security',
-      name: t('security.title'),
-      description: t('security.description'),
-      icon: KeyIcon,
-      disabled: true
-    },
-    {
-      id: 'business',
-      name: t('business_setting.menu.title'),
-      description: t('business_setting.menu.description'),
-      icon: BuildingOfficeIcon,
-      component: BusinessInfoSettings
-    },
-    {
-      id: 'shift-types',
-      name: t('shift_types.menu.title'),
-      description: t('shift_types.menu.description'),
-      icon: RectangleGroupIcon,
-      component: ShiftTypeSettings
+    })
+    
+    if (canManageBusiness) {
+      sections.push({
+        id: 'business',
+        name: t('business_setting.menu.title'),
+        description: t('business_setting.menu.description'),
+        icon: BuildingOfficeIcon,
+        component: BusinessInfoSettings
+      })
     }
-  ]
+    
+    if (canManageShiftTypes) {
+      sections.push({
+        id: 'shift-types',
+        name: t('shift_types.menu.title'),
+        description: t('shift_types.menu.description'),
+        icon: RectangleGroupIcon,
+        component: ShiftTypeSettings
+      })
+    }
+    
+    return sections
+  }, [t, canManageContractTemplates, canManageLaborLaw, canManagePunchClock, canManageBusiness, canManageShiftTypes])
 
   const activeSettingSection = settingSections.find(section => {
     if (section.id === activeSection) {

@@ -18,6 +18,7 @@ interface MultiSelectProps {
   error?: string
   className?: string
   maxHeight?: string
+  disabled?: boolean
 }
 
 export function MultiSelect({
@@ -29,7 +30,8 @@ export function MultiSelect({
   required,
   error,
   className = '',
-  maxHeight = 'max-h-60'
+  maxHeight = 'max-h-60',
+  disabled = false,
 }: MultiSelectProps) {
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -70,8 +72,12 @@ export function MultiSelect({
       
       <div className="relative" ref={dropdownRef}>
         <div
-          onClick={() => setIsOpen(!isOpen)}
-          className={`relative w-full rounded-md border px-3 py-2 text-left cursor-pointer focus:outline-none focus:ring-1 ${
+          onClick={() => !disabled && setIsOpen(!isOpen)}
+          className={`relative w-full rounded-md border px-3 py-2 text-left focus:outline-none focus:ring-1 ${
+            disabled
+              ? 'bg-gray-100 cursor-not-allowed opacity-60'
+              : 'cursor-pointer'
+          } ${
             error
               ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
               : 'border-gray-300 focus:border-[#31BCFF] focus:ring-[#31BCFF]'
@@ -88,13 +94,15 @@ export function MultiSelect({
                     className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#31BCFF] text-white text-sm"
                   >
                     {option.name}
-                    <button
-                      type="button"
-                      onClick={(e) => handleRemove(option.id, e)}
-                      className="hover:bg-[#31BCFF]/80 rounded-sm"
-                    >
-                      <XMarkIcon className="w-3 h-3" />
-                    </button>
+                    {!disabled && (
+                      <button
+                        type="button"
+                        onClick={(e) => handleRemove(option.id, e)}
+                        className="hover:bg-[#31BCFF]/80 rounded-sm"
+                      >
+                        <XMarkIcon className="w-3 h-3" />
+                      </button>
+                    )}
                   </span>
                 ))
               )}
@@ -107,7 +115,7 @@ export function MultiSelect({
           </div>
         </div>
 
-        {isOpen && (
+        {isOpen && !disabled && (
           <div className={`absolute z-10 mt-1 w-full rounded-md bg-white shadow-lg border border-gray-300 ${maxHeight} overflow-auto`}>
             {options.length === 0 ? (
               <div className="px-3 py-2 text-sm text-gray-500">No options available</div>

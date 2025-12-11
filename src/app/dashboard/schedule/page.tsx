@@ -30,6 +30,8 @@ import {
   GroupGroupedViewSkeleton,
   FunctionGroupedViewSkeleton 
 } from '@/components/skeletons/ScheduleSkeleton'
+import { usePermissions } from '@/shared/lib/usePermissions'
+import { PERMISSIONS } from '@/shared/lib/permissions'
 
 type ViewTabValue = 'time' | 'employees' | 'groups' | 'functions'
 
@@ -66,6 +68,13 @@ export default function SchedulePage() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [scheduleViewType, setScheduleViewType] = useState<'time' | 'employees' | 'groups' | 'functions'>('employees')
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
+
+  const { hasPermission, loading: permissionsLoading } = usePermissions()
+  const canViewSchedule = hasPermission(PERMISSIONS.SCHEDULE_VIEW) || hasPermission(PERMISSIONS.SHIFTS_VIEW)
+  const canCreateShifts = hasPermission(PERMISSIONS.SCHEDULE_CREATE) || hasPermission(PERMISSIONS.SHIFTS_CREATE)
+  const canEditShifts = hasPermission(PERMISSIONS.SCHEDULE_EDIT) || hasPermission(PERMISSIONS.SHIFTS_EDIT)
+  const canDeleteShifts = hasPermission(PERMISSIONS.SCHEDULE_DELETE) || hasPermission(PERMISSIONS.SHIFTS_DELETE)
+  const canUseTemplates = hasPermission(PERMISSIONS.SCHEDULE_TEMPLATES)
 
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<string | null>(null);
@@ -461,6 +470,14 @@ export default function SchedulePage() {
   }, [selectedEmployeeId])
 
   const openShiftModal = useCallback((view: 'week' | 'day' | 'month', formData?: any | null) => {
+    const isEditing = formData?.id
+    if (isEditing && !canEditShifts) {
+      return
+    }
+    if (!isEditing && !canCreateShifts) {
+      return
+    }
+
     const payload = formData ? { ...formData } : null
 
     if (payload?.employeeId && payload?.date) {
@@ -472,7 +489,7 @@ export default function SchedulePage() {
     setModalViewType(view)
     setShiftInitialData(payload ?? null)
     setShowShiftModal(true)
-  }, [shouldPreventShiftCreation])
+  }, [shouldPreventShiftCreation, canCreateShifts, canEditShifts])
 
   const handlePreviousWeek = () => {
     if (viewMode === 'day') {
@@ -943,6 +960,10 @@ export default function SchedulePage() {
   }
 
   const handleTemplateAction = (action: 'create' | 'save' | 'edit' | 'apply' | 'copy-week') => {
+    if (!canUseTemplates) {
+      return
+    }
+    
     switch (action) {
       case 'create':
         setShowCreateTemplateModal(true)
@@ -984,6 +1005,8 @@ export default function SchedulePage() {
             const payload = attachSelectedEmployee(formData ?? null)
             openShiftModal('week', payload)
           }}
+          canCreateShifts={canCreateShifts}
+          canEditShifts={canEditShifts}
         />
       )
     }
@@ -1010,6 +1033,8 @@ export default function SchedulePage() {
           onAddShift={(data) => {
             openShiftModal('week', data ?? null)
           }}
+          canCreateShifts={canCreateShifts}
+          canEditShifts={canEditShifts}
         />
       )
     }
@@ -1029,6 +1054,8 @@ export default function SchedulePage() {
             const payload = attachSelectedEmployee(data ?? null)
             openShiftModal('week', payload)
           }}
+          canCreateShifts={canCreateShifts}
+          canEditShifts={canEditShifts}
         />
       )
     }
@@ -1048,6 +1075,8 @@ export default function SchedulePage() {
             const payload = attachSelectedEmployee(data ?? null)
             openShiftModal('week', payload)
           }}
+          canCreateShifts={canCreateShifts}
+          canEditShifts={canEditShifts}
         />
       )
     }
@@ -1068,6 +1097,8 @@ export default function SchedulePage() {
           const payload = attachSelectedEmployee(formData ?? null)
           openShiftModal('week', payload)
         }}
+        canCreateShifts={canCreateShifts}
+        canEditShifts={canEditShifts}
       />
     )
   }
@@ -1075,6 +1106,19 @@ export default function SchedulePage() {
   const formatRangeLabel = (dates: Date[]) => {
     if (!dates || dates.length === 0) return ''
     return `${format(dates[0], 'MMM d')} - ${format(dates[dates.length - 1], 'MMM d')}`
+  }
+
+  // Show access denied if user doesn't have view permission
+  if (!permissionsLoading && !canViewSchedule) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-gray-50">
+        <div className="text-center p-8 bg-white rounded-lg shadow-md">
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Access Denied</h2>
+          <p className="text-gray-600">You do not have permission to view the schedule.</p>
+          <p className="text-sm text-gray-500 mt-2">Please contact your administrator if you need access.</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -1113,6 +1157,7 @@ export default function SchedulePage() {
           scheduleViewType={scheduleViewType}
           onScheduleViewTypeChange={setScheduleViewType}
           onTemplateAction={handleTemplateAction}
+          canUseTemplates={canUseTemplates}
         />
       </div>
 
@@ -1246,6 +1291,8 @@ export default function SchedulePage() {
                     const enrichedPayload = attachSelectedEmployee(payload)
                     openShiftModal('day', enrichedPayload)
                   }}
+                  canCreateShifts={canCreateShifts}
+                  canEditShifts={canEditShifts}
                 />
               ) : scheduleViewType === 'employees' ? (
                 <DayEmployeeTimeline
@@ -1306,6 +1353,8 @@ export default function SchedulePage() {
                     const enrichedPayload = attachSelectedEmployee(payload)
                     openShiftModal('day', enrichedPayload)
                   }}
+                  canCreateShifts={canCreateShifts}
+                  canEditShifts={canEditShifts}
                 />
               )
             )}
@@ -1323,6 +1372,8 @@ export default function SchedulePage() {
           onDelete={handleShiftDelete}
           viewType={modalViewType}
           loading={loading}
+          canEditShifts={canEditShifts}
+          canDeleteShifts={canDeleteShifts}
         />
 
         <CreateTemplateModal

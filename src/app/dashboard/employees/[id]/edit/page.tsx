@@ -7,6 +7,8 @@ import { FormSkeleton } from '@/components/skeletons/CommonSkeletons'
 import EmployeeForm from '@/components/EmployeeForm'
 import { Department, EmployeeGroup } from '@prisma/client'
 import { useCurrency } from '@/shared/hooks/useCurrency'
+import { usePermissions } from '@/shared/lib/usePermissions'
+import { PERMISSIONS } from '@/shared/lib/permissions'
 import { 
   EmployeeFormTabs, 
   defaultEmployeeTabs, 
@@ -46,13 +48,21 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
   const { t } = useTranslation()
   const router = useRouter()
   const { currencySymbol } = useCurrency()
+  const { hasPermission } = usePermissions()
   const [employee, setEmployee] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [departments, setDepartments] = useState<Department[]>([])
   const [employeeGroups, setEmployeeGroups] = useState<EmployeeGroup[]>([])
+  const [roles, setRoles] = useState<Array<{ id: string; name: string }>>([])
   const [activeTab, setActiveTab] = useState<EmployeeTabType>('details')
+  
+  // Permission checks
+  const canEdit = hasPermission(PERMISSIONS.EMPLOYEES_EDIT)
+  const canViewSensitive = hasPermission(PERMISSIONS.EMPLOYEES_VIEW_SENSITIVE)
+  const canViewContracts = hasPermission(PERMISSIONS.CONTRACTS_VIEW)
+  const canCreateContracts = hasPermission(PERMISSIONS.CONTRACTS_CREATE)
   
   // Shifts related state
   const [shifts, setShifts] = useState<Shift[]>([])
@@ -75,28 +85,30 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
 
     const fetchData = async () => {
       try {
-        const [employeeRes, deptsRes, groupsRes] = await Promise.all([
+        const [employeeRes, formDataRes] = await Promise.all([
           fetch(`/api/employees/${employeeId}`),
-          fetch('/api/departments'),
-          fetch('/api/employee-groups')
+          fetch('/api/form-data')
         ])
 
-        if (!employeeRes.ok || !deptsRes.ok || !groupsRes.ok) {
+        if (!employeeRes.ok || !formDataRes.ok) {
           throw new Error('Failed to fetch required data')
         }
 
         const employeeData = await employeeRes.json()
+        const { departments, employeeGroups, roles } = await formDataRes.json()
         
         // Map junction table data to arrays
         const mappedEmployee = {
           ...employeeData,
           departmentIds: employeeData.departments?.map((d: any) => d.departmentId) || [],
-          employeeGroupIds: employeeData.employeeGroups?.map((g: any) => g.employeeGroupId) || []
+          employeeGroupIds: employeeData.employeeGroups?.map((g: any) => g.employeeGroupId) || [],
+          roleIds: employeeData.employeeRoles?.map((r: any) => r.roleId) || []
         }
         
         setEmployee(mappedEmployee)
-        setDepartments(await deptsRes.json())
-        setEmployeeGroups(await groupsRes.json())
+        setDepartments(departments)
+        setEmployeeGroups(employeeGroups)
+        setRoles(roles || [])
         
         fetchContracts()
       } catch (error) {
@@ -157,9 +169,14 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
 
   useEffect(() => {
     if (employeeId) {
-      setAvailableTabs([...defaultEmployeeTabs, contractTab])
+      // Only add contracts tab if user has permission to view contracts
+      if (canViewContracts) {
+        setAvailableTabs([...defaultEmployeeTabs, contractTab])
+      } else {
+        setAvailableTabs(defaultEmployeeTabs)
+      }
     }
-  }, [employeeId])
+  }, [employeeId, canViewContracts])
 
   const fetchPayslips = async () => {
     if (!employeeId) return
@@ -385,14 +402,17 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
                 onSubmit={handleSubmit} 
                 loading={saving}
                 departments={departments}
-                  employeeGroups={employeeGroups}
-                />
-              ) : (
-                <div className="p-4 text-gray-500 text-center">
-                  Employee data not available
-                </div>
-              )}
-            </div>
+                employeeGroups={employeeGroups}
+                roles={roles}
+                readOnly={!canEdit}
+                canViewSensitive={canViewSensitive}
+              />
+            ) : (
+              <div className="p-4 text-gray-500 text-center">
+                Employee data not available
+              </div>
+            )}
+          </div>
           )}
 
           {activeTab === 'shifts' && (
@@ -772,6 +792,8 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
               employeeName={employee ? `${employee.firstName} ${employee.lastName}` : undefined}
               loading={contractsLoading}
               onCreateContract={handleCreateContractNavigation}
+              canViewContracts={canViewContracts}
+              canCreateContracts={canCreateContracts}
             />
           )}
         </div>

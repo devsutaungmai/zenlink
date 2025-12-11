@@ -22,6 +22,8 @@ interface ContractsTabContentProps {
   isNewEmployee?: boolean
   loading?: boolean
   onCreateContract?: () => void
+  canViewContracts?: boolean
+  canCreateContracts?: boolean
 }
 
 export function ContractsTabContent({ 
@@ -29,7 +31,9 @@ export function ContractsTabContent({
   employeeName, 
   isNewEmployee,
   loading,
-  onCreateContract
+  onCreateContract,
+  canViewContracts = true,
+  canCreateContracts = true,
 }: ContractsTabContentProps) {
   const [downloading, setDownloading] = useState<string | null>(null)
   const [viewingContract, setViewingContract] = useState<Contract | null>(null)
@@ -171,40 +175,50 @@ export function ContractsTabContent({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h3 className="text-lg font-medium text-gray-900">Employee Contracts</h3>
-          <div className="text-sm text-gray-500">
-            {employeeName && `Contracts for ${employeeName}`}
-          </div>
-        </div>
-        {onCreateContract && !isNewEmployee && (
-          <button
-            onClick={onCreateContract}
-            className="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-[#31BCFF] text-white text-sm font-medium shadow hover:bg-[#31BCFF]/90 transition-colors"
-          >
-            Create Contract
-          </button>
-        )}
-      </div>
-
-      {!contracts || contracts.length === 0 ? (
+      {!canViewContracts ? (
         <div className="bg-gray-50 rounded-xl p-8 text-center">
           <DocumentDuplicateIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h4 className="text-lg font-medium text-gray-900 mb-2">No Contracts Found</h4>
+          <h4 className="text-lg font-medium text-gray-900 mb-2">Access Denied</h4>
           <p className="text-gray-500">
-            This employee has no contracts assigned yet.
+            You don&apos;t have permission to view contracts.
           </p>
-          {onCreateContract && !isNewEmployee && (
-            <button
-              onClick={onCreateContract}
-              className="mt-4 inline-flex items-center justify-center px-4 py-2 rounded-lg bg-[#31BCFF] text-white text-sm font-medium hover:bg-[#31BCFF]/90"
-            >
-              Create Contract
-            </button>
-          )}
         </div>
       ) : (
+        <>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="text-lg font-medium text-gray-900">Employee Contracts</h3>
+              <div className="text-sm text-gray-500">
+                {employeeName && `Contracts for ${employeeName}`}
+              </div>
+            </div>
+            {onCreateContract && !isNewEmployee && canCreateContracts && (
+              <button
+                onClick={onCreateContract}
+                className="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-[#31BCFF] text-white text-sm font-medium shadow hover:bg-[#31BCFF]/90 transition-colors"
+              >
+                Create Contract
+              </button>
+            )}
+          </div>
+
+          {!contracts || contracts.length === 0 ? (
+            <div className="bg-gray-50 rounded-xl p-8 text-center">
+              <DocumentDuplicateIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <h4 className="text-lg font-medium text-gray-900 mb-2">No Contracts Found</h4>
+              <p className="text-gray-500">
+                This employee has no contracts assigned yet.
+              </p>
+              {onCreateContract && !isNewEmployee && canCreateContracts && (
+                <button
+                  onClick={onCreateContract}
+                  className="mt-4 inline-flex items-center justify-center px-4 py-2 rounded-lg bg-[#31BCFF] text-white text-sm font-medium hover:bg-[#31BCFF]/90"
+                >
+                  Create Contract
+                </button>
+              )}
+            </div>
+          ) : (
         <div className="space-y-3">
           {contracts.map((contract) => (
             <div 
@@ -345,6 +359,8 @@ export function ContractsTabContent({
             </div>
           </div>
         </div>
+      )}
+        </>
       )}
     </div>
   )

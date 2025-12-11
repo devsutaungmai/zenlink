@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import DepartmentForm from '@/components/DepartmentForm'
+import { usePermissions } from '@/shared/lib/usePermissions'
+import { PERMISSIONS } from '@/shared/lib/permissions'
 
 interface Department {
   id: string
@@ -20,12 +22,22 @@ interface Department {
 export default function EditDepartmentPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
   const { t } = useTranslation()
+  const { hasPermission, loading: permissionsLoading } = usePermissions()
   const departmentId = React.use(params).id
   const [department, setDepartment] = useState<Department | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [existingDepartments, setExistingDepartments] = useState<{ id: string; name: string; number?: string | null }[]>([])
+
+  const canEditDepartments = hasPermission(PERMISSIONS.DEPARTMENTS_EDIT)
+
+  // Redirect if no permission
+  useEffect(() => {
+    if (!permissionsLoading && !canEditDepartments) {
+      router.push('/dashboard/departments')
+    }
+  }, [permissionsLoading, canEditDepartments, router])
 
   useEffect(() => {
     const fetchData = async () => {
@@ -84,6 +96,11 @@ export default function EditDepartmentPage({ params }: { params: Promise<{ id: s
     } finally {
       setSaving(false)
     }
+  }
+
+  // Show nothing while checking permissions or if no permission (will redirect)
+  if (permissionsLoading || !canEditDepartments) {
+    return null
   }
 
   if (loading) {

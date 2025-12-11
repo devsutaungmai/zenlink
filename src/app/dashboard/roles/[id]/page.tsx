@@ -20,6 +20,11 @@ interface PermissionsByCategory {
   [category: string]: PermissionInfo[]
 }
 
+interface Department {
+  id: string
+  name: string
+}
+
 interface Role {
   id: string
   name: string
@@ -27,7 +32,8 @@ interface Role {
   isSystem: boolean
   isDefault: boolean
   permissions: { permission: { code: string } }[]
-  _count?: { users: number }
+  departments?: { departmentId: string }[]
+  _count?: { users: number; employees: number }
 }
 
 export default function EditRolePage({ params }: { params: Promise<{ id: string }> }) {
@@ -37,18 +43,22 @@ export default function EditRolePage({ params }: { params: Promise<{ id: string 
   const [loading, setLoading] = useState(false)
   const [loadingRole, setLoadingRole] = useState(true)
   const [loadingPermissions, setLoadingPermissions] = useState(true)
+  const [loadingDepartments, setLoadingDepartments] = useState(true)
   const [permissionsByCategory, setPermissionsByCategory] = useState<PermissionsByCategory>({})
+  const [departments, setDepartments] = useState<Department[]>([])
   const [role, setRole] = useState<Role | null>(null)
   
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    permissions: [] as string[]
+    permissions: [] as string[],
+    departmentIds: [] as string[]
   })
 
   useEffect(() => {
     fetchPermissions()
     fetchRole()
+    fetchDepartments()
   }, [resolvedParams.id])
 
   const fetchPermissions = async () => {
@@ -73,7 +83,8 @@ export default function EditRolePage({ params }: { params: Promise<{ id: string 
       setFormData({
         name: data.name,
         description: data.description || '',
-        permissions: data.permissions.map((p: any) => p.permission.code)
+        permissions: data.permissions.map((p: any) => p.permission.code),
+        departmentIds: data.departments?.map((d: any) => d.departmentId) || []
       })
     } catch (err) {
       console.error('Error fetching role:', err)
@@ -82,6 +93,28 @@ export default function EditRolePage({ params }: { params: Promise<{ id: string 
     } finally {
       setLoadingRole(false)
     }
+  }
+
+  const fetchDepartments = async () => {
+    try {
+      const res = await fetch('/api/form-data')
+      if (!res.ok) throw new Error('Failed to fetch departments')
+      const data = await res.json()
+      setDepartments(data.departments || [])
+    } catch (err) {
+      console.error('Error fetching departments:', err)
+    } finally {
+      setLoadingDepartments(false)
+    }
+  }
+
+  const toggleDepartment = (deptId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      departmentIds: prev.departmentIds.includes(deptId)
+        ? prev.departmentIds.filter(id => id !== deptId)
+        : [...prev.departmentIds, deptId]
+    }))
   }
 
   const togglePermission = (code: string) => {
@@ -156,7 +189,7 @@ export default function EditRolePage({ params }: { params: Promise<{ id: string 
     return selectedCount > 0 && selectedCount < categoryPermissions.length
   }
 
-  if (loadingRole || loadingPermissions) {
+  if (loadingRole || loadingPermissions || loadingDepartments) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#31BCFF]"></div>
@@ -207,11 +240,15 @@ export default function EditRolePage({ params }: { params: Promise<{ id: string 
         </div>
       )}
 
-      {/* Users using this role */}
-      {role._count && role._count.users > 0 && (
+      {/* Users/Employees using this role */}
+      {role._count && (role._count.users > 0 || role._count.employees > 0) && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <p className="text-sm text-blue-800">
-            {t('roles.usersCount', '{{count}} user(s) are assigned to this role. Changes will affect all of them.', { count: role._count.users })}
+            {role._count.users > 0 && role._count.employees > 0
+              ? t('roles.usersAndEmployeesCount', '{{userCount}} user(s) and {{employeeCount}} employee(s) are assigned to this role. Changes will affect all of them.', { userCount: role._count.users, employeeCount: role._count.employees })
+              : role._count.users > 0
+              ? t('roles.usersCount', '{{count}} user(s) are assigned to this role. Changes will affect all of them.', { count: role._count.users })
+              : t('roles.employeesCount', '{{count}} employee(s) are assigned to this role. Changes will affect all of them.', { count: role._count.employees })}
           </p>
         </div>
       )}
@@ -248,6 +285,40 @@ export default function EditRolePage({ params }: { params: Promise<{ id: string 
                 placeholder={t('roles.roleDescriptionPlaceholder', 'Brief description of this role')}
               />
             </div>
+          </div>
+
+          {/* Department Restrictions */}
+          <div className="mt-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {t('roles.departmentRestrictions', 'Department Restrictions')}
+            </label>
+            <p className="text-xs text-gray-500 mb-3">
+              {t('roles.departmentRestrictionsHint', 'Leave empty to make this role available to all departments. Select specific departments to restrict this role to employees in those departments only.')}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {departments.map((dept) => (
+                <button
+                  key={dept.id}
+                  type="button"
+                  onClick={() => toggleDepartment(dept.id)}
+                  className={`px-3 py-1.5 text-sm rounded-full border transition-colors ${
+                    formData.departmentIds.includes(dept.id)
+                      ? 'bg-[#31BCFF] text-white border-[#31BCFF]'
+                      : 'bg-white text-gray-700 border-gray-300 hover:border-[#31BCFF]'
+                  }`}
+                >
+                  {dept.name}
+                </button>
+              ))}
+              {departments.length === 0 && (
+                <p className="text-sm text-gray-500">No departments available</p>
+              )}
+            </div>
+            {formData.departmentIds.length > 0 && (
+              <p className="mt-2 text-xs text-[#31BCFF]">
+                {t('roles.selectedDepartments', 'This role will only be available for employees in the selected departments.')}
+              </p>
+            )}
           </div>
         </div>
 

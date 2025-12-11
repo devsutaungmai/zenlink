@@ -8,7 +8,7 @@ export async function PATCH(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const params = await context.params
+    const { id } = await context.params
     const employee = await getCurrentEmployee()
     const { action } = await request.json()
 
@@ -28,7 +28,7 @@ export async function PATCH(
 
     // Get the exchange request
     const exchange = await prisma.shiftExchange.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         shift: true,
         fromEmployee: true,
@@ -63,7 +63,7 @@ export async function PATCH(
     const newStatus = action === 'accept' ? 'EMPLOYEE_ACCEPTED' : 'EMPLOYEE_REJECTED'
     
     const updatedExchange = await prisma.shiftExchange.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         status: newStatus,
         employeeResponseAt: new Date(),

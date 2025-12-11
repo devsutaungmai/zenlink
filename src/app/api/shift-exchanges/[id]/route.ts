@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/shared/lib/prisma'
 import { requireAuth } from '@/shared/lib/auth'
 import { ShiftExchangeNotifications } from '@/shared/lib/notifications'
+import { hasAnyServerPermission } from '@/shared/lib/serverPermissions'
+import { PERMISSIONS } from '@/shared/lib/permissions'
 
 export async function PATCH(
   request: Request,
@@ -9,6 +11,7 @@ export async function PATCH(
 ) {
   try {
     const params = await context.params
+    const { id } = params
     const user = await requireAuth()
     const { status } = await request.json()
 
@@ -19,8 +22,20 @@ export async function PATCH(
       )
     }
 
+    // Check permission to approve shift exchanges
+    const canApprove = await hasAnyServerPermission([
+      PERMISSIONS.SHIFTS_EXCHANGE_APPROVE
+    ])
+    
+    if (!canApprove) {
+      return NextResponse.json(
+        { error: 'You do not have permission to approve shift exchanges' },
+        { status: 403 }
+      )
+    }
+
     const existingExchange = await prisma.shiftExchange.findUnique({
-      where: { id: params.id },
+      where: { id: id },
       include: {
         fromEmployee: {
           include: {
@@ -61,7 +76,7 @@ export async function PATCH(
     }
 
     const exchange = await prisma.shiftExchange.update({
-      where: { id: params.id },
+      where: { id: id },
       data: {
         status,
         approvedAt: new Date(),
@@ -112,11 +127,12 @@ export async function DELETE(
 ) {
   try {
     const params = await context.params
+    const { id } = params
     const user = await requireAuth()
 
     // Check if the exchange exists and is pending
     const exchange = await prisma.shiftExchange.findUnique({
-      where: { id: params.id },
+      where: { id: id },
       include: { 
         fromEmployee: {
           include: {
@@ -157,7 +173,7 @@ export async function DELETE(
 
     // Delete the exchange request
     await prisma.shiftExchange.delete({
-      where: { id: params.id }
+      where: { id: id }
     })
 
     return NextResponse.json({ message: 'Exchange request cancelled successfully' })

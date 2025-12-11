@@ -84,6 +84,7 @@ interface ScheduleHeaderProps {
   scheduleViewType?: 'time' | 'employees' | 'groups' | 'functions'
   onScheduleViewTypeChange?: (type: 'time' | 'employees' | 'groups' | 'functions') => void
   onTemplateAction?: (action: TemplateAction) => void
+  canUseTemplates?: boolean
 }
 
 export default function ScheduleHeader({
@@ -112,7 +113,8 @@ export default function ScheduleHeader({
   onFiltersChange = () => {},
   scheduleViewType = 'time',
   onScheduleViewTypeChange = () => {},
-  onTemplateAction = () => {}
+  onTemplateAction = () => {},
+  canUseTemplates = true
 }: ScheduleHeaderProps) {
   const { t } = useTranslation('schedule')
   const [showFilters, setShowFilters] = useState(false)
@@ -309,7 +311,7 @@ export default function ScheduleHeader({
         {/* Row 2: Filters Button */}
         <div className="flex items-center gap-2">
           {/* Templates Button - Mobile */}
-          <TemplatesDropdown onAction={handleTemplateAction} />
+          {canUseTemplates && <TemplatesDropdown onAction={handleTemplateAction} />}
           
           {/* Filters Button - Mobile */}
           <div className="relative flex-1" ref={filterButtonRef}>
@@ -647,7 +649,7 @@ export default function ScheduleHeader({
                 </svg>
               </button>
 
-              <TemplatesDropdown onAction={handleTemplateAction} />
+              {canUseTemplates && <TemplatesDropdown onAction={handleTemplateAction} />}
 
               <div className="relative w-full sm:w-auto">
                 <button

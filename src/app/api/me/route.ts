@@ -63,7 +63,26 @@ export async function GET() {
     const user = await getCurrentUser()
     
     if (user) {
-      return NextResponse.json(user)
+      // Check if this user has an associated employee record
+      const employeeRecord = await prisma.employee.findFirst({
+        where: { userId: user.id },
+        include: {
+          department: true,
+          employeeGroup: true,
+        },
+      })
+      
+      return NextResponse.json({
+        ...user,
+        employee: employeeRecord ? {
+          id: employeeRecord.id,
+          employeeNo: employeeRecord.employeeNo,
+          department: employeeRecord.department?.name,
+          departmentId: employeeRecord.departmentId,
+          employeeGroup: employeeRecord.employeeGroup?.name,
+          employeeGroupId: employeeRecord.employeeGroupId,
+        } : undefined
+      })
     }
     
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

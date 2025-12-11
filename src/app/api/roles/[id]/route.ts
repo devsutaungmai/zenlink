@@ -27,8 +27,13 @@ export async function GET(
             permission: true
           }
         },
+        departments: {
+          select: {
+            departmentId: true
+          }
+        },
         _count: {
-          select: { users: true }
+          select: { users: true, employees: true }
         }
       }
     })
@@ -58,7 +63,7 @@ export async function PUT(
     }
 
     const data = await request.json()
-    const { name, description, permissions = [] } = data
+    const { name, description, permissions = [], departmentIds } = data
 
     // Find the role
     const existingRole = await prisma.role.findFirst({
@@ -108,7 +113,14 @@ export async function PUT(
         where: { roleId: id }
       })
 
-      // Update role and add new permissions
+      // Delete existing department associations if departmentIds is provided
+      if (departmentIds !== undefined) {
+        await tx.roleDepartment.deleteMany({
+          where: { roleId: id }
+        })
+      }
+
+      // Update role and add new permissions and departments
       return tx.role.update({
         where: { id },
         data: {
@@ -120,12 +132,22 @@ export async function PUT(
                 connect: { code: permCode }
               }
             }))
-          }
+          },
+          departments: departmentIds !== undefined && departmentIds.length > 0 ? {
+            create: departmentIds.map((deptId: string) => ({
+              departmentId: deptId
+            }))
+          } : undefined
         },
         include: {
           permissions: {
             include: {
               permission: true
+            }
+          },
+          departments: {
+            select: {
+              departmentId: true
             }
           }
         }
@@ -159,7 +181,7 @@ export async function DELETE(
       },
       include: {
         _count: {
-          select: { users: true }
+          select: { users: true, employees: true }
         }
       }
     })
@@ -172,9 +194,9 @@ export async function DELETE(
       return NextResponse.json({ error: 'System roles cannot be deleted' }, { status: 400 })
     }
 
-    if (role._count.users > 0) {
+    if (role._count.users > 0 || role._count.employees > 0) {
       return NextResponse.json({ 
-        error: 'Cannot delete role that is assigned to users. Please reassign users first.' 
+        error: 'Cannot delete role that is assigned to users or employees. Please reassign them first.' 
       }, { status: 400 })
     }
 

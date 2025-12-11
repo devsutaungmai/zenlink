@@ -7,6 +7,8 @@ import { useTranslation } from 'react-i18next'
 import { CardGridSkeleton } from '@/components/skeletons/ScheduleSkeleton'
 import Swal from 'sweetalert2'
 import { useCurrency } from '@/shared/hooks/useCurrency'
+import { usePermissions } from '@/shared/lib/usePermissions'
+import { PERMISSIONS } from '@/shared/lib/permissions'
 import {
   Pagination,
   PaginationContent,
@@ -40,10 +42,16 @@ interface EmployeeGroup {
 export default function EmployeeGroupsPage() {
   const { t } = useTranslation()
   const { currencySymbol } = useCurrency()
+  const { hasPermission } = usePermissions()
   const [employeeGroups, setEmployeeGroups] = useState<EmployeeGroup[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
+
+  // Permission checks
+  const canCreateEmployeeGroups = hasPermission(PERMISSIONS.EMPLOYEE_GROUPS_CREATE)
+  const canEditEmployeeGroups = hasPermission(PERMISSIONS.EMPLOYEE_GROUPS_EDIT)
+  const canDeleteEmployeeGroups = hasPermission(PERMISSIONS.EMPLOYEE_GROUPS_DELETE)
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1)
@@ -182,13 +190,15 @@ export default function EmployeeGroupsPage() {
               {t('employee_groups.description')}
             </p>
           </div>
-          <Link
-            href="/dashboard/employee-groups/create"
-            className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 group"
-          >
-            <PlusIcon className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
-            {t('employee_groups.create_group')}
-          </Link>
+          {canCreateEmployeeGroups && (
+            <Link
+              href="/dashboard/employee-groups/create"
+              className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 group"
+            >
+              <PlusIcon className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
+              {t('employee_groups.create_group')}
+            </Link>
+          )}
         </div>
       </div>
 
@@ -235,7 +245,7 @@ export default function EmployeeGroupsPage() {
           <p className="text-gray-500 mb-6">
             {searchTerm ? t('employee_groups.adjust_search') : t('employee_groups.get_started')}
           </p>
-          {!searchTerm && (
+          {!searchTerm && canCreateEmployeeGroups && (
             <Link
               href="/dashboard/employee-groups/create"
               className="inline-flex items-center px-6 py-3 rounded-xl bg-[#31BCFF] text-white font-medium hover:bg-[#31BCFF]/90 transition-colors duration-200"
@@ -283,20 +293,24 @@ export default function EmployeeGroupsPage() {
                 </MobileCardGrid>
 
                 <MobileCardActions>
-                  <Link
-                    href={`/dashboard/employee-groups/${group.id}/edit`}
-                    className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
-                    title={t('employee_groups.edit_group')}
-                  >
-                    <PencilIcon className="h-5 w-5" />
-                  </Link>
-                  <button
-                    onClick={() => handleDelete(group.id)}
-                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                    title={t('employee_groups.delete_group')}
-                  >
-                    <TrashIcon className="h-5 w-5" />
-                  </button>
+                  {canEditEmployeeGroups && (
+                    <Link
+                      href={`/dashboard/employee-groups/${group.id}/edit`}
+                      className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
+                      title={t('employee_groups.edit_group')}
+                    >
+                      <PencilIcon className="h-5 w-5" />
+                    </Link>
+                  )}
+                  {canDeleteEmployeeGroups && (
+                    <button
+                      onClick={() => handleDelete(group.id)}
+                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                      title={t('employee_groups.delete_group')}
+                    >
+                      <TrashIcon className="h-5 w-5" />
+                    </button>
+                  )}
                 </MobileCardActions>
               </MobileCard>
             ))}
@@ -358,20 +372,24 @@ export default function EmployeeGroupsPage() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-end gap-2">
-                          <Link
-                            href={`/dashboard/employee-groups/${group.id}/edit`}
-                            className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
-                            title={t('employee_groups.edit_group')}
-                          >
-                            <PencilIcon className="h-4 w-4" />
-                          </Link>
-                          <button
-                            onClick={() => handleDelete(group.id)}
-                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                            title={t('employee_groups.delete_group')}
-                          >
-                            <TrashIcon className="h-4 w-4" />
-                          </button>
+                          {canEditEmployeeGroups && (
+                            <Link
+                              href={`/dashboard/employee-groups/${group.id}/edit`}
+                              className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
+                              title={t('employee_groups.edit_group')}
+                            >
+                              <PencilIcon className="h-4 w-4" />
+                            </Link>
+                          )}
+                          {canDeleteEmployeeGroups && (
+                            <button
+                              onClick={() => handleDelete(group.id)}
+                              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                              title={t('employee_groups.delete_group')}
+                            >
+                              <TrashIcon className="h-4 w-4" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

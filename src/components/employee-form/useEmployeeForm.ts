@@ -44,6 +44,7 @@ export function useEmployeeForm({ initialData }: UseEmployeeFormProps) {
       departmentId: '',
       departmentIds: [],
       employeeGroupIds: [],
+      roleIds: [],
       email: '',
       profilePhoto: null,
       salaryRate: undefined,
@@ -64,6 +65,10 @@ export function useEmployeeForm({ initialData }: UseEmployeeFormProps) {
         baseData.employeeGroupIds = [initialData.employeeGroupId]
       } else if (initialData.employeeGroupIds) {
         baseData.employeeGroupIds = initialData.employeeGroupIds
+      }
+
+      if (initialData.roleIds) {
+        baseData.roleIds = initialData.roleIds
       }
     }
 

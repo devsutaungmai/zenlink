@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/shared/lib/prisma'
 import { requireAuth, getCurrentUserOrEmployee } from '@/shared/lib/auth'
+import { hasAnyServerPermission } from '@/shared/lib/serverPermissions'
+import { PERMISSIONS } from '@/shared/lib/permissions'
 
 export async function GET(request: NextRequest) {
   try {

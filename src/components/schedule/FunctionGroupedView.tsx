@@ -39,6 +39,8 @@ interface FunctionGroupedViewProps {
   selectedEmployeeId?: string | null
   isEmployeeUnavailable?: (employeeId: string, date: string) => boolean
   onUnavailableClick?: (employeeId: string, date: string) => void
+  canCreateShifts?: boolean
+  canEditShifts?: boolean
 }
 
 export default function FunctionGroupedView({
@@ -50,7 +52,9 @@ export default function FunctionGroupedView({
   onAddShift = () => {},
   selectedEmployeeId,
   isEmployeeUnavailable,
-  onUnavailableClick
+  onUnavailableClick,
+  canCreateShifts = true,
+  canEditShifts = true
 }: FunctionGroupedViewProps) {
   const { currencySymbol } = useCurrency()
   const [modalState, setModalState] = useState<{
@@ -285,7 +289,7 @@ export default function FunctionGroupedView({
                                   <button
                                     key={shift.id}
                                     onClick={() => onEditShift(shift)}
-                                    className="w-full rounded-xl text-white font-medium flex flex-col items-center justify-center gap-0.5 py-2 transition-all active:scale-95"
+                                    className="w-full rounded-xl text-white font-medium flex flex-col items-center justify-center gap-0.5 py-2 transition-all active:scale-95 cursor-pointer"
                                     style={{ backgroundColor: shiftColor }}
                                   >
                                     <span className="text-xs leading-tight">
@@ -500,6 +504,7 @@ export default function FunctionGroupedView({
         title={modalState.title}
         employees={employees}
         onEditShift={onEditShift}
+        canEditShifts={canEditShifts}
       />
     </div>
   );

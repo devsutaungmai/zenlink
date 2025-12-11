@@ -6,7 +6,7 @@ import { cookies } from 'next/headers'
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const currentUser = await getCurrentUser()

@@ -16,6 +16,9 @@ export default function EmployeeForm({
   loading,
   departments,
   employeeGroups,
+  roles = [],
+  readOnly = false,
+  canViewSensitive = true,
 }: EmployeeFormProps) {
   const { t } = useTranslation()
   const router = useRouter()
@@ -182,7 +185,7 @@ export default function EmployeeForm({
         <ProfilePhotoUpload
           currentPhotoUrl={formData.profilePhoto}
           onPhotoChange={(url) => setFormData({ ...formData, profilePhoto: url })}
-          disabled={loading}
+          disabled={loading || readOnly}
         />
       </div>
 
@@ -195,6 +198,7 @@ export default function EmployeeForm({
             getFieldStyle={getFieldStyle}
             onChange={handleChange}
             onDateChange={handleDateChange}
+            readOnly={readOnly}
           />
         </div>
       </div>
@@ -229,14 +233,23 @@ export default function EmployeeForm({
                 employeeGroupId: employeeGroupIds[0] || undefined
               }))
             }}
+            onRolesChange={(roleIds) => {
+              setFormData(prev => ({
+                ...prev,
+                roleIds
+              }))
+            }}
             departments={departments}
             employeeGroups={employeeGroups}
+            roles={roles}
             employeeNumberMode={employeeNumberMode}
             fetchingNextNumber={fetchingNextNumber}
             onSSNChange={(e) => {
               handleChange(e)
               validateSocialSecurityNumber(e.target.value)
             }}
+            readOnly={readOnly}
+            canViewSensitive={canViewSensitive}
           />
         </div>
       </div>
@@ -250,6 +263,7 @@ export default function EmployeeForm({
             getFieldStyle={getFieldStyle}
             onChange={handleChange}
             onCountryCodeSelect={(code) => setFormData({ ...formData, countryCode: code })}
+            readOnly={readOnly}
           />
         </div>
       </div>
@@ -260,29 +274,31 @@ export default function EmployeeForm({
           onClick={() => router.back()}
           className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#31BCFF]"
         >
-          {t('common.cancel')}
+          {readOnly ? t('common.back', 'Back') : t('common.cancel')}
         </button>
-        <button
-          type="submit"
-          disabled={loading || validatingSSN || validatingEmail || validatingEmployeeNo}
-          className={`px-4 py-2 text-sm font-medium text-white border border-transparent rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#31BCFF] ${
-            loading || validatingSSN || validatingEmail || validatingEmployeeNo
-              ? 'bg-gray-400 cursor-not-allowed'
-              : Object.keys(validationErrors).some(key => validationErrors[key] !== '')
-                ? 'bg-red-500 hover:bg-red-600'
-                : 'bg-[#31BCFF] hover:bg-[#31BCFF]/90'
-          }`}
-        >
-          {loading ? (
-            t('employees.form.saving')
-          ) : validatingSSN || validatingEmail || validatingEmployeeNo ? (
-            'Validating...'
-          ) : Object.keys(validationErrors).some(key => validationErrors[key] !== '') ? (
-            'Fix Errors to Save'
-          ) : (
-            t('common.save')
-          )}
-        </button>
+        {!readOnly && (
+          <button
+            type="submit"
+            disabled={loading || validatingSSN || validatingEmail || validatingEmployeeNo}
+            className={`px-4 py-2 text-sm font-medium text-white border border-transparent rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#31BCFF] ${
+              loading || validatingSSN || validatingEmail || validatingEmployeeNo
+                ? 'bg-gray-400 cursor-not-allowed'
+                : Object.keys(validationErrors).some(key => validationErrors[key] !== '')
+                  ? 'bg-red-500 hover:bg-red-600'
+                  : 'bg-[#31BCFF] hover:bg-[#31BCFF]/90'
+            }`}
+          >
+            {loading ? (
+              t('employees.form.saving')
+            ) : validatingSSN || validatingEmail || validatingEmployeeNo ? (
+              'Validating...'
+            ) : Object.keys(validationErrors).some(key => validationErrors[key] !== '') ? (
+              'Fix Errors to Save'
+            ) : (
+              t('common.save')
+            )}
+          </button>
+        )}
       </div>
     </form>
   )

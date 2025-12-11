@@ -5,6 +5,8 @@ import Image from 'next/image'
 import { useState, useEffect } from 'react'
 import { CalendarIcon, ClockIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
 import { useUser } from '@/shared/lib/useUser'
+import { usePermissions } from '@/shared/lib/usePermissions'
+import { PERMISSIONS } from '@/shared/lib/permissions'
 import PunchClockModal from '@/components/PunchClockModal'
 import { LocationValidationResult, validatePunchLocation } from '@/shared/lib/locationValidation'
 import LocationValidationModal from '@/components/LocationValidationModal'
@@ -142,6 +144,7 @@ interface DashboardStats {
 
 export default function DashboardPage() {
   const { user, loading } = useUser()
+  const { hasPermission } = usePermissions()
   const [showShiftModal, setShowShiftModal] = useState(false)
   const [employees, setEmployees] = useState<Employee[]>([])
   const [employeeGroups, setEmployeeGroups] = useState<EmployeeGroup[]>([])
@@ -170,8 +173,19 @@ export default function DashboardPage() {
   const [weeklyShifts, setWeeklyShifts] = useState<WeeklyShift[]>([])
   const [weeklyShiftsLoading, setWeeklyShiftsLoading] = useState(false)
   const {t} = useTranslation();
-  const isEmployeeUser = user?.role === 'EMPLOYEE' || Boolean(user?.employee)
-  const showAdminQuickCards = !isEmployeeUser
+  
+  const canClockInOut = hasPermission(PERMISSIONS.ATTENDANCE_CLOCK_IN_OUT)
+  const hasEmployeeRecord = Boolean(user?.employee)
+  const canUsePunchClock = canClockInOut && hasEmployeeRecord
+  const isEmployeeUser = user?.role === 'EMPLOYEE' || hasEmployeeRecord
+
+  const canViewStats = hasPermission(PERMISSIONS.DASHBOARD_VIEW_STATS)
+  const canViewWeeklyShifts = hasPermission(PERMISSIONS.DASHBOARD_VIEW_WEEKLY_SHIFTS)
+  const canViewMostActive = hasPermission(PERMISSIONS.DASHBOARD_VIEW_MOST_ACTIVE)
+  const canViewShiftCompletion = hasPermission(PERMISSIONS.DASHBOARD_VIEW_SHIFT_COMPLETION)
+  const canViewAttendanceFeed = hasPermission(PERMISSIONS.DASHBOARD_VIEW_ATTENDANCE_FEED)
+  
+  const showAdminQuickCards = !isEmployeeUser && canViewStats
   const canAutoStartExtraShift = !todayShift || todayShift.status === 'COMPLETED'
 
   const formatDurationText = (ms: number) => {
@@ -202,24 +216,24 @@ export default function DashboardPage() {
 
   // Fetch data needed for the shift form and check for active shifts
   useEffect(() => {
-    if (user?.role === 'EMPLOYEE') {
+    if (canUsePunchClock) {
       fetchEmployees()
       fetchEmployeeGroups()
       fetchDepartments()
       fetchActiveShift()
     }
-  }, [user])
+  }, [user, canUsePunchClock])
 
   // Fetch today's shift after employees are loaded
   useEffect(() => {
-    if (user?.role === 'EMPLOYEE' && employees.length > 0) {
+    if (canUsePunchClock && employees.length > 0) {
       fetchTodayShift()
       fetchCurrentAttendance()
     }
-  }, [employees, user])
+  }, [employees, canUsePunchClock])
 
   useEffect(() => {
-    if (!user || isEmployeeUser) {
+    if (!user || isEmployeeUser || !canViewStats) {
       setAdminStats(null)
       return
     }
@@ -253,10 +267,10 @@ export default function DashboardPage() {
     return () => {
       ignore = true
     }
-  }, [user, isEmployeeUser])
+  }, [user, isEmployeeUser, canViewStats])
 
   useEffect(() => {
-    if (!showAdminQuickCards) {
+    if (!showAdminQuickCards || !canViewAttendanceFeed) {
       setRecentAttendances([])
       return
     }
@@ -292,7 +306,7 @@ export default function DashboardPage() {
     return () => {
       ignore = true
     }
-  }, [showAdminQuickCards])
+  }, [showAdminQuickCards, canViewAttendanceFeed])
 
   useEffect(() => {
     if (!user) {
@@ -1108,27 +1122,28 @@ export default function DashboardPage() {
           <p className="mt-1 max-w-2xl text-xs sm:text-sm text-white/90">{t('dashboard.hero.description')}</p>
         </section>
 
-        <section className="mt-6 rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_20px_50px_rgba(15,23,42,0.08)]">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm font-medium text-slate-500">{t('dashboard.weekly_shifts.title')}</p>
-              <h3 className="text-2xl font-semibold text-slate-900">{weeklyShiftsSubtitle}</h3>
-              <p className="text-xs text-slate-500">{weeklyRangeLabel}</p>
-            </div>
-            <Link href="/dashboard/schedule" className="text-sm font-semibold text-[#2563eb] hover:text-[#1d4ed8]">
-              {t('dashboard.weekly_shifts.view_schedule')}
-            </Link>
-          </div>
-          <div className="mt-4 space-y-3">
-            {weeklyShiftsLoading ? (
-              <div className="space-y-3">
-                {[0, 1, 2].map((item) => (
-                  <div key={item} className="h-20 rounded-2xl bg-slate-100 animate-pulse" />
-                ))}
+        {canViewWeeklyShifts && (
+          <section className="mt-6 rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_20px_50px_rgba(15,23,42,0.08)]">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-medium text-slate-500">{t('dashboard.weekly_shifts.title')}</p>
+                <h3 className="text-2xl font-semibold text-slate-900">{weeklyShiftsSubtitle}</h3>
+                <p className="text-xs text-slate-500">{weeklyRangeLabel}</p>
               </div>
-            ) : weeklyShifts.length === 0 ? (
-              <p className="text-sm text-slate-500">{t('dashboard.weekly_shifts.empty')}</p>
-            ) : (
+              <Link href="/dashboard/schedule" className="text-sm font-semibold text-[#2563eb] hover:text-[#1d4ed8]">
+                {t('dashboard.weekly_shifts.view_schedule')}
+              </Link>
+            </div>
+            <div className="mt-4 space-y-3">
+              {weeklyShiftsLoading ? (
+                <div className="space-y-3">
+                  {[0, 1, 2].map((item) => (
+                    <div key={item} className="h-20 rounded-2xl bg-slate-100 animate-pulse" />
+                  ))}
+                </div>
+              ) : weeklyShifts.length === 0 ? (
+                <p className="text-sm text-slate-500">{t('dashboard.weekly_shifts.empty')}</p>
+              ) : (
               displayedWeeklyShifts.map((shift) => {
                 const statusInfo = getShiftStatusInfo(shift.status)
                 const dateLabel = formatShiftDateLabel(shift.date)
@@ -1158,10 +1173,12 @@ export default function DashboardPage() {
             )}
           </div>
         </section>
+        )}
 
         {showAdminQuickCards && (
           <section className="mt-6 rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_20px_50px_rgba(15,23,42,0.08)]">
             <div className="grid gap-6 md:grid-cols-2">
+              {canViewMostActive && (
               <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-5">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
@@ -1202,7 +1219,9 @@ export default function DashboardPage() {
                   </p>
                 )}
               </div>
+              )}
 
+              {canViewShiftCompletion && (
               <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-5">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
@@ -1258,11 +1277,12 @@ export default function DashboardPage() {
                   </div>
                 )}
               </div>
+              )}
             </div>
           </section>
         )}
 
-        {showAdminQuickCards && (
+        {showAdminQuickCards && canViewAttendanceFeed && (
           <section className="mt-6 rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_20px_50px_rgba(15,23,42,0.08)]">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -1356,7 +1376,7 @@ export default function DashboardPage() {
           </section>
         )}
 
-        {isEmployeeUser && (
+        {canUsePunchClock && (
           <section className="mt-6 rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_20px_50px_rgba(15,23,42,0.08)]">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -1491,7 +1511,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Punch Clock Modal */}
-      {user?.role === 'EMPLOYEE' && (
+      {canUsePunchClock && (
         <PunchClockModal
           isOpen={showShiftModal}
           onClose={() => setShowShiftModal(false)}

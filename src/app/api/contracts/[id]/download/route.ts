@@ -5,16 +5,17 @@ import { launchBrowser } from '@/shared/lib/puppeteer-config'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await getCurrentUser()
     
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const contractId = params.id
+    const contractId = id
 
     // Fetch contract with all necessary relations
     const contract = await prisma.contract.findUnique({

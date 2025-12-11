@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/shared/lib/prisma'
 import { getCurrentUserOrEmployee } from '@/shared/lib/auth'
+import { hasAnyServerPermission } from '@/shared/lib/serverPermissions'
+import { PERMISSIONS } from '@/shared/lib/permissions'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -12,6 +14,16 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     if (!auth) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    
+    // Check permission to use templates
+    const canUseTemplates = await hasAnyServerPermission([
+      PERMISSIONS.SCHEDULE_TEMPLATES
+    ])
+    
+    if (!canUseTemplates) {
+      return NextResponse.json({ error: 'You do not have permission to manage template shifts' }, { status: 403 })
+    }
+    
     const businessId = auth.type === 'user' ? (auth.data as any).businessId : (auth.data as any).user.businessId
 
     const { id: templateId } = await params

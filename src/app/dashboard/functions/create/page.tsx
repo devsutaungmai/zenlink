@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslation } from 'react-i18next'
 import Swal from 'sweetalert2'
+import { usePermissions } from '@/shared/lib/usePermissions'
+import { PERMISSIONS } from '@/shared/lib/permissions'
 
 interface Category {
   id: string
@@ -34,6 +36,7 @@ interface EmployeeGroupOption {
 export default function CreateFunctionPage() {
   const router = useRouter()
   const { t } = useTranslation('functions')
+  const { hasPermission, loading: permissionsLoading } = usePermissions()
   const [loading, setLoading] = useState(false)
   const [categories, setCategories] = useState<Category[]>([])
   const [employeeGroups, setEmployeeGroups] = useState<EmployeeGroupOption[]>([])
@@ -43,6 +46,14 @@ export default function CreateFunctionPage() {
     color: '#3B82F6',
     categoryId: ''
   })
+
+  const canCreateFunctions = hasPermission(PERMISSIONS.FUNCTIONS_CREATE)
+
+  useEffect(() => {
+    if (!permissionsLoading && !canCreateFunctions) {
+      router.push('/dashboard/functions')
+    }
+  }, [permissionsLoading, canCreateFunctions, router])
 
   useEffect(() => {
     fetchCategories()
@@ -160,6 +171,10 @@ export default function CreateFunctionPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  if (permissionsLoading || !canCreateFunctions) {
+    return null
   }
 
   return (

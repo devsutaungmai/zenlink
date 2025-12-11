@@ -1,9 +1,72 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/shared/lib/prisma'
-import { getCurrentUser } from '@/shared/lib/auth'
+import { getCurrentUser, getCurrentUserOrEmployee } from '@/shared/lib/auth'
 import { SMSService, NotificationService } from '@/shared/lib/notifications'
+import { hasAnyServerPermission } from '@/shared/lib/serverPermissions'
+import { PERMISSIONS } from '@/shared/lib/permissions'
 import jwt from 'jsonwebtoken'
 import { cookies } from 'next/headers'
+
+async function getAccessibleDepartmentIds(auth: any): Promise<string[] | null> {
+  if (auth.type === 'user') {
+    const user = auth.data as any
+
+    if (user.role === 'ADMIN') {
+      return null
+    }
+
+    if (user.roleId) {
+      const userWithRole = await prisma.user.findUnique({
+        where: { id: user.id },
+        include: {
+          assignedRole: {
+            include: {
+              departments: {
+                select: { departmentId: true }
+              }
+            }
+          }
+        }
+      })
+
+      if (userWithRole?.assignedRole?.departments.length) {
+        return userWithRole.assignedRole.departments.map(d => d.departmentId)
+      }
+    }
+    
+    return null
+  } else {
+    const employee = auth.data as any
+    
+    const employeeRoles = await prisma.employeeRole.findMany({
+      where: { employeeId: employee.id },
+      include: {
+        role: {
+          include: {
+            departments: {
+              select: { departmentId: true }
+            }
+          }
+        }
+      }
+    })
+
+    const departmentSet = new Set<string>()
+    let hasUnrestrictedRole = false
+
+    for (const er of employeeRoles) {
+      if (er.role.departments.length === 0) {
+        hasUnrestrictedRole = true
+        break
+      }
+      for (const d of er.role.departments) {
+        departmentSet.add(d.departmentId)
+      }
+    }
+
+    return hasUnrestrictedRole ? null : Array.from(departmentSet)
+  }
+}
 
 export async function GET(request: Request) {
   try {
@@ -89,6 +152,22 @@ export async function GET(request: Request) {
       whereCondition.employeeId = employeeId
     }
 
+    // Get accessible departments for the current user/employee
+    let accessibleDepartmentIds: string[] | null = null
+    
+    if (currentUser) {
+      const auth = { type: 'user' as const, data: currentUser }
+      accessibleDepartmentIds = await getAccessibleDepartmentIds(auth)
+    } else if (currentEmployeeId) {
+      const employee = await prisma.employee.findUnique({
+        where: { id: currentEmployeeId }
+      })
+      if (employee) {
+        const auth = { type: 'employee' as const, data: employee }
+        accessibleDepartmentIds = await getAccessibleDepartmentIds(auth)
+      }
+    }
+
     whereCondition.AND = [
       ...(whereCondition.AND || []),
       {
@@ -100,6 +179,17 @@ export async function GET(request: Request) {
         ]
       }
     ]
+
+    // Filter by accessible departments if not admin
+    if (accessibleDepartmentIds !== null && accessibleDepartmentIds.length > 0) {
+      whereCondition.AND.push({
+        OR: [
+          { departmentId: { in: accessibleDepartmentIds } },
+          { employee: { departments: { some: { departmentId: { in: accessibleDepartmentIds } } } } },
+          { function: { category: { departments: { some: { departmentId: { in: accessibleDepartmentIds } } } } } }
+        ]
+      })
+    }
     
     const shifts = await prisma.shift.findMany({
       where: whereCondition,
@@ -226,6 +316,19 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
+      )
+    }
+
+    // Check permission to create shifts
+    const canCreate = await hasAnyServerPermission([
+      PERMISSIONS.SCHEDULE_CREATE,
+      PERMISSIONS.SHIFTS_CREATE
+    ])
+    
+    if (!canCreate) {
+      return NextResponse.json(
+        { error: 'You do not have permission to create shifts' },
+        { status: 403 }
       )
     }
 

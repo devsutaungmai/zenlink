@@ -6,6 +6,8 @@ import { useTranslation } from 'react-i18next'
 import Link from 'next/link'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
+import { usePermissions } from '@/shared/lib/usePermissions'
+import { PERMISSIONS } from '@/shared/lib/permissions'
 
 interface Department {
   id: string
@@ -16,6 +18,7 @@ export default function EditCategoryPage({ params }: { params: Promise<{ id: str
   const resolvedParams = use(params)
   const router = useRouter()
   const { t } = useTranslation('categories')
+  const { hasPermission, loading: permissionsLoading } = usePermissions()
   const [loading, setLoading] = useState(false)
   const [fetchingLoading, setFetchingLoading] = useState(true)
   const [departments, setDepartments] = useState<Department[]>([])
@@ -26,6 +29,15 @@ export default function EditCategoryPage({ params }: { params: Promise<{ id: str
     departmentIds: [] as string[]
   })
   const [isBusinessWide, setIsBusinessWide] = useState(true)
+
+  const canEditCategories = hasPermission(PERMISSIONS.CATEGORIES_EDIT)
+
+  // Redirect if no permission
+  useEffect(() => {
+    if (!permissionsLoading && !canEditCategories) {
+      router.push('/dashboard/categories')
+    }
+  }, [permissionsLoading, canEditCategories, router])
 
   const allDepartmentIds = departments.map((dept) => dept.id)
 
@@ -142,6 +154,11 @@ export default function EditCategoryPage({ params }: { params: Promise<{ id: str
     } finally {
       setLoading(false)
     }
+  }
+
+  // Show nothing while checking permissions
+  if (permissionsLoading || !canEditCategories) {
+    return null
   }
 
   if (fetchingLoading) {

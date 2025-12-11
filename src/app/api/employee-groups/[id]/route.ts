@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/shared/lib/prisma'
 import { requireAuth } from '@/shared/lib/auth'
 
-export async function GET(request: NextRequest, context: { params: { id: string } }) {
+export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     const user = await requireAuth()
-    const { id } = context.params
+    const { id } = await context.params
     
     const employeeGroup = await prisma.employeeGroup.findUnique({
       where: { 
@@ -52,11 +52,11 @@ export async function GET(request: NextRequest, context: { params: { id: string 
 
 export async function PUT(
   request: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await requireAuth()
-    const { id } = context.params
+    const { id } = await context.params
     const rawData = await request.json()
 
     if (!rawData.name) {
@@ -124,11 +124,11 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await requireAuth()
-    const { id } = context.params
+    const { id } = await context.params
     
     // Check if employee group has any employees first
     const employeeGroup = await prisma.employeeGroup.findUnique({

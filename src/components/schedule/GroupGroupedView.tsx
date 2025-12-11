@@ -21,6 +21,8 @@ interface GroupGroupedViewProps {
   selectedEmployeeId?: string | null
   isEmployeeUnavailable?: (employeeId: string, date: string) => boolean
   onUnavailableClick?: (employeeId: string, date: string) => void
+  canCreateShifts?: boolean
+  canEditShifts?: boolean
 }
 
 export default function GroupGroupedView({
@@ -32,7 +34,9 @@ export default function GroupGroupedView({
   onAddShift = () => {},
   selectedEmployeeId,
   isEmployeeUnavailable,
-  onUnavailableClick
+  onUnavailableClick,
+  canCreateShifts = true,
+  canEditShifts = true
 }: GroupGroupedViewProps) {
   const { currencySymbol } = useCurrency()
   const [modalState, setModalState] = useState<{
@@ -260,7 +264,7 @@ export default function GroupGroupedView({
                                   <button
                                     key={shift.id}
                                     onClick={() => onEditShift(shift)}
-                                    className={`w-full rounded-xl text-white font-medium flex flex-col items-center justify-center gap-0.5 py-2 transition-all active:scale-95 ${
+                                    className={`w-full rounded-xl text-white font-medium flex flex-col items-center justify-center gap-0.5 py-2 transition-all active:scale-95 cursor-pointer ${
                                       shift.status === 'CANCELLED' ? 'bg-red-500' :
                                       shift.status === 'WORKING' ? 'bg-blue-500' :
                                       'bg-[#31BCFF]'
@@ -470,6 +474,7 @@ export default function GroupGroupedView({
         title={modalState.title}
         employees={employees}
         onEditShift={onEditShift}
+        canEditShifts={canEditShifts}
       />
     </div>
   );

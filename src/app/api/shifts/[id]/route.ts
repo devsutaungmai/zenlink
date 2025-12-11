@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/shared/lib/prisma'
 import { getCurrentUser } from '@/shared/lib/auth'
+import { hasAnyServerPermission } from '@/shared/lib/serverPermissions'
+import { PERMISSIONS } from '@/shared/lib/permissions'
 import { ShiftType, WageType } from '@prisma/client'
 
 export async function GET(
@@ -73,6 +75,19 @@ export async function PUT(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Check permission to edit shifts
+    const canEdit = await hasAnyServerPermission([
+      PERMISSIONS.SCHEDULE_EDIT,
+      PERMISSIONS.SHIFTS_EDIT
+    ])
+    
+    if (!canEdit) {
+      return NextResponse.json(
+        { error: 'You do not have permission to edit shifts' },
+        { status: 403 }
+      )
+    }
+
     const { id } = await context.params
     const extraRawData = await request.json()
     const {
@@ -134,6 +149,19 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Check permission to delete shifts
+    const canDelete = await hasAnyServerPermission([
+      PERMISSIONS.SCHEDULE_DELETE,
+      PERMISSIONS.SHIFTS_DELETE
+    ])
+    
+    if (!canDelete) {
+      return NextResponse.json(
+        { error: 'You do not have permission to delete shifts' },
+        { status: 403 }
+      )
+    }
+
     const { id } = await context.params
     await prisma.shift.delete({
       where: { id }
@@ -149,10 +177,24 @@ export async function DELETE(
   }
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  const { id } = params
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
 
   try {
+    // Check permission to edit shifts (approve is an edit operation)
+    const canEdit = await hasAnyServerPermission([
+      PERMISSIONS.SCHEDULE_EDIT,
+      PERMISSIONS.SHIFTS_EDIT,
+      PERMISSIONS.SCHEDULE_PUBLISH
+    ])
+    
+    if (!canEdit) {
+      return NextResponse.json(
+        { error: 'You do not have permission to approve shifts' },
+        { status: 403 }
+      )
+    }
+
     const shift = await prisma.shift.update({
       where: { id },
       data: { approved: true },

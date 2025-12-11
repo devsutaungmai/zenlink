@@ -4,9 +4,10 @@ import { getCurrentUser } from '@/shared/lib/auth'
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const currentUser = await getCurrentUser()
     
     if (!currentUser || currentUser.role !== 'ADMIN') {
@@ -32,7 +33,7 @@ export async function PUT(
 
     // Get current employee to check if email is being changed
     const currentEmployee = await prisma.employee.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { user: true }
     })
 
@@ -77,19 +78,25 @@ export async function PUT(
         : data.employeeGroupId 
           ? [data.employeeGroupId]
           : []
+      const roleIds = data.roleIds && Array.isArray(data.roleIds) ? data.roleIds : []
 
       // Delete existing department and employee group relationships
       await tx.employeeDepartment.deleteMany({
-        where: { employeeId: params.id }
+        where: { employeeId: id }
       })
 
       await tx.employeeEmployeeGroup.deleteMany({
-        where: { employeeId: params.id }
+        where: { employeeId: id }
+      })
+
+      // Delete existing employee role relationships
+      await tx.employeeRole.deleteMany({
+        where: { employeeId: id }
       })
 
       // Update employee record
       const updatedEmployee = await tx.employee.update({
-        where: { id: params.id },
+        where: { id },
         data: {
           firstName: data.firstName,
           lastName: data.lastName,
@@ -121,6 +128,14 @@ export async function PUT(
                   isPrimary: index === 0
                 }))
               }
+            : undefined,
+          employeeRoles: roleIds.length > 0
+            ? {
+                create: roleIds.map((roleId: string, index: number) => ({
+                  roleId: roleId,
+                  isPrimary: index === 0
+                }))
+              }
             : undefined
         },
         include: {
@@ -134,6 +149,11 @@ export async function PUT(
           employeeGroups: {
             include: {
               employeeGroup: true
+            }
+          },
+          employeeRoles: {
+            include: {
+              role: true
             }
           }
         }
@@ -196,9 +216,10 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const currentUser = await getCurrentUser()
     
     if (!currentUser || currentUser.role !== 'ADMIN') {
@@ -210,7 +231,7 @@ export async function DELETE(
 
     // First check if employee exists
     const employee = await prisma.employee.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         timeEntries: true,
         sickLeaves: true,
@@ -236,7 +257,7 @@ export async function DELETE(
     }
 
     await prisma.employee.delete({
-      where: { id: params.id }
+      where: { id }
     })
 
     return NextResponse.json(
@@ -265,9 +286,10 @@ export async function DELETE(
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const currentUser = await getCurrentUser()
     
     // Allow both ADMIN and regular users to view employee details
@@ -280,7 +302,7 @@ export async function GET(
     }
 
     const employee = await prisma.employee.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         department: true,
         employeeGroup: true,
@@ -295,6 +317,14 @@ export async function GET(
         employeeGroups: {
           include: {
             employeeGroup: true
+          },
+          orderBy: {
+            isPrimary: 'desc'
+          }
+        },
+        employeeRoles: {
+          include: {
+            role: true
           },
           orderBy: {
             isPrimary: 'desc'

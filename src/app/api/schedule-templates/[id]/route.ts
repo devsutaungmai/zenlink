@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/shared/lib/prisma'
 import { getCurrentUserOrEmployee } from '@/shared/lib/auth'
+import { hasAnyServerPermission } from '@/shared/lib/serverPermissions'
+import { PERMISSIONS } from '@/shared/lib/permissions'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -12,6 +14,16 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     if (!auth) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    
+    // Check permission to use templates
+    const canUseTemplates = await hasAnyServerPermission([
+      PERMISSIONS.SCHEDULE_TEMPLATES
+    ])
+    
+    if (!canUseTemplates) {
+      return NextResponse.json({ error: 'You do not have permission to access templates' }, { status: 403 })
+    }
+    
     const businessId = auth.type === 'user' ? (auth.data as any).businessId : (auth.data as any).user.businessId
 
     const { id } = await params
@@ -48,6 +60,16 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     if (!auth) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    
+    // Check permission to use templates
+    const canUseTemplates = await hasAnyServerPermission([
+      PERMISSIONS.SCHEDULE_TEMPLATES
+    ])
+    
+    if (!canUseTemplates) {
+      return NextResponse.json({ error: 'You do not have permission to update templates' }, { status: 403 })
+    }
+    
     const businessId = auth.type === 'user' ? (auth.data as any).businessId : (auth.data as any).user.businessId
 
     const { id } = await params
@@ -94,6 +116,16 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     if (!auth) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    
+    // Check permission to use templates
+    const canUseTemplates = await hasAnyServerPermission([
+      PERMISSIONS.SCHEDULE_TEMPLATES
+    ])
+    
+    if (!canUseTemplates) {
+      return NextResponse.json({ error: 'You do not have permission to delete templates' }, { status: 403 })
+    }
+    
     const businessId = auth.type === 'user' ? (auth.data as any).businessId : (auth.data as any).user.businessId
 
     const { id } = await params

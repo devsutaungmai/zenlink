@@ -23,6 +23,8 @@ interface WeekViewProps {
   onAddShift: (formData?: any) => void
   isEmployeeUnavailable?: (employeeId: string, date: string) => boolean
   onUnavailableClick?: (employeeId: string, date: string) => void
+  canCreateShifts?: boolean
+  canEditShifts?: boolean
 }
 
 export default function WeekView({
@@ -36,7 +38,9 @@ export default function WeekView({
   onEditShift,
   onAddShift,
   isEmployeeUnavailable,
-  onUnavailableClick
+  onUnavailableClick,
+  canCreateShifts = true,
+  canEditShifts = true
 }: WeekViewProps) {
   const { t, i18n } = useTranslation('schedule')
   const [isDragging, setIsDragging] = useState(false)
@@ -101,6 +105,8 @@ export default function WeekView({
   }
 
   const handleDragEndToCreate = () => {
+    if (!canCreateShifts) return
+    
     if (dragStartHour !== null && dragEndHour !== null && dragDate !== null) {
       const startHour = Math.min(dragStartHour, dragEndHour)
       const endHourExclusive = Math.max(dragStartHour, dragEndHour) + 1
@@ -397,15 +403,17 @@ export default function WeekView({
       </div>
 
       {/* Add Employee Button */}
-      <div className="md:hidden p-4">
-        <button
-          onClick={() => onAddShift()}
-          className="w-full py-3 bg-[#31BCFF] text-white rounded-lg font-medium hover:bg-[#28a8e6] flex items-center justify-center gap-2"
-        >
-          <PlusIcon className="w-5 h-5" />
-          Add Employee Shift
-        </button>
-      </div>
+      {canCreateShifts && (
+        <div className="md:hidden p-4">
+          <button
+            onClick={() => onAddShift()}
+            className="w-full py-3 bg-[#31BCFF] text-white rounded-lg font-medium hover:bg-[#28a8e6] flex items-center justify-center gap-2"
+          >
+            <PlusIcon className="w-5 h-5" />
+            Add Employee Shift
+          </button>
+        </div>
+      )}
 
       {/* Desktop View - Original Grid Layout */}
       <div 
@@ -486,6 +494,7 @@ export default function WeekView({
                             displayStartTime={segment.displayStartTime}
                             displayEndTime={segment.displayEndTime}
                             isContinuation={segment.isContinuation}
+                            canEdit={canEditShifts}
                           />
                         ))}
                       </React.Fragment>

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/shared/lib/prisma'
 import { getCurrentUserOrEmployee } from '@/shared/lib/auth'
+import { hasAnyServerPermission } from '@/shared/lib/serverPermissions'
+import { PERMISSIONS } from '@/shared/lib/permissions'
 
 export async function GET(request: NextRequest) {
   try {
@@ -8,6 +10,16 @@ export async function GET(request: NextRequest) {
     if (!auth) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    
+    // Check permission to use templates
+    const canUseTemplates = await hasAnyServerPermission([
+      PERMISSIONS.SCHEDULE_TEMPLATES
+    ])
+    
+    if (!canUseTemplates) {
+      return NextResponse.json({ error: 'You do not have permission to access templates' }, { status: 403 })
+    }
+    
     const businessId = auth.type === 'user' ? (auth.data as any).businessId : (auth.data as any).user.businessId
 
     const templates = await prisma.scheduleTemplate.findMany({
@@ -33,6 +45,16 @@ export async function POST(request: NextRequest) {
     if (!auth) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    
+    // Check permission to use templates
+    const canUseTemplates = await hasAnyServerPermission([
+      PERMISSIONS.SCHEDULE_TEMPLATES
+    ])
+    
+    if (!canUseTemplates) {
+      return NextResponse.json({ error: 'You do not have permission to create templates' }, { status: 403 })
+    }
+    
     const businessId = auth.type === 'user' ? (auth.data as any).businessId : (auth.data as any).user.businessId
 
     const body = await request.json()

@@ -1,25 +1,108 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/shared/lib/prisma'
-import { getCurrentUser } from '@/shared/lib/auth'
+import { getCurrentUserOrEmployee } from '@/shared/lib/auth'
+
+// Get accessible department IDs based on user's role
+async function getAccessibleDepartmentIds(auth: any): Promise<string[] | null> {
+  if (auth.type === 'user') {
+    const user = auth.data as any
+
+    if (user.role === 'ADMIN') {
+      return null // Admins can see all
+    }
+
+    if (user.roleId) {
+      const userWithRole = await prisma.user.findUnique({
+        where: { id: user.id },
+        include: {
+          assignedRole: {
+            include: {
+              departments: {
+                select: { departmentId: true }
+              }
+            }
+          }
+        }
+      })
+
+      if (userWithRole?.assignedRole?.departments.length) {
+        return userWithRole.assignedRole.departments.map(d => d.departmentId)
+      }
+    }
+    
+    return null
+  } else {
+    const employee = auth.data as any
+    
+    const employeeRoles = await prisma.employeeRole.findMany({
+      where: { employeeId: employee.id },
+      include: {
+        role: {
+          include: {
+            departments: {
+              select: { departmentId: true }
+            }
+          }
+        }
+      }
+    })
+
+    const departmentSet = new Set<string>()
+    let hasUnrestrictedRole = false
+
+    for (const er of employeeRoles) {
+      if (er.role.departments.length === 0) {
+        hasUnrestrictedRole = true
+        break
+      }
+      for (const d of er.role.departments) {
+        departmentSet.add(d.departmentId)
+      }
+    }
+
+    return hasUnrestrictedRole ? null : Array.from(departmentSet)
+  }
+}
 
 export async function GET() {
   try {
-    const currentUser = await getCurrentUser()
+    const auth = await getCurrentUserOrEmployee()
     
-    if (!currentUser) {
+    if (!auth) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       )
     }
 
-    // Get all employees in the business
+    let businessId: string
+    if (auth.type === 'user') {
+      businessId = (auth.data as any).businessId
+    } else {
+      businessId = (auth.data as any).user.businessId
+    }
+
+    // Get accessible department IDs
+    const accessibleDepartmentIds = await getAccessibleDepartmentIds(auth)
+
+    // Build employee where clause with department filtering
+    const employeeWhereClause: any = {
+      user: {
+        businessId: businessId
+      }
+    }
+
+    // If user has department restrictions, filter employees
+    if (accessibleDepartmentIds !== null && accessibleDepartmentIds.length > 0) {
+      employeeWhereClause.OR = [
+        { departmentId: { in: accessibleDepartmentIds } },
+        { departments: { some: { departmentId: { in: accessibleDepartmentIds } } } }
+      ]
+    }
+
+    // Get all employees in the business (filtered by accessible departments)
     const allEmployees = await prisma.employee.findMany({
-      where: {
-        user: {
-          businessId: currentUser.businessId
-        }
-      },
+      where: employeeWhereClause,
       select: {
         id: true,
         firstName: true,
@@ -69,9 +152,24 @@ export async function GET() {
     const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
     const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0, 23, 59, 59, 999)
 
+    // Build contract where clause with department filtering
+    const contractWhereBase: any = {
+      businessId: businessId,
+    }
+
+    // If user has department restrictions, filter contracts by employee's department
+    if (accessibleDepartmentIds !== null && accessibleDepartmentIds.length > 0) {
+      contractWhereBase.employee = {
+        OR: [
+          { departmentId: { in: accessibleDepartmentIds } },
+          { departments: { some: { departmentId: { in: accessibleDepartmentIds } } } }
+        ]
+      }
+    }
+
     const contractsExpiringThisMonth = await prisma.contract.findMany({
       where: {
-        businessId: currentUser.businessId,
+        ...contractWhereBase,
         endDate: {
           gte: startOfMonth,
           lte: endOfMonth
@@ -101,7 +199,7 @@ export async function GET() {
     // Get expired contracts (ended before today)
     const expiredContracts = await prisma.contract.findMany({
       where: {
-        businessId: currentUser.businessId,
+        ...contractWhereBase,
         endDate: {
           lt: currentDate
         }

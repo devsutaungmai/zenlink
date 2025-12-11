@@ -133,7 +133,7 @@ export async function PUT(
     }
 
     const payrollEntry = await prisma.payrollEntry.update({
-      where: { id: params.id },
+      where: { id: id },
       data: updateData,
       include: {
         employee: {
@@ -169,9 +169,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -179,7 +180,7 @@ export async function DELETE(
 
     const payrollEntry = await prisma.payrollEntry.findFirst({
       where: {
-        id: params.id,
+        id: id,
         payrollPeriod: {
           businessId: user.businessId,
         },
@@ -201,7 +202,7 @@ export async function DELETE(
     }
 
     await prisma.payrollEntry.delete({
-      where: { id: params.id },
+      where: { id: id },
     });
 
     return NextResponse.json({ message: 'Payroll entry deleted successfully' });

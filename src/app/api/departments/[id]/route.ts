@@ -4,11 +4,11 @@ import { requireAuth } from '@/shared/lib/auth'
 
 export async function GET(
   request: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await requireAuth()
-    const { id } = context.params
+    const { id } = await context.params
     
     const department = await prisma.department.findUnique({
       where: { 
@@ -41,11 +41,11 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await requireAuth()
-    const { id } = context.params
+    const { id } = await context.params
     const rawData = await request.json()
 
     const data = {
@@ -85,11 +85,11 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await requireAuth()
-    const { id } = context.params
+    const { id } = await context.params
     
     await prisma.department.delete({
       where: { 

@@ -20,6 +20,8 @@ interface ShiftFormModalProps {
   onDelete?: (shiftId: string) => void
   viewType: 'week' | 'day' | 'month'
   loading: boolean
+  canEditShifts?: boolean
+  canDeleteShifts?: boolean
 }
 
 export default function ShiftFormModal({
@@ -31,7 +33,9 @@ export default function ShiftFormModal({
   onSubmit,
   onDelete,
   viewType,
-  loading
+  loading,
+  canEditShifts = true,
+  canDeleteShifts = true
 }: ShiftFormModalProps) {
   const formKey = initialData?.id || 'new-shift'
   
@@ -40,7 +44,7 @@ export default function ShiftFormModal({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {initialData?.id ? 'Edit Shift' : 'Create New Shift'}
+            {!canEditShifts ? 'View Shift' : (initialData?.id ? 'Edit Shift' : 'Create New Shift')}
           </DialogTitle>
         </DialogHeader>
         <ShiftForm
@@ -48,13 +52,14 @@ export default function ShiftFormModal({
           initialData={initialData}
           employees={employees}
           employeeGroups={employeeGroups}
-          onSubmit={onSubmit}
-          onDelete={onDelete}
+          onSubmit={canEditShifts ? onSubmit : undefined}
+          onDelete={canDeleteShifts ? onDelete : undefined}
           onCancel={onClose}
           loading={loading}
           showEmployee={true}
           showStartTime={true}
           showDate={true}
+          readOnly={!canEditShifts}
         />
       </DialogContent>
     </Dialog>

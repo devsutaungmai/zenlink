@@ -40,9 +40,25 @@ model Role {
   updatedAt   DateTime         @updatedAt
   users       User[]
   permissions RolePermission[]
+  employees   EmployeeRole[]   // Many-to-many relation with employees
+  departments RoleDepartment[] // Many-to-many relation with departments
 
   @@unique([name, businessId])
   @@index([businessId])
+}
+
+// Junction table for Role-Department many-to-many relationship
+model RoleDepartment {
+  id           String     @id @default(cuid())
+  roleId       String
+  departmentId String
+  createdAt    DateTime   @default(now())
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, departmentId])
+  @@index([roleId])
+  @@index([departmentId])
 }
 
 // Permission model - defines all available permissions
@@ -154,6 +170,21 @@ model Employee {
   functions           EmployeeFunction[]
   departments         EmployeeDepartment[]      // Many-to-many relation
   employeeGroups      EmployeeEmployeeGroup[]   // Many-to-many relation
+  employeeRoles       EmployeeRole[]            // Many-to-many relation with roles
+}
+
+model EmployeeRole {
+  id           String     @id @default(cuid())
+  employeeId   String
+  roleId       String
+  isPrimary    Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+  employee     Employee   @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, roleId])
+  @@index([employeeId])
+  @@index([roleId])
 }
 
 model EmployeeDepartment {
@@ -249,6 +280,7 @@ model Department {
   categoriesManyMany CategoryDepartment[]   // New many-to-many relation
   shifts             Shift[]
   employeesMulti     EmployeeDepartment[]   // Many-to-many relation
+  roles              RoleDepartment[]       // Many-to-many relation with roles
 }
 
 model DepartmentCategory {

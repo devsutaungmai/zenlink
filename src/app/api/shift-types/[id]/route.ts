@@ -5,9 +5,10 @@ import { getCurrentUser } from '@/shared/lib/auth'
 // PATCH /api/shift-types/[id] - Update a shift type
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await getCurrentUser()
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -22,7 +23,7 @@ export async function PATCH(
 
     // Verify the shift type belongs to the user's business
     const shiftType = await prisma.shiftTypeConfig.findUnique({
-      where: { id: params.id },
+      where: { id: id },
     })
 
     if (!shiftType) {
@@ -39,7 +40,7 @@ export async function PATCH(
         where: {
           name,
           businessId: user.businessId,
-          id: { not: params.id },
+          id: { not: id },
         },
       })
 
@@ -52,7 +53,7 @@ export async function PATCH(
     }
 
     const updated = await prisma.shiftTypeConfig.update({
-      where: { id: params.id },
+      where: { id: id },
       data: {
         name: name || shiftType.name,
         salaryCode: salaryCode || shiftType.salaryCode,
@@ -83,9 +84,10 @@ export async function PATCH(
 // DELETE /api/shift-types/[id] - Delete a shift type
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await getCurrentUser()
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -97,7 +99,7 @@ export async function DELETE(
 
     // Verify the shift type belongs to the user's business
     const shiftType = await prisma.shiftTypeConfig.findUnique({
-      where: { id: params.id },
+      where: { id: id },
     })
 
     if (!shiftType) {
@@ -109,7 +111,7 @@ export async function DELETE(
     }
 
     await prisma.shiftTypeConfig.delete({
-      where: { id: params.id },
+      where: { id: id },
     })
 
     return NextResponse.json({ message: 'Shift type deleted successfully' })

@@ -2,6 +2,67 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/shared/lib/prisma'
 import { getCurrentUserOrEmployee, getCurrentUser } from '@/shared/lib/auth'
 
+async function getAccessibleDepartmentIds(auth: any): Promise<string[] | null> {
+  if (auth.type === 'user') {
+    const user = auth.data as any
+
+    if (user.role === 'ADMIN') {
+      return null
+    }
+
+    if (user.roleId) {
+      const userWithRole = await prisma.user.findUnique({
+        where: { id: user.id },
+        include: {
+          assignedRole: {
+            include: {
+              departments: {
+                select: { departmentId: true }
+              }
+            }
+          }
+        }
+      })
+
+      if (userWithRole?.assignedRole?.departments.length) {
+        return userWithRole.assignedRole.departments.map(d => d.departmentId)
+      }
+    }
+    
+    return null
+  } else {
+    const employee = auth.data as any
+    
+    const employeeRoles = await prisma.employeeRole.findMany({
+      where: { employeeId: employee.id },
+      include: {
+        role: {
+          include: {
+            departments: {
+              select: { departmentId: true }
+            }
+          }
+        }
+      }
+    })
+
+    const departmentSet = new Set<string>()
+    let hasUnrestrictedRole = false
+
+    for (const er of employeeRoles) {
+      if (er.role.departments.length === 0) {
+        hasUnrestrictedRole = true
+        break
+      }
+      for (const d of er.role.departments) {
+        departmentSet.add(d.departmentId)
+      }
+    }
+
+    return hasUnrestrictedRole ? null : Array.from(departmentSet)
+  }
+}
+
 export async function GET(request: Request) {
   try {
     const auth = await getCurrentUserOrEmployee()
@@ -25,10 +86,19 @@ export async function GET(request: Request) {
       businessId = (auth.data as any).user.businessId
     }
 
+    const accessibleDepartmentIds = await getAccessibleDepartmentIds(auth)
+
     const whereClause: any = {
       user: {
         businessId: businessId
       }
+    }
+
+    if (accessibleDepartmentIds !== null && accessibleDepartmentIds.length > 0) {
+      whereClause.OR = [
+        { departmentId: { in: accessibleDepartmentIds } },
+        { departments: { some: { departmentId: { in: accessibleDepartmentIds } } } }
+      ]
     }
 
     if (userId) {
@@ -36,12 +106,22 @@ export async function GET(request: Request) {
     }
 
     if (search && search.trim()) {
-      whereClause.OR = [
+      const searchConditions = [
         { firstName: { contains: search.trim(), mode: 'insensitive' } },
         { lastName: { contains: search.trim(), mode: 'insensitive' } },
         { employeeNo: { contains: search.trim(), mode: 'insensitive' } },
         { email: { contains: search.trim(), mode: 'insensitive' } }
       ]
+
+      if (whereClause.OR) {
+        whereClause.AND = [
+          { OR: whereClause.OR },
+          { OR: searchConditions }
+        ]
+        delete whereClause.OR
+      } else {
+        whereClause.OR = searchConditions
+      }
     }
 
     const skip = (page - 1) * limit
@@ -106,6 +186,17 @@ export async function GET(request: Request) {
           },
           orderBy: {
             isPrimary: 'desc'
+          }
+        },
+        employeeRoles: {
+          select: {
+            roleId: true,
+            role: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
           }
         }
       },
@@ -215,6 +306,21 @@ export async function POST(request: Request) {
       userEmail = `employee.${employeeNo}.${emailSuffix}@company.local`
     }
 
+    let roleIdsToAssign = data.roleIds
+    if (!roleIdsToAssign || !Array.isArray(roleIdsToAssign) || roleIdsToAssign.length === 0) {
+      const defaultEmployeeRole = await prisma.role.findFirst({
+        where: {
+          businessId: currentUser.businessId,
+          name: 'Employee',
+          isDefault: true
+        }
+      })
+      
+      if (defaultEmployeeRole) {
+        roleIdsToAssign = [defaultEmployeeRole.id]
+      }
+    }
+
     const employeeUser = await prisma.user.create({
       data: {
         email: userEmail,
@@ -264,7 +370,15 @@ export async function POST(request: Request) {
             }
           : data.employeeGroupId 
             ? { create: [{ employeeGroupId: data.employeeGroupId, isPrimary: true }] }
-            : undefined
+            : undefined,
+        employeeRoles: roleIdsToAssign && Array.isArray(roleIdsToAssign) && roleIdsToAssign.length > 0
+          ? {
+              create: roleIdsToAssign.map((roleId: string, index: number) => ({
+                roleId: roleId,
+                isPrimary: index === 0
+              }))
+            }
+          : undefined
       },
       include: {
         department: true,
@@ -277,6 +391,11 @@ export async function POST(request: Request) {
         employeeGroups: {
           include: {
             employeeGroup: true
+          }
+        },
+        employeeRoles: {
+          include: {
+            role: true
           }
         }
       }

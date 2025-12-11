@@ -14,14 +14,24 @@ export interface EmployeeFormData {
   hoursPerMonth: number
   dateOfHire: Date
   isTeamLeader: boolean
-  departmentId: string // Keep for backward compatibility
-  departmentIds: string[] // New field for multiple departments
-  employeeGroupId?: string // Keep for backward compatibility
-  employeeGroupIds: string[] // New field for multiple employee groups
+  departmentId: string
+  departmentIds: string[]
+  employeeGroupId?: string
+  employeeGroupIds: string[]
+  roleIds: string[]
   email?: string
   profilePhoto?: string | null
   salaryRate?: number
   id?: string
+}
+
+export interface Role {
+  id: string
+  name: string
+  description?: string | null
+  isSystem?: boolean
+  isDefault?: boolean
+  departments?: Array<{ departmentId: string }>
 }
 
 export interface EmployeeFormProps {
@@ -30,4 +40,7 @@ export interface EmployeeFormProps {
   loading: boolean
   departments: Array<{ id: string; name: string }>
   employeeGroups: Array<{ id: string; name: string }>
+  roles?: Role[]
+  readOnly?: boolean
+  canViewSensitive?: boolean
 }

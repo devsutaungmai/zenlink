@@ -20,21 +20,30 @@ interface PermissionsByCategory {
   [category: string]: PermissionInfo[]
 }
 
+interface Department {
+  id: string
+  name: string
+}
+
 export default function CreateRolePage() {
   const { t } = useTranslation()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [loadingPermissions, setLoadingPermissions] = useState(true)
+  const [loadingDepartments, setLoadingDepartments] = useState(true)
   const [permissionsByCategory, setPermissionsByCategory] = useState<PermissionsByCategory>({})
+  const [departments, setDepartments] = useState<Department[]>([])
   
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    permissions: [] as string[]
+    permissions: [] as string[],
+    departmentIds: [] as string[]
   })
 
   useEffect(() => {
     fetchPermissions()
+    fetchDepartments()
   }, [])
 
   const fetchPermissions = async () => {
@@ -48,6 +57,28 @@ export default function CreateRolePage() {
     } finally {
       setLoadingPermissions(false)
     }
+  }
+
+  const fetchDepartments = async () => {
+    try {
+      const res = await fetch('/api/form-data')
+      if (!res.ok) throw new Error('Failed to fetch departments')
+      const data = await res.json()
+      setDepartments(data.departments || [])
+    } catch (err) {
+      console.error('Error fetching departments:', err)
+    } finally {
+      setLoadingDepartments(false)
+    }
+  }
+
+  const toggleDepartment = (deptId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      departmentIds: prev.departmentIds.includes(deptId)
+        ? prev.departmentIds.filter(id => id !== deptId)
+        : [...prev.departmentIds, deptId]
+    }))
   }
 
   const togglePermission = (code: string) => {
@@ -176,6 +207,47 @@ export default function CreateRolePage() {
                 placeholder={t('roles.roleDescriptionPlaceholder', 'Brief description of this role')}
               />
             </div>
+          </div>
+
+          {/* Department Restrictions */}
+          <div className="mt-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {t('roles.departmentRestrictions', 'Department Restrictions')}
+            </label>
+            <p className="text-xs text-gray-500 mb-3">
+              {t('roles.departmentRestrictionsHint', 'Leave empty to make this role available to all departments. Select specific departments to restrict this role to employees in those departments only.')}
+            </p>
+            {loadingDepartments ? (
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#31BCFF]"></div>
+                Loading departments...
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {departments.map((dept) => (
+                  <button
+                    key={dept.id}
+                    type="button"
+                    onClick={() => toggleDepartment(dept.id)}
+                    className={`px-3 py-1.5 text-sm rounded-full border transition-colors ${
+                      formData.departmentIds.includes(dept.id)
+                        ? 'bg-[#31BCFF] text-white border-[#31BCFF]'
+                        : 'bg-white text-gray-700 border-gray-300 hover:border-[#31BCFF]'
+                    }`}
+                  >
+                    {dept.name}
+                  </button>
+                ))}
+                {departments.length === 0 && (
+                  <p className="text-sm text-gray-500">No departments available</p>
+                )}
+              </div>
+            )}
+            {formData.departmentIds.length > 0 && (
+              <p className="mt-2 text-xs text-[#31BCFF]">
+                {t('roles.selectedDepartments', 'This role will only be available for employees in the selected departments.')}
+              </p>
+            )}
           </div>
         </div>
 

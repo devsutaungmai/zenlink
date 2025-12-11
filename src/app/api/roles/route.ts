@@ -20,8 +20,13 @@ export async function GET(request: NextRequest) {
             permission: true
           }
         },
+        departments: {
+          select: {
+            departmentId: true
+          }
+        },
         _count: {
-          select: { users: true }
+          select: { users: true, employees: true }
         }
       },
       orderBy: [
@@ -47,7 +52,7 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await request.json()
-    const { name, description, permissions = [] } = data
+    const { name, description, permissions = [], departmentIds = [] } = data
 
     if (!name) {
       return NextResponse.json({ error: 'Role name is required' }, { status: 400 })
@@ -79,7 +84,7 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Create the role with permissions
+    // Create the role with permissions and department associations
     const role = await prisma.role.create({
       data: {
         name,
@@ -92,12 +97,22 @@ export async function POST(request: NextRequest) {
               connect: { code: permCode }
             }
           }))
-        }
+        },
+        departments: departmentIds.length > 0 ? {
+          create: departmentIds.map((deptId: string) => ({
+            departmentId: deptId
+          }))
+        } : undefined
       },
       include: {
         permissions: {
           include: {
             permission: true
+          }
+        },
+        departments: {
+          select: {
+            departmentId: true
           }
         }
       }

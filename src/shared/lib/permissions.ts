@@ -9,6 +9,8 @@ export const PERMISSION_CATEGORIES = {
   REPORTS: 'Reports',
   SETTINGS: 'Settings',
   DEPARTMENTS: 'Departments',
+  CATEGORIES: 'Categories',
+  FUNCTIONS: 'Functions',
   ROLES: 'Roles & Permissions',
 } as const
 
@@ -24,6 +26,8 @@ export const PERMISSIONS = {
   EMPLOYEES_CREATE: 'employees.create',
   EMPLOYEES_EDIT: 'employees.edit',
   EMPLOYEES_DELETE: 'employees.delete',
+  EMPLOYEES_INVITE: 'employees.invite',
+  EMPLOYEES_SET_PIN: 'employees.set_pin',
   EMPLOYEES_VIEW_SENSITIVE: 'employees.view_sensitive', // SSN, bank account, etc.
   
   // Departments
@@ -57,6 +61,7 @@ export const PERMISSIONS = {
   // Attendance
   ATTENDANCE_VIEW: 'attendance.view',
   ATTENDANCE_VIEW_ALL: 'attendance.view_all',
+  ATTENDANCE_VIEW_OWN_HOURS: 'attendance.view_own_hours',
   ATTENDANCE_CLOCK_IN_OUT: 'attendance.clock_in_out',
   ATTENDANCE_EDIT: 'attendance.edit',
   ATTENDANCE_APPROVE: 'attendance.approve',
@@ -99,13 +104,30 @@ export const PERMISSIONS = {
   CONTRACTS_DELETE: 'contracts.delete',
   CONTRACT_TEMPLATES_MANAGE: 'contract_templates.manage',
   
+  // Dashboard
+  DASHBOARD_VIEW_STATS: 'dashboard.view_stats',
+  DASHBOARD_VIEW_WEEKLY_SHIFTS: 'dashboard.view_weekly_shifts',
+  DASHBOARD_VIEW_MOST_ACTIVE: 'dashboard.view_most_active',
+  DASHBOARD_VIEW_SHIFT_COMPLETION: 'dashboard.view_shift_completion',
+  DASHBOARD_VIEW_ATTENDANCE_FEED: 'dashboard.view_attendance_feed',
+  
   // Settings
   SETTINGS_VIEW: 'settings.view',
   SETTINGS_BUSINESS: 'settings.business',
   SETTINGS_LABOR_LAW: 'settings.labor_law',
-  SETTINGS_CATEGORIES: 'settings.categories',
-  SETTINGS_FUNCTIONS: 'settings.functions',
   SETTINGS_SHIFT_TYPES: 'settings.shift_types',
+  
+  // Categories
+  CATEGORIES_VIEW: 'categories.view',
+  CATEGORIES_CREATE: 'categories.create',
+  CATEGORIES_EDIT: 'categories.edit',
+  CATEGORIES_DELETE: 'categories.delete',
+  
+  // Functions
+  FUNCTIONS_VIEW: 'functions.view',
+  FUNCTIONS_CREATE: 'functions.create',
+  FUNCTIONS_EDIT: 'functions.edit',
+  FUNCTIONS_DELETE: 'functions.delete',
   
   // Roles & Permissions
   ROLES_VIEW: 'roles.view',
@@ -163,6 +185,18 @@ export const PERMISSION_INFO: Record<Permission, PermissionInfo> = {
     code: PERMISSIONS.EMPLOYEES_VIEW_SENSITIVE,
     name: 'View Sensitive Data',
     description: 'Access sensitive employee data (SSN, bank account)',
+    category: PERMISSION_CATEGORIES.EMPLOYEES,
+  },
+  [PERMISSIONS.EMPLOYEES_INVITE]: {
+    code: PERMISSIONS.EMPLOYEES_INVITE,
+    name: 'Send Invitations',
+    description: 'Send email invitations to employees',
+    category: PERMISSION_CATEGORIES.EMPLOYEES,
+  },
+  [PERMISSIONS.EMPLOYEES_SET_PIN]: {
+    code: PERMISSIONS.EMPLOYEES_SET_PIN,
+    name: 'Set Employee PIN',
+    description: 'Set or reset employee PIN codes',
     category: PERMISSION_CATEGORIES.EMPLOYEES,
   },
   
@@ -305,6 +339,12 @@ export const PERMISSION_INFO: Record<Permission, PermissionInfo> = {
     code: PERMISSIONS.ATTENDANCE_VIEW_ALL,
     name: 'View All Attendance',
     description: 'View attendance for all employees',
+    category: PERMISSION_CATEGORIES.ATTENDANCE,
+  },
+  [PERMISSIONS.ATTENDANCE_VIEW_OWN_HOURS]: {
+    code: PERMISSIONS.ATTENDANCE_VIEW_OWN_HOURS,
+    name: 'View Own Hours',
+    description: 'View own working hours and attendance history',
     category: PERMISSION_CATEGORIES.ATTENDANCE,
   },
   [PERMISSIONS.ATTENDANCE_CLOCK_IN_OUT]: {
@@ -494,6 +534,38 @@ export const PERMISSION_INFO: Record<Permission, PermissionInfo> = {
     category: PERMISSION_CATEGORIES.EMPLOYEES,
   },
   
+  // Dashboard
+  [PERMISSIONS.DASHBOARD_VIEW_STATS]: {
+    code: PERMISSIONS.DASHBOARD_VIEW_STATS,
+    name: 'View Dashboard Stats',
+    description: 'View overall dashboard statistics',
+    category: PERMISSION_CATEGORIES.DASHBOARD,
+  },
+  [PERMISSIONS.DASHBOARD_VIEW_WEEKLY_SHIFTS]: {
+    code: PERMISSIONS.DASHBOARD_VIEW_WEEKLY_SHIFTS,
+    name: 'View Weekly Shifts',
+    description: 'View weekly shifts overview on dashboard',
+    category: PERMISSION_CATEGORIES.DASHBOARD,
+  },
+  [PERMISSIONS.DASHBOARD_VIEW_MOST_ACTIVE]: {
+    code: PERMISSIONS.DASHBOARD_VIEW_MOST_ACTIVE,
+    name: 'View Most Active Employee',
+    description: 'View most active employee statistics',
+    category: PERMISSION_CATEGORIES.DASHBOARD,
+  },
+  [PERMISSIONS.DASHBOARD_VIEW_SHIFT_COMPLETION]: {
+    code: PERMISSIONS.DASHBOARD_VIEW_SHIFT_COMPLETION,
+    name: 'View Shift Completion',
+    description: 'View shift completion chart and statistics',
+    category: PERMISSION_CATEGORIES.DASHBOARD,
+  },
+  [PERMISSIONS.DASHBOARD_VIEW_ATTENDANCE_FEED]: {
+    code: PERMISSIONS.DASHBOARD_VIEW_ATTENDANCE_FEED,
+    name: 'View Attendance Feed',
+    description: 'View recent attendance activity feed',
+    category: PERMISSION_CATEGORIES.DASHBOARD,
+  },
+  
   // Settings
   [PERMISSIONS.SETTINGS_VIEW]: {
     code: PERMISSIONS.SETTINGS_VIEW,
@@ -513,23 +585,63 @@ export const PERMISSION_INFO: Record<Permission, PermissionInfo> = {
     description: 'Configure labor law settings',
     category: PERMISSION_CATEGORIES.SETTINGS,
   },
-  [PERMISSIONS.SETTINGS_CATEGORIES]: {
-    code: PERMISSIONS.SETTINGS_CATEGORIES,
-    name: 'Manage Categories',
-    description: 'Manage department categories',
-    category: PERMISSION_CATEGORIES.SETTINGS,
-  },
-  [PERMISSIONS.SETTINGS_FUNCTIONS]: {
-    code: PERMISSIONS.SETTINGS_FUNCTIONS,
-    name: 'Manage Functions',
-    description: 'Manage employee functions',
-    category: PERMISSION_CATEGORIES.SETTINGS,
-  },
   [PERMISSIONS.SETTINGS_SHIFT_TYPES]: {
     code: PERMISSIONS.SETTINGS_SHIFT_TYPES,
     name: 'Manage Shift Types',
     description: 'Configure shift types',
     category: PERMISSION_CATEGORIES.SETTINGS,
+  },
+  
+  // Categories
+  [PERMISSIONS.CATEGORIES_VIEW]: {
+    code: PERMISSIONS.CATEGORIES_VIEW,
+    name: 'View Categories',
+    description: 'View department categories',
+    category: PERMISSION_CATEGORIES.CATEGORIES,
+  },
+  [PERMISSIONS.CATEGORIES_CREATE]: {
+    code: PERMISSIONS.CATEGORIES_CREATE,
+    name: 'Create Categories',
+    description: 'Create new department categories',
+    category: PERMISSION_CATEGORIES.CATEGORIES,
+  },
+  [PERMISSIONS.CATEGORIES_EDIT]: {
+    code: PERMISSIONS.CATEGORIES_EDIT,
+    name: 'Edit Categories',
+    description: 'Edit existing department categories',
+    category: PERMISSION_CATEGORIES.CATEGORIES,
+  },
+  [PERMISSIONS.CATEGORIES_DELETE]: {
+    code: PERMISSIONS.CATEGORIES_DELETE,
+    name: 'Delete Categories',
+    description: 'Delete department categories',
+    category: PERMISSION_CATEGORIES.CATEGORIES,
+  },
+  
+  // Functions
+  [PERMISSIONS.FUNCTIONS_VIEW]: {
+    code: PERMISSIONS.FUNCTIONS_VIEW,
+    name: 'View Functions',
+    description: 'View employee functions',
+    category: PERMISSION_CATEGORIES.FUNCTIONS,
+  },
+  [PERMISSIONS.FUNCTIONS_CREATE]: {
+    code: PERMISSIONS.FUNCTIONS_CREATE,
+    name: 'Create Functions',
+    description: 'Create new employee functions',
+    category: PERMISSION_CATEGORIES.FUNCTIONS,
+  },
+  [PERMISSIONS.FUNCTIONS_EDIT]: {
+    code: PERMISSIONS.FUNCTIONS_EDIT,
+    name: 'Edit Functions',
+    description: 'Edit existing employee functions',
+    category: PERMISSION_CATEGORIES.FUNCTIONS,
+  },
+  [PERMISSIONS.FUNCTIONS_DELETE]: {
+    code: PERMISSIONS.FUNCTIONS_DELETE,
+    name: 'Delete Functions',
+    description: 'Delete employee functions',
+    category: PERMISSION_CATEGORIES.FUNCTIONS,
   },
   
   // Roles & Permissions
@@ -680,6 +792,7 @@ export const DEFAULT_ROLES = {
       PERMISSIONS.SCHEDULE_VIEW,
       PERMISSIONS.SHIFTS_VIEW,
       PERMISSIONS.ATTENDANCE_VIEW,
+      PERMISSIONS.ATTENDANCE_VIEW_OWN_HOURS,
       PERMISSIONS.ATTENDANCE_CLOCK_IN_OUT,
       PERMISSIONS.AVAILABILITY_VIEW,
       PERMISSIONS.AVAILABILITY_EDIT,

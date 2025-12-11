@@ -13,6 +13,8 @@ interface DayViewProps {
   onAddShift: (formData?: any) => void
   onEditShift: (shift: ShiftWithRelations) => void
   employees: Employee[]
+  canCreateShifts?: boolean
+  canEditShifts?: boolean
 }
 
 export default function DayView({ 
@@ -20,7 +22,9 @@ export default function DayView({
   shifts, 
   onAddShift, 
   onEditShift, 
-  employees = []
+  employees = [],
+  canCreateShifts = true,
+  canEditShifts = true
 }: DayViewProps) {
   const { user } = useUser()
   const { t, i18n } = useTranslation('schedule')
@@ -31,7 +35,7 @@ export default function DayView({
   const [dragEndHour, setDragEndHour] = useState<number | null>(null)
 
   const handleDragStartToCreate = (hour: number) => {
-    if (isEmployee) return
+    if (isEmployee || !canCreateShifts) return
     
     setDragStartHour(hour)
     setDragEndHour(hour)
@@ -45,7 +49,7 @@ export default function DayView({
   }
 
   const handleDragEndToCreate = () => {
-    if (isEmployee) return
+    if (isEmployee || !canCreateShifts) return
     
     if (dragStartHour !== null && dragEndHour !== null) {
       const startHour = Math.min(dragStartHour, dragEndHour)
@@ -192,6 +196,7 @@ export default function DayView({
                       displayStartTime={segment.displayStartTime}
                       displayEndTime={segment.displayEndTime}
                       isContinuation={segment.isContinuation}
+                      canEdit={canEditShifts}
                     />
                   ))}
                 </React.Fragment>
