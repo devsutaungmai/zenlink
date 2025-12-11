@@ -69,6 +69,7 @@ model Business {
   customerPayments         CustomerPayment[]
   ledgerAccounts           LedgerAccount[]
   ledgerEntries            LedgerEntry[]
+  vouchers                 Voucher[]
 }
 
 model Employee {
@@ -866,6 +867,9 @@ model LedgerEntry {
   businessId     String       @map("business_id")
   business       Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
+  voucherId      String
+  voucher        Voucher      @relation(fields: [voucherId], references: [id])
+
   description    String?
 
   createdAt      DateTime     @default(now()) @map("created_at")
@@ -931,6 +935,8 @@ model Invoice {
 
   ledgerEntries     LedgerEntry[]
 
+  voucherId     String?       @unique
+  voucher       Voucher?      @relation(fields: [voucherId], references: [id])
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -1055,6 +1061,9 @@ model CustomerPayment {
 
   allocations   PaymentAllocation[]
 
+  voucherId     String?    @unique
+  voucher       Voucher?   @relation(fields: [voucherId], references: [id])
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -1075,6 +1084,32 @@ model PaymentAllocation {
   
   @@map("payment_allocations")
 }
+
+enum VoucherType {
+  INVOICE
+  PAYMENT
+  CREDIT_NOTE
+  MANUAL
+}
+
+model Voucher {
+  id            String        @id @default(cuid())
+  businessId    String
+  year          Int
+  sequence      Int
+  voucherNumber String        @unique
+  type          VoucherType
+  createdAt     DateTime      @default(now())
+
+  business      Business      @relation(fields: [businessId], references: [id])
+
+  ledgerEntries  LedgerEntry[]
+  invoice        Invoice?
+  payment        CustomerPayment?
+
+  @@index([businessId, year, sequence])
+}
+
 
 enum PaymentMethod {
   BANK

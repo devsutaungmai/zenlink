@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/shared/lib/prisma'
 import { getCurrentUserOrEmployee } from '@/shared/lib/auth'
-import { calculateInvoiceTotals, getBusinessId, invoiceToLedgerPosting } from '@/shared/lib/invoiceHelper'
+import { calculateInvoiceTotals, generateVoucherNumber, getBusinessId, invoiceToLedgerPosting } from '@/shared/lib/invoiceHelper'
+import { VoucherType } from '@prisma/client'
 
 // GET /api/invoices/[id]
 export async function GET(
@@ -228,7 +229,14 @@ export async function PUT(
       })
     })
 
-    if(invoice.status === "SENT"){
+    if (invoice.status === "SENT") {
+      const voucher = await generateVoucherNumber(businessId, VoucherType.INVOICE);
+
+      await prisma.invoice.update({
+        where: { id: invoice.id },
+        data: { voucherId: voucher.id }
+      });
+
       await invoiceToLedgerPosting(invoice.id);
     }
 
