@@ -1,6 +1,3 @@
--- CreateEnum
-CREATE TYPE "LegacyUserRole" AS ENUM ('ADMIN', 'HR_ADMIN', 'KONTO_ADMIN', 'VAKTPLAN_ADMIN', 'EMPLOYEE');
-
 -- CreateTable
 CREATE TABLE IF NOT EXISTS "Role" (
     "id" TEXT NOT NULL,
@@ -54,6 +51,9 @@ CREATE INDEX IF NOT EXISTS "RolePermission_permissionId_idx" ON "RolePermission"
 
 -- CreateIndex
 CREATE UNIQUE INDEX IF NOT EXISTS "RolePermission_roleId_permissionId_key" ON "RolePermission"("roleId", "permissionId");
+
+-- AlterTable - Add roleId column to User
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "roleId" TEXT;
 
 -- CreateIndex
 CREATE INDEX IF NOT EXISTS "User_roleId_idx" ON "User"("roleId");

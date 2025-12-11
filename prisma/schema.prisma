@@ -14,12 +14,14 @@ model User {
   firstName           String
   lastName            String
   role                String               @default("USER")
+  roleId              String?
   businessId          String
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
   pin                 String?
   employees           Employee[]
   business            Business             @relation(fields: [businessId], references: [id])
+  assignedRole        Role?                @relation(fields: [roleId], references: [id])
   passwordResetTokens PasswordResetToken[]
 
   @@index([roleId])
@@ -1254,7 +1256,8 @@ enum PaymentMethod {
   BANK
   CASH
 }
-enum Role {
+
+enum LegacyUserRole {
   ADMIN
   HR_ADMIN
   KONTO_ADMIN
