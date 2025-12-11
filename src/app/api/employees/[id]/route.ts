@@ -176,7 +176,7 @@ export async function PUT(
       }
 
       return updatedEmployee
-    })
+    }, { timeout: 15000 })
 
     return NextResponse.json(result)
 
