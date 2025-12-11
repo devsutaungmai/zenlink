@@ -77,3 +77,124 @@ ALTER TABLE "RolePermission" ADD CONSTRAINT "RolePermission_roleId_fkey" FOREIGN
 
 -- AddForeignKey
 ALTER TABLE "RolePermission" ADD CONSTRAINT "RolePermission_permissionId_fkey" FOREIGN KEY ("permissionId") REFERENCES "Permission"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- CreateTable LaborLawSettings (if not exists)
+CREATE TABLE IF NOT EXISTS "LaborLawSettings" (
+    "id" TEXT NOT NULL,
+    "businessId" TEXT NOT NULL,
+    "countryCode" TEXT NOT NULL,
+    "maxHoursPerDay" DOUBLE PRECISION NOT NULL DEFAULT 9,
+    "maxHoursPerWeek" DOUBLE PRECISION NOT NULL DEFAULT 40,
+    "maxOvertimePerDay" DOUBLE PRECISION NOT NULL DEFAULT 4,
+    "maxOvertimePerWeek" DOUBLE PRECISION NOT NULL DEFAULT 10,
+    "maxConsecutiveDays" INTEGER NOT NULL DEFAULT 6,
+    "minRestHoursBetweenShifts" DOUBLE PRECISION NOT NULL DEFAULT 11,
+    "longShiftThreshold" DOUBLE PRECISION NOT NULL DEFAULT 5.5,
+    "minBreakForLongShifts" INTEGER NOT NULL DEFAULT 30,
+    "overtimeThreshold" DOUBLE PRECISION NOT NULL DEFAULT 9,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "LaborLawSettings_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX IF NOT EXISTS "LaborLawSettings_businessId_countryCode_key" ON "LaborLawSettings"("businessId", "countryCode");
+
+-- CreateIndex
+CREATE INDEX IF NOT EXISTS "LaborLawSettings_businessId_idx" ON "LaborLawSettings"("businessId");
+
+-- CreateIndex
+CREATE INDEX IF NOT EXISTS "LaborLawSettings_businessId_isActive_idx" ON "LaborLawSettings"("businessId", "isActive");
+
+-- AddForeignKey
+ALTER TABLE "LaborLawSettings" ADD CONSTRAINT "LaborLawSettings_businessId_fkey" FOREIGN KEY ("businessId") REFERENCES "Business"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- CreateTable ScheduleTemplate (if not exists)
+CREATE TABLE IF NOT EXISTS "ScheduleTemplate" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "length" TEXT NOT NULL,
+    "businessId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "ScheduleTemplate_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE INDEX IF NOT EXISTS "ScheduleTemplate_businessId_idx" ON "ScheduleTemplate"("businessId");
+
+-- AddForeignKey
+ALTER TABLE "ScheduleTemplate" ADD CONSTRAINT "ScheduleTemplate_businessId_fkey" FOREIGN KEY ("businessId") REFERENCES "Business"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- CreateTable ScheduleTemplateShift (if not exists)
+CREATE TABLE IF NOT EXISTS "ScheduleTemplateShift" (
+    "id" TEXT NOT NULL,
+    "templateId" TEXT NOT NULL,
+    "dayOfWeek" INTEGER NOT NULL,
+    "startTime" TEXT NOT NULL,
+    "endTime" TEXT NOT NULL,
+    "shiftType" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "ScheduleTemplateShift_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE INDEX IF NOT EXISTS "ScheduleTemplateShift_templateId_idx" ON "ScheduleTemplateShift"("templateId");
+
+-- AddForeignKey
+ALTER TABLE "ScheduleTemplateShift" ADD CONSTRAINT "ScheduleTemplateShift_templateId_fkey" FOREIGN KEY ("templateId") REFERENCES "ScheduleTemplate"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- CreateTable RoleDepartment (if not exists)
+CREATE TABLE IF NOT EXISTS "RoleDepartment" (
+    "id" TEXT NOT NULL,
+    "roleId" TEXT NOT NULL,
+    "departmentId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "RoleDepartment_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX IF NOT EXISTS "RoleDepartment_roleId_departmentId_key" ON "RoleDepartment"("roleId", "departmentId");
+
+-- CreateIndex
+CREATE INDEX IF NOT EXISTS "RoleDepartment_roleId_idx" ON "RoleDepartment"("roleId");
+
+-- CreateIndex
+CREATE INDEX IF NOT EXISTS "RoleDepartment_departmentId_idx" ON "RoleDepartment"("departmentId");
+
+-- AddForeignKey
+ALTER TABLE "RoleDepartment" ADD CONSTRAINT "RoleDepartment_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "Role"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "RoleDepartment" ADD CONSTRAINT "RoleDepartment_departmentId_fkey" FOREIGN KEY ("departmentId") REFERENCES "Department"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- CreateTable EmployeeRole (if not exists)
+CREATE TABLE IF NOT EXISTS "EmployeeRole" (
+    "id" TEXT NOT NULL,
+    "employeeId" TEXT NOT NULL,
+    "roleId" TEXT NOT NULL,
+    "isPrimary" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "EmployeeRole_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX IF NOT EXISTS "EmployeeRole_employeeId_roleId_key" ON "EmployeeRole"("employeeId", "roleId");
+
+-- CreateIndex
+CREATE INDEX IF NOT EXISTS "EmployeeRole_employeeId_idx" ON "EmployeeRole"("employeeId");
+
+-- CreateIndex
+CREATE INDEX IF NOT EXISTS "EmployeeRole_roleId_idx" ON "EmployeeRole"("roleId");
+
+-- AddForeignKey
+ALTER TABLE "EmployeeRole" ADD CONSTRAINT "EmployeeRole_employeeId_fkey" FOREIGN KEY ("employeeId") REFERENCES "Employee"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "EmployeeRole" ADD CONSTRAINT "EmployeeRole_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "Role"("id") ON DELETE CASCADE ON UPDATE CASCADE;
