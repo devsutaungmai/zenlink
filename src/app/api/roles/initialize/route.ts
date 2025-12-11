@@ -3,6 +3,8 @@ import { prisma } from '@/shared/lib/prisma'
 import { getCurrentUser } from '@/shared/lib/auth'
 import { PERMISSION_INFO, DEFAULT_ROLES } from '@/shared/lib/permissions'
 
+export const maxDuration = 30 // Allow up to 30 seconds for this endpoint
+
 export async function POST(request: NextRequest) {
   try {
     const currentUser = await getCurrentUser()
@@ -12,22 +14,27 @@ export async function POST(request: NextRequest) {
     }
 
     const allPermissions = Object.values(PERMISSION_INFO)
-    for (const perm of allPermissions) {
-      await prisma.permission.upsert({
-        where: { code: perm.code },
-        update: {
-          name: perm.name,
-          description: perm.description,
-          category: perm.category
-        },
-        create: {
-          code: perm.code,
-          name: perm.name,
-          description: perm.description,
-          category: perm.category
-        }
-      })
-    }
+    
+    // Batch upsert permissions using a transaction for better performance
+    await prisma.$transaction(
+      allPermissions.map((perm) =>
+        prisma.permission.upsert({
+          where: { code: perm.code },
+          update: {
+            name: perm.name,
+            description: perm.description,
+            category: perm.category
+          },
+          create: {
+            code: perm.code,
+            name: perm.name,
+            description: perm.description,
+            category: perm.category
+          }
+        })
+      ),
+      { timeout: 25000 } // 25 second timeout for transaction
+    )
 
     // Create default roles if they don't exist
     const createdRoles = []
