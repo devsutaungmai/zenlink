@@ -3,6 +3,8 @@ import { prisma } from '@/shared/lib/prisma'
 import { getCurrentUser } from '@/shared/lib/auth'
 import { PERMISSION_INFO } from '@/shared/lib/permissions'
 
+export const maxDuration = 30 // Allow up to 30 seconds for this endpoint
+
 // GET - Get a single role
 export async function GET(
   request: NextRequest,
@@ -92,9 +94,9 @@ export async function PUT(
       }
     }
 
-    // Ensure all permissions exist
-    for (const permCode of permissions) {
-      await prisma.permission.upsert({
+    // Batch upsert permissions using transaction for better performance
+    const permissionUpserts = permissions.map((permCode: string) =>
+      prisma.permission.upsert({
         where: { code: permCode },
         update: {},
         create: {
@@ -104,9 +106,20 @@ export async function PUT(
           category: PERMISSION_INFO[permCode as keyof typeof PERMISSION_INFO]?.category || 'Other'
         }
       })
+    )
+    
+    if (permissionUpserts.length > 0) {
+      await prisma.$transaction(permissionUpserts, { timeout: 15000 })
     }
 
-    // Update the role
+    // Get permission IDs for the codes
+    const permissionRecords = await prisma.permission.findMany({
+      where: { code: { in: permissions } },
+      select: { id: true, code: true }
+    })
+    const permissionIdMap = new Map(permissionRecords.map(p => [p.code, p.id]))
+
+    // Update the role using batch operations
     const role = await prisma.$transaction(async (tx) => {
       // Delete existing permissions
       await tx.rolePermission.deleteMany({
@@ -120,24 +133,34 @@ export async function PUT(
         })
       }
 
-      // Update role and add new permissions and departments
+      // Batch create new permissions using createMany
+      if (permissions.length > 0) {
+        await tx.rolePermission.createMany({
+          data: permissions.map((permCode: string) => ({
+            roleId: id,
+            permissionId: permissionIdMap.get(permCode)!
+          })),
+          skipDuplicates: true
+        })
+      }
+
+      // Batch create new departments using createMany
+      if (departmentIds !== undefined && departmentIds.length > 0) {
+        await tx.roleDepartment.createMany({
+          data: departmentIds.map((deptId: string) => ({
+            roleId: id,
+            departmentId: deptId
+          })),
+          skipDuplicates: true
+        })
+      }
+
+      // Update role basic info
       return tx.role.update({
         where: { id },
         data: {
           name: name || existingRole.name,
           description: description !== undefined ? description : existingRole.description,
-          permissions: {
-            create: permissions.map((permCode: string) => ({
-              permission: {
-                connect: { code: permCode }
-              }
-            }))
-          },
-          departments: departmentIds !== undefined && departmentIds.length > 0 ? {
-            create: departmentIds.map((deptId: string) => ({
-              departmentId: deptId
-            }))
-          } : undefined
         },
         include: {
           permissions: {
@@ -152,7 +175,7 @@ export async function PUT(
           }
         }
       })
-    })
+    }, { timeout: 25000 })
 
     return NextResponse.json(role)
   } catch (error: any) {
@@ -200,9 +223,12 @@ export async function DELETE(
       }, { status: 400 })
     }
 
-    await prisma.role.delete({
-      where: { id }
-    })
+    // Use transaction to delete related records first
+    await prisma.$transaction([
+      prisma.rolePermission.deleteMany({ where: { roleId: id } }),
+      prisma.roleDepartment.deleteMany({ where: { roleId: id } }),
+      prisma.role.delete({ where: { id } })
+    ])
 
     return NextResponse.json({ success: true })
   } catch (error: any) {
