@@ -352,7 +352,8 @@ export default function TimeTrackingPage() {
       alert('This employee does not have an Employee ID set. Please contact your administrator.')
       return
     }
-    router.push(`/employee/login?employeeId=${employee.employeeNo}`)
+    const businessNameParam = businessName ? `&businessName=${encodeURIComponent(businessName)}` : ''
+    router.push(`/employee/login?employeeId=${employee.employeeNo}${businessNameParam}`)
   }
 
   if (loading) {
