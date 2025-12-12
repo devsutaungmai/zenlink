@@ -443,11 +443,11 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
   });
 
   const vatPayable = await prisma.ledgerAccount.findFirst({
-    where: { accountNumber: 2700 }
+    where: { accountNumber: 2701 }
   });
 
   if (!accountsReceivable || !vatPayable) {
-    throw new Error('Required ledger accounts not found (1500, 2700)');
+    throw new Error('Required ledger accounts not found (1500, 2701)');
   }
 
   await prisma.$transaction(async (tx) => {
@@ -514,7 +514,7 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
 
     if (vatAmount > 0) {
       if (isCreditNote) {
-        // CREDIT NOTE: DR 2700 / CR 1500 (REVERSED)
+        // CREDIT NOTE: DR 2701 / CR 1500 (REVERSED)
         await tx.ledgerEntry.create({
           data: {
             entryType: LedgerEntryType.CREDIT_NOTE,
@@ -532,7 +532,7 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
           }
         });
       } else {
-        // NORMAL INVOICE: DR 1500 / CR 2700
+        // NORMAL INVOICE: DR 1500 / CR 2701
         await tx.ledgerEntry.create({
           data: {
             entryType: LedgerEntryType.INVOICE_POST,
