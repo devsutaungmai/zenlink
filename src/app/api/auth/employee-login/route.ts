@@ -135,14 +135,9 @@ export async function POST(req: Request) {
       sameSite: 'strict',
     })
 
-    // Clear any existing admin session to ensure employee session takes precedence
-    res.cookies.set('token', '', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 0, // Expire immediately
-      path: '/',
-      sameSite: 'strict',
-    })
+    // NOTE: We no longer clear the admin token here.
+    // Both sessions (admin 'token' and employee 'employee_token') can coexist.
+    // Admin pages use 'token', employee pages use 'employee_token'.
 
     return res
   } catch (error: any) {
