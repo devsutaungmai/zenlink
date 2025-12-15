@@ -80,10 +80,10 @@ export async function PUT(
     if (!existingProduct) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 })
     }
-    const { productNumber, productName, salesPrice } = body
+    const { productNumber, productName } = body
 
-    if (!productNumber || !productName || !salesPrice) {
-      return NextResponse.json({ error: 'ProductName and ProductNumber and salesPrice are required' }, { status: 400 })
+    if (!productNumber || !productName) {
+      return NextResponse.json({ error: 'ProductName and ProductNumber are required' }, { status: 400 })
     }
 
 
