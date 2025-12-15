@@ -138,16 +138,27 @@ export async function GET(
     pdf.text('Earnings', margin, yPos)
     yPos += 5
 
-    const regularPay = payrollEntry.regularHours * payrollEntry.regularRate
-    const overtimePay = payrollEntry.overtimeHours * payrollEntry.overtimeRate
+    // Safely get numeric values with defaults
+    const regularHours = payrollEntry.regularHours ?? 0
+    const regularRate = payrollEntry.regularRate ?? 0
+    const overtimeHours = payrollEntry.overtimeHours ?? 0
+    const overtimeRate = payrollEntry.overtimeRate ?? 0
+    const deductions = payrollEntry.deductions ?? 0
+    const bonuses = payrollEntry.bonuses ?? 0
+    const grossPay = payrollEntry.grossPay ?? 0
+    const netPay = payrollEntry.netPay ?? 0
+    const totalHours = regularHours + overtimeHours
+
+    const regularPay = regularHours * regularRate
+    const overtimePay = overtimeHours * overtimeRate
 
     autoTable(pdf, {
       startY: yPos,
       margin: { left: margin, right: margin },
       head: [['Description', 'Hours', 'Rate', 'Amount']],
       body: [
-        ['Regular Hours', payrollEntry.regularHours.toFixed(2), `$${payrollEntry.regularRate.toFixed(2)}`, `$${regularPay.toFixed(2)}`],
-        ['Overtime Hours', payrollEntry.overtimeHours.toFixed(2), `$${payrollEntry.overtimeRate.toFixed(2)}`, `$${overtimePay.toFixed(2)}`],
+        ['Regular Hours', regularHours.toFixed(2), `$${regularRate.toFixed(2)}`, `$${regularPay.toFixed(2)}`],
+        ['Overtime Hours', overtimeHours.toFixed(2), `$${overtimeRate.toFixed(2)}`, `$${overtimePay.toFixed(2)}`],
       ],
       headStyles: { fillColor: [49, 188, 255], textColor: 255 },
       styles: { fontSize: 10 },
@@ -172,9 +183,7 @@ export async function GET(
       margin: { left: margin, right: margin },
       head: [['Description', 'Amount']],
       body: [
-        ['Tax', `$${payrollEntry.tax.toFixed(2)}`],
-        ['Other Deductions', `$${payrollEntry.deductions.toFixed(2)}`],
-        ['Total Deductions', `$${(payrollEntry.tax + payrollEntry.deductions).toFixed(2)}`],
+        ['Deductions', `$${deductions.toFixed(2)}`],
       ],
       headStyles: { fillColor: [220, 53, 69], textColor: 255 },
       styles: { fontSize: 10 },
@@ -198,20 +207,23 @@ export async function GET(
     const colX2 = pageWidth / 2 + 10
     
     pdf.text(`Gross Pay:`, colX1, yPos)
-    pdf.text(`$${payrollEntry.grossPay.toFixed(2)}`, colX1 + 70, yPos)
+    pdf.text(`$${grossPay.toFixed(2)}`, colX1 + 70, yPos)
     
     pdf.text(`Total Hours:`, colX2, yPos)
-    pdf.text(`${payrollEntry.totalHours.toFixed(2)}`, colX2 + 50, yPos)
+    pdf.text(`${totalHours.toFixed(2)}`, colX2 + 50, yPos)
     
     yPos += 8
-    pdf.text(`Total Deductions:`, colX1, yPos)
-    pdf.text(`-$${(payrollEntry.tax + payrollEntry.deductions).toFixed(2)}`, colX1 + 70, yPos)
+    pdf.text(`Bonuses:`, colX1, yPos)
+    pdf.text(`$${bonuses.toFixed(2)}`, colX1 + 70, yPos)
+    
+    pdf.text(`Deductions:`, colX2, yPos)
+    pdf.text(`-$${deductions.toFixed(2)}`, colX2 + 50, yPos)
 
     yPos += 12
     pdf.setFontSize(16)
     pdf.setFont('helvetica', 'bold')
     pdf.setTextColor(4, 120, 87)
-    pdf.text(`Net Pay: $${payrollEntry.netPay.toFixed(2)}`, pageWidth / 2, yPos, { align: 'center' })
+    pdf.text(`Net Pay: $${netPay.toFixed(2)}`, pageWidth / 2, yPos, { align: 'center' })
 
     // Footer
     const footerY = pdf.internal.pageSize.getHeight() - 20
