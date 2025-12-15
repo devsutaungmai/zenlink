@@ -661,48 +661,48 @@ export async function generateLedgerReport(
     // Get entries in date range
     const entries = await prisma.ledgerEntry.findMany({
       where: {
-      businessId,
-      OR: [
-        { debitAccountId: account.id },
-        { creditAccountId: account.id }
-      ],
-      postingDate: {
-        gte: startDate,
-        lte: endDate
-      }
+        businessId,
+        OR: [
+          { debitAccountId: account.id },
+          { creditAccountId: account.id }
+        ],
+        postingDate: {
+          gte: startDate,
+          lte: endDate
+        }
       },
       include: {
-      // include voucher at the ledgerEntry level so voucherNumber corresponds to ledgerEntry.voucherId
-      voucher: {
-        select: {
-        id: true,
-        voucherNumber: true
-        }
-      },
-      invoice: {
-        select: {
-        invoiceNumber: true,
-        status: true,
-        voucher: { // keep invoice.voucher as well if needed, but prefer entry.voucher at usage
+        // include voucher at the ledgerEntry level so voucherNumber corresponds to ledgerEntry.voucherId
+        voucher: {
           select: {
-          id: true,
-          voucherNumber: true
+            id: true,
+            voucherNumber: true
           }
         },
-        customer: {
+        invoice: {
           select: {
-          id: true,
-          customerName: true
+            invoiceNumber: true,
+            status: true,
+            voucher: { // keep invoice.voucher as well if needed, but prefer entry.voucher at usage
+              select: {
+                id: true,
+                voucherNumber: true
+              }
+            },
+            customer: {
+              select: {
+                id: true,
+                customerName: true
+              }
+            }
           }
-        }
-        }
-      },
-      debitAccount: true,
-      creditAccount: true
+        },
+        debitAccount: true,
+        creditAccount: true
       },
       orderBy: [
-      { postingDate: 'asc' },
-      { createdAt: 'asc' }
+        { postingDate: 'asc' },
+        { createdAt: 'asc' }
       ]
     });
 
@@ -856,7 +856,7 @@ export async function generateLedgerReport(
 
         runningBalance += trueMovement;
 
-        const voucherNo = entry.voucher.voucherNumber  || `V-${entry.id.slice(-8)}`;
+        const voucherNo = entry.voucher.voucherNumber || `V-${entry.id.slice(-8)}`;
 
         const isVATEntry =
           entry.creditAccount?.accountNumber === 2740 ||

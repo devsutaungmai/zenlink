@@ -100,6 +100,7 @@ export default function DashboardNavbar() {
         { name:"Project", href: '/dashboard/projects' },
         { name:"Customer", href: '/dashboard/customers' },
         { name: "Product", href: '/dashboard/products' },
+        { name:"LedgerAccount", href: '/dashboard/ledger-accounts' },
       ],
     },
     { name: t('navigation.settings'), href: '/dashboard/settings', icon: Cog6ToothIcon },
