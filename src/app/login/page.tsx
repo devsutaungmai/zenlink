@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/shared/lib/useAuth'
 import Link from 'next/link'
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
@@ -8,16 +9,45 @@ import { User } from 'lucide-react'
 import { APP_NAME } from '@/app/constants/constants'
 
 export default function LoginPage() {
+  const router = useRouter()
   const { login, error, loading } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [companyId, setCompanyId] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(true)
+  const [checkingAuth, setCheckingAuth] = useState(true)
+
+  // Check if user is already logged in
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/api/me')
+        if (response.ok) {
+          // User is already logged in, redirect to dashboard
+          router.replace('/dashboard')
+          return
+        }
+      } catch (err) {
+        // Not logged in, show login page
+      }
+      setCheckingAuth(false)
+    }
+    checkAuth()
+  }, [router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     await login(email, password, rememberMe)
+  }
+
+  // Show loading while checking auth status
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#E5F1FF' }}>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#31BCFF]"></div>
+      </div>
+    )
   }
 
   return (
