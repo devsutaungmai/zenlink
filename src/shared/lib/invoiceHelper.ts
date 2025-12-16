@@ -353,7 +353,7 @@ async function generateCreditNoteNumber(businessId: string): Promise<string> {
 export async function generateVoucherNumber(businessId: string, type: VoucherType) {
   return await prisma.$transaction(async (tx) => {
     const year = new Date().getFullYear();
-    const BASE = 1_000_000;
+    const BASE = 0;
 
     // Find last voucher for this business + year
     const lastVoucher = await tx.voucher.findFirst({
