@@ -5,11 +5,11 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "dev:legacy": "next dev",
-    "build": "prisma generate && next build",
+    "build": "prisma generate && prisma migrate deploy && prisma db seed && next build",
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate",
-    "vercel-build": "prisma generate && prisma migrate deploy && next build"
+    "vercel-build": "prisma generate && prisma migrate deploy && prisma db seed && next build"
   },
   "dependencies": {
     "@aws-sdk/client-sns": "^3.848.0",
@@ -86,6 +86,6 @@
     "typescript": "^5"
   },
   "prisma": {
-    "seed": "node prisma/seed.ts"
+    "seed": "tsx prisma/seed.ts"
   }
 }

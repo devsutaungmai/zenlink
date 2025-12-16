@@ -44,7 +44,17 @@ function getAccountType(accountNumber: number): AccountType {
 
 async function importLedgerAccounts() {
   try {
-    console.log('📊 Starting ledger account import...');
+    // Check if default accounts already exist
+    const existingCount = await prisma.ledgerAccount.count({
+      where: { businessId: null }
+    });
+
+    if (existingCount > 0) {
+      console.log(`Default ledger accounts already exist (${existingCount} accounts). Skipping import.`);
+      return; // Exit early if data exists
+    }
+
+    console.log('📊 Starting ledger account import (no existing data found)...');
 
     const filePath = path.join(__dirname, 'data', 'Kontoplan.xlsx');
     console.log('📁 Reading file from:', filePath);
@@ -57,11 +67,11 @@ async function importLedgerAccounts() {
       throw new Error('No worksheet found in Excel file');
     }
 
-    console.log('📄 Worksheet name:', worksheet.name);
-    console.log('📏 Row count:', worksheet.rowCount);
+    console.log('Worksheet name:', worksheet.name);
+    console.log('Row count:', worksheet.rowCount);
 
     // Let's check the first 5 rows to see the structure
-    console.log('\n🔍 Inspecting first 5 rows:');
+    console.log('\n Inspecting first 5 rows:');
     for (let i = 1; i <= 5; i++) {
       const row = worksheet.getRow(i);
       console.log(`\nRow ${i}:`);
@@ -82,7 +92,7 @@ async function importLedgerAccounts() {
       });
       if (hasKode) {
         headerRowNumber = i;
-        console.log(`\n✅ Found header row at row ${i}`);
+        console.log(`\n Found header row at row ${i}`);
         break;
       }
     }
@@ -188,14 +198,14 @@ async function importLedgerAccounts() {
         imported++;
 
         if (imported === 1) {
-          console.log('\n✅ First account created successfully!');
+          console.log('\n First account created successfully!');
         }
 
         if (imported % 50 === 0) {
-          console.log(`   ✅ Imported ${imported} accounts...`);
+          console.log(`Imported ${imported} accounts...`);
         }
       } catch (error) {
-        console.error(`   ❌ Error importing account ${accountNumber} (${row['Navn']}):`, error);
+        console.error(`Error importing account ${accountNumber} (${row['Navn']}):`, error);
         invalidRows++;
       }
     }
