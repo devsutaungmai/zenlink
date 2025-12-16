@@ -5,11 +5,12 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "dev:legacy": "next dev",
-    "build": "prisma generate && prisma migrate deploy && prisma db seed && next build",
+    "build": "prisma generate && next build",
+    "seed:manual": "prisma db seed",
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate",
-    "vercel-build": "prisma generate && prisma migrate deploy && prisma db seed && next build"
+    "vercel-build": "prisma generate && next build"
   },
   "dependencies": {
     "@aws-sdk/client-sns": "^3.848.0",
