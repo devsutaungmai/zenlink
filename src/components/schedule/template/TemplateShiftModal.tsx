@@ -243,7 +243,14 @@ export default function TemplateShiftModal({
     if (!initialData?.employeeGroupId || initialData?.employeeId || initialData?.departmentId) return
     
     // Find an employee in this group to get their department
-    const groupEmployee = employees.find(emp => emp.employeeGroupId === initialData.employeeGroupId)
+    const groupEmployee = employees.find(emp => {
+      // Check employeeGroups array first
+      if (emp.employeeGroups && emp.employeeGroups.length > 0) {
+        return emp.employeeGroups.some(eg => eg.employeeGroupId === initialData.employeeGroupId)
+      }
+      // Fallback to legacy employeeGroupId
+      return emp.employeeGroupId === initialData.employeeGroupId
+    })
     if (groupEmployee?.departmentId) {
       setDepartmentId(groupEmployee.departmentId)
     }
@@ -408,6 +415,16 @@ export default function TemplateShiftModal({
     return undefined
   }, [functionId, employeeGroupId, linkedFunctionGroups])
 
+  // Helper function to check if employee belongs to a group
+  const employeeBelongsToGroup = useCallback((emp: Employee, groupId: string): boolean => {
+    // Check employeeGroups array first (many-to-many)
+    if (emp.employeeGroups && emp.employeeGroups.length > 0) {
+      return emp.employeeGroups.some(eg => eg.employeeGroupId === groupId)
+    }
+    // Fallback to legacy employeeGroupId field
+    return emp.employeeGroupId === groupId
+  }, [])
+
   // Filter employees based on function and employee group
   const filteredEmployees = useMemo(() => {
     // If employee is pre-selected, always include them in the list
@@ -419,13 +436,13 @@ export default function TemplateShiftModal({
       if (!resolvedLinkedGroupId) {
         return []
       }
-      return employees.filter(emp => emp.employeeGroupId === resolvedLinkedGroupId)
+      return employees.filter(emp => employeeBelongsToGroup(emp, resolvedLinkedGroupId))
     }
     if (employeeGroupId) {
-      return employees.filter(emp => emp.employeeGroupId === employeeGroupId)
+      return employees.filter(emp => employeeBelongsToGroup(emp, employeeGroupId))
     }
     return employees
-  }, [employees, functionId, employeeGroupId, resolvedLinkedGroupId, isEmployeePreSelected, preSelectedEmployee])
+  }, [employees, functionId, employeeGroupId, resolvedLinkedGroupId, isEmployeePreSelected, preSelectedEmployee, employeeBelongsToGroup])
 
   // Available employee group options based on function and employee context
   const availableEmployeeGroupOptions = useMemo(() => {

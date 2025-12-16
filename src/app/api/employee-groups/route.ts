@@ -99,11 +99,20 @@ export async function GET() {
           }
         },
         _count: {
-          select: { employees: true }
+          select: { employeesMulti: true }
         }
       }
     })
-    return NextResponse.json(employeeGroups)
+    
+    // Transform the response to use a consistent _count.employees key
+    const transformedGroups = employeeGroups.map(group => ({
+      ...group,
+      _count: {
+        employees: group._count.employeesMulti
+      }
+    }))
+    
+    return NextResponse.json(transformedGroups)
   } catch (error: any) {
     console.error('Detailed error:', error)
     return NextResponse.json(

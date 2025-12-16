@@ -99,6 +99,14 @@ interface EmployeeForForm {
   salaryRate?: number | null;
   employeeGroupId?: string | null;
   departmentId: string;
+  employeeGroups?: Array<{
+    employeeGroupId: string;
+    isPrimary: boolean;
+    employeeGroup: {
+      id: string;
+      name: string;
+    };
+  }>;
 }
 
 interface Department {
@@ -465,11 +473,21 @@ export default function ShiftForm({
       ? safeEmployees.find(emp => emp.id === formData.employeeId)
       : null;
 
+    // Helper function to check if employee belongs to a group
+    const employeeBelongsToGroup = (emp: EmployeeForForm, groupId: string): boolean => {
+      // Check employeeGroups array first (many-to-many)
+      if (emp.employeeGroups && emp.employeeGroups.length > 0) {
+        return emp.employeeGroups.some(eg => eg.employeeGroupId === groupId)
+      }
+      // Fallback to legacy employeeGroupId field
+      return emp.employeeGroupId === groupId
+    }
+
     if (formData.functionId) {
       if (!resolvedLinkedGroupId) {
         return currentEmployee ? [currentEmployee] : []
       }
-      const filtered = safeEmployees.filter(emp => emp.employeeGroupId === resolvedLinkedGroupId)
+      const filtered = safeEmployees.filter(emp => employeeBelongsToGroup(emp, resolvedLinkedGroupId))
       if (currentEmployee && !filtered.some(emp => emp.id === currentEmployee.id)) {
         return [currentEmployee, ...filtered]
       }
@@ -477,7 +495,7 @@ export default function ShiftForm({
     }
 
     if (formData.employeeGroupId) {
-      const filtered = safeEmployees.filter(emp => emp.employeeGroupId === formData.employeeGroupId)
+      const filtered = safeEmployees.filter(emp => employeeBelongsToGroup(emp, formData.employeeGroupId!))
       if (currentEmployee && !filtered.some(emp => emp.id === currentEmployee.id)) {
         return [currentEmployee, ...filtered]
       }
@@ -499,6 +517,30 @@ export default function ShiftForm({
       ? linkedFunctionGroups
       : employeeGroups
     : employeeGroups
+
+  // Helper function to check if employee belongs to a group (used in useEffect)
+  const employeeBelongsToGroup = React.useCallback((emp: EmployeeForForm, groupId: string): boolean => {
+    // Check employeeGroups array first (many-to-many)
+    if (emp.employeeGroups && emp.employeeGroups.length > 0) {
+      return emp.employeeGroups.some(eg => eg.employeeGroupId === groupId)
+    }
+    // Fallback to legacy employeeGroupId field
+    return emp.employeeGroupId === groupId
+  }, [])
+
+  // Helper function to get the first group an employee belongs to from a list of valid groups
+  const getEmployeeGroupFromValid = React.useCallback((emp: EmployeeForForm, validGroupIds: string[]): string | undefined => {
+    // Check employeeGroups array first (many-to-many)
+    if (emp.employeeGroups && emp.employeeGroups.length > 0) {
+      const matchingGroup = emp.employeeGroups.find(eg => validGroupIds.includes(eg.employeeGroupId))
+      return matchingGroup?.employeeGroupId
+    }
+    // Fallback to legacy employeeGroupId field
+    if (emp.employeeGroupId && validGroupIds.includes(emp.employeeGroupId)) {
+      return emp.employeeGroupId
+    }
+    return undefined
+  }, [])
 
   useEffect(() => {
     if (!formData.functionId) {
@@ -529,7 +571,7 @@ export default function ShiftForm({
     if (linkedFunctionGroups.length === 1) {
       const onlyGroup = linkedFunctionGroups[0]
       const employeeValid = formData.employeeId
-        ? safeEmployees.some(emp => emp.id === formData.employeeId && emp.employeeGroupId === onlyGroup.id)
+        ? safeEmployees.some(emp => emp.id === formData.employeeId && employeeBelongsToGroup(emp, onlyGroup.id))
         : true
 
       if (formData.employeeGroupId === onlyGroup.id && employeeValid) {
@@ -550,12 +592,15 @@ export default function ShiftForm({
     if (!hasValidGroupSelection) {
       if (initialData?.employeeId && formData.employeeId === initialData.employeeId) {
         const employee = safeEmployees.find(emp => emp.id === formData.employeeId)
-        if (employee?.employeeGroupId && validGroupIds.includes(employee.employeeGroupId)) {
-          setFormData(prev => ({
-            ...prev,
-            employeeGroupId: employee.employeeGroupId || undefined,
-          }))
-          return
+        if (employee) {
+          const employeeGroupId = getEmployeeGroupFromValid(employee, validGroupIds)
+          if (employeeGroupId) {
+            setFormData(prev => ({
+              ...prev,
+              employeeGroupId: employeeGroupId,
+            }))
+            return
+          }
         }
       }
       
@@ -571,7 +616,7 @@ export default function ShiftForm({
 
     if (formData.employeeId) {
       const employeeValid = safeEmployees.some(
-        emp => emp.id === formData.employeeId && emp.employeeGroupId === formData.employeeGroupId
+        emp => emp.id === formData.employeeId && employeeBelongsToGroup(emp, formData.employeeGroupId!)
       )
 
       if (!employeeValid) {
@@ -581,7 +626,7 @@ export default function ShiftForm({
         }))
       }
     }
-  }, [formData.functionId, formData.employeeGroupId, formData.employeeId, linkedFunctionGroups, safeEmployees, loadingFunctions, initialData?.employeeId, functions.length])
+  }, [formData.functionId, formData.employeeGroupId, formData.employeeId, linkedFunctionGroups, safeEmployees, loadingFunctions, initialData?.employeeId, functions.length, employeeBelongsToGroup, getEmployeeGroupFromValid])
 
 
   useEffect(() => {

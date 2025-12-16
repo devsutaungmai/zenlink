@@ -3,11 +3,30 @@ import { prisma } from '@/shared/lib/prisma'
 import { getCurrentUserOrEmployee } from '@/shared/lib/auth'
 import { hasAnyServerPermission } from '@/shared/lib/serverPermissions'
 import { PERMISSIONS } from '@/shared/lib/permissions'
-import { addDays, startOfWeek, format } from 'date-fns'
 
-function toUTCDate(date: Date): Date {
-  const dateString = format(date, 'yyyy-MM-dd')
-  return new Date(dateString + 'T00:00:00.000Z')
+// Helper to get UTC date from date string (YYYY-MM-DD)
+function parseUTCDate(dateStr: string): Date {
+  return new Date(dateStr + 'T00:00:00.000Z')
+}
+
+// Helper to format date as YYYY-MM-DD
+function formatDateString(date: Date): string {
+  return date.toISOString().split('T')[0]
+}
+
+// Helper to add days to a date string and return YYYY-MM-DD
+function addDaysToDateString(dateStr: string, days: number): string {
+  const date = parseUTCDate(dateStr)
+  date.setUTCDate(date.getUTCDate() + days)
+  return formatDateString(date)
+}
+
+// Helper to get the start of week (Sunday) for a date string
+function getWeekStartDateString(dateStr: string): string {
+  const date = parseUTCDate(dateStr)
+  const dayOfWeek = date.getUTCDay() // 0 = Sunday, 1 = Monday, etc.
+  date.setUTCDate(date.getUTCDate() - dayOfWeek)
+  return formatDateString(date)
 }
 
 interface RouteParams {
@@ -58,21 +77,26 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Template not found' }, { status: 404 })
     }
 
-    const targetDate = new Date(applyToDate)
-    let dateRange: { start: Date; end: Date }
+    // Extract the date string from the ISO date (YYYY-MM-DD)
+    // This ensures we work with the date the user intended, regardless of timezone
+    const targetDateStr = applyToDate.split('T')[0]
+    let dateRangeStart: string
+    let dateRangeEnd: string
+
+    console.log('[Apply Template] Input applyToDate:', applyToDate)
+    console.log('[Apply Template] Parsed targetDateStr:', targetDateStr)
 
     if (template.length === 'week') {
-      const weekStart = startOfWeek(targetDate, { weekStartsOn: 0 })
-      dateRange = {
-        start: toUTCDate(weekStart),
-        end: toUTCDate(addDays(weekStart, 7))
-      }
+      const weekStartStr = getWeekStartDateString(targetDateStr)
+      dateRangeStart = weekStartStr
+      dateRangeEnd = addDaysToDateString(weekStartStr, 7)
+      console.log('[Apply Template] Week template - weekStartStr:', weekStartStr)
     } else {
-      dateRange = {
-        start: toUTCDate(targetDate),
-        end: toUTCDate(addDays(targetDate, 1))
-      }
+      dateRangeStart = targetDateStr
+      dateRangeEnd = addDaysToDateString(targetDateStr, 1)
     }
+    
+    console.log('[Apply Template] Date range:', dateRangeStart, 'to', dateRangeEnd)
 
     if (existingShiftsOption === 'delete-all') {
       await prisma.shift.deleteMany({
@@ -83,21 +107,27 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
             }
           },
           date: {
-            gte: dateRange.start,
-            lt: dateRange.end
+            gte: parseUTCDate(dateRangeStart),
+            lt: parseUTCDate(dateRangeEnd)
           }
         }
       })
     }
 
     const createdShifts = []
+    const weekStartStr = template.length === 'week' ? getWeekStartDateString(targetDateStr) : targetDateStr
+
+    console.log('[Apply Template] Template shifts count:', template.shifts.length)
+    console.log('[Apply Template] Template shifts dayIndices:', template.shifts.map(s => s.dayIndex))
 
     for (const templateShift of template.shifts) {
-      const shiftDate = template.length === 'week'
-        ? addDays(startOfWeek(targetDate, { weekStartsOn: 0 }), templateShift.dayIndex)
-        : targetDate
+      const shiftDateStr = template.length === 'week'
+        ? addDaysToDateString(weekStartStr, templateShift.dayIndex)
+        : targetDateStr
       
-      const shiftDateUTC = toUTCDate(shiftDate)
+      const shiftDateUTC = parseUTCDate(shiftDateStr)
+      
+      console.log('[Apply Template] Creating shift - dayIndex:', templateShift.dayIndex, 'shiftDateStr:', shiftDateStr, 'shiftDateUTC:', shiftDateUTC.toISOString())
 
       if (existingShiftsOption === 'update' && templateShift.employeeId) {
         const existingShift = await prisma.shift.findFirst({

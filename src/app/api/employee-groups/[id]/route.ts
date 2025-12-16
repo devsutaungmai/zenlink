@@ -14,6 +14,19 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
       },
       include: {
         employees: true,
+        employeesMulti: {
+          include: {
+            employee: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                employeeNo: true,
+                email: true
+              }
+            }
+          }
+        },
         functions: {
           select: {
             id: true,
@@ -28,7 +41,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
           }
         },
         _count: {
-          select: { employees: true }
+          select: { employeesMulti: true }
         }
       }
     })
@@ -40,7 +53,15 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
       )
     }
     
-    return NextResponse.json(employeeGroup)
+    // Transform the response to use consistent _count.employees key
+    const transformedGroup = {
+      ...employeeGroup,
+      _count: {
+        employees: employeeGroup._count.employeesMulti
+      }
+    }
+    
+    return NextResponse.json(transformedGroup)
   } catch (error) {
     console.error('GET error:', error)
     return NextResponse.json(
@@ -84,6 +105,19 @@ export async function PUT(
       data,
       include: {
         employees: true,
+        employeesMulti: {
+          include: {
+            employee: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                employeeNo: true,
+                email: true
+              }
+            }
+          }
+        },
         functions: {
           select: {
             id: true,
@@ -98,12 +132,20 @@ export async function PUT(
           }
         },
         _count: {
-          select: { employees: true }
+          select: { employeesMulti: true }
         }
       }
     })
     
-    return NextResponse.json(employeeGroup)
+    // Transform the response to use consistent _count.employees key
+    const transformedGroup = {
+      ...employeeGroup,
+      _count: {
+        employees: employeeGroup._count.employeesMulti
+      }
+    }
+    
+    return NextResponse.json(transformedGroup)
   } catch (error: any) {
     console.error('Update error:', error)
     
@@ -130,7 +172,7 @@ export async function DELETE(
     const user = await requireAuth()
     const { id } = await context.params
     
-    // Check if employee group has any employees first
+    // Check if employee group has any employees first (check both old and new relations)
     const employeeGroup = await prisma.employeeGroup.findUnique({
       where: { 
         id,
@@ -138,7 +180,7 @@ export async function DELETE(
       },
       include: {
         _count: {
-          select: { employees: true }
+          select: { employees: true, employeesMulti: true }
         }
       }
     })
@@ -150,7 +192,8 @@ export async function DELETE(
       )
     }
     
-    if (employeeGroup._count.employees > 0) {
+    // Check both old and new relations for assigned employees
+    if (employeeGroup._count.employees > 0 || employeeGroup._count.employeesMulti > 0) {
       return NextResponse.json(
         { error: 'Cannot delete employee group with assigned employees' },
         { status: 400 }
