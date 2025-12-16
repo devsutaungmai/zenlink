@@ -1397,13 +1397,20 @@ export default function SchedulePage() {
           currentWeekStart={startOfWeek(currentDate, { weekStartsOn: 0 })}
           onApply={async (data) => {
             try {
+              // Format date as YYYY-MM-DD to avoid timezone issues
+              // Using local date components ensures the user's selected date is preserved
+              const year = data.applyToDate.getFullYear()
+              const month = String(data.applyToDate.getMonth() + 1).padStart(2, '0')
+              const day = String(data.applyToDate.getDate()).padStart(2, '0')
+              const applyToDateStr = `${year}-${month}-${day}`
+              
               const response = await fetch(`/api/schedule-templates/${data.templateId}/apply`, {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                  applyToDate: data.applyToDate.toISOString(),
+                  applyToDate: applyToDateStr,
                   existingShiftsOption: data.existingShiftsOption
                 })
               })
