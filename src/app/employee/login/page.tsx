@@ -15,7 +15,6 @@ function EmployeeLoginContent() {
   const [error, setError] = useState<string | null>(null)
   const [isPreFilled, setIsPreFilled] = useState(false)
 
-  // Check for pre-filled employee ID from URL params
   useEffect(() => {
     const preFilledEmployeeId = searchParams.get('employeeId')
     if (preFilledEmployeeId) {
@@ -55,10 +54,12 @@ function EmployeeLoginContent() {
     setError(null)
 
     try {
+      const businessName = searchParams.get('businessName')
+
       const res = await fetch('/api/auth/employee-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ employeeId, pin }),
+        body: JSON.stringify({ employeeId, pin, businessName }),
       })
 
       const data = await res.json()

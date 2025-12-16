@@ -5,73 +5,103 @@ import bcrypt from 'bcryptjs'
 
 export async function POST(req: Request) {
   try {
-    const { employeeId, pin } = await req.json()
+    const { employeeId, pin, businessName } = await req.json()
 
-    if (!employeeId || !pin) {
+    const employeeNo = String(employeeId ?? '').trim()
+    const pinValue = String(pin ?? '').trim()
+
+    const businessNameValue = String(businessName ?? '').trim()
+
+    if (!employeeNo || !pinValue) {
       return NextResponse.json(
         { error: 'Employee ID and PIN are required' },
         { status: 400 }
       )
     }
 
-    if (!/^\d{6}$/.test(pin)) {
+    if (!/^\d{6}$/.test(pinValue)) {
       return NextResponse.json(
         { error: 'PIN must be exactly 6 digits' },
         { status: 400 }
       )
     }
 
-    const employee = await prisma.employee.findFirst({
-      where: { employeeNo: employeeId },
+    let businessId: string | null = null
+    if (businessNameValue) {
+      const business = await prisma.business.findFirst({
+        where: {
+          name: {
+            equals: businessNameValue,
+            mode: 'insensitive',
+          },
+        },
+        select: { id: true },
+      })
+      businessId = business?.id ?? null
+    }
+
+    const employees = await prisma.employee.findMany({
+      where: {
+        employeeNo,
+        ...(businessId
+          ? {
+              user: {
+                businessId,
+              },
+            }
+          : {}),
+      },
       include: {
         user: true,
         department: true,
         employeeGroup: true,
       },
+      take: 25,
     })
 
-    console.log('Employee login attempt:', {
-      employeeId,
-      employeeFound: !!employee,
-      hasUser: !!employee?.user,
-      hasPin: !!employee?.user?.pin,
-      pinLength: employee?.user?.pin?.length,
-      userIdMatch: employee?.userId === employee?.user?.id
-    })
-
-    if (!employee) {
-      console.log('Employee not found for employeeNo:', employeeId)
+    if (employees.length === 0) {
       return NextResponse.json(
         { error: 'Invalid employee ID or PIN' },
         { status: 401 }
       )
     }
 
-    // Ensure this employee has their own User record with a PIN
-    if (!employee.user.pin) {
+    const candidatesWithPin = employees.filter((e) => !!e.user?.pin)
+    if (candidatesWithPin.length === 0) {
       return NextResponse.json(
         { error: 'PIN not set. Please contact your administrator.' },
         { status: 401 }
       )
     }
 
-    // Verify that the User record belongs to this specific employee
-    if (employee.userId !== employee.user.id) {
-      return NextResponse.json(
-        { error: 'User record mismatch. Please contact your administrator.' },
-        { status: 401 }
-      )
+    const matchedEmployees: (typeof employees) = []
+    for (const candidate of candidatesWithPin) {
+      if (!candidate.user || candidate.userId !== candidate.user.id) continue
+
+      const ok = await bcrypt.compare(pinValue, candidate.user.pin as string)
+      if (ok) {
+        matchedEmployees.push(candidate)
+      }
     }
 
-    // Use bcrypt to compare the PIN
-    const isPinValid = await bcrypt.compare(pin, employee.user.pin)
-    
-    if (!isPinValid) {
+    if (matchedEmployees.length === 0) {
       return NextResponse.json(
         { error: 'Invalid employee ID or PIN' },
         { status: 401 }
       )
     }
+
+    if (matchedEmployees.length > 1) {
+      return NextResponse.json(
+        {
+          error:
+            'Multiple employees matched this Employee ID and PIN. Please login from the Time Tracking portal (select your business) or contact your administrator.',
+        },
+        { status: 401 }
+      )
+    }
+
+    const employee = matchedEmployees[0]
 
     const token = jwt.sign(
       {
@@ -105,14 +135,9 @@ export async function POST(req: Request) {
       sameSite: 'strict',
     })
 
-    // Clear any existing admin session to ensure employee session takes precedence
-    res.cookies.set('token', '', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 0, // Expire immediately
-      path: '/',
-      sameSite: 'strict',
-    })
+    // NOTE: We no longer clear the admin token here.
+    // Both sessions (admin 'token' and employee 'employee_token') can coexist.
+    // Admin pages use 'token', employee pages use 'employee_token'.
 
     return res
   } catch (error: any) {

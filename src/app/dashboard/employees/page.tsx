@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon, PhoneIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon, PhoneIcon, EyeIcon } from '@heroicons/react/24/outline'
 import { useTranslation } from 'react-i18next'
 import Swal from 'sweetalert2'
 import {
@@ -33,6 +33,8 @@ import {
   MobileCardActions,
   Badge,
 } from "@/components/MobileCardList"
+import { usePermissions } from "@/shared/lib/usePermissions"
+import { PERMISSIONS } from "@/shared/lib/permissions"
 
 interface Employee {
   id: string
@@ -42,9 +44,32 @@ interface Employee {
   department: {
     name: string
   }
+  departments?: {
+    departmentId: string
+    isPrimary: boolean
+    department: {
+      id: string
+      name: string
+    }
+  }[]
   employeeGroup?: {
     name: string
   }
+  employeeGroups?: {
+    employeeGroupId: string
+    isPrimary: boolean
+    employeeGroup: {
+      id: string
+      name: string
+    }
+  }[]
+  employeeRoles?: {
+    roleId: string
+    role: {
+      id: string
+      name: string
+    }
+  }[]
   mobile: string
   email?: string
   isTeamLeader: boolean
@@ -53,6 +78,7 @@ interface Employee {
 
 export default function EmployeesPage() {
   const { t } = useTranslation()
+  const { hasPermission } = usePermissions()
   const [employees, setEmployees] = useState<Employee[]>([]) 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -309,13 +335,15 @@ export default function EmployeesPage() {
               {t('employees.description')}
             </p>
           </div>
-          <Link
-            href="/dashboard/employees/create"
-            className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 group"
-          >
-            <PlusIcon className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
-            {t('employees.add_employee')}
-          </Link>
+          {hasPermission(PERMISSIONS.EMPLOYEES_CREATE) && (
+            <Link
+              href="/dashboard/employees/create"
+              className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 group"
+            >
+              <PlusIcon className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
+              {t('employees.add_employee')}
+            </Link>
+          )}
         </div>
       </div>
 
@@ -372,7 +400,7 @@ export default function EmployeesPage() {
           <p className="text-gray-500 mb-6">
             {searchTerm ? t('employees.no_employees_message') : t('employees.get_started')}
           </p>
-          {!searchTerm && (
+          {!searchTerm && hasPermission(PERMISSIONS.EMPLOYEES_CREATE) && (
             <Link
               href="/dashboard/employees/create"
               className="inline-flex items-center px-6 py-3 rounded-xl bg-[#31BCFF] text-white font-medium hover:bg-[#31BCFF]/90 transition-colors duration-200"
@@ -403,14 +431,54 @@ export default function EmployeesPage() {
                 <MobileCardGrid columns={2}>
                   <MobileCardField
                     label={t('employees.table.department')}
-                    value={employee.department.name}
+                    value={
+                      <div className="flex flex-wrap gap-1">
+                        {employee.departments && employee.departments.length > 0 ? (
+                          employee.departments.map((dept: any) => (
+                            <span key={dept.departmentId} className="inline-flex items-center px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 text-xs">
+                              {dept.department.name}
+                            </span>
+                          ))
+                        ) : employee.department ? (
+                          employee.department.name
+                        ) : (
+                          <span className="text-gray-400 italic">No department</span>
+                        )}
+                      </div>
+                    }
                   />
                   <MobileCardField
                     label={t('employees.table.group')}
                     value={
-                      employee.employeeGroup?.name || (
-                        <span className="text-gray-400 italic">{t('employees.table.no_group')}</span>
-                      )
+                      <div className="flex flex-wrap gap-1">
+                        {employee.employeeGroups && employee.employeeGroups.length > 0 ? (
+                          employee.employeeGroups.map((grp: any) => (
+                            <span key={grp.employeeGroupId} className="inline-flex items-center px-2 py-0.5 rounded-md bg-green-50 text-green-700 text-xs">
+                              {grp.employeeGroup.name}
+                            </span>
+                          ))
+                        ) : employee.employeeGroup ? (
+                          employee.employeeGroup.name
+                        ) : (
+                          <span className="text-gray-400 italic">{t('employees.table.no_group')}</span>
+                        )}
+                      </div>
+                    }
+                  />
+                  <MobileCardField
+                    label={t('employees.table.roles', { defaultValue: 'Roles' })}
+                    value={
+                      <div className="flex flex-wrap gap-1">
+                        {employee.employeeRoles && employee.employeeRoles.length > 0 ? (
+                          employee.employeeRoles.map((er) => (
+                            <span key={er.roleId} className="inline-flex items-center px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 text-xs">
+                              {er.role.name}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-gray-400 italic">{t('employees.table.no_roles', { defaultValue: 'No roles' })}</span>
+                        )}
+                      </div>
                     }
                   />
                 </MobileCardGrid>
@@ -430,60 +498,72 @@ export default function EmployeesPage() {
                 </MobileCardSection>
 
                 <MobileCardActions>
-                  <button
-                    onClick={() => handleInvite(employee.email || '', employee.id)}
-                    className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
-                    title={t('employees.table.send_invite')}
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                      stroke="currentColor"
-                      className="w-5 h-5"
+                  {hasPermission(PERMISSIONS.EMPLOYEES_INVITE) && (
+                    <button
+                      onClick={() => handleInvite(employee.email || '', employee.id)}
+                      className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
+                      title={t('employees.table.send_invite')}
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25H4.5a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"
-                      />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={() => handleSetPin(employee.id, `${employee.firstName} ${employee.lastName}`)}
-                    className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200"
-                    title={t('employees.table.set_pin')}
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                      stroke="currentColor"
-                      className="w-5 h-5"
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={1.5}
+                        stroke="currentColor"
+                        className="w-5 h-5"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25H4.5a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"
+                        />
+                      </svg>
+                    </button>
+                  )}
+                  {hasPermission(PERMISSIONS.EMPLOYEES_SET_PIN) && (
+                    <button
+                      onClick={() => handleSetPin(employee.id, `${employee.firstName} ${employee.lastName}`)}
+                      className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200"
+                      title={t('employees.table.set_pin')}
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z"
-                      />
-                    </svg>
-                  </button>
-                  <Link
-                    href={`/dashboard/employees/${employee.id}/edit`}
-                    className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
-                    title={t('employees.table.edit_employee')}
-                  >
-                    <PencilIcon className="h-5 w-5" />
-                  </Link>
-                  <button
-                    onClick={() => handleDelete(employee.id)}
-                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                    title={t('employees.table.delete_employee')}
-                  >
-                    <TrashIcon className="h-5 w-5" />
-                  </button>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={1.5}
+                        stroke="currentColor"
+                        className="w-5 h-5"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z"
+                        />
+                      </svg>
+                    </button>
+                  )}
+                  {hasPermission(PERMISSIONS.EMPLOYEES_VIEW) && (
+                    <Link
+                      href={`/dashboard/employees/${employee.id}/edit`}
+                      className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
+                      title={hasPermission(PERMISSIONS.EMPLOYEES_EDIT) ? t('employees.table.edit_employee') : t('employees.table.view_employee', { defaultValue: 'View Employee' })}
+                    >
+                      {hasPermission(PERMISSIONS.EMPLOYEES_EDIT) ? (
+                        <PencilIcon className="h-5 w-5" />
+                      ) : (
+                        <EyeIcon className="h-5 w-5" />
+                      )}
+                    </Link>
+                  )}
+                  {hasPermission(PERMISSIONS.EMPLOYEES_DELETE) && (
+                    <button
+                      onClick={() => handleDelete(employee.id)}
+                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                      title={t('employees.table.delete_employee')}
+                    >
+                      <TrashIcon className="h-5 w-5" />
+                    </button>
+                  )}
                 </MobileCardActions>
               </MobileCard>
             ))}
@@ -506,6 +586,9 @@ export default function EmployeesPage() {
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       {t('employees.table.group')}
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t('employees.table.roles', { defaultValue: 'Roles' })}
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       {t('employees.table.contact')}
@@ -534,12 +617,45 @@ export default function EmployeesPage() {
                         <div className="text-sm text-gray-900">{employee.employeeNo}</div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900">{employee.department.name}</div>
+                        <div className="flex flex-wrap gap-1">
+                          {employee.departments && employee.departments.length > 0 ? (
+                            employee.departments.map((dept: any) => (
+                              <span key={dept.departmentId} className="inline-flex items-center px-2 py-1 rounded-md bg-blue-50 text-blue-700 text-xs font-medium">
+                                {dept.department.name}
+                              </span>
+                            ))
+                          ) : employee.department ? (
+                            <span className="text-sm text-gray-900">{employee.department.name}</span>
+                          ) : (
+                            <span className="text-sm text-gray-400 italic">No department</span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900">
-                          {employee.employeeGroup?.name || (
-                            <span className="text-gray-400 italic">{t('employees.table.no_group')}</span>
+                        <div className="flex flex-wrap gap-1">
+                          {employee.employeeGroups && employee.employeeGroups.length > 0 ? (
+                            employee.employeeGroups.map((grp: any) => (
+                              <span key={grp.employeeGroupId} className="inline-flex items-center px-2 py-1 rounded-md bg-green-50 text-green-700 text-xs font-medium">
+                                {grp.employeeGroup.name}
+                              </span>
+                            ))
+                          ) : employee.employeeGroup ? (
+                            <span className="text-sm text-gray-900">{employee.employeeGroup.name}</span>
+                          ) : (
+                            <span className="text-sm text-gray-400 italic">{t('employees.table.no_group')}</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-wrap gap-1">
+                          {employee.employeeRoles && employee.employeeRoles.length > 0 ? (
+                            employee.employeeRoles.map((er) => (
+                              <span key={er.roleId} className="inline-flex items-center px-2 py-1 rounded-md bg-purple-50 text-purple-700 text-xs font-medium">
+                                {er.role.name}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-sm text-gray-400 italic">{t('employees.table.no_roles', { defaultValue: 'No roles' })}</span>
                           )}
                         </div>
                       </td>
@@ -551,60 +667,72 @@ export default function EmployeesPage() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => handleInvite(employee.email || '', employee.id)}
-                            className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
-                            title={t('employees.table.send_invite')}
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              strokeWidth={1.5}
-                              stroke="currentColor"
-                              className="w-4 h-4"
+                          {hasPermission(PERMISSIONS.EMPLOYEES_INVITE) && (
+                            <button
+                              onClick={() => handleInvite(employee.email || '', employee.id)}
+                              className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
+                              title={t('employees.table.send_invite')}
                             >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25H4.5a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"
-                              />
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => handleSetPin(employee.id, `${employee.firstName} ${employee.lastName}`)}
-                            className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200"
-                            title={t('employees.table.set_pin')}
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              strokeWidth={1.5}
-                              stroke="currentColor"
-                              className="w-4 h-4"
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                strokeWidth={1.5}
+                                stroke="currentColor"
+                                className="w-4 h-4"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25H4.5a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"
+                                />
+                              </svg>
+                            </button>
+                          )}
+                          {hasPermission(PERMISSIONS.EMPLOYEES_SET_PIN) && (
+                            <button
+                              onClick={() => handleSetPin(employee.id, `${employee.firstName} ${employee.lastName}`)}
+                              className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200"
+                              title={t('employees.table.set_pin')}
                             >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z"
-                              />
-                            </svg>
-                          </button>
-                          <Link
-                            href={`/dashboard/employees/${employee.id}/edit`}
-                            className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
-                            title={t('employees.table.edit_employee')}
-                          >
-                            <PencilIcon className="h-4 w-4" />
-                          </Link>
-                          <button
-                            onClick={() => handleDelete(employee.id)}
-                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                            title={t('employees.table.delete_employee')}
-                          >
-                            <TrashIcon className="h-4 w-4" />
-                          </button>
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                strokeWidth={1.5}
+                                stroke="currentColor"
+                                className="w-4 h-4"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z"
+                                />
+                              </svg>
+                            </button>
+                          )}
+                          {hasPermission(PERMISSIONS.EMPLOYEES_VIEW) && (
+                            <Link
+                              href={`/dashboard/employees/${employee.id}/edit`}
+                              className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
+                              title={hasPermission(PERMISSIONS.EMPLOYEES_EDIT) ? t('employees.table.edit_employee') : t('employees.table.view_employee', { defaultValue: 'View Employee' })}
+                            >
+                              {hasPermission(PERMISSIONS.EMPLOYEES_EDIT) ? (
+                                <PencilIcon className="h-4 w-4" />
+                              ) : (
+                                <EyeIcon className="h-4 w-4" />
+                              )}
+                            </Link>
+                          )}
+                          {hasPermission(PERMISSIONS.EMPLOYEES_DELETE) && (
+                            <button
+                              onClick={() => handleDelete(employee.id)}
+                              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                              title={t('employees.table.delete_employee')}
+                            >
+                              <TrashIcon className="h-4 w-4" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

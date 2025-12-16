@@ -14,13 +14,76 @@ model User {
   firstName           String
   lastName            String
   role                String               @default("USER")
+  roleId              String?
   businessId          String
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
   pin                 String?
   employees           Employee[]
   business            Business             @relation(fields: [businessId], references: [id])
+  assignedRole        Role?                @relation(fields: [roleId], references: [id])
   passwordResetTokens PasswordResetToken[]
+
+  @@index([roleId])
+}
+
+// Role model - admin can create custom roles
+model Role {
+  id          String           @id @default(cuid())
+  name        String           // e.g., "Admin", "Manager", "Employee"
+  description String?
+  isSystem    Boolean          @default(false) // System roles can't be deleted
+  isDefault   Boolean          @default(false) // Default role for new employees
+  businessId  String
+  business    Business         @relation(fields: [businessId], references: [id])
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  users       User[]
+  permissions RolePermission[]
+  employees   EmployeeRole[]   // Many-to-many relation with employees
+  departments RoleDepartment[] // Many-to-many relation with departments
+
+  @@unique([name, businessId])
+  @@index([businessId])
+}
+
+// Junction table for Role-Department many-to-many relationship
+model RoleDepartment {
+  id           String     @id @default(cuid())
+  roleId       String
+  departmentId String
+  createdAt    DateTime   @default(now())
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, departmentId])
+  @@index([roleId])
+  @@index([departmentId])
+}
+
+// Permission model - defines all available permissions
+model Permission {
+  id          String           @id @default(cuid())
+  code        String           @unique // e.g., "employees.view", "employees.create"
+  name        String           // Human readable name
+  description String?
+  category    String           // e.g., "Employees", "Schedule", "Reports"
+  createdAt   DateTime         @default(now())
+  roles       RolePermission[]
+}
+
+// Junction table for Role-Permission many-to-many relationship
+model RolePermission {
+  id           String     @id @default(cuid())
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
 }
 
 model PasswordResetToken {
@@ -53,11 +116,14 @@ model Business {
   departments              Department[]
   employeeGroups           EmployeeGroup[]
   invitations              Invitation[]
+  laborLawSettings         LaborLawSettings[]
   payRules                 PayRule[]
   payrollPeriods           PayrollPeriod[]
   punchClockAccessSettings PunchClockAccessSettings? @relation("PunchClockAccessSettings")
   punchClockProfiles       PunchClockProfile[]
+  roles                    Role[]
   salaryCodes              SalaryCode[]
+  scheduleTemplates        ScheduleTemplate[]
   shiftTypes               ShiftTypeConfig[]
   users                    User[]
   customers                Customer[]
@@ -73,64 +139,110 @@ model Business {
 }
 
 model Employee {
-  id                  String               @id @default(cuid())
+  id                  String                    @id @default(cuid())
   userId              String
   firstName           String
   lastName            String
   birthday            DateTime
   sex                 Sex
-  socialSecurityNo    String?              @unique
+  socialSecurityNo    String?                   @unique
   address             String
   mobile              String
   employeeNo          String?
   bankAccount         String
   hoursPerMonth       Float?
   dateOfHire          DateTime
-  isTeamLeader        Boolean              @default(false)
-  departmentId        String
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
-  employeeGroupId     String?
-  email               String?              @unique
+  isTeamLeader        Boolean                   @default(false)
+  departmentId        String                    // Kept for backward compatibility
+  createdAt           DateTime                  @default(now())
+  updatedAt           DateTime                  @updatedAt
+  employeeGroupId     String?                   // Kept for backward compatibility
+  email               String?                   @unique
   profilePhoto        String?
   salaryRate          Float?
   attendances         Attendance[]
   availabilities      Availability[]
-  contractsAsPerson   Contract[]           @relation("ContractPerson")
+  contractsAsPerson   Contract[]                @relation("ContractPerson")
   contracts           Contract[]
-  department          Department           @relation(fields: [departmentId], references: [id])
-  employeeGroup       EmployeeGroup?       @relation("EmployeeToGroup", fields: [employeeGroupId], references: [id])
-  user                User                 @relation(fields: [userId], references: [id])
+  department          Department                @relation(fields: [departmentId], references: [id])
+  employeeGroup       EmployeeGroup?            @relation("EmployeeToGroup", fields: [employeeGroupId], references: [id])
+  user                User                      @relation(fields: [userId], references: [id])
   employeePayRules    EmployeePayRule[]
-  notifications       Notification[]       @relation("NotificationRecipient")
+  notifications       Notification[]            @relation("NotificationRecipient")
   payrollEntries      PayrollEntry[]
   shifts              Shift[]
-  fromShiftExchanges  ShiftExchange[]      @relation("FromEmployee")
-  toShiftExchanges    ShiftExchange[]      @relation("ToEmployee")
+  fromShiftExchanges  ShiftExchange[]           @relation("FromEmployee")
+  toShiftExchanges    ShiftExchange[]           @relation("ToEmployee")
   sickLeaves          SickLeave[]
   sickPayCalculations SickPayCalculation[]
   timeEntries         TimeEntry[]
   workPlans           WorkPlan[]
   functions           EmployeeFunction[]
+  departments         EmployeeDepartment[]      // Many-to-many relation
+  employeeGroups      EmployeeEmployeeGroup[]   // Many-to-many relation
+  employeeRoles       EmployeeRole[]            // Many-to-many relation with roles
+}
+
+model EmployeeRole {
+  id           String     @id @default(cuid())
+  employeeId   String
+  roleId       String
+  isPrimary    Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+  employee     Employee   @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, roleId])
+  @@index([employeeId])
+  @@index([roleId])
+}
+
+model EmployeeDepartment {
+  id           String     @id @default(cuid())
+  employeeId   String
+  departmentId String
+  isPrimary    Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+  employee     Employee   @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, departmentId])
+  @@index([employeeId])
+  @@index([departmentId])
+}
+
+model EmployeeEmployeeGroup {
+  id              String        @id @default(cuid())
+  employeeId      String
+  employeeGroupId String
+  isPrimary       Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+  employee        Employee      @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employeeGroup   EmployeeGroup @relation(fields: [employeeGroupId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, employeeGroupId])
+  @@index([employeeId])
+  @@index([employeeGroupId])
 }
 
 model EmployeeGroup {
-  id                    String                 @id @default(cuid())
+  id                    String                   @id @default(cuid())
   name                  String
   hourlyWage            Float
   wagePerShift          Float
-  defaultWageType       WageType               @default(HOURLY)
+  defaultWageType       WageType                 @default(HOURLY)
   salaryCode            String?
-  createdAt             DateTime               @default(now())
-  updatedAt             DateTime               @default(now())
+  createdAt             DateTime                 @default(now())
+  updatedAt             DateTime                 @default(now())
   businessId            String
   contracts             Contract[]
   contractTemplates     ContractTemplate[]
-  employees             Employee[]             @relation("EmployeeToGroup")
-  business              Business               @relation(fields: [businessId], references: [id])
+  employees             Employee[]               @relation("EmployeeToGroup")
+  business              Business                 @relation(fields: [businessId], references: [id])
   functions             DepartmentFunction[]
   employeeGroupPayRules EmployeeGroupPayRule[]
   shifts                Shift[]
+  employeesMulti        EmployeeEmployeeGroup[]  // Many-to-many relation
 
   @@unique([name, businessId])
 }
@@ -180,6 +292,8 @@ model Department {
   customers          Customer[]
   invoices           Invoice[] 
   ledgerEntries      LedgerEntry[]
+  employeesMulti     EmployeeDepartment[]   // Many-to-many relation
+  roles              RoleDepartment[]       // Many-to-many relation with roles
 }
 
 model DepartmentCategory {
@@ -1037,6 +1151,68 @@ enum PaymentTimeUnit {
   @@map("payment_time_unit")
 }
 
+model LaborLawSettings {
+  id                      String   @id @default(cuid())
+  businessId              String
+  countryCode             String
+  maxHoursPerDay          Float    @default(9)
+  maxHoursPerWeek         Float    @default(40)
+  maxOvertimePerDay       Float    @default(4)
+  maxOvertimePerWeek      Float    @default(10)
+  maxConsecutiveDays      Int      @default(6)
+  minRestHoursBetweenShifts Float  @default(11)
+  longShiftThreshold      Float    @default(5.5)
+  minBreakForLongShifts   Int      @default(30)
+  overtimeThreshold       Float    @default(9)
+  isActive                Boolean  @default(true)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+  business                Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, countryCode])
+  @@index([businessId])
+  @@index([businessId, isActive])
+}
+
+model ScheduleTemplate {
+  id         String                  @id @default(cuid())
+  name       String
+  length     ScheduleTemplateLength
+  businessId String
+  createdAt  DateTime                @default(now())
+  updatedAt  DateTime                @updatedAt
+  business   Business                @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  shifts     ScheduleTemplateShift[]
+
+  @@index([businessId])
+}
+
+model ScheduleTemplateShift {
+  id              String           @id @default(cuid())
+  templateId      String
+  dayIndex        Int
+  startTime       String
+  endTime         String?
+  employeeId      String?
+  employeeGroupId String?
+  functionId      String?
+  departmentId    String?
+  categoryId      String?
+  note            String?
+  breakMinutes    Int?
+  breakPaid       Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  template        ScheduleTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@index([templateId])
+}
+
+enum ScheduleTemplateLength {
+  week
+  day
+}
+
 enum WageType {
   HOURLY
   PER_SHIFT
@@ -1129,7 +1305,8 @@ enum PaymentMethod {
   BANK
   CASH
 }
-enum Role {
+
+enum LegacyUserRole {
   ADMIN
   HR_ADMIN
   KONTO_ADMIN

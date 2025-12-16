@@ -10,6 +10,7 @@ interface PersonalInfoSectionProps {
   getFieldStyle: (fieldName: string) => string
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void
   onDateChange: (date: Date | null, fieldName: 'birthday' | 'dateOfHire') => void
+  readOnly?: boolean
 }
 
 export function PersonalInfoSection({
@@ -17,7 +18,8 @@ export function PersonalInfoSection({
   validationErrors,
   getFieldStyle,
   onChange,
-  onDateChange
+  onDateChange,
+  readOnly = false,
 }: PersonalInfoSectionProps) {
   const { t } = useTranslation()
 
@@ -34,6 +36,7 @@ export function PersonalInfoSection({
           onChange={onChange}
           className={getFieldStyle('firstName')}
           required
+          disabled={readOnly}
         />
         {validationErrors.firstName && (
           <p className="mt-1 text-sm text-red-500">{validationErrors.firstName}</p>
@@ -51,6 +54,7 @@ export function PersonalInfoSection({
           onChange={onChange}
           className={getFieldStyle('lastName')}
           required
+          disabled={readOnly}
         />
         {validationErrors.lastName && (
           <p className="mt-1 text-sm text-red-500">{validationErrors.lastName}</p>
@@ -71,6 +75,7 @@ export function PersonalInfoSection({
             from: new Date().getFullYear() - 100, 
             to: new Date().getFullYear() 
           }}
+          disabled={readOnly}
         />
         {validationErrors.birthday && (
           <p className="mt-1 text-sm text-red-500">{validationErrors.birthday}</p>
@@ -87,6 +92,7 @@ export function PersonalInfoSection({
           onChange={onChange}
           className={getFieldStyle('sex')}
           required
+          disabled={readOnly}
         >
           <option value="MALE">{t('employees.form.male')}</option>
           <option value="FEMALE">{t('employees.form.female')}</option>
@@ -108,6 +114,7 @@ export function PersonalInfoSection({
           onChange={onChange}
           className={getFieldStyle('address')}
           required
+          disabled={readOnly}
         />
         {validationErrors.address && (
           <p className="mt-1 text-sm text-red-500">{validationErrors.address}</p>

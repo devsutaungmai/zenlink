@@ -4,13 +4,24 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import DepartmentForm from '@/components/DepartmentForm'
+import { usePermissions } from '@/shared/lib/usePermissions'
+import { PERMISSIONS } from '@/shared/lib/permissions'
 
 export default function CreateDepartmentPage() {
   const router = useRouter()
   const { t } = useTranslation()
+  const { hasPermission, loading: permissionsLoading } = usePermissions()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [existingDepartments, setExistingDepartments] = useState<{ id: string; name: string; number?: string | null }[]>([])
+
+  const canCreateDepartments = hasPermission(PERMISSIONS.DEPARTMENTS_CREATE)
+
+  useEffect(() => {
+    if (!permissionsLoading && !canCreateDepartments) {
+      router.push('/dashboard/departments')
+    }
+  }, [permissionsLoading, canCreateDepartments, router])
 
   useEffect(() => {
     const fetchExistingDepartments = async () => {
@@ -55,6 +66,11 @@ export default function CreateDepartmentPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  // Show nothing while checking permissions or if no permission (will redirect)
+  if (permissionsLoading || !canCreateDepartments) {
+    return null
   }
 
   return (

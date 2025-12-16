@@ -4,15 +4,16 @@ import { getCurrentUser } from '@/shared/lib/auth'
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await getCurrentUser()
     if (!user || user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const attendanceId = params.id
+    const attendanceId = id
     if (!attendanceId) {
       return NextResponse.json({ error: 'Attendance ID is required' }, { status: 400 })
     }

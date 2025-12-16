@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import { ChevronLeftIcon } from '@heroicons/react/24/outline'
 import EmployeeGroupForm, { EmployeeGroupFormData } from '@/components/EmployeeGroupForm'
+import { usePermissions } from '@/shared/lib/usePermissions'
+import { PERMISSIONS } from '@/shared/lib/permissions'
 
 interface EmployeeGroup extends EmployeeGroupFormData {
   id: string
@@ -14,10 +16,20 @@ export default function EditEmployeeGroupPage({ params }: { params: Promise<{ id
   const { t } = useTranslation()
   const employeeGroupId = React.use(params).id
   const router = useRouter()
+  const { hasPermission, loading: permissionsLoading } = usePermissions()
   const [employeeGroup, setEmployeeGroup] = useState<EmployeeGroup | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const canEditEmployeeGroups = hasPermission(PERMISSIONS.EMPLOYEE_GROUPS_EDIT)
+
+  // Redirect if no permission
+  useEffect(() => {
+    if (!permissionsLoading && !canEditEmployeeGroups) {
+      router.push('/dashboard/employee-groups')
+    }
+  }, [permissionsLoading, canEditEmployeeGroups, router])
 
   useEffect(() => {
     const fetchEmployeeGroup = async () => {
@@ -71,6 +83,11 @@ export default function EditEmployeeGroupPage({ params }: { params: Promise<{ id
     } finally {
       setSaving(false)
     }
+  }
+
+  // Show nothing while checking permissions or if no permission (will redirect)
+  if (permissionsLoading || !canEditEmployeeGroups) {
+    return null
   }
 
   if (loading) {

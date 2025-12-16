@@ -4,9 +4,10 @@ import { prisma } from '@/shared/lib/prisma'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await getCurrentUser()
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -14,7 +15,7 @@ export async function GET(
 
     const payRule = await prisma.payRule.findFirst({
       where: {
-        id: params.id,
+        id: id,
         businessId: user.businessId,
       },
       include: {
@@ -65,9 +66,10 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await getCurrentUser()
     if (!user || user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -84,7 +86,7 @@ export async function PUT(
 
     const existingPayRule = await prisma.payRule.findFirst({
       where: {
-        id: params.id,
+        id: id,
         businessId: user.businessId,
       },
       include: {
@@ -103,7 +105,7 @@ export async function PUT(
     const result = await prisma.$transaction(async (tx) => {
       // Update the pay rule
       const payRule = await tx.payRule.update({
-        where: { id: params.id },
+        where: { id: id },
         data: {
           name,
           description,
@@ -115,7 +117,7 @@ export async function PUT(
       if (overtimeRule && existingPayRule.ruleType === 'OVERTIME') {
         if (existingPayRule.overtimeRule) {
           await tx.overtimeRule.update({
-            where: { payRuleId: params.id },
+            where: { payRuleId: id },
             data: {
               triggerAfterHours: overtimeRule.triggerAfterHours,
               rateMultiplier: overtimeRule.rateMultiplier,
@@ -127,7 +129,7 @@ export async function PUT(
         } else {
           await tx.overtimeRule.create({
             data: {
-              payRuleId: params.id,
+              payRuleId: id,
               triggerAfterHours: overtimeRule.triggerAfterHours,
               rateMultiplier: overtimeRule.rateMultiplier || 1.5,
               isDaily: overtimeRule.isDaily ?? true,
@@ -142,7 +144,7 @@ export async function PUT(
       if (employeeGroupRules) {
         // Delete existing rules
         await tx.employeeGroupPayRule.deleteMany({
-          where: { payRuleId: params.id },
+          where: { payRuleId: id },
         })
 
         // Create new rules
@@ -150,7 +152,7 @@ export async function PUT(
           await tx.employeeGroupPayRule.createMany({
             data: employeeGroupRules.map((rule: any) => ({
               employeeGroupId: rule.employeeGroupId,
-              payRuleId: params.id,
+              payRuleId: id,
               baseRate: rule.baseRate,
               isDefault: rule.isDefault ?? true,
             })),
@@ -163,7 +165,7 @@ export async function PUT(
 
     // Fetch the complete updated pay rule
     const completePayRule = await prisma.payRule.findUnique({
-      where: { id: params.id },
+      where: { id: id },
       include: {
         salaryCode: true,
         overtimeRule: true,
@@ -192,9 +194,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await getCurrentUser()
     if (!user || user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -202,7 +205,7 @@ export async function DELETE(
 
     const existingPayRule = await prisma.payRule.findFirst({
       where: {
-        id: params.id,
+        id: id,
         businessId: user.businessId,
       },
       include: {
@@ -229,7 +232,7 @@ export async function DELETE(
     }
 
     await prisma.payRule.delete({
-      where: { id: params.id },
+      where: { id: id },
     })
 
     return NextResponse.json({ message: 'Pay rule deleted successfully' })

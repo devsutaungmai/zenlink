@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/shared/lib/prisma'
-import { getCurrentUser } from '@/shared/lib/auth'
+import { getCurrentUserOrEmployee } from '@/shared/lib/auth'
 
 const HOURS_IN_MS = 1000 * 60 * 60
 
@@ -31,31 +31,131 @@ const endOfCurrentUtcWeek = (startOfWeek: Date) => {
   return end
 }
 
+// Get accessible department IDs based on user's role
+async function getAccessibleDepartmentIds(auth: any): Promise<string[] | null> {
+  if (auth.type === 'user') {
+    const user = auth.data as any
+
+    if (user.role === 'ADMIN') {
+      return null // Admins can see all
+    }
+
+    if (user.roleId) {
+      const userWithRole = await prisma.user.findUnique({
+        where: { id: user.id },
+        include: {
+          assignedRole: {
+            include: {
+              departments: {
+                select: { departmentId: true }
+              }
+            }
+          }
+        }
+      })
+
+      if (userWithRole?.assignedRole?.departments.length) {
+        return userWithRole.assignedRole.departments.map(d => d.departmentId)
+      }
+    }
+    
+    return null
+  } else {
+    const employee = auth.data as any
+    
+    const employeeRoles = await prisma.employeeRole.findMany({
+      where: { employeeId: employee.id },
+      include: {
+        role: {
+          include: {
+            departments: {
+              select: { departmentId: true }
+            }
+          }
+        }
+      }
+    })
+
+    const departmentSet = new Set<string>()
+    let hasUnrestrictedRole = false
+
+    for (const er of employeeRoles) {
+      if (er.role.departments.length === 0) {
+        hasUnrestrictedRole = true
+        break
+      }
+      for (const d of er.role.departments) {
+        departmentSet.add(d.departmentId)
+      }
+    }
+
+    return hasUnrestrictedRole ? null : Array.from(departmentSet)
+  }
+}
+
 export async function GET() {
   try {
-    const user = await getCurrentUser()
+    const auth = await getCurrentUserOrEmployee()
 
-    if (!user) {
+    if (!auth) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    if (user.role === 'EMPLOYEE') {
+    let businessId: string
+    let isEmployee = false
+    
+    if (auth.type === 'user') {
+      const user = auth.data as any
+      if (user.role === 'EMPLOYEE') {
+        isEmployee = true
+      }
+      businessId = user.businessId
+    } else {
+      isEmployee = true
+      businessId = (auth.data as any).user.businessId
+    }
+
+    // Employees without admin dashboard permission shouldn't see stats
+    if (isEmployee) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { businessId } = user
+    // Get accessible department IDs
+    const accessibleDepartmentIds = await getAccessibleDepartmentIds(auth)
+
     const now = new Date()
     const todayStart = startOfUtcDay(now)
     const todayEnd = endOfUtcDay(now)
     const weekStart = startOfCurrentUtcWeek(now)
     const weekEnd = endOfCurrentUtcWeek(weekStart)
 
-    const shiftBusinessScope = {
+    // Build department filter for employees
+    const employeeDepartmentFilter = accessibleDepartmentIds !== null && accessibleDepartmentIds.length > 0
+      ? {
+          OR: [
+            { departmentId: { in: accessibleDepartmentIds } },
+            { departments: { some: { departmentId: { in: accessibleDepartmentIds } } } }
+          ]
+        }
+      : {}
+
+    // Build shift business scope with department filtering
+    const shiftBusinessScope: any = {
       OR: [
         { department: { businessId } },
         { employeeGroup: { businessId } },
         { employee: { user: { businessId } } },
       ],
+    }
+
+    // Add department filter if user has restrictions
+    if (accessibleDepartmentIds !== null && accessibleDepartmentIds.length > 0) {
+      shiftBusinessScope.employee = {
+        OR: [
+          { departmentId: { in: accessibleDepartmentIds } },
+          { departments: { some: { departmentId: { in: accessibleDepartmentIds } } } }
+        ]
+      }
     }
 
     const weekShiftWhere = {
@@ -66,10 +166,21 @@ export async function GET() {
       },
     }
 
+    // Build attendance filter with department restrictions
+    const attendanceWhereBase: any = { businessId }
+    if (accessibleDepartmentIds !== null && accessibleDepartmentIds.length > 0) {
+      attendanceWhereBase.employee = {
+        OR: [
+          { departmentId: { in: accessibleDepartmentIds } },
+          { departments: { some: { departmentId: { in: accessibleDepartmentIds } } } }
+        ]
+      }
+    }
+
     const [activeEmployees, shiftsInProgress, pendingApprovals, weeklyAttendances, weeklyShiftStatusCounts] = await Promise.all([
       prisma.attendance.count({
         where: {
-          businessId,
+          ...attendanceWhereBase,
           punchOutTime: null,
         },
       }),
@@ -92,7 +203,7 @@ export async function GET() {
       }),
       prisma.attendance.findMany({
         where: {
-          businessId,
+          ...attendanceWhereBase,
           punchInTime: {
             gte: weekStart,
             lte: weekEnd,

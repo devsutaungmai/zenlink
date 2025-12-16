@@ -13,6 +13,7 @@ interface SpanningShiftCardProps {
   displayStartTime?: string
   displayEndTime?: string | null
   isContinuation?: boolean
+  canEdit?: boolean
 }
 
 export default function SpanningShiftCard({ 
@@ -24,7 +25,8 @@ export default function SpanningShiftCard({
   total = 1,
   displayStartTime,
   displayEndTime,
-  isContinuation = false
+  isContinuation = false,
+  canEdit = true
 }: SpanningShiftCardProps) {
   const { currencySymbol } = useCurrency()
   const effectiveStart = displayStartTime ?? shift.startTime

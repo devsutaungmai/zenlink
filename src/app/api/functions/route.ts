@@ -2,6 +2,68 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/shared/lib/prisma'
 import { getCurrentUserOrEmployee } from '@/shared/lib/auth'
 
+// Get accessible department IDs based on user's role
+async function getAccessibleDepartmentIds(auth: any): Promise<string[] | null> {
+  if (auth.type === 'user') {
+    const user = auth.data as any
+
+    if (user.role === 'ADMIN') {
+      return null // Admins can see all
+    }
+
+    if (user.roleId) {
+      const userWithRole = await prisma.user.findUnique({
+        where: { id: user.id },
+        include: {
+          assignedRole: {
+            include: {
+              departments: {
+                select: { departmentId: true }
+              }
+            }
+          }
+        }
+      })
+
+      if (userWithRole?.assignedRole?.departments.length) {
+        return userWithRole.assignedRole.departments.map(d => d.departmentId)
+      }
+    }
+    
+    return null
+  } else {
+    const employee = auth.data as any
+    
+    const employeeRoles = await prisma.employeeRole.findMany({
+      where: { employeeId: employee.id },
+      include: {
+        role: {
+          include: {
+            departments: {
+              select: { departmentId: true }
+            }
+          }
+        }
+      }
+    })
+
+    const departmentSet = new Set<string>()
+    let hasUnrestrictedRole = false
+
+    for (const er of employeeRoles) {
+      if (er.role.departments.length === 0) {
+        hasUnrestrictedRole = true
+        break
+      }
+      for (const d of er.role.departments) {
+        departmentSet.add(d.departmentId)
+      }
+    }
+
+    return hasUnrestrictedRole ? null : Array.from(departmentSet)
+  }
+}
+
 // GET /api/functions - Get all functions for the business
 export async function GET(request: NextRequest) {
   try {
@@ -26,12 +88,41 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Business not found' }, { status: 404 })
     }
 
-    const functions = await prisma.departmentFunction.findMany({
-      where: {
-        category: {
-          businessId: businessId
+    // Get accessible departments for the user
+    const accessibleDepartmentIds = await getAccessibleDepartmentIds(auth)
+
+    // Build where clause
+    const whereClause: any = {
+      category: {
+        businessId: businessId
+      }
+    }
+
+    // If user has department restrictions, filter functions by categories linked to those departments
+    if (accessibleDepartmentIds !== null) {
+      if (accessibleDepartmentIds.length === 0) {
+        // User has role but no departments assigned - return empty
+        return NextResponse.json([])
+      }
+      // Filter functions whose categories are linked to accessible departments or are business-wide
+      whereClause.category.OR = [
+        {
+          departments: {
+            some: {
+              departmentId: { in: accessibleDepartmentIds }
+            }
+          }
+        },
+        {
+          departments: {
+            none: {}
+          }
         }
-      },
+      ]
+    }
+
+    const functions = await prisma.departmentFunction.findMany({
+      where: whereClause,
       include: {
         category: {
           select: {

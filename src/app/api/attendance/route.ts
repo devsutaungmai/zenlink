@@ -2,6 +2,67 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/shared/lib/prisma'
 import { getCurrentUserOrEmployee } from '@/shared/lib/auth'
 
+async function getAccessibleDepartmentIds(auth: any): Promise<string[] | null> {
+  if (auth.type === 'user') {
+    const user = auth.data as any
+
+    if (user.role === 'ADMIN') {
+      return null // Admins can see all
+    }
+
+    if (user.roleId) {
+      const userWithRole = await prisma.user.findUnique({
+        where: { id: user.id },
+        include: {
+          assignedRole: {
+            include: {
+              departments: {
+                select: { departmentId: true }
+              }
+            }
+          }
+        }
+      })
+
+      if (userWithRole?.assignedRole?.departments.length) {
+        return userWithRole.assignedRole.departments.map(d => d.departmentId)
+      }
+    }
+    
+    return null
+  } else {
+    const employee = auth.data as any
+    
+    const employeeRoles = await prisma.employeeRole.findMany({
+      where: { employeeId: employee.id },
+      include: {
+        role: {
+          include: {
+            departments: {
+              select: { departmentId: true }
+            }
+          }
+        }
+      }
+    })
+
+    const departmentSet = new Set<string>()
+    let hasUnrestrictedRole = false
+
+    for (const er of employeeRoles) {
+      if (er.role.departments.length === 0) {
+        hasUnrestrictedRole = true
+        break
+      }
+      for (const d of er.role.departments) {
+        departmentSet.add(d.departmentId)
+      }
+    }
+
+    return hasUnrestrictedRole ? null : Array.from(departmentSet)
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { employeeId, businessId, shiftId, punchInTime } = await request.json()
@@ -133,10 +194,38 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized business scope' }, { status: 403 })
     }
 
+    // Get accessible departments for the user
+    const accessibleDepartmentIds = await getAccessibleDepartmentIds(auth)
+
     if (auth.type === 'employee') {
       whereClause.employeeId = enforcedEmployeeId
-    } else if (requestedEmployeeId) {
-      whereClause.employeeId = requestedEmployeeId
+    } else {
+      // For users, apply department filtering if they have restricted access
+      if (accessibleDepartmentIds !== null && accessibleDepartmentIds.length > 0) {
+        whereClause.employee = {
+          departmentId: { in: accessibleDepartmentIds }
+        }
+      } else if (accessibleDepartmentIds !== null && accessibleDepartmentIds.length === 0) {
+        // User has role but no departments assigned - return empty
+        return NextResponse.json({ 
+          attendances: [], 
+          pagination: {
+            total: 0,
+            page: 1,
+            pageSize: 25,
+            totalPages: 0
+          }
+        })
+      }
+      
+      // Apply specific employee filter if requested
+      if (requestedEmployeeId) {
+        if (whereClause.employee) {
+          whereClause.employee.id = requestedEmployeeId
+        } else {
+          whereClause.employeeId = requestedEmployeeId
+        }
+      }
     }
 
     if (statusParam === 'working') {
@@ -172,14 +261,18 @@ export async function GET(request: NextRequest) {
 
     const trimmedSearch = searchParam?.trim()
     if (trimmedSearch) {
-      whereClause.OR = [
+      // Build search conditions - need to merge with any existing employee filter (department restriction)
+      const searchConditions = [
         {
           employee: {
             is: {
               firstName: {
                 contains: trimmedSearch,
                 mode: 'insensitive'
-              }
+              },
+              ...(accessibleDepartmentIds !== null && accessibleDepartmentIds.length > 0 
+                ? { departmentId: { in: accessibleDepartmentIds } } 
+                : {})
             }
           }
         },
@@ -189,7 +282,10 @@ export async function GET(request: NextRequest) {
               lastName: {
                 contains: trimmedSearch,
                 mode: 'insensitive'
-              }
+              },
+              ...(accessibleDepartmentIds !== null && accessibleDepartmentIds.length > 0 
+                ? { departmentId: { in: accessibleDepartmentIds } } 
+                : {})
             }
           }
         },
@@ -199,7 +295,10 @@ export async function GET(request: NextRequest) {
               employeeNo: {
                 contains: trimmedSearch,
                 mode: 'insensitive'
-              }
+              },
+              ...(accessibleDepartmentIds !== null && accessibleDepartmentIds.length > 0 
+                ? { departmentId: { in: accessibleDepartmentIds } } 
+                : {})
             }
           }
         },
@@ -213,7 +312,10 @@ export async function GET(request: NextRequest) {
                     mode: 'insensitive'
                   }
                 }
-              }
+              },
+              ...(accessibleDepartmentIds !== null && accessibleDepartmentIds.length > 0 
+                ? { departmentId: { in: accessibleDepartmentIds } } 
+                : {})
             }
           }
         },
@@ -227,11 +329,18 @@ export async function GET(request: NextRequest) {
                     mode: 'insensitive'
                   }
                 }
-              }
+              },
+              ...(accessibleDepartmentIds !== null && accessibleDepartmentIds.length > 0 
+                ? { departmentId: { in: accessibleDepartmentIds } } 
+                : {})
             }
           }
         }
       ]
+      
+      whereClause.OR = searchConditions
+      // Remove standalone employee filter since it's now embedded in search conditions
+      delete whereClause.employee
     }
 
     const attendances = await prisma.attendance.findMany({

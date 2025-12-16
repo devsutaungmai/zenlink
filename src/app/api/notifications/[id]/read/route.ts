@@ -4,7 +4,7 @@ import { getCurrentUserOrEmployee } from '@/shared/lib/auth'
 import { prisma } from '@/shared/lib/prisma'
 
 interface RouteContext {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 // PATCH /api/notifications/[id]/read - Mark notification as read
@@ -13,6 +13,7 @@ export async function PATCH(
   { params }: RouteContext
 ) {
   try {
+    const { id } = await params
     const auth = await getCurrentUserOrEmployee()
     if (!auth) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -40,7 +41,7 @@ export async function PATCH(
     // Verify the notification belongs to the current user/employee
     const notification = await prisma.notification.findFirst({
       where: {
-        id: params.id,
+        id: id,
         recipientId: recipientId,
       },
     })
@@ -49,7 +50,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Notification not found' }, { status: 404 })
     }
 
-    const updatedNotification = await NotificationService.markAsRead(params.id)
+    const updatedNotification = await NotificationService.markAsRead(id)
     return NextResponse.json(updatedNotification)
   } catch (error) {
     console.error('Error marking notification as read:', error)

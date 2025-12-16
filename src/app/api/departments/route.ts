@@ -2,6 +2,67 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/shared/lib/prisma'
 import { requireAuth, getCurrentUserOrEmployee } from '@/shared/lib/auth'
 
+async function getAccessibleDepartmentIds(auth: any): Promise<string[] | null> {
+  if (auth.type === 'user') {
+    const user = auth.data as any
+
+    if (user.role === 'ADMIN') {
+      return null
+    }
+
+    if (user.roleId) {
+      const userWithRole = await prisma.user.findUnique({
+        where: { id: user.id },
+        include: {
+          assignedRole: {
+            include: {
+              departments: {
+                select: { departmentId: true }
+              }
+            }
+          }
+        }
+      })
+
+      if (userWithRole?.assignedRole?.departments.length) {
+        return userWithRole.assignedRole.departments.map(d => d.departmentId)
+      }
+    }
+    
+    return null
+  } else {
+    const employee = auth.data as any
+    
+    const employeeRoles = await prisma.employeeRole.findMany({
+      where: { employeeId: employee.id },
+      include: {
+        role: {
+          include: {
+            departments: {
+              select: { departmentId: true }
+            }
+          }
+        }
+      }
+    })
+
+    const departmentSet = new Set<string>()
+    let hasUnrestrictedRole = false
+
+    for (const er of employeeRoles) {
+      if (er.role.departments.length === 0) {
+        hasUnrestrictedRole = true
+        break
+      }
+      for (const d of er.role.departments) {
+        departmentSet.add(d.departmentId)
+      }
+    }
+
+    return hasUnrestrictedRole ? null : Array.from(departmentSet)
+  }
+}
+
 export async function GET() {
   try {
     const auth = await getCurrentUserOrEmployee()
@@ -18,11 +79,26 @@ export async function GET() {
     } else {
       businessId = (auth.data as any).department.businessId
     }
+
+    // Get accessible departments for the user
+    const accessibleDepartmentIds = await getAccessibleDepartmentIds(auth)
+
+    // Build where clause with department filtering
+    const whereClause: any = {
+      businessId: businessId
+    }
+
+    // If user has department restrictions, filter by those departments
+    if (accessibleDepartmentIds !== null) {
+      if (accessibleDepartmentIds.length === 0) {
+        // User has role but no departments assigned - return empty
+        return NextResponse.json([])
+      }
+      whereClause.id = { in: accessibleDepartmentIds }
+    }
     
     const departments = await prisma.department.findMany({
-      where: {
-        businessId: businessId
-      },
+      where: whereClause,
       include: {
         _count: {
           select: { employees: true }

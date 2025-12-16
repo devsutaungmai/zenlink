@@ -6,17 +6,19 @@ import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons
 import { useTranslation } from 'react-i18next'
 import { CardGridSkeleton } from '@/components/skeletons/ScheduleSkeleton'
 import Swal from 'sweetalert2'
+import { usePermissions } from '@/shared/lib/usePermissions'
+import { PERMISSIONS } from '@/shared/lib/permissions'
 
 interface Category {
   id: string
   name: string
   description?: string | null
   color?: string | null
-  departmentId: string
-  department: {
+  departmentId?: string | null
+  department?: {
     id: string
     name: string
-  }
+  } | null
   departments?: Array<{
     id: string
     department: {
@@ -33,9 +35,15 @@ interface Category {
 
 export default function CategoriesPage() {
   const { t } = useTranslation('categories')
+  const { hasPermission } = usePermissions()
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
+
+  // Permission checks
+  const canCreateCategories = hasPermission(PERMISSIONS.CATEGORIES_CREATE)
+  const canEditCategories = hasPermission(PERMISSIONS.CATEGORIES_EDIT)
+  const canDeleteCategories = hasPermission(PERMISSIONS.CATEGORIES_DELETE)
 
   useEffect(() => {
     fetchCategories()
@@ -128,7 +136,8 @@ export default function CategoriesPage() {
 
   const filteredCategories = categories.filter(category =>
     category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    category.department.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    category.department?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    category.departments?.some(d => d.department?.name?.toLowerCase().includes(searchTerm.toLowerCase())) ||
     category.description?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
@@ -163,13 +172,15 @@ export default function CategoriesPage() {
               </span>
             </div>
           </div>
-          <Link
-            href="/dashboard/categories/create"
-            className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 group"
-          >
-            <PlusIcon className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
-            {t('create_category')}
-          </Link>
+          {canCreateCategories && (
+            <Link
+              href="/dashboard/categories/create"
+              className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 group"
+            >
+              <PlusIcon className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
+              {t('create_category')}
+            </Link>
+          )}
         </div>
       </div>
 
@@ -204,7 +215,7 @@ export default function CategoriesPage() {
           <p className="text-gray-500 mb-6">
             {searchTerm ? t('try_adjusting_search') : t('create_first_category')}
           </p>
-          {!searchTerm && (
+          {!searchTerm && canCreateCategories && (
             <Link
               href="/dashboard/categories/create"
               className="inline-flex items-center px-6 py-3 rounded-xl bg-[#31BCFF] text-white font-medium hover:bg-[#31BCFF]/90 transition-colors duration-200"
@@ -255,20 +266,15 @@ export default function CategoriesPage() {
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                  {/* <Link
-                    href={`/dashboard/categories/${category.id}/edit`}
-                    className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
-                    title="Edit Category"
-                  >
-                    <PencilIcon className="h-4 w-4" />
-                  </Link> */}
-                  <button
-                    onClick={() => handleDelete(category.id, category.name)}
-                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                    title="Delete Category"
-                  >
-                    <TrashIcon className="h-4 w-4" />
-                  </button>
+                  {canDeleteCategories && (
+                    <button
+                      onClick={() => handleDelete(category.id, category.name)}
+                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                      title="Delete Category"
+                    >
+                      <TrashIcon className="h-4 w-4" />
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -317,15 +323,17 @@ export default function CategoriesPage() {
               )}
 
               {/* Quick Actions */}
-              <div className="mt-4 pt-4 border-t border-gray-200/50">
-                <Link
-                  href={`/dashboard/categories/${category.id}/edit`}
-                  className="w-full inline-flex items-center justify-center px-4 py-2 rounded-xl bg-gray-50 text-gray-700 font-medium hover:bg-[#31BCFF] hover:text-white transition-all duration-200 group/btn"
-                >
-                  <PencilIcon className="w-4 h-4 mr-2 group-hover/btn:scale-110 transition-transform duration-200" />
-                  {t('edit_category')}
-                </Link>
-              </div>
+              {canEditCategories && (
+                <div className="mt-4 pt-4 border-t border-gray-200/50">
+                  <Link
+                    href={`/dashboard/categories/${category.id}/edit`}
+                    className="w-full inline-flex items-center justify-center px-4 py-2 rounded-xl bg-gray-50 text-gray-700 font-medium hover:bg-[#31BCFF] hover:text-white transition-all duration-200 group/btn"
+                  >
+                    <PencilIcon className="w-4 h-4 mr-2 group-hover/btn:scale-110 transition-transform duration-200" />
+                    {t('edit_category')}
+                  </Link>
+                </div>
+              )}
             </div>
           ))}
         </div>

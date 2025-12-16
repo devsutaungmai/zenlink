@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Fragment, useState } from 'react'
+import { Fragment, useState, useMemo } from 'react'
 import { Menu, Transition } from '@headlessui/react'
 import { APP_NAME } from '@/app/constants/constants'
 import { 
@@ -7,21 +7,21 @@ import {
   ChevronDownIcon,
   HomeIcon,
   UserGroupIcon,
-  UserIcon,
   Cog6ToothIcon,
   ClockIcon,
-  CurrencyDollarIcon,
-  CalendarIcon
+  CurrencyDollarIcon
 } from '@heroicons/react/24/outline'
 import { usePathname, useRouter } from 'next/navigation'
 import { useUser } from '@/shared/lib/useUser'
 import { useTranslation } from 'react-i18next'
 import LanguageSwitcher from './LanguageSwitcher'
 import NotificationCenter from './NotificationCenter'
+import { usePermissions, NAV_PERMISSIONS } from '@/shared/lib/usePermissions'
 
 type NavigationChild = {
   name: string
   href: string
+  permissionKey?: keyof typeof NAV_PERMISSIONS
 }
 
 type NavigationItem = {
@@ -29,6 +29,7 @@ type NavigationItem = {
   href?: string
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>
   children?: NavigationChild[]
+  permissionKey?: keyof typeof NAV_PERMISSIONS
 }
 
 export default function DashboardNavbar() {
@@ -36,6 +37,7 @@ export default function DashboardNavbar() {
   const pathname = usePathname()
   const { user, loading } = useUser()
   const { t } = useTranslation()
+  const { hasAnyPermission, isAdmin, loading: permissionsLoading } = usePermissions()
   const [activeBottomMenu, setActiveBottomMenu] = useState<string | null>(null)
   const profileInitials = (() => {
     const first = user?.firstName?.charAt(0) ?? ''
@@ -56,37 +58,37 @@ export default function DashboardNavbar() {
       name: t('navigation.employees'),
       icon: UserGroupIcon,
       children: [
-        { name: t('navigation.departments'), href: '/dashboard/departments' },
-        { name: t('navigation.categories'), href: '/dashboard/categories' },
-        { name: t('navigation.functions'), href: '/dashboard/functions' },
-        { name: t('navigation.employees'), href: '/dashboard/employees' },
-        { name: t('navigation.employee_groups'), href: '/dashboard/employee-groups' },
-        { name: t('navigation.contracts'), href: '/dashboard/contracts' },
-        // { name: t('navigation.documents'), href: '/dashboard/documents' },
+        { name: t('navigation.departments'), href: '/dashboard/departments', permissionKey: 'departments' },
+        { name: t('navigation.categories'), href: '/dashboard/categories', permissionKey: 'categories' },
+        { name: t('navigation.functions'), href: '/dashboard/functions', permissionKey: 'functions' },
+        { name: t('navigation.employees'), href: '/dashboard/employees', permissionKey: 'employees' },
+        { name: t('navigation.employee_groups'), href: '/dashboard/employee-groups', permissionKey: 'employeeGroups' },
+        { name: t('navigation.contracts'), href: '/dashboard/contracts', permissionKey: 'contracts' },
+        { name: t('navigation.roles'), href: '/dashboard/roles', permissionKey: 'roles' },
       ],
     },
     {
       name: t('navigation.schedule'),
       icon: ClockIcon,
       children: [
-        // { name: t('navigation.shift'), href: '/dashboard/shifts' },
-        { name: t('navigation.schedule'), href: '/dashboard/schedule' },
-        { name: t('navigation.punch_clock'), href: '/dashboard/punch-clock' },
-        { name: t('navigation.availability'), href: '/dashboard/availability' },
-        { name: t('navigation.sick_leaves'), href: '/dashboard/sick-leaves' },
-        { name: t('navigation.pending_requests'), href: '/dashboard/pending-requests' },
+        { name: t('navigation.schedule'), href: '/dashboard/schedule', permissionKey: 'schedule' },
+        { name: t('navigation.punch_clock'), href: '/dashboard/punch-clock', permissionKey: 'punchClock' },
+        { name: t('navigation.availability'), href: '/dashboard/availability', permissionKey: 'availability' },
+        { name: t('navigation.sick_leaves'), href: '/dashboard/sick-leaves', permissionKey: 'sickLeaves' },
+        { name: t('navigation.pending_requests'), href: '/dashboard/pending-requests', permissionKey: 'pendingRequests' },
+        { name: t('navigation.your_hours'), href: '/dashboard/hours', permissionKey: 'yourHours' },
       ],
     },
     {
       name: t('navigation.payroll'),
       icon: CurrencyDollarIcon,
       children: [
-        { name: t('navigation.payroll_periods'), href: '/dashboard/payroll-periods' },
-        { name: t('navigation.payroll_entries'), href: '/dashboard/payroll-entries' },
-        { name: t('navigation.payroll_reports'), href: '/dashboard/reports/payroll' },
-        { name: t('navigation.salary_codes'), href: '/dashboard/salary-codes' },
-        { name: t('navigation.pay_rules'), href: '/dashboard/pay-rules' },
-        { name: t('navigation.overtime_rules'), href: '/dashboard/overtime-rules' },
+        { name: t('navigation.payroll_periods'), href: '/dashboard/payroll-periods', permissionKey: 'payrollPeriods' },
+        { name: t('navigation.payroll_entries'), href: '/dashboard/payroll-entries', permissionKey: 'payrollEntries' },
+        { name: t('navigation.payroll_reports'), href: '/dashboard/reports/payroll', permissionKey: 'payrollReports' },
+        { name: t('navigation.salary_codes'), href: '/dashboard/salary-codes', permissionKey: 'salaryCodes' },
+        { name: t('navigation.pay_rules'), href: '/dashboard/pay-rules', permissionKey: 'payRules' },
+        { name: t('navigation.overtime_rules'), href: '/dashboard/overtime-rules', permissionKey: 'overtimeRules' },
       ],
     },
     {
@@ -106,15 +108,36 @@ export default function DashboardNavbar() {
     { name: t('navigation.settings'), href: '/dashboard/settings', icon: Cog6ToothIcon },
   ]
 
-  const employeeNavigation: NavigationItem[] = [
-    { name: t('navigation.home'), href: '/dashboard', icon: HomeIcon },
-    { name: t('navigation.your_hours'), href: '/dashboard/hours', icon: ClockIcon },
-    { name: t('navigation.schedule'), href: '/dashboard/schedule', icon: CalendarIcon },
-    { name: t('navigation.availability'), href: '/dashboard/availability', icon: ClockIcon },
-    { name: t('navigation.sick_leaves'), href: '/dashboard/sick-leaves', icon: UserIcon },
-  ]
+  const filteredNavigation = useMemo(() => {
+    if (isAdmin) return adminNavigation
+    
+    return adminNavigation
+      .map(item => {
+        // If item has children, filter them based on permissions
+        if (item.children) {
+          const filteredChildren = item.children.filter(child => {
+            if (!child.permissionKey) return true
+            const requiredPermissions = NAV_PERMISSIONS[child.permissionKey]
+            return hasAnyPermission(requiredPermissions)
+          })
+          
+          // Only include parent if it has visible children
+          if (filteredChildren.length === 0) return null
+          
+          return { ...item, children: filteredChildren }
+        }
+        
+        if (item.permissionKey) {
+          const requiredPermissions = NAV_PERMISSIONS[item.permissionKey]
+          if (!hasAnyPermission(requiredPermissions)) return null
+        }
+        
+        return item
+      })
+      .filter((item): item is NavigationItem => item !== null)
+  }, [adminNavigation, isAdmin, hasAnyPermission])
 
-  const navigation = (user?.role === 'EMPLOYEE' || user?.employee) ? employeeNavigation : adminNavigation
+  const navigation = filteredNavigation
 
   const handleLogout = async () => {
     try {

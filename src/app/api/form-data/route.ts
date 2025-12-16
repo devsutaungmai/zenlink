@@ -21,7 +21,7 @@ export async function GET() {
     }
 
     // Fetch all required data in parallel
-    const [departments, employeeGroups] = await Promise.all([
+    const [departments, employeeGroups, roles] = await Promise.all([
       prisma.department.findMany({
         where: {
           businessId: businessId
@@ -45,12 +45,34 @@ export async function GET() {
         orderBy: {
           name: 'asc'
         }
+      }),
+      prisma.role.findMany({
+        where: {
+          businessId: businessId
+        },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          isSystem: true,
+          isDefault: true,
+          departments: {
+            select: {
+              departmentId: true
+            }
+          }
+        },
+        orderBy: [
+          { isSystem: 'desc' },
+          { name: 'asc' }
+        ]
       })
     ])
 
     return NextResponse.json({
       departments,
-      employeeGroups
+      employeeGroups,
+      roles
     }, {
       headers: {
         'Cache-Control': 's-maxage=60, stale-while-revalidate=300' // Cache for 1 minute, stale for 5 minutes

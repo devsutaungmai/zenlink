@@ -17,6 +17,8 @@ import {
 import Swal from 'sweetalert2'
 import { useTranslation } from 'react-i18next'
 import { CardGridSkeleton } from '@/components/skeletons/ScheduleSkeleton'
+import { usePermissions } from '@/shared/lib/usePermissions'
+import { PERMISSIONS } from '@/shared/lib/permissions'
 
 interface Employee {
   id: string
@@ -54,12 +56,18 @@ interface ShiftExchange {
 
 export default function PendingRequestsPage() {
   const { t } = useTranslation('pending-requests')
+  const { hasPermission, loading: permissionsLoading } = usePermissions()
   const [pendingExchanges, setPendingExchanges] = useState<ShiftExchange[]>([])
   const [loading, setLoading] = useState(true)
   const [processingId, setProcessingId] = useState<string | null>(null)
   const [selectedExchange, setSelectedExchange] = useState<ShiftExchange | null>(null)
   const [showDetailsModal, setShowDetailsModal] = useState(false)
   const [activeTab, setActiveTab] = useState<'swap' | 'handover'>('swap')
+  
+  const canApproveAvailability = hasPermission(PERMISSIONS.AVAILABILITY_APPROVE)
+  const canApproveSickLeave = hasPermission(PERMISSIONS.SICK_LEAVE_APPROVE)
+  const canApproveShiftExchange = hasPermission(PERMISSIONS.SHIFTS_EXCHANGE_APPROVE)
+  const hasAnyApprovePermission = canApproveAvailability || canApproveSickLeave || canApproveShiftExchange
 
   useEffect(() => {
     fetchPendingExchanges()
@@ -197,10 +205,23 @@ export default function PendingRequestsPage() {
     }
   }
 
-  if (loading) {
+  if (loading || permissionsLoading) {
     return (
       <div className="p-6">
         <CardGridSkeleton count={8} />
+      </div>
+    )
+  }
+
+  // Show access denied if user doesn't have any approve permission
+  if (!hasAnyApprovePermission) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-gray-50">
+        <div className="text-center p-8 bg-white rounded-lg shadow-md">
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Access Denied</h2>
+          <p className="text-gray-600">You do not have permission to view pending requests.</p>
+          <p className="text-sm text-gray-500 mt-2">Please contact your administrator if you need access.</p>
+        </div>
       </div>
     )
   }

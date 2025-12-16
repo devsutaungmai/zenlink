@@ -1,20 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/shared/lib/auth'
 import { prisma } from '@/shared/lib/prisma'
-import { launchBrowser } from '@/shared/lib/puppeteer-config'
+import jsPDF from 'jspdf'
+
+export const maxDuration = 30
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await getCurrentUser()
     
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const contractId = params.id
+    const contractId = id
 
     // Fetch contract with all necessary relations
     const contract = await prisma.contract.findUnique({
@@ -39,9 +42,11 @@ export async function GET(
     const formatContractBody = (body: string) => {
       if (!body || !contract.employee) return body
       
+      const employeeFullName = contract.employee.firstName + ' ' + contract.employee.lastName
+      const contractPersonFullName = contract.contractPerson.firstName + ' ' + contract.contractPerson.lastName
+      
       return body
-        // Support both formats: {{variable}} and [VARIABLE]
-        .replace(/\{\{employee_name\}\}/g, `${contract.employee.firstName} ${contract.employee.lastName}`)
+        .replace(/\{\{employee_name\}\}/g, employeeFullName)
         .replace(/\{\{employee_first_name\}\}/g, contract.employee.firstName || '')
         .replace(/\{\{employee_last_name\}\}/g, contract.employee.lastName || '')
         .replace(/\{\{employee_email\}\}/g, contract.employee.email || '')
@@ -50,12 +55,12 @@ export async function GET(
         .replace(/\{\{employee_number\}\}/g, contract.employee.employeeNo || '')
         .replace(/\{\{start_date\}\}/g, new Date(contract.startDate).toLocaleDateString())
         .replace(/\{\{end_date\}\}/g, contract.endDate ? new Date(contract.endDate).toLocaleDateString() : 'Indefinite')
-        .replace(/\{\{contract_person\}\}/g, `${contract.contractPerson.firstName} ${contract.contractPerson.lastName}`)
-        .replace(/\{\{employee_group\}\}/g, contract.employeeGroup?.name || '{{employee_group}}')
-        .replace(/\{\{department\}\}/g, contract.employee.department?.name || '{{department}}')
+        .replace(/\{\{contract_person\}\}/g, contractPersonFullName)
+        .replace(/\{\{employee_group\}\}/g, contract.employeeGroup?.name || '')
+        .replace(/\{\{department\}\}/g, contract.employee.department?.name || '')
         .replace(/\{\{today\}\}/g, new Date().toLocaleDateString())
         // Legacy format support
-        .replace(/\[EMPLOYEE_NAME\]/g, `${contract.employee.firstName} ${contract.employee.lastName}`)
+        .replace(/\[EMPLOYEE_NAME\]/g, employeeFullName)
         .replace(/\[EMPLOYEE_FIRST_NAME\]/g, contract.employee.firstName || '')
         .replace(/\[EMPLOYEE_LAST_NAME\]/g, contract.employee.lastName || '')
         .replace(/\[EMPLOYEE_EMAIL\]/g, contract.employee.email || '')
@@ -64,233 +69,218 @@ export async function GET(
         .replace(/\[EMPLOYEE_NUMBER\]/g, contract.employee.employeeNo || '')
         .replace(/\[START_DATE\]/g, new Date(contract.startDate).toLocaleDateString())
         .replace(/\[END_DATE\]/g, contract.endDate ? new Date(contract.endDate).toLocaleDateString() : 'Indefinite')
-        .replace(/\[CONTRACT_PERSON\]/g, `${contract.contractPerson.firstName} ${contract.contractPerson.lastName}`)
-        .replace(/\[EMPLOYEE_GROUP\]/g, contract.employeeGroup?.name || '[EMPLOYEE_GROUP]')
+        .replace(/\[CONTRACT_PERSON\]/g, contractPersonFullName)
+        .replace(/\[EMPLOYEE_GROUP\]/g, contract.employeeGroup?.name || '')
         .replace(/\[TODAY\]/g, new Date().toLocaleDateString())
     }
 
-    const formattedBody = formatContractBody(contract.contractTemplate.body)
+    // Generate PDF using jsPDF
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4',
+    })
 
-    const logoHtml = contract.contractTemplate.logoPath ? 
-      `<img src="${contract.contractTemplate.logoPath}" alt="Company Logo" style="height: 64px; width: auto; margin-bottom: 16px;" />` : ''
-    
-    const logoPositionStyle = 
-      contract.contractTemplate.logoPosition === 'TOP_LEFT' ? 'text-align: left;' :
-      contract.contractTemplate.logoPosition === 'TOP_CENTER' ? 'text-align: center;' : 'text-align: right;'
+    const pageWidth = pdf.internal.pageSize.getWidth()
+    const pageHeight = pdf.internal.pageSize.getHeight()
+    const margin = 20
+    const contentWidth = pageWidth - margin * 2
+    let yPos = margin
 
-    const html = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <title>${contract.contractTemplate.name}</title>
-          <style>
-            body {
-              font-family: Arial, sans-serif;
-              line-height: 1.6;
-              color: #333;
-              max-width: 800px;
-              margin: 0 auto;
-              padding: 40px;
-            }
-            .logo-container {
-              ${logoPositionStyle}
-              margin-bottom: 32px;
-            }
-            .header {
-              text-align: center;
-              margin-bottom: 40px;
-              border-bottom: 2px solid #e5e7eb;
-              padding-bottom: 20px;
-            }
-            .title {
-              font-size: 24px;
-              font-weight: bold;
-              color: #1f2937;
-              margin: 0;
-            }
-            .content {
-              white-space: pre-wrap;
-              line-height: 1.8;
-              margin-bottom: 40px;
-            }
-            .contract-details {
-              background-color: #f9fafb;
-              padding: 20px;
-              border-radius: 8px;
-              margin-top: 40px;
-            }
-            .details-title {
-              font-size: 18px;
-              font-weight: bold;
-              margin-bottom: 16px;
-              color: #1f2937;
-            }
-            .details-grid {
-              display: grid;
-              grid-template-columns: 1fr 1fr;
-              gap: 16px;
-            }
-            .detail-item {
-              margin-bottom: 8px;
-            }
-            .detail-label {
-              font-weight: 600;
-              color: #6b7280;
-              font-size: 14px;
-            }
-            .detail-value {
-              color: #1f2937;
-              margin-top: 2px;
-            }
-            .signature-section {
-              margin-top: 60px;
-              display: grid;
-              grid-template-columns: 1fr 1fr;
-              gap: 40px;
-            }
-            .signature-box {
-              border-top: 1px solid #000;
-              padding-top: 8px;
-              text-align: center;
-            }
-            .signature-label {
-              font-size: 12px;
-              color: #6b7280;
-            }
-            ${contract.signedStatus && contract.signedStatus !== 'UNSIGNED' ? `
-            .signed-info {
-              background-color: #ecfdf5;
-              border: 1px solid #10b981;
-              padding: 16px;
-              border-radius: 8px;
-              margin-top: 20px;
-            }
-            .signed-signature {
-              font-family: 'Brush Script MT', cursive;
-              font-style: italic;
-              font-size: 20px;
-              margin: 8px 0;
-            }
-            ` : ''}
-          </style>
-        </head>
-        <body>
-          <div class="logo-container">
-            ${logoHtml}
-          </div>
-          
-          <div class="header">
-            <h1 class="title">${contract.contractTemplate.name}</h1>
-          </div>
-          
-          <div class="content">${formattedBody}</div>
-          
-          <div class="contract-details">
-            <h3 class="details-title">Contract Information</h3>
-            <div class="details-grid">
-              <div class="detail-item">
-                <div class="detail-label">Employee</div>
-                <div class="detail-value">${contract.employee.firstName} ${contract.employee.lastName}</div>
-                ${contract.employee.email ? `<div class="detail-value" style="font-size: 12px; color: #6b7280;">${contract.employee.email}</div>` : ''}
-              </div>
-              <div class="detail-item">
-                <div class="detail-label">Employee Group</div>
-                <div class="detail-value">${contract.employeeGroup.name}</div>
-              </div>
-              <div class="detail-item">
-                <div class="detail-label">Start Date</div>
-                <div class="detail-value">${new Date(contract.startDate).toLocaleDateString()}</div>
-              </div>
-              <div class="detail-item">
-                <div class="detail-label">End Date</div>
-                <div class="detail-value">${contract.endDate ? new Date(contract.endDate).toLocaleDateString() : 'Indefinite'}</div>
-              </div>
-              <div class="detail-item">
-                <div class="detail-label">Contract Person</div>
-                <div class="detail-value">${contract.contractPerson.firstName} ${contract.contractPerson.lastName}</div>
-              </div>
-              <div class="detail-item">
-                <div class="detail-label">Template</div>
-                <div class="detail-value">${contract.contractTemplate.name}</div>
-              </div>
-            </div>
-          </div>
-          
-          ${contract.signedStatus && contract.signedStatus !== 'UNSIGNED' ? `
-            <div class="signed-info">
-              <h4 style="margin: 0 0 8px 0; color: #065f46;">Contract Signature Status</h4>
-              <p style="margin: 0; color: #047857;">
-                This contract has been signed ${contract.signedStatus === 'SIGNED_PAPER' ? 'on paper' : 'electronically'}
-                ${contract.signedAt ? ` on ${new Date(contract.signedAt).toLocaleDateString()}` : ''}.
-              </p>
-              ${contract.signedStatus === 'SIGNED_ELECTRONIC' && contract.signatureData ? `
-                <div style="margin-top: 16px;">
-                  <div class="detail-label">Electronic Signature:</div>
-                  <div class="signed-signature">${JSON.parse(contract.signatureData).signature}</div>
-                  <div style="font-size: 12px; color: #047857;">
-                    Signed by: ${JSON.parse(contract.signatureData).signedBy}
-                  </div>
-                </div>
-              ` : ''}
-            </div>
-          ` : `
-            <div class="signature-section">
-              <div class="signature-box">
-                <div class="signature-label">Employee Signature</div>
-              </div>
-              <div class="signature-box">
-                <div class="signature-label">Date</div>
-              </div>
-            </div>
-          `}
-          
-          <div style="margin-top: 40px; text-align: center; font-size: 12px; color: #6b7280;">
-            Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}
-          </div>
-        </body>
-      </html>
-    `
-
-    // Launch Puppeteer and generate PDF
-    const browser = await launchBrowser()
-    
-    try {
-      const page = await browser.newPage()
-      await page.setContent(html, { waitUntil: 'networkidle0' })
-      
-      const pdfBuffer = await page.pdf({
-        format: 'A4',
-        printBackground: true,
-        margin: {
-          top: '20mm',
-          right: '20mm',
-          bottom: '20mm',
-          left: '20mm'
+    // Helper to add text with word wrap
+    const addWrappedText = (text: string, x: number, y: number, maxWidth: number, lineHeight: number = 6): number => {
+      const lines = pdf.splitTextToSize(text, maxWidth)
+      lines.forEach((line: string) => {
+        if (y > pageHeight - margin) {
+          pdf.addPage()
+          y = margin
         }
+        pdf.text(line, x, y)
+        y += lineHeight
       })
-
-      await browser.close()
-
-      // Create filename
-      const filename = `${contract.contractTemplate.name}_${contract.employee.firstName}_${contract.employee.lastName}.pdf`
-        .replace(/[^a-zA-Z0-9_-]/g, '_')
-        .replace(/_+/g, '_')
-
-      // Return PDF as response
-      return new NextResponse(pdfBuffer, {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/pdf',
-          'Content-Disposition': `attachment; filename="${filename}"`,
-          'Content-Length': pdfBuffer.length.toString(),
-        },
-      })
-
-    } catch (error) {
-      await browser.close()
-      throw error
+      return y
     }
+
+    // Helper to check and add new page if needed
+    const checkNewPage = (requiredSpace: number): void => {
+      if (yPos + requiredSpace > pageHeight - margin) {
+        pdf.addPage()
+        yPos = margin
+      }
+    }
+
+    // Add logo if exists
+    if (contract.contractTemplate.logoPath) {
+      try {
+        const response = await fetch(contract.contractTemplate.logoPath)
+        if (response.ok) {
+          const arrayBuffer = await response.arrayBuffer()
+          const base64 = Buffer.from(arrayBuffer).toString('base64')
+          const mimeType = response.headers.get('content-type') || 'image/png'
+          const logoDataUrl = 'data:' + mimeType + ';base64,' + base64
+          
+          const logoWidth = 40
+          const logoHeight = 15
+          let logoX = margin
+          
+          if (contract.contractTemplate.logoPosition === 'TOP_CENTER') {
+            logoX = (pageWidth - logoWidth) / 2
+          } else if (contract.contractTemplate.logoPosition === 'TOP_RIGHT') {
+            logoX = pageWidth - margin - logoWidth
+          }
+          
+          pdf.addImage(logoDataUrl, 'PNG', logoX, yPos, logoWidth, logoHeight)
+          yPos += logoHeight + 10
+        }
+      } catch (logoError) {
+        console.warn('Failed to load logo:', logoError)
+      }
+    }
+
+    // Title
+    pdf.setFontSize(18)
+    pdf.setFont('helvetica', 'bold')
+    const titleLines = pdf.splitTextToSize(contract.contractTemplate.name, contentWidth)
+    titleLines.forEach((line: string) => {
+      const titleWidth = pdf.getTextWidth(line)
+      pdf.text(line, (pageWidth - titleWidth) / 2, yPos)
+      yPos += 8
+    })
+    yPos += 5
+
+    // Divider line
+    pdf.setDrawColor(200, 200, 200)
+    pdf.line(margin, yPos, pageWidth - margin, yPos)
+    yPos += 10
+
+    // Contract body - parse HTML and convert to text
+    const formattedBody = formatContractBody(contract.contractTemplate.body)
+    
+    // Strip HTML tags and convert to plain text
+    const plainText = formattedBody
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/p>/gi, '\n\n')
+      .replace(/<\/div>/gi, '\n')
+      .replace(/<\/h[1-6]>/gi, '\n\n')
+      .replace(/<\/li>/gi, '\n')
+      .replace(/<li>/gi, '• ')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/\n{3,}/g, '\n\n')
+      .trim()
+
+    pdf.setFontSize(11)
+    pdf.setFont('helvetica', 'normal')
+    yPos = addWrappedText(plainText, margin, yPos, contentWidth, 6)
+    yPos += 15
+
+    // Contract Information Box
+    checkNewPage(60)
+    pdf.setFillColor(249, 250, 251)
+    pdf.rect(margin, yPos - 5, contentWidth, 55, 'F')
+    
+    pdf.setFontSize(14)
+    pdf.setFont('helvetica', 'bold')
+    pdf.setTextColor(0, 0, 0)
+    pdf.text('Contract Information', margin + 5, yPos + 5)
+    yPos += 15
+
+    pdf.setFontSize(10)
+    const employeeFullName = contract.employee.firstName + ' ' + contract.employee.lastName
+    const contractPersonFullName = contract.contractPerson.firstName + ' ' + contract.contractPerson.lastName
+    
+    const details = [
+      { label: 'Employee', value: employeeFullName },
+      { label: 'Department', value: contract.employee.department?.name || 'N/A' },
+      { label: 'Employee Group', value: contract.employeeGroup?.name || 'N/A' },
+      { label: 'Start Date', value: new Date(contract.startDate).toLocaleDateString() },
+      { label: 'End Date', value: contract.endDate ? new Date(contract.endDate).toLocaleDateString() : 'Indefinite' },
+      { label: 'Contract Person', value: contractPersonFullName },
+    ]
+
+    const colWidth = contentWidth / 2
+    details.forEach((detail, index) => {
+      const col = index % 2
+      const row = Math.floor(index / 2)
+      const x = margin + 5 + col * colWidth
+      const y = yPos + row * 12
+
+      pdf.setFont('helvetica', 'bold')
+      pdf.setTextColor(107, 114, 128)
+      pdf.text(detail.label, x, y)
+
+      pdf.setFont('helvetica', 'normal')
+      pdf.setTextColor(31, 41, 55)
+      pdf.text(detail.value, x, y + 5)
+    })
+    yPos += 45
+
+    // Signature Section
+    checkNewPage(40)
+
+    if (contract.signedStatus && contract.signedStatus !== 'UNSIGNED') {
+      // Signed contract
+      pdf.setFillColor(236, 253, 245)
+      pdf.rect(margin, yPos, contentWidth, 30, 'F')
+
+      pdf.setFontSize(12)
+      pdf.setFont('helvetica', 'bold')
+      pdf.setTextColor(6, 95, 70)
+      pdf.text('Contract Signature Status', margin + 5, yPos + 10)
+
+      pdf.setFontSize(10)
+      pdf.setFont('helvetica', 'normal')
+      pdf.setTextColor(4, 120, 87)
+      const signedMethod = contract.signedStatus === 'SIGNED_PAPER' ? 'on paper' : 'electronically'
+      const signedDate = contract.signedAt ? ' on ' + new Date(contract.signedAt).toLocaleDateString() : ''
+      const signedText = 'This contract has been signed ' + signedMethod + signedDate + '.'
+      pdf.text(signedText, margin + 5, yPos + 20)
+      yPos += 35
+    } else {
+      // Unsigned - add signature lines
+      const signatureWidth = (contentWidth - 20) / 2
+      pdf.setDrawColor(0, 0, 0)
+      pdf.line(margin, yPos, margin + signatureWidth, yPos)
+      pdf.line(margin + signatureWidth + 20, yPos, pageWidth - margin, yPos)
+
+      pdf.setFontSize(9)
+      pdf.setTextColor(107, 114, 128)
+      pdf.text('Employee Signature', margin, yPos + 5)
+      pdf.text('Date', margin + signatureWidth + 20, yPos + 5)
+      yPos += 15
+    }
+
+    // Footer
+    checkNewPage(15)
+    pdf.setFontSize(9)
+    pdf.setTextColor(107, 114, 128)
+    pdf.setFont('helvetica', 'normal')
+    const footerText = 'Generated on ' + new Date().toLocaleDateString() + ' at ' + new Date().toLocaleTimeString()
+    const footerWidth = pdf.getTextWidth(footerText)
+    pdf.text(footerText, (pageWidth - footerWidth) / 2, pageHeight - 10)
+
+    // Create filename
+    const filename = (contract.contractTemplate.name + '_' + contract.employee.firstName + '_' + contract.employee.lastName + '.pdf')
+      .replace(/[^a-zA-Z0-9_.-]/g, '_')
+      .replace(/_+/g, '_')
+
+    // Output PDF buffer
+    const pdfBuffer = Buffer.from(pdf.output('arraybuffer'))
+
+    // Return PDF as response
+    return new NextResponse(pdfBuffer, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': 'attachment; filename="' + filename + '"',
+        'Content-Length': pdfBuffer.length.toString(),
+      },
+    })
 
   } catch (error) {
     console.error('Error generating PDF:', error)

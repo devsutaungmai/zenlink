@@ -1,14 +1,14 @@
 'use client'
 
-import React, { useState, useEffect, use } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { AlertTriangle, Clock, Calendar, Shield, Save, RotateCcw } from 'lucide-react'
-import { LaborLawRules, COUNTRY_RULES, DEFAULT_LABOR_RULES } from '@/shared/lib/laborLawValidation'
+import { AlertTriangle, Clock, Calendar, Shield, Save, RotateCcw, Loader2 } from 'lucide-react'
+import { LaborLawRules, COUNTRY_RULES, DEFAULT_LABOR_RULES, updateLaborLawValidatorRules } from '@/shared/lib/laborLawValidation'
 import Swal from 'sweetalert2'
 import { useTranslation } from 'react-i18next'
 
@@ -16,33 +16,103 @@ interface LaborLawSettingsProps {
   onRulesChange?: (rules: LaborLawRules) => void
 }
 
+interface SettingsFromDB {
+  id?: string
+  countryCode: string
+  maxHoursPerDay: number
+  maxHoursPerWeek: number
+  maxOvertimePerDay: number
+  maxOvertimePerWeek: number
+  maxConsecutiveDays: number
+  minRestHoursBetweenShifts: number
+  longShiftThreshold: number
+  minBreakForLongShifts: number
+  overtimeThreshold: number
+  isActive: boolean
+}
+
 export default function LaborLawSettings({ onRulesChange }: LaborLawSettingsProps) {
   const [rules, setRules] = useState<LaborLawRules>(DEFAULT_LABOR_RULES)
-  const [selectedCountry, setSelectedCountry] = useState<string>('DEFAULT')
+  const [selectedCountry, setSelectedCountry] = useState<string>('NO')
   const [hasChanges, setHasChanges] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  const [savedSettings, setSavedSettings] = useState<Record<string, SettingsFromDB>>({})
   const { t } = useTranslation('settings')
 
-  useEffect(() => {
-    // Load saved rules from localStorage or use defaults
-    const savedRules = localStorage.getItem('laborLawRules')
-    const savedCountry = localStorage.getItem('laborLawCountry')
-
-    if (savedRules) {
-      try {
-        setRules(JSON.parse(savedRules))
-      } catch (error) {
-        console.error('Error loading saved labor law rules:', error)
+  // Fetch all saved settings from database
+  const fetchAllSettings = useCallback(async () => {
+    try {
+      setIsLoading(true)
+      const response = await fetch('/api/labor-law-settings')
+      if (response.ok) {
+        const data = await response.json()
+        const settingsMap: Record<string, SettingsFromDB> = {}
+        
+        if (data.settings && data.settings.length > 0) {
+          data.settings.forEach((s: SettingsFromDB) => {
+            settingsMap[s.countryCode] = s
+          })
+          
+          // Find active setting
+          const activeSetting = data.settings.find((s: SettingsFromDB) => s.isActive)
+          if (activeSetting) {
+            setSelectedCountry(activeSetting.countryCode)
+            const loadedRules: LaborLawRules = {
+              maxHoursPerDay: activeSetting.maxHoursPerDay,
+              maxHoursPerWeek: activeSetting.maxHoursPerWeek,
+              maxOvertimePerDay: activeSetting.maxOvertimePerDay,
+              maxOvertimePerWeek: activeSetting.maxOvertimePerWeek,
+              maxConsecutiveDays: activeSetting.maxConsecutiveDays,
+              minRestHoursBetweenShifts: activeSetting.minRestHoursBetweenShifts,
+              longShiftThreshold: activeSetting.longShiftThreshold,
+              minBreakForLongShifts: activeSetting.minBreakForLongShifts,
+              overtimeThreshold: activeSetting.overtimeThreshold,
+            }
+            setRules(loadedRules)
+            updateLaborLawValidatorRules(loadedRules)
+          }
+        }
+        
+        setSavedSettings(settingsMap)
       }
-    }
-
-    if (savedCountry) {
-      setSelectedCountry(savedCountry)
+    } catch (error) {
+      console.error('Error fetching labor law settings:', error)
+      // Fall back to Norwegian defaults
+      setRules(COUNTRY_RULES['NO'])
+      updateLaborLawValidatorRules(COUNTRY_RULES['NO'])
+    } finally {
+      setIsLoading(false)
     }
   }, [])
 
-  const handleCountryChange = (countryCode: string) => {
+  useEffect(() => {
+    fetchAllSettings()
+  }, [fetchAllSettings])
+
+  const handleCountryChange = async (countryCode: string) => {
     setSelectedCountry(countryCode)
 
+    // Check if we have saved settings for this country in our cache
+    if (savedSettings[countryCode]) {
+      const saved = savedSettings[countryCode]
+      const loadedRules: LaborLawRules = {
+        maxHoursPerDay: saved.maxHoursPerDay,
+        maxHoursPerWeek: saved.maxHoursPerWeek,
+        maxOvertimePerDay: saved.maxOvertimePerDay,
+        maxOvertimePerWeek: saved.maxOvertimePerWeek,
+        maxConsecutiveDays: saved.maxConsecutiveDays,
+        minRestHoursBetweenShifts: saved.minRestHoursBetweenShifts,
+        longShiftThreshold: saved.longShiftThreshold,
+        minBreakForLongShifts: saved.minBreakForLongShifts,
+        overtimeThreshold: saved.overtimeThreshold,
+      }
+      setRules(loadedRules)
+      setHasChanges(false)
+      return
+    }
+
+    // No saved settings for this country, use country defaults
     if (countryCode === 'DEFAULT') {
       setRules(DEFAULT_LABOR_RULES)
     } else if (COUNTRY_RULES[countryCode]) {
@@ -60,10 +130,36 @@ export default function LaborLawSettings({ onRulesChange }: LaborLawSettingsProp
     setHasChanges(true)
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     try {
-      localStorage.setItem('laborLawRules', JSON.stringify(rules))
-      localStorage.setItem('laborLawCountry', selectedCountry)
+      setIsSaving(true)
+      
+      const response = await fetch('/api/labor-law-settings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          countryCode: selectedCountry,
+          ...rules,
+          isActive: true,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to save settings')
+      }
+
+      const data = await response.json()
+      
+      // Update cache with saved settings
+      setSavedSettings(prev => ({
+        ...prev,
+        [selectedCountry]: data.settings,
+      }))
+
+      // Update the singleton validator with the new rules
+      updateLaborLawValidatorRules(rules)
 
       if (onRulesChange) {
         onRulesChange(rules)
@@ -94,16 +190,19 @@ export default function LaborLawSettings({ onRulesChange }: LaborLawSettingsProp
           popup: 'swal-toast-wide'
         }
       })
+    } finally {
+      setIsSaving(false)
     }
   }
 
   const handleReset = () => {
-    setRules(DEFAULT_LABOR_RULES)
-    setSelectedCountry('DEFAULT')
+    // Reset to Norwegian defaults (Arbeidsmiljøloven)
+    setRules(COUNTRY_RULES['NO'])
+    setSelectedCountry('NO')
     setHasChanges(true)
 
     Swal.fire({
-      text: 'Reset Complete: Labor law rules have been reset to defaults.',
+      text: 'Reset Complete: Labor law rules have been reset to Norwegian defaults (Arbeidsmiljøloven).',
       toast: true,
       position: 'top-end',
       showConfirmButton: false,
@@ -116,14 +215,23 @@ export default function LaborLawSettings({ onRulesChange }: LaborLawSettingsProp
 
   const getCountryName = (code: string): string => {
     const countryNames: Record<string, string> = {
-      'DEFAULT': 'Default Rules',
-      'NO': 'Norway',
+      'DEFAULT': 'Custom Rules',
+      'NO': 'Norway (Arbeidsmiljøloven)',
       'TH': 'Thailand',
       'US': 'United States',
       'GB': 'United Kingdom',
       'DE': 'Germany'
     }
     return countryNames[code] || code
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-8 h-8 animate-spin text-[#31BCFF]" />
+        <span className="ml-2 text-gray-600">Loading settings...</span>
+      </div>
+    )
   }
 
   return (
@@ -163,18 +271,41 @@ export default function LaborLawSettings({ onRulesChange }: LaborLawSettingsProp
                   <SelectValue placeholder="Select country" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="DEFAULT">Default Rules</SelectItem>
-                  <SelectItem value="NO">🇳🇴 Norway</SelectItem>
-                  <SelectItem value="TH">🇹🇭 Thailand</SelectItem>
-                  <SelectItem value="US">🇺🇸 United States</SelectItem>
-                  <SelectItem value="GB">🇬🇧 United Kingdom</SelectItem>
-                  <SelectItem value="DE">🇩🇪 Germany</SelectItem>
+                  <SelectItem value="NO">
+                    🇳🇴 Norway (Arbeidsmiljøloven) - Default
+                    {savedSettings['NO'] && <span className="ml-2 text-green-600">✓</span>}
+                  </SelectItem>
+                  <SelectItem value="TH">
+                    🇹🇭 Thailand
+                    {savedSettings['TH'] && <span className="ml-2 text-green-600">✓</span>}
+                  </SelectItem>
+                  <SelectItem value="US">
+                    🇺🇸 United States
+                    {savedSettings['US'] && <span className="ml-2 text-green-600">✓</span>}
+                  </SelectItem>
+                  <SelectItem value="GB">
+                    🇬🇧 United Kingdom
+                    {savedSettings['GB'] && <span className="ml-2 text-green-600">✓</span>}
+                  </SelectItem>
+                  <SelectItem value="DE">
+                    🇩🇪 Germany
+                    {savedSettings['DE'] && <span className="ml-2 text-green-600">✓</span>}
+                  </SelectItem>
+                  <SelectItem value="DEFAULT">
+                    Custom Rules
+                    {savedSettings['DEFAULT'] && <span className="ml-2 text-green-600">✓</span>}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="flex items-end">
               <div className="text-sm text-gray-600">
                 <strong>{t('labor.setting.country_region.label2')}:</strong> {getCountryName(selectedCountry)}
+                {savedSettings[selectedCountry] && (
+                  <Badge variant="outline" className="ml-2 text-green-600 border-green-600">
+                    Saved
+                  </Badge>
+                )}
                 <br />
                 <span className="text-xs">
                   {t('labor.setting.country_region.info2')}
@@ -399,11 +530,15 @@ export default function LaborLawSettings({ onRulesChange }: LaborLawSettingsProp
 
         <Button
           onClick={handleSave}
-          disabled={!hasChanges}
+          disabled={!hasChanges || isSaving}
           className="flex items-center gap-2 bg-[#31BCFF] hover:bg-[#31BCFF]/90"
         >
-          <Save className="w-4 h-4" />
-          {t('labor.setting.buttons.save')}
+          {isSaving ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Save className="w-4 h-4" />
+          )}
+          {isSaving ? 'Saving...' : t('labor.setting.buttons.save')}
         </Button>
       </div>
 

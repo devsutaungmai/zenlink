@@ -8,6 +8,8 @@ import { useTranslation } from 'react-i18next'
 import { CardGridSkeleton } from '@/components/skeletons/ScheduleSkeleton'
 import ContractForm from '@/components/ContractForm'
 import { useUser } from '@/shared/lib/useUser'
+import { usePermissions } from '@/shared/lib/usePermissions'
+import { PERMISSIONS } from '@/shared/lib/permissions'
 import Swal from 'sweetalert2'
 import {
   Dialog,
@@ -103,8 +105,15 @@ export default function ContractsPage() {
   const [statistics, setStatistics] = useState<ContractStatistics | null>(null)
   const [activeFilter, setActiveFilter] = useState<'all' | 'missing' | 'expiring' | 'expired'>('all')
   const { user } = useUser()
+  const { hasPermission } = usePermissions()
   const searchParams = useSearchParams()
   const preselectedEmployeeId = searchParams.get('employeeId') || undefined
+
+  // Permission checks
+  const canViewContracts = hasPermission(PERMISSIONS.CONTRACTS_VIEW)
+  const canCreateContracts = hasPermission(PERMISSIONS.CONTRACTS_CREATE)
+  const canEditContracts = hasPermission(PERMISSIONS.CONTRACTS_EDIT)
+  const canDeleteContracts = hasPermission(PERMISSIONS.CONTRACTS_DELETE)
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | undefined>(preselectedEmployeeId)
 
   // Pagination states
@@ -653,13 +662,15 @@ export default function ContractsPage() {
             {/* Contract status alerts */}
               
           </div>
-          <button
-            onClick={() => openCreateForm()}
-            className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 group"
-          >
-            <PlusIcon className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
-            Create Contract
-          </button>
+          {canCreateContracts && (
+            <button
+              onClick={() => openCreateForm()}
+              className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 group"
+            >
+              <PlusIcon className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
+              Create Contract
+            </button>
+          )}
         </div>
       </div>
 
@@ -880,14 +891,16 @@ export default function ContractsPage() {
                       </MobileCardSection>
 
                       <MobileCardActions>
-                        <button
-                          onClick={() => openCreateForm(employee.id)}
-                          className="inline-flex items-center px-3 py-1.5 rounded-lg bg-orange-100 text-orange-800 text-sm font-medium hover:bg-orange-200 transition-colors duration-200"
-                          title="Create Contract"
-                        >
-                          <PlusIcon className="w-4 h-4 mr-1" />
-                          Create Contract
-                        </button>
+                        {canCreateContracts && (
+                          <button
+                            onClick={() => openCreateForm(employee.id)}
+                            className="inline-flex items-center px-3 py-1.5 rounded-lg bg-orange-100 text-orange-800 text-sm font-medium hover:bg-orange-200 transition-colors duration-200"
+                            title="Create Contract"
+                          >
+                            <PlusIcon className="w-4 h-4 mr-1" />
+                            Create Contract
+                          </button>
+                        )}
                       </MobileCardActions>
                     </MobileCard>
                   ))}
@@ -941,14 +954,16 @@ export default function ContractsPage() {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                               <div className="flex items-center justify-end gap-2">
-                                <button
-                                  onClick={() => openCreateForm(employee.id)}
-                                  className="inline-flex items-center px-3 py-1.5 rounded-lg bg-orange-100 text-orange-800 text-sm font-medium hover:bg-orange-200 transition-colors duration-200"
-                                  title="Create Contract"
-                                >
-                                  <PlusIcon className="w-4 h-4 mr-1" />
-                                  Create Contract
-                                </button>
+                                {canCreateContracts && (
+                                  <button
+                                    onClick={() => openCreateForm(employee.id)}
+                                    className="inline-flex items-center px-3 py-1.5 rounded-lg bg-orange-100 text-orange-800 text-sm font-medium hover:bg-orange-200 transition-colors duration-200"
+                                    title="Create Contract"
+                                  >
+                                    <PlusIcon className="w-4 h-4 mr-1" />
+                                    Create Contract
+                                  </button>
+                                )}
                               </div>
                             </td>
                           </tr>
@@ -1028,7 +1043,7 @@ export default function ContractsPage() {
                     : 'Get started by creating your first employee contract.'
                   }
                 </p>
-                {!searchTerm && (
+                {!searchTerm && canCreateContracts && (
                   <button
                     onClick={() => openCreateForm()}
                     className="inline-flex items-center px-6 py-3 rounded-xl bg-[#31BCFF] text-white font-medium hover:bg-[#31BCFF]/90 transition-colors duration-200"
@@ -1094,21 +1109,25 @@ export default function ContractsPage() {
                         >
                           <ArrowDownTrayIcon className="h-5 w-5" />
                         </button>
-                        <button
-                          onClick={() => handleSign(contract)}
-                          className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all duration-200"
-                          title="Sign Contract"
-                        >
-                          <PencilSquareIcon className="h-5 w-5" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(contract)}
-                          disabled={!canDeleteContract(contract)}
-                          className={`p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 ${!canDeleteContract(contract) ? 'opacity-50 cursor-not-allowed hover:text-gray-400 hover:bg-transparent' : ''}`}
-                          title={canDeleteContract(contract) ? 'Delete Contract' : 'Signed contracts cannot be deleted'}
-                        >
-                          <TrashIcon className="h-5 w-5" />
-                        </button>
+                        {canEditContracts && (
+                          <button
+                            onClick={() => handleSign(contract)}
+                            className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all duration-200"
+                            title="Sign Contract"
+                          >
+                            <PencilSquareIcon className="h-5 w-5" />
+                          </button>
+                        )}
+                        {canDeleteContracts && (
+                          <button
+                            onClick={() => handleDelete(contract)}
+                            disabled={!canDeleteContract(contract)}
+                            className={`p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 ${!canDeleteContract(contract) ? 'opacity-50 cursor-not-allowed hover:text-gray-400 hover:bg-transparent' : ''}`}
+                            title={canDeleteContract(contract) ? 'Delete Contract' : 'Signed contracts cannot be deleted'}
+                          >
+                            <TrashIcon className="h-5 w-5" />
+                          </button>
+                        )}
                       </MobileCardActions>
                     </MobileCard>
                   ))}
@@ -1179,21 +1198,25 @@ export default function ContractsPage() {
                                 >
                                   <ArrowDownTrayIcon className="h-4 w-4" />
                                 </button>
-                                <button
-                                  onClick={() => handleSign(contract)}
-                                  className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all duration-200"
-                                  title="Sign Contract"
-                                >
-                                  <PencilSquareIcon className="h-4 w-4" />
-                                </button>
-                                <button
-                                  onClick={() => handleDelete(contract)}
-                                  disabled={!canDeleteContract(contract)}
-                                  className={`p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 ${!canDeleteContract(contract) ? 'opacity-50 cursor-not-allowed hover:text-gray-400 hover:bg-transparent' : ''}`}
-                                  title={canDeleteContract(contract) ? 'Delete Contract' : 'Signed contracts cannot be deleted'}
-                                >
-                                  <TrashIcon className="h-4 w-4" />
-                                </button>
+                                {canEditContracts && (
+                                  <button
+                                    onClick={() => handleSign(contract)}
+                                    className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all duration-200"
+                                    title="Sign Contract"
+                                  >
+                                    <PencilSquareIcon className="h-4 w-4" />
+                                  </button>
+                                )}
+                                {canDeleteContracts && (
+                                  <button
+                                    onClick={() => handleDelete(contract)}
+                                    disabled={!canDeleteContract(contract)}
+                                    className={`p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 ${!canDeleteContract(contract) ? 'opacity-50 cursor-not-allowed hover:text-gray-400 hover:bg-transparent' : ''}`}
+                                    title={canDeleteContract(contract) ? 'Delete Contract' : 'Signed contracts cannot be deleted'}
+                                  >
+                                    <TrashIcon className="h-4 w-4" />
+                                  </button>
+                                )}
                               </div>
                             </td>
                           </tr>

@@ -39,6 +39,8 @@ interface FunctionGroupedViewProps {
   selectedEmployeeId?: string | null
   isEmployeeUnavailable?: (employeeId: string, date: string) => boolean
   onUnavailableClick?: (employeeId: string, date: string) => void
+  canCreateShifts?: boolean
+  canEditShifts?: boolean
 }
 
 export default function FunctionGroupedView({
@@ -50,7 +52,9 @@ export default function FunctionGroupedView({
   onAddShift = () => {},
   selectedEmployeeId,
   isEmployeeUnavailable,
-  onUnavailableClick
+  onUnavailableClick,
+  canCreateShifts = true,
+  canEditShifts = true
 }: FunctionGroupedViewProps) {
   const { currencySymbol } = useCurrency()
   const [modalState, setModalState] = useState<{
@@ -245,7 +249,7 @@ export default function FunctionGroupedView({
 
                       return (
                         <div key={dayIndex} className="px-1">
-                          <div className="aspect-square">
+                          <div className="min-h-[60px]">
                             {dayShifts.length === 0 ? (
                               <button
                                 onClick={() => {
@@ -260,7 +264,7 @@ export default function FunctionGroupedView({
                                     departmentId: fn.category?.department?.id || fn.category?.departments?.[0]?.department?.id
                                   })
                                 }}
-                                className={`w-full h-full border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 ${
+                                className={`w-full h-full min-h-[60px] border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 ${
                                   unavailable
                                     ? 'border-red-300 bg-red-50 text-red-500 cursor-not-allowed'
                                     : isToday 
@@ -274,7 +278,7 @@ export default function FunctionGroupedView({
                                 )}
                               </button>
                             ) : (
-                              <div className="w-full h-full flex flex-col">
+                              <div className="w-full h-full flex flex-col gap-1">
                                 {dayShifts.slice(0, 1).map(shift => {
                                   const shiftColor = shift.function?.color || (
                                     shift.status === 'CANCELLED' ? '#ef4444' :
@@ -285,7 +289,7 @@ export default function FunctionGroupedView({
                                   <button
                                     key={shift.id}
                                     onClick={() => onEditShift(shift)}
-                                    className="w-full flex-1 rounded-xl text-white font-medium flex flex-col items-center justify-center gap-0.5 transition-all active:scale-95"
+                                    className="w-full rounded-xl text-white font-medium flex flex-col items-center justify-center gap-0.5 py-2 transition-all active:scale-95 cursor-pointer"
                                     style={{ backgroundColor: shiftColor }}
                                   >
                                     <span className="text-xs leading-tight">
@@ -302,11 +306,28 @@ export default function FunctionGroupedView({
                                 {dayShifts.length > 1 && (
                                   <button 
                                     onClick={() => handleShowMoreShifts(dayShifts, date, fn.name)}
-                                    className="w-full text-xs text-center text-gray-600 hover:text-[#31BCFF] font-semibold mt-1 py-1 px-2 bg-gray-100 hover:bg-blue-50 rounded transition-all active:scale-95"
+                                    className="w-full text-xs text-center text-gray-600 hover:text-[#31BCFF] font-semibold py-1 px-2 bg-gray-100 hover:bg-blue-50 rounded transition-all active:scale-95"
                                   >
                                     +{dayShifts.length - 1} more
                                   </button>
                                 )}
+                                <button
+                                  onClick={() => {
+                                    if (unavailable && selectedEmployeeId) {
+                                      onUnavailableClick?.(selectedEmployeeId, formattedDate)
+                                      return
+                                    }
+                                    onAddShift({ 
+                                      date: formattedDate,
+                                      functionId: fn.id,
+                                      categoryId: fn.categoryId || fn.category?.id,
+                                      departmentId: fn.category?.department?.id || fn.category?.departments?.[0]?.department?.id
+                                    })
+                                  }}
+                                  className="w-full text-xs text-center text-[#31BCFF] font-semibold py-1 px-2 bg-blue-50 hover:bg-blue-100 rounded transition-all active:scale-95 mt-1"
+                                >
+                                  + Add
+                                </button>
                               </div>
                             )}
                           </div>
@@ -483,6 +504,7 @@ export default function FunctionGroupedView({
         title={modalState.title}
         employees={employees}
         onEditShift={onEditShift}
+        canEditShifts={canEditShifts}
       />
     </div>
   );

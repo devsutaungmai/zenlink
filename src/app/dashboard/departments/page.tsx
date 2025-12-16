@@ -6,6 +6,8 @@ import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons
 import { useTranslation } from 'react-i18next'
 import Swal from 'sweetalert2'
 import { CardGridSkeleton } from '@/components/skeletons/ScheduleSkeleton'
+import { usePermissions } from '@/shared/lib/usePermissions'
+import { PERMISSIONS } from '@/shared/lib/permissions'
 
 interface Department {
   id: string
@@ -24,9 +26,15 @@ interface Department {
 
 export default function DepartmentsPage() {
   const { t } = useTranslation()
+  const { hasPermission } = usePermissions()
   const [departments, setDepartments] = useState<Department[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
+
+  // Permission checks
+  const canCreateDepartments = hasPermission(PERMISSIONS.DEPARTMENTS_CREATE)
+  const canEditDepartments = hasPermission(PERMISSIONS.DEPARTMENTS_EDIT)
+  const canDeleteDepartments = hasPermission(PERMISSIONS.DEPARTMENTS_DELETE)
 
   useEffect(() => {
     fetchDepartments()
@@ -134,13 +142,15 @@ export default function DepartmentsPage() {
               </span>
             </div>
           </div>
-          <Link
-            href="/dashboard/departments/create"
-            className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 group"
-          >
-            <PlusIcon className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
-            {t('departments.create_department')}
-          </Link>
+          {canCreateDepartments && (
+            <Link
+              href="/dashboard/departments/create"
+              className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 group"
+            >
+              <PlusIcon className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
+              {t('departments.create_department')}
+            </Link>
+          )}
         </div>
       </div>
 
@@ -175,7 +185,7 @@ export default function DepartmentsPage() {
           <p className="text-gray-500 mb-6">
             {searchTerm ? t('departments.adjust_search') : t('departments.get_started')}
           </p>
-          {!searchTerm && (
+          {!searchTerm && canCreateDepartments && (
             <Link
               href="/dashboard/departments/create"
               className="inline-flex items-center px-6 py-3 rounded-xl bg-[#31BCFF] text-white font-medium hover:bg-[#31BCFF]/90 transition-colors duration-200"
@@ -204,22 +214,17 @@ export default function DepartmentsPage() {
                     </p>
                   )}
                 </div>
-                <div className="flex items-center space-x-2">
-                  {/* <Link
-                    href={`/dashboard/departments/${department.id}/edit`}
-                    className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
-                    title="Edit Department"
-                  >
-                    <PencilIcon className="h-4 w-4" />
-                  </Link> */}
-                  <button
-                    onClick={() => handleDelete(department.id)}
-                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                    title="Delete Department"
-                  >
-                    <TrashIcon className="h-4 w-4" />
-                  </button>
-                </div>
+                {canDeleteDepartments && (
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => handleDelete(department.id)}
+                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                      title="Delete Department"
+                    >
+                      <TrashIcon className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Department Stats */}
@@ -263,15 +268,17 @@ export default function DepartmentsPage() {
               </div>
 
               {/* Quick Actions */}
-              <div className="mt-4 pt-4 border-t border-gray-200/50">
-                <Link
-                  href={`/dashboard/departments/${department.id}/edit`}
-                  className="w-full inline-flex items-center justify-center px-4 py-2 rounded-xl bg-gray-50 text-gray-700 font-medium hover:bg-[#31BCFF] hover:text-white transition-all duration-200 group/btn"
-                >
-                  <PencilIcon className="w-4 h-4 mr-2 group-hover/btn:scale-110 transition-transform duration-200" />
-                  {t('departments.edit_department_action')}
-                </Link>
-              </div>
+              {canEditDepartments && (
+                <div className="mt-4 pt-4 border-t border-gray-200/50">
+                  <Link
+                    href={`/dashboard/departments/${department.id}/edit`}
+                    className="w-full inline-flex items-center justify-center px-4 py-2 rounded-xl bg-gray-50 text-gray-700 font-medium hover:bg-[#31BCFF] hover:text-white transition-all duration-200 group/btn"
+                  >
+                    <PencilIcon className="w-4 h-4 mr-2 group-hover/btn:scale-110 transition-transform duration-200" />
+                    {t('departments.edit_department_action')}
+                  </Link>
+                </div>
+              )}
             </div>
           ))}
         </div>

@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 import { getCurrentUserOrEmployee } from "@/shared/lib/auth";
 import { prisma } from "@/shared/lib/prisma";
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    console.log('[CONTRACT_SIGN] Request received for contract:', params.id);
+    const { id } = await params;
+    console.log('[CONTRACT_SIGN] Request received for contract:', id);
     
     const auth = await getCurrentUserOrEmployee();
     if (!auth) {
@@ -44,13 +45,13 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     // Get the contract
     const contract = await prisma.contract.findFirst({
       where: {
-        id: params.id,
+        id: id,
         businessId
       }
     });
 
     if (!contract) {
-      console.log('[CONTRACT_SIGN] Contract not found:', { id: params.id, businessId });
+      console.log('[CONTRACT_SIGN] Contract not found:', { id: id, businessId });
       return NextResponse.json(
         { error: 'Contract not found' },
         { status: 404 }
@@ -65,7 +66,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     console.log('[CONTRACT_SIGN] Updating contract with status:', signedStatus);
     
     const updatedContract = await prisma.contract.update({
-      where: { id: params.id },
+      where: { id: id },
       data: {
         signedStatus,
         signatureData: signatureData ? JSON.stringify(signatureData) : null,

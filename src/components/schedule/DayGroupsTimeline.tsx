@@ -5,6 +5,7 @@ import { PlusIcon } from '@heroicons/react/24/outline'
 import { useCurrency } from '@/shared/hooks/useCurrency'
 import { ShiftWithRelations } from '@/types/schedule'
 import { getShiftSegmentsForDate, ShiftSegment } from './utils'
+import ShiftsModal from './ShiftsModal'
 
 interface DayGroupsTimelineProps {
   date: Date
@@ -153,8 +154,139 @@ export default function DayGroupsTimeline({
     setHoveredCell(prev => (prev?.rowId === rowId ? null : prev))
   }, [])
 
+  // Modal state for showing all shifts
+  const [modalState, setModalState] = useState<{
+    isOpen: boolean
+    shifts: ShiftWithRelations[]
+    title: string
+  }>({
+    isOpen: false,
+    shifts: [],
+    title: ''
+  })
+
+  const handleShowMoreShifts = (shifts: ShiftWithRelations[], groupName: string) => {
+    setModalState({
+      isOpen: true,
+      shifts,
+      title: `${groupName} - All Shifts`
+    })
+  }
+
+  const handleCloseModal = () => {
+    setModalState({
+      isOpen: false,
+      shifts: [],
+      title: ''
+    })
+  }
+
+  // Get shifts for mobile view
+  const getGroupShiftsForMobile = (groupId: string) => {
+    return shifts.filter(shift => {
+      const shiftDate = typeof shift.date === 'string' ? shift.date : format(shift.date, 'yyyy-MM-dd')
+      return shift.employeeGroupId === groupId && shiftDate.substring(0, 10) === formattedDate
+    })
+  }
+
   return (
-    <div className="mt-4 overflow-hidden rounded-xl border border-gray-200 bg-white">
+    <>
+    {/* Mobile View */}
+    <div className="md:hidden mt-4 bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
+      <div className="p-3 space-y-3">
+        {groupRows.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <p className="text-sm">No groups found</p>
+          </div>
+        ) : (
+          groupRows.map((row) => {
+            const groupShifts = getGroupShiftsForMobile(row.id)
+            const stats = getStatsForRow(segmentsByGroup.get(row.id) ?? [])
+            
+            return (
+              <div key={row.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+                {/* Group Header */}
+                <div className="flex items-center justify-between px-3 py-2.5 border-b bg-gray-50">
+                  <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                    <div className="w-9 h-9 rounded-full bg-[#31BCFF] flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+                      {row.displayName.substring(0, 2).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-sm text-gray-900 truncate">
+                        {row.displayName}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {stats.duration} / {stats.shifts} Shift{stats.shifts !== 1 ? 's' : ''}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Shifts */}
+                <div className="p-3">
+                  <div className="min-h-[60px]">
+                    {groupShifts.length === 0 ? (
+                      <button
+                        onClick={() => onAddShift({ 
+                          date: formattedDate,
+                          employeeGroupId: row.id 
+                        })}
+                        className="w-full h-full min-h-[60px] border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 border-gray-300 hover:border-[#31BCFF] hover:bg-blue-50"
+                      >
+                        <PlusIcon className="w-6 h-6 text-[#31BCFF]" />
+                      </button>
+                    ) : (
+                      <div className="w-full h-full flex flex-col gap-1">
+                        {groupShifts.slice(0, 1).map(shift => (
+                          <button
+                            key={shift.id}
+                            onClick={() => onEditShift(shift)}
+                            className={`w-full rounded-xl text-white font-medium flex flex-col items-center justify-center gap-0.5 py-2 transition-all active:scale-95 ${
+                              shift.status === 'CANCELLED' ? 'bg-red-500' :
+                              shift.status === 'WORKING' ? 'bg-blue-500' :
+                              'bg-[#31BCFF]'
+                            }`}
+                          >
+                            <span className="text-xs leading-tight">
+                              {shift.startTime.substring(0, 5)}
+                            </span>
+                            {shift.endTime && (
+                              <span className="text-xs leading-tight">
+                                {shift.endTime.substring(0, 5)}
+                              </span>
+                            )}
+                          </button>
+                        ))}
+                        {groupShifts.length > 1 && (
+                          <button 
+                            onClick={() => handleShowMoreShifts(groupShifts, row.displayName)}
+                            className="w-full text-xs text-center text-gray-600 hover:text-[#31BCFF] font-semibold py-1 px-2 bg-gray-100 hover:bg-blue-50 rounded transition-all active:scale-95"
+                          >
+                            +{groupShifts.length - 1} more
+                          </button>
+                        )}
+                        <button
+                          onClick={() => onAddShift({ 
+                            date: formattedDate,
+                            employeeGroupId: row.id 
+                          })}
+                          className="w-full text-xs text-center text-[#31BCFF] font-semibold py-1 px-2 bg-blue-50 hover:bg-blue-100 rounded transition-all active:scale-95 mt-1"
+                        >
+                          + Add
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )
+          })
+        )}
+      </div>
+    </div>
+
+    {/* Desktop View */}
+    <div className="hidden md:block mt-4 overflow-hidden rounded-xl border border-gray-200 bg-white">
       <div className="overflow-x-auto">
         <div className="min-w-[1100px]">
           {/* Header Row */}
@@ -277,5 +409,17 @@ export default function DayGroupsTimeline({
         </div>
       </div>
     </div>
+
+    {/* Shifts Modal */}
+    <ShiftsModal
+      isOpen={modalState.isOpen}
+      onClose={handleCloseModal}
+      shifts={modalState.shifts}
+      date={date}
+      title={modalState.title}
+      employees={[]}
+      onEditShift={onEditShift}
+    />
+    </>
   )
 }

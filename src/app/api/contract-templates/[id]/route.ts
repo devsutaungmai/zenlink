@@ -6,9 +6,10 @@ import { join } from 'path'
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const currentUser = await getCurrentUser()
     if (!currentUser?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -24,7 +25,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Business not found' }, { status: 404 })
     }
 
-    const templateId = params.id
+    const templateId = id
 
     // Find the contract template and verify it belongs to the user's business
     const contractTemplate = await prisma.contractTemplate.findUnique({

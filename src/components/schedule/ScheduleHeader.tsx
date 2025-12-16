@@ -2,6 +2,7 @@ import { format } from 'date-fns'
 import { ArrowLeftIcon, ArrowRightIcon, FunnelIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { useTranslation } from 'react-i18next'
 import { useState, useRef, useEffect } from 'react'
+import TemplatesDropdown, { TemplateAction } from './TemplatesDropdown'
 
 interface Employee {
   id: string
@@ -82,6 +83,8 @@ interface ScheduleHeaderProps {
   onFiltersChange?: (filters: FilterOptions) => void
   scheduleViewType?: 'time' | 'employees' | 'groups' | 'functions'
   onScheduleViewTypeChange?: (type: 'time' | 'employees' | 'groups' | 'functions') => void
+  onTemplateAction?: (action: TemplateAction) => void
+  canUseTemplates?: boolean
 }
 
 export default function ScheduleHeader({
@@ -109,7 +112,9 @@ export default function ScheduleHeader({
   filters = { employeeIds: [], employeeGroupIds: [], shiftTypeIds: [], statuses: [], timeFrom: '', timeTo: '' },
   onFiltersChange = () => {},
   scheduleViewType = 'time',
-  onScheduleViewTypeChange = () => {}
+  onScheduleViewTypeChange = () => {},
+  onTemplateAction = () => {},
+  canUseTemplates = true
 }: ScheduleHeaderProps) {
   const { t } = useTranslation('schedule')
   const [showFilters, setShowFilters] = useState(false)
@@ -213,6 +218,10 @@ export default function ScheduleHeader({
     onFiltersChange({ employeeIds: [], employeeGroupIds: [], shiftTypeIds: [], statuses: [], timeFrom: '', timeTo: '' })
   }
   
+  const handleTemplateAction = (action: TemplateAction) => {
+    onTemplateAction(action)
+  }
+  
   const activeFilterCount = 
     filters.employeeIds.length + 
     filters.employeeGroupIds.length + 
@@ -301,6 +310,9 @@ export default function ScheduleHeader({
 
         {/* Row 2: Filters Button */}
         <div className="flex items-center gap-2">
+          {/* Templates Button - Mobile */}
+          {canUseTemplates && <TemplatesDropdown onAction={handleTemplateAction} />}
+          
           {/* Filters Button - Mobile */}
           <div className="relative flex-1" ref={filterButtonRef}>
             <button 
@@ -636,6 +648,8 @@ export default function ScheduleHeader({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
                 </svg>
               </button>
+
+              {canUseTemplates && <TemplatesDropdown onAction={handleTemplateAction} />}
 
               <div className="relative w-full sm:w-auto">
                 <button

@@ -4,9 +4,10 @@ import { getCurrentUser } from '@/shared/lib/auth'
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const currentUser = await getCurrentUser()
     if (!currentUser) {
       return NextResponse.json(
@@ -17,7 +18,7 @@ export async function PUT(
 
     const data = await request.json()
     const { name, departmentId, isActive } = data
-    const profileId = params.id
+    const profileId = id
 
     if (!name || !departmentId) {
       return NextResponse.json(
@@ -103,9 +104,10 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const currentUser = await getCurrentUser()
     if (!currentUser) {
       return NextResponse.json(
@@ -114,7 +116,7 @@ export async function DELETE(
       )
     }
 
-    const profileId = params.id
+    const profileId = id
 
     // Check if profile exists and belongs to user's business
     const existingProfile = await prisma.punchClockProfile.findFirst({

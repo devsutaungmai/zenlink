@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { DocumentDuplicateIcon, EyeIcon, ArrowDownTrayIcon, CheckCircleIcon, XCircleIcon, ClockIcon, XMarkIcon } from '@heroicons/react/24/outline'
-import { downloadBlob } from '@/shared/utils/download'
+import { generateContractPdf, downloadContractPdf } from '@/shared/lib/contractPdfGenerator'
 
 interface Contract {
   id: string
@@ -22,6 +22,8 @@ interface ContractsTabContentProps {
   isNewEmployee?: boolean
   loading?: boolean
   onCreateContract?: () => void
+  canViewContracts?: boolean
+  canCreateContracts?: boolean
 }
 
 export function ContractsTabContent({ 
@@ -29,7 +31,9 @@ export function ContractsTabContent({
   employeeName, 
   isNewEmployee,
   loading,
-  onCreateContract
+  onCreateContract,
+  canViewContracts = true,
+  canCreateContracts = true,
 }: ContractsTabContentProps) {
   const [downloading, setDownloading] = useState<string | null>(null)
   const [viewingContract, setViewingContract] = useState<Contract | null>(null)
@@ -40,25 +44,18 @@ export function ContractsTabContent({
     try {
       setDownloading(contract.id)
       
-      const downloadUrl = `/api/contracts/${contract.id}/download`
-      const response = await fetch(downloadUrl)
+      // Fetch full contract data
+      const response = await fetch(`/api/contracts/${contract.id}/data`)
       
       if (!response.ok) {
-        throw new Error('Failed to generate PDF')
+        throw new Error('Failed to fetch contract data')
       }
 
-      const contentDisposition = response.headers.get('content-disposition')
-      let filename = `${contract.contractTemplate.name}_Contract.pdf`
-      
-      if (contentDisposition) {
-        const filenameMatch = contentDisposition.match(/filename="([^"]+)"/)
-        if (filenameMatch) {
-          filename = filenameMatch[1]
-        }
-      }
+      const contractData = await response.json()
 
-      const blob = await response.blob()
-      downloadBlob(blob, filename)
+      // Generate PDF on client side
+      const pdfBlob = await generateContractPdf(contractData)
+      downloadContractPdf(pdfBlob, contractData)
     } catch (error) {
       console.error('Error downloading contract:', error)
       alert('Failed to download contract. Please try again.')
@@ -72,14 +69,18 @@ export function ContractsTabContent({
       setViewingContract(contract)
       setPreviewLoading(true)
       
-      const response = await fetch(`/api/contracts/${contract.id}/download`)
+      // Fetch full contract data
+      const response = await fetch(`/api/contracts/${contract.id}/data`)
       
       if (!response.ok) {
-        throw new Error('Failed to load contract preview')
+        throw new Error('Failed to load contract data')
       }
 
-      const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
+      const contractData = await response.json()
+
+      // Generate PDF on client side
+      const pdfBlob = await generateContractPdf(contractData)
+      const url = window.URL.createObjectURL(pdfBlob)
       setPreviewUrl(url)
     } catch (error) {
       console.error('Error viewing contract:', error)
@@ -171,40 +172,50 @@ export function ContractsTabContent({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h3 className="text-lg font-medium text-gray-900">Employee Contracts</h3>
-          <div className="text-sm text-gray-500">
-            {employeeName && `Contracts for ${employeeName}`}
-          </div>
-        </div>
-        {onCreateContract && !isNewEmployee && (
-          <button
-            onClick={onCreateContract}
-            className="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-[#31BCFF] text-white text-sm font-medium shadow hover:bg-[#31BCFF]/90 transition-colors"
-          >
-            Create Contract
-          </button>
-        )}
-      </div>
-
-      {!contracts || contracts.length === 0 ? (
+      {!canViewContracts ? (
         <div className="bg-gray-50 rounded-xl p-8 text-center">
           <DocumentDuplicateIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h4 className="text-lg font-medium text-gray-900 mb-2">No Contracts Found</h4>
+          <h4 className="text-lg font-medium text-gray-900 mb-2">Access Denied</h4>
           <p className="text-gray-500">
-            This employee has no contracts assigned yet.
+            You don&apos;t have permission to view contracts.
           </p>
-          {onCreateContract && !isNewEmployee && (
-            <button
-              onClick={onCreateContract}
-              className="mt-4 inline-flex items-center justify-center px-4 py-2 rounded-lg bg-[#31BCFF] text-white text-sm font-medium hover:bg-[#31BCFF]/90"
-            >
-              Create Contract
-            </button>
-          )}
         </div>
       ) : (
+        <>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="text-lg font-medium text-gray-900">Employee Contracts</h3>
+              <div className="text-sm text-gray-500">
+                {employeeName && `Contracts for ${employeeName}`}
+              </div>
+            </div>
+            {onCreateContract && !isNewEmployee && canCreateContracts && (
+              <button
+                onClick={onCreateContract}
+                className="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-[#31BCFF] text-white text-sm font-medium shadow hover:bg-[#31BCFF]/90 transition-colors"
+              >
+                Create Contract
+              </button>
+            )}
+          </div>
+
+          {!contracts || contracts.length === 0 ? (
+            <div className="bg-gray-50 rounded-xl p-8 text-center">
+              <DocumentDuplicateIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <h4 className="text-lg font-medium text-gray-900 mb-2">No Contracts Found</h4>
+              <p className="text-gray-500">
+                This employee has no contracts assigned yet.
+              </p>
+              {onCreateContract && !isNewEmployee && canCreateContracts && (
+                <button
+                  onClick={onCreateContract}
+                  className="mt-4 inline-flex items-center justify-center px-4 py-2 rounded-lg bg-[#31BCFF] text-white text-sm font-medium hover:bg-[#31BCFF]/90"
+                >
+                  Create Contract
+                </button>
+              )}
+            </div>
+          ) : (
         <div className="space-y-3">
           {contracts.map((contract) => (
             <div 
@@ -345,6 +356,8 @@ export function ContractsTabContent({
             </div>
           </div>
         </div>
+      )}
+        </>
       )}
     </div>
   )

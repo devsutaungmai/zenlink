@@ -18,6 +18,7 @@ interface ShiftsModalProps {
   title: string
   employees?: Employee[]
   onEditShift: (shift: ShiftWithRelations) => void
+  canEditShifts?: boolean
 }
 
 export default function ShiftsModal({
@@ -27,7 +28,8 @@ export default function ShiftsModal({
   date,
   title,
   employees = [],
-  onEditShift
+  onEditShift,
+  canEditShifts = true
 }: ShiftsModalProps) {
   const handleShiftClick = (shift: ShiftWithRelations) => {
     onEditShift(shift)
@@ -68,7 +70,7 @@ export default function ShiftsModal({
             <button
               key={shift.id}
               onClick={() => handleShiftClick(shift)}
-              className="w-full p-3 rounded-lg border border-gray-200 hover:border-[#31BCFF] hover:bg-blue-50 transition-all text-left"
+              className="w-full p-3 rounded-lg border border-gray-200 transition-all text-left hover:border-[#31BCFF] hover:bg-blue-50 cursor-pointer"
             >
               <div className="flex items-center gap-3">
                 {/* Status Indicator */}

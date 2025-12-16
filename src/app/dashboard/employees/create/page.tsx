@@ -15,6 +15,7 @@ import { ShiftsTabContent } from '@/components/employee-form/ShiftsTabContent'
 import { PayslipsTabContent } from '@/components/employee-form/PayslipsTabContent'
 import { SickLeaveTabContent } from '@/components/employee-form/SickLeaveTabContent'
 import { ChevronLeftIcon } from '@heroicons/react/24/outline'
+import { Role } from '@/components/employee-form/types'
 
 export default function CreateEmployeePage() {
   const { t } = useTranslation()
@@ -24,6 +25,7 @@ export default function CreateEmployeePage() {
   const [error, setError] = useState<string | null>(null)
   const [departments, setDepartments] = useState<Department[]>([])
   const [employeeGroups, setEmployeeGroups] = useState<EmployeeGroup[]>([])
+  const [roles, setRoles] = useState<Role[]>([])
   const [authChecked, setAuthChecked] = useState(false)
   const [activeTab, setActiveTab] = useState<EmployeeTabType>('details')
 
@@ -46,9 +48,10 @@ export default function CreateEmployeePage() {
           throw new Error('Failed to fetch form data')
         }
 
-        const { departments, employeeGroups } = await formDataRes.json()
+        const { departments, employeeGroups, roles } = await formDataRes.json()
         setDepartments(departments)
         setEmployeeGroups(employeeGroups)
+        setRoles(roles || [])
       } catch (error) {
         setError(error instanceof Error ? error.message : 'Failed to load form data')
       } finally {
@@ -177,6 +180,7 @@ export default function CreateEmployeePage() {
             loading={saving}
             departments={departments}
             employeeGroups={employeeGroups}
+            roles={roles}
           />
         )}
 

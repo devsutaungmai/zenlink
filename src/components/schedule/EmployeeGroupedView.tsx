@@ -17,6 +17,8 @@ interface EmployeeGroupedViewProps {
   onAddShift?: (data?: { date?: string; employeeId?: string }) => void
   isEmployeeUnavailable?: (employeeId: string, date: string) => boolean
   onUnavailableClick?: (employeeId: string, date: string) => void
+  canCreateShifts?: boolean
+  canEditShifts?: boolean
 }
 
 export default function EmployeeGroupedView({
@@ -28,7 +30,9 @@ export default function EmployeeGroupedView({
   onEditShift,
   onAddShift = () => {},
   isEmployeeUnavailable,
-  onUnavailableClick
+  onUnavailableClick,
+  canCreateShifts = true,
+  canEditShifts = true
 }: EmployeeGroupedViewProps) {
   const { currencySymbol } = useCurrency()
   const [modalState, setModalState] = useState<{
@@ -212,39 +216,43 @@ export default function EmployeeGroupedView({
 
                       return (
                         <div key={dayIndex} className="px-1">
-                          <div className="aspect-square">
+                          <div className="min-h-[60px]">
                             {dayShifts.length === 0 ? (
-                              <button
-                                onClick={() => {
-                                  if (unavailable) {
-                                    onUnavailableClick?.(employee.id, formattedDate)
-                                    return
-                                  }
-                                  onAddShift({ 
-                                    date: formattedDate,
-                                    employeeId: employee.id 
-                                  })
-                                }}
-                                className={`w-full h-full border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 ${
-                                  unavailable
-                                    ? 'border-red-300 bg-red-50 text-red-500 cursor-not-allowed'
-                                    : isToday 
-                                      ? 'border-[#31BCFF] bg-blue-50 hover:bg-blue-100' 
-                                      : 'border-gray-300 hover:border-[#31BCFF] hover:bg-blue-50'
-                                }`}
-                              >
-                                <PlusIcon className={`w-6 h-6 ${unavailable ? 'text-red-400' : 'text-[#31BCFF]'}`} />
-                                {unavailable && (
-                                  <span className="hidden md:inline text-[10px] font-semibold text-red-500">Unavailable</span>
-                                )}
-                              </button>
+                              canCreateShifts ? (
+                                <button
+                                  onClick={() => {
+                                    if (unavailable) {
+                                      onUnavailableClick?.(employee.id, formattedDate)
+                                      return
+                                    }
+                                    onAddShift({ 
+                                      date: formattedDate,
+                                      employeeId: employee.id 
+                                    })
+                                  }}
+                                  className={`w-full h-full min-h-[60px] border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 ${
+                                    unavailable
+                                      ? 'border-red-300 bg-red-50 text-red-500 cursor-not-allowed'
+                                      : isToday 
+                                        ? 'border-[#31BCFF] bg-blue-50 hover:bg-blue-100' 
+                                        : 'border-gray-300 hover:border-[#31BCFF] hover:bg-blue-50'
+                                  }`}
+                                >
+                                  <PlusIcon className={`w-6 h-6 ${unavailable ? 'text-red-400' : 'text-[#31BCFF]'}`} />
+                                  {unavailable && (
+                                    <span className="hidden md:inline text-[10px] font-semibold text-red-500">Unavailable</span>
+                                  )}
+                                </button>
+                              ) : (
+                                <div className="w-full h-full min-h-[60px] border-2 border-dashed border-gray-200 rounded-xl" />
+                              )
                             ) : (
-                              <div className="w-full h-full flex flex-col">
-                                {dayShifts.slice(0, 1).map(shift => (
+                              <div className="w-full h-full flex flex-col gap-1">
+                                {dayShifts.map(shift => (
                                   <button
                                     key={shift.id}
                                     onClick={() => onEditShift(shift)}
-                                    className={`w-full flex-1 rounded-xl text-white font-medium flex flex-col items-center justify-center gap-0.5 transition-all active:scale-95 ${
+                                    className={`w-full rounded-xl text-white font-medium flex flex-col items-center justify-center gap-0.5 py-2 transition-all active:scale-95 cursor-pointer ${
                                       shift.status === 'CANCELLED' ? 'bg-red-500' :
                                       shift.status === 'WORKING' ? 'bg-blue-500' :
                                       'bg-[#31BCFF]'
@@ -260,14 +268,21 @@ export default function EmployeeGroupedView({
                                     )}
                                   </button>
                                 ))}
-                                {dayShifts.length > 1 && (
-                                  <button 
-                                    onClick={() => handleShowMoreShifts(dayShifts, date, `${employee.firstName} ${employee.lastName}`)}
-                                    className="w-full text-xs text-center text-gray-600 hover:text-[#31BCFF] font-semibold mt-1 py-1 px-2 bg-gray-100 hover:bg-blue-50 rounded transition-all active:scale-95"
-                                  >
-                                    +{dayShifts.length - 1} more
-                                  </button>
-                                )}
+                                <button
+                                  onClick={() => {
+                                    if (unavailable) {
+                                      onUnavailableClick?.(employee.id, formattedDate)
+                                      return
+                                    }
+                                    onAddShift({ 
+                                      date: formattedDate,
+                                      employeeId: employee.id 
+                                    })
+                                  }}
+                                  className="w-full text-xs text-center text-[#31BCFF] font-semibold py-1 px-2 bg-blue-50 hover:bg-blue-100 rounded transition-all active:scale-95 mt-1"
+                                >
+                                  + Add
+                                </button>
                               </div>
                             )}
                           </div>
@@ -427,6 +442,7 @@ export default function EmployeeGroupedView({
         title={modalState.title}
         employees={employees}
         onEditShift={onEditShift}
+        canEditShifts={canEditShifts}
       />
     </div>
   );

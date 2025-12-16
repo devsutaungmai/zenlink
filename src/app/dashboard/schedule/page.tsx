@@ -8,6 +8,10 @@ import { useTranslation } from 'react-i18next'
 
 import Swal from 'sweetalert2'
 import ScheduleHeader from '@/components/schedule/ScheduleHeader'
+import CreateTemplateModal from '@/components/schedule/CreateTemplateModal'
+import SelectTemplateModal from '@/components/schedule/template/SelectTemplateModal'
+import ApplyTemplateModal from '@/components/schedule/template/ApplyTemplateModal'
+import SaveAsTemplateModal from '@/components/schedule/template/SaveAsTemplateModal'
 import WeekView from '@/components/schedule/WeekView'
 import DayView from '@/components/schedule/DayView'
 import DayEmployeeTimeline from '@/components/schedule/DayEmployeeTimeline'
@@ -26,6 +30,8 @@ import {
   GroupGroupedViewSkeleton,
   FunctionGroupedViewSkeleton 
 } from '@/components/skeletons/ScheduleSkeleton'
+import { usePermissions } from '@/shared/lib/usePermissions'
+import { PERMISSIONS } from '@/shared/lib/permissions'
 
 type ViewTabValue = 'time' | 'employees' | 'groups' | 'functions'
 
@@ -45,6 +51,11 @@ const VIEW_TAB_CONFIG: ViewTabConfig[] = [
 
 export default function SchedulePage() {
   const [showShiftModal, setShowShiftModal] = useState(false)
+  const [showCreateTemplateModal, setShowCreateTemplateModal] = useState(false)
+  const [showSelectTemplateModal, setShowSelectTemplateModal] = useState(false)
+  const [showApplyTemplateModal, setShowApplyTemplateModal] = useState(false)
+  const [showSaveAsTemplateModal, setShowSaveAsTemplateModal] = useState(false)
+  const [selectTemplateMode, setSelectTemplateMode] = useState<'edit' | 'apply'>('edit')
   const [shiftInitialData, setShiftInitialData] = useState<any>(null)
   const [modalViewType, setModalViewType] = useState<'week' | 'day' | 'month'>('week')
 
@@ -57,6 +68,13 @@ export default function SchedulePage() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [scheduleViewType, setScheduleViewType] = useState<'time' | 'employees' | 'groups' | 'functions'>('employees')
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
+
+  const { hasPermission, loading: permissionsLoading } = usePermissions()
+  const canViewSchedule = hasPermission(PERMISSIONS.SCHEDULE_VIEW) || hasPermission(PERMISSIONS.SHIFTS_VIEW)
+  const canCreateShifts = hasPermission(PERMISSIONS.SCHEDULE_CREATE) || hasPermission(PERMISSIONS.SHIFTS_CREATE)
+  const canEditShifts = hasPermission(PERMISSIONS.SCHEDULE_EDIT) || hasPermission(PERMISSIONS.SHIFTS_EDIT)
+  const canDeleteShifts = hasPermission(PERMISSIONS.SCHEDULE_DELETE) || hasPermission(PERMISSIONS.SHIFTS_DELETE)
+  const canUseTemplates = hasPermission(PERMISSIONS.SCHEDULE_TEMPLATES)
 
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<string | null>(null);
@@ -167,6 +185,51 @@ export default function SchedulePage() {
       return true
     })
   }, [shifts, filters, employees, selectedDepartmentId, selectedCategoryId, selectedFunctionId])
+
+  // Filter categories based on selected department
+  const filteredCategories = useMemo(() => {
+    if (!selectedDepartmentId) {
+      return categories
+    }
+    return categories.filter((category: any) => {
+      // Check if category has departments array (many-to-many)
+      if (category.departments && category.departments.length > 0) {
+        return category.departments.some((cd: any) => cd.department?.id === selectedDepartmentId || cd.departmentId === selectedDepartmentId)
+      }
+      // Fallback to old single department field
+      if (category.departmentId) {
+        return category.departmentId === selectedDepartmentId
+      }
+      // Business-wide categories (no department restriction)
+      return true
+    })
+  }, [categories, selectedDepartmentId])
+
+  // Filter functions based on filtered categories
+  const filteredFunctions = useMemo(() => {
+    if (!selectedDepartmentId) {
+      return functions
+    }
+    const filteredCategoryIds = filteredCategories.map((c: any) => c.id)
+    return functions.filter((fn: any) => filteredCategoryIds.includes(fn.categoryId))
+  }, [functions, filteredCategories, selectedDepartmentId])
+
+  // Filter employees based on selected department (using many-to-many relationship)
+  const filteredEmployees = useMemo(() => {
+    if (!selectedDepartmentId) {
+      return employees
+    }
+    return employees.filter((employee: any) => {
+      // Check new many-to-many departments relationship
+      if (employee.departments && employee.departments.length > 0) {
+        return employee.departments.some((ed: any) => 
+          ed.departmentId === selectedDepartmentId || ed.department?.id === selectedDepartmentId
+        )
+      }
+      // Fallback to old single departmentId field
+      return employee.departmentId === selectedDepartmentId
+    })
+  }, [employees, selectedDepartmentId])
 
   const startDate = useMemo(() => {
     if (viewMode === 'month') {
@@ -407,6 +470,14 @@ export default function SchedulePage() {
   }, [selectedEmployeeId])
 
   const openShiftModal = useCallback((view: 'week' | 'day' | 'month', formData?: any | null) => {
+    const isEditing = formData?.id
+    if (isEditing && !canEditShifts) {
+      return
+    }
+    if (!isEditing && !canCreateShifts) {
+      return
+    }
+
     const payload = formData ? { ...formData } : null
 
     if (payload?.employeeId && payload?.date) {
@@ -418,7 +489,7 @@ export default function SchedulePage() {
     setModalViewType(view)
     setShiftInitialData(payload ?? null)
     setShowShiftModal(true)
-  }, [shouldPreventShiftCreation])
+  }, [shouldPreventShiftCreation, canCreateShifts, canEditShifts])
 
   const handlePreviousWeek = () => {
     if (viewMode === 'day') {
@@ -888,6 +959,32 @@ export default function SchedulePage() {
     setSelectedEmployeeId(employeeId);
   }
 
+  const handleTemplateAction = (action: 'create' | 'save' | 'edit' | 'apply' | 'copy-week') => {
+    if (!canUseTemplates) {
+      return
+    }
+    
+    switch (action) {
+      case 'create':
+        setShowCreateTemplateModal(true)
+        break
+      case 'save':
+        setShowSaveAsTemplateModal(true)
+        break
+      case 'edit':
+        setSelectTemplateMode('edit')
+        setShowSelectTemplateModal(true)
+        break
+      case 'apply':
+        setShowApplyTemplateModal(true)
+        break
+      case 'copy-week':
+        // TODO: Implement copy week
+        console.log('Copy week')
+        break
+    }
+  }
+
   const isWeekBasedView = viewMode === 'week' || viewMode === 'two-week'
 
   const renderWeekScopedContent = (dates: Date[]) => {
@@ -896,10 +993,10 @@ export default function SchedulePage() {
         <WeekView
           weekDates={dates}
           shifts={filteredShifts}
-          employees={employees}
+          employees={filteredEmployees}
           employeeGroups={employeeGroups}
-          functions={functions}
-          categories={categories}
+          functions={filteredFunctions}
+          categories={filteredCategories}
           scheduleViewType={scheduleViewType}
           onEditShift={handleEditShift}
           isEmployeeUnavailable={isEmployeeUnavailableOnDate}
@@ -908,6 +1005,8 @@ export default function SchedulePage() {
             const payload = attachSelectedEmployee(formData ?? null)
             openShiftModal('week', payload)
           }}
+          canCreateShifts={canCreateShifts}
+          canEditShifts={canEditShifts}
         />
       )
     }
@@ -917,7 +1016,7 @@ export default function SchedulePage() {
         <EmployeeGroupedView
           weekDates={dates}
           shifts={filteredShifts}
-          employees={employees}
+          employees={filteredEmployees}
           expandedGroups={expandedGroups}
           onToggleGroup={(groupId) => {
             const newExpanded = new Set(expandedGroups);
@@ -934,6 +1033,8 @@ export default function SchedulePage() {
           onAddShift={(data) => {
             openShiftModal('week', data ?? null)
           }}
+          canCreateShifts={canCreateShifts}
+          canEditShifts={canEditShifts}
         />
       )
     }
@@ -943,7 +1044,7 @@ export default function SchedulePage() {
         <GroupGroupedView
           weekDates={dates}
           shifts={filteredShifts}
-          employees={employees}
+          employees={filteredEmployees}
           employeeGroups={employeeGroups}
           onEditShift={handleEditShift}
           selectedEmployeeId={selectedEmployeeId}
@@ -953,6 +1054,8 @@ export default function SchedulePage() {
             const payload = attachSelectedEmployee(data ?? null)
             openShiftModal('week', payload)
           }}
+          canCreateShifts={canCreateShifts}
+          canEditShifts={canEditShifts}
         />
       )
     }
@@ -962,8 +1065,8 @@ export default function SchedulePage() {
         <FunctionGroupedView
           weekDates={dates}
           shifts={filteredShifts}
-          employees={employees}
-          functions={functions}
+          employees={filteredEmployees}
+          functions={filteredFunctions}
           onEditShift={handleEditShift}
           selectedEmployeeId={selectedEmployeeId}
           isEmployeeUnavailable={isEmployeeUnavailableOnDate}
@@ -972,6 +1075,8 @@ export default function SchedulePage() {
             const payload = attachSelectedEmployee(data ?? null)
             openShiftModal('week', payload)
           }}
+          canCreateShifts={canCreateShifts}
+          canEditShifts={canEditShifts}
         />
       )
     }
@@ -980,10 +1085,10 @@ export default function SchedulePage() {
       <WeekView
         weekDates={dates}
         shifts={filteredShifts}
-        employees={employees}
+        employees={filteredEmployees}
         employeeGroups={employeeGroups}
-        functions={functions}
-        categories={categories}
+        functions={filteredFunctions}
+        categories={filteredCategories}
         scheduleViewType={scheduleViewType}
         onEditShift={handleEditShift}
         isEmployeeUnavailable={isEmployeeUnavailableOnDate}
@@ -992,6 +1097,8 @@ export default function SchedulePage() {
           const payload = attachSelectedEmployee(formData ?? null)
           openShiftModal('week', payload)
         }}
+        canCreateShifts={canCreateShifts}
+        canEditShifts={canEditShifts}
       />
     )
   }
@@ -999,6 +1106,19 @@ export default function SchedulePage() {
   const formatRangeLabel = (dates: Date[]) => {
     if (!dates || dates.length === 0) return ''
     return `${format(dates[0], 'MMM d')} - ${format(dates[dates.length - 1], 'MMM d')}`
+  }
+
+  // Show access denied if user doesn't have view permission
+  if (!permissionsLoading && !canViewSchedule) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-gray-50">
+        <div className="text-center p-8 bg-white rounded-lg shadow-md">
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Access Denied</h2>
+          <p className="text-gray-600">You do not have permission to view the schedule.</p>
+          <p className="text-sm text-gray-500 mt-2">Please contact your administrator if you need access.</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -1013,24 +1133,31 @@ export default function SchedulePage() {
           onNextWeek={viewMode === 'month' ? handleNextMonth : handleNextWeek}
           onTodayClick={handleTodayClick}
           onViewModeChange={setViewMode}
-          employees={employees}
+          employees={filteredEmployees}
           selectedEmployeeId={selectedEmployeeId}
           onEmployeeChange={handleEmployeeChange}
           departments={departments}
           employeeGroups={employeeGroups}
           shiftTypes={shiftTypes}
-          categories={categories}
-          functions={functions}
+          categories={filteredCategories}
+          functions={filteredFunctions}
           selectedDepartmentId={selectedDepartmentId}
           selectedCategoryId={selectedCategoryId}
           selectedFunctionId={selectedFunctionId}
-          onDepartmentChange={setSelectedDepartmentId}
+          onDepartmentChange={(deptId) => {
+            setSelectedDepartmentId(deptId)
+            // Clear category and function selections when department changes
+            setSelectedCategoryId(null)
+            setSelectedFunctionId(null)
+          }}
           onCategoryChange={setSelectedCategoryId}
           onFunctionChange={setSelectedFunctionId}
           filters={filters}
           onFiltersChange={setFilters}
           scheduleViewType={scheduleViewType}
           onScheduleViewTypeChange={setScheduleViewType}
+          onTemplateAction={handleTemplateAction}
+          canUseTemplates={canUseTemplates}
         />
       </div>
 
@@ -1137,7 +1264,7 @@ export default function SchedulePage() {
               <MonthView
                 currentDate={currentDate}
                 shifts={filteredShifts}
-                employees={employees}
+                employees={filteredEmployees}
                 onEditShift={handleEditShift}
                 isEmployeeUnavailable={isEmployeeUnavailableOnDate}
                 onUnavailableClick={notifyEmployeeUnavailable}
@@ -1151,7 +1278,7 @@ export default function SchedulePage() {
                 <DayView
                   selectedDate={selectedDate}
                   shifts={filteredShifts}
-                  employees={employees}
+                  employees={filteredEmployees}
                   onEditShift={handleEditShift}
                   onAddShift={(formData) => {
                     const defaultDate = format(selectedDate, 'yyyy-MM-dd')
@@ -1164,12 +1291,14 @@ export default function SchedulePage() {
                     const enrichedPayload = attachSelectedEmployee(payload)
                     openShiftModal('day', enrichedPayload)
                   }}
+                  canCreateShifts={canCreateShifts}
+                  canEditShifts={canEditShifts}
                 />
               ) : scheduleViewType === 'employees' ? (
                 <DayEmployeeTimeline
                   date={selectedDate}
                   shifts={filteredShifts}
-                  employees={employees}
+                  employees={filteredEmployees}
                   onEditShift={handleEditShift}
                   onAddShift={(data) => {
                     const payload = data ? { ...data } : {}
@@ -1197,7 +1326,7 @@ export default function SchedulePage() {
                 <DayFunctionsTimeline
                   date={selectedDate}
                   shifts={filteredShifts}
-                  functions={functions}
+                  functions={filteredFunctions}
                   onEditShift={handleEditShift}
                   onAddShift={(data) => {
                     const payload = data ? { ...data } : {}
@@ -1211,7 +1340,7 @@ export default function SchedulePage() {
                 <DayView
                   selectedDate={selectedDate}
                   shifts={filteredShifts}
-                  employees={employees}
+                  employees={filteredEmployees}
                   onEditShift={handleEditShift}
                   onAddShift={(formData) => {
                     const defaultDate = format(selectedDate, 'yyyy-MM-dd')
@@ -1224,6 +1353,8 @@ export default function SchedulePage() {
                     const enrichedPayload = attachSelectedEmployee(payload)
                     openShiftModal('day', enrichedPayload)
                   }}
+                  canCreateShifts={canCreateShifts}
+                  canEditShifts={canEditShifts}
                 />
               )
             )}
@@ -1241,6 +1372,119 @@ export default function SchedulePage() {
           onDelete={handleShiftDelete}
           viewType={modalViewType}
           loading={loading}
+          canEditShifts={canEditShifts}
+          canDeleteShifts={canDeleteShifts}
+        />
+
+        <CreateTemplateModal
+          isOpen={showCreateTemplateModal}
+          onClose={() => setShowCreateTemplateModal(false)}
+        />
+
+        <SelectTemplateModal
+          isOpen={showSelectTemplateModal}
+          onClose={() => setShowSelectTemplateModal(false)}
+          mode={selectTemplateMode}
+          onApply={(templateId) => {
+            // TODO: Implement apply template logic
+            console.log('Apply template:', templateId)
+          }}
+        />
+
+        <ApplyTemplateModal
+          isOpen={showApplyTemplateModal}
+          onClose={() => setShowApplyTemplateModal(false)}
+          currentWeekStart={startOfWeek(currentDate, { weekStartsOn: 0 })}
+          onApply={async (data) => {
+            try {
+              const response = await fetch(`/api/schedule-templates/${data.templateId}/apply`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  applyToDate: data.applyToDate.toISOString(),
+                  existingShiftsOption: data.existingShiftsOption
+                })
+              })
+
+              if (!response.ok) {
+                const errorData = await response.json()
+                throw new Error(errorData.error || 'Failed to apply template')
+              }
+
+              const result = await response.json()
+              
+              Swal.fire({
+                icon: 'success',
+                title: 'Template Applied',
+                text: result.message || `Successfully applied ${result.shiftsCreated} shifts`,
+                timer: 2500,
+                showConfirmButton: false
+              })
+
+              // Refresh shifts after applying
+              fetchShifts()
+            } catch (error) {
+              console.error('Error applying template:', error)
+              Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: error instanceof Error ? error.message : 'Failed to apply template'
+              })
+            }
+          }}
+        />
+
+        <SaveAsTemplateModal
+          isOpen={showSaveAsTemplateModal}
+          onClose={() => setShowSaveAsTemplateModal(false)}
+          shifts={shifts}
+          weekStart={startOfWeek(currentDate, { weekStartsOn: 0 })}
+          onSave={async (templateName) => {
+            const weekStartDate = startOfWeek(currentDate, { weekStartsOn: 0 })
+            
+            const response = await fetch('/api/schedule-templates/save-from-schedule', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                name: templateName,
+                weekStart: weekStartDate.toISOString(),
+                shifts: shifts.map(shift => ({
+                  id: shift.id,
+                  date: typeof shift.date === 'string' ? shift.date : shift.date.toISOString(),
+                  startTime: shift.startTime,
+                  endTime: shift.endTime,
+                  employeeId: shift.employeeId,
+                  employeeGroupId: shift.employeeGroupId,
+                  functionId: shift.functionId,
+                  departmentId: shift.departmentId,
+                  note: shift.note,
+                  breakPaid: shift.breakPaid
+                }))
+              })
+            })
+
+            if (!response.ok) {
+              const errorData = await response.json()
+              throw new Error(errorData.error || 'Failed to save template')
+            }
+
+            const result = await response.json()
+            
+            Swal.fire({
+              icon: 'success',
+              title: t('templates.saved', 'Template Saved'),
+              text: t('templates.saved_message', 'Template "{{name}}" saved with {{count}} shifts', { 
+                name: templateName, 
+                count: result.template.shiftsCount 
+              }),
+              timer: 2500,
+              showConfirmButton: false
+            })
+          }}
         />
       </div>
   )

@@ -4,9 +4,10 @@ import { getCurrentUser } from '@/shared/lib/auth'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await getCurrentUser()
     
     if (!user) {
@@ -18,7 +19,7 @@ export async function GET(
     }
 
     const overtimeRule = await prisma.overtimeRule.findUnique({
-      where: { id: params.id },
+      where: { id: id },
       include: {
         payRule: {
           include: {
@@ -47,9 +48,10 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await getCurrentUser()
     
     if (!user) {
@@ -63,7 +65,7 @@ export async function PUT(
     const body = await request.json()
     const { name, description, hoursThreshold, multiplier, maxOvertimeHours, salaryCodeId } = body
     const existingRule = await prisma.overtimeRule.findUnique({
-      where: { id: params.id },
+      where: { id: id },
       include: { payRule: true }
     })
 
@@ -84,7 +86,7 @@ export async function PUT(
       }
 
       const overtime = await tx.overtimeRule.update({
-        where: { id: params.id },
+        where: { id: id },
         data: {
           ...(hoursThreshold && { triggerAfterHours: parseFloat(hoursThreshold) }),
           ...(multiplier && { rateMultiplier: parseFloat(multiplier) }),
@@ -119,9 +121,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await getCurrentUser()
     
     if (!user) {
@@ -133,7 +136,7 @@ export async function DELETE(
     }
 
     const existingRule = await prisma.overtimeRule.findUnique({
-      where: { id: params.id },
+      where: { id: id },
       include: { payRule: true }
     })
 
@@ -143,7 +146,7 @@ export async function DELETE(
 
     await prisma.$transaction(async (tx) => {
       await tx.overtimeRule.delete({
-        where: { id: params.id }
+        where: { id: id }
       })
 
       await tx.payRule.delete({

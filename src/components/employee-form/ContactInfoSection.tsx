@@ -10,6 +10,7 @@ interface ContactInfoSectionProps {
   getFieldStyle: (fieldName: string) => string
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
   onCountryCodeSelect: (code: string) => void
+  readOnly?: boolean
 }
 
 export function ContactInfoSection({
@@ -17,7 +18,8 @@ export function ContactInfoSection({
   validationErrors,
   getFieldStyle,
   onChange,
-  onCountryCodeSelect
+  onCountryCodeSelect,
+  readOnly = false,
 }: ContactInfoSectionProps) {
   const { t } = useTranslation()
   const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false)
@@ -57,8 +59,9 @@ export function ContactInfoSection({
           <div className="relative w-32" ref={dropdownRef}>
             <button
               type="button"
-              onClick={() => setIsCountryDropdownOpen(!isCountryDropdownOpen)}
-              className={`mt-1 w-full flex items-center justify-between rounded-md border px-3 py-2 text-left ${getFieldStyle('countryCode')}`}
+              onClick={() => !readOnly && setIsCountryDropdownOpen(!isCountryDropdownOpen)}
+              disabled={readOnly}
+              className={`mt-1 w-full flex items-center justify-between rounded-md border px-3 py-2 text-left ${getFieldStyle('countryCode')} ${readOnly ? 'bg-gray-100 cursor-not-allowed' : ''}`}
             >
               <span>{formData.countryCode}</span>
               <ChevronDownIcon className="w-4 h-4 text-gray-400" />
@@ -118,6 +121,7 @@ export function ContactInfoSection({
             maxLength={8}
             className={getFieldStyle('mobile')}
             required
+            disabled={readOnly}
           />
         </div>
         <p className="mt-1 text-xs text-gray-500">
@@ -139,6 +143,7 @@ export function ContactInfoSection({
           onChange={onChange}
           className={getFieldStyle('email')}
           placeholder="employee@company.com"
+          disabled={readOnly}
         />
         <p className="mt-1 text-xs text-gray-500">
           Optional. Will be used for account setup and notifications.

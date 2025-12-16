@@ -7,6 +7,8 @@ import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons
 import { useTranslation } from 'react-i18next'
 import { CardGridSkeleton } from '@/components/skeletons/ScheduleSkeleton'
 import Swal from 'sweetalert2'
+import { usePermissions } from '@/shared/lib/usePermissions'
+import { PERMISSIONS } from '@/shared/lib/permissions'
 
 interface Category {
   id: string
@@ -40,10 +42,15 @@ interface Function {
 export default function FunctionsPage() {
   const router = useRouter()
   const { t } = useTranslation('functions')
+  const { hasPermission } = usePermissions()
   const [functions, setFunctions] = useState<Function[]>([])
   const [filteredFunctions, setFilteredFunctions] = useState<Function[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [loading, setLoading] = useState(true)
+
+  const canCreateFunctions = hasPermission(PERMISSIONS.FUNCTIONS_CREATE)
+  const canEditFunctions = hasPermission(PERMISSIONS.FUNCTIONS_EDIT)
+  const canDeleteFunctions = hasPermission(PERMISSIONS.FUNCTIONS_DELETE)
 
   useEffect(() => {
     fetchFunctions()
@@ -175,13 +182,15 @@ export default function FunctionsPage() {
               </span>
             </div>
           </div>
-          <Link
-            href="/dashboard/functions/create"
-            className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 group"
-          >
-            <PlusIcon className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
-            {t('add_function')}
-          </Link>
+          {canCreateFunctions && (
+            <Link
+              href="/dashboard/functions/create"
+              className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 group"
+            >
+              <PlusIcon className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
+              {t('add_function')}
+            </Link>
+          )}
         </div>
       </div>
 
@@ -216,7 +225,7 @@ export default function FunctionsPage() {
           <p className="text-gray-500 mb-6">
             {searchTerm ? t('try_adjusting_search') : t('create_first_function')}
           </p>
-          {!searchTerm && (
+          {!searchTerm && canCreateFunctions && (
             <Link
               href="/dashboard/functions/create"
               className="inline-flex items-center px-6 py-3 rounded-xl bg-[#31BCFF] text-white font-medium hover:bg-[#31BCFF]/90 transition-colors duration-200"
@@ -265,20 +274,15 @@ export default function FunctionsPage() {
                   )}
                 </div>
                 <div className="flex items-center space-x-2">
-                  {/* <Link
-                    href={`/dashboard/functions/${func.id}/edit`}
-                    className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
-                    title="Edit Function"
-                  >
-                    <PencilIcon className="h-4 w-4" />
-                  </Link> */}
-                  <button
-                    onClick={() => handleDelete(func.id, func.name)}
-                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                    title="Delete Function"
-                  >
-                    <TrashIcon className="h-4 w-4" />
-                  </button>
+                  {canDeleteFunctions && (
+                    <button
+                      onClick={() => handleDelete(func.id, func.name)}
+                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                      title="Delete Function"
+                    >
+                      <TrashIcon className="h-4 w-4" />
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -297,15 +301,17 @@ export default function FunctionsPage() {
               </div>
 
               {/* Quick Action */}
-              <div className="mt-4 pt-4 border-t border-gray-200/50">
-                <Link
-                  href={`/dashboard/functions/${func.id}/edit`}
-                  className="w-full inline-flex items-center justify-center px-4 py-2 rounded-xl bg-gray-50 text-gray-700 font-medium hover:bg-[#31BCFF] hover:text-white transition-all duration-200 group/btn"
-                >
-                  <PencilIcon className="w-4 h-4 mr-2 group-hover/btn:scale-110 transition-transform duration-200" />
-                  {t('edit')}
-                </Link>
-              </div>
+              {canEditFunctions && (
+                <div className="mt-4 pt-4 border-t border-gray-200/50">
+                  <Link
+                    href={`/dashboard/functions/${func.id}/edit`}
+                    className="w-full inline-flex items-center justify-center px-4 py-2 rounded-xl bg-gray-50 text-gray-700 font-medium hover:bg-[#31BCFF] hover:text-white transition-all duration-200 group/btn"
+                  >
+                    <PencilIcon className="w-4 h-4 mr-2 group-hover/btn:scale-110 transition-transform duration-200" />
+                    {t('edit')}
+                  </Link>
+                </div>
+              )}
             </div>
           ))}
         </div>

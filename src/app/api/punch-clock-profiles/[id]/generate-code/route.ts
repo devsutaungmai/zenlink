@@ -14,9 +14,10 @@ function generateActivationCode(): string {
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const currentUser = await getCurrentUser();
     
     if (!currentUser?.businessId) {
@@ -26,7 +27,7 @@ export async function POST(
       );
     }
 
-    const profileId = params.id;
+    const profileId = id;
     
     // Verify the profile belongs to the user's business
     const profile = await prisma.punchClockProfile.findFirst({

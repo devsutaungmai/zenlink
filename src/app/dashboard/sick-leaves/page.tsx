@@ -7,6 +7,8 @@ import Swal from 'sweetalert2'
 import SickLeaveModal from '@/components/SickLeaveModal'
 import { useTranslation } from 'react-i18next'
 import { useUser } from '@/shared/lib/useUser'
+import { usePermissions } from '@/shared/lib/usePermissions'
+import { PERMISSIONS } from '@/shared/lib/permissions'
 
 interface SickLeave {
   id: string
@@ -42,7 +44,13 @@ interface SickLeaveFormData {
 export default function SickLeavesPage() {
   const { t } = useTranslation('sick-leave')
   const { user, loading: userLoading } = useUser()
+  const { hasPermission, loading: permissionsLoading } = usePermissions()
   const isEmployeeUser = user?.role === 'EMPLOYEE' || !!user?.employee
+  
+  const canViewSickLeave = hasPermission(PERMISSIONS.SICK_LEAVE_VIEW)
+  const canCreateSickLeave = hasPermission(PERMISSIONS.SICK_LEAVE_CREATE)
+  const canApproveSickLeave = hasPermission(PERMISSIONS.SICK_LEAVE_APPROVE)
+  
   const [sickLeaves, setSickLeaves] = useState<SickLeave[]>([])
   const [employees, setEmployees] = useState<Employee[]>([])
   const [loading, setLoading] = useState(true)
@@ -395,10 +403,22 @@ export default function SickLeavesPage() {
     return matchesSearch && matchesStatus
   })
 
-  if (loading || userLoading) {
+  if (loading || userLoading || permissionsLoading) {
     return (
       <div className="p-6">
         <div className="text-center">{t('loading')}</div>
+      </div>
+    )
+  }
+
+  if (!canViewSickLeave && !isEmployeeUser) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-gray-50">
+        <div className="text-center p-8 bg-white rounded-lg shadow-md">
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Access Denied</h2>
+          <p className="text-gray-600">You do not have permission to view sick leaves.</p>
+          <p className="text-sm text-gray-500 mt-2">Please contact your administrator if you need access.</p>
+        </div>
       </div>
     )
   }

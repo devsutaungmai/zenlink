@@ -6,6 +6,8 @@ import { useTranslation } from 'react-i18next'
 import Link from 'next/link'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
+import { usePermissions } from '@/shared/lib/usePermissions'
+import { PERMISSIONS } from '@/shared/lib/permissions'
 
 interface Department {
   id: string
@@ -15,6 +17,7 @@ interface Department {
 export default function CreateCategoryPage() {
   const router = useRouter()
   const { t } = useTranslation('categories')
+  const { hasPermission, loading: permissionsLoading } = usePermissions()
   const [loading, setLoading] = useState(false)
   const [departments, setDepartments] = useState<Department[]>([])
   const [formData, setFormData] = useState({
@@ -24,6 +27,15 @@ export default function CreateCategoryPage() {
     departmentIds: [] as string[]
   })
   const [isBusinessWide, setIsBusinessWide] = useState(true)
+
+  const canCreateCategories = hasPermission(PERMISSIONS.CATEGORIES_CREATE)
+
+  // Redirect if no permission
+  useEffect(() => {
+    if (!permissionsLoading && !canCreateCategories) {
+      router.push('/dashboard/categories')
+    }
+  }, [permissionsLoading, canCreateCategories, router])
 
   const allDepartmentIds = departments.map((dept) => dept.id)
 
@@ -118,6 +130,11 @@ export default function CreateCategoryPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  // Show nothing while checking permissions
+  if (permissionsLoading || !canCreateCategories) {
+    return null
   }
 
   return (

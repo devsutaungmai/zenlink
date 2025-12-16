@@ -99,6 +99,14 @@ interface EmployeeForForm {
   salaryRate?: number | null;
   employeeGroupId?: string | null;
   departmentId: string;
+  employeeGroups?: Array<{
+    employeeGroupId: string;
+    isPrimary: boolean;
+    employeeGroup: {
+      id: string;
+      name: string;
+    };
+  }>;
 }
 
 interface Department {
@@ -130,7 +138,7 @@ interface FunctionItem {
 
 interface ShiftFormProps {
   initialData?: ShiftFormData & { id?: string }
-  onSubmit: (data: ShiftFormData) => void
+  onSubmit?: (data: ShiftFormData) => void
   onDelete?: (shiftId: string) => Promise<void> | void
   onCancel: () => void
   loading: boolean
@@ -139,6 +147,7 @@ interface ShiftFormProps {
   showEmployee?: boolean
   showStartTime?: boolean
   showDate?: boolean
+  readOnly?: boolean
 }
 
 export default function ShiftForm({
@@ -152,11 +161,13 @@ export default function ShiftForm({
   showEmployee = true,
   showStartTime = true,
   showDate = true,
+  readOnly = false,
 }: ShiftFormProps) {
   const { user } = useUser()
 
   const safeEmployees = Array.isArray(employees) ? employees : []
   const isEmployee = user?.role === 'EMPLOYEE'
+  const isDisabled = isEmployee || readOnly
 
   const today = new Date()
   const todayString = today.toISOString().split('T')[0]
@@ -458,21 +469,47 @@ export default function ShiftForm({
   }, [formData.functionId, formData.employeeGroupId, linkedFunctionGroups, singleLinkedFunctionGroup])
 
   const filteredEmployees = React.useMemo(() => {
+    const currentEmployee = formData.employeeId 
+      ? safeEmployees.find(emp => emp.id === formData.employeeId)
+      : null;
+
+    // Helper function to check if employee belongs to a group
+    const employeeBelongsToGroup = (emp: EmployeeForForm, groupId: string): boolean => {
+      // Check employeeGroups array first (many-to-many)
+      if (emp.employeeGroups && emp.employeeGroups.length > 0) {
+        return emp.employeeGroups.some(eg => eg.employeeGroupId === groupId)
+      }
+      // Fallback to legacy employeeGroupId field
+      return emp.employeeGroupId === groupId
+    }
+
     if (formData.functionId) {
       if (!resolvedLinkedGroupId) {
-        return []
+        return currentEmployee ? [currentEmployee] : []
       }
-      return safeEmployees.filter(emp => emp.employeeGroupId === resolvedLinkedGroupId)
+      const filtered = safeEmployees.filter(emp => employeeBelongsToGroup(emp, resolvedLinkedGroupId))
+      if (currentEmployee && !filtered.some(emp => emp.id === currentEmployee.id)) {
+        return [currentEmployee, ...filtered]
+      }
+      return filtered
     }
 
     if (formData.employeeGroupId) {
-      return safeEmployees.filter(emp => emp.employeeGroupId === formData.employeeGroupId)
+      const filtered = safeEmployees.filter(emp => employeeBelongsToGroup(emp, formData.employeeGroupId!))
+      if (currentEmployee && !filtered.some(emp => emp.id === currentEmployee.id)) {
+        return [currentEmployee, ...filtered]
+      }
+      return filtered
     }
 
     return safeEmployees
-  }, [safeEmployees, formData.functionId, formData.employeeGroupId, resolvedLinkedGroupId])
+  }, [safeEmployees, formData.functionId, formData.employeeGroupId, formData.employeeId, resolvedLinkedGroupId])
 
-  const employeeSelectDisabled = isEmployee || (formData.functionId ? !resolvedLinkedGroupId || filteredEmployees.length === 0 : false)
+  const employeeSelectDisabled = isEmployee || Boolean(
+    !formData.employeeId &&
+    formData.functionId && 
+    (!resolvedLinkedGroupId || filteredEmployees.length === 0)
+  )
   const employeeGroupSelectDisabled = isEmployee || (formData.functionId ? linkedFunctionGroups.length === 1 : false)
 
   const availableEmployeeGroupOptions = formData.functionId
@@ -481,18 +518,52 @@ export default function ShiftForm({
       : employeeGroups
     : employeeGroups
 
+  // Helper function to check if employee belongs to a group (used in useEffect)
+  const employeeBelongsToGroup = React.useCallback((emp: EmployeeForForm, groupId: string): boolean => {
+    // Check employeeGroups array first (many-to-many)
+    if (emp.employeeGroups && emp.employeeGroups.length > 0) {
+      return emp.employeeGroups.some(eg => eg.employeeGroupId === groupId)
+    }
+    // Fallback to legacy employeeGroupId field
+    return emp.employeeGroupId === groupId
+  }, [])
+
+  // Helper function to get the first group an employee belongs to from a list of valid groups
+  const getEmployeeGroupFromValid = React.useCallback((emp: EmployeeForForm, validGroupIds: string[]): string | undefined => {
+    // Check employeeGroups array first (many-to-many)
+    if (emp.employeeGroups && emp.employeeGroups.length > 0) {
+      const matchingGroup = emp.employeeGroups.find(eg => validGroupIds.includes(eg.employeeGroupId))
+      return matchingGroup?.employeeGroupId
+    }
+    // Fallback to legacy employeeGroupId field
+    if (emp.employeeGroupId && validGroupIds.includes(emp.employeeGroupId)) {
+      return emp.employeeGroupId
+    }
+    return undefined
+  }, [])
+
   useEffect(() => {
     if (!formData.functionId) {
       return
     }
 
+    if (linkedFunctionGroups.length === 0 && loadingFunctions) {
+      return
+    }
+
+    if (linkedFunctionGroups.length === 0 && initialData?.employeeId && functions.length === 0) {
+      return
+    }
+
     if (linkedFunctionGroups.length === 0) {
       if (formData.employeeGroupId || formData.employeeId) {
-        setFormData(prev => ({
-          ...prev,
-          employeeGroupId: undefined,
-          employeeId: undefined,
-        }))
+        if (!initialData?.employeeId || formData.employeeId !== initialData.employeeId) {
+          setFormData(prev => ({
+            ...prev,
+            employeeGroupId: undefined,
+            employeeId: undefined,
+          }))
+        }
       }
       return
     }
@@ -500,7 +571,7 @@ export default function ShiftForm({
     if (linkedFunctionGroups.length === 1) {
       const onlyGroup = linkedFunctionGroups[0]
       const employeeValid = formData.employeeId
-        ? safeEmployees.some(emp => emp.id === formData.employeeId && emp.employeeGroupId === onlyGroup.id)
+        ? safeEmployees.some(emp => emp.id === formData.employeeId && employeeBelongsToGroup(emp, onlyGroup.id))
         : true
 
       if (formData.employeeGroupId === onlyGroup.id && employeeValid) {
@@ -519,6 +590,20 @@ export default function ShiftForm({
     const hasValidGroupSelection = formData.employeeGroupId && validGroupIds.includes(formData.employeeGroupId)
 
     if (!hasValidGroupSelection) {
+      if (initialData?.employeeId && formData.employeeId === initialData.employeeId) {
+        const employee = safeEmployees.find(emp => emp.id === formData.employeeId)
+        if (employee) {
+          const employeeGroupId = getEmployeeGroupFromValid(employee, validGroupIds)
+          if (employeeGroupId) {
+            setFormData(prev => ({
+              ...prev,
+              employeeGroupId: employeeGroupId,
+            }))
+            return
+          }
+        }
+      }
+      
       if (formData.employeeGroupId || formData.employeeId) {
         setFormData(prev => ({
           ...prev,
@@ -531,7 +616,7 @@ export default function ShiftForm({
 
     if (formData.employeeId) {
       const employeeValid = safeEmployees.some(
-        emp => emp.id === formData.employeeId && emp.employeeGroupId === formData.employeeGroupId
+        emp => emp.id === formData.employeeId && employeeBelongsToGroup(emp, formData.employeeGroupId!)
       )
 
       if (!employeeValid) {
@@ -541,7 +626,7 @@ export default function ShiftForm({
         }))
       }
     }
-  }, [formData.functionId, formData.employeeGroupId, formData.employeeId, linkedFunctionGroups, safeEmployees])
+  }, [formData.functionId, formData.employeeGroupId, formData.employeeId, linkedFunctionGroups, safeEmployees, loadingFunctions, initialData?.employeeId, functions.length, employeeBelongsToGroup, getEmployeeGroupFromValid])
 
 
   useEffect(() => {
@@ -782,7 +867,9 @@ export default function ShiftForm({
       }
     }
 
-    onSubmit(submissionData as ShiftFormData)
+    if (onSubmit) {
+      onSubmit(submissionData as ShiftFormData)
+    }
   }
 
   const toggleBreakFields = () => {
@@ -826,7 +913,7 @@ export default function ShiftForm({
   }
 
   const canDeleteShift = Boolean(
-    !isEmployee &&
+    !isDisabled &&
     onDelete &&
     initialData?.id &&
     initialData?.approved === false
@@ -834,6 +921,13 @@ export default function ShiftForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {readOnly && !isEmployee && (
+        <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+          <p className="text-sm text-blue-700">
+            You are viewing this shift in read-only mode. You don&apos;t have permission to edit shifts.
+          </p>
+        </div>
+      )}
       {isEmployee && (
         <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
           <p className="text-sm text-yellow-700">
@@ -895,9 +989,9 @@ export default function ShiftForm({
                 type="text"
                 value={displayDate}
                 onChange={handleDateChange}
-                disabled={isEmployee}
+                disabled={isDisabled}
                 placeholder="DD/MM/YYYY"
-                className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isDisabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                 required
               />
               <p className="mt-1 text-xs text-gray-500">Format: DD/MM/YYYY</p>
@@ -953,7 +1047,7 @@ export default function ShiftForm({
                   }
                 }
               }}
-              disabled={isEmployee || loadingShiftTypes}
+              disabled={isDisabled || loadingShiftTypes}
               className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee || loadingShiftTypes ? 'bg-gray-100 cursor-not-allowed' : ''}`}
               required
             >
@@ -978,8 +1072,8 @@ export default function ShiftForm({
                 type="time"
                 value={formData.startTime || ''}
                 onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
-                disabled={isEmployee}
-                className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                disabled={isDisabled}
+                className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isDisabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                 required
               />
             </div>
@@ -994,8 +1088,8 @@ export default function ShiftForm({
               type="time"
               value={formData.endTime || ''}
               onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
-              disabled={isEmployee}
-              className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+              disabled={isDisabled}
+              className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isDisabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
               required
             />
           </div>
@@ -1008,8 +1102,8 @@ export default function ShiftForm({
             <select
               value={formData.departmentId || ''}
               onChange={(e) => setFormData({ ...formData, departmentId: e.target.value || undefined, categoryId: undefined, functionId: undefined })}
-              disabled={isEmployee || loadingDepartments}
-              className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+              disabled={isDisabled || loadingDepartments}
+              className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isDisabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
               required
             >
               <option value="">Select department</option>
@@ -1029,7 +1123,7 @@ export default function ShiftForm({
             <select
               value={formData.categoryId || ''}
               onChange={(e) => setFormData({ ...formData, categoryId: e.target.value || undefined, functionId: undefined })}
-              disabled={isEmployee || !formData.departmentId || loadingCategories}
+              disabled={isDisabled || !formData.departmentId || loadingCategories}
               className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee || !formData.departmentId ? 'bg-gray-100 cursor-not-allowed' : ''}`}
               required={!!formData.departmentId}
             >
@@ -1052,7 +1146,7 @@ export default function ShiftForm({
             <select
               value={formData.functionId || ''}
               onChange={(e) => setFormData({ ...formData, functionId: e.target.value || undefined })}
-              disabled={isEmployee || !formData.categoryId || loadingFunctions}
+              disabled={isDisabled || !formData.categoryId || loadingFunctions}
               className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee || !formData.categoryId ? 'bg-gray-100 cursor-not-allowed' : ''}`}
               required={!!formData.categoryId}
             >
@@ -1094,15 +1188,17 @@ export default function ShiftForm({
                 required={!!formData.functionId}
               >
                 <option value="">
-                  {formData.functionId
-                    ? activeLinkedGroup
-                      ? filteredEmployees.length > 0
-                        ? `Select an employee from ${activeLinkedGroup.name}`
-                        : `No eligible employees in ${activeLinkedGroup.name}`
-                      : linkedFunctionGroups.length > 1
-                        ? 'Select an employee group first'
-                        : 'Link this function to an employee group'
-                    : 'Select an employee (optional)'}
+                  {formData.employeeId 
+                    ? 'Select an employee'
+                    : formData.functionId
+                      ? activeLinkedGroup
+                        ? filteredEmployees.length > 0
+                          ? `Select an employee from ${activeLinkedGroup.name}`
+                          : `No eligible employees in ${activeLinkedGroup.name}`
+                        : linkedFunctionGroups.length > 1
+                          ? 'Select an employee group first'
+                          : 'Link this function to an employee group'
+                      : 'Select an employee (optional)'}
                 </option>
                 {filteredEmployees.map((employee) => (
                   <option key={employee.id} value={employee.id}>
@@ -1111,19 +1207,21 @@ export default function ShiftForm({
                 ))}
               </select>
               <p
-                className={`mt-1 text-xs ${formData.functionId && (!activeLinkedGroup || filteredEmployees.length === 0) ? 'text-red-500' : 'text-gray-500'}`}
+                className={`mt-1 text-xs ${formData.functionId && !formData.employeeId && (!activeLinkedGroup || filteredEmployees.length === 0) ? 'text-red-500' : 'text-gray-500'}`}
               >
-                {formData.functionId
-                  ? activeLinkedGroup
-                    ? filteredEmployees.length > 0
-                      ? `Only employees in ${activeLinkedGroup.name} can be assigned.`
-                      : `No employees currently belong to ${activeLinkedGroup.name}.`
-                    : linkedFunctionGroups.length > 1
-                      ? 'Select an employee group to view eligible employees.'
-                      : 'Link this function to an employee group to assign employees.'
-                  : formData.employeeGroupId
-                    ? 'Only employees in the selected employee group are shown.'
-                    : 'All employees in the business are shown.'}
+                {formData.employeeId
+                  ? 'Currently assigned employee is shown.'
+                  : formData.functionId
+                    ? activeLinkedGroup
+                      ? filteredEmployees.length > 0
+                        ? `Only employees in ${activeLinkedGroup.name} can be assigned.`
+                        : `No employees currently belong to ${activeLinkedGroup.name}.`
+                      : linkedFunctionGroups.length > 1
+                        ? 'Select an employee group to view eligible employees.'
+                        : 'Link this function to an employee group to assign employees.'
+                    : formData.employeeGroupId
+                      ? 'Only employees in the selected employee group are shown.'
+                      : 'All employees in the business are shown.'}
               </p>
             </div>
           )}
@@ -1183,8 +1281,8 @@ export default function ShiftForm({
                 const value = parseFloat(e.target.value)
                 setFormData({ ...formData, wage: isNaN(value) ? 0 : value })
               }}
-              disabled={isEmployee}
-              className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+              disabled={isDisabled}
+              className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isDisabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
               required
             />
           </div>
@@ -1196,8 +1294,8 @@ export default function ShiftForm({
               value={formData.note || ''}
               onChange={(e) => setFormData({ ...formData, note: e.target.value || undefined })}
               rows={2}
-              disabled={isEmployee}
-              className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+              disabled={isDisabled}
+              className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isDisabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
             />
           </div>
 
@@ -1208,8 +1306,8 @@ export default function ShiftForm({
                 type="checkbox"
                 checked={formData.approved}
                 onChange={(e) => setFormData({ ...formData, approved: e.target.checked })}
-                disabled={isEmployee}
-                className={`rounded border-gray-300 text-[#31BCFF] focus:ring-[#31BCFF] h-4 w-4 ${isEmployee ? 'cursor-not-allowed' : ''}`}
+                disabled={isDisabled}
+                className={`rounded border-gray-300 text-[#31BCFF] focus:ring-[#31BCFF] h-4 w-4 ${isDisabled ? 'cursor-not-allowed' : ''}`}
               />
               <span className="text-sm font-medium text-gray-700">Approved</span>
             </label>
@@ -1231,8 +1329,8 @@ export default function ShiftForm({
                 type="checkbox"
                 checked={showBreakFields}
                 onChange={toggleBreakFields}
-                disabled={isEmployee}
-                className={`rounded border-gray-300 text-[#31BCFF] focus:ring-[#31BCFF] h-4 w-4 ${isEmployee ? 'cursor-not-allowed' : ''}`}
+                disabled={isDisabled}
+                className={`rounded border-gray-300 text-[#31BCFF] focus:ring-[#31BCFF] h-4 w-4 ${isDisabled ? 'cursor-not-allowed' : ''}`}
               />
             </label>
           </div>
@@ -1248,8 +1346,8 @@ export default function ShiftForm({
                   type="time"
                   value={formData.breakStart || ''}
                   onChange={(e) => setFormData({ ...formData, breakStart: e.target.value || undefined })}
-                  disabled={isEmployee}
-                  className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                  disabled={isDisabled}
+                  className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isDisabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                 />
                 <p className="mt-1 text-xs text-gray-500">Time when break period starts</p>
               </div>
@@ -1262,8 +1360,8 @@ export default function ShiftForm({
                   type="time"
                   value={formData.breakEnd || ''}
                   onChange={(e) => setFormData({ ...formData, breakEnd: e.target.value || undefined })}
-                  disabled={isEmployee}
-                  className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                  disabled={isDisabled}
+                  className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isDisabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                 />
                 <p className="mt-1 text-xs text-gray-500">Time when break period ends</p>
               </div>
@@ -1275,8 +1373,8 @@ export default function ShiftForm({
                     type="checkbox"
                     checked={formData.breakPaid || false}
                     onChange={(e) => setFormData({ ...formData, breakPaid: e.target.checked })}
-                    disabled={isEmployee}
-                    className={`rounded border-gray-300 text-[#31BCFF] focus:ring-[#31BCFF] h-4 w-4 ${isEmployee ? 'cursor-not-allowed' : ''}`}
+                    disabled={isDisabled}
+                    className={`rounded border-gray-300 text-[#31BCFF] focus:ring-[#31BCFF] h-4 w-4 ${isDisabled ? 'cursor-not-allowed' : ''}`}
                   />
                   <span className="text-sm font-medium text-gray-700">Paid Break</span>
                 </label>
@@ -1459,18 +1557,20 @@ export default function ShiftForm({
             onClick={onCancel}
             className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#31BCFF]"
           >
-            Cancel
+            {readOnly ? 'Close' : 'Cancel'}
           </button>
-          <button
-            type="submit"
-            disabled={loading || isEmployee}
-            className={`w-full sm:w-auto px-4 py-2 text-sm font-medium text-white border border-transparent rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#31BCFF] disabled:opacity-50 ${
-              isEmployee ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#31BCFF] hover:bg-[#31BCFF]/90'
-            }`}
-            title={isEmployee ? "Employees cannot create or edit shifts" : ""}
-          >
-            {loading ? 'Saving...' : isEmployee ? 'Not Authorized' : 'Save'}
-          </button>
+          {!readOnly && (
+            <button
+              type="submit"
+              disabled={loading || isEmployee}
+              className={`w-full sm:w-auto px-4 py-2 text-sm font-medium text-white border border-transparent rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#31BCFF] disabled:opacity-50 ${
+                isEmployee ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#31BCFF] hover:bg-[#31BCFF]/90'
+              }`}
+              title={isEmployee ? "Employees cannot create or edit shifts" : ""}
+            >
+              {loading ? 'Saving...' : isEmployee ? 'Not Authorized' : 'Save'}
+            </button>
+          )}
         </div>
       </div>
     </form>
