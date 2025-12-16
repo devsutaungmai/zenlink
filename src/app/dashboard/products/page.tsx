@@ -1,10 +1,20 @@
-'use client'
+"use client"
 
-import React, { useEffect, useState } from 'react'
-import Link from 'next/link'
-import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
-import { useTranslation } from 'react-i18next'
-import Swal from 'sweetalert2'
+import { useEffect, useState } from "react"
+import Link from "next/link"
+import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline"
+import { useTranslation } from "react-i18next"
+import Swal from "sweetalert2"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
+
 interface Unit {
   id: string
   name: string
@@ -51,7 +61,10 @@ export default function ProductsPage() {
   const { t } = useTranslation()
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState('')
+  const [searchTerm, setSearchTerm] = useState("")
+
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage] = useState(10)
 
   useEffect(() => {
     fetchProducts()
@@ -59,22 +72,22 @@ export default function ProductsPage() {
 
   const fetchProducts = async () => {
     try {
-      const res = await fetch('/api/products')
-      
+      const res = await fetch("/api/products")
+
       if (!res.ok) {
         throw new Error(`HTTP error! status: ${res.status}`)
       }
-      
+
       const data = await res.json()
-      
+
       if (Array.isArray(data)) {
         setProducts(data)
       } else {
-        console.error('API did not return an array:', data)
+        console.error("API did not return an array:", data)
         setProducts([])
       }
     } catch (error) {
-      console.error('Error fetching products:', error)
+      console.error("Error fetching products:", error)
       setProducts([])
     } finally {
       setLoading(false)
@@ -84,49 +97,64 @@ export default function ProductsPage() {
   const handleDelete = async (id: string, customerName: string) => {
     try {
       const result = await Swal.fire({
-        title: t('common.confirm'),
+        title: t("common.confirm"),
         text: `Are you sure you want to delete "${customerName}"?`,
-        icon: 'warning',
+        icon: "warning",
         showCancelButton: true,
-        confirmButtonColor: '#31BCFF',
-        cancelButtonColor: '#d33',
-        confirmButtonText: t('common.yes'),
-        cancelButtonText: t('common.cancel')
+        confirmButtonColor: "#31BCFF",
+        cancelButtonColor: "#d33",
+        confirmButtonText: t("common.yes"),
+        cancelButtonText: t("common.cancel"),
       })
 
       if (result.isConfirmed) {
         const res = await fetch(`/api/products/${id}`, {
-          method: 'DELETE',
+          method: "DELETE",
         })
-        
+
         if (res.ok) {
-          setProducts(products.filter(cust => cust.id !== id))
-          
+          setProducts(products.filter((cust) => cust.id !== id))
+
           await Swal.fire({
-            title: t('common.success'),
-            text: 'Product deleted successfully',
-            icon: 'success',
-            confirmButtonColor: '#31BCFF',
+            title: t("common.success"),
+            text: "Product deleted successfully",
+            icon: "success",
+            confirmButtonColor: "#31BCFF",
           })
         } else {
-          throw new Error('Failed to delete product')
+          throw new Error("Failed to delete product")
         }
       }
     } catch (error) {
-      console.error('Error deleting product:', error)
+      console.error("Error deleting product:", error)
       await Swal.fire({
-        title: t('common.error'),
-        text: 'Failed to delete product',
-        icon: 'error',
-        confirmButtonColor: '#31BCFF',
+        title: t("common.error"),
+        text: "Failed to delete product",
+        icon: "error",
+        confirmButtonColor: "#31BCFF",
       })
     }
   }
 
-  const filteredCustomers = products.filter(product =>
-    product.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.productNumber.toLowerCase().includes(searchTerm.toLowerCase()) 
+  const filteredCustomers = products.filter(
+    (product) =>
+      product.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.productNumber.toLowerCase().includes(searchTerm.toLowerCase()),
   )
+
+  const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedProducts = filteredCustomers.slice(startIndex, endIndex)
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm])
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }
 
   if (loading) {
     return (
@@ -145,13 +173,11 @@ export default function ProductsPage() {
             <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
               Products
             </h1>
-            <p className="mt-2 text-gray-600">
-              Manage product for invoice
-            </p>
+            <p className="mt-2 text-gray-600">Manage product for invoice</p>
             <div className="mt-4 flex items-center space-x-4 text-sm text-gray-500">
               <span className="flex items-center">
                 <div className="w-2 h-2 bg-[#31BCFF] rounded-full mr-2"></div>
-                {products.length} {products.length === 1 ? 'product' : 'products'}
+                {products.length} {products.length === 1 ? "product" : "products"}
               </span>
             </div>
           </div>
@@ -180,13 +206,22 @@ export default function ProductsPage() {
               className="block w-full pl-12 pr-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
             />
           </div>
-          <div className="flex items-center text-sm text-gray-500">
-            Showing {filteredCustomers.length} of {products.length}
-          </div>
+        </div>
+        <div className="flex items-center justify-between mt-4 text-sm text-gray-500">
+          <span>
+            {filteredCustomers.length > 0
+              ? `Showing ${startIndex + 1}-${Math.min(endIndex, filteredCustomers.length)} of ${filteredCustomers.length}`
+              : `Showing 0 of ${products.length}`}
+          </span>
+          {totalPages > 1 && (
+            <span className="text-xs text-gray-400">
+              Page {currentPage} of {totalPages}
+            </span>
+          )}
         </div>
       </div>
 
-      {/* Products Grid */}
+      {/* Products List */}
       {filteredCustomers.length === 0 ? (
         <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-12 border border-gray-200/50 shadow-lg text-center">
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -194,7 +229,7 @@ export default function ProductsPage() {
           </div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
           <p className="text-gray-500 mb-6">
-            {searchTerm ? 'Try adjusting your search terms' : 'Get started by creating your first product'}
+            {searchTerm ? "Try adjusting your search terms" : "Get started by creating your first product"}
           </p>
           {!searchTerm && (
             <Link
@@ -207,87 +242,214 @@ export default function ProductsPage() {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredCustomers.map((product) => (
-            <div
-              key={product.id}
-              className="group bg-white/80 backdrop-blur-xl rounded-2xl p-6 border border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] hover:border-[#31BCFF]/30"
-            >
-              {/* Category Header */}
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="text-lg font-semibold text-gray-900 group-hover:text-[#31BCFF] transition-colors duration-200">
-                      {product.productName}
-                    </h3>
+        <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg overflow-hidden">
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50/80">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Product Number
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Product Name
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Sales Price
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Cost Price
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Discount %
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    {t("actions")}
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200/50">
+                {paginatedProducts.map((product) => (
+                  <tr key={product.id} className="hover:bg-blue-50/30 transition-colors duration-200">
+                    <td className="px-6 py-4">
+                      <div className="text-sm font-medium text-gray-900">{product.productNumber}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-gray-900">{product.productName}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-gray-900">{Number(product.salesPrice).toFixed(2)}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-gray-900">{Number(product.costPrice).toFixed(2)}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-gray-900">
+                        {product.discountPercentage ? `${product.discountPercentage}%` : "-"}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          product.active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+                        }`}
+                      >
+                        {product.active ? "Active" : "Inactive"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-end gap-2">
+                        <Link
+                          href={`/dashboard/products/${product.id}/edit`}
+                          className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
+                          title="Edit Product"
+                        >
+                          <PencilIcon className="h-4 w-4" />
+                        </Link>
+                        <button
+                          onClick={() => handleDelete(product.id, product.productName)}
+                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                          title="Delete Product"
+                        >
+                          <TrashIcon className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {totalPages > 1 && (
+            <div className="hidden md:flex items-center justify-center px-6 py-4 border-t border-gray-200/50">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
+                      className={currentPage <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                    if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
+                      return (
+                        <PaginationItem key={page}>
+                          <PaginationLink
+                            onClick={() => handlePageChange(page)}
+                            isActive={page === currentPage}
+                            className="cursor-pointer"
+                          >
+                            {page}
+                          </PaginationLink>
+                        </PaginationItem>
+                      )
+                    } else if (page === currentPage - 2 || page === currentPage + 2) {
+                      return (
+                        <PaginationItem key={page}>
+                          <PaginationEllipsis />
+                        </PaginationItem>
+                      )
+                    }
+                    return null
+                  })}
+
+                  <PaginationItem>
+                    <PaginationNext
+                      onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
+                      className={currentPage >= totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
+
+          <div className="md:hidden space-y-4 p-4">
+            {paginatedProducts.map((product) => (
+              <div
+                key={product.id}
+                className="group bg-white rounded-2xl p-6 border border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-[#31BCFF]/30"
+              >
+                {/* Card Header */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="text-lg font-semibold text-gray-900 group-hover:text-[#31BCFF] transition-colors duration-200">
+                        {product.productName}
+                      </h3>
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                          product.active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+                        }`}
+                      >
+                        {product.active ? "Active" : "Inactive"}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Link
+                      href={`/dashboard/products/${product.id}/edit`}
+                      className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
+                      title="Edit Product"
+                    >
+                      <PencilIcon className="h-4 w-4" />
+                    </Link>
+                    <button
+                      onClick={() => handleDelete(product.id, product.productName)}
+                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                      title="Delete Product"
+                    >
+                      <TrashIcon className="h-4 w-4" />
+                    </button>
                   </div>
                 </div>
-                <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  <Link
-                    href={`/dashboard/products/${product.id}/edit`}
-                    className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
-                    title="Edit Category"
-                  >
-                    <PencilIcon className="h-4 w-4" />
-                  </Link>
-                  <button
-                    onClick={() => handleDelete(product.id, product.productName)}
-                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                    title="Delete Category"
-                  >
-                    <TrashIcon className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
 
-               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 mb-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <div className="w-10 h-10 bg-[#31BCFF]/10 rounded-lg flex items-center justify-center mr-3">
-                      <svg className="w-5 h-5 text-[#31BCFF]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-gray-900">
-                        {product.productNumber}
-                      </p>
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 mb-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <div className="w-10 h-10 bg-[#31BCFF]/10 rounded-lg flex items-center justify-center mr-3">
+                        <svg className="w-5 h-5 text-[#31BCFF]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                          />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Product Number</p>
+                        <p className="text-lg font-bold text-gray-900">{product.productNumber}</p>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center text-gray-600">
-                  <svg className="w-4 h-4 mr-2 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  <span className="truncate">{product.salesPrice}</span>
+                {/* Price Information */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <div className="text-xs text-gray-500 mb-1">Sales Price</div>
+                    <div className="text-sm font-medium text-gray-900">{Number(product.salesPrice).toFixed(2)}</div>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <div className="text-xs text-gray-500 mb-1">Cost Price</div>
+                    <div className="text-sm font-medium text-gray-900">{Number(product.costPrice).toFixed(2)}</div>
+                  </div>
                 </div>
-                {product.costPrice && (
-                  <div className="flex items-center text-gray-600">
-                    <svg className="w-4 h-4 mr-2 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                    </svg>
-                    <span className="truncate">{product.costPrice}</span>
+
+                {product.discountPercentage && (
+                  <div className="mt-3 bg-orange-50 rounded-lg p-3">
+                    <div className="text-xs text-gray-500 mb-1">Discount</div>
+                    <div className="text-sm font-medium text-orange-700">{product.discountPercentage}%</div>
                   </div>
                 )}
-
               </div>
-
-              {/* Quick Actions */}
-              {/* <div className="mt-4 pt-4 border-t border-gray-200/50">
-                <Link
-                  href={`/dashboard/products/${product.id}/edit`}
-                  className="w-full inline-flex items-center justify-center px-4 py-2 rounded-xl bg-gray-50 text-gray-700 font-medium hover:bg-[#31BCFF] hover:text-white transition-all duration-200 group/btn"
-                >
-                  <PencilIcon className="w-4 h-4 mr-2 group-hover/btn:scale-110 transition-transform duration-200" />
-                  Edit Category
-                </Link>
-              </div> */}
+            ))}
           </div>
-          ))}
         </div>
       )}
     </div>

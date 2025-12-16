@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/shared/lib/prisma'
 import { getCurrentUserOrEmployee, requireAuth } from '@/shared/lib/auth'
-import { calculateInvoiceTotals, generateInvoiceNumber, getBusinessId, invoiceToLedgerPosting } from '@/shared/lib/invoiceHelper'
+import { calculateInvoiceTotals, generateInvoiceNumber, generateVoucherNumber, getBusinessId, invoiceToLedgerPosting } from '@/shared/lib/invoiceHelper'
+import { VoucherType } from '@prisma/client'
 
 // GET /api/invoices
 export async function GET(request: NextRequest) {
@@ -28,7 +29,7 @@ export async function GET(request: NextRequest) {
           }
         },
         project: {
-          select:{
+          select: {
             id: true,
             name: true
           }
@@ -86,8 +87,8 @@ export async function POST(request: NextRequest) {
 
     for (const line of invoiceLines) {
 
-      const {productId,quantity,pricePerUnit,discountPercentage}= line;
-       // Validate line data
+      const { productId, quantity, pricePerUnit, discountPercentage } = line;
+      // Validate line data
       if (!productId || !quantity || !pricePerUnit) {
         return NextResponse.json(
           { error: 'Each line must have productId, quantity, and pricePerUnit' },
@@ -146,10 +147,10 @@ export async function POST(request: NextRequest) {
     }
 
     const invoiceNumber = await generateInvoiceNumber();
-    
+
     console.log('Creating invoice with number:', invoiceNumber);
 
-    
+
     // Create invoice with nested invoice line
     const invoice = await prisma.invoice.create({
       data: {
@@ -190,7 +191,14 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    if(invoice.status === "SENT"){
+    if (invoice.status === "SENT") {
+      const voucher = await generateVoucherNumber(businessId, VoucherType.INVOICE);
+
+      await prisma.invoice.update({
+        where: { id: invoice.id },
+        data: { voucherId: voucher.id }
+      });
+
       await invoiceToLedgerPosting(invoice.id);
     }
 

@@ -13,6 +13,7 @@ import { Decimal } from '@prisma/client/runtime/library'
 import InvoiceSummaryCalculation from '@/components/invoice/InvoiceSummaryCalculation'
 import { se } from 'date-fns/locale'
 import { set } from 'zod'
+import CustomerDialog, { CustomerFormType } from '@/components/invoice/CustomerDialog'
 
 export interface Customer {
     id: string
@@ -38,6 +39,7 @@ export interface Customer {
 export interface Product {
     id: string
     productName: string
+    salesPrice: number
 }
 
 export interface Project {
@@ -110,6 +112,12 @@ export default function CreateInvoicePage() {
     const [emailSendLoading, setEmailSendLoading] = useState(false);
     const { settings } = useInvoiceSettings();
     const [netTotals, setNetTotals] = useState<Number[]>([]);
+
+    const [loadingCustomer, setLoadingCustomer] = useState<boolean>(false);
+    const [customerDialog, setCustomerDialog] = useState<boolean>(false)
+    const onSaveCustomer = async (customer: CustomerFormType) => {
+        console.log("CustomerFormData" + JSON.stringify(customer));
+    }
 
     useEffect(() => {
         fetchCustomers()
@@ -200,9 +208,11 @@ export default function CreateInvoicePage() {
             const res = await fetch('/api/products')
             if (res.ok) {
                 const data = await res.json()
-                setProducts(data)
-                if (data.length > 0) {
-                    setFormData(prev => ({ ...prev, productGroupId: data[0].id }))
+                // Keep only active products
+                const activeProducts = Array.isArray(data) ? data.filter((product: any) => product.active === true) : []
+                setProducts(activeProducts)
+                if (activeProducts.length > 0) {
+                    setFormData(prev => ({ ...prev, productGroupId: activeProducts[0].id }))
                 }
             }
         } catch (error) {
@@ -305,7 +315,7 @@ export default function CreateInvoicePage() {
         setNetTotals((prevNetTotals) => ([...prevNetTotals, 0]));
     }
 
-    const handleCopyOrderLine = (copiedInvoiceLine: InvoiceLine,netTotal: number) => {
+    const handleCopyOrderLine = (copiedInvoiceLine: InvoiceLine, netTotal: number) => {
         setFormData((prev: InvoiceFormData) => ({
             ...prev,
             invoiceLines: [
@@ -319,7 +329,7 @@ export default function CreateInvoicePage() {
             ]
         }))
         setNetTotals((prevNetTotals) => ([...prevNetTotals, netTotal]));
- 
+
     }
 
     const updateLineTotal = (index: number) => {
@@ -331,7 +341,7 @@ export default function CreateInvoicePage() {
 
         const { totalExclVAT } = calculateInvoiceTotals(qty, price, discount, 25);
         setNetTotals((prevNetTotals) => {
-            const newNetTotals = [...prevNetTotals];    
+            const newNetTotals = [...prevNetTotals];
             newNetTotals[index] = totalExclVAT;
             return newNetTotals;
         });
@@ -439,7 +449,7 @@ export default function CreateInvoicePage() {
                 <form onSubmit={(e) => { e.preventDefault(); handleSubmit('save'); }} className="space-y-6">
                     <div className="bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-xl border border-slate-200 p-6">
                         <h2 className="text-lg font-semibold text-gray-900 mb-4">Customer Information</h2>
-
+                        
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                             <div>
                                 <label htmlFor="customerId" className="block text-sm font-medium text-gray-700 mb-2">
@@ -461,7 +471,7 @@ export default function CreateInvoicePage() {
                                 </select>
                             </div>
 
-                          <div>
+                            <div>
                                 <label htmlFor="contactPersonId" className="block text-sm font-medium text-gray-700 mb-2">
                                     Contact Name *
                                 </label>
@@ -635,8 +645,10 @@ export default function CreateInvoicePage() {
                                         required
                                         value={line.productId || ''}
                                         onChange={(e) => {
+                                            const product = products.find(p => p.id === e.target.value);
                                             const updatedLines = [...formData.invoiceLines];
                                             updatedLines[index].productId = e.target.value;
+                                            updatedLines[index].pricePerUnit = product?.salesPrice ?? 0;
                                             setFormData({ ...formData, invoiceLines: updatedLines });
                                         }}
                                         className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
@@ -757,7 +769,7 @@ export default function CreateInvoicePage() {
                                     </button>
                                     <button
                                         type='button'
-                                        onClick={() => handleCopyOrderLine(line,Number(netTotals[index]))}
+                                        onClick={() => handleCopyOrderLine(line, Number(netTotals[index]))}
                                     >
                                         <svg className="w-8 h-8 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2h-6a2 2 0 01-2-2V7z" />
@@ -843,6 +855,16 @@ export default function CreateInvoicePage() {
                     </div>
                 </form>
             </div>
+            {customerDialog && <CustomerDialog
+                open={true}
+                onOpenChange={(open) => {
+                    if (!open && !loadingCustomer) {
+                        setCustomerDialog(false);
+                    }
+                }}
+                loading={loadingCustomer}
+                onSave={onSaveCustomer}
+            />}
         </div>
     )
 

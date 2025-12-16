@@ -37,6 +37,7 @@ export async function POST(request: NextRequest,
                 originalInvoiceId: originalInvoiceId,
                 reason: comment || "No reason provided",
                 creditNoteDate: parsedDate,
+                businessId: businessId
             });
 
 

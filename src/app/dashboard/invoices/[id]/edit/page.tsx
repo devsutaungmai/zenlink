@@ -21,6 +21,7 @@ interface Customer {
 interface Product {
     id: string
     productName: string
+    salesPrice : number
 }
 
 
@@ -516,8 +517,10 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                                         required
                                         value={line.productId || ''}
                                         onChange={(e) => {
+                                            const product = products.find(p => p.id === e.target.value);
                                             const updatedLines = [...formData.invoiceLines];
                                             updatedLines[index].productId = e.target.value;
+                                            updatedLines[index].pricePerUnit = product?.salesPrice ?? 0;
                                             setFormData({ ...formData, invoiceLines: updatedLines });
                                         }}
                                         className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"

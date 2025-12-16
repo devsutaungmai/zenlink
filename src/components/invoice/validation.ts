@@ -68,7 +68,7 @@ export const customerValidationSchema = z.object({
       const num = parseFloat(val)
       return !isNaN(num) && num >= 0 && num <= 100
     }, 'Discount must be between 0 and 100')
-  ]).optional(),
+  ]).optional().or(z.literal(0)),
   
   deliveryAddress: z.string()
     .max(200, 'Delivery address must be less than 200 characters')

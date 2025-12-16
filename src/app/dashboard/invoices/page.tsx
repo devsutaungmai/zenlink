@@ -483,7 +483,7 @@ export default function InvoicesPage() {
                                     <tr key={invoice.id} className="hover:bg-blue-50/30 transition-colors duration-200">
                                         <td className="px-6 py-4">
                                             <div className="text-sm font-medium text-gray-900">
-                                                {invoice.invoiceNumber}
+                                                {invoice.status !== InvoiceStatus.DRAFT ? invoice.invoiceNumber : "-"}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
@@ -599,7 +599,7 @@ export default function InvoicesPage() {
                         </div>
                     )}
 
-                      {/* Mobile Cards  */}
+                    {/* Mobile Cards  */}
                     <div className="md:hidden space-y-4">
                         {paginatedInvoices.map((invoice) => (
                             <div
@@ -612,7 +612,8 @@ export default function InvoicesPage() {
                                         <div className="flex-1">
                                             <div className="flex items-center gap-2 flex-wrap mb-2">
                                                 <span className="text-base font-bold text-gray-900">
-                                                    {invoice.invoiceNumber}
+                                                    {invoice.status !== InvoiceStatus.DRAFT ? invoice.invoiceNumber : "-"}
+
                                                 </span>
                                                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                                     {invoice.status}
@@ -660,7 +661,7 @@ export default function InvoicesPage() {
                                         <div className="flex items-center justify-between text-sm">
                                             <span className="text-gray-600">VAT Amount</span>
                                             <span className="font-medium text-gray-900">
-                                               {Number(invoice.vatAmount).toFixed(2)}
+                                                {Number(invoice.vatAmount).toFixed(2)}
                                             </span>
                                         </div>
                                         <div className="flex items-center justify-between text-sm pt-2 border-t border-blue-200">

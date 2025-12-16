@@ -103,6 +103,9 @@ export default function InvoiceOverview() {
     const paginatedInvoices = invoices.slice(startIndex, endIndex)
     const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] = useState<Invoice | null>(null)
     const [selectedInvoiceForCredit, setSelectedInvoiceForCredit] = useState<Invoice | null>(null)
+    const [loadingPayment, setLoadingPayment] = useState<boolean>(false);
+    const [loadingCredit, setLoadingCredit] = useState<boolean>(false);
+    const [loadingEmail, setLoadingEmail] = useState<Record<string, boolean>>({});
 
     useEffect(() => {
         fetchInvoices()
@@ -207,7 +210,9 @@ export default function InvoiceOverview() {
     }
 
     const handleSendEmail = async (invoiceId: string) => {
-        await sendEmail(invoiceId)
+        setLoadingEmail(prev => ({ ...prev, [invoiceId]: true }));
+        await sendEmail(invoiceId);
+        setLoadingEmail(prev => ({ ...prev, [invoiceId]: false }));
     }
     return (
         <div className="min-h-screen bg-gray-50 p-3 sm:p-6">
@@ -413,7 +418,8 @@ export default function InvoiceOverview() {
                                             </td>
                                             <td className="px-4 py-3">
                                                 <span className="text-sm font-medium text-blue-600 hover:underline cursor-pointer">
-                                                    {invoice.invoiceNumber}
+                                                    {invoice.status !== InvoiceStatus.DRAFT ? invoice.invoiceNumber : "-"}
+
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3">
@@ -467,21 +473,22 @@ export default function InvoiceOverview() {
                                                     <td className="px-2 py-3">
                                                         <button
                                                             onClick={() => handleSendEmail(invoice.id)}
-                                                            className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
+                                                            disabled={loadingEmail[invoice.id]}
+                                                            className={`p-2 rounded-lg transition-all duration-200 ${loadingEmail[invoice.id]
+                                                                ? 'text-gray-300 bg-gray-50 cursor-not-allowed'
+                                                                : 'text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50'
+                                                                }`}
                                                         >
-                                                            <svg
-                                                                xmlns="http://www.w3.org/2000/svg"
-                                                                fill="none"
-                                                                viewBox="0 0 24 24"
-                                                                strokeWidth={1.5}
-                                                                stroke="currentColor"
-                                                                className="w-4 h-4"
-                                                            >
-                                                                <path
-                                                                    strokeLinecap="round"
-                                                                    strokeLinejoin="round"
-                                                                    d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25H4.5a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-                                                            </svg>
+                                                            {loadingEmail[invoice.id] ? (
+                                                                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                                </svg>
+                                                            ) : (
+                                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25H4.5a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                                                                </svg>
+                                                            )}
                                                         </button>
                                                     </td>
                                                     <td className="px-2 py-3">
@@ -514,7 +521,7 @@ export default function InvoiceOverview() {
                                                                             Copy invoice
                                                                         </Link>
                                                                     </DropdownMenu.Item>
-                                                                    {(invoice.status !== InvoiceStatus.CREDIT_NOTE && invoice.status !== InvoiceStatus.CREDITED ) ?
+                                                                    {(invoice.status !== InvoiceStatus.CREDIT_NOTE && invoice.status !== InvoiceStatus.CREDITED) ?
                                                                         <DropdownMenu.Item
                                                                             className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2"
                                                                             onSelect={() => setSelectedInvoiceForCredit(invoice)}
@@ -682,7 +689,10 @@ export default function InvoiceOverview() {
                                             onChange={() => toggleSelectInvoice(invoice.id)}
                                             className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mt-1"
                                         />
-                                        <h3 className="font-semibold text-blue-600 text-sm">{invoice.invoiceNumber}</h3>
+                                        <h3 className="font-semibold text-blue-600 text-sm">
+                                            {invoice.status !== InvoiceStatus.DRAFT ? invoice.invoiceNumber : "-"}
+
+                                        </h3>
                                     </div>
                                     <p className="text-xs text-gray-600 ml-6">{invoice.customer?.customerName}</p>
                                 </div>
@@ -734,23 +744,24 @@ export default function InvoiceOverview() {
                                     {invoice.status !== InvoiceStatus.DRAFT &&
                                         <button
                                             onClick={() => handleSendEmail(invoice.id)}
-                                            className="p-1.5 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
+                                            disabled={loadingEmail[invoice.id]}
+                                            className={`p-2 rounded-lg transition-all duration-200 ${loadingEmail[invoice.id]
+                                                ? 'text-gray-300 bg-gray-50 cursor-not-allowed'
+                                                : 'text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50'
+                                                }`}
                                         >
-                                            <svg
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                fill="none"
-                                                viewBox="0 0 24 24"
-                                                strokeWidth={1.5}
-                                                stroke="currentColor"
-                                                className="w-4 h-4"
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25H4.5a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"
-                                                />
-                                            </svg>
-                                        </button>}
+                                            {loadingEmail[invoice.id] ? (
+                                                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                </svg>
+                                            ) : (
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25H4.5a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                                                </svg>
+                                            )}
+                                        </button>
+                                    }
                                 </div>
                                 {invoice.status !== InvoiceStatus.DRAFT &&
                                     <DropdownMenu.Root>
@@ -789,7 +800,7 @@ export default function InvoiceOverview() {
                                                     >
                                                         <span className="text-base">✓</span>
                                                         Credit Note
-                                                    </DropdownMenu.Item>: null}
+                                                    </DropdownMenu.Item> : null}
                                             </DropdownMenu.Content>
                                         </DropdownMenu.Portal>
                                     </DropdownMenu.Root>}
@@ -882,26 +893,38 @@ export default function InvoiceOverview() {
             {selectedInvoiceForPayment && (
                 <RegisterPaymentDialog
                     open={true}
-                    onOpenChange={(open) => !open && setSelectedInvoiceForPayment(null)}
+                    onOpenChange={(open) => {
+                        if (!open && !loadingPayment) {
+                            setSelectedInvoiceForPayment(null);
+                        }
+                    }}
                     paymentData={{
                         customer: selectedInvoiceForPayment.customer,
                         invoiceId: selectedInvoiceForPayment.id,
                         amount: Number(selectedInvoiceForPayment.totalInclVAT),
                     }}
                     fetchInvoices={fetchInvoices}
+                    loadingPayment={loadingPayment}
+                    setLoadingPayment={setLoadingPayment}
                 />
             )}
 
             {selectedInvoiceForCredit && (
                 <CreditNoteDialog
                     open={true}
-                    onOpenChange={(open) => !open && setSelectedInvoiceForCredit(null)}
+                    onOpenChange={(open) => {
+                        if (!open && !loadingCredit) {
+                            setSelectedInvoiceForCredit(null)
+                        }
+                    }}
                     creditNoteData={{
                         customer: selectedInvoiceForCredit.customer,
                         invoiceId: selectedInvoiceForCredit.id,
                         amount: Number(selectedInvoiceForCredit.totalInclVAT),
                     }}
                     fetchInvoices={fetchInvoices}
+                    loadingCredit={loadingCredit}
+                    setLoadingCredit={setLoadingCredit}
                 />
             )}
         </div>

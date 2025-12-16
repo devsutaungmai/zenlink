@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient, Prisma, LedgerEntryType } from '@prisma/client';
-import { getBusinessId } from '@/shared/lib/invoiceHelper';
+import { PrismaClient, Prisma, LedgerEntryType, VoucherType } from '@prisma/client';
+import { generateVoucherNumber, getBusinessId } from '@/shared/lib/invoiceHelper';
 
 const prisma = new PrismaClient();
 
@@ -23,7 +23,7 @@ async function customerPaid(params: {
         if (invoice.status !== 'OUTSTANDING') throw new Error('Invoice must be OUTSTANDING to receive payment');
 
         const accountsReceivable = await tx.ledgerAccount.findFirst({
-            where: {accountNumber: 1500 }
+            where: { accountNumber: 1500 }
         });
 
         const paymentAccount = await tx.ledgerAccount.findFirst({
@@ -35,12 +35,17 @@ async function customerPaid(params: {
         if (!accountsReceivable || !paymentAccount) {
             throw new Error('Required payment accounts not found');
         }
+        const voucher = await generateVoucherNumber(
+            businessId,
+            VoucherType.PAYMENT
+        );
 
         const customerPayment = await tx.customerPayment.create({
             data: {
                 customerId,
                 businessId,
                 paymentDate,
+                voucherId: voucher.id ?? "",
                 method: paymentMethod,
                 amount: new Prisma.Decimal(amount),
                 allocations: {
@@ -54,8 +59,9 @@ async function customerPaid(params: {
 
         await tx.ledgerEntry.create({
             data: {
-                entryType:LedgerEntryType.PAYMENT_RECEIVED,
+                entryType: LedgerEntryType.PAYMENT_RECEIVED,
                 invoiceId: invoice.id,
+                voucherId: customerPayment.voucherId ?? "",
                 documentDate: paymentDate,
                 postingDate: new Date(),
                 amount: new Prisma.Decimal(amount),
@@ -77,19 +83,19 @@ async function customerPaid(params: {
     });
 }
 
-export async function POST( request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }) {
+export async function POST(request: NextRequest,
+    { params }: { params: Promise<{ id: string }> }) {
     try {
-        const {id} = await params;
+        const { id } = await params;
         const invoiceId = id;
 
         if (!invoiceId) {
             return NextResponse.json({ error: 'Missing invoice id in params' }, { status: 400 });
         }
-         const businessId = await getBusinessId()
-            if (!businessId) {
-              return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-            }
+        const businessId = await getBusinessId()
+        if (!businessId) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
 
         const body = await request.json();
         const { customerId, paymentDate, paymentMethod, amount } = body ?? {};

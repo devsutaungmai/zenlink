@@ -135,6 +135,7 @@ model Business {
   customerPayments         CustomerPayment[]
   ledgerAccounts           LedgerAccount[]
   ledgerEntries            LedgerEntry[]
+  vouchers                 Voucher[]
 }
 
 model Employee {
@@ -905,24 +906,38 @@ model ProductGroup {
 }
 
 model LedgerAccount {
-  id            String   @id @default(cuid())
-  accountNumber Int       @unique @map("account_number") // e.g. 1500, 3000, 2700, 1920
-  name          String    @map("name")                   // Account name
-  type          AccountType @map("type")                 // Asset, Liability, Income, Expense, Equity
-  isActive      Boolean   @default(true) @map("is_active")
+  id                    String      @id @default(cuid())
+  accountNumber         Int         @map("account_number")
+  name                  String      @map("name")
+  type                  AccountType @map("type")
+  isActive              Boolean     @default(true) @map("is_active")
+  
+  // New fields from Excel
+  vatCode               String?     @map("vat_code")              // Mva-kode
+  vatSpecification      String?     @map("vat_specification")      // Mva-spesifikasjon
+  reportGroup           String?     @map("report_group")           // Rapportgruppe
+  saftStandardAccount   String?     @map("saft_standard_account")  // SAF-T standardkonto
+  industrySpecification String?     @map("industry_specification") // Næringsspesifikasjon
+  
+  // Project and Department settings
+  allowProject          Boolean     @default(false) @map("allow_project")
+  requireProject        Boolean     @default(false) @map("require_project")
+  allowDepartment       Boolean     @default(false) @map("allow_department")
+  requireDepartment     Boolean     @default(false) @map("require_department")
+  
+  // NULL businessId means it's a default/template account
+  businessId            String?     @map("business_id")
+  business              Business?   @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
-  // Reverse relations
-  debitEntries  LedgerEntry[] @relation("DebitAccount")
-  creditEntries LedgerEntry[] @relation("CreditAccount")
+  // Relations
+  debitEntries          LedgerEntry[] @relation("DebitAccount")
+  creditEntries         LedgerEntry[] @relation("CreditAccount")
+  saleAccounts          SalesAccount[]
 
-  businessId    String       @map("business_id")
-  business      Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  createdAt             DateTime    @default(now()) @map("created_at")
+  updatedAt             DateTime    @updatedAt      @map("updated_at")
 
-  saleAccounts SalesAccount[]
-
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt      @map("updated_at")
-
+  @@unique([accountNumber, businessId]) // Unique per business, or global if businessId is null
   @@map("ledger_accounts")
 }
 
@@ -979,6 +994,9 @@ model LedgerEntry {
 
   businessId     String       @map("business_id")
   business       Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  voucherId      String
+  voucher        Voucher      @relation(fields: [voucherId], references: [id])
 
   description    String?
 
@@ -1045,6 +1063,8 @@ model Invoice {
 
   ledgerEntries     LedgerEntry[]
 
+  voucherId     String?       @unique
+  voucher       Voucher?      @relation(fields: [voucherId], references: [id])
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -1231,6 +1251,9 @@ model CustomerPayment {
 
   allocations   PaymentAllocation[]
 
+  voucherId     String?    @unique
+  voucher       Voucher?   @relation(fields: [voucherId], references: [id])
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -1251,6 +1274,32 @@ model PaymentAllocation {
   
   @@map("payment_allocations")
 }
+
+enum VoucherType {
+  INVOICE
+  PAYMENT
+  CREDIT_NOTE
+  MANUAL
+}
+
+model Voucher {
+  id            String        @id @default(cuid())
+  businessId    String
+  year          Int
+  sequence      Int
+  voucherNumber String        @unique
+  type          VoucherType
+  createdAt     DateTime      @default(now())
+
+  business      Business      @relation(fields: [businessId], references: [id])
+
+  ledgerEntries  LedgerEntry[]
+  invoice        Invoice?
+  payment        CustomerPayment?
+
+  @@index([businessId, year, sequence])
+}
+
 
 enum PaymentMethod {
   BANK

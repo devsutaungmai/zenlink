@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/shared/lib/prisma'
 import { getCurrentUserOrEmployee } from '@/shared/lib/auth'
 
-// GET /api/products/[id]
+// GET /api/ledger/accounts/[id]
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -22,25 +22,25 @@ export async function GET(
       businessId = (auth.data as any).department.businessId
     }
 
-    const product = await prisma.product.findFirst({
+    const ledgerAccount = await prisma.ledgerAccount.findFirst({
       where: {
         id: id,
         businessId: businessId
       }
     })
 
-    if (!product) {
-      return NextResponse.json({ error: 'Product not found' }, { status: 404 })
+    if (!ledgerAccount) {
+      return NextResponse.json({ error: 'LedgerAccount not found' }, { status: 404 })
     }
 
-    return NextResponse.json(product)
+    return NextResponse.json(ledgerAccount)
   } catch (error) {
-    console.error('Error fetching product:', error)
+    console.error('Error fetching LedgerAccount:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
-// PUT /api/products/[id]
+// PUT /api/ledger/accounts/[id]
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -70,34 +70,34 @@ export async function PUT(
 
     const body = await request.json()
 
-    const existingProduct = await prisma.product.findFirst({
+    const existingLedgerAccount = await prisma.ledgerAccount.findFirst({
       where: {
         id: id,
         businessId: businessId
       }
     })
 
-    if (!existingProduct) {
-      return NextResponse.json({ error: 'Product not found' }, { status: 404 })
+    if (!existingLedgerAccount) {
+      return NextResponse.json({ error: 'LedgerAccount not found' }, { status: 404 })
     }
-    const { productNumber, productName } = body
+    const { accountNumber, name, type } = body
 
-    if (!productNumber || !productName) {
-      return NextResponse.json({ error: 'ProductName and ProductNumber are required' }, { status: 400 })
+    if (!accountNumber || !name || !type) {
+      return NextResponse.json({ error: 'AccountNumber and Name and Type are required' }, { status: 400 })
     }
 
 
-    const product = await prisma.product.update({
+    const ledgerAccount = await prisma.ledgerAccount.update({
       where: { id: id },
       data: body
     })
 
-    return NextResponse.json(product)
+    return NextResponse.json(ledgerAccount)
   } catch (error: any) {
-    console.error('Error updating product:', error)
+    console.error('Error updating ledgerAccount:', error)
 
     if (error.code === 'P2002') {
-      return NextResponse.json({ error: 'Product name already exists in this department' }, { status: 409 })
+      return NextResponse.json({ error: 'LedgerAccount name already exists in this department' }, { status: 409 })
     }
 
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -132,25 +132,24 @@ export async function DELETE(
       return NextResponse.json({ error: 'Business not found' }, { status: 404 })
     }
 
-    const product = await prisma.product.findFirst({
+    const ledgerAccount = await prisma.ledgerAccount.findFirst({
       where: {
         id: id,
         businessId: businessId
       }
     })
 
-    if (!product) {
-      return NextResponse.json({ error: 'Product not found' }, { status: 404 })
+    if (!ledgerAccount) {
+      return NextResponse.json({ error: 'LedgerAccount not found' }, { status: 404 })
     }
 
-    // Delete the product (cascade will delete functions)
-    await prisma.product.delete({
+    await prisma.ledgerAccount.delete({
       where: { id: id }
     })
 
-    return NextResponse.json({ message: 'Product deleted successfully' })
+    return NextResponse.json({ message: 'LedgerAccount deleted successfully' })
   } catch (error) {
-    console.error('Error deleting product:', error)
+    console.error('Error deleting ledgerAccount:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

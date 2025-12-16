@@ -21,10 +21,11 @@ interface CreditNoteDialogProps {
   onOpenChange: (open: boolean) => void
   creditNoteData: CreditNoteData
   fetchInvoices: () => Promise<void>
-
+  loadingCredit: boolean
+  setLoadingCredit: (loadingCredit: boolean) => void
 }
 
-export default function CreditNoteDialog({ open, onOpenChange ,creditNoteData, fetchInvoices}: CreditNoteDialogProps) {
+export default function CreditNoteDialog({ open, onOpenChange, creditNoteData, fetchInvoices, loadingCredit, setLoadingCredit }: CreditNoteDialogProps) {
   const router = useRouter()
   const [creditNote, setCreditNote] = useState({
     customer: creditNoteData.customer || { id: "", customerName: "" },
@@ -50,19 +51,22 @@ export default function CreditNoteDialog({ open, onOpenChange ,creditNoteData, f
   }, [creditNoteData])
 
   const handleSubmit = async () => {
+
     try {
+      setLoadingCredit(true)
       const response = await fetch(`/api/invoices/${creditNote.invoiceId}/customer/credit-note`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-            customerId: creditNote.customer.id,
-            creditNoteDate: creditNote.date,
-            comment: creditNote.comment,
-            amount: creditNote.amount,
-          }),
+          customerId: creditNote.customer.id,
+          creditNoteDate: creditNote.date,
+          comment: creditNote.comment,
+          amount: creditNote.amount,
+        }),
       })
 
       if (response.ok) {
+        setLoadingCredit(false)
         onOpenChange(false)
         await fetchInvoices();
         router.refresh()
@@ -71,8 +75,11 @@ export default function CreditNoteDialog({ open, onOpenChange ,creditNoteData, f
       console.error("Failed to create credit note:", error)
     }
   }
- return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+  return (
+    <Dialog.Root open={open} onOpenChange={(isOpen) => {
+      if (loadingCredit) return;
+      onOpenChange(isOpen)
+    }}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/40" />
         <Dialog.Content className="fixed left-[50%] top-[50%] -translate-x-[50%] -translate-y-[50%] w-[calc(100%-2rem)] max-w-sm sm:max-w-lg md:max-w-2xl rounded-xl bg-white shadow-lg p-4 sm:p-6 md:p-8 max-h-[90vh] overflow-y-auto">
@@ -138,13 +145,29 @@ export default function CreditNoteDialog({ open, onOpenChange ,creditNoteData, f
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-4 sm:pt-6 border-t border-gray-200">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
               <button
+                type="button"
                 onClick={handleSubmit}
-                className="w-full sm:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors text-sm"
+                disabled={loadingCredit}
+                aria-busy={loadingCredit}
+                className={`w-full sm:w-auto px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg transition-colors text-sm flex items-center justify-center ${loadingCredit ? "opacity-80 cursor-not-allowed" : "hover:bg-blue-700"
+                  }`}
               >
-                Send credit note
+                {loadingCredit ? (
+                  <>
+                    <span className="inline-block h-4 w-4 mr-2 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  "Send credit note"
+                )}
               </button>
               <Dialog.Close asChild>
-                <button className="w-full sm:w-auto px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-colors text-sm">
+                <button
+                  type="button"
+                  disabled={loadingCredit}
+                  className={`w-full sm:w-auto px-6 py-3 bg-gray-100 text-gray-700 font-medium rounded-lg transition-colors text-sm ${loadingCredit ? "opacity-50 cursor-not-allowed" : "hover:bg-gray-200"
+                    }`}
+                >
                   Cancel
                 </button>
               </Dialog.Close>

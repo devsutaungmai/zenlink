@@ -1,7 +1,8 @@
 import { getCurrentUserOrEmployee } from '@/shared/lib/auth'
 import Swal from 'sweetalert2'
 import { prisma } from './prisma'
-import { InvoiceStatus, LedgerEntryType, Prisma } from '@prisma/client'
+import { InvoiceStatus, LedgerEntryType, Prisma, VoucherType } from '@prisma/client'
+import { isValid } from 'date-fns'
 
 export interface InvoiceCalculation {
   subtotal: number
@@ -148,8 +149,9 @@ export async function createCreditNote(params: {
   originalInvoiceId: string;
   reason?: string;
   creditNoteDate?: Date;
+  businessId: string
 }) {
-  const { originalInvoiceId, reason, creditNoteDate = new Date() } = params;
+  const { originalInvoiceId, reason, creditNoteDate = new Date(), businessId } = params;
 
   // Fetch original invoice with all details
   const originalInvoice = await prisma.invoice.findUnique({
@@ -192,7 +194,7 @@ export async function createCreditNote(params: {
     // 1. Update original invoice status to CREDITED
     await tx.invoice.update({
       where: { id: originalInvoiceId },
-      data: { 
+      data: {
         status: InvoiceStatus.CREDITED,
         updatedAt: new Date()
       }
@@ -205,36 +207,36 @@ export async function createCreditNote(params: {
         invoiceDate: creditNoteDate,
         dueDate: creditNoteDate, // Credit notes don't have due dates
         status: InvoiceStatus.CREDIT_NOTE,
-        
+
         customerId: originalInvoice.customerId,
         businessId: originalInvoice.businessId,
         projectId: originalInvoice.projectId,
         departmentId: originalInvoice.departmentId,
         contactPersonId: originalInvoice.contactPersonId,
-        
+
         // Negative amounts for credit note
         totalExclVAT: -originalInvoice.totalExclVAT,
         vatAmount: -originalInvoice.vatAmount,
         vatPercentage: originalInvoice.vatPercentage,
         totalInclVAT: -originalInvoice.totalInclVAT,
-        
+
         // Link to original invoice
         creditedInvoiceId: originalInvoiceId,
-        
+
         notes: reason || `Kreditnota for faktura ${originalInvoice.invoiceNumber}`,
-        
+
         invoiceLines: {
           create: originalInvoice.invoiceLines.map(line => ({
             productId: line.productId,
             quantity: line.quantity, // Keep positive for display
             pricePerUnit: line.pricePerUnit,
             discountPercentage: line.discountPercentage,
-            
+
             // Negative amounts for credit note
             subtotal: -line.subtotal,
             discountAmount: -line.discountAmount,
             lineTotal: -line.lineTotal,
-            
+
             productName: line.productName,
             productNumber: line.productNumber,
           }))
@@ -256,16 +258,25 @@ export async function createCreditNote(params: {
         }
       }
     });
+    if (creditNote) {
+      const voucher = await generateVoucherNumber(businessId, VoucherType.CREDIT_NOTE);
+
+      await tx.invoice.update({
+        where: { id: creditNote.id },
+        data: { voucherId: voucher.id }
+      });
+    }
+
 
   });
 
   // 3. Post credit note to ledger using the standard function
-    // The invoiceToLedgerPosting function will detect it's a credit note
-    // and automatically reverse the entries
-    if (!creditNote) {
-      throw new Error('Failed to create credit note');
-    }
-    await invoiceToLedgerPosting(creditNote.id);
+  // The invoiceToLedgerPosting function will detect it's a credit note
+  // and automatically reverse the entries
+  if (!creditNote) {
+    throw new Error('Failed to create credit note');
+  }
+  await invoiceToLedgerPosting(creditNote.id);
 
   return {
     success: true,
@@ -281,7 +292,7 @@ export async function createCreditNote(params: {
 async function generateCreditNoteNumber(businessId: string): Promise<string> {
   const year = new Date().getFullYear();
   const prefix = `CN-${year}-`;
-  
+
   // Find the highest credit note number for this year and business
   const lastCreditNote = await prisma.invoice.findFirst({
     where: {
@@ -296,7 +307,7 @@ async function generateCreditNoteNumber(businessId: string): Promise<string> {
   });
 
   let nextNumber = 1;
-  
+
   if (lastCreditNote && lastCreditNote.invoiceNumber) {
     try {
       // Extract the number part (e.g., "CN-2025-0001" -> "0001")
@@ -316,27 +327,59 @@ async function generateCreditNoteNumber(businessId: string): Promise<string> {
   // Keep trying until we find a unique number (in case of race conditions)
   let attempts = 0;
   const maxAttempts = 10;
-  
+
   while (attempts < maxAttempts) {
     const candidateNumber = `${prefix}${nextNumber.toString().padStart(4, '0')}`;
-    
+
     // Check if this number already exists
     const existing = await prisma.invoice.findUnique({
       where: {
         invoiceNumber: candidateNumber
       }
     });
-    
+
     if (!existing) {
       return candidateNumber;
     }
-    
+
     nextNumber++;
     attempts++;
   }
-  
+
   throw new Error('Failed to generate unique credit note number after multiple attempts');
 }
+
+
+export async function generateVoucherNumber(businessId: string, type: VoucherType) {
+  return await prisma.$transaction(async (tx) => {
+    const year = new Date().getFullYear();
+    const BASE = 0;
+
+    // Find last voucher for this business + year
+    const lastVoucher = await tx.voucher.findFirst({
+      where: { businessId, year },
+      orderBy: { sequence: "desc" }
+    });
+
+    const nextSeq = lastVoucher ? lastVoucher.sequence + 1 : 1;
+
+    const voucherNumber = `${BASE + nextSeq}-${year}`;
+
+    // Create voucher row
+    const voucher = await tx.voucher.create({
+      data: {
+        businessId,
+        year,
+        sequence: nextSeq,
+        voucherNumber,
+        type
+      }
+    });
+
+    return voucher;
+  });
+}
+
 
 /**
 * Post invoice to ledger when status changes to SENT
@@ -400,11 +443,11 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
   });
 
   const vatPayable = await prisma.ledgerAccount.findFirst({
-    where: { accountNumber: 2700 }
+    where: { accountNumber: 2701 }
   });
 
   if (!accountsReceivable || !vatPayable) {
-    throw new Error('Required ledger accounts not found (1500, 2700)');
+    throw new Error('Required ledger accounts not found (1500, 2701)');
   }
 
   await prisma.$transaction(async (tx) => {
@@ -431,9 +474,10 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
         // CREDIT NOTE: DR Sales Account / CR 1500 (REVERSED)
         await tx.ledgerEntry.create({
           data: {
-            entryType: LedgerEntryType.CREDIT_NOTE, 
+            entryType: LedgerEntryType.CREDIT_NOTE,
             businessId,
             invoiceId: invoice.id,
+            voucherId: invoice.voucherId ?? "",
             documentDate,
             postingDate,
             debitAccountId: salesAccount.ledgerAccountId,
@@ -451,6 +495,7 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
             entryType: LedgerEntryType.INVOICE_POST,
             businessId,
             invoiceId: invoice.id,
+            voucherId: invoice.voucherId ?? "",
             documentDate,
             postingDate,
             debitAccountId: accountsReceivable.id,
@@ -466,15 +511,16 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
 
     // VAT Entry
     const vatAmount = Math.abs(parseFloat(invoice.vatAmount.toString()));
-    
+
     if (vatAmount > 0) {
       if (isCreditNote) {
-        // CREDIT NOTE: DR 2700 / CR 1500 (REVERSED)
+        // CREDIT NOTE: DR 2701 / CR 1500 (REVERSED)
         await tx.ledgerEntry.create({
           data: {
-            entryType: LedgerEntryType.CREDIT_NOTE, 
+            entryType: LedgerEntryType.CREDIT_NOTE,
             businessId,
             invoiceId: invoice.id,
+            voucherId: invoice.voucherId ?? "",
             documentDate,
             postingDate,
             debitAccountId: vatPayable.id,
@@ -486,12 +532,13 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
           }
         });
       } else {
-        // NORMAL INVOICE: DR 1500 / CR 2700
+        // NORMAL INVOICE: DR 1500 / CR 2701
         await tx.ledgerEntry.create({
           data: {
-            entryType: LedgerEntryType.INVOICE_POST, 
+            entryType: LedgerEntryType.INVOICE_POST,
             businessId,
             invoiceId: invoice.id,
+            voucherId: invoice.voucherId ?? "",
             documentDate,
             postingDate,
             debitAccountId: accountsReceivable.id,
@@ -625,14 +672,27 @@ export async function generateLedgerReport(
         }
       },
       include: {
+        // include voucher at the ledgerEntry level so voucherNumber corresponds to ledgerEntry.voucherId
+        voucher: {
+          select: {
+            id: true,
+            voucherNumber: true
+          }
+        },
         invoice: {
           select: {
             invoiceNumber: true,
             status: true,
-            customer: {
-              select: { 
+            voucher: { // keep invoice.voucher as well if needed, but prefer entry.voucher at usage
+              select: {
                 id: true,
-                customerName: true 
+                voucherNumber: true
+              }
+            },
+            customer: {
+              select: {
+                id: true,
+                customerName: true
               }
             }
           }
@@ -656,7 +716,7 @@ export async function generateLedgerReport(
     let runningBalance = openingBalance;
 
     // Group 1500 entries ONLY for INVOICE_POST and CREDIT_NOTE
-    const shouldGroupByInvoice = account.accountNumber === 1500;
+    const shouldGroupByInvoice = account.accountNumber === 1500 || account.accountNumber === 3200;
 
     let ledgerEntries;
 
@@ -695,7 +755,7 @@ export async function generateLedgerReport(
           entry.entryType === LedgerEntryType.CREDIT_NOTE
         ) {
           const groupKey = entry.invoiceId || `no-invoice-${entry.id}`;
-          const voucherNo = entry.invoice?.invoiceNumber || `V-${entry.id.slice(-8)}`;
+          const voucherNo = entry.voucher.voucherNumber || `V-${entry.id.slice(-8)}`;
           const customerName = entry.invoice?.customer?.customerName || '';
           const customerId = entry.invoice?.customer?.id || '';
 
@@ -764,7 +824,7 @@ export async function generateLedgerReport(
           const { entry, displayAmount, trueMovement } = item.data;
           runningBalance += trueMovement;
 
-          const voucherNo = entry.invoice?.invoiceNumber || `V-${entry.id.slice(-8)}`;
+          const voucherNo = entry.voucher?.voucherNumber || `V-${entry.id.slice(-8)}`;
 
           return {
             id: entry.id,
@@ -796,10 +856,10 @@ export async function generateLedgerReport(
 
         runningBalance += trueMovement;
 
-        const voucherNo = entry.invoice?.invoiceNumber || `V-${entry.id.slice(-8)}`;
+        const voucherNo = entry.voucher.voucherNumber || `V-${entry.id.slice(-8)}`;
 
-        const isVATEntry = 
-          entry.creditAccount?.accountNumber === 2740 || 
+        const isVATEntry =
+          entry.creditAccount?.accountNumber === 2740 ||
           entry.debitAccount?.accountNumber === 2740;
 
         return {
@@ -838,5 +898,3 @@ export async function generateLedgerReport(
     totalBalance: accountGroups.reduce((sum, acc) => sum + acc.closingBalance, 0)
   };
 }
-
-
