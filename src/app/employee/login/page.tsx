@@ -14,6 +14,25 @@ function EmployeeLoginContent() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isPreFilled, setIsPreFilled] = useState(false)
+  const [checkingAuth, setCheckingAuth] = useState(true)
+
+  // Check if employee is already logged in
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/api/employee/me')
+        if (response.ok) {
+          // Employee is already logged in, redirect to employee dashboard
+          router.replace('/employee/dashboard')
+          return
+        }
+      } catch (err) {
+        // Not logged in, show login page
+      }
+      setCheckingAuth(false)
+    }
+    checkAuth()
+  }, [router])
 
   useEffect(() => {
     const preFilledEmployeeId = searchParams.get('employeeId')
@@ -75,6 +94,15 @@ function EmployeeLoginContent() {
     } finally {
       setLoading(false)
     }
+  }
+
+  // Show loading while checking auth status
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#E5F1FF' }}>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#31BCFF]"></div>
+      </div>
+    )
   }
 
   return (
