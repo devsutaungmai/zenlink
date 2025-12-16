@@ -117,6 +117,38 @@ export default function CreateInvoicePage() {
     const [customerDialog, setCustomerDialog] = useState<boolean>(false)
     const onSaveCustomer = async (customer: CustomerFormType) => {
         console.log("CustomerFormData" + JSON.stringify(customer));
+
+        setLoadingCustomer(true)
+        try {
+            const res = await fetch('/api/customers', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(customer),
+            })
+
+            if (!res.ok) {
+                const error = await res.json()
+                throw new Error(error.error || 'Failed to create customer')
+            }
+
+            await Swal.fire({
+                title: 'Success!',
+                text: 'Customer created successfully',
+                icon: 'success',
+                confirmButtonColor: '#31BCFF',
+            })
+
+            router.refresh()
+        } catch (error) {
+            await Swal.fire({
+                title: 'Error',
+                text: error instanceof Error ? error.message : 'An error occurred',
+                icon: 'error',
+                confirmButtonColor: '#31BCFF',
+            })
+        } finally {
+            setLoadingCustomer(false)
+        }
     }
 
     useEffect(() => {
@@ -267,12 +299,15 @@ export default function CreateInvoicePage() {
                     setDepartments([data.department])
                 }
 
-                if (data.contactPersons) {
+                if (Array.isArray(data.contactPersons) && data.contactPersons.length > 0) {
                     setContacts(data.contactPersons)
                     setFormData(prev => ({
                         ...prev,
-                        contactPersonId: data.contactPersons?.[0].id
+                        contactPersonId: data.contactPersons[0]?.id ?? prev.contactPersonId ?? ''
                     }))
+                } else if (data.contactPersons) {
+                    // Ensure contacts is cleared if contactPersons exists but has no items
+                    setContacts([])
                 }
             }
         } catch (error) {
@@ -449,7 +484,7 @@ export default function CreateInvoicePage() {
                 <form onSubmit={(e) => { e.preventDefault(); handleSubmit('save'); }} className="space-y-6">
                     <div className="bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-xl border border-slate-200 p-6">
                         <h2 className="text-lg font-semibold text-gray-900 mb-4">Customer Information</h2>
-                        
+                        <button type='button' onClick={() => setCustomerDialog(true)}>Add New Customer</button>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                             <div>
                                 <label htmlFor="customerId" className="block text-sm font-medium text-gray-700 mb-2">
@@ -477,7 +512,6 @@ export default function CreateInvoicePage() {
                                 </label>
                                 <select
                                     id="contactPersonId"
-                                    required
                                     value={formData.contactPersonId || ''}
                                     onChange={(e) => setFormData({ ...formData, contactPersonId: e.target.value })}
                                     className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
@@ -531,7 +565,6 @@ export default function CreateInvoicePage() {
                                 </label>
                                 <select
                                     id="projectId"
-                                    required
                                     value={formData.projectId || ''}
                                     onChange={(e) => setFormData({ ...formData, projectId: e.target.value })}
                                     className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
@@ -552,7 +585,6 @@ export default function CreateInvoicePage() {
                                     </label>
                                     <select
                                         id="departmentId"
-                                        required
                                         value={formData.departmentId || ''}
                                         onChange={(e) => setFormData({ ...formData, departmentId: e.target.value })}
                                         className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"

@@ -2,6 +2,12 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 
+export interface CustomerContact {
+    name: string
+    phoneNumber: string
+    email: string,
+    isPrimary: boolean
+}
 export interface CustomerFormType {
     customerName: string;
     customerNumber: string;
@@ -11,10 +17,12 @@ export interface CustomerFormType {
     postalAddress: string;
     phoneNumber: string;
     email: string;
-    discountPercentage: string;
     deliveryAddress: string;
     deliveryAddressPostalCode: string;
     deliveryAddressPostalAddress: string;
+    customerContactName: string;
+    customerContacts?: CustomerContact[]
+    
 }
 
 interface CustomerDialogProps {
@@ -34,10 +42,10 @@ const emptyCustomer: CustomerFormType = {
     postalAddress: "",
     phoneNumber: "",
     email: "",
-    discountPercentage: "",
     deliveryAddress: "",
     deliveryAddressPostalCode: "",
     deliveryAddressPostalAddress: "",
+    customerContactName:""
 };
 
 export default function CustomerDialog({
@@ -58,7 +66,25 @@ export default function CustomerDialog({
     };
 
     const handleSubmit = async () => {
-        await onSave(form);
+        // Build payload removing unknown Prisma field and creating contactPersons structure
+        const payload: any = { ...form };
+        // If customerContactName exists, create contactPersons array for server-side relation
+        if (form.customerContactName) {
+            payload.contactPersons = {
+                create: [
+                    {
+                        name: form.customerContactName,
+                        phoneNumber: form.phoneNumber ?? "",
+                        email: form.email ?? "",
+                        isPrimary: true,
+                    },
+                ],
+            };
+        }
+        // Remove front-end-only field not present in Prisma model
+        delete payload.customerContactName;
+
+        await onSave(payload as unknown as CustomerFormType);
         onOpenChange(false);
     };
 
@@ -98,17 +124,16 @@ export default function CustomerDialog({
                         <Input label="Postal address" value={form.postalAddress} onChange={(v) => updateField("postalAddress", v)} />
                         <Input label="Phone number" value={form.phoneNumber} onChange={(v) => updateField("phoneNumber", v)} />
                         <Input label="Email" value={form.email} onChange={(v) => updateField("email", v)} />
-                        <Input label="Discount %" value={form.discountPercentage} onChange={(v) => updateField("discountPercentage", v)} />
-
+                        <Input label="Delivery postal code" value={form.deliveryAddressPostalCode} onChange={(v) => updateField("deliveryAddressPostalCode", v)} />
+                        <Input label="Delivery postal address" value={form.deliveryAddressPostalAddress} onChange={(v) => updateField("deliveryAddressPostalAddress", v)} />
                         <Input
                             className="md:col-span-3"
                             label="Delivery address"
                             value={form.deliveryAddress}
                             onChange={(v) => updateField("deliveryAddress", v)}
                         />
+                        <Input className="md:col-span-3" label="Customer Contact Name" value={form.customerContactName} onChange={(v) => updateField("customerContactName", v)} />
 
-                        <Input label="Delivery postal code" value={form.deliveryAddressPostalCode} onChange={(v) => updateField("deliveryAddressPostalCode", v)} />
-                        <Input label="Delivery postal address" value={form.deliveryAddressPostalAddress} onChange={(v) => updateField("deliveryAddressPostalAddress", v)} />
                     </div>
 
                     {/* Footer */}
