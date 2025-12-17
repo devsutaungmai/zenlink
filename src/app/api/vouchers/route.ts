@@ -1,7 +1,13 @@
+import { getBusinessId } from "@/shared/lib/invoiceHelper";
 import { prisma } from "@/shared/lib/prisma";
 import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
+
+   const businessId = await getBusinessId()
+      if (!businessId) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
   const { searchParams } = new URL(req.url);
 
   const page = parseInt(searchParams.get("page") || "1");
@@ -16,7 +22,7 @@ export async function GET(req: Request) {
   const voucherFrom = searchParams.get("voucherFrom");
   const voucherTo = searchParams.get("voucherTo");
 
-  const where: any = {};
+  const where: any = {businessId};
 
   if (registeredBy && registeredBy !== "not-chosen")
     where.createdBy = registeredBy;

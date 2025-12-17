@@ -348,7 +348,6 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                                 </label>
                                 <select
                                     id="contactPersonId"
-                                    required
                                     value={formData.contactPersonId || ''}
                                     onChange={(e) => setFormData({ ...formData, contactPersonId: e.target.value })}
                                     className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
@@ -402,7 +401,6 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                                 </label>
                                 <select
                                     id="projectId"
-                                    required
                                     value={formData.projectId || ''}
                                     onChange={(e) => setFormData({ ...formData, projectId: e.target.value })}
                                     className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
@@ -423,7 +421,6 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                                     </label>
                                     <select
                                         id="departmentId"
-                                        required
                                         value={formData.departmentId || ''}
                                         onChange={(e) => setFormData({ ...formData, departmentId: e.target.value })}
                                         className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
@@ -446,7 +443,6 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                                     <input
                                         type="text"
                                         id="deliveryAddress"
-                                        required
                                         value={formData.deliveryAddress || ""}
                                         onChange={(e) => setFormData({ ...formData, deliveryAddress: e.target.value })}
                                         className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
@@ -602,7 +598,6 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                                             step="0.01"
                                             min="0"
                                             max="100"
-                                            required
                                             value={line.discountPercentage || ""}
                                             onChange={(e) => {
                                                 const updatedLines = [...formData.invoiceLines];

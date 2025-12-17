@@ -75,10 +75,10 @@ export async function POST(request: NextRequest) {
       status
     } = body
 
-    // Validate inputs
-    if (!customerId || !invoiceLines.length) {
+    // Validate inputs - only check for required fields
+    if (!customerId || !invoiceLines || invoiceLines.length === 0) {
       return NextResponse.json(
-        { error: 'Missing required fields: customerId,orderLine' },
+        { error: 'Missing required fields: customerId, invoiceLines' },
         { status: 400 }
       )
     }
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
 
     for (const line of invoiceLines) {
 
-      const { productId, quantity, pricePerUnit, discountPercentage } = line;
+      const { productId, quantity, pricePerUnit, discountPercentage = 0 } = line;
       // Validate line data
       if (!productId || !quantity || !pricePerUnit) {
         return NextResponse.json(
@@ -107,20 +107,26 @@ export async function POST(request: NextRequest) {
           { status: 404 }
         )
       }
+
+      // Convert string values to numbers
+      const qty = Number(quantity)
+      const price = Number(pricePerUnit)
+      const discount = Number(discountPercentage) || 0
+
       // Calculate totals
       const calculations = calculateInvoiceTotals(
-        quantity,
-        pricePerUnit,
-        discountPercentage
+        qty,
+        price,
+        discount
       )
 
       totalExclVAT += calculations.totalExclVAT
 
       invoiceLinesData.push({
         productId,
-        quantity,
-        pricePerUnit,
-        discountPercentage,
+        quantity: qty,
+        pricePerUnit: price,
+        discountPercentage: discount,
         subtotal: calculations.subtotal,
         discountAmount: calculations.discountAmount,
         lineTotal: calculations.totalExclVAT,
@@ -150,37 +156,59 @@ export async function POST(request: NextRequest) {
 
     console.log('Creating invoice with number:', invoiceNumber);
 
+    const invoiceData: any = {
+      invoiceNumber: invoiceNumber,
+      customerId,
+      businessId,
+
+      // Invoice totals
+      totalExclVAT: totalExclVAT,
+      vatPercentage: 25,
+      vatAmount: vatAmount,
+      totalInclVAT: totalInclVAT,
+      notes,
+      status: status,
+      sentAt: new Date(sentAt) ?? new Date(),
+      dueDay: dueDay ?? 14,
+
+
+      // Create invoice line with product
+      invoiceLines: {
+        create: invoiceLinesData
+      }
+    }
+
+    if (contactPersonId && contactPersonId.trim() !== '') {
+      invoiceData.contactPersonId = contactPersonId
+    }
+
+    if (projectId && projectId.trim() !== '') {
+      invoiceData.projectId = projectId
+    }
+
+    if (departmentId && departmentId.trim() !== '') {
+      invoiceData.departmentId = departmentId
+    }
+
+    if (deliveryAddress && deliveryAddress.trim() !== '') {
+      invoiceData.deliveryAddress = deliveryAddress
+    }
+
+    if (paidAt && paidAt.trim() !== "") {
+      invoiceData.dueDate = new Date(paidAt)
+      invoiceData.paidAt = new Date(paidAt)
+    } else {
+      const sentDate = invoiceData.sentAt;
+      const paidDate = new Date(sentDate);
+      paidDate.setDate(paidDate.getDate() + Number(invoiceData.dueDay))
+      invoiceData.dueDate = paidDate;
+      invoiceData.paidAt = paidDate;
+
+    }
 
     // Create invoice with nested invoice line
     const invoice = await prisma.invoice.create({
-      data: {
-        invoiceNumber: invoiceNumber,
-        customerId,
-        businessId,
-        contactPersonId,
-        projectId,
-        departmentId,
-        deliveryAddress,
-
-        // Invoice totals
-        totalExclVAT: totalExclVAT,
-        vatPercentage: 25,
-        vatAmount: vatAmount,
-        totalInclVAT: totalInclVAT,
-
-        dueDate: paidAt ? new Date(paidAt) : null,
-        notes,
-        status: status,
-        sentAt: sentAt ? new Date(sentAt) : null,
-        paidAt: paidAt ? new Date(paidAt) : null,
-        dueDay,
-
-
-        // Create invoice line with product
-        invoiceLines: {
-          create: invoiceLinesData
-        }
-      },
+      data: invoiceData,
       include: {
         customer: true,
         invoiceLines: {
@@ -210,6 +238,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invoice already exists in this department' }, { status: 409 })
     }
 
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: error }, { status: 500 })
   }
 }

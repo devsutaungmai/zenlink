@@ -98,9 +98,9 @@ export async function PUT(
     } = body
 
     // Validate inputs
-    if (!customerId || !invoiceLines.length) {
+    if (!customerId || !invoiceLines || invoiceLines.length === 0) {
       return NextResponse.json(
-        { error: 'Missing required fields: customerId and at least one product' },
+        { error: 'Missing required fields: customerId, invoiceLines' },
         { status: 400 }
       )
     }
@@ -159,20 +159,25 @@ export async function PUT(
         )
       }
 
+      // Convert string values to numbers
+      const qty = Number(quantity)
+      const price = Number(pricePerUnit)
+      const discount = Number(discountPercentage) || 0
+
       // Calculate line totals using helper function
       const calculations = calculateInvoiceTotals(
-        quantity,
-        pricePerUnit,
-        discountPercentage
+        qty,
+        price,
+        discount
       )
 
       totalExclVAT += calculations.totalExclVAT
 
       invoiceLinesData.push({
         productId,
-        quantity,
-        pricePerUnit,
-        discountPercentage,
+        quantity: qty,
+        pricePerUnit: price,
+        discountPercentage: discount,
         subtotal: calculations.subtotal,
         discountAmount: calculations.discountAmount,
         lineTotal: calculations.totalExclVAT,
@@ -192,32 +197,55 @@ export async function PUT(
       await tx.invoiceLine.deleteMany({
         where: { invoiceId: invoiceId }
       })
+      const invoiceData: any = {
+        customerId,
+        totalExclVAT,
+        vatPercentage,
+        vatAmount,
+        totalInclVAT,
+        notes,
+        status: status,
+        sentAt: new Date(sentAt) ?? new Date(),
+        dueDay: dueDay ?? 14,
+
+        // Create new invoice lines
+        invoiceLines: {
+          create: invoiceLinesData
+        }
+      }
+
+      if (contactPersonId && contactPersonId.trim() !== '') {
+        invoiceData.contactPersonId = contactPersonId
+      }
+
+      if (projectId && projectId.trim() !== '') {
+        invoiceData.projectId = projectId
+      }
+
+      if (departmentId && departmentId.trim() !== '') {
+        invoiceData.departmentId = departmentId
+      }
+
+      if (deliveryAddress && deliveryAddress.trim() !== '') {
+        invoiceData.deliveryAddress = deliveryAddress
+      }
+
+      if (paidAt && paidAt.trim() !== "") {
+        invoiceData.dueDate = new Date(paidAt)
+        invoiceData.paidAt = new Date(paidAt)
+      } else {
+        const sentDate = invoiceData.sentAt;
+        const paidDate = new Date(sentDate);
+        paidDate.setDate(paidDate.getDate() + Number(invoiceData.dueDay))
+        invoiceData.dueDate = paidDate;
+        invoiceData.paidAt = paidDate;
+
+      }
 
       // Update invoice with new data and create new lines
       return await tx.invoice.update({
         where: { id: invoiceId },
-        data: {
-          customerId,
-          contactPersonId,
-          projectId,
-          departmentId,
-          deliveryAddress,
-          totalExclVAT,
-          vatPercentage,
-          vatAmount,
-          totalInclVAT,
-          dueDate: paidAt ? new Date(paidAt) : null,
-          notes,
-          status: status,
-          sentAt: sentAt ? new Date(sentAt) : null,
-          paidAt: paidAt ? new Date(paidAt) : null,
-          dueDay,
-
-          // Create new invoice lines
-          invoiceLines: {
-            create: invoiceLinesData
-          }
-        },
+        data: invoiceData,
         include: {
           customer: true,
           invoiceLines: {

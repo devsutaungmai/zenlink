@@ -117,9 +117,9 @@ export default function CreateInvoicePage() {
     const [customerDialog, setCustomerDialog] = useState<boolean>(false)
     const onSaveCustomer = async (customer: CustomerFormType) => {
         console.log("CustomerFormData" + JSON.stringify(customer));
-
-        setLoadingCustomer(true)
+        setCustomerDialog(false)
         try {
+            setLoadingCustomer(true)
             const res = await fetch('/api/customers', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -136,8 +136,8 @@ export default function CreateInvoicePage() {
                 text: 'Customer created successfully',
                 icon: 'success',
                 confirmButtonColor: '#31BCFF',
+                focusConfirm: false,
             })
-
             router.refresh()
         } catch (error) {
             await Swal.fire({
@@ -145,9 +145,11 @@ export default function CreateInvoicePage() {
                 text: error instanceof Error ? error.message : 'An error occurred',
                 icon: 'error',
                 confirmButtonColor: '#31BCFF',
+                focusConfirm: false,
             })
         } finally {
             setLoadingCustomer(false)
+            setCustomerDialog(false)
         }
     }
 
@@ -167,7 +169,7 @@ export default function CreateInvoicePage() {
         if (formData.sentAt && formData.dueDay) {
             const sentDate = new Date(formData.sentAt)
             const paidDate = new Date(sentDate)
-            paidDate.setDate(paidDate.getDate() + Number(formData.dueDay))
+            paidDate.setDate(paidDate.getDate() + Number(formData.dueDay)) 
 
             setFormData(prev => ({
                 ...prev,
@@ -483,8 +485,16 @@ export default function CreateInvoicePage() {
             <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg p-6">
                 <form onSubmit={(e) => { e.preventDefault(); handleSubmit('save'); }} className="space-y-6">
                     <div className="bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-xl border border-slate-200 p-6">
-                        <h2 className="text-lg font-semibold text-gray-900 mb-4">Customer Information</h2>
-                        <button type='button' onClick={() => setCustomerDialog(true)}>Add New Customer</button>
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-lg font-semibold text-gray-900">Customer Information</h2>
+                            <button
+                                type="button"
+                                onClick={() => setCustomerDialog(true)}
+                                className="px-4 py-2 rounded-lg bg-[#31BCFF] text-white hover:bg-[#0ea5e9] transition-colors"
+                            >
+                                Add New Customer
+                            </button>
+                        </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                             <div>
                                 <label htmlFor="customerId" className="block text-sm font-medium text-gray-700 mb-2">
@@ -762,7 +772,6 @@ export default function CreateInvoicePage() {
                                             step="0.01"
                                             min="0"
                                             max="100"
-                                            required
                                             value={line.discountPercentage || ""}
                                             onChange={(e) => {
                                                 const updatedLines = [...formData.invoiceLines];
@@ -890,9 +899,7 @@ export default function CreateInvoicePage() {
             {customerDialog && <CustomerDialog
                 open={true}
                 onOpenChange={(open) => {
-                    if (!open && !loadingCustomer) {
-                        setCustomerDialog(false);
-                    }
+                        setCustomerDialog(open);
                 }}
                 loading={loadingCustomer}
                 onSave={onSaveCustomer}
