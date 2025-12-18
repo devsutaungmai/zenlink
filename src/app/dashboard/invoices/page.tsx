@@ -16,9 +16,7 @@ import {
     PaginationPrevious,
 } from "@/components/ui/pagination"
 import { Decimal } from '@prisma/client/runtime/library'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { useInvoiceSettings } from '@/shared/hooks/useInvoiceSettings'
+
 
 export enum InvoiceStatus {
     DRAFT = 'DRAFT',       // Not sent yet
@@ -72,32 +70,10 @@ export default function InvoicesPage() {
     // Pagination states
     const [currentPage, setCurrentPage] = useState(1)
     const [itemsPerPage] = useState(10)
-    const { settings } = useInvoiceSettings();
-    const [settingsOpen, setSettingsOpen] = useState(false)
-    const [visibleFields, setVisibleFields] = useState({
-        showDiscount: true,
-        showPaymentTerms: true,
-        showDepartment: true,
-        showSeller: true,
-        showContactPerson: true,
-        showDeliveryAddress: true,
-    })
+   
     useEffect(() => {
         fetchInvoices()
     }, [])
-
-    useEffect(() => {
-        if (settings) {
-            setVisibleFields({
-                showDiscount: settings.showDiscount,
-                showPaymentTerms: settings.showPaymentTerms,
-                showDepartment: settings.showDepartment,
-                showSeller: settings.showSeller,
-                showContactPerson: settings.showContactPerson,
-                showDeliveryAddress: settings.showDeliveryAddress,
-            })
-        }
-    }, [settings])
 
     const fetchInvoices = async () => {
         try {
@@ -190,41 +166,7 @@ export default function InvoicesPage() {
         // Scroll to top of table when page changes
         window.scrollTo({ top: 0, behavior: 'smooth' })
     }
-    const handleSaveSettings = async () => {
-
-        console.log(JSON.stringify(visibleFields));
-        setSettingsOpen(false)
-        setLoading(true)
-        try {
-            const res = await fetch('/api/invoices/settings', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(visibleFields),
-            })
-
-            if (!res.ok) {
-                const error = await res.json()
-                throw new Error(error.error || 'Failed to save the settings')
-            }
-            Swal.fire({
-                title: t('common.success'),
-                text: 'Settings saved successfully',
-                icon: 'success',
-                confirmButtonColor: '#31BCFF',
-            })
-
-        } catch (error) {
-            await Swal.fire({
-                title: 'Error',
-                text: error instanceof Error ? error.message : 'An error occurred',
-                icon: 'error',
-                confirmButtonColor: '#31BCFF',
-            })
-        } finally {
-            setLoading(false)
-        }
-
-    }
+   
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
@@ -263,125 +205,6 @@ export default function InvoicesPage() {
                         </p>
                     </div>
                     <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                        <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-                            <DialogTrigger asChild>
-                                <button className="inline-flex items-center justify-center px-4 py-3 rounded-2xl bg-white text-gray-700 font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 border border-gray-200">
-                                    <Cog6ToothIcon className="w-5 h-5 mr-2" />
-                                    Settings
-                                </button>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
-                                <DialogHeader>
-                                    <DialogTitle className="text-2xl font-bold">Invoice Field Settings</DialogTitle>
-                                    <DialogDescription>
-                                        Select which fields you want to display in the invoice form
-                                    </DialogDescription>
-                                </DialogHeader>
-
-                                <div className="space-y-4 py-4">
-
-                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                                        <input
-                                            type="checkbox"
-                                            id="showDiscount"
-                                            checked={visibleFields.showDiscount}
-                                            onChange={(e) =>
-                                                setVisibleFields({ ...visibleFields, showDiscount: e.target.checked })
-                                            }
-                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                                        />
-                                        <label htmlFor="showDiscount" className="text-base font-medium cursor-pointer flex-1">
-                                            Discount
-                                        </label>
-                                    </div>
-
-                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                                        <input
-                                            type="checkbox"
-                                            id="showPaymentTerms"
-                                            checked={visibleFields.showPaymentTerms}
-                                            onChange={(e) =>
-                                                setVisibleFields({ ...visibleFields, showPaymentTerms: e.target.checked })
-                                            }
-                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                                        />
-                                        <label htmlFor="showPaymentTerms" className="text-base font-medium cursor-pointer flex-1">
-                                            Payment Terms
-                                        </label>
-                                    </div>
-
-                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                                        <input
-                                            type="checkbox"
-                                            id="showDepartment"
-                                            checked={visibleFields.showDepartment}
-                                            onChange={(e) =>
-                                                setVisibleFields({ ...visibleFields, showDepartment: e.target.checked })
-                                            }
-                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                                        />
-                                        <label htmlFor="showDepartment" className="text-base font-medium cursor-pointer flex-1">
-                                            Department
-                                        </label>
-                                    </div>
-
-                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                                        <input
-                                            type="checkbox"
-                                            id="showSeller"
-                                            checked={visibleFields.showSeller}
-                                            onChange={(e) =>
-                                                setVisibleFields({ ...visibleFields, showSeller: e.target.checked })
-                                            }
-                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                                        />
-                                        <label htmlFor="showSeller" className="text-base font-medium cursor-pointer flex-1">
-                                            Seller
-                                        </label>
-                                    </div>
-
-                                    {/* <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                                        <input
-                                            type="checkbox"
-                                            id="showContactPerson"
-                                            checked={visibleFields.showContactPerson}
-                                            onChange={(e) =>
-                                                setVisibleFields({ ...visibleFields, showContactPerson: e.target.checked })
-                                            }
-                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                                        />
-                                        <label htmlFor="showContactPerson" className="text-base font-medium cursor-pointer flex-1">
-                                            Contact Person
-                                        </label>
-                                    </div> */}
-
-                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                                        <input
-                                            type="checkbox"
-                                            id="showDeliveryAddress"
-                                            checked={visibleFields.showDeliveryAddress}
-                                            onChange={(e) =>
-                                                setVisibleFields({ ...visibleFields, showDeliveryAddress: e.target.checked })
-                                            }
-                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                                        />
-                                        <label htmlFor="showDeliveryAddress" className="text-base font-medium cursor-pointer flex-1">
-                                            Delivery Address
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <div className="flex justify-end gap-3 pt-4 border-t">
-                                    <Button variant="outline" onClick={() => setSettingsOpen(false)}>
-                                        Cancel
-                                    </Button>
-                                    <Button onClick={handleSaveSettings} className="bg-[#31BCFF] hover:bg-[#0EA5E9] text-white">
-                                        Save Settings
-                                    </Button>
-                                </div>
-                            </DialogContent>
-                        </Dialog>
-
                         <Link
                             href="/dashboard/invoices/create"
                             className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 group"

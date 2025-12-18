@@ -7,13 +7,16 @@ import Link from 'next/link'
 import { ArrowLeftIcon, ArrowDownIcon } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
 import { Contact } from 'lucide-react'
-import { useInvoiceSettings } from '@/shared/hooks/useInvoiceSettings'
 import { calculateInvoiceTotals, exportToPDF, sendEmail } from '@/shared/lib/invoiceHelper'
 import { Decimal } from '@prisma/client/runtime/library'
 import InvoiceSummaryCalculation from '@/components/invoice/InvoiceSummaryCalculation'
 import { se } from 'date-fns/locale'
 import { set } from 'zod'
 import CustomerDialog, { CustomerFormType } from '@/components/invoice/CustomerDialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { useInvoiceSettings } from '@/shared/hooks/useInvoiceSettings'
+import Cog6ToothIcon from '@heroicons/react/24/solid/Cog6ToothIcon'
 
 export interface Customer {
     id: string
@@ -100,7 +103,7 @@ export default function CreateInvoicePage() {
         contactPersonId: '',
         deliveryAddress: '',
         sentAt: new Date().toISOString().split('T')[0],
-        dueDay: 0,
+        dueDay: 14,
         paidAt: '',
         projectId: '',
         departmentId: '',
@@ -110,11 +113,21 @@ export default function CreateInvoicePage() {
         notes: ''
     })
     const [emailSendLoading, setEmailSendLoading] = useState(false);
-    const { settings } = useInvoiceSettings();
     const [netTotals, setNetTotals] = useState<Number[]>([]);
 
     const [loadingCustomer, setLoadingCustomer] = useState<boolean>(false);
     const [customerDialog, setCustomerDialog] = useState<boolean>(false)
+    const { settings } = useInvoiceSettings();
+    const [settingsOpen, setSettingsOpen] = useState(false)
+    const [visibleFields, setVisibleFields] = useState({
+        showDiscount: true,
+        showPaymentTerms: true,
+        showDepartment: true,
+        showSeller: true,
+        showContactPerson: true,
+        showDeliveryAddress: true,
+        showProject: true,
+    })
     const onSaveCustomer = async (customer: CustomerFormType) => {
         console.log("CustomerFormData" + JSON.stringify(customer));
         setCustomerDialog(false)
@@ -169,7 +182,7 @@ export default function CreateInvoicePage() {
         if (formData.sentAt && formData.dueDay) {
             const sentDate = new Date(formData.sentAt)
             const paidDate = new Date(sentDate)
-            paidDate.setDate(paidDate.getDate() + Number(formData.dueDay)) 
+            paidDate.setDate(paidDate.getDate() + Number(formData.dueDay))
 
             setFormData(prev => ({
                 ...prev,
@@ -177,6 +190,55 @@ export default function CreateInvoicePage() {
             }))
         }
     }, [formData.sentAt, formData.dueDay])
+
+    useEffect(() => {
+        if (settings) {
+            setVisibleFields({
+                showDiscount: settings.showDiscount,
+                showPaymentTerms: settings.showPaymentTerms,
+                showDepartment: settings.showDepartment,
+                showSeller: settings.showSeller,
+                showContactPerson: settings.showContactPerson,
+                showDeliveryAddress: settings.showDeliveryAddress,
+                showProject: settings.showProject,
+            })
+        }
+    }, [settings])
+    const handleSaveSettings = async () => {
+
+        setSettingsOpen(false)
+        setLoading(true)
+        try {
+            const res = await fetch('/api/invoices/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(visibleFields),
+            })
+
+            if (!res.ok) {
+                const error = await res.json()
+                throw new Error(error.error || 'Failed to save the settings')
+            }
+            Swal.fire({
+                title: t('common.success'),
+                text: 'Settings saved successfully',
+                icon: 'success',
+                confirmButtonColor: '#31BCFF',
+            })
+
+
+        } catch (error) {
+            await Swal.fire({
+                title: 'Error',
+                text: error instanceof Error ? error.message : 'An error occurred',
+                icon: 'error',
+                confirmButtonColor: '#31BCFF',
+            })
+        } finally {
+            setLoading(false)
+        }
+
+    }
 
     const fetchInvoice = async () => {
         try {
@@ -472,6 +534,139 @@ export default function CreateInvoicePage() {
                         </p>
                     </div>
                     <div className="hidden md:flex items-center space-x-2">
+                        <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+                            <DialogTrigger asChild>
+                                <button className="inline-flex items-center justify-center px-4 py-3 rounded-2xl bg-white text-gray-700 font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 border border-gray-200">
+                                    <Cog6ToothIcon className="w-5 h-5 mr-2" />
+                                    Options
+                                </button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+                                <DialogHeader>
+                                    <DialogTitle className="text-2xl font-bold">Invoice Field Options</DialogTitle>
+                                    <DialogDescription>
+                                        Select which fields you want to display in the invoice form
+                                    </DialogDescription>
+                                </DialogHeader>
+
+                                <div className="space-y-4 py-4">
+
+                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            id="showDiscount"
+                                            checked={visibleFields.showDiscount}
+                                            onChange={(e) =>
+                                                setVisibleFields({ ...visibleFields, showDiscount: e.target.checked })
+                                            }
+                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                                        />
+                                        <label htmlFor="showDiscount" className="text-base font-medium cursor-pointer flex-1">
+                                            Discount
+                                        </label>
+                                    </div>
+
+                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            id="showPaymentTerms"
+                                            checked={visibleFields.showPaymentTerms}
+                                            onChange={(e) =>
+                                                setVisibleFields({ ...visibleFields, showPaymentTerms: e.target.checked })
+                                            }
+                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                                        />
+                                        <label htmlFor="showPaymentTerms" className="text-base font-medium cursor-pointer flex-1">
+                                            Payment Terms
+                                        </label>
+                                    </div>
+
+                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            id="showDepartment"
+                                            checked={visibleFields.showDepartment}
+                                            onChange={(e) =>
+                                                setVisibleFields({ ...visibleFields, showDepartment: e.target.checked })
+                                            }
+                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                                        />
+                                        <label htmlFor="showDepartment" className="text-base font-medium cursor-pointer flex-1">
+                                            Department
+                                        </label>
+                                    </div>
+
+                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            id="showSeller"
+                                            checked={visibleFields.showSeller}
+                                            onChange={(e) =>
+                                                setVisibleFields({ ...visibleFields, showSeller: e.target.checked })
+                                            }
+                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                                        />
+                                        <label htmlFor="showSeller" className="text-base font-medium cursor-pointer flex-1">
+                                            Seller
+                                        </label>
+                                    </div>
+
+                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            id="showContactPerson"
+                                            checked={visibleFields.showContactPerson}
+                                            onChange={(e) =>
+                                                setVisibleFields({ ...visibleFields, showContactPerson: e.target.checked })
+                                            }
+                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                                        />
+                                        <label htmlFor="showContactPerson" className="text-base font-medium cursor-pointer flex-1">
+                                            Contact Person
+                                        </label>
+                                    </div>
+
+                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            id="showProject"
+                                            checked={visibleFields.showProject}
+                                            onChange={(e) =>
+                                                setVisibleFields({ ...visibleFields, showProject: e.target.checked })
+                                            }
+                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                                        />
+                                        <label htmlFor="showProject" className="text-base font-medium cursor-pointer flex-1">
+                                            Project
+                                        </label>
+                                    </div>
+
+                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            id="showDeliveryAddress"
+                                            checked={visibleFields.showDeliveryAddress}
+                                            onChange={(e) =>
+                                                setVisibleFields({ ...visibleFields, showDeliveryAddress: e.target.checked })
+                                            }
+                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                                        />
+                                        <label htmlFor="showDeliveryAddress" className="text-base font-medium cursor-pointer flex-1">
+                                            Delivery Address
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end gap-3 pt-4 border-t">
+                                    <Button variant="outline" onClick={() => setSettingsOpen(false)}>
+                                        Cancel
+                                    </Button>
+                                    <Button onClick={handleSaveSettings} className="bg-[#31BCFF] hover:bg-[#0EA5E9] text-white">
+                                        Save Settings
+                                    </Button>
+                                </div>
+                            </DialogContent>
+                        </Dialog>
                         <div className="w-12 h-12 bg-[#31BCFF]/10 rounded-xl flex items-center justify-center">
                             <svg className="w-6 h-6 text-[#31BCFF]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
@@ -495,16 +690,20 @@ export default function CreateInvoicePage() {
                                 Add New Customer
                             </button>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                            <div>
+
+                        <div className="flex flex-wrap gap-6 mb-6">
+                            <div className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] min-w-[250px]">
                                 <label htmlFor="customerId" className="block text-sm font-medium text-gray-700 mb-2">
                                     Customer *
                                 </label>
                                 <select
                                     id="customerId"
                                     required
-                                    value={formData.customerId || ''}
-                                    onChange={(e) => { e.preventDefault(); handleCustomerChange(e.target.value) }}
+                                    value={formData.customerId || ""}
+                                    onChange={(e) => {
+                                        e.preventDefault()
+                                        handleCustomerChange(e.target.value)
+                                    }}
                                     className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
                                 >
                                     <option value="">Select Customer</option>
@@ -516,86 +715,89 @@ export default function CreateInvoicePage() {
                                 </select>
                             </div>
 
-                            <div>
-                                <label htmlFor="contactPersonId" className="block text-sm font-medium text-gray-700 mb-2">
-                                    Contact Name *
-                                </label>
-                                <select
-                                    id="contactPersonId"
-                                    value={formData.contactPersonId || ''}
-                                    onChange={(e) => setFormData({ ...formData, contactPersonId: e.target.value })}
-                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                                >
-                                    <option value="">Select Contact Name</option>
-                                    {contacts.map((contact) => (
-                                        <option key={contact.id} value={contact.id}>
-                                            {contact.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
-
-                        {settings.showPaymentTerms &&
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                                <div>
-                                    <label htmlFor="sentAt" className="block text-sm font-medium text-gray-700 mb-2">
-                                        Invoice Date (sentAt) *
+                            {visibleFields.showContactPerson && (
+                                <div className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] min-w-[250px]">
+                                    <label htmlFor="contactPersonId" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Contact Name *
                                     </label>
-                                    <input
-                                        type="date"
-                                        id="sentAt"
-                                        required
-                                        value={formData.sentAt || ""}
-                                        onChange={(e) => setFormData({ ...formData, sentAt: e.target.value })}
+                                    <select
+                                        id="contactPersonId"
+                                        value={formData.contactPersonId || ""}
+                                        onChange={(e) => setFormData({ ...formData, contactPersonId: e.target.value })}
                                         className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                                    />
+                                    >
+                                        <option value="">Select Contact Name</option>
+                                        {contacts.map((contact) => (
+                                            <option key={contact.id} value={contact.id}>
+                                                {contact.name}
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
-                                <div>
-                                    <label htmlFor="dueDay" className="block text-sm font-medium text-gray-700 mb-2">
-                                        Days until due (PaidAt - {formData.paidAt || 'Not calculated'})
+                            )}
+
+                            {visibleFields.showPaymentTerms && (
+                                <>
+                                    <div className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] min-w-[250px]">
+                                        <label htmlFor="sentAt" className="block text-sm font-medium text-gray-700 mb-2">
+                                            Invoice Date (sentAt) *
+                                        </label>
+                                        <input
+                                            type="date"
+                                            id="sentAt"
+                                            required
+                                            value={formData.sentAt || ""}
+                                            onChange={(e) => setFormData({ ...formData, sentAt: e.target.value })}
+                                            className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                        />
+                                    </div>
+                                    <div className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] min-w-[250px]">
+                                        <label htmlFor="dueDay" className="block text-sm font-medium text-gray-700 mb-2">
+                                            Days until due (PaidAt - {formData.paidAt || "Not calculated"})
+                                        </label>
+                                        <input
+                                            type="number"
+                                            id="dueDay"
+                                            required
+                                            min="0"
+                                            value={formData.dueDay}
+                                            onChange={(e) => setFormData({ ...formData, dueDay: Number.parseInt(e.target.value) || 0 })}
+                                            className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                            placeholder="Enter days until due"
+                                        />
+                                    </div>
+                                </>
+                            )}
+
+                            {visibleFields.showProject && (
+                                <div className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] min-w-[250px]">
+                                    <label htmlFor="projectId" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Project *
                                     </label>
-                                    <input
-                                        type="number"
-                                        id="dueDay"
-                                        required
-                                        min="0"
-                                        value={formData.dueDay}
-                                        onChange={(e) => setFormData({ ...formData, dueDay: parseInt(e.target.value) || 0 })}
+                                    <select
+                                        id="projectId"
+                                        value={formData.projectId || ""}
+                                        onChange={(e) => setFormData({ ...formData, projectId: e.target.value })}
                                         className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                                        placeholder="Enter days until due"
-                                    />
+                                    >
+                                        <option value="">Select Project</option>
+                                        {projects.map((proj) => (
+                                            <option key={proj.id} value={proj.id}>
+                                                {proj.name}
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
-                            </div>}
+                            )}
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div>
-                                <label htmlFor="projectId" className="block text-sm font-medium text-gray-700 mb-2">
-                                    Project *
-                                </label>
-                                <select
-                                    id="projectId"
-                                    value={formData.projectId || ''}
-                                    onChange={(e) => setFormData({ ...formData, projectId: e.target.value })}
-                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                                >
-                                    <option value="">Select Project</option>
-                                    {projects.map((proj) => (
-                                        <option key={proj.id} value={proj.id}>
-                                            {proj.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {settings.showDepartment &&
-                                <div>
+                            {visibleFields.showDepartment && (
+                                <div className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] min-w-[250px]">
                                     <label htmlFor="departmentId" className="block text-sm font-medium text-gray-700 mb-2">
                                         Department *
                                     </label>
                                     <select
                                         id="departmentId"
-                                        value={formData.departmentId || ''}
+                                        value={formData.departmentId || ""}
                                         onChange={(e) => setFormData({ ...formData, departmentId: e.target.value })}
                                         className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
                                     >
@@ -607,29 +809,26 @@ export default function CreateInvoicePage() {
                                         ))}
                                     </select>
                                 </div>
-                            }
+                            )}
 
-                            {settings.showDeliveryAddress &&
-                                <div>
+                            {visibleFields.showDeliveryAddress && (
+                                <div className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] min-w-[250px]">
                                     <label htmlFor="deliveryAddress" className="block text-sm font-medium text-gray-700 mb-2">
                                         Delivery Address *
                                     </label>
                                     <input
                                         type="text"
                                         id="deliveryAddress"
-                                        required
                                         value={formData.deliveryAddress || ""}
                                         onChange={(e) => setFormData({ ...formData, deliveryAddress: e.target.value })}
                                         className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
                                         placeholder="Enter delivery address"
                                     />
                                 </div>
-                            }
-
+                            )}
                         </div>
                     </div>
-
-                    {settings.showSeller && <div className="bg-gradient-to-br rounded-xl border p-6">
+                    {visibleFields.showSeller && <div className="bg-gradient-to-br rounded-xl border p-6">
                         <h2 className="text-lg font-semibold text-gray-900 mb-4">Seller Information</h2>
 
                         <div className="grid grid-cols-1 md:grid-cols-1 gap-6 mb-6">
@@ -652,20 +851,7 @@ export default function CreateInvoicePage() {
                         </div>
                     </div>}
 
-                    {/* Notes Section */}
-                    <div>
-                        <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
-                            Additional Notes
-                        </label>
-                        <textarea
-                            id="notes"
-                            value={formData.notes || ""}
-                            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                            className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                            placeholder="Enter any additional notes"
-                            rows={3}
-                        />
-                    </div>
+
 
                     <div className="bg-gradient-to-br rounded-xl border p-6">
                         <div className="flex justify-between items-center mb-4">
@@ -761,7 +947,7 @@ export default function CreateInvoicePage() {
                                     />
                                 </div>
 
-                                {settings.showDiscount &&
+                                {visibleFields.showDiscount &&
                                     <div>
                                         <label htmlFor="discountPercentage" className="block text-sm font-medium text-gray-700 mb-2">
                                             Discount(%) *
@@ -823,6 +1009,21 @@ export default function CreateInvoicePage() {
 
                             </div>
                         ))}
+                    </div>
+
+                    {/* Notes Section */}
+                    <div>
+                        <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
+                            Additional Notes
+                        </label>
+                        <textarea
+                            id="notes"
+                            value={formData.notes || ""}
+                            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                            className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                            placeholder="Enter any additional notes"
+                            rows={3}
+                        />
                     </div>
                     {/* Summary Calculation */}
                     <InvoiceSummaryCalculation invoiceLines={formData.invoiceLines} />
@@ -899,7 +1100,7 @@ export default function CreateInvoicePage() {
             {customerDialog && <CustomerDialog
                 open={true}
                 onOpenChange={(open) => {
-                        setCustomerDialog(open);
+                    setCustomerDialog(open);
                 }}
                 loading={loadingCustomer}
                 onSave={onSaveCustomer}

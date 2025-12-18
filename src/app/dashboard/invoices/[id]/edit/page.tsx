@@ -21,7 +21,7 @@ interface Customer {
 interface Product {
     id: string
     productName: string
-    salesPrice : number
+    salesPrice: number
 }
 
 
@@ -73,7 +73,7 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                 paidAt: paidDate.toISOString().split('T')[0]
             }))
         }
-        
+
     }, [formData.sentAt, formData.dueDay])
 
     const fetchCustomers = async () => {
@@ -148,7 +148,7 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                     const discount = Number(line.discountPercentage) || 0;
                     const { totalExclVAT } = calculateInvoiceTotals(qty, price, discount, 25);
                     return totalExclVAT;
-                }) );
+                }));
             }
         } catch (error) {
             console.error('Error fetching invoice:', error)
@@ -185,7 +185,7 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
         setNetTotals((prevNetTotals) => ([...prevNetTotals, 0]));
     }
 
-    const handleCopyOrderLine = (copiedInvoiceLine: InvoiceLine,netTotal: number) => {
+    const handleCopyOrderLine = (copiedInvoiceLine: InvoiceLine, netTotal: number) => {
         setFormData((prev: InvoiceFormData) => ({
             ...prev,
             invoiceLines: [
@@ -201,7 +201,7 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
         setNetTotals((prevNetTotals) => ([...prevNetTotals, netTotal]));
     }
 
-    const updateLineTotal= (index:number)=>{
+    const updateLineTotal = (index: number) => {
         const line = formData.invoiceLines[index];
 
         const qty = Number(line.quantity) || 0;
@@ -210,7 +210,7 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
 
         const { totalExclVAT } = calculateInvoiceTotals(qty, price, discount, 25);
         setNetTotals((prevNetTotals) => {
-            const newNetTotals = [...prevNetTotals];    
+            const newNetTotals = [...prevNetTotals];
             newNetTotals[index] = totalExclVAT;
             return newNetTotals;
         });
@@ -316,15 +316,18 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
             {/* Form Container */}
             <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg p-6">
                 <form onSubmit={(e) => handleSubmit(e, 'update')} className="space-y-6">
-                    <div className="bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-xl border border-slate-200 p-6">
-                        <h2 className="text-lg font-semibold text-gray-900 mb-4">Customer Information</h2>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                            <div>
+                    <div className="bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-xl border border-slate-200 p-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-lg font-semibold text-gray-900">Customer Information</h2>
+
+                        </div>
+
+                        <div className="flex flex-wrap gap-6 mb-6">
+                            <div className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] min-w-[250px]">
                                 <label htmlFor="customerId" className="block text-sm font-medium text-gray-700 mb-2">
                                     Customer *
                                 </label>
-
                                 <select
                                     id="customerId"
                                     required
@@ -342,86 +345,90 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                                 </select>
                                 <p className="text-xs mt-2 text-blue-400">Customer is already assigned </p>
                             </div>
-                           <div>
-                                <label htmlFor="contactPersonId" className="block text-sm font-medium text-gray-700 mb-2">
-                                    Contact Name *
-                                </label>
-                                <select
-                                    id="contactPersonId"
-                                    value={formData.contactPersonId || ''}
-                                    onChange={(e) => setFormData({ ...formData, contactPersonId: e.target.value })}
-                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                                >
-                                    <option value="">Select Project</option>
-                                    {contacts.map((contact) => (
-                                        <option key={contact.id} value={contact.id}>
-                                            {contact.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
 
-                        {settings.showPaymentTerms &&
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                                <div>
-                                    <label htmlFor="sentAt" className="block text-sm font-medium text-gray-700 mb-2">
-                                        Invoice Date (sentAt) *
+                            {settings.showContactPerson && (
+                                <div className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] min-w-[250px]">
+                                    <label htmlFor="contactPersonId" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Contact Name *
                                     </label>
-                                    <input
-                                        type="date"
-                                        id="sentAt"
-                                        required
-                                        value={formData.sentAt || ""}
-                                        onChange={(e) => setFormData({ ...formData, sentAt: e.target.value })}
+                                    <select
+                                        id="contactPersonId"
+                                        value={formData.contactPersonId || ""}
+                                        onChange={(e) => setFormData({ ...formData, contactPersonId: e.target.value })}
                                         className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                                    />
+                                    >
+                                        <option value="">Select Contact Name</option>
+                                        {contacts.map((contact) => (
+                                            <option key={contact.id} value={contact.id}>
+                                                {contact.name}
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
-                                <div>
-                                    <label htmlFor="dueDay" className="block text-sm font-medium text-gray-700 mb-2">
-                                        Days until due (PaidAt - {formData.paidAt || 'Not calculated'})
+                            )}
+
+                            {settings.showPaymentTerms && (
+                                <>
+                                    <div className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] min-w-[250px]">
+                                        <label htmlFor="sentAt" className="block text-sm font-medium text-gray-700 mb-2">
+                                            Invoice Date (sentAt) *
+                                        </label>
+                                        <input
+                                            type="date"
+                                            id="sentAt"
+                                            required
+                                            value={formData.sentAt || ""}
+                                            onChange={(e) => setFormData({ ...formData, sentAt: e.target.value })}
+                                            className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                        />
+                                    </div>
+                                    <div className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] min-w-[250px]">
+                                        <label htmlFor="dueDay" className="block text-sm font-medium text-gray-700 mb-2">
+                                            Days until due (PaidAt - {formData.paidAt || "Not calculated"})
+                                        </label>
+                                        <input
+                                            type="number"
+                                            id="dueDay"
+                                            required
+                                            min="0"
+                                            value={formData.dueDay}
+                                            onChange={(e) => setFormData({ ...formData, dueDay: Number.parseInt(e.target.value) || 0 })}
+                                            className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                            placeholder="Enter days until due"
+                                        />
+                                    </div>
+                                </>
+                            )}
+
+                            {settings.showProject && (
+                                <div className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] min-w-[250px]">
+                                    <label htmlFor="projectId" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Project *
                                     </label>
-                                    <input
-                                        type="number"
-                                        id="dueDay"
-                                        required
-                                        min="0"
-                                        value={formData.dueDay}
-                                        onChange={(e) => setFormData({ ...formData, dueDay: parseInt(e.target.value) || 0 })}
+                                    <select
+                                        id="projectId"
+                                        value={formData.projectId || ""}
+                                        onChange={(e) => setFormData({ ...formData, projectId: e.target.value })}
                                         className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                                        placeholder="Enter days until due"
-                                    />
+                                    >
+                                        <option value="">Select Project</option>
+                                        {projects.map((proj) => (
+                                            <option key={proj.id} value={proj.id}>
+                                                {proj.name}
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
-                            </div>}
+                            )}
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div>
-                                <label htmlFor="projectId" className="block text-sm font-medium text-gray-700 mb-2">
-                                    Project *
-                                </label>
-                                <select
-                                    id="projectId"
-                                    value={formData.projectId || ''}
-                                    onChange={(e) => setFormData({ ...formData, projectId: e.target.value })}
-                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                                >
-                                    <option value="">Select Project</option>
-                                    {projects.map((proj) => (
-                                        <option key={proj.id} value={proj.id}>
-                                            {proj.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {settings.showDepartment &&
-                                <div>
+                            {settings.showDepartment && (
+                                <div className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] min-w-[250px]">
                                     <label htmlFor="departmentId" className="block text-sm font-medium text-gray-700 mb-2">
                                         Department *
                                     </label>
                                     <select
                                         id="departmentId"
-                                        value={formData.departmentId || ''}
+                                        value={formData.departmentId || ""}
                                         onChange={(e) => setFormData({ ...formData, departmentId: e.target.value })}
                                         className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
                                     >
@@ -433,10 +440,10 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                                         ))}
                                     </select>
                                 </div>
-                            }
+                            )}
 
-                            {settings.showDeliveryAddress &&
-                                <div>
+                            {settings.showDeliveryAddress && (
+                                <div className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] min-w-[250px]">
                                     <label htmlFor="deliveryAddress" className="block text-sm font-medium text-gray-700 mb-2">
                                         Delivery Address *
                                     </label>
@@ -449,8 +456,7 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                                         placeholder="Enter delivery address"
                                     />
                                 </div>
-                            }
-
+                            )}
                         </div>
                     </div>
 
@@ -477,24 +483,11 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                         </div>
                     </div>}
 
-                    {/* Notes Section */}
-                    <div>
-                        <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
-                            Additional Notes
-                        </label>
-                        <textarea
-                            id="notes"
-                            value={formData.notes || ""}
-                            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                            className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                            placeholder="Enter any additional notes"
-                            rows={3}
-                        />
-                    </div>
+
 
 
                     <div className="bg-gradient-to-br rounded-xl border p-6">
-                          <div className="flex justify-between items-center mb-4">
+                        <div className="flex justify-between items-center mb-4">
                             <h2 className="text-lg font-semibold text-gray-900 mb-4">Order Lines</h2>
                             <button
                                 type="button"
@@ -611,7 +604,7 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                                     </div>
                                 }
 
-                                 <div>
+                                <div>
                                     <label htmlFor="netTotal" className="block text-sm font-medium text-gray-700 mb-2">
                                         Net Total
                                     </label>
@@ -637,7 +630,7 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                                     </button>
                                     <button
                                         type='button'
-                                        onClick={() => handleCopyOrderLine(line,Number(netTotals[index] || 0))}
+                                        onClick={() => handleCopyOrderLine(line, Number(netTotals[index] || 0))}
                                     >
                                         <svg className="w-8 h-8 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2h-6a2 2 0 01-2-2V7z" />
@@ -650,6 +643,21 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
 
                             </div>
                         ))}
+                    </div>
+
+                    {/* Notes Section */}
+                    <div>
+                        <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
+                            Additional Notes
+                        </label>
+                        <textarea
+                            id="notes"
+                            value={formData.notes || ""}
+                            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                            className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                            placeholder="Enter any additional notes"
+                            rows={3}
+                        />
                     </div>
 
                     {/* Summary Calculation */}

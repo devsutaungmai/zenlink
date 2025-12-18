@@ -40,6 +40,7 @@ export async function GET(req: NextRequest) {
                     showDepartment: true,
                     showSeller: true,
                     showDiscount: true,
+                    showProject: true
                 }
             })
         }
@@ -74,7 +75,8 @@ export async function POST(req: NextRequest) {
             showPaymentTerms,
             showDepartment,
             showSeller,
-            showDiscount
+            showDiscount,
+            showProject
         } = body
 
         // Validate boolean fields
@@ -84,7 +86,8 @@ export async function POST(req: NextRequest) {
             showPaymentTerms,
             showDepartment,
             showSeller,
-            showDiscount
+            showDiscount,
+            showProject
         }
 
         for (const [key, value] of Object.entries(booleanFields)) {
@@ -108,6 +111,7 @@ export async function POST(req: NextRequest) {
                 showDepartment,
                 showSeller,
                 showDiscount,
+                showProject
             },
             create: {
                 businessId,
@@ -117,6 +121,7 @@ export async function POST(req: NextRequest) {
                 showDepartment,
                 showSeller,
                 showDiscount,
+                showProject
             }
         })
 

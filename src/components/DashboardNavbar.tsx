@@ -92,7 +92,7 @@ export default function DashboardNavbar() {
       ],
     },
     {
-      name: "Invoice Control",
+      name: "Invoice",
       icon: CurrencyDollarIcon,
       children: [
         { name: 'General ledger', href: '/dashboard/accounts/general-ledger' },

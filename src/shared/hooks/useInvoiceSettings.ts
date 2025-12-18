@@ -8,6 +8,7 @@ interface InvoiceSettings {
   showDepartment: boolean
   showSeller: boolean
   showDiscount: boolean
+  showProject: boolean
 }
 
 export function useInvoiceSettings() {
@@ -18,6 +19,7 @@ export function useInvoiceSettings() {
     showDepartment: true,
     showSeller: true,
     showDiscount: true,
+    showProject: true,
   })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -46,6 +48,7 @@ export function useInvoiceSettings() {
         showDepartment: data.showDepartment,
         showSeller: data.showSeller,
         showDiscount: data.showDiscount,
+        showProject: data.showProject
       })
     } catch (err) {
       console.error('Error fetching invoice settings:', err)

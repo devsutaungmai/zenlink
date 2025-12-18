@@ -2,18 +2,9 @@
 
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon, Cog6ToothIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 import { useTranslation } from 'react-i18next'
 import Swal from 'sweetalert2'
-import {
-    Pagination,
-    PaginationContent,
-    PaginationEllipsis,
-    PaginationItem,
-    PaginationLink,
-    PaginationNext,
-    PaginationPrevious,
-} from "@/components/ui/pagination"
 import { AccountType } from '@prisma/client'
 
 export interface LedgerAccount {
@@ -27,21 +18,14 @@ export interface LedgerAccount {
 
 export default function LedgerAccountsPage() {
     const { t } = useTranslation()
-    // const { currencySymbol } = useCurrency()
     const [ledgerAccounts, setledgerAccounts] = useState<LedgerAccount[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [searchTerm, setSearchTerm] = useState('')
 
-    // Pagination states
-    const [currentPage, setCurrentPage] = useState(1)
-    const [itemsPerPage] = useState(10)
-
     useEffect(() => {
         fetchledgerAccounts()
     }, [])
-
-
 
     const fetchledgerAccounts = async () => {
         try {
@@ -123,23 +107,6 @@ export default function LedgerAccountsPage() {
         )
     })
 
-    // Pagination calculations
-    const totalPages = Math.ceil(filteredledgerAccounts.length / itemsPerPage)
-    const startIndex = (currentPage - 1) * itemsPerPage
-    const endIndex = startIndex + itemsPerPage
-    const paginatedledgerAccounts = filteredledgerAccounts.slice(startIndex, endIndex)
-
-    // Reset to page 1 when search changes
-    useEffect(() => {
-        setCurrentPage(1)
-    }, [searchTerm])
-
-    const handlePageChange = (page: number) => {
-        setCurrentPage(page)
-        // Scroll to top of table when page changes
-        window.scrollTo({ top: 0, behavior: 'smooth' })
-    }
-
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
@@ -171,7 +138,7 @@ export default function LedgerAccountsPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between">
                     <div className="mb-4 sm:mb-0">
                         <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                            Ledger Accout
+                            Ledger Account
                         </h1>
                         <p className="mt-2 text-gray-600">
                             Ledger Account for all business
@@ -198,27 +165,15 @@ export default function LedgerAccountsPage() {
                             type="text"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            placeholder="Search ledgerAccounts by invoice number and customer name"
+                            placeholder="Search ledger accounts by account number, name, or type"
                             className="block w-full pl-12 pr-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
                         />
                     </div>
                 </div>
                 <div className="flex items-center justify-between mt-4 text-sm text-gray-500">
                     <span>
-                        {filteredledgerAccounts.length > 0
-                            ? t('showing_paginated', {
-                                start: startIndex + 1,
-                                end: Math.min(endIndex, filteredledgerAccounts.length),
-                                total: filteredledgerAccounts.length
-                            })
-                            : t('employee_groups.showing', { current: 0, total: ledgerAccounts.length })
-                        }
+                        Showing {filteredledgerAccounts.length} of {ledgerAccounts.length} accounts
                     </span>
-                    {totalPages > 1 && (
-                        <span className="text-xs text-gray-400">
-                            {t('page_info', { current: currentPage, total: totalPages })}
-                        </span>
-                    )}
                 </div>
             </div>
 
@@ -228,17 +183,17 @@ export default function LedgerAccountsPage() {
                     <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                         <MagnifyingGlassIcon className="w-8 h-8 text-gray-400" />
                     </div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">{t('employee_groups.no_groups_found')}</h3>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No accounts found</h3>
                     <p className="text-gray-500 mb-6">
-                        {searchTerm ? t('employee_groups.adjust_search') : t('employee_groups.get_started')}
+                        {searchTerm ? 'Try adjusting your search terms' : 'Get started by creating your first ledger account'}
                     </p>
                     {!searchTerm && (
                         <Link
-                            href="/dashboard/ledgerAccounts/create"
+                            href="/dashboard/ledger-accounts/create"
                             className="inline-flex items-center px-6 py-3 rounded-xl bg-[#31BCFF] text-white font-medium hover:bg-[#31BCFF]/90 transition-colors duration-200"
                         >
                             <PlusIcon className="w-5 h-5 mr-2" />
-                            {t('employee_groups.create_first_group')}
+                            Create First Account
                         </Link>
                     )}
                 </div>
@@ -266,7 +221,7 @@ export default function LedgerAccountsPage() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200/50">
-                                {paginatedledgerAccounts.map((account) => (
+                                {filteredledgerAccounts.map((account) => (
                                     <tr key={account.id} className="hover:bg-blue-50/30 transition-colors duration-200">
                                         <td className="px-6 py-4">
                                             <div className="text-sm font-medium text-gray-900">
@@ -300,19 +255,19 @@ export default function LedgerAccountsPage() {
                                                     <Link
                                                         href={`/dashboard/ledger-accounts/${account.id}/edit`}
                                                         className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
-                                                        title="Edit Invoice"
+                                                        title="Edit Account"
                                                     >
                                                         <PencilIcon className="h-4 w-4" />
                                                     </Link>
                                                     <button
                                                         onClick={() => handleDelete(account.id, account.accountNumber)}
                                                         className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                                                        title={t('employee_groups.delete_group')}
+                                                        title="Delete Account"
                                                     >
                                                         <TrashIcon className="h-4 w-4" />
                                                     </button>
                                                 </div>
-                                            ) : ""
+                                            ) : null
                                             }
                                         </td>
                                     </tr>
@@ -321,63 +276,9 @@ export default function LedgerAccountsPage() {
                         </table>
                     </div>
 
-                    {/* Pagination */}
-                    {totalPages > 1 && (
-                        <div className="flex items-center justify-center px-6 py-4 border-t border-gray-200/50">
-                            <Pagination>
-                                <PaginationContent>
-                                    <PaginationItem>
-                                        <PaginationPrevious
-                                            onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
-                                            className={currentPage <= 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                                        />
-                                    </PaginationItem>
-
-                                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
-                                        // Show first page, last page, current page, and pages around current page
-                                        if (
-                                            page === 1 ||
-                                            page === totalPages ||
-                                            (page >= currentPage - 1 && page <= currentPage + 1)
-                                        ) {
-                                            return (
-                                                <PaginationItem key={page}>
-                                                    <PaginationLink
-                                                        onClick={() => handlePageChange(page)}
-                                                        isActive={page === currentPage}
-                                                        className="cursor-pointer"
-                                                    >
-                                                        {page}
-                                                    </PaginationLink>
-                                                </PaginationItem>
-                                            )
-                                        } else if (
-                                            page === currentPage - 2 ||
-                                            page === currentPage + 2
-                                        ) {
-                                            return (
-                                                <PaginationItem key={page}>
-                                                    <PaginationEllipsis />
-                                                </PaginationItem>
-                                            )
-                                        }
-                                        return null
-                                    })}
-
-                                    <PaginationItem>
-                                        <PaginationNext
-                                            onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
-                                            className={currentPage >= totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                                        />
-                                    </PaginationItem>
-                                </PaginationContent>
-                            </Pagination>
-                        </div>
-                    )}
-
                     {/* Mobile Cards  */}
-                    <div className="md:hidden space-y-4">
-                        {paginatedledgerAccounts.map((account) => (
+                    <div className="md:hidden space-y-4 p-4">
+                        {filteredledgerAccounts.map((account) => (
                             <div
                                 key={account.id}
                                 className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg overflow-hidden hover:shadow-xl transition-all duration-200"
@@ -389,7 +290,6 @@ export default function LedgerAccountsPage() {
                                             <div className="flex items-center gap-2 flex-wrap mb-2">
                                                 <span className="text-base font-bold text-gray-900">
                                                     {account.accountNumber}
-
                                                 </span>
                                                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                                     {account.name}
@@ -397,12 +297,11 @@ export default function LedgerAccountsPage() {
                                             </div>
                                         </div>
                                     </div>
-
                                 </div>
 
                                 {/* Card Body */}
                                 <div className="p-4 space-y-3">
-                                    {/* Date Information */}
+                                    {/* Account Information */}
                                     <div className="grid grid-cols-2 gap-3">
                                         <div className="bg-gray-50 rounded-lg p-3">
                                             <div className="text-xs text-gray-500 mb-1">Account Type</div>
@@ -413,12 +312,18 @@ export default function LedgerAccountsPage() {
                                         <div className="bg-gray-50 rounded-lg p-3">
                                             <div className="text-xs text-gray-500 mb-1">Status</div>
                                             <div className="text-sm font-medium text-gray-900">
-                                                {account.isActive}
+                                                {account.isActive ? (
+                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                        Active
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                        Inactive
+                                                    </span>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
-
-
 
                                     {/* Action Buttons */}
                                     <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-200">
@@ -427,19 +332,19 @@ export default function LedgerAccountsPage() {
                                                 <Link
                                                     href={`/dashboard/ledger-accounts/${account.id}/edit`}
                                                     className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
-                                                    title="Edit Invoice"
+                                                    title="Edit Account"
                                                 >
                                                     <PencilIcon className="h-5 w-5" />
                                                 </Link>
                                                 <button
                                                     onClick={() => handleDelete(account.id, account.accountNumber)}
                                                     className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                                                    title={t('employee_groups.delete_group')}
+                                                    title="Delete Account"
                                                 >
                                                     <TrashIcon className="h-5 w-5" />
                                                 </button>
                                             </>
-                                        ) : ""}
+                                        ) : null}
                                     </div>
                                 </div>
                             </div>
