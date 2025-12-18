@@ -363,7 +363,7 @@ export async function generateVoucherNumber(businessId: string, type: VoucherTyp
 
     const nextSeq = lastVoucher ? lastVoucher.sequence + 1 : 1;
 
-    const voucherNumber = `${BASE + nextSeq}-${year}`;
+    const voucherNumber = `${year}-${BASE + nextSeq}`;
 
     // Create voucher row
     const voucher = await tx.voucher.create({
@@ -633,7 +633,7 @@ export async function generateLedgerReport(
   accountNumbers?: number[]
 ) {
   // const whereClause: any = { businessId, isActive: true };
-  accountNumbers = [1500,1920,3200,1900,2701]
+  accountNumbers = [1500, 1920, 3200, 1900, 2701]
   const whereClause: any = {};
   if (accountNumbers && accountNumbers.length > 0) {
     whereClause.accountNumber = { in: accountNumbers };

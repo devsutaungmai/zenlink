@@ -80,16 +80,32 @@ export async function PUT(
     if (!existingProduct) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 })
     }
-    const { productNumber, productName } = body
+    const { productNumber, productName, unitId, productGroupId } = body
 
     if (!productNumber || !productName) {
       return NextResponse.json({ error: 'ProductName and ProductNumber are required' }, { status: 400 })
     }
 
+    const refinedUnitId =
+      typeof unitId === "string" && unitId.trim() !== "" ? unitId : null;
+
+    const refinedProductGroupId =
+      typeof productGroupId === "string" && productGroupId.trim() !== ""
+        ? productGroupId
+        : null;
+
+    const productData = {
+      ...body,
+      businessId,
+
+      unitId: refinedUnitId,
+      productGroupId: refinedProductGroupId,
+    };
+
 
     const product = await prisma.product.update({
       where: { id: id },
-      data: body
+      data: productData
     })
 
     return NextResponse.json(product)

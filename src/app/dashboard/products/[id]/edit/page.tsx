@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import Link from 'next/link'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
+import { useProductSettings } from '@/shared/hooks/useProductSettings'
 
 interface Unit {
     id: string
@@ -45,8 +46,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         productGroupId: '',
         salesAccountId: ''
     })
-
-
+    const { settings } = useProductSettings();
     useEffect(() => {
         fetchUnits()
         fetchProductGroups()
@@ -200,179 +200,186 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             {/* Form Container */}
             <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg p-6">
                 <form onSubmit={handleSubmit} className="space-y-6">
-                    {/* Product Name & Product Number */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label htmlFor="productName" className="block text-sm font-medium text-gray-700 mb-2">
-                                Product Name *
+                    <div className="flex justify-end items-center gap-3 mt-8">
+                        <input
+                            id="active"
+                            type="checkbox"
+                            checked={formData.active}
+                            onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
+                            className="h-5 w-5 text-[#31BCFF] border-gray-300 rounded focus:ring-[#31BCFF]/50"
+                        />
+                        <label htmlFor="active" className="text-sm font-medium text-gray-700">
+                            Active
+                        </label>
+                    </div>
+
+                    <div>
+                        {/* Product Name & Product Number */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label htmlFor="productName" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Product Name *
+                                </label>
+                                <input
+                                    type="text"
+                                    id="productName"
+                                    required
+                                    value={formData.productName}
+                                    onChange={(e) => setFormData({ ...formData, productName: e.target.value })}
+                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                    placeholder="Enter product name"
+                                />
+                            </div>
+
+                            <div>
+                                <label htmlFor="productNumber" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Product Number *
+                                </label>
+                                <input
+                                    type="text"
+                                    id="productNumber"
+                                    required
+                                    value={formData.productNumber}
+                                    onChange={(e) => setFormData({ ...formData, productNumber: e.target.value })}
+                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                    placeholder="Enter product number"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-6 mt-6">
+                            {settings.showSalesPrice && (
+                                <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                                    <label htmlFor="salesPrice" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Sales Price *
+                                    </label>
+                                    <input
+                                        type="number"
+                                        id="salesPrice"
+                                        value={formData.salesPrice || ""}
+                                        onChange={(e) => setFormData({ ...formData, salesPrice: Number.parseFloat(e.target.value) })}
+                                        className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                        placeholder="Enter sales price"
+                                    />
+                                </div>
+                            )}
+
+                            {settings.showCostPrice && (
+                                <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                                    <label htmlFor="costPrice" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Cost Price *
+                                    </label>
+                                    <input
+                                        type="number"
+                                        id="costPrice"
+                                        value={formData.costPrice || ""}
+                                        onChange={(e) => setFormData({ ...formData, costPrice: Number.parseFloat(e.target.value) })}
+                                        className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                        placeholder="Enter cost price"
+                                    />
+                                </div>
+                            )}
+
+                            {settings.showDiscountPercentage && (
+                                <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                                    <label htmlFor="discountPercentage" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Discount Percentage
+                                    </label>
+                                    <input
+                                        type="number"
+                                        id="discountPercentage"
+                                        value={formData.discountPercentage ?? ""}
+                                        onChange={(e) =>
+                                            setFormData({ ...formData, discountPercentage: e.target.value ? Number.parseFloat(e.target.value) : 0 })
+                                        }
+                                        className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                        placeholder="Enter discount %"
+                                    />
+                                </div>
+                            )}
+
+                            {settings.showUnit && (
+                                <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                                    <label htmlFor="unitId" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Unit *
+                                    </label>
+                                    <select
+                                        id="unitId"
+                                        value={formData.unitId || ""}
+                                        onChange={(e) => setFormData({ ...formData, unitId: e.target.value })}
+                                        className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                    >
+                                        <option value="">-- Select unit --</option>
+                                        {units.map((unit) => (
+                                            <option key={unit.id} value={unit.id}>
+                                                {unit.name} {unit.symbol ? `(${unit.symbol})` : ""}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+
+                            {settings.showProductGroup && (
+                                <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                                    <label htmlFor="productGroupId" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Product Group *
+                                    </label>
+                                    <select
+                                        id="productGroupId"
+                                        value={formData.productGroupId || ""}
+                                        onChange={(e) => setFormData({ ...formData, productGroupId: e.target.value })}
+                                        className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                    >
+                                        <option value="">--Select Product Group--</option>
+                                        {productGroups.map((pg) => (
+                                            <option key={pg.id} value={pg.id}>
+                                                {pg.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Sales Account - always visible */}
+                        <div className='mt-4'>
+                            <label htmlFor="salesAccountId" className="block text-sm font-medium text-gray-700 mb-2">
+                                Sales Account *
                             </label>
-                            <input
-                                type="text"
-                                id="productName"
+                            <select
+                                id="salesAccountId"
                                 required
-                                value={formData.productName}
-                                onChange={(e) => setFormData({ ...formData, productName: e.target.value })}
-                                className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                                placeholder="Enter product name"
-                            />
+                                value={formData.salesAccountId || ""}
+                                onChange={(e) => setFormData({ ...formData, salesAccountId: e.target.value })}
+                                className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                            >
+                                <option value="">--Select Sales Account--</option>
+                                {salesAccounts.map((sa) => (
+                                    <option key={sa.id} value={sa.id}>
+                                        {sa.accountNumber} - {sa.accountName}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
 
-                        <div>
-                            <label htmlFor="productNumber" className="block text-sm font-medium text-gray-700 mb-2">
-                                Product Number *
-                            </label>
-                            <input
-                                type="text"
-                                id="productNumber"
-                                required
-                                value={formData.productNumber}
-                                onChange={(e) => setFormData({ ...formData, productNumber: e.target.value })}
-                                className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                                placeholder="Enter product number"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Sales Price & Cost Price */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label htmlFor="salesPrice" className="block text-sm font-medium text-gray-700 mb-2">
-                                Sales Price *
-                            </label>
-                            <input
-                                type="number"
-                                id="salesPrice"
-                                value={formData.salesPrice || ""}
-                                onChange={(e) => setFormData({ ...formData, salesPrice: parseFloat(e.target.value) })}
-                                className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                                placeholder="Enter sales price"
-                            />
-                        </div>
-
-                        <div>
-                            <label htmlFor="costPrice" className="block text-sm font-medium text-gray-700 mb-2">
-                                Cost Price *
-                            </label>
-                            <input
-                                type="number"
-                                id="costPrice"
-                                value={formData.costPrice || ""}
-                                onChange={(e) => setFormData({ ...formData, costPrice: parseFloat(e.target.value) })}
-                                className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                                placeholder="Enter cost price"
-                            />
+                        {/* Form Actions */}
+                        <div className="flex items-center justify-end gap-4 pt-6 border-t border-gray-200">
+                            <Link
+                                href="/dashboard/products"
+                                className="px-6 py-3 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium hover:bg-gray-50 transition-colors duration-200"
+                            >
+                                Cancel
+                            </Link>
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="px-6 py-3 rounded-xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                            >
+                                {loading ? 'Updating...' : 'Update Product'}
+                            </button>
                         </div>
                     </div>
 
-                    {/* Discount & Active */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label htmlFor="discountPercentage" className="block text-sm font-medium text-gray-700 mb-2">
-                                Discount Percentage
-                            </label>
-                            <input
-                                type="number"
-                                id="discountPercentage"
-                                value={formData.discountPercentage ?? ''}
-                                onChange={(e) => setFormData({ ...formData, discountPercentage: e.target.value ? parseFloat(e.target.value) : 0 })}
-                                className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                                placeholder="Enter discount %"
-                            />
-                        </div>
-
-                        <div className="flex items-center gap-3 mt-8">
-                            <input
-                                id="active"
-                                type="checkbox"
-                                checked={formData.active}
-                                onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
-                                className="h-5 w-5 text-[#31BCFF] border-gray-300 rounded focus:ring-[#31BCFF]/50"
-                            />
-                            <label htmlFor="active" className="text-sm font-medium text-gray-700">
-                                Active
-                            </label>
-                        </div>
-                    </div>
-
-                    {/* Unit */}
-                    <div>
-                        <label htmlFor="unitId" className="block text-sm font-medium text-gray-700 mb-2">
-                            Unit *
-                        </label>
-                        <select
-                            id="unitId"
-                            required
-                            value={formData.unitId || ''}
-                            onChange={(e) => setFormData({ ...formData, unitId: e.target.value })}
-                            className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                        >
-                            <option value="">Select Unit</option>
-                            {units.map((unit) => (
-                                <option key={unit.id} value={unit.id}>
-                                    {unit.name} {unit.symbol ? `(${unit.symbol})` : ''}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {/* Product Group */}
-                    <div>
-                        <label htmlFor="productGroupId" className="block text-sm font-medium text-gray-700 mb-2">
-                            Product Group *
-                        </label>
-                        <select
-                            id="productGroupId"
-                            required
-                            value={formData.productGroupId || ''}
-                            onChange={(e) => setFormData({ ...formData, productGroupId: e.target.value })}
-                            className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                        >
-                            <option value="">Select Product Group</option>
-                            {productGroups.map((pg) => (
-                                <option key={pg.id} value={pg.id}>
-                                    {pg.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {/* Sales Account */}
-                    <div>
-                        <label htmlFor="salesAccountId" className="block text-sm font-medium text-gray-700 mb-2">
-                            Sales Account *
-                        </label>
-                        <select
-                            id="salesAccountId"
-                            required
-                            value={formData.salesAccountId || ''}
-                            onChange={(e) => setFormData({ ...formData, salesAccountId: e.target.value })}
-                            className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                        >
-                            <option value="">Select Sales Account</option>
-                            {salesAccounts.map((sa) => (
-                                <option key={sa.id} value={sa.id}>
-                                    {sa.accountNumber} - {sa.accountName}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {/* Form Actions */}
-                    <div className="flex items-center justify-end gap-4 pt-6 border-t border-gray-200">
-                        <Link
-                            href="/dashboard/products"
-                            className="px-6 py-3 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium hover:bg-gray-50 transition-colors duration-200"
-                        >
-                            Cancel
-                        </Link>
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="px-6 py-3 rounded-xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                        >
-                            {loading ? 'Updating...' : 'Update Product'}
-                        </button>
-                    </div>
                 </form>
             </div>
         </div>

@@ -136,6 +136,7 @@ model Business {
   ledgerAccounts           LedgerAccount[]
   ledgerEntries            LedgerEntry[]
   vouchers                 Voucher[]
+  productFormSettings      ProductFormSettings[]                          
 }
 
 model Employee {
@@ -848,6 +849,26 @@ model CustomerGroup {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("customer_groups")
+}
+
+model ProductFormSettings {
+  id         String   @id @default(cuid())
+  businessId String
+  deviceId   String?
+  
+  showSalesPrice       Boolean @default(true)
+  showCostPrice        Boolean @default(true)
+  showDiscountPercentage     Boolean @default(true)
+  showUnit             Boolean @default(true)
+  showProductGroup     Boolean @default(true)
+  
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  
+  @@unique([businessId])
+  @@index([businessId])
 }
 
 model Product {
