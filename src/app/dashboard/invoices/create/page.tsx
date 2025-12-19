@@ -176,6 +176,13 @@ export default function CreateInvoicePage() {
         }
     }, [copyMode, invoiceId]);
 
+    useEffect(() => {
+        // Refetch customers when dialog closes after successful save
+        if (!customerDialog && !loadingCustomer) {
+            fetchCustomers()
+        }
+    }, [customerDialog, loadingCustomer])
+
 
     // Calculate paidAt whenever sentAt or dueDay changes
     useEffect(() => {

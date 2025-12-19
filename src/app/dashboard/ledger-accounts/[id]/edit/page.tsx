@@ -153,7 +153,7 @@ export default function EditLedgerAccountPage({ params }: { params: Promise<{ id
 
                         <div>
                             <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                                Name *
+                                Account Name *
                             </label>
                             <input
                                 type="text"

@@ -252,13 +252,13 @@ export default function LedgerAccountsPage() {
                                         <td className="px-6 py-4">
                                             {account.businessId !== null ? (
                                                 <div className="flex items-center justify-end gap-2">
-                                                    <Link
+                                                    {/* <Link
                                                         href={`/dashboard/ledger-accounts/${account.id}/edit`}
                                                         className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
                                                         title="Edit Account"
                                                     >
                                                         <PencilIcon className="h-4 w-4" />
-                                                    </Link>
+                                                    </Link> */}
                                                     <button
                                                         onClick={() => handleDelete(account.id, account.accountNumber)}
                                                         className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
@@ -329,13 +329,13 @@ export default function LedgerAccountsPage() {
                                     <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-200">
                                         {account.businessId !== null ? (
                                             <>
-                                                <Link
+                                                {/* <Link
                                                     href={`/dashboard/ledger-accounts/${account.id}/edit`}
                                                     className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
                                                     title="Edit Account"
                                                 >
                                                     <PencilIcon className="h-5 w-5" />
-                                                </Link>
+                                                </Link> */}
                                                 <button
                                                     onClick={() => handleDelete(account.id, account.accountNumber)}
                                                     className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"

@@ -102,7 +102,7 @@ export default function CustomerDialog({
                     {/* Header */}
                     <div className="flex items-center justify-between mb-6">
                         <Dialog.Title className="text-2xl font-semibold">
-                            Customer details
+                            Create New Customer
                         </Dialog.Title>
 
                         <Dialog.Close asChild>
@@ -140,7 +140,7 @@ export default function CustomerDialog({
                                 value={form.deliveryAddress}
                                 onChange={(v) => updateField("deliveryAddress", v)}
                             />
-                            <Input className="md:col-span-3" label="Customer Contact Name" value={form.customerContactName} onChange={(v) => updateField("customerContactName", v)} />
+                            {/* <Input className="md:col-span-3" label="Customer Contact Name" value={form.customerContactName} onChange={(v) => updateField("customerContactName", v)} /> */}
 
                         </div>
 
