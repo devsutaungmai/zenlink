@@ -1,35 +1,70 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/shared/lib/prisma'
 import { getCurrentUserOrEmployee, getCurrentUser } from '@/shared/lib/auth'
+import { getSchedulableEmployees, EmployeeWithUser } from '@/shared/lib/employeeProfileHelper'
 
-async function getAccessibleDepartmentIds(auth: any): Promise<string[] | null> {
+interface VisibilityResult {
+  accessibleDepartmentIds: string[] | null
+  canViewContact: boolean
+  roleIds: string[]
+}
+
+async function getVisibilitySettings(auth: any, businessId: string): Promise<VisibilityResult> {
+  const settings = await prisma.employeeSettings.findUnique({
+    where: { businessId }
+  })
+  
+  const rolesCanViewEmployees = settings?.rolesCanViewEmployees || []
+  const limitVisibilityByDepartment = settings?.limitVisibilityByDepartment ?? false
+  const employeesCanSeeContactInfo = settings?.employeesCanSeeContactInfo ?? true
+  
   if (auth.type === 'user') {
     const user = auth.data as any
 
     if (user.role === 'ADMIN') {
-      return null
+      return { accessibleDepartmentIds: null, canViewContact: true, roleIds: [] }
     }
 
-    if (user.roleId) {
-      const userWithRole = await prisma.user.findUnique({
-        where: { id: user.id },
-        include: {
-          assignedRole: {
-            include: {
-              departments: {
-                select: { departmentId: true }
-              }
+    const userWithRole = await prisma.user.findUnique({
+      where: { id: user.id },
+      include: {
+        assignedRole: {
+          include: {
+            departments: { select: { departmentId: true } },
+            permissions: { 
+              include: { 
+                permission: { select: { code: true } } 
+              } 
             }
           }
         }
-      })
+      }
+    })
 
-      if (userWithRole?.assignedRole?.departments.length) {
-        return userWithRole.assignedRole.departments.map(d => d.departmentId)
+    const roleId = userWithRole?.assignedRole?.id
+    const permissionCodes = userWithRole?.assignedRole?.permissions?.map(p => p.permission.code) || []
+    
+    const hasViewAllPermission = permissionCodes.includes('employees.view_all')
+    const hasViewContactPermission = permissionCodes.includes('employees.view_contact')
+    const isInRolesCanView = roleId ? rolesCanViewEmployees.includes(roleId) : false
+
+    if (hasViewAllPermission || isInRolesCanView) {
+      return { 
+        accessibleDepartmentIds: null, 
+        canViewContact: hasViewContactPermission || employeesCanSeeContactInfo,
+        roleIds: roleId ? [roleId] : []
+      }
+    }
+
+    if (userWithRole?.assignedRole?.departments.length) {
+      return { 
+        accessibleDepartmentIds: userWithRole.assignedRole.departments.map(d => d.departmentId),
+        canViewContact: hasViewContactPermission || employeesCanSeeContactInfo,
+        roleIds: roleId ? [roleId] : []
       }
     }
     
-    return null
+    return { accessibleDepartmentIds: null, canViewContact: true, roleIds: roleId ? [roleId] : [] }
   } else {
     const employee = auth.data as any
     
@@ -38,13 +73,47 @@ async function getAccessibleDepartmentIds(auth: any): Promise<string[] | null> {
       include: {
         role: {
           include: {
-            departments: {
-              select: { departmentId: true }
+            departments: { select: { departmentId: true } },
+            permissions: { 
+              include: { 
+                permission: { select: { code: true } } 
+              } 
             }
           }
         }
       }
     })
+
+    const roleIds = employeeRoles.map(er => er.roleId)
+    const allPermissionCodes = employeeRoles.flatMap(er => er.role.permissions.map(p => p.permission.code))
+    
+    const hasViewAllPermission = allPermissionCodes.includes('employees.view_all')
+    const hasViewContactPermission = allPermissionCodes.includes('employees.view_contact')
+    const isInRolesCanView = roleIds.some(rid => rolesCanViewEmployees.includes(rid))
+
+    if (hasViewAllPermission || isInRolesCanView) {
+      return { 
+        accessibleDepartmentIds: null, 
+        canViewContact: hasViewContactPermission || employeesCanSeeContactInfo,
+        roleIds
+      }
+    }
+
+    if (limitVisibilityByDepartment) {
+      const employeeDepts = await prisma.employeeDepartment.findMany({
+        where: { employeeId: employee.id },
+        select: { departmentId: true }
+      })
+      const deptIds = employeeDepts.map(d => d.departmentId)
+      if (employee.departmentId && !deptIds.includes(employee.departmentId)) {
+        deptIds.push(employee.departmentId)
+      }
+      return { 
+        accessibleDepartmentIds: deptIds.length > 0 ? deptIds : null, 
+        canViewContact: hasViewContactPermission || employeesCanSeeContactInfo,
+        roleIds
+      }
+    }
 
     const departmentSet = new Set<string>()
     let hasUnrestrictedRole = false
@@ -59,7 +128,11 @@ async function getAccessibleDepartmentIds(auth: any): Promise<string[] | null> {
       }
     }
 
-    return hasUnrestrictedRole ? null : Array.from(departmentSet)
+    return { 
+      accessibleDepartmentIds: hasUnrestrictedRole ? null : Array.from(departmentSet),
+      canViewContact: hasViewContactPermission || employeesCanSeeContactInfo,
+      roleIds
+    }
   }
 }
 
@@ -78,6 +151,8 @@ export async function GET(request: Request) {
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '50')
     const search = searchParams.get('search')
+    const schedulableOnly = searchParams.get('schedulable') === 'true'
+    const includeProfileStatus = searchParams.get('includeProfileStatus') === 'true'
 
     let businessId: string
     if (auth.type === 'user') {
@@ -86,7 +161,8 @@ export async function GET(request: Request) {
       businessId = (auth.data as any).user.businessId
     }
 
-    const accessibleDepartmentIds = await getAccessibleDepartmentIds(auth)
+    const visibility = await getVisibilitySettings(auth, businessId)
+    const { accessibleDepartmentIds, canViewContact } = visibility
 
     const whereClause: any = {
       user: {
@@ -128,7 +204,7 @@ export async function GET(request: Request) {
 
     const totalCount = await prisma.employee.count({ where: whereClause })
 
-    const employees = await prisma.employee.findMany({
+    let employees = await prisma.employee.findMany({
       where: whereClause,
       select: {
         id: true,
@@ -145,6 +221,13 @@ export async function GET(request: Request) {
         salaryRate: true,
         employeeGroupId: true,
         departmentId: true,
+        user: (schedulableOnly || includeProfileStatus) ? {
+          select: {
+            id: true,
+            pin: true,
+            password: true
+          }
+        } : false,
         department: {
           select: {
             id: true,
@@ -207,7 +290,63 @@ export async function GET(request: Request) {
       take: limit
     })
 
-    return NextResponse.json(employees, {
+    if (schedulableOnly) {
+      const schedulable = await getSchedulableEmployees(businessId, employees as EmployeeWithUser[])
+      employees = schedulable as typeof employees
+    }
+
+    if (includeProfileStatus) {
+      const settings = await prisma.employeeSettings.findUnique({
+        where: { businessId }
+      })
+      
+      const employeesWithStatus = employees.map((emp: any) => {
+        const hasPinSet = !!(emp.user?.pin && emp.user.pin.length > 0)
+        const isInvited = !!(emp.user?.password && emp.user.password.length > 0)
+        const issues: string[] = []
+        
+        if (!hasPinSet) issues.push('PIN not set')
+        if (!isInvited) issues.push('Not invited to system')
+        
+        const { user, ...empWithoutUser } = emp
+        let resultEmp = empWithoutUser
+        if (!canViewContact) {
+          const { email, mobile, ...withoutContact } = empWithoutUser
+          resultEmp = withoutContact
+        }
+        return {
+          ...resultEmp,
+          profileStatus: {
+            isComplete: issues.length === 0,
+            hasPinSet,
+            isInvited,
+            issues,
+            behavior: settings?.incompleteProfileBehavior || 'NONE'
+          }
+        }
+      })
+      
+      return NextResponse.json(employeesWithStatus, {
+        headers: {
+          'Cache-Control': 'private, no-cache, no-store, must-revalidate',
+          'X-Total-Count': totalCount.toString(),
+          'X-Page': page.toString(),
+          'X-Per-Page': limit.toString(),
+          'X-Total-Pages': Math.ceil(totalCount / limit).toString()
+        }
+      })
+    }
+
+    const employeesWithoutUserData = employees.map((emp: any) => {
+      const { user, ...rest } = emp
+      if (!canViewContact) {
+        const { email, mobile, ...withoutContact } = rest
+        return withoutContact
+      }
+      return rest
+    })
+
+    return NextResponse.json(employeesWithoutUserData, {
       headers: {
         'Cache-Control': 'private, no-cache, no-store, must-revalidate',
         'X-Total-Count': totalCount.toString(),
@@ -237,7 +376,32 @@ export async function POST(request: Request) {
     }
 
     const data = await request.json()
-    const requiredFields = ['firstName', 'lastName', 'departmentId']
+
+    // Fetch employee settings for defaults and validation
+    const employeeSettings = await prisma.employeeSettings.findUnique({
+      where: { businessId: currentUser.businessId }
+    })
+
+    // Apply default department if not provided and settings have a default
+    if (!data.departmentId && !data.departmentIds?.length && employeeSettings?.defaultDepartmentId) {
+      data.departmentId = employeeSettings.defaultDepartmentId
+    }
+
+    // Apply default employee group if not provided
+    if (!data.employeeGroupId && !data.employeeGroupIds?.length && employeeSettings?.defaultEmployeeGroupId) {
+      data.employeeGroupId = employeeSettings.defaultEmployeeGroupId
+    }
+
+    // Apply default role if not provided
+    if (!data.roleIds?.length && employeeSettings?.defaultRoleId) {
+      data.roleIds = [employeeSettings.defaultRoleId]
+    }
+
+    const requiredFields: string[] = []
+    if (employeeSettings?.requireFirstName !== false) requiredFields.push('firstName')
+    if (employeeSettings?.requireLastName !== false) requiredFields.push('lastName')
+    if (employeeSettings?.requireDepartment !== false) requiredFields.push('departmentId')
+    
     const missingFields = requiredFields.filter(field => !data[field])
     
     if (missingFields.length > 0) {
@@ -333,34 +497,44 @@ export async function POST(request: Request) {
       }
     })
 
+    const primaryDepartmentId = Array.isArray(data.departmentIds) && data.departmentIds.length > 0 
+      ? data.departmentIds[0] 
+      : (data.departmentId || null)
+
+    const departmentsToCreate = Array.isArray(data.departmentIds) && data.departmentIds.length > 0
+      ? data.departmentIds.map((deptId: string, index: number) => ({
+          departmentId: deptId,
+          isPrimary: index === 0
+        }))
+      : data.departmentId 
+        ? [{ departmentId: data.departmentId, isPrimary: true }]
+        : []
+
     const employee = await prisma.employee.create({
       data: {
-        userId: employeeUser.id, // Use the new employee user ID
-        firstName: data.firstName,
-        lastName: data.lastName,
-        birthday: new Date(data.birthday),
-        dateOfHire: new Date(data.dateOfHire),
-        socialSecurityNo: data.socialSecurityNo,
-        address: data.address,
-        mobile: data.mobile,
-        sex: data.sex,
+        userId: employeeUser.id,
+        firstName: data.firstName || '',
+        lastName: data.lastName || '',
+        birthday: data.birthday ? new Date(data.birthday) : new Date(),
+        dateOfHire: data.dateOfHire ? new Date(data.dateOfHire) : new Date(),
+        socialSecurityNo: data.socialSecurityNo || '',
+        address: data.address || '',
+        mobile: data.mobile || '',
+        sex: data.sex || 'OTHER',
         employeeNo: employeeNo,
-        bankAccount: data.bankAccount,
+        bankAccount: data.bankAccount || '',
         hoursPerMonth: parseFloat(data.hoursPerMonth) || 0,
         isTeamLeader: Boolean(data.isTeamLeader),
-        departmentId: Array.isArray(data.departmentIds) ? data.departmentIds[0] : data.departmentId,
-        employeeGroupId: Array.isArray(data.employeeGroupIds) ? data.employeeGroupIds[0] : (data.employeeGroupId || null),
-        email: (!data.email || data.email === '') ? null : data.email, // Convert empty emails to null
+        departmentId: primaryDepartmentId,
+        employeeGroupId: Array.isArray(data.employeeGroupIds) && data.employeeGroupIds.length > 0 ? data.employeeGroupIds[0] : (data.employeeGroupId || null),
+        email: (!data.email || data.email === '') ? null : data.email,
         profilePhoto: data.profilePhoto || null,
         salaryRate: data.salaryRate ? parseFloat(data.salaryRate) : null,
-        departments: {
-          create: Array.isArray(data.departmentIds) 
-            ? data.departmentIds.map((deptId: string, index: number) => ({
-                departmentId: deptId,
-                isPrimary: index === 0
-              }))
-            : [{ departmentId: data.departmentId, isPrimary: true }]
-        },
+        ...(departmentsToCreate.length > 0 && {
+          departments: {
+            create: departmentsToCreate
+          }
+        }),
         employeeGroups: data.employeeGroupIds && Array.isArray(data.employeeGroupIds) && data.employeeGroupIds.length > 0
           ? {
               create: data.employeeGroupIds.map((groupId: string, index: number) => ({

@@ -23,6 +23,8 @@ export const PERMISSIONS = {
   
   // Employees
   EMPLOYEES_VIEW: 'employees.view',
+  EMPLOYEES_VIEW_ALL: 'employees.view_all', // View all employees regardless of department
+  EMPLOYEES_VIEW_CONTACT: 'employees.view_contact', // View contact info (phone, email)
   EMPLOYEES_CREATE: 'employees.create',
   EMPLOYEES_EDIT: 'employees.edit',
   EMPLOYEES_DELETE: 'employees.delete',
@@ -116,6 +118,7 @@ export const PERMISSIONS = {
   SETTINGS_BUSINESS: 'settings.business',
   SETTINGS_LABOR_LAW: 'settings.labor_law',
   SETTINGS_SHIFT_TYPES: 'settings.shift_types',
+  SETTINGS_PEOPLE_GENERAL: 'settings.people_general',
   
   // Categories
   CATEGORIES_VIEW: 'categories.view',
@@ -161,6 +164,18 @@ export const PERMISSION_INFO: Record<Permission, PermissionInfo> = {
     code: PERMISSIONS.EMPLOYEES_VIEW,
     name: 'View Employees',
     description: 'View employee list and basic details',
+    category: PERMISSION_CATEGORIES.EMPLOYEES,
+  },
+  [PERMISSIONS.EMPLOYEES_VIEW_ALL]: {
+    code: PERMISSIONS.EMPLOYEES_VIEW_ALL,
+    name: 'View All Employees',
+    description: 'View all employees regardless of department restrictions',
+    category: PERMISSION_CATEGORIES.EMPLOYEES,
+  },
+  [PERMISSIONS.EMPLOYEES_VIEW_CONTACT]: {
+    code: PERMISSIONS.EMPLOYEES_VIEW_CONTACT,
+    name: 'View Contact Info',
+    description: 'View employee contact information (phone, email)',
     category: PERMISSION_CATEGORIES.EMPLOYEES,
   },
   [PERMISSIONS.EMPLOYEES_CREATE]: {
@@ -589,6 +604,12 @@ export const PERMISSION_INFO: Record<Permission, PermissionInfo> = {
     code: PERMISSIONS.SETTINGS_SHIFT_TYPES,
     name: 'Manage Shift Types',
     description: 'Configure shift types',
+    category: PERMISSION_CATEGORIES.SETTINGS,
+  },
+  [PERMISSIONS.SETTINGS_PEOPLE_GENERAL]: {
+    code: PERMISSIONS.SETTINGS_PEOPLE_GENERAL,
+    name: 'People General Settings',
+    description: 'Configure employee management settings',
     category: PERMISSION_CATEGORIES.SETTINGS,
   },
   

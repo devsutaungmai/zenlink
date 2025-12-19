@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon, PhoneIcon, EyeIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon, PhoneIcon, EyeIcon, QuestionMarkCircleIcon } from '@heroicons/react/24/outline'
 import { useTranslation } from 'react-i18next'
 import Swal from 'sweetalert2'
 import {
@@ -13,6 +13,12 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { Label } from "@/components/ui/label"
 import {
   Pagination,
@@ -35,6 +41,14 @@ import {
 } from "@/components/MobileCardList"
 import { usePermissions } from "@/shared/lib/usePermissions"
 import { PERMISSIONS } from "@/shared/lib/permissions"
+
+interface ProfileStatus {
+  isComplete: boolean
+  hasPinSet: boolean
+  isInvited: boolean
+  issues: string[]
+  behavior: 'SHOW_WARNING' | 'BLOCK_SCHEDULING' | 'NONE'
+}
 
 interface Employee {
   id: string
@@ -74,6 +88,7 @@ interface Employee {
   email?: string
   isTeamLeader: boolean
   dateOfHire: Date
+  profileStatus?: ProfileStatus
 }
 
 export default function EmployeesPage() {
@@ -105,7 +120,7 @@ export default function EmployeesPage() {
       setLoading(true)
       setError(null)
       
-      const response = await fetch('/api/employees')
+      const response = await fetch('/api/employees?includeProfileStatus=true')
       
       if (!response.ok) {
         const errorData = await response.json()
@@ -420,11 +435,27 @@ export default function EmployeesPage() {
                   title={`${employee.firstName} ${employee.lastName}`}
                   subtitle={`${t('employees.table.employee_no')}: ${employee.employeeNo}`}
                   badge={
-                    employee.isTeamLeader ? (
-                      <Badge variant="blue">
-                        {t('employees.table.team_leader')}
-                      </Badge>
-                    ) : null
+                    <>
+                      {employee.isTeamLeader && (
+                        <Badge variant="blue">
+                          {t('employees.table.team_leader')}
+                        </Badge>
+                      )}
+                      {employee.profileStatus && (employee.profileStatus.behavior === 'SHOW_WARNING' || employee.profileStatus.behavior === 'BLOCK_SCHEDULING') && !employee.profileStatus.isComplete && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="cursor-help">
+                                <QuestionMarkCircleIcon className="w-5 h-5 text-amber-500" />
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{employee.profileStatus.issues.join(', ')}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+                    </>
                   }
                 />
 
@@ -606,11 +637,27 @@ export default function EmployeesPage() {
                           <div className="text-sm font-medium text-gray-900">
                             {employee.firstName} {employee.lastName}
                           </div>
-                          {employee.isTeamLeader && (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mt-1">
-                              {t('employees.table.team_leader')}
-                            </span>
-                          )}
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {employee.isTeamLeader && (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                {t('employees.table.team_leader')}
+                              </span>
+                            )}
+                            {employee.profileStatus && (employee.profileStatus.behavior === 'SHOW_WARNING' || employee.profileStatus.behavior === 'BLOCK_SCHEDULING') && !employee.profileStatus.isComplete && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="cursor-help">
+                                      <QuestionMarkCircleIcon className="w-5 h-5 text-amber-500" />
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>{employee.profileStatus.issues.join(', ')}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                          </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">

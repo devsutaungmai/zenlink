@@ -1,8 +1,8 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { z } from 'zod'
 import { Sex } from '@prisma/client'
 import { EmployeeFormData } from './types'
-import { employeeValidationSchema } from './validation'
+import { createEmployeeValidationSchema, EmployeeSettingsForValidation, defaultValidationSettings } from './validation'
 import { parseMobileNumber } from './constants'
 
 interface UseEmployeeFormProps {
@@ -17,6 +17,70 @@ export function useEmployeeForm({ initialData }: UseEmployeeFormProps) {
   const [validatingEmail, setValidatingEmail] = useState(false)
   const [validatingEmployeeNo, setValidatingEmployeeNo] = useState(false)
   const [isFormValid, setIsFormValid] = useState(false)
+  const [validationSettings, setValidationSettings] = useState<EmployeeSettingsForValidation>(defaultValidationSettings)
+  const [settingsLoaded, setSettingsLoaded] = useState(false)
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await fetch('/api/employee-settings')
+        if (res.ok) {
+          const settings = await res.json()
+          setValidationSettings({
+            requireFirstName: settings.requireFirstName ?? defaultValidationSettings.requireFirstName,
+            requireLastName: settings.requireLastName ?? defaultValidationSettings.requireLastName,
+            requireBirthday: settings.requireBirthday ?? defaultValidationSettings.requireBirthday,
+            requireGender: settings.requireGender ?? defaultValidationSettings.requireGender,
+            requireAddress: settings.requireAddress ?? defaultValidationSettings.requireAddress,
+            requirePhone: settings.requirePhone ?? defaultValidationSettings.requirePhone,
+            requireEmail: settings.requireEmail ?? defaultValidationSettings.requireEmail,
+            requireSocialSecurityNo: settings.requireSocialSecurityNo ?? defaultValidationSettings.requireSocialSecurityNo,
+            requireEmployeeNo: settings.requireEmployeeNo ?? defaultValidationSettings.requireEmployeeNo,
+            requireDateOfHire: settings.requireDateOfHire ?? defaultValidationSettings.requireDateOfHire,
+            requireHoursPerMonth: settings.requireHoursPerMonth ?? defaultValidationSettings.requireHoursPerMonth,
+            requireBankAccount: settings.requireBankAccount ?? defaultValidationSettings.requireBankAccount,
+            requireDepartment: settings.requireDepartment ?? defaultValidationSettings.requireDepartment,
+            requireSalaryRate: settings.requireSalaryRate ?? defaultValidationSettings.requireSalaryRate,
+          })
+          
+          // Apply default values only for new employee (no initialData)
+          if (!initialData) {
+            setFormData(prev => {
+              const updates: Partial<EmployeeFormData> = {}
+              
+              if (settings.defaultDepartmentId && prev.departmentIds.length === 0) {
+                updates.departmentIds = [settings.defaultDepartmentId]
+                updates.departmentId = settings.defaultDepartmentId
+              }
+              
+              if (settings.defaultEmployeeGroupId && prev.employeeGroupIds.length === 0) {
+                updates.employeeGroupIds = [settings.defaultEmployeeGroupId]
+              }
+              
+              if (settings.defaultRoleId && prev.roleIds.length === 0) {
+                updates.roleIds = [settings.defaultRoleId]
+              }
+              
+              if (Object.keys(updates).length > 0) {
+                return { ...prev, ...updates }
+              }
+              return prev
+            })
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch employee settings:', error)
+      } finally {
+        setSettingsLoaded(true)
+      }
+    }
+    fetchSettings()
+  }, [initialData])
+
+  const validationSchema = useMemo(() => 
+    createEmployeeValidationSchema(validationSettings), 
+    [validationSettings]
+  )
   
   const ssnValidationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const emailValidationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -83,15 +147,15 @@ export function useEmployeeForm({ initialData }: UseEmployeeFormProps) {
 
   const validateForm = async (): Promise<boolean> => {
     try {
-      await employeeValidationSchema.parseAsync(formData)
+      await validationSchema.parseAsync(formData)
 
       const customFieldErrors: Record<string, string> = {}
 
-      if (formData.mobile && formData.mobile.length !== 8) {
+      if (validationSettings.requirePhone && formData.mobile && formData.mobile.length !== 8) {
         customFieldErrors.mobile = 'Mobile number must contain exactly 8 digits'
       }
 
-      if (formData.salaryRate !== undefined && formData.salaryRate !== null && formData.salaryRate <= 0) {
+      if (validationSettings.requireSalaryRate && formData.salaryRate !== undefined && formData.salaryRate !== null && formData.salaryRate <= 0) {
         customFieldErrors.salaryRate = 'Salary rate must be greater than 0'
       }
 
@@ -145,7 +209,7 @@ export function useEmployeeForm({ initialData }: UseEmployeeFormProps) {
       }
 
       const numericValue = typeof value === 'number' ? value : Number(value)
-      if (Number.isNaN(numericValue) || numericValue <= 0) {
+      if (validationSettings.requireSalaryRate && (Number.isNaN(numericValue) || numericValue <= 0)) {
         setValidationErrors(prev => ({ ...prev, salaryRate: 'Salary rate must be greater than 0' }))
       } else {
         setValidationErrors(prev => ({ ...prev, salaryRate: '' }))
@@ -154,7 +218,7 @@ export function useEmployeeForm({ initialData }: UseEmployeeFormProps) {
     }
 
     try {
-      const fieldSchema = employeeValidationSchema.shape[fieldName as keyof typeof employeeValidationSchema.shape]
+      const fieldSchema = validationSchema.shape[fieldName as keyof typeof validationSchema.shape]
       if (fieldSchema) {
         fieldSchema.parse(value)
         if (!['socialSecurityNo', 'email', 'employeeNo'].includes(fieldName)) {
@@ -391,5 +455,7 @@ export function useEmployeeForm({ initialData }: UseEmployeeFormProps) {
     validateSocialSecurityNumber,
     validateEmailUniqueness,
     validateEmployeeNumberUniqueness,
+    validationSettings,
+    settingsLoaded,
   }
 }

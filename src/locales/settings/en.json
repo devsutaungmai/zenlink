@@ -251,8 +251,82 @@
     },
     "general_setting": {
       "title": "People - General",
-      "description": "General people management settings",
-      "coming_soon": "This punch clock feature is coming soon."
+      "description": "Configure global employee management settings that apply across your organization.",
+      "loading": "Loading settings...",
+      "unsaved_changes": "Unsaved Changes",
+      "required_fields": {
+        "title": "Required Profile Fields",
+        "description": "Define which fields are mandatory for all employees.",
+        "first_name": "First Name",
+        "last_name": "Last Name",
+        "birthday": "Birthday",
+        "gender": "Gender",
+        "address": "Address",
+        "phone": "Phone Number",
+        "email": "Email",
+        "ssn": "Social Security Number",
+        "employee_no": "Employee Number",
+        "date_of_hire": "Date of Hire",
+        "hours_per_month": "Hours Per Month",
+        "bank_account": "Bank Account",
+        "department": "Department",
+        "salary_rate": "Salary Rate",
+        "incomplete_behavior": "Incomplete Profile Behavior",
+        "behavior_options": {
+          "show_warning": "Show warning on incomplete profiles",
+          "block_scheduling": "Block scheduling for incomplete profiles",
+          "none": "No action"
+        }
+      },
+      "defaults": {
+        "title": "Default Settings for New Employees",
+        "description": "Set default values applied when creating new employees.",
+        "department": "Default Department",
+        "employee_group": "Default Employee Group",
+        "role": "Default Role",
+        "select_department": "Select department",
+        "select_group": "Select group",
+        "select_role": "Select role",
+        "no_default": "No default"
+      },
+      "visibility": {
+        "title": "Visibility & Access Rules",
+        "description": "Control how employees can view other employees' information.",
+        "roles_can_view": "Roles that can view all employees",
+        "roles_hint": "Select which roles can view the full employee list",
+        "see_contact_info": "Employees can see colleague contact info",
+        "see_contact_info_hint": "Allow employees to view contact details of their colleagues",
+        "limit_by_department": "Limit visibility by department",
+        "limit_by_department_hint": "Employees can only see colleagues in their own department"
+      },
+      "onboarding": {
+        "title": "Employee Onboarding Rules",
+        "description": "Configure requirements for new employee activation.",
+        "required_before_active": "Required fields before employee becomes active",
+        "manager_approval": "Require manager approval",
+        "manager_approval_hint": "New employees need manager approval before becoming active",
+        "send_reminder": "Send reminder for missing info",
+        "send_reminder_hint": "Automatically remind employees to complete their profile",
+        "reminder_days": "Days after hire to send reminder"
+      },
+      "preferences": {
+        "title": "General HR Preferences",
+        "description": "Configure general employee management preferences.",
+        "default_language": "Default language for new employees",
+        "notifications_enabled": "Enable employee notifications",
+        "notifications_hint": "Allow employees to receive system notifications",
+        "can_edit_profile": "Employees can edit their own profile",
+        "can_edit_profile_hint": "Allow employees to update their personal information",
+        "editable_fields": "Fields employees can edit"
+      },
+      "buttons": {
+        "save": "Save Settings",
+        "saving": "Saving..."
+      },
+      "messages": {
+        "saved": "Employee settings saved successfully!",
+        "error": "Failed to save settings. Please try again."
+      }
     },
     "contract_rules_setting": {
       "title": "People - Contract Rules",

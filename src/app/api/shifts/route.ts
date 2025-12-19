@@ -4,6 +4,7 @@ import { getCurrentUser, getCurrentUserOrEmployee } from '@/shared/lib/auth'
 import { SMSService, NotificationService } from '@/shared/lib/notifications'
 import { hasAnyServerPermission } from '@/shared/lib/serverPermissions'
 import { PERMISSIONS } from '@/shared/lib/permissions'
+import { canEmployeeBeScheduled } from '@/shared/lib/employeeProfileHelper'
 import jwt from 'jsonwebtoken'
 import { cookies } from 'next/headers'
 
@@ -350,6 +351,22 @@ export async function POST(req: Request) {
         return NextResponse.json(
           { error: 'Employee not found or access denied' },
           { status: 403 }
+        )
+      }
+
+      // Check if employee profile is complete enough for scheduling
+      const schedulingCheck = await canEmployeeBeScheduled(currentUser.businessId, {
+        address: employee.address,
+        bankAccount: employee.bankAccount,
+        mobile: employee.mobile,
+        email: employee.email,
+        socialSecurityNo: employee.socialSecurityNo
+      })
+
+      if (!schedulingCheck.allowed) {
+        return NextResponse.json(
+          { error: schedulingCheck.reason || 'Employee profile incomplete' },
+          { status: 400 }
         )
       }
     }

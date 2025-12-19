@@ -286,7 +286,13 @@ export default function SchedulePage() {
 
   const fetchEmployees = async () => {
     try {
-      const res = await fetch('/api/employees', {
+      // Check employee settings for BLOCK_SCHEDULING behavior
+      const settingsRes = await fetch('/api/employee-settings')
+      const settings = settingsRes.ok ? await settingsRes.json() : null
+      const useSchedulableFilter = settings?.incompleteProfileBehavior === 'BLOCK_SCHEDULING'
+      
+      const url = useSchedulableFilter ? '/api/employees?schedulable=true' : '/api/employees'
+      const res = await fetch(url, {
         headers: { 'Cache-Control': 'max-age=300' }
       })
       const data = await res.json()

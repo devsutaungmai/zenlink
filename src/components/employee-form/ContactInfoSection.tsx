@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { ChevronDownIcon, MagnifyingGlassIcon, CheckIcon } from '@heroicons/react/24/outline'
 import { EmployeeFormData } from './types'
 import { countryCodes } from './constants'
+import { EmployeeSettingsForValidation } from './validation'
 
 interface ContactInfoSectionProps {
   formData: EmployeeFormData
@@ -11,6 +12,7 @@ interface ContactInfoSectionProps {
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
   onCountryCodeSelect: (code: string) => void
   readOnly?: boolean
+  validationSettings?: EmployeeSettingsForValidation
 }
 
 export function ContactInfoSection({
@@ -20,6 +22,7 @@ export function ContactInfoSection({
   onChange,
   onCountryCodeSelect,
   readOnly = false,
+  validationSettings,
 }: ContactInfoSectionProps) {
   const { t } = useTranslation()
   const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false)
@@ -53,7 +56,7 @@ export function ContactInfoSection({
     <>
       <div>
         <label className="block text-sm font-medium text-gray-700">
-          {t('employees.form.mobile')} <span className="text-red-500">*</span>
+          {t('employees.form.mobile')} {validationSettings?.requirePhone !== false && <span className="text-red-500">*</span>}
         </label>
         <div className="flex gap-2">
           <div className="relative w-32" ref={dropdownRef}>
@@ -120,7 +123,7 @@ export function ContactInfoSection({
             pattern="[0-9]*"
             maxLength={8}
             className={getFieldStyle('mobile')}
-            required
+            required={validationSettings?.requirePhone !== false}
             disabled={readOnly}
           />
         </div>
@@ -134,7 +137,7 @@ export function ContactInfoSection({
 
       <div>
         <label className="block text-sm font-medium text-gray-700">
-          Email
+          Email {validationSettings?.requireEmail && <span className="text-red-500">*</span>}
         </label>
         <input
           type="email"
