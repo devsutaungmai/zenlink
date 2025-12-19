@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { DatePicker } from '@/components/ui/date-picker'
 import { Sex } from '@prisma/client'
 import { EmployeeFormData } from './types'
+import { EmployeeSettingsForValidation } from './validation'
 
 interface PersonalInfoSectionProps {
   formData: EmployeeFormData
@@ -11,6 +12,7 @@ interface PersonalInfoSectionProps {
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void
   onDateChange: (date: Date | null, fieldName: 'birthday' | 'dateOfHire') => void
   readOnly?: boolean
+  validationSettings?: EmployeeSettingsForValidation
 }
 
 export function PersonalInfoSection({
@@ -20,6 +22,7 @@ export function PersonalInfoSection({
   onChange,
   onDateChange,
   readOnly = false,
+  validationSettings,
 }: PersonalInfoSectionProps) {
   const { t } = useTranslation()
 
@@ -27,7 +30,7 @@ export function PersonalInfoSection({
     <>
       <div>
         <label className="block text-sm font-medium text-gray-700">
-          {t('employees.form.first_name')} <span className="text-red-500">*</span>
+          {t('employees.form.first_name')} {validationSettings?.requireFirstName !== false && <span className="text-red-500">*</span>}
         </label>
         <input
           type="text"
@@ -35,7 +38,7 @@ export function PersonalInfoSection({
           value={formData.firstName}
           onChange={onChange}
           className={getFieldStyle('firstName')}
-          required
+          required={validationSettings?.requireFirstName !== false}
           disabled={readOnly}
         />
         {validationErrors.firstName && (
@@ -45,7 +48,7 @@ export function PersonalInfoSection({
 
       <div>
         <label className="block text-sm font-medium text-gray-700">
-          {t('employees.form.last_name')} <span className="text-red-500">*</span>
+          {t('employees.form.last_name')} {validationSettings?.requireLastName !== false && <span className="text-red-500">*</span>}
         </label>
         <input
           type="text"
@@ -53,7 +56,7 @@ export function PersonalInfoSection({
           value={formData.lastName}
           onChange={onChange}
           className={getFieldStyle('lastName')}
-          required
+          required={validationSettings?.requireLastName !== false}
           disabled={readOnly}
         />
         {validationErrors.lastName && (
@@ -63,7 +66,7 @@ export function PersonalInfoSection({
 
       <div>
         <label className="block text-sm font-medium text-gray-700">
-          {t('employees.form.birthday')} <span className="text-red-500">*</span>
+          {t('employees.form.birthday')} {validationSettings?.requireBirthday !== false && <span className="text-red-500">*</span>}
         </label>
         <DatePicker
           date={formData.birthday}
@@ -84,14 +87,14 @@ export function PersonalInfoSection({
 
       <div>
         <label className="block text-sm font-medium text-gray-700">
-          {t('employees.form.gender')} <span className="text-red-500">*</span>
+          {t('employees.form.gender')} {validationSettings?.requireGender !== false && <span className="text-red-500">*</span>}
         </label>
         <select
           name="sex"
           value={formData.sex}
           onChange={onChange}
           className={getFieldStyle('sex')}
-          required
+          required={validationSettings?.requireGender !== false}
           disabled={readOnly}
         >
           <option value="MALE">{t('employees.form.male')}</option>
@@ -105,7 +108,7 @@ export function PersonalInfoSection({
 
       <div>
         <label className="block text-sm font-medium text-gray-700">
-          {t('employees.form.address')} <span className="text-red-500">*</span>
+          {t('employees.form.address')} {validationSettings?.requireAddress === true && <span className="text-red-500">*</span>}
         </label>
         <input
           type="text"
@@ -113,7 +116,7 @@ export function PersonalInfoSection({
           value={formData.address}
           onChange={onChange}
           className={getFieldStyle('address')}
-          required
+          required={validationSettings?.requireAddress === true}
           disabled={readOnly}
         />
         {validationErrors.address && (

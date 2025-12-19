@@ -137,6 +137,7 @@ model Business {
   ledgerEntries            LedgerEntry[]
   vouchers                 Voucher[]
   productFormSettings      ProductFormSettings[]                          
+  employeeSettings         EmployeeSettings?         @relation("EmployeeSettings")
 }
 
 model Employee {
@@ -154,7 +155,7 @@ model Employee {
   hoursPerMonth       Float?
   dateOfHire          DateTime
   isTeamLeader        Boolean                   @default(false)
-  departmentId        String                    // Kept for backward compatibility
+  departmentId        String?                   // Optional - kept for backward compatibility
   createdAt           DateTime                  @default(now())
   updatedAt           DateTime                  @updatedAt
   employeeGroupId     String?                   // Kept for backward compatibility
@@ -165,7 +166,7 @@ model Employee {
   availabilities      Availability[]
   contractsAsPerson   Contract[]                @relation("ContractPerson")
   contracts           Contract[]
-  department          Department                @relation(fields: [departmentId], references: [id])
+  department          Department?               @relation(fields: [departmentId], references: [id])
   employeeGroup       EmployeeGroup?            @relation("EmployeeToGroup", fields: [employeeGroupId], references: [id])
   user                User                      @relation(fields: [userId], references: [id])
   employeePayRules    EmployeePayRule[]
@@ -1403,4 +1404,60 @@ enum PayCalculationType {
 enum AutoBreakType {
   AUTO_BREAK
   MANUAL_BREAK
+}
+
+enum IncompleteProfileBehavior {
+  SHOW_WARNING
+  BLOCK_SCHEDULING
+  NONE
+}
+
+model EmployeeSettings {
+  id                          String                    @id @default(cuid())
+  businessId                  String                    @unique
+  business                    Business                  @relation("EmployeeSettings", fields: [businessId], references: [id], onDelete: Cascade)
+  
+  // Required Profile Fields
+  requireFirstName            Boolean                   @default(true)
+  requireLastName             Boolean                   @default(true)
+  requireBirthday             Boolean                   @default(true)
+  requireGender               Boolean                   @default(true)
+  requireAddress              Boolean                   @default(false)
+  requirePhone                Boolean                   @default(true)
+  requireEmail                Boolean                   @default(false)
+  requireSocialSecurityNo     Boolean                   @default(false)
+  requireEmployeeNo           Boolean                   @default(true)
+  requireDateOfHire           Boolean                   @default(true)
+  requireHoursPerMonth        Boolean                   @default(true)
+  requireBankAccount          Boolean                   @default(false)
+  requireDepartment           Boolean                   @default(true)
+  requireSalaryRate           Boolean                   @default(false)
+  incompleteProfileBehavior   IncompleteProfileBehavior @default(SHOW_WARNING)
+  
+  // Default Settings for New Employees
+  defaultDepartmentId         String?
+  defaultEmployeeGroupId      String?
+  defaultRoleId               String?
+  
+  // Visibility & Access Rules
+  rolesCanViewEmployees       String[]                  @default([])
+  employeesCanSeeContactInfo  Boolean                   @default(true)
+  limitVisibilityByDepartment Boolean                   @default(false)
+  
+  // Onboarding Rules
+  onboardingRequiredFields    String[]                  @default([])
+  requireManagerApproval      Boolean                   @default(false)
+  sendMissingInfoReminder     Boolean                   @default(true)
+  reminderDaysAfterHire       Int                       @default(7)
+  
+  // General HR Preferences
+  defaultLanguage             String                    @default("en")
+  employeeNotificationsEnabled Boolean                  @default(true)
+  employeesCanEditProfile     Boolean                   @default(true)
+  employeeEditableFields      String[]                  @default(["phone", "address", "profilePhoto"])
+  
+  createdAt                   DateTime                  @default(now())
+  updatedAt                   DateTime                  @updatedAt
+
+  @@index([businessId])
 }

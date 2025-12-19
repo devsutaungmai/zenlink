@@ -21,6 +21,7 @@ import PunchClockAccessSettings from '@/components/PunchClockAccessSettings'
 import BusinessInfoSettings from '@/components/BusinessInfoSettings'
 import ContractTemplateForm from '@/components/ContractTemplateForm'
 import ShiftTypeSettings from '@/components/ShiftTypeSettings'
+import PeopleGeneralSettings from '@/components/PeopleGeneralSettings'
 import { useTranslation } from 'react-i18next'
 import { usePermissions } from '@/shared/lib/usePermissions'
 import { PERMISSIONS } from '@/shared/lib/permissions'
@@ -56,6 +57,7 @@ export default function SettingsPage() {
   const canManagePunchClock = hasPermission(PERMISSIONS.PUNCH_CLOCK_SETTINGS)
   const canManageBusiness = hasPermission(PERMISSIONS.SETTINGS_BUSINESS)
   const canManageShiftTypes = hasPermission(PERMISSIONS.SETTINGS_SHIFT_TYPES)
+  const canManagePeopleGeneral = hasPermission(PERMISSIONS.SETTINGS_PEOPLE_GENERAL)
   
   const settingSections = useMemo((): SettingSection[] => {
     const sections: SettingSection[] = []
@@ -115,7 +117,8 @@ export default function SettingsPage() {
           {
             id: 'people-general',
             name: t('people.menu.general.title'),
-            description: t('people.menu.general.description')
+            description: t('people.menu.general.description'),
+            component: PeopleGeneralSettings
           },
           {
             id: 'people-contract-rules',

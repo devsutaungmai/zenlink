@@ -41,6 +41,7 @@ export default function EmployeeForm({
     validateSocialSecurityNumber,
     validateEmailUniqueness,
     validateEmployeeNumberUniqueness,
+    validationSettings,
   } = useEmployeeForm({ initialData })
 
   const getFieldStyle = (fieldName: string) => {
@@ -199,6 +200,7 @@ export default function EmployeeForm({
             onChange={handleChange}
             onDateChange={handleDateChange}
             readOnly={readOnly}
+            validationSettings={validationSettings}
           />
         </div>
       </div>
@@ -250,6 +252,7 @@ export default function EmployeeForm({
             }}
             readOnly={readOnly}
             canViewSensitive={canViewSensitive}
+            validationSettings={validationSettings}
           />
         </div>
       </div>
@@ -264,6 +267,7 @@ export default function EmployeeForm({
             onChange={handleChange}
             onCountryCodeSelect={(code) => setFormData({ ...formData, countryCode: code })}
             readOnly={readOnly}
+            validationSettings={validationSettings}
           />
         </div>
       </div>
