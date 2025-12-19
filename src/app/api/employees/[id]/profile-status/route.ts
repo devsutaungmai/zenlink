@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/shared/lib/auth'
 import { prisma } from '@/shared/lib/prisma'
-import { checkProfileCompleteness } from '@/shared/lib/employeeProfileHelper'
+import { checkEmployeeProfileStatus } from '@/shared/lib/employeeProfileHelper'
 
 export async function GET(
   req: NextRequest,
@@ -19,7 +19,12 @@ export async function GET(
       where: { id },
       include: {
         user: {
-          select: { businessId: true }
+          select: { 
+            id: true,
+            businessId: true,
+            pin: true,
+            password: true
+          }
         }
       }
     })
@@ -28,16 +33,13 @@ export async function GET(
       return NextResponse.json({ error: 'Employee not found' }, { status: 404 })
     }
 
-    if (employee.user.businessId !== currentUser.businessId) {
+    if (employee.user?.businessId !== currentUser.businessId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const profileStatus = await checkProfileCompleteness(currentUser.businessId, {
-      address: employee.address,
-      bankAccount: employee.bankAccount,
-      mobile: employee.mobile,
-      email: employee.email,
-      socialSecurityNo: employee.socialSecurityNo
+    const profileStatus = await checkEmployeeProfileStatus(currentUser.businessId, {
+      id: employee.id,
+      user: employee.user
     })
 
     return NextResponse.json({
