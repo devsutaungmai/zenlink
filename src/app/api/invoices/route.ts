@@ -224,13 +224,19 @@ export async function POST(request: NextRequest) {
         })
 
         if (invoice.status === "SENT") {
-          const voucher = await generateVoucherNumber(businessId, VoucherType.INVOICE);
+          // Generate voucher and update invoice in a transaction
+          const updatedInvoice = await prisma.$transaction(async (tx) => {
+            const voucher = await generateVoucherNumber(businessId, VoucherType.INVOICE);
 
-          await prisma.invoice.update({
-            where: { id: invoice.id },
-            data: { voucherId: voucher.id }
+            const updated = await tx.invoice.update({
+              where: { id: invoice.id },
+              data: { voucherId: voucher.id }
+            });
+
+            return updated;
           });
 
+          // Now the invoice has voucherId committed to DB
           await invoiceToLedgerPosting(invoice.id);
         }
 
