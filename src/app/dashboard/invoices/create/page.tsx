@@ -127,6 +127,7 @@ export default function CreateInvoicePage() {
         showContactPerson: true,
         showDeliveryAddress: true,
         showProject: true,
+        showNote: true
     })
     const onSaveCustomer = async (customer: CustomerFormType) => {
         console.log("CustomerFormData" + JSON.stringify(customer));
@@ -208,6 +209,7 @@ export default function CreateInvoicePage() {
                 showContactPerson: settings.showContactPerson,
                 showDeliveryAddress: settings.showDeliveryAddress,
                 showProject: settings.showProject,
+                showNote: settings.showNote
             })
         }
     }, [settings])
@@ -662,6 +664,21 @@ export default function CreateInvoicePage() {
                                             Delivery Address
                                         </label>
                                     </div>
+
+                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            id="showDeliveryAddress"
+                                            checked={visibleFields.showNote}
+                                            onChange={(e) =>
+                                                setVisibleFields({ ...visibleFields, showNote: e.target.checked })
+                                            }
+                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                                        />
+                                        <label htmlFor="showDeliveryAddress" className="text-base font-medium cursor-pointer flex-1">
+                                            Additional Note
+                                        </label>
+                                    </div>
                                 </div>
 
                                 <div className="flex justify-end gap-3 pt-4 border-t">
@@ -1019,19 +1036,20 @@ export default function CreateInvoicePage() {
                     </div>
 
                     {/* Notes Section */}
-                    <div>
-                        <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
-                            Additional Notes
-                        </label>
-                        <textarea
-                            id="notes"
-                            value={formData.notes || ""}
-                            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                            className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                            placeholder="Enter any additional notes"
-                            rows={3}
-                        />
-                    </div>
+                    {visibleFields.showNote
+                        && <div>
+                            <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
+                                Additional Notes
+                            </label>
+                            <textarea
+                                id="notes"
+                                value={formData.notes || ""}
+                                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                                className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                placeholder="Enter any additional notes"
+                                rows={3}
+                            />
+                        </div>}
                     {/* Summary Calculation */}
                     <InvoiceSummaryCalculation invoiceLines={formData.invoiceLines} />
 

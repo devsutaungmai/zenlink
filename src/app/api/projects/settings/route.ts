@@ -22,33 +22,29 @@ export async function GET(req: NextRequest) {
         const deviceId = searchParams.get('deviceId') || null
 
         // Find existing settings
-        let settings = await prisma.invoiceFormSettings.findUnique({
+        let settings = await prisma.projectFormSettings.findUnique({
             where: {
-                businessId:businessId
+                businessId: businessId
             }
         })
 
         // If no settings exist, create default settings
         if (!settings) {
-            settings = await prisma.invoiceFormSettings.create({
+            settings = await prisma.projectFormSettings.create({
                 data: {
                     businessId,
                     deviceId: deviceId || null,
-                    showContactPerson: true,
-                    showDeliveryAddress: true,
-                    showPaymentTerms: true,
-                    showDepartment: true,
-                    showSeller: true,
-                    showDiscount: true,
-                    showProject: true,
-                    showNote: true
+                    showCategory: true,
+                    showCustomer: true,
+                    showStartDate: true,
+                    showEndDate: true
                 }
             })
         }
 
         return NextResponse.json(settings, { status: 200 })
     } catch (error) {
-        console.error('Error fetching invoice settings:', error)
+        console.error('Error fetching project settings:', error)
         return NextResponse.json(
             { error: 'Failed to fetch settings' },
             { status: 500 }
@@ -69,28 +65,20 @@ export async function POST(req: NextRequest) {
         }
 
         const body = await req.json()
-        
+
         const {
-            showContactPerson,
-            showDeliveryAddress,
-            showPaymentTerms,
-            showDepartment,
-            showSeller,
-            showDiscount,
-            showProject,
-            showNote
+            showCategory,
+            showCustomer,
+            showStartDate,
+            showEndDate
         } = body
 
         // Validate boolean fields
         const booleanFields = {
-            showContactPerson,
-            showDeliveryAddress,
-            showPaymentTerms,
-            showDepartment,
-            showSeller,
-            showDiscount,
-            showProject,
-            showNote
+            showCategory,
+            showCustomer,
+            showStartDate,
+            showEndDate
         }
 
         for (const [key, value] of Object.entries(booleanFields)) {
@@ -103,36 +91,28 @@ export async function POST(req: NextRequest) {
         }
 
         // Upsert settings (update if exists, create if not)
-        const settings = await prisma.invoiceFormSettings.upsert({
+        const settings = await prisma.projectFormSettings.upsert({
             where: {
                 businessId
             },
             update: {
-                showContactPerson,
-                showDeliveryAddress,
-                showPaymentTerms,
-                showDepartment,
-                showSeller,
-                showDiscount,
-                showProject,
-                showNote
+                showCategory,
+                showCustomer,
+                showStartDate,
+                showEndDate
             },
             create: {
                 businessId,
-                showContactPerson,
-                showDeliveryAddress,
-                showPaymentTerms,
-                showDepartment,
-                showSeller,
-                showDiscount,
-                showProject,
-                showNote
+                showCategory,
+                showCustomer,
+                showStartDate,
+                showEndDate
             }
         })
 
         return NextResponse.json(settings, { status: 200 })
     } catch (error) {
-        console.error('Error saving invoice settings:', error)
+        console.error('Error saving project settings:', error)
         return NextResponse.json(
             { error: 'Failed to save settings' },
             { status: 500 }

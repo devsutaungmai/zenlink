@@ -53,21 +53,25 @@ export async function PUT(
         if (!auth) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
+
         let businessId: string
+        let userDepartmentId: string | null = null
+
         if (auth.type === 'user') {
             businessId = (auth.data as any).businessId
+            userDepartmentId = (auth.data as any).departmentId ?? null
         } else {
             const employeeData = auth.data as any
             if (!employeeData.department || !employeeData.department.businessId) {
                 return NextResponse.json({ error: 'Employee department not found' }, { status: 404 })
             }
             businessId = employeeData.department.businessId
+            userDepartmentId = employeeData.departmentId ?? null
         }
 
         if (!businessId) {
             return NextResponse.json({ error: 'Business not found' }, { status: 404 })
         }
-
 
         const body = await request.json()
 
@@ -82,26 +86,52 @@ export async function PUT(
             return NextResponse.json({ error: 'Project not found' }, { status: 404 })
         }
 
-        const customer = await prisma.customer.findFirst({
-            where: {
-                id: existingProject.customerId || "",
-                businessId: businessId
+        // Determine the customerId - use from body if provided, otherwise keep existing
+        const customerId = body.customerId !== undefined ? (body.customerId || null) : existingProject.customerId
+
+        let departmentIdForProject: string | null = null
+
+        if (customerId) {
+            // If customer is provided, use the customer's department
+            const customer = await prisma.customer.findFirst({
+                where: {
+                    id: customerId,
+                    businessId: businessId
+                }
+            })
+
+            if (!customer) {
+                return NextResponse.json({ error: 'Customer not found' }, { status: 404 })
             }
-        })
 
-        if (!customer) {
-            return NextResponse.json({ error: 'Customer not found' }, { status: 404 })
+            departmentIdForProject = customer.departmentId ?? null
+        } else if (userDepartmentId) {
+            // If no customer but user has a department, use that
+            departmentIdForProject = userDepartmentId
+        } else if (existingProject.departmentId) {
+            // Keep existing department if available
+            departmentIdForProject = existingProject.departmentId
+        } else {
+            // Try to get a default department for this business
+            const defaultDepartment = await prisma.department.findFirst({
+                where: { businessId }
+            })
+
+            departmentIdForProject = defaultDepartment?.id ?? null
         }
-
-        const departmentIdofCustomer = customer.departmentId;
-
 
         const project = await prisma.project.update({
             where: { id: id },
             data: {
-                ...body, departmentId: departmentIdofCustomer,
+                name: body.name,
+                projectNumber: body.projectNumber,
+                categoryId: body.categoryId || null,
+                customerId: customerId,
+                departmentId: departmentIdForProject,
                 startDate: body.startDate ? new Date(body.startDate) : null,
-                endDate: body.endDate ? new Date(body.endDate) : null
+                endDate: body.endDate ? new Date(body.endDate) : null,
+                active: body.active !== undefined ? body.active : existingProject.active,
+                status: body.status !== undefined ? body.status : existingProject.status
             }
         })
 
@@ -110,13 +140,12 @@ export async function PUT(
         console.error('Error updating project:', error)
 
         if (error.code === 'P2002') {
-            return NextResponse.json({ error: 'Project name already exists in this department' }, { status: 409 })
+            return NextResponse.json({ error: 'Project number already exists' }, { status: 409 })
         }
 
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }
-
 
 // DELETE /api/customers/[id]
 export async function DELETE(

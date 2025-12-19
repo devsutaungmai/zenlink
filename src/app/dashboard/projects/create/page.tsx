@@ -6,6 +6,10 @@ import { useTranslation } from 'react-i18next'
 import Link from 'next/link'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import Cog6ToothIcon from '@heroicons/react/24/solid/Cog6ToothIcon'
+import { useProjectSettings } from '@/shared/hooks/useProjectSettings'
 
 interface Customer {
     id: string
@@ -22,16 +26,72 @@ export default function CreateProjectPage() {
     const [loading, setLoading] = useState(false)
     const [customers, setCustomers] = useState<Customer[]>([])
     const [projectCategories, setProjectCategories] = useState<ProjectCategory[]>([])
-
+    const today = new Date().toISOString().split("T")[0];
     const [formData, setFormData] = useState({
         name: '',
         projectNumber: '',
         active: true,
         categoryId: '',
-        startDate: '',
+        startDate: today,
         endDate: '',
         customerId: ''
     })
+
+    const { settings } = useProjectSettings();
+    const [settingsOpen, setSettingsOpen] = useState(false)
+    const [visibleFields, setVisibleFields] = useState({
+        showCategory: true,
+        showCustomer: true,
+        showStartDate: true,
+        showEndDate: true,
+    })
+
+
+    useEffect(() => {
+        if (settings) {
+            setVisibleFields({
+                showCategory: settings.showCategory,
+                showCustomer: settings.showCustomer,
+                showStartDate: settings.showStartDate,
+                showEndDate: settings.showEndDate,
+            })
+        }
+    }, [settings])
+    const handleSaveSettings = async () => {
+
+        setSettingsOpen(false)
+        setLoading(true)
+        try {
+            const res = await fetch('/api/projects/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(visibleFields),
+            })
+
+            if (!res.ok) {
+                const error = await res.json()
+                throw new Error(error.error || 'Failed to save the settings')
+            }
+            Swal.fire({
+                title: t('common.success'),
+                text: 'Settings saved successfully',
+                icon: 'success',
+                confirmButtonColor: '#31BCFF',
+            })
+
+
+        } catch (error) {
+            await Swal.fire({
+                title: 'Error',
+                text: error instanceof Error ? error.message : 'An error occurred',
+                icon: 'error',
+                confirmButtonColor: '#31BCFF',
+            })
+        } finally {
+            setLoading(false)
+        }
+
+    }
 
     useEffect(() => {
         fetchProjectCategories()
@@ -121,6 +181,96 @@ export default function CreateProjectPage() {
                         </p>
                     </div>
                     <div className="hidden md:flex items-center space-x-2">
+                        <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+                            <DialogTrigger asChild>
+                                <button className="inline-flex items-center justify-center px-4 py-3 rounded-2xl bg-white text-gray-700 font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 border border-gray-200">
+                                    <Cog6ToothIcon className="w-5 h-5 mr-2" />
+                                    Options
+                                </button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+                                <DialogHeader>
+                                    <DialogTitle className="text-2xl font-bold">Invoice Field Options</DialogTitle>
+                                    <DialogDescription>
+                                        Select which fields you want to display in the project form
+                                    </DialogDescription>
+                                </DialogHeader>
+
+                                <div className="space-y-4 py-4">
+
+                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            id="showCategory"
+                                            checked={visibleFields.showCategory}
+                                            onChange={(e) =>
+                                                setVisibleFields({ ...visibleFields, showCategory: e.target.checked })
+                                            }
+                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                                        />
+                                        <label htmlFor="showCategory" className="text-base font-medium cursor-pointer flex-1">
+                                            Category
+                                        </label>
+                                    </div>
+
+                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            id="showCustomer"
+                                            checked={visibleFields.showCustomer}
+                                            onChange={(e) =>
+                                                setVisibleFields({ ...visibleFields, showCustomer: e.target.checked })
+                                            }
+                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                                        />
+                                        <label htmlFor="showCustomer" className="text-base font-medium cursor-pointer flex-1">
+                                            Customer
+                                        </label>
+                                    </div>
+
+                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            id="showStartDate"
+                                            checked={visibleFields.showStartDate}
+                                            onChange={(e) =>
+                                                setVisibleFields({ ...visibleFields, showStartDate: e.target.checked })
+                                            }
+                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                                        />
+                                        <label htmlFor="showStartDate" className="text-base font-medium cursor-pointer flex-1">
+                                            Start Date
+                                        </label>
+                                    </div>
+
+                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            id="showEndDate"
+                                            checked={visibleFields.showEndDate}
+                                            onChange={(e) =>
+                                                setVisibleFields({ ...visibleFields, showEndDate: e.target.checked })
+                                            }
+                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                                        />
+                                        <label htmlFor="showEndDate" className="text-base font-medium cursor-pointer flex-1">
+                                            End Date
+                                        </label>
+                                    </div>
+
+
+                                </div>
+
+                                <div className="flex justify-end gap-3 pt-4 border-t">
+                                    <Button variant="outline" onClick={() => setSettingsOpen(false)}>
+                                        Cancel
+                                    </Button>
+                                    <Button onClick={handleSaveSettings} className="bg-[#31BCFF] hover:bg-[#0EA5E9] text-white">
+                                        Save Settings
+                                    </Button>
+                                </div>
+                            </DialogContent>
+                        </Dialog>
                         <div className="w-12 h-12 bg-[#31BCFF]/10 rounded-xl flex items-center justify-center">
                             <svg className="w-6 h-6 text-[#31BCFF]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
@@ -133,6 +283,19 @@ export default function CreateProjectPage() {
             {/* Form Container */}
             <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg p-6">
                 <form onSubmit={handleSubmit} className="space-y-6">
+                    {/* Active Checkbox */}
+                    <div className="flex justify-end items-center gap-3 mt-8">
+                        <input
+                            id="active"
+                            type="checkbox"
+                            checked={formData.active}
+                            onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
+                            className="h-5 w-5 text-[#31BCFF] border-gray-300 rounded focus:ring-[#31BCFF]/50"
+                        />
+                        <label htmlFor="active" className="text-sm font-medium text-gray-700">
+                            Active
+                        </label>
+                    </div>
                     {/* Project Name & Project Number */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
@@ -167,87 +330,76 @@ export default function CreateProjectPage() {
 
                     {/* Category & Customer */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700 mb-2">
-                                Category
-                            </label>
-                            <select
-                                id="categoryId"
-                                value={formData.categoryId}
-                                onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-                                className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                            >
-                                <option value="">Select Category</option>
-                                {projectCategories.map((category) => (
-                                    <option key={category.id} value={category.id}>
-                                        {category.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
+                        {visibleFields.showCategory
+                            && <div>
+                                <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Category
+                                </label>
+                                <select
+                                    id="categoryId"
+                                    value={formData.categoryId}
+                                    onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                >
+                                    <option value="">Select Category</option>
+                                    {projectCategories.map((category) => (
+                                        <option key={category.id} value={category.id}>
+                                            {category.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>}
 
-                        <div>
-                           <label htmlFor="customerId" className="block text-sm font-medium text-gray-700 mb-2">
-                                Customer
-                            </label>
-                            <select
-                                id="customerId"
-                                required
-                                value={formData.customerId}
-                                onChange={(e) => setFormData({ ...formData, customerId: e.target.value })}
-                                className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                            >
-                                <option value="">Select Customer</option>
-                                {customers.map((cus) => (
-                                    <option key={cus.id} value={cus.id}>
-                                        {cus.customerName}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
+                        {visibleFields.showCustomer &&
+                            <div>
+                                <label htmlFor="customerId" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Customer
+                                </label>
+                                <select
+                                    id="customerId"
+                                    value={formData.customerId}
+                                    onChange={(e) => setFormData({ ...formData, customerId: e.target.value })}
+                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                >
+                                    <option value="">Select Customer</option>
+                                    {customers.map((cus) => (
+                                        <option key={cus.id} value={cus.id}>
+                                            {cus.customerName}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>}
                     </div>
 
                     {/* Start Date & End Date */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-2">
-                                Start Date
-                            </label>
-                            <input
-                                type="date"
-                                id="startDate"
-                                value={formData.startDate}
-                                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                                className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                            />
-                        </div>
+                        {visibleFields.showStartDate &&
+                            <div>
+                                <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Start Date
+                                </label>
+                                <input
+                                    type="date"
+                                    id="startDate"
+                                    value={formData.startDate}
+                                    onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                />
+                            </div>}
 
-                        <div>
-                            <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-2">
-                                End Date
-                            </label>
-                            <input
-                                type="date"
-                                id="endDate"
-                                value={formData.endDate}
-                                onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                                className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Active Checkbox */}
-                    <div className="flex items-center gap-3">
-                        <input
-                            id="active"
-                            type="checkbox"
-                            checked={formData.active}
-                            onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
-                            className="h-5 w-5 text-[#31BCFF] border-gray-300 rounded focus:ring-[#31BCFF]/50"
-                        />
-                        <label htmlFor="active" className="text-sm font-medium text-gray-700">
-                            Active
-                        </label>
+                        {visibleFields.showEndDate
+                            && <div>
+                                <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-2">
+                                    End Date
+                                </label>
+                                <input
+                                    type="date"
+                                    id="endDate"
+                                    value={formData.endDate}
+                                    onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                />
+                            </div>}
                     </div>
 
                     {/* Form Actions */}

@@ -646,19 +646,20 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                     </div>
 
                     {/* Notes Section */}
-                    <div>
-                        <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
-                            Additional Notes
-                        </label>
-                        <textarea
-                            id="notes"
-                            value={formData.notes || ""}
-                            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                            className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                            placeholder="Enter any additional notes"
-                            rows={3}
-                        />
-                    </div>
+                    {settings.showNote
+                        && <div>
+                            <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
+                                Additional Notes
+                            </label>
+                            <textarea
+                                id="notes"
+                                value={formData.notes || ""}
+                                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                                className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                placeholder="Enter any additional notes"
+                                rows={3}
+                            />
+                        </div>}
 
                     {/* Summary Calculation */}
                     <InvoiceSummaryCalculation invoiceLines={formData.invoiceLines} />

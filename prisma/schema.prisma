@@ -130,14 +130,15 @@ model Business {
   products                 Product[]
   invoices                 Invoice[]
   InvoicePaymentTerms      InvoicePaymentTerms[]
-  invoiceFormSettings      InvoiceFormSettings[]
+  invoiceFormSettings      InvoiceFormSettings?     @relation("InvoiceFormSettings")
   projects                 Project[]
   customerPayments         CustomerPayment[]
   ledgerAccounts           LedgerAccount[]
   ledgerEntries            LedgerEntry[]
   vouchers                 Voucher[]
-  productFormSettings      ProductFormSettings[]                          
+  productFormSettings      ProductFormSettings?      @relation("ProductFormSettings")                       
   employeeSettings         EmployeeSettings?         @relation("EmployeeSettings")
+  projectFormSettings      ProjectFormSettings?      @relation("ProjectFormSettings")
 }
 
 model Employee {
@@ -384,6 +385,22 @@ model ProjectCategory {
   updatedAt DateTime  @updatedAt
 }
 
+model ProjectFormSettings {
+  id         String   @id @default(cuid())
+  businessId String   @unique
+  business   Business @relation("ProjectFormSettings", fields: [businessId], references: [id], onDelete: Cascade)
+  deviceId   String?
+
+  showCategory   Boolean @default(true)
+  showCustomer   Boolean @default(true)
+  showStartDate  Boolean @default(true)
+  showEndDate    Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([businessId])
+}
 
 model Project {
   id           String      @id @default(cuid())
@@ -397,10 +414,10 @@ model Project {
   category     ProjectCategory?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   startDate    DateTime?   // Startdato (nullable)
   endDate      DateTime?   // Sluttdato (nullable)
-  departmentId String
+  departmentId String?
+  department   Department?  @relation(fields: [departmentId], references: [id])
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @default(now())
-  department   Department  @relation(fields: [departmentId], references: [id])
   timeEntries  TimeEntry[]
   invoices     Invoice[] 
   businessId     String
@@ -854,7 +871,9 @@ model CustomerGroup {
 
 model ProductFormSettings {
   id         String   @id @default(cuid())
-  businessId String
+  businessId String   @unique
+  business   Business @relation("ProductFormSettings", fields: [businessId], references: [id], onDelete: Cascade)
+
   deviceId   String?
   
   showSalesPrice       Boolean @default(true)
@@ -865,10 +884,7 @@ model ProductFormSettings {
   
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-  
-  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  
-  @@unique([businessId])
+
   @@index([businessId])
 }
 
@@ -1242,7 +1258,8 @@ enum WageType {
 }
 model InvoiceFormSettings {
   id         String   @id @default(cuid())
-  businessId String
+  businessId String   @unique
+  business   Business @relation("InvoiceFormSettings", fields: [businessId], references: [id], onDelete: Cascade)
   deviceId   String?
   
   showContactPerson    Boolean @default(true)
@@ -1251,14 +1268,12 @@ model InvoiceFormSettings {
   showDepartment       Boolean @default(true)
   showSeller           Boolean @default(true)
   showDiscount         Boolean @default(true)
-  showProject          Boolean @default(true) 
+  showProject          Boolean @default(true)
+  showNote             Boolean @default(true) 
   
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   
-  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  
-  @@unique([businessId])
   @@index([businessId])
 }
 

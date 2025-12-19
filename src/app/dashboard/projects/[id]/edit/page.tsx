@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import Link from 'next/link'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
+import { useProjectSettings } from '@/shared/hooks/useProjectSettings'
 
 interface Customer {
     id: string
@@ -28,6 +29,7 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
     const [initialLoading, setInitialLoading] = useState(true)
     const [customers, setCustomers] = useState<Customer[]>([])
     const [projectCategories, setProjectCategories] = useState<ProjectCategory[]>([])
+    const { settings } = useProjectSettings();
 
     const [formData, setFormData] = useState({
         name: '',
@@ -55,7 +57,7 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
                     projectNumber: data.projectNumber || '',
                     active: data.active ?? true,
                     categoryId: data.categoryId || '',
-                    startDate: data.startDate ? new Date(data.startDate).toISOString().split('T')[0] : '',
+                    startDate: data.startDate ? new Date(data.startDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
                     endDate: data.endDate ? new Date(data.endDate).toISOString().split('T')[0] : '',
                     customerId: data.customerId || ''
                 })
@@ -180,6 +182,19 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
 
             {/* Form Container */}
             <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg p-6">
+                {/* Active Checkbox */}
+                <div className="flex justify-end items-center gap-3 mt-8">
+                    <input
+                        id="active"
+                        type="checkbox"
+                        checked={formData.active}
+                        onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
+                        className="h-5 w-5 text-[#31BCFF] border-gray-300 rounded focus:ring-[#31BCFF]/50"
+                    />
+                    <label htmlFor="active" className="text-sm font-medium text-gray-700">
+                        Active
+                    </label>
+                </div>
                 <div className="space-y-6">
                     {/* Project Name & Project Number */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -215,87 +230,77 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
 
                     {/* Category & Customer */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700 mb-2">
-                                Category
-                            </label>
-                            <select
-                                id="categoryId"
-                                value={formData.categoryId}
-                                onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-                                className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                            >
-                                <option value="">Select Category</option>
-                                {projectCategories.map((category) => (
-                                    <option key={category.id} value={category.id}>
-                                        {category.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
+                        {settings.showCategory
+                            && <div>
+                                <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Category
+                                </label>
+                                <select
+                                    id="categoryId"
+                                    value={formData.categoryId}
+                                    onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                >
+                                    <option value="">Select Category</option>
+                                    {projectCategories.map((category) => (
+                                        <option key={category.id} value={category.id}>
+                                            {category.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>}
 
-                        <div>
-                           <label htmlFor="customerId" className="block text-sm font-medium text-gray-700 mb-2">
-                                Customer
-                            </label>
-                            <select
-                                id="customerId"
-                                required
-                                value={formData.customerId}
-                                onChange={(e) => setFormData({ ...formData, customerId: e.target.value })}
-                                className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                            >
-                                <option value="">Select Customer</option>
-                                {customers.map((cus) => (
-                                    <option key={cus.id} value={cus.id}>
-                                        {cus.customerName}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
+                        {settings.showCustomer
+                            && <div>
+                                <label htmlFor="customerId" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Customer
+                                </label>
+                                <select
+                                    id="customerId"
+                                    required
+                                    value={formData.customerId}
+                                    onChange={(e) => setFormData({ ...formData, customerId: e.target.value })}
+                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                >
+                                    <option value="">Select Customer</option>
+                                    {customers.map((cus) => (
+                                        <option key={cus.id} value={cus.id}>
+                                            {cus.customerName}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>}
                     </div>
 
                     {/* Start Date & End Date */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-2">
-                                Start Date
-                            </label>
-                            <input
-                                type="date"
-                                id="startDate"
-                                value={formData.startDate}
-                                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                                className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                            />
-                        </div>
+                        {settings.showStartDate
+                            && <div>
+                                <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Start Date
+                                </label>
+                                <input
+                                    type="date"
+                                    id="startDate"
+                                    value={formData.startDate}
+                                    onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                />
+                            </div>}
 
-                        <div>
-                            <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-2">
-                                End Date
-                            </label>
-                            <input
-                                type="date"
-                                id="endDate"
-                                value={formData.endDate}
-                                onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                                className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Active Checkbox */}
-                    <div className="flex items-center gap-3">
-                        <input
-                            id="active"
-                            type="checkbox"
-                            checked={formData.active}
-                            onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
-                            className="h-5 w-5 text-[#31BCFF] border-gray-300 rounded focus:ring-[#31BCFF]/50"
-                        />
-                        <label htmlFor="active" className="text-sm font-medium text-gray-700">
-                            Active
-                        </label>
+                        {settings.showEndDate
+                            && <div>
+                                <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-2">
+                                    End Date
+                                </label>
+                                <input
+                                    type="date"
+                                    id="endDate"
+                                    value={formData.endDate}
+                                    onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                />
+                            </div>}
                     </div>
 
                     {/* Form Actions */}

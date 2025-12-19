@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
       where: {
         businessId: businessId
       },
-      include:{
+      include: {
         customer: true,
         category: true
       },
@@ -46,57 +46,78 @@ export async function POST(request: NextRequest) {
     if (!auth) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    
     let businessId: string
+    let userDepartmentId: string | null = null
+    
     if (auth.type === 'user') {
       businessId = (auth.data as any).businessId
+      userDepartmentId = (auth.data as any).departmentId ?? null
     } else {
-      // For employees, get businessId from their department
+      // For employees, get businessId and departmentId from their department
       businessId = (auth.data as any).department.businessId
+      userDepartmentId = (auth.data as any).departmentId ?? null
     }
 
     const formData = await request.json()
-    const { name, projectNumber,customerId } = formData
-
-    console.log('Creating project with data:', JSON.stringify(formData))
+    const { name, projectNumber, customerId, categoryId, startDate, endDate,active } = formData
 
     if (!name || !projectNumber) {
       return NextResponse.json({ error: 'Name and ProjectNumber are required' }, { status: 400 })
     }
 
-    if(!customerId){
-      return NextResponse.json({ error: 'CustomerId is required' }, { status: 400 })
-    }
-    
-    const customer = await prisma.customer.findFirst({
-      where: {
-        id: customerId,
-        businessId: businessId
-      }
-    })
+    const refinedCustomerId = customerId || null
+    let departmentIdForProject: string | null = null
 
-    if (!customer) {
-      return NextResponse.json({ error: 'Customer not found' }, { status: 404 })
+    if (customerId) {
+      // If customer is provided, use the customer's department
+      const customer = await prisma.customer.findFirst({
+        where: {
+          id: customerId,
+          businessId: businessId
+        }
+      })
+
+      if (!customer) {
+        return NextResponse.json({ error: 'Customer not found' }, { status: 404 })
+      }
+
+      departmentIdForProject = customer.departmentId ?? null
+    } else if (userDepartmentId) {
+      // If no customer but user has a department, use that
+      departmentIdForProject = userDepartmentId
+    } else {
+      // Try to get a default department for this business
+      const defaultDepartment = await prisma.department.findFirst({
+        where: { businessId }
+      })
+      
+      departmentIdForProject = defaultDepartment?.id ?? null
     }
-    
-    const departmentIdofCustomer = customer.departmentId;
 
     const project = await prisma.project.create({
-      data: {...formData, 
-        businessId,startDate: formData.startDate ? new Date(formData.startDate): null, 
-        endDate: formData.endDate ? new Date(formData.endDate) : null,
-        departmentId: departmentIdofCustomer
+      data: {
+        name,
+        projectNumber,
+        businessId,
+        categoryId: categoryId || null,
+        customerId: refinedCustomerId,
+        departmentId: departmentIdForProject,
+        startDate: startDate ? new Date(startDate) : null,
+        endDate: endDate ? new Date(endDate) : null,
+        active: active
       }
     })
 
     return NextResponse.json(project, { status: 201 })
-    
+
   } catch (error: any) {
     console.error('Error creating project:', error)
-    
+
     if (error.code === 'P2002') {
       return NextResponse.json({ error: 'Project number already exists' }, { status: 409 })
     }
-    
+
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
