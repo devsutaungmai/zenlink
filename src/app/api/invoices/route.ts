@@ -49,209 +49,214 @@ export async function GET(request: NextRequest) {
 
 // POST /api/invoices - Create a new invocies
 export async function POST(request: NextRequest) {
-  const maxRetries = 3
+  try {
+    const user = await requireAuth()
+    const auth = await getCurrentUserOrEmployee()
 
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    try {
-      const user = await requireAuth()
-      const auth = await getCurrentUserOrEmployee()
+    if (!auth) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const businessId = await getBusinessId()
+    if (!businessId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const body = await request.json()
+    const {
+      customerId,
+      contactPersonId,
+      projectId,
+      departmentId,
+      deliveryAddress,
+      notes,
+      sentAt,
+      paidAt,
+      dueDay,
+      invoiceLines,
+      status
+    } = body
 
-      if (!auth) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-      }
-      const businessId = await getBusinessId()
-      if (!businessId) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-      }
-      const body = await request.json()
-      const {
-        customerId,
-        contactPersonId,
-        projectId,
-        departmentId,
-        deliveryAddress,
-        notes,
-        sentAt,
-        paidAt,
-        dueDay,
-        invoiceLines,
-        status
-      } = body
+    // Validate inputs - only check for required fields
+    if (!customerId || !invoiceLines || invoiceLines.length === 0) {
+      return NextResponse.json(
+        { error: 'Missing required fields: customerId, invoiceLines' },
+        { status: 400 }
+      )
+    }
+    const maxRetries = 3
 
-      // Validate inputs - only check for required fields
-      if (!customerId || !invoiceLines || invoiceLines.length === 0) {
-        return NextResponse.json(
-          { error: 'Missing required fields: customerId, invoiceLines' },
-          { status: 400 }
-        )
-      }
-      let invoiceLinesData = [];
-      let totalExclVAT = 0
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        let invoiceLinesData = [];
+        let totalExclVAT = 0
 
-      for (const line of invoiceLines) {
+        for (const line of invoiceLines) {
 
-        const { productId, quantity, pricePerUnit, discountPercentage = 0 } = line;
-        // Validate line data
-        if (!productId || !quantity || !pricePerUnit) {
-          return NextResponse.json(
-            { error: 'Each line must have productId, quantity, and pricePerUnit' },
-            { status: 400 }
+          const { productId, quantity, pricePerUnit, discountPercentage = 0 } = line;
+          // Validate line data
+          if (!productId || !quantity || !pricePerUnit) {
+            return NextResponse.json(
+              { error: 'Each line must have productId, quantity, and pricePerUnit' },
+              { status: 400 }
+            )
+          }
+
+          // Get product details for snapshot
+          const product = await prisma.product.findFirst({
+            where: { id: productId, businessId }
+          })
+
+          if (!product) {
+            return NextResponse.json(
+              { error: `Product not found: ${productId}` },
+              { status: 404 }
+            )
+          }
+
+          // Convert string values to numbers
+          const qty = Number(quantity)
+          const price = Number(pricePerUnit)
+          const discount = Number(discountPercentage) || 0
+
+          // Calculate totals
+          const calculations = calculateInvoiceTotals(
+            qty,
+            price,
+            discount
           )
+
+          totalExclVAT += calculations.totalExclVAT
+
+          invoiceLinesData.push({
+            productId,
+            quantity: qty,
+            pricePerUnit: price,
+            discountPercentage: discount,
+            subtotal: calculations.subtotal,
+            discountAmount: calculations.discountAmount,
+            lineTotal: calculations.totalExclVAT,
+            productName: product.productName,
+            productNumber: product.productNumber || ''
+          })
         }
 
-        // Get product details for snapshot
-        const product = await prisma.product.findFirst({
-          where: { id: productId, businessId }
+        // Calculate invoice-level VAT (after summing all lines)
+        const vatPercentage = 25
+        const vatAmount = Math.round(totalExclVAT * (vatPercentage / 100) * 100) / 100
+        const totalInclVAT = Math.round((totalExclVAT + vatAmount) * 100) / 100
+
+        // Verify customer exists
+        const customer = await prisma.customer.findUnique({
+          where: { id: customerId }
         })
 
-        if (!product) {
+        if (!customer) {
           return NextResponse.json(
-            { error: `Product not found: ${productId}` },
+            { error: 'Customer not found' },
             { status: 404 }
           )
         }
 
-        // Convert string values to numbers
-        const qty = Number(quantity)
-        const price = Number(pricePerUnit)
-        const discount = Number(discountPercentage) || 0
+        const invoiceNumber = await generateInvoiceNumber();
 
-        // Calculate totals
-        const calculations = calculateInvoiceTotals(
-          qty,
-          price,
-          discount
-        )
+        console.log('Creating invoice with number:', invoiceNumber);
 
-        totalExclVAT += calculations.totalExclVAT
+        const invoiceData: any = {
+          invoiceNumber: invoiceNumber,
+          customerId,
+          businessId,
 
-        invoiceLinesData.push({
-          productId,
-          quantity: qty,
-          pricePerUnit: price,
-          discountPercentage: discount,
-          subtotal: calculations.subtotal,
-          discountAmount: calculations.discountAmount,
-          lineTotal: calculations.totalExclVAT,
-          productName: product.productName,
-          productNumber: product.productNumber || ''
-        })
-      }
-
-      // Calculate invoice-level VAT (after summing all lines)
-      const vatPercentage = 25
-      const vatAmount = Math.round(totalExclVAT * (vatPercentage / 100) * 100) / 100
-      const totalInclVAT = Math.round((totalExclVAT + vatAmount) * 100) / 100
-
-      // Verify customer exists
-      const customer = await prisma.customer.findUnique({
-        where: { id: customerId }
-      })
-
-      if (!customer) {
-        return NextResponse.json(
-          { error: 'Customer not found' },
-          { status: 404 }
-        )
-      }
-
-      const invoiceNumber = await generateInvoiceNumber();
-
-      console.log('Creating invoice with number:', invoiceNumber);
-
-      const invoiceData: any = {
-        invoiceNumber: invoiceNumber,
-        customerId,
-        businessId,
-
-        // Invoice totals
-        totalExclVAT: totalExclVAT,
-        vatPercentage: 25,
-        vatAmount: vatAmount,
-        totalInclVAT: totalInclVAT,
-        notes,
-        status: status,
-        sentAt: new Date(sentAt) ?? new Date(),
-        dueDay: dueDay ?? 14,
+          // Invoice totals
+          totalExclVAT: totalExclVAT,
+          vatPercentage: 25,
+          vatAmount: vatAmount,
+          totalInclVAT: totalInclVAT,
+          notes,
+          status: status,
+          sentAt: new Date(sentAt) ?? new Date(),
+          dueDay: dueDay ?? 14,
 
 
-        // Create invoice line with product
-        invoiceLines: {
-          create: invoiceLinesData
-        }
-      }
-
-      if (contactPersonId && contactPersonId.trim() !== '') {
-        invoiceData.contactPersonId = contactPersonId
-      }
-
-      if (projectId && projectId.trim() !== '') {
-        invoiceData.projectId = projectId
-      }
-
-      if (departmentId && departmentId.trim() !== '') {
-        invoiceData.departmentId = departmentId
-      }
-
-      if (deliveryAddress && deliveryAddress.trim() !== '') {
-        invoiceData.deliveryAddress = deliveryAddress
-      }
-
-      if (paidAt && paidAt.trim() !== "") {
-        invoiceData.dueDate = new Date(paidAt)
-        invoiceData.paidAt = new Date(paidAt)
-      } else {
-        const sentDate = invoiceData.sentAt;
-        const paidDate = new Date(sentDate);
-        paidDate.setDate(paidDate.getDate() + Number(invoiceData.dueDay))
-        invoiceData.dueDate = paidDate;
-        invoiceData.paidAt = paidDate;
-
-      }
-
-      // Create invoice with nested invoice line
-      const invoice = await prisma.invoice.create({
-        data: invoiceData,
-        include: {
-          customer: true,
+          // Create invoice line with product
           invoiceLines: {
-            include: {
-              product: true
-            }
+            create: invoiceLinesData
           }
         }
-      })
 
-      if (invoice.status === "SENT") {
-        const voucher = await generateVoucherNumber(businessId, VoucherType.INVOICE);
+        if (contactPersonId && contactPersonId.trim() !== '') {
+          invoiceData.contactPersonId = contactPersonId
+        }
 
-        await prisma.invoice.update({
-          where: { id: invoice.id },
-          data: { voucherId: voucher.id }
-        });
+        if (projectId && projectId.trim() !== '') {
+          invoiceData.projectId = projectId
+        }
 
-        await invoiceToLedgerPosting(invoice.id);
+        if (departmentId && departmentId.trim() !== '') {
+          invoiceData.departmentId = departmentId
+        }
+
+        if (deliveryAddress && deliveryAddress.trim() !== '') {
+          invoiceData.deliveryAddress = deliveryAddress
+        }
+
+        if (paidAt && paidAt.trim() !== "") {
+          invoiceData.dueDate = new Date(paidAt)
+          invoiceData.paidAt = new Date(paidAt)
+        } else {
+          const sentDate = invoiceData.sentAt;
+          const paidDate = new Date(sentDate);
+          paidDate.setDate(paidDate.getDate() + Number(invoiceData.dueDay))
+          invoiceData.dueDate = paidDate;
+          invoiceData.paidAt = paidDate;
+
+        }
+
+        // Create invoice with nested invoice line
+        const invoice = await prisma.invoice.create({
+          data: invoiceData,
+          include: {
+            customer: true,
+            invoiceLines: {
+              include: {
+                product: true
+              }
+            }
+          }
+        })
+
+        if (invoice.status === "SENT") {
+          const voucher = await generateVoucherNumber(businessId, VoucherType.INVOICE);
+
+          await prisma.invoice.update({
+            where: { id: invoice.id },
+            data: { voucherId: voucher.id }
+          });
+
+          await invoiceToLedgerPosting(invoice.id);
+        }
+
+        return NextResponse.json(invoice, { status: 201 })
+      } catch (error: any) {
+        console.error('Error creating invoice:', error)
+
+        // If it's a duplicate invoice number, retry
+        if (error.code === 'P2002' && attempt < maxRetries - 1) {
+          console.log(`Duplicate invoice number, retrying... (attempt ${attempt + 1})`)
+          await new Promise(resolve => setTimeout(resolve, 100))
+          continue
+        }
+
+        // Other errors or max retries reached
+        if (error.code === 'P2002') {
+          return NextResponse.json({
+            error: 'Unable to generate unique invoice number. Please try again.'
+          }, { status: 409 })
+        }
+
+        return NextResponse.json({ error: error.message }, { status: 500 })
       }
-
-      return NextResponse.json(invoice, { status: 201 })
-    } catch (error: any) {
-      console.error('Error creating invoice:', error)
-
-      // If it's a duplicate invoice number, retry
-      if (error.code === 'P2002' && attempt < maxRetries - 1) {
-        console.log(`Duplicate invoice number, retrying... (attempt ${attempt + 1})`)
-        await new Promise(resolve => setTimeout(resolve, 100))
-        continue
-      }
-
-      // Other errors or max retries reached
-      if (error.code === 'P2002') {
-        return NextResponse.json({
-          error: 'Unable to generate unique invoice number. Please try again.'
-        }, { status: 409 })
-      }
-
-      return NextResponse.json({ error: error.message }, { status: 500 })
     }
+  } catch (error: any) {
+    console.error('Error in invoice creation:', error)
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
