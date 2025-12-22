@@ -147,7 +147,7 @@ model Employee {
   lastName            String
   birthday            DateTime
   sex                 Sex
-  socialSecurityNo    String?                   @unique
+  socialSecurityNo    String?
   address             String
   mobile              String
   employeeNo          String?

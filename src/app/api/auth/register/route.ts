@@ -2,6 +2,7 @@ import { prisma } from '@/shared/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
+import { PERMISSION_INFO, DEFAULT_ROLES } from '@/shared/lib/permissions'
 
 export async function POST(req: Request) {
   try {
@@ -51,6 +52,48 @@ export async function POST(req: Request) {
 
       return { newUser, newBusiness }
     })
+
+    try {
+      const allPermissions = Object.values(PERMISSION_INFO)
+      
+      await prisma.permission.createMany({
+        data: allPermissions.map((perm) => ({
+          code: perm.code,
+          name: perm.name,
+          description: perm.description,
+          category: perm.category
+        })),
+        skipDuplicates: true
+      })
+
+      const roleEntries = Object.entries(DEFAULT_ROLES)
+      await Promise.all(
+        roleEntries.map(async ([key, roleData]) => {
+          try {
+            await prisma.role.create({
+              data: {
+                name: roleData.name,
+                description: roleData.description,
+                isSystem: roleData.isSystem,
+                isDefault: (roleData as any).isDefault || false,
+                businessId: result.newBusiness.id,
+                permissions: {
+                  create: roleData.permissions.map((permCode: string) => ({
+                    permission: {
+                      connect: { code: permCode }
+                    }
+                  }))
+                }
+              }
+            })
+          } catch (err: any) {
+            if (err.code !== 'P2002') throw err
+          }
+        })
+      )
+    } catch (roleError) {
+      console.error('Error initializing default roles:', roleError)
+    }
 
     const res = NextResponse.json({ 
       success: true,

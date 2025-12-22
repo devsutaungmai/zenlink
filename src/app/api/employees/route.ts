@@ -589,8 +589,6 @@ export async function POST(request: Request) {
       let errorMessage = 'Validation error'
       if (error.meta?.target?.includes('employeeNo')) {
         errorMessage = 'Employee number already exists'
-      } else if (error.meta?.target?.includes('socialSecurityNo')) {
-        errorMessage = 'Social security number already in use'
       } else if (error.meta?.target?.includes('email')) {
         // Check if it's User table or Employee table
         if (error.meta?.modelName === 'User') {
