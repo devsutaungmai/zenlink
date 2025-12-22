@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/shared/lib/prisma'
 import { getCurrentUserOrEmployee, requireAuth } from '@/shared/lib/auth'
+import { de } from 'date-fns/locale'
 
 // GET /api/categories - Get all categories for the business
 export async function GET(request: NextRequest) {
@@ -117,6 +118,7 @@ export async function POST(request: NextRequest) {
         customerNumber,
         businessId,
         invoicepaymentTermsId: paymentTermsId,
+        ...(restData.departmentId && restData.departmentId !== "" ? { departmentId: restData.departmentId } : {departmentId: null}),
         contactPersons: {
           create: customerContacts || []
         }

@@ -10,6 +10,10 @@ import CustomerPaymentTermComponent from '@/components/invoice/CustomerPaymentTe
 import CustomerContactComponent from '@/components/invoice/CustomerContact'
 import { customerValidationSchema } from '@/components/invoice/validation'
 import z from 'zod'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import Cog6ToothIcon from '@heroicons/react/24/solid/Cog6ToothIcon'
+import { useCustomerSettings } from '@/shared/hooks/useCustomerSettings'
 
 export interface Department {
     id: string
@@ -122,8 +126,10 @@ export default function CreateCustomersPage() {
             customerValidationSchema.parse(formData)
             setValidationErrors({})
         } catch (error) {
+
             if (error instanceof z.ZodError) {
                 const errors: Record<string, string> = {}
+
                 error.issues.forEach(issue => {
                     if (issue.path[0]) {
                         errors[issue.path[0].toString()] = issue.message
@@ -181,6 +187,80 @@ export default function CreateCustomersPage() {
         }
     }
 
+    const { settings } = useCustomerSettings();
+    const [settingsOpen, setSettingsOpen] = useState(false)
+    const [visibleFields, setVisibleFields] = useState({
+        showOrganizationNumber: true,
+        showAddress: true,
+        showPostalCode: true,
+        showPostalAddress: true,
+        showPhoneNumber: true,
+        showEmail: true,
+        showDiscountPercentage: true,
+        showDeliveryAddress: true,
+        showDeliveryAddressPostalCode: true,
+        showDeliveryAddressPostalAddress: true,
+        showDepartment: true,
+        showInvoicePaymentTerms: true,
+        showContactPerson: true,
+    })
+
+
+    useEffect(() => {
+        if (settings) {
+            setVisibleFields({
+                showOrganizationNumber: settings.showOrganizationNumber ?? true,
+                showAddress: settings.showAddress ?? true,
+                showPostalCode: settings.showPostalCode ?? true,
+                showPostalAddress: settings.showPostalAddress ?? true,
+                showPhoneNumber: settings.showPhoneNumber ?? true,
+                showEmail: settings.showEmail ?? true,
+                showDiscountPercentage: settings.showDiscountPercentage ?? true,
+                showDeliveryAddress: settings.showDeliveryAddress ?? true,
+                showDeliveryAddressPostalCode: settings.showDeliveryAddressPostalCode ?? true,
+                showDeliveryAddressPostalAddress: settings.showDeliveryAddressPostalAddress ?? true,
+                showDepartment: settings.showDepartment ?? true,
+                showInvoicePaymentTerms: settings.showInvoicePaymentTerms ?? true,
+                showContactPerson: settings.showContactPerson ?? true,
+            })
+        }
+    }, [settings])
+    const handleSaveSettings = async () => {
+
+        setSettingsOpen(false)
+        setLoading(true)
+        try {
+            const res = await fetch('/api/customers/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(visibleFields),
+            })
+
+            if (!res.ok) {
+                const error = await res.json()
+                throw new Error(error.error || 'Failed to save the settings')
+            }
+            Swal.fire({
+                title: t('common.success'),
+                text: 'Settings saved successfully',
+                icon: 'success',
+                confirmButtonColor: '#31BCFF',
+            })
+
+
+        } catch (error) {
+            await Swal.fire({
+                title: 'Error',
+                text: error instanceof Error ? error.message : 'An error occurred',
+                icon: 'error',
+                confirmButtonColor: '#31BCFF',
+            })
+        } finally {
+            setLoading(false)
+        }
+
+    }
+
     return (
         <div className="space-y-6">
             {/* Header Section */}
@@ -203,6 +283,230 @@ export default function CreateCustomersPage() {
                         </p>
                     </div>
                     <div className="hidden md:flex items-center space-x-2">
+                        <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+                            <DialogTrigger asChild>
+                                <button className="inline-flex items-center justify-center px-4 py-3 rounded-2xl bg-white text-gray-700 font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 border border-gray-200">
+                                    <Cog6ToothIcon className="w-5 h-5 mr-2" />
+                                    Options
+                                </button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+                                <DialogHeader>
+                                    <DialogTitle className="text-2xl font-bold">Invoice Field Options</DialogTitle>
+                                    <DialogDescription>
+                                        Select which fields you want to display in the project form
+                                    </DialogDescription>
+                                </DialogHeader>
+
+                                <div className="space-y-4 py-4">
+
+                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            id="showOrganizationNumber"
+                                            checked={visibleFields.showOrganizationNumber}
+                                            onChange={(e) =>
+                                                setVisibleFields({ ...visibleFields, showOrganizationNumber: e.target.checked })
+                                            }
+                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                                        />
+                                        <label htmlFor="showOrganizationNumber" className="text-base font-medium cursor-pointer flex-1">
+                                            Organization Number
+                                        </label>
+                                    </div>
+
+                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            id="showAddress"
+                                            checked={visibleFields.showAddress}
+                                            onChange={(e) =>
+                                                setVisibleFields({ ...visibleFields, showAddress: e.target.checked })
+                                            }
+                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                                        />
+                                        <label htmlFor="showAddress" className="text-base font-medium cursor-pointer flex-1">
+                                            Address
+                                        </label>
+                                    </div>
+
+                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            id="showPostalCode"
+                                            checked={visibleFields.showPostalCode}
+                                            onChange={(e) =>
+                                                setVisibleFields({ ...visibleFields, showPostalCode: e.target.checked })
+                                            }
+                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                                        />
+                                        <label htmlFor="showPostalCode" className="text-base font-medium cursor-pointer flex-1">
+                                            Postal Code
+                                        </label>
+                                    </div>
+
+                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            id="showPostalAddress"
+                                            checked={visibleFields.showPostalAddress}
+                                            onChange={(e) =>
+                                                setVisibleFields({ ...visibleFields, showPostalAddress: e.target.checked })
+                                            }
+                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                                        />
+                                        <label htmlFor="showPostalAddress" className="text-base font-medium cursor-pointer flex-1">
+                                            Postal Address
+                                        </label>
+                                    </div>
+
+                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            id="showPhoneNumber"
+                                            checked={visibleFields.showPhoneNumber}
+                                            onChange={(e) =>
+                                                setVisibleFields({ ...visibleFields, showPhoneNumber: e.target.checked })
+                                            }
+                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                                        />
+                                        <label htmlFor="showPhoneNumber" className="text-base font-medium cursor-pointer flex-1">
+                                            Phone Number
+                                        </label>
+                                    </div>
+
+                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            id="showEmail"
+                                            checked={visibleFields.showEmail}
+                                            onChange={(e) =>
+                                                setVisibleFields({ ...visibleFields, showEmail: e.target.checked })
+                                            }
+                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                                        />
+                                        <label htmlFor="showEmail" className="text-base font-medium cursor-pointer flex-1">
+                                            Email
+                                        </label>
+                                    </div>
+
+                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            id="showDiscountPercentage"
+                                            checked={visibleFields.showDiscountPercentage}
+                                            onChange={(e) =>
+                                                setVisibleFields({ ...visibleFields, showDiscountPercentage: e.target.checked })
+                                            }
+                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                                        />
+                                        <label htmlFor="showDiscountPercentage" className="text-base font-medium cursor-pointer flex-1">
+                                            Discount Percentage
+                                        </label>
+                                    </div>
+
+                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            id="showDeliveryAddress"
+                                            checked={visibleFields.showDeliveryAddress}
+                                            onChange={(e) =>
+                                                setVisibleFields({ ...visibleFields, showDeliveryAddress: e.target.checked })
+                                            }
+                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                                        />
+                                        <label htmlFor="showDeliveryAddress" className="text-base font-medium cursor-pointer flex-1">
+                                            Delivery Address
+                                        </label>
+                                    </div>
+
+                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            id="showDeliveryAddressPostalCode"
+                                            checked={visibleFields.showDeliveryAddressPostalCode}
+                                            onChange={(e) =>
+                                                setVisibleFields({ ...visibleFields, showDeliveryAddressPostalCode: e.target.checked })
+                                            }
+                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                                        />
+                                        <label htmlFor="showDeliveryAddressPostalCode" className="text-base font-medium cursor-pointer flex-1">
+                                            Delivery Address Postal Code
+                                        </label>
+                                    </div>
+
+                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            id="showDeliveryAddressPostalAddress"
+                                            checked={visibleFields.showDeliveryAddressPostalAddress}
+                                            onChange={(e) =>
+                                                setVisibleFields({ ...visibleFields, showDeliveryAddressPostalAddress: e.target.checked })
+                                            }
+                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                                        />
+                                        <label htmlFor="showDeliveryAddressPostalAddress" className="text-base font-medium cursor-pointer flex-1">
+                                            Delivery Address Postal Address
+                                        </label>
+                                    </div>
+
+                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            id="showDepartment"
+                                            checked={visibleFields.showDepartment}
+                                            onChange={(e) =>
+                                                setVisibleFields({ ...visibleFields, showDepartment: e.target.checked })
+                                            }
+                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                                        />
+                                        <label htmlFor="showDepartment" className="text-base font-medium cursor-pointer flex-1">
+                                            Department
+                                        </label>
+                                    </div>
+
+                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            id="showInvoicePaymentTerms"
+                                            checked={visibleFields.showInvoicePaymentTerms}
+                                            onChange={(e) =>
+                                                setVisibleFields({ ...visibleFields, showInvoicePaymentTerms: e.target.checked })
+                                            }
+                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                                        />
+                                        <label htmlFor="showInvoicePaymentTerms" className="text-base font-medium cursor-pointer flex-1">
+                                            Invoice Payment Terms
+                                        </label>
+                                    </div>
+
+                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            id="showContactPerson"
+                                            checked={visibleFields.showContactPerson}
+                                            onChange={(e) =>
+                                                setVisibleFields({ ...visibleFields, showContactPerson: e.target.checked })
+                                            }
+                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                                        />
+                                        <label htmlFor="showContactPerson" className="text-base font-medium cursor-pointer flex-1">
+                                            Contact Person
+                                        </label>
+                                    </div>
+
+                                </div>
+
+                                <div className="flex justify-end gap-3 pt-4 border-t">
+                                    <Button variant="outline" onClick={() => setSettingsOpen(false)}>
+                                        Cancel
+                                    </Button>
+                                    <Button onClick={handleSaveSettings} className="bg-[#31BCFF] hover:bg-[#0EA5E9] text-white">
+                                        Save Settings
+                                    </Button>
+                                </div>
+                            </DialogContent>
+                        </Dialog>
                         <div className="w-12 h-12 bg-[#31BCFF]/10 rounded-xl flex items-center justify-center">
                             <svg className="w-6 h-6 text-[#31BCFF]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
@@ -215,10 +519,9 @@ export default function CreateCustomersPage() {
             {/* Form Container */}
             <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg p-6">
                 <form onSubmit={handleSubmit} className="space-y-6">
-
-                    {/* Row 1: Customer Name + Customer Number */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
+                    <div className="flex flex-wrap gap-6">
+                        {/* Customer Name - Always visible */}
+                        <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
                             <label htmlFor="customerName" className="block text-sm font-medium text-gray-700 mb-2">
                                 Customer Name *
                             </label>
@@ -229,12 +532,11 @@ export default function CreateCustomersPage() {
                                 value={formData.customerName}
                                 onChange={(e) => {
                                     setFormData({ ...formData, customerName: e.target.value })
-                                    debouncedValidation('customerName', e.target.value)
+                                    debouncedValidation("customerName", e.target.value)
                                 }}
-                                onBlur={(e) => validateField('customerName', e.target.value)}
-                                className={`block w-full px-4 py-3 rounded-xl border ${
-                                    validationErrors.customerName ? 'border-red-500' : 'border-gray-300'
-                                } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
+                                onBlur={(e) => validateField("customerName", e.target.value)}
+                                className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.customerName ? "border-red-500" : "border-gray-300"
+                                    } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
                                 placeholder="Customer name"
                             />
                             {validationErrors.customerName && (
@@ -242,7 +544,8 @@ export default function CreateCustomersPage() {
                             )}
                         </div>
 
-                        <div>
+                        {/* Customer Number - Always visible */}
+                        <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
                             <label htmlFor="customerNumber" className="block text-sm font-medium text-gray-700 mb-2">
                                 Customer Number *
                             </label>
@@ -253,318 +556,320 @@ export default function CreateCustomersPage() {
                                 value={formData.customerNumber}
                                 onChange={(e) => {
                                     setFormData({ ...formData, customerNumber: e.target.value })
-                                    debouncedValidation('customerNumber', e.target.value)
+                                    debouncedValidation("customerNumber", e.target.value)
                                 }}
-                                onBlur={(e) => validateField('customerNumber', e.target.value)}
-                                className={`block w-full px-4 py-3 rounded-xl border ${
-                                    validationErrors.customerNumber ? 'border-red-500' : 'border-gray-300'
-                                } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
+                                onBlur={(e) => validateField("customerNumber", e.target.value)}
+                                className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.customerNumber ? "border-red-500" : "border-gray-300"
+                                    } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
                                 placeholder="Customer number"
                             />
                             {validationErrors.customerNumber && (
                                 <p className="mt-1 text-sm text-red-600">{validationErrors.customerNumber}</p>
                             )}
                         </div>
-                    </div>
 
-                    {/* Row 2: Organization Number + Address */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label htmlFor="organizationNumber" className="block text-sm font-medium text-gray-700 mb-2">
-                                Organization Number
-                            </label>
-                            <input
-                                type="text"
-                                id="organizationNumber"
-                                value={formData.organizationNumber}
-                                onChange={(e) => {
-                                    setFormData({ ...formData, organizationNumber: e.target.value })
-                                    debouncedValidation('organizationNumber', e.target.value)
-                                }}
-                                onBlur={(e) => validateField('organizationNumber', e.target.value)}
-                                className={`block w-full px-4 py-3 rounded-xl border ${
-                                    validationErrors.organizationNumber ? 'border-red-500' : 'border-gray-300'
-                                } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
-                                placeholder="Organization number"
-                            />
-                            {validationErrors.organizationNumber && (
-                                <p className="mt-1 text-sm text-red-600">{validationErrors.organizationNumber}</p>
-                            )}
-                        </div>
+                        {/* Organization Number - Conditional */}
+                        {visibleFields.showOrganizationNumber && (
+                            <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                                <label htmlFor="organizationNumber" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Organization Number
+                                </label>
+                                <input
+                                    type="text"
+                                    id="organizationNumber"
+                                    value={formData.organizationNumber}
+                                    onChange={(e) => {
+                                        setFormData({ ...formData, organizationNumber: e.target.value })
+                                        debouncedValidation("organizationNumber", e.target.value)
+                                    }}
+                                    onBlur={(e) => validateField("organizationNumber", e.target.value)}
+                                    className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.organizationNumber ? "border-red-500" : "border-gray-300"
+                                        } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
+                                    placeholder="Organization number"
+                                />
+                                {validationErrors.organizationNumber && (
+                                    <p className="mt-1 text-sm text-red-600">{validationErrors.organizationNumber}</p>
+                                )}
+                            </div>
+                        )}
 
-                        <div>
-                            <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">
-                                Address
-                            </label>
-                            <input
-                                type="text"
-                                id="address"
-                                value={formData.address}
-                                onChange={(e) => {
-                                    setFormData({ ...formData, address: e.target.value })
-                                    debouncedValidation('address', e.target.value)
-                                }}
-                                onBlur={(e) => validateField('address', e.target.value)}
-                                className={`block w-full px-4 py-3 rounded-xl border ${
-                                    validationErrors.address ? 'border-red-500' : 'border-gray-300'
-                                } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
-                                placeholder="Address"
-                            />
-                            {validationErrors.address && (
-                                <p className="mt-1 text-sm text-red-600">{validationErrors.address}</p>
-                            )}
-                        </div>
-                    </div>
+                        {/* Address - Conditional */}
+                        {visibleFields.showAddress && (
+                            <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                                <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Address
+                                </label>
+                                <input
+                                    type="text"
+                                    id="address"
+                                    value={formData.address}
+                                    onChange={(e) => {
+                                        setFormData({ ...formData, address: e.target.value })
+                                        debouncedValidation("address", e.target.value)
+                                    }}
+                                    onBlur={(e) => validateField("address", e.target.value)}
+                                    className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.address ? "border-red-500" : "border-gray-300"
+                                        } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
+                                    placeholder="Address"
+                                />
+                                {validationErrors.address && <p className="mt-1 text-sm text-red-600">{validationErrors.address}</p>}
+                            </div>
+                        )}
 
-                    {/* Row 3: Postal Code + Postal Address */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label htmlFor="postalCode" className="block text-sm font-medium text-gray-700 mb-2">
-                                Postal Code
-                            </label>
-                            <input
-                                type="text"
-                                id="postalCode"
-                                value={formData.postalCode}
-                                onChange={(e) => {
-                                    setFormData({ ...formData, postalCode: e.target.value })
-                                    debouncedValidation('postalCode', e.target.value)
-                                }}
-                                onBlur={(e) => validateField('postalCode', e.target.value)}
-                                className={`block w-full px-4 py-3 rounded-xl border ${
-                                    validationErrors.postalCode ? 'border-red-500' : 'border-gray-300'
-                                } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
-                                placeholder="Postal code"
-                            />
-                            {validationErrors.postalCode && (
-                                <p className="mt-1 text-sm text-red-600">{validationErrors.postalCode}</p>
-                            )}
-                        </div>
+                        {/* Postal Code - Conditional */}
+                        {visibleFields.showPostalCode && (
+                            <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                                <label htmlFor="postalCode" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Postal Code
+                                </label>
+                                <input
+                                    type="text"
+                                    id="postalCode"
+                                    value={formData.postalCode}
+                                    onChange={(e) => {
+                                        setFormData({ ...formData, postalCode: e.target.value })
+                                        debouncedValidation("postalCode", e.target.value)
+                                    }}
+                                    onBlur={(e) => validateField("postalCode", e.target.value)}
+                                    className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.postalCode ? "border-red-500" : "border-gray-300"
+                                        } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
+                                    placeholder="Postal code"
+                                />
+                                {validationErrors.postalCode && (
+                                    <p className="mt-1 text-sm text-red-600">{validationErrors.postalCode}</p>
+                                )}
+                            </div>
+                        )}
 
-                        <div>
-                            <label htmlFor="postalAddress" className="block text-sm font-medium text-gray-700 mb-2">
-                                Postal Address
-                            </label>
-                            <input
-                                type="text"
-                                id="postalAddress"
-                                value={formData.postalAddress}
-                                onChange={(e) => {
-                                    setFormData({ ...formData, postalAddress: e.target.value })
-                                    debouncedValidation('postalAddress', e.target.value)
-                                }}
-                                onBlur={(e) => validateField('postalAddress', e.target.value)}
-                                className={`block w-full px-4 py-3 rounded-xl border ${
-                                    validationErrors.postalAddress ? 'border-red-500' : 'border-gray-300'
-                                } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
-                                placeholder="Postal address"
-                            />
-                            {validationErrors.postalAddress && (
-                                <p className="mt-1 text-sm text-red-600">{validationErrors.postalAddress}</p>
-                            )}
-                        </div>
-                    </div>
+                        {/* Postal Address - Conditional */}
+                        {visibleFields.showPostalAddress && (
+                            <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                                <label htmlFor="postalAddress" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Postal Address
+                                </label>
+                                <input
+                                    type="text"
+                                    id="postalAddress"
+                                    value={formData.postalAddress}
+                                    onChange={(e) => {
+                                        setFormData({ ...formData, postalAddress: e.target.value })
+                                        debouncedValidation("postalAddress", e.target.value)
+                                    }}
+                                    onBlur={(e) => validateField("postalAddress", e.target.value)}
+                                    className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.postalAddress ? "border-red-500" : "border-gray-300"
+                                        } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
+                                    placeholder="Postal address"
+                                />
+                                {validationErrors.postalAddress && (
+                                    <p className="mt-1 text-sm text-red-600">{validationErrors.postalAddress}</p>
+                                )}
+                            </div>
+                        )}
 
-                    {/* Row 4: Phone Number + Email */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-2">
-                                Phone Number
-                            </label>
-                            <input
-                                type="text"
-                                id="phoneNumber"
-                                value={formData.phoneNumber}
-                                onChange={(e) => {
-                                    setFormData({ ...formData, phoneNumber: e.target.value })
-                                    debouncedValidation('phoneNumber', e.target.value)
-                                }}
-                                onBlur={(e) => validateField('phoneNumber', e.target.value)}
-                                className={`block w-full px-4 py-3 rounded-xl border ${
-                                    validationErrors.phoneNumber ? 'border-red-500' : 'border-gray-300'
-                                } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
-                                placeholder="Phone number"
-                            />
-                            {validationErrors.phoneNumber && (
-                                <p className="mt-1 text-sm text-red-600">{validationErrors.phoneNumber}</p>
-                            )}
-                        </div>
+                        {/* Phone Number - Conditional */}
+                        {visibleFields.showPhoneNumber && (
+                            <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                                <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Phone Number
+                                </label>
+                                <input
+                                    type="text"
+                                    id="phoneNumber"
+                                    value={formData.phoneNumber}
+                                    onChange={(e) => {
+                                        setFormData({ ...formData, phoneNumber: e.target.value })
+                                        debouncedValidation("phoneNumber", e.target.value)
+                                    }}
+                                    onBlur={(e) => validateField("phoneNumber", e.target.value)}
+                                    className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.phoneNumber ? "border-red-500" : "border-gray-300"
+                                        } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
+                                    placeholder="Phone number"
+                                />
+                                {validationErrors.phoneNumber && (
+                                    <p className="mt-1 text-sm text-red-600">{validationErrors.phoneNumber}</p>
+                                )}
+                            </div>
+                        )}
 
-                        <div>
-                            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                                Email
-                            </label>
-                            <input
-                                type="email"
-                                id="email"
-                                value={formData.email}
-                                onChange={(e) => {
-                                    setFormData({ ...formData, email: e.target.value })
-                                    debouncedValidation('email', e.target.value)
-                                }}
-                                onBlur={(e) => validateField('email', e.target.value)}
-                                className={`block w-full px-4 py-3 rounded-xl border ${
-                                    validationErrors.email ? 'border-red-500' : 'border-gray-300'
-                                } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
-                                placeholder="Email address"
-                            />
-                            {validationErrors.email && (
-                                <p className="mt-1 text-sm text-red-600">{validationErrors.email}</p>
-                            )}
-                        </div>
-                    </div>
+                        {/* Email - Conditional */}
+                        {visibleFields.showEmail && (
+                            <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Email
+                                </label>
+                                <input
+                                    type="email"
+                                    id="email"
+                                    value={formData.email}
+                                    onChange={(e) => {
+                                        setFormData({ ...formData, email: e.target.value })
+                                        debouncedValidation("email", e.target.value)
+                                    }}
+                                    onBlur={(e) => validateField("email", e.target.value)}
+                                    className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.email ? "border-red-500" : "border-gray-300"
+                                        } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
+                                    placeholder="Email address"
+                                />
+                                {validationErrors.email && <p className="mt-1 text-sm text-red-600">{validationErrors.email}</p>}
+                            </div>
+                        )}
 
-                    {/* Row 5: Discount Percentage + Delivery Address */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label htmlFor="discountPercentage" className="block text-sm font-medium text-gray-700 mb-2">
-                                Discount Percentage
-                            </label>
-                            <input
-                                type="number"
-                                step="0.01"
-                                id="discountPercentage"
-                                value={formData.discountPercentage}
-                                onChange={(e) => {
-                                    setFormData({ ...formData, discountPercentage: e.target.value })
-                                    debouncedValidation('discountPercentage', e.target.value)
-                                }}
-                                onBlur={(e) => validateField('discountPercentage', e.target.value)}
-                                className={`block w-full px-4 py-3 rounded-xl border ${
-                                    validationErrors.discountPercentage ? 'border-red-500' : 'border-gray-300'
-                                } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
-                                placeholder="e.g., 10.00"
-                            />
-                            {validationErrors.discountPercentage && (
-                                <p className="mt-1 text-sm text-red-600">{validationErrors.discountPercentage}</p>
-                            )}
-                        </div>
+                        {/* Discount Percentage - Conditional */}
+                        {visibleFields.showDiscountPercentage && (
+                            <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                                <label htmlFor="discountPercentage" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Discount Percentage
+                                </label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    id="discountPercentage"
+                                    value={formData.discountPercentage}
+                                    onChange={(e) => {
+                                        setFormData({ ...formData, discountPercentage: e.target.value })
+                                        debouncedValidation("discountPercentage", e.target.value)
+                                    }}
+                                    onBlur={(e) => validateField("discountPercentage", e.target.value)}
+                                    className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.discountPercentage ? "border-red-500" : "border-gray-300"
+                                        } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
+                                    placeholder="e.g., 10.00"
+                                />
+                                {validationErrors.discountPercentage && (
+                                    <p className="mt-1 text-sm text-red-600">{validationErrors.discountPercentage}</p>
+                                )}
+                            </div>
+                        )}
 
-                        <div>
-                            <label htmlFor="deliveryAddress" className="block text-sm font-medium text-gray-700 mb-2">
-                                Delivery Address
-                            </label>
-                            <input
-                                type="text"
-                                id="deliveryAddress"
-                                value={formData.deliveryAddress}
-                                onChange={(e) => {
-                                    setFormData({ ...formData, deliveryAddress: e.target.value })
-                                    debouncedValidation('deliveryAddress', e.target.value)
-                                }}
-                                onBlur={(e) => validateField('deliveryAddress', e.target.value)}
-                                className={`block w-full px-4 py-3 rounded-xl border ${
-                                    validationErrors.deliveryAddress ? 'border-red-500' : 'border-gray-300'
-                                } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
-                                placeholder="Delivery address"
-                            />
-                            {validationErrors.deliveryAddress && (
-                                <p className="mt-1 text-sm text-red-600">{validationErrors.deliveryAddress}</p>
-                            )}
-                        </div>
-                    </div>
+                        {/* Delivery Address - Conditional */}
+                        {visibleFields.showDeliveryAddress && (
+                            <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                                <label htmlFor="deliveryAddress" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Delivery Address
+                                </label>
+                                <input
+                                    type="text"
+                                    id="deliveryAddress"
+                                    value={formData.deliveryAddress}
+                                    onChange={(e) => {
+                                        setFormData({ ...formData, deliveryAddress: e.target.value })
+                                        debouncedValidation("deliveryAddress", e.target.value)
+                                    }}
+                                    onBlur={(e) => validateField("deliveryAddress", e.target.value)}
+                                    className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.deliveryAddress ? "border-red-500" : "border-gray-300"
+                                        } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
+                                    placeholder="Delivery address"
+                                />
+                                {validationErrors.deliveryAddress && (
+                                    <p className="mt-1 text-sm text-red-600">{validationErrors.deliveryAddress}</p>
+                                )}
+                            </div>
+                        )}
 
-                    {/* Row 6: Delivery Postal Code + Delivery Postal Address */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label htmlFor="deliveryAddressPostalCode" className="block text-sm font-medium text-gray-700 mb-2">
-                                Delivery Address Postal Code
-                            </label>
-                            <input
-                                type="text"
-                                id="deliveryAddressPostalCode"
-                                value={formData.deliveryAddressPostalCode}
-                                onChange={(e) => {
-                                    setFormData({ ...formData, deliveryAddressPostalCode: e.target.value })
-                                    debouncedValidation('deliveryAddressPostalCode', e.target.value)
-                                }}
-                                onBlur={(e) => validateField('deliveryAddressPostalCode', e.target.value)}
-                                className={`block w-full px-4 py-3 rounded-xl border ${
-                                    validationErrors.deliveryAddressPostalCode ? 'border-red-500' : 'border-gray-300'
-                                } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
-                                placeholder="Postal code for delivery"
-                            />
-                            {validationErrors.deliveryAddressPostalCode && (
-                                <p className="mt-1 text-sm text-red-600">{validationErrors.deliveryAddressPostalCode}</p>
-                            )}
-                        </div>
-                        <div>
-                            <label htmlFor="departmentId" className="block text-sm font-medium text-gray-700 mb-2">
-                                Department *
-                            </label>
-                            <select
-                                id="departmentId"
-                                required
-                                value={formData.departmentId || ''}
-                                onChange={(e) => {
-                                    setFormData({ ...formData, departmentId: e.target.value })
-                                    debouncedValidation('departmentId', e.target.value)
-                                }}
-                                onBlur={(e) => validateField('departmentId', e.target.value)}
-                                className={`block w-full px-4 py-3 rounded-xl border ${
-                                    validationErrors.departmentId ? 'border-red-500' : 'border-gray-300'
-                                } bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
-                            >
-                                <option value="">Select Department</option>
-                                {departments.map((dep) => (
-                                    <option key={dep.id} value={dep.id}>
-                                        {dep.name}
-                                    </option>
-                                ))}
-                            </select>
-                            {validationErrors.departmentId && (
-                                <p className="mt-1 text-sm text-red-600">{validationErrors.departmentId}</p>
-                            )}
-                        </div>
-                    </div>
+                        {/* Delivery Address Postal Code - Conditional */}
+                        {visibleFields.showDeliveryAddressPostalCode && (
+                            <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                                <label htmlFor="deliveryAddressPostalCode" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Delivery Address Postal Code
+                                </label>
+                                <input
+                                    type="text"
+                                    id="deliveryAddressPostalCode"
+                                    value={formData.deliveryAddressPostalCode}
+                                    onChange={(e) => {
+                                        setFormData({ ...formData, deliveryAddressPostalCode: e.target.value })
+                                        debouncedValidation("deliveryAddressPostalCode", e.target.value)
+                                    }}
+                                    onBlur={(e) => validateField("deliveryAddressPostalCode", e.target.value)}
+                                    className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.deliveryAddressPostalCode ? "border-red-500" : "border-gray-300"
+                                        } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
+                                    placeholder="Postal code for delivery"
+                                />
+                                {validationErrors.deliveryAddressPostalCode && (
+                                    <p className="mt-1 text-sm text-red-600">{validationErrors.deliveryAddressPostalCode}</p>
+                                )}
+                            </div>
+                        )}
 
-                    <div className="grid grid-cols-1">
-                        <label htmlFor="deliveryAddressPostalAddress" className="block text-sm font-medium text-gray-700 mb-2">
-                            Delivery Address Postal Address
-                        </label>
-                        <input
-                            type="text"
-                            id="deliveryAddressPostalAddress"
-                            value={formData.deliveryAddressPostalAddress}
-                            onChange={(e) => {
-                                setFormData({ ...formData, deliveryAddressPostalAddress: e.target.value })
-                                debouncedValidation('deliveryAddressPostalAddress', e.target.value)
-                            }}
-                            onBlur={(e) => validateField('deliveryAddressPostalAddress', e.target.value)}
-                            className={`block w-full px-4 py-3 rounded-xl border ${
-                                validationErrors.deliveryAddressPostalAddress ? 'border-red-500' : 'border-gray-300'
-                            } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
-                            placeholder="Postal address for delivery"
-                        />
-                        {validationErrors.deliveryAddressPostalAddress && (
-                            <p className="mt-1 text-sm text-red-600">{validationErrors.deliveryAddressPostalAddress}</p>
+                        {/* Delivery Address Postal Address - Conditional */}
+                        {visibleFields.showDeliveryAddressPostalAddress && (
+                            <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                                <label htmlFor="deliveryAddressPostalAddress" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Delivery Address Postal Address
+                                </label>
+                                <input
+                                    type="text"
+                                    id="deliveryAddressPostalAddress"
+                                    value={formData.deliveryAddressPostalAddress}
+                                    onChange={(e) => {
+                                        setFormData({ ...formData, deliveryAddressPostalAddress: e.target.value })
+                                        debouncedValidation("deliveryAddressPostalAddress", e.target.value)
+                                    }}
+                                    onBlur={(e) => validateField("deliveryAddressPostalAddress", e.target.value)}
+                                    className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.deliveryAddressPostalAddress ? "border-red-500" : "border-gray-300"
+                                        } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
+                                    placeholder="Postal address for delivery"
+                                />
+                                {validationErrors.deliveryAddressPostalAddress && (
+                                    <p className="mt-1 text-sm text-red-600">{validationErrors.deliveryAddressPostalAddress}</p>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Department - Conditional */}
+                        {visibleFields.showDepartment && (
+                            <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                                <label htmlFor="departmentId" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Department *
+                                </label>
+                                <select
+                                    id="departmentId"
+                                    value={formData.departmentId || ""}
+                                    onChange={(e) => {
+                                        setFormData({ ...formData, departmentId: e.target.value })
+                                        debouncedValidation("departmentId", e.target.value)
+                                    }}
+                                    onBlur={(e) => validateField("departmentId", e.target.value)}
+                                    className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.departmentId ? "border-red-500" : "border-gray-300"
+                                        } bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
+                                >
+                                    <option value="">Select Department</option>
+                                    {departments.map((dep) => (
+                                        <option key={dep.id} value={dep.id}>
+                                            {dep.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                {validationErrors.departmentId && (
+                                    <p className="mt-1 text-sm text-red-600">{validationErrors.departmentId}</p>
+                                )}
+                            </div>
                         )}
                     </div>
 
-                    <CustomerPaymentTermComponent
-                        onSettingsChange={(settings) => {
-                            const updatedPaymentTerm: InvoicePaymentTerms = {
-                                dueDateType: settings.dueDateType,
-                                dueDateValue: (settings.dueDateType === 'DAYS_AFTER'
-                                    ? settings.daysAfter ?? 14
-                                    : settings.fixedDateDay ?? 1),
-                                dueDateUnit: (settings.dueDateType === 'DAYS_AFTER' ?
-                                    settings.unit === 'DAYS' ? 'DAYS' : 'MONTHS' :
-                                    'MONTHS'
-                                )
-                            }
+                    {visibleFields.showInvoicePaymentTerms && (
+                        <CustomerPaymentTermComponent
+                            onSettingsChange={(settings) => {
+                                const updatedPaymentTerm: InvoicePaymentTerms = {
+                                    dueDateType: settings.dueDateType,
+                                    dueDateValue:
+                                        settings.dueDateType === "DAYS_AFTER" ? (settings.daysAfter ?? 14) : (settings.fixedDateDay ?? 1),
+                                    dueDateUnit:
+                                        settings.dueDateType === "DAYS_AFTER" ? (settings.unit === "DAYS" ? "DAYS" : "MONTHS") : "MONTHS",
+                                }
 
-                            setFormData({ ...formData, customerPaymentTerm: updatedPaymentTerm })
-                        }}
-                    />
+                                setFormData({ ...formData, customerPaymentTerm: updatedPaymentTerm })
+                            }}
+                        />
+                    )}
 
-                    <CustomerContactComponent
-                        defaultValues={formData.customerContacts}
-                        oncustomerContactsChange={(customerContacts) => {
-                            setFormData({ ...formData, customerContacts: customerContacts });
-                            // console.log('FormData of Customer Contact:', formData);
-                        }}
-                    />
+                    {visibleFields.showContactPerson && (
+                        <CustomerContactComponent
+                            defaultValues={formData.customerContacts}
+                            oncustomerContactsChange={(customerContacts) => {
+                                setFormData({ ...formData, customerContacts: customerContacts })
+                            }}
+                        />
+                    )}
 
                     {/* After CustomerContactComponent */}
                     {validationErrors.customerContacts && (
@@ -586,7 +891,7 @@ export default function CreateCustomersPage() {
                             disabled={loading}
                             className="px-6 py-3 rounded-xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                         >
-                            {loading ? 'Creating...' : 'Create Customer'}
+                            {loading ? "Creating..." : "Create Customer"}
                         </button>
                     </div>
                 </form>

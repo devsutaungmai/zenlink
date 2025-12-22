@@ -11,6 +11,7 @@ import CustomerPaymentTermComponent, { CustomerPaymentTermForComponent } from '@
 import CustomerContactComponent, { CustomerContact } from '@/components/invoice/CustomerContact'
 import { customerValidationSchema } from '@/components/invoice/validation'
 import z from 'zod'
+import { useCustomerSettings } from '@/shared/hooks/useCustomerSettings'
 
 export default function EditCustomersPage({ params }: { params: Promise<{ id: string }> }) {
     const resolvedParams = use(params)
@@ -64,6 +65,7 @@ export default function EditCustomersPage({ params }: { params: Promise<{ id: st
     })
     const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
     const validationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+    const { settings } = useCustomerSettings();
 
     const validateField = (fieldName: string, value: any) => {
         try {
@@ -202,9 +204,7 @@ export default function EditCustomersPage({ params }: { params: Promise<{ id: st
         )
     }
 
-
     return (
-
         <div className="space-y-6">
             {/* Header Section */}
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-100">
@@ -238,8 +238,7 @@ export default function EditCustomersPage({ params }: { params: Promise<{ id: st
             {/* Form Container */}
             <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg p-6">
                 <form onSubmit={handleSubmit} className="space-y-6">
-
-                    {/* Row 1: Customer Name + Customer Number */}
+                    {/* Row 1: Customer Name + Customer Number (always visible) */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label htmlFor="customerName" className="block text-sm font-medium text-gray-700 mb-2">
@@ -252,10 +251,10 @@ export default function EditCustomersPage({ params }: { params: Promise<{ id: st
                                 value={formData.customerName}
                                 onChange={(e) => {
                                     setFormData({ ...formData, customerName: e.target.value })
-                                    debouncedValidation('customerName', e.target.value)
+                                    debouncedValidation("customerName", e.target.value)
                                 }}
-                                onBlur={(e) => validateField('customerName', e.target.value)}
-                                className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.customerName ? 'border-red-500' : 'border-gray-300'
+                                onBlur={(e) => validateField("customerName", e.target.value)}
+                                className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.customerName ? "border-red-500" : "border-gray-300"
                                     } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
                                 placeholder="Customer name"
                             />
@@ -275,10 +274,10 @@ export default function EditCustomersPage({ params }: { params: Promise<{ id: st
                                 value={formData.customerNumber}
                                 onChange={(e) => {
                                     setFormData({ ...formData, customerNumber: e.target.value })
-                                    debouncedValidation('customerNumber', e.target.value)
+                                    debouncedValidation("customerNumber", e.target.value)
                                 }}
-                                onBlur={(e) => validateField('customerNumber', e.target.value)}
-                                className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.customerNumber ? 'border-red-500' : 'border-gray-300'
+                                onBlur={(e) => validateField("customerNumber", e.target.value)}
+                                className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.customerNumber ? "border-red-500" : "border-gray-300"
                                     } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
                                 placeholder="Customer number"
                             />
@@ -288,271 +287,275 @@ export default function EditCustomersPage({ params }: { params: Promise<{ id: st
                         </div>
                     </div>
 
-                    {/* Row 2: Organization Number + Address */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label htmlFor="organizationNumber" className="block text-sm font-medium text-gray-700 mb-2">
-                                Organization Number
-                            </label>
-                            <input
-                                type="text"
-                                id="organizationNumber"
-                                value={formData.organizationNumber}
-                                onChange={(e) => {
-                                    setFormData({ ...formData, organizationNumber: e.target.value })
-                                    debouncedValidation('organizationNumber', e.target.value)
-                                }}
-                                onBlur={(e) => validateField('organizationNumber', e.target.value)}
-                                className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.organizationNumber ? 'border-red-500' : 'border-gray-300'
-                                    } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
-                                placeholder="Organization number"
-                            />
-                            {validationErrors.organizationNumber && (
-                                <p className="mt-1 text-sm text-red-600">{validationErrors.organizationNumber}</p>
-                            )}
-                        </div>
+                    <div className="flex flex-wrap gap-6">
+                        {settings.showOrganizationNumber && (
+                            <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                                <label htmlFor="organizationNumber" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Organization Number
+                                </label>
+                                <input
+                                    type="text"
+                                    id="organizationNumber"
+                                    value={formData.organizationNumber}
+                                    onChange={(e) => {
+                                        setFormData({ ...formData, organizationNumber: e.target.value })
+                                        debouncedValidation("organizationNumber", e.target.value)
+                                    }}
+                                    onBlur={(e) => validateField("organizationNumber", e.target.value)}
+                                    className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.organizationNumber ? "border-red-500" : "border-gray-300"
+                                        } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
+                                    placeholder="Organization number"
+                                />
+                                {validationErrors.organizationNumber && (
+                                    <p className="mt-1 text-sm text-red-600">{validationErrors.organizationNumber}</p>
+                                )}
+                            </div>
+                        )}
 
-                        <div>
-                            <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">
-                                Address
-                            </label>
-                            <input
-                                type="text"
-                                id="address"
-                                value={formData.address}
-                                onChange={(e) => {
-                                    setFormData({ ...formData, address: e.target.value })
-                                    debouncedValidation('address', e.target.value)
-                                }}
-                                onBlur={(e) => validateField('address', e.target.value)}
-                                className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.address ? 'border-red-500' : 'border-gray-300'
-                                    } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
-                                placeholder="Address"
-                            />
-                            {validationErrors.address && (
-                                <p className="mt-1 text-sm text-red-600">{validationErrors.address}</p>
-                            )}
-                        </div>
-                    </div>
+                        {settings.showAddress && (
+                            <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                                <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Address
+                                </label>
+                                <input
+                                    type="text"
+                                    id="address"
+                                    value={formData.address}
+                                    onChange={(e) => {
+                                        setFormData({ ...formData, address: e.target.value })
+                                        debouncedValidation("address", e.target.value)
+                                    }}
+                                    onBlur={(e) => validateField("address", e.target.value)}
+                                    className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.address ? "border-red-500" : "border-gray-300"
+                                        } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
+                                    placeholder="Address"
+                                />
+                                {validationErrors.address && <p className="mt-1 text-sm text-red-600">{validationErrors.address}</p>}
+                            </div>
+                        )}
 
-                    {/* Row 3: Postal Code + Postal Address */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label htmlFor="postalCode" className="block text-sm font-medium text-gray-700 mb-2">
-                                Postal Code
-                            </label>
-                            <input
-                                type="text"
-                                id="postalCode"
-                                value={formData.postalCode}
-                                onChange={(e) => {
-                                    setFormData({ ...formData, postalCode: e.target.value })
-                                    debouncedValidation('postalCode', e.target.value)
-                                }}
-                                onBlur={(e) => validateField('postalCode', e.target.value)}
-                                className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.postalCode ? 'border-red-500' : 'border-gray-300'
-                                    } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
-                                placeholder="Postal code"
-                            />
-                            {validationErrors.postalCode && (
-                                <p className="mt-1 text-sm text-red-600">{validationErrors.postalCode}</p>
-                            )}
-                        </div>
+                        {settings.showPostalCode && (
+                            <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                                <label htmlFor="postalCode" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Postal Code
+                                </label>
+                                <input
+                                    type="text"
+                                    id="postalCode"
+                                    value={formData.postalCode}
+                                    onChange={(e) => {
+                                        setFormData({ ...formData, postalCode: e.target.value })
+                                        debouncedValidation("postalCode", e.target.value)
+                                    }}
+                                    onBlur={(e) => validateField("postalCode", e.target.value)}
+                                    className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.postalCode ? "border-red-500" : "border-gray-300"
+                                        } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
+                                    placeholder="Postal code"
+                                />
+                                {validationErrors.postalCode && (
+                                    <p className="mt-1 text-sm text-red-600">{validationErrors.postalCode}</p>
+                                )}
+                            </div>
+                        )}
 
-                        <div>
-                            <label htmlFor="postalAddress" className="block text-sm font-medium text-gray-700 mb-2">
-                                Postal Address
-                            </label>
-                            <input
-                                type="text"
-                                id="postalAddress"
-                                value={formData.postalAddress}
-                                onChange={(e) => {
-                                    setFormData({ ...formData, postalAddress: e.target.value })
-                                    debouncedValidation('postalAddress', e.target.value)
-                                }}
-                                onBlur={(e) => validateField('postalAddress', e.target.value)}
-                                className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.postalAddress ? 'border-red-500' : 'border-gray-300'
-                                    } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
-                                placeholder="Postal address"
-                            />
-                            {validationErrors.postalAddress && (
-                                <p className="mt-1 text-sm text-red-600">{validationErrors.postalAddress}</p>
-                            )}
-                        </div>
-                    </div>
+                        {settings.showPostalAddress && (
+                            <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                                <label htmlFor="postalAddress" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Postal Address
+                                </label>
+                                <input
+                                    type="text"
+                                    id="postalAddress"
+                                    value={formData.postalAddress}
+                                    onChange={(e) => {
+                                        setFormData({ ...formData, postalAddress: e.target.value })
+                                        debouncedValidation("postalAddress", e.target.value)
+                                    }}
+                                    onBlur={(e) => validateField("postalAddress", e.target.value)}
+                                    className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.postalAddress ? "border-red-500" : "border-gray-300"
+                                        } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
+                                    placeholder="Postal address"
+                                />
+                                {validationErrors.postalAddress && (
+                                    <p className="mt-1 text-sm text-red-600">{validationErrors.postalAddress}</p>
+                                )}
+                            </div>
+                        )}
 
-                    {/* Row 4: Phone Number + Email */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-2">
-                                Phone Number
-                            </label>
-                            <input
-                                type="text"
-                                id="phoneNumber"
-                                value={formData.phoneNumber}
-                                onChange={(e) => {
-                                    setFormData({ ...formData, phoneNumber: e.target.value })
-                                    debouncedValidation('phoneNumber', e.target.value)
-                                }}
-                                onBlur={(e) => validateField('phoneNumber', e.target.value)}
-                                className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.phoneNumber ? 'border-red-500' : 'border-gray-300'
-                                    } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
-                                placeholder="Phone number"
-                            />
-                            {validationErrors.phoneNumber && (
-                                <p className="mt-1 text-sm text-red-600">{validationErrors.phoneNumber}</p>
-                            )}
-                        </div>
+                        {settings.showPhoneNumber && (
+                            <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                                <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Phone Number
+                                </label>
+                                <input
+                                    type="text"
+                                    id="phoneNumber"
+                                    value={formData.phoneNumber}
+                                    onChange={(e) => {
+                                        setFormData({ ...formData, phoneNumber: e.target.value })
+                                        debouncedValidation("phoneNumber", e.target.value)
+                                    }}
+                                    onBlur={(e) => validateField("phoneNumber", e.target.value)}
+                                    className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.phoneNumber ? "border-red-500" : "border-gray-300"
+                                        } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
+                                    placeholder="Phone number"
+                                />
+                                {validationErrors.phoneNumber && (
+                                    <p className="mt-1 text-sm text-red-600">{validationErrors.phoneNumber}</p>
+                                )}
+                            </div>
+                        )}
 
-                        <div>
-                            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                                Email
-                            </label>
-                            <input
-                                type="email"
-                                id="email"
-                                value={formData.email}
-                                onChange={(e) => {
-                                    setFormData({ ...formData, email: e.target.value })
-                                    debouncedValidation('email', e.target.value)
-                                }}
-                                onBlur={(e) => validateField('email', e.target.value)}
-                                className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.email ? 'border-red-500' : 'border-gray-300'
-                                    } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
-                                placeholder="Email address"
-                            />
-                            {validationErrors.email && (
-                                <p className="mt-1 text-sm text-red-600">{validationErrors.email}</p>
-                            )}
-                        </div>
-                    </div>
+                        {settings.showEmail && (
+                            <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Email
+                                </label>
+                                <input
+                                    type="email"
+                                    id="email"
+                                    value={formData.email}
+                                    onChange={(e) => {
+                                        setFormData({ ...formData, email: e.target.value })
+                                        debouncedValidation("email", e.target.value)
+                                    }}
+                                    onBlur={(e) => validateField("email", e.target.value)}
+                                    className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.email ? "border-red-500" : "border-gray-300"
+                                        } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
+                                    placeholder="Email address"
+                                />
+                                {validationErrors.email && <p className="mt-1 text-sm text-red-600">{validationErrors.email}</p>}
+                            </div>
+                        )}
 
-                    {/* Row 5: Discount Percentage + Delivery Address */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label htmlFor="discountPercentage" className="block text-sm font-medium text-gray-700 mb-2">
-                                Discount Percentage
-                            </label>
-                            <input
-                                type="number"
-                                step="0.01"
-                                id="discountPercentage"
-                                value={formData.discountPercentage}
-                                onChange={(e) => {
-                                    setFormData({ ...formData, discountPercentage: e.target.value })
-                                    debouncedValidation('discountPercentage', e.target.value)
-                                }}
-                                onBlur={(e) => validateField('discountPercentage', e.target.value)}
-                                className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.discountPercentage ? 'border-red-500' : 'border-gray-300'
-                                    } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
-                                placeholder="e.g., 10.00"
-                            />
-                            {validationErrors.discountPercentage && (
-                                <p className="mt-1 text-sm text-red-600">{validationErrors.discountPercentage}</p>
-                            )}
-                        </div>
+                        {settings.showDiscountPercentage && (
+                            <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                                <label htmlFor="discountPercentage" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Discount Percentage
+                                </label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    id="discountPercentage"
+                                    value={formData.discountPercentage}
+                                    onChange={(e) => {
+                                        setFormData({ ...formData, discountPercentage: e.target.value })
+                                        debouncedValidation("discountPercentage", e.target.value)
+                                    }}
+                                    onBlur={(e) => validateField("discountPercentage", e.target.value)}
+                                    className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.discountPercentage ? "border-red-500" : "border-gray-300"
+                                        } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
+                                    placeholder="e.g., 10.00"
+                                />
+                                {validationErrors.discountPercentage && (
+                                    <p className="mt-1 text-sm text-red-600">{validationErrors.discountPercentage}</p>
+                                )}
+                            </div>
+                        )}
 
-                        <div></div>
-                        <label htmlFor="deliveryAddress" className="block text-sm font-medium text-gray-700 mb-2">
-                            Delivery Address
-                        </label>
-                        <input
-                            type="text"
-                            id="deliveryAddress"
-                            value={formData.deliveryAddress}
-                            onChange={(e) => {
-                                setFormData({ ...formData, deliveryAddress: e.target.value })
-                                debouncedValidation('deliveryAddress', e.target.value)
-                            }}
-                            onBlur={(e) => validateField('deliveryAddress', e.target.value)}
-                            className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.deliveryAddress ? 'border-red-500' : 'border-gray-300'
-                                } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
-                            placeholder="Delivery address"
-                        />
-                        {validationErrors.deliveryAddress && (
-                            <p className="mt-1 text-sm text-red-600">{validationErrors.deliveryAddress}</p>
+                        {settings.showDeliveryAddress && (
+                            <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                                <label htmlFor="deliveryAddress" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Delivery Address
+                                </label>
+                                <input
+                                    type="text"
+                                    id="deliveryAddress"
+                                    value={formData.deliveryAddress}
+                                    onChange={(e) => {
+                                        setFormData({ ...formData, deliveryAddress: e.target.value })
+                                        debouncedValidation("deliveryAddress", e.target.value)
+                                    }}
+                                    onBlur={(e) => validateField("deliveryAddress", e.target.value)}
+                                    className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.deliveryAddress ? "border-red-500" : "border-gray-300"
+                                        } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
+                                    placeholder="Delivery address"
+                                />
+                                {validationErrors.deliveryAddress && (
+                                    <p className="mt-1 text-sm text-red-600">{validationErrors.deliveryAddress}</p>
+                                )}
+                            </div>
+                        )}
+
+                        {settings.showDeliveryAddressPostalCode && (
+                            <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                                <label htmlFor="deliveryAddressPostalCode" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Delivery Address Postal Code
+                                </label>
+                                <input
+                                    type="text"
+                                    id="deliveryAddressPostalCode"
+                                    value={formData.deliveryAddressPostalCode}
+                                    onChange={(e) => {
+                                        setFormData({ ...formData, deliveryAddressPostalCode: e.target.value })
+                                        debouncedValidation("deliveryAddressPostalCode", e.target.value)
+                                    }}
+                                    onBlur={(e) => validateField("deliveryAddressPostalCode", e.target.value)}
+                                    className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.deliveryAddressPostalCode ? "border-red-500" : "border-gray-300"
+                                        } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
+                                    placeholder="Postal code for delivery"
+                                />
+                                {validationErrors.deliveryAddressPostalCode && (
+                                    <p className="mt-1 text-sm text-red-600">{validationErrors.deliveryAddressPostalCode}</p>
+                                )}
+                            </div>
+                        )}
+
+                        {settings.showDepartment && (
+                            <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                                <label htmlFor="departmentId" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Department *
+                                </label>
+                                <select
+                                    id="departmentId"
+                                    value={formData.departmentId || ""}
+                                    onChange={(e) => {
+                                        setFormData({ ...formData, departmentId: e.target.value })
+                                        debouncedValidation("departmentId", e.target.value)
+                                    }}
+                                    onBlur={(e) => validateField("departmentId", e.target.value)}
+                                    className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.departmentId ? "border-red-500" : "border-gray-300"
+                                        } bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
+                                >
+                                    <option value="">Select Department</option>
+                                    {departments.map((dep) => (
+                                        <option key={dep.id} value={dep.id}>
+                                            {dep.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                {validationErrors.departmentId && (
+                                    <p className="mt-1 text-sm text-red-600">{validationErrors.departmentId}</p>
+                                )}
+                            </div>
+                        )}
+
+                        {settings.showDeliveryAddressPostalAddress && (
+                            <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                                <label htmlFor="deliveryAddressPostalAddress" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Delivery Address Postal Address
+                                </label>
+                                <input
+                                    type="text"
+                                    id="deliveryAddressPostalAddress"
+                                    value={formData.deliveryAddressPostalAddress}
+                                    onChange={(e) => {
+                                        setFormData({ ...formData, deliveryAddressPostalAddress: e.target.value })
+                                        debouncedValidation("deliveryAddressPostalAddress", e.target.value)
+                                    }}
+                                    onBlur={(e) => validateField("deliveryAddressPostalAddress", e.target.value)}
+                                    className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.deliveryAddressPostalAddress ? "border-red-500" : "border-gray-300"
+                                        } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
+                                    placeholder="Postal address for delivery"
+                                />
+                                {validationErrors.deliveryAddressPostalAddress && (
+                                    <p className="mt-1 text-sm text-red-600">{validationErrors.deliveryAddressPostalAddress}</p>
+                                )}
+                            </div>
                         )}
                     </div>
 
-                    {/* Row 6: Delivery Postal Code + Delivery Postal Address */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label htmlFor="deliveryAddressPostalCode" className="block text-sm font-medium text-gray-700 mb-2">
-                                Delivery Address Postal Code
-                            </label>
-                            <input
-                                type="text"
-                                id="deliveryAddressPostalCode"
-                                value={formData.deliveryAddressPostalCode}
-                                onChange={(e) => {
-                                    setFormData({ ...formData, deliveryAddressPostalCode: e.target.value })
-                                    debouncedValidation('deliveryAddressPostalCode', e.target.value)
-                                }}
-                                onBlur={(e) => validateField('deliveryAddressPostalCode', e.target.value)}
-                                className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.deliveryAddressPostalCode ? 'border-red-500' : 'border-gray-300'
-                                    } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
-                                placeholder="Postal code for delivery"
-                            />
-                            {validationErrors.deliveryAddressPostalCode && (
-                                <p className="mt-1 text-sm text-red-600">{validationErrors.deliveryAddressPostalCode}</p>
-                            )}
-                        </div>
-
-                        <div>
-                            <label htmlFor="departmentId" className="block text-sm font-medium text-gray-700 mb-2">
-                                Department *
-                            </label>
-                            <select
-                                id="departmentId"
-                                required
-                                value={formData.departmentId || ''}
-                                onChange={(e) => {
-                                    setFormData({ ...formData, departmentId: e.target.value })
-                                    debouncedValidation('departmentId', e.target.value)
-                                }}
-                                onBlur={(e) => validateField('departmentId', e.target.value)}
-                                className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.departmentId ? 'border-red-500' : 'border-gray-300'
-                                    } bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
-                            >
-                                <option value="">Select Department</option>
-                                {departments.map((dep) => (
-                                    <option key={dep.id} value={dep.id}>
-                                        {dep.name}
-                                    </option>
-                                ))}
-                            </select>
-                            {validationErrors.departmentId && (
-                                <p className="mt-1 text-sm text-red-600">{validationErrors.departmentId}</p>
-                            )}
-                        </div>
-
-                    </div>
-
-                    <div className="grid">
-                        <label htmlFor="deliveryAddressPostalAddress" className="block text-sm font-medium text-gray-700 mb-2">
-                            Delivery Address Postal Address
-                        </label>
-                        <input
-                            type="text"
-                            id="deliveryAddressPostalAddress"
-                            value={formData.deliveryAddressPostalAddress}
-                            onChange={(e) => {
-                                setFormData({ ...formData, deliveryAddressPostalAddress: e.target.value })
-                                debouncedValidation('deliveryAddressPostalAddress', e.target.value)
-                            }}
-                            onBlur={(e) => validateField('deliveryAddressPostalAddress', e.target.value)}
-                            className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.deliveryAddressPostalAddress ? 'border-red-500' : 'border-gray-300'
-                                } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
-                            placeholder="Postal address for delivery"
-                        />
-                        {validationErrors.deliveryAddressPostalAddress && (
-                            <p className="mt-1 text-sm text-red-600">{validationErrors.deliveryAddressPostalAddress}</p>
-                        )}
-                    </div>
-
-                    <CustomerPaymentTermComponent
+                    {settings.showInvoicePaymentTerms && <CustomerPaymentTermComponent
                         defaultValues={paymentTermDefaults}
                         onSettingsChange={(settings) => {
                             const updatedPaymentTerm: InvoicePaymentTerms = {
@@ -569,15 +572,15 @@ export default function EditCustomersPage({ params }: { params: Promise<{ id: st
 
                             setFormData({ ...formData, customerPaymentTerm: updatedPaymentTerm })
                         }}
-                    />
+                    />}
 
-                    <CustomerContactComponent
+                    {settings.showContactPerson && <CustomerContactComponent
                         defaultValues={formData.customerContacts}
                         oncustomerContactsChange={(customerContacts) => {
                             setFormData({ ...formData, customerContacts: customerContacts });
                             console.log('FormData of Customer Contact:', formData);
                         }}
-                    />
+                    />}
                     {/* After CustomerContactComponent */}
                     {validationErrors.customerContacts && (
                         <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
@@ -605,5 +608,4 @@ export default function EditCustomersPage({ params }: { params: Promise<{ id: st
             </div>
         </div>
     )
-
 }

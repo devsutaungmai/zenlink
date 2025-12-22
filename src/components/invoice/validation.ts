@@ -6,18 +6,26 @@ const customerContactSchema = z.object({
     .min(1, 'Contact name is required')
     .min(2, 'Contact name must be at least 2 characters')
     .max(100, 'Contact name must be less than 100 characters'),
-  
+
   phoneNumber: z.string()
-    .min(1, 'Contact phone number is required')
     .max(20, 'Phone number must be less than 20 characters')
-    .regex(/^[0-9\s+()-]*$/, 'Phone number can only contain numbers and phone symbols'),
-  
-  email: z.string()
-    .min(1, 'Contact email is required')
-    .email('Invalid email format'),
-  
-  isPrimary: z.boolean()
+    .regex(/^[0-9\s+()-]*$/, 'Phone number can only contain numbers and phone symbols')
+    .optional()
+    .or(z.literal('')),
+
+  email: z.union([z.literal(''), z.string().email('Invalid email format')]).optional(),
+
+  isPrimary: z.boolean().optional()
 })
+
+// Helper to set the first contact as primary if none are marked primary
+export function ensurePrimaryContact(contacts?: Array<z.infer<typeof customerContactSchema>>) {
+  const arr = Array.isArray(contacts) ? contacts.slice() : []
+  if (arr.length > 0 && !arr.some(c => c?.isPrimary === true)) {
+    arr[0] = { ...arr[0], isPrimary: true }
+  }
+  return arr
+}
 
 export const customerValidationSchema = z.object({
   customerName: z.string()
@@ -86,16 +94,9 @@ export const customerValidationSchema = z.object({
     .optional()
     .or(z.literal('')),
   
-  departmentId: z.string()
-    .min(1, 'Department is required'),
-  
-  // Customer contacts validation - REQUIRED and must have at least one contact
-  customerContacts: z.array(customerContactSchema)
-    .min(1, 'At least one customer contact is required')
-    .refine(
-      (contacts) => contacts.some(contact => contact.isPrimary),
-      'At least one contact must be marked as primary'
-    ),
+  departmentId: z.string().optional().or(z.literal('')),
+
+  customerContacts: z.array(customerContactSchema).default([]),
   
   // Payment term validation
   customerPaymentTerm: z.object({

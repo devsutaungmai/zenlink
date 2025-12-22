@@ -154,6 +154,7 @@ export async function PUT(
       data: {
         ...restData,
         invoicepaymentTermsId: paymentTermsId,
+        ...(restData.departmentId && restData.departmentId !== "" ? { departmentId: restData.departmentId } : {departmentId: null}),
         contactPersons: {
           deleteMany: {},
           create: (customerContacts || []).map((contact: any) => ({

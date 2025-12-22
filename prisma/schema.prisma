@@ -139,6 +139,7 @@ model Business {
   productFormSettings      ProductFormSettings?      @relation("ProductFormSettings")                       
   employeeSettings         EmployeeSettings?         @relation("EmployeeSettings")
   projectFormSettings      ProjectFormSettings?      @relation("ProjectFormSettings")
+  customerFormSettings     CustomerFormSettings?     @relation("CustomerFormSettings")
 }
 
 model Employee {
@@ -801,6 +802,32 @@ model ShiftTypeConfig {
 
   @@unique([name, businessId])
   @@index([businessId, isActive])
+}
+
+model CustomerFormSettings {
+  id         String   @id @default(cuid())
+  businessId String   @unique
+  business   Business @relation("CustomerFormSettings", fields: [businessId], references: [id], onDelete: Cascade)
+  deviceId   String?
+
+  showOrganizationNumber           Boolean @default(true)
+  showAddress                      Boolean @default(true)
+  showPostalCode                   Boolean @default(true)
+  showPostalAddress                Boolean @default(true)
+  showPhoneNumber                  Boolean @default(true)
+  showEmail                        Boolean @default(true)
+  showDiscountPercentage           Boolean @default(true)
+  showDeliveryAddress              Boolean @default(true)
+  showDeliveryAddressPostalCode    Boolean @default(true)
+  showDeliveryAddressPostalAddress Boolean @default(true)
+  showDepartment                   Boolean @default(true)
+  showInvoicePaymentTerms          Boolean @default(true)
+  showContactPerson                Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([businessId])
 }
 
 model Customer {
