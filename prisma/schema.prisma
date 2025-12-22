@@ -1446,6 +1446,8 @@ model EmployeeSettings {
   requireHoursPerMonth        Boolean                   @default(true)
   requireBankAccount          Boolean                   @default(false)
   requireDepartment           Boolean                   @default(true)
+  requireEmployeeGroup        Boolean                   @default(false)
+  requireRole                 Boolean                   @default(false)
   requireSalaryRate           Boolean                   @default(false)
   incompleteProfileBehavior   IncompleteProfileBehavior @default(SHOW_WARNING)
   

@@ -270,6 +270,8 @@
         "hours_per_month": "Hours Per Month",
         "bank_account": "Bank Account",
         "department": "Department",
+        "employee_group": "Employee Group",
+        "role": "Role",
         "salary_rate": "Salary Rate",
         "incomplete_behavior": "Incomplete Profile Behavior",
         "behavior_options": {

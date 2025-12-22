@@ -14,6 +14,8 @@ export interface EmployeeSettingsForValidation {
   requireHoursPerMonth: boolean
   requireBankAccount: boolean
   requireDepartment: boolean
+  requireEmployeeGroup: boolean
+  requireRole: boolean
   requireSalaryRate: boolean
 }
 
@@ -31,6 +33,8 @@ export const defaultValidationSettings: EmployeeSettingsForValidation = {
   requireHoursPerMonth: true,
   requireBankAccount: false,
   requireDepartment: true,
+  requireEmployeeGroup: false,
+  requireRole: false,
   requireSalaryRate: false,
 }
 
@@ -129,7 +133,13 @@ export function createEmployeeValidationSchema(settings: EmployeeSettingsForVali
     ? z.string().min(1, 'Department is required')
     : z.string().optional().or(z.literal('')),
   
-  employeeGroupId: z.string().optional(),
+  employeeGroupId: settings.requireEmployeeGroup
+    ? z.string().min(1, 'Employee group is required')
+    : z.string().optional().or(z.literal('')),
+
+  roleIds: settings.requireRole
+    ? z.array(z.string()).min(1, 'At least one role is required')
+    : z.array(z.string()).optional(),
   
   email: settings.requireEmail
     ? z.string().min(1, 'Email is required').email('Invalid email format')

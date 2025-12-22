@@ -252,7 +252,11 @@
     "general_setting": {
       "title": "Personale - Generelt",
       "description": "Generelle indstillinger for personaleadministration",
-      "coming_soon": "Denne stempelursfunktion kommer snart."
+      "coming_soon": "Denne stempelursfunktion kommer snart.",
+      "required_fields": {
+        "employee_group": "Medarbejdergruppe",
+        "role": "Rolle"
+      }
     },
     "contract_rules_setting": {
       "title": "Personale - Kontraktregler",

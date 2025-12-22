@@ -192,6 +192,8 @@ export function EmploymentInfoSection({
           onChange={onEmployeeGroupsChange}
           placeholder="Select employee groups..."
           disabled={readOnly}
+          required={validationSettings?.requireEmployeeGroup !== false}
+          error={validationErrors.employeeGroupId || validationErrors.employeeGroupIds}
         />
       </div>
 
@@ -204,6 +206,8 @@ export function EmploymentInfoSection({
             onChange={onRolesChange}
             placeholder={t('employees.form.select_roles', 'Select access roles...')}
             disabled={readOnly}
+            required={validationSettings?.requireRole !== false}
+            error={validationErrors.roleIds}
           />
           <p className="mt-1 text-xs text-gray-500">
             {formData.departmentIds.length > 0 

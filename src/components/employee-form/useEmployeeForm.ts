@@ -40,6 +40,8 @@ export function useEmployeeForm({ initialData }: UseEmployeeFormProps) {
             requireHoursPerMonth: settings.requireHoursPerMonth ?? defaultValidationSettings.requireHoursPerMonth,
             requireBankAccount: settings.requireBankAccount ?? defaultValidationSettings.requireBankAccount,
             requireDepartment: settings.requireDepartment ?? defaultValidationSettings.requireDepartment,
+            requireEmployeeGroup: settings.requireEmployeeGroup ?? defaultValidationSettings.requireEmployeeGroup,
+            requireRole: settings.requireRole ?? defaultValidationSettings.requireRole,
             requireSalaryRate: settings.requireSalaryRate ?? defaultValidationSettings.requireSalaryRate,
           })
           
