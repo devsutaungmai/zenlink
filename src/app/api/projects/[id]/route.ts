@@ -140,7 +140,17 @@ export async function PUT(
         console.error('Error updating project:', error)
 
         if (error.code === 'P2002') {
-            return NextResponse.json({ error: 'Project number already exists' }, { status: 409 })
+            const target = error.meta?.target
+            const targets = Array.isArray(target) ? target.map(String).join(',').toLowerCase() : String(target || '').toLowerCase()
+
+            if (targets.includes('projectnumber') || targets.includes('project_number')) {
+                return NextResponse.json({ error: 'Project number already exists!' }, { status: 409 })
+            }
+            if (targets.includes('projectname') || targets.includes('project_name')) {
+                return NextResponse.json({ error: 'Project name already exists!' }, { status: 409 })
+            }
+
+            return NextResponse.json({ error: 'Unique constraint failed' }, { status: 409 })
         }
 
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

@@ -76,9 +76,15 @@ export async function POST(request: NextRequest) {
     } = body
 
     // Validate inputs - only check for required fields
-    if (!customerId || !invoiceLines || invoiceLines.length === 0) {
+    if (!customerId) {
       return NextResponse.json(
-        { error: 'Missing required fields: customerId, invoiceLines' },
+        { error: 'Customer is required!' },
+        { status: 400 }
+      )
+    }
+    if (!invoiceLines || invoiceLines.length === 0) {
+      return NextResponse.json(
+        { error: 'InvoiceLine is required!' },
         { status: 400 }
       )
     }

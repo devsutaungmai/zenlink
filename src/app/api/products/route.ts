@@ -62,8 +62,11 @@ export async function POST(request: NextRequest) {
 
     console.log('Creating product with data:', JSON.stringify(formData))
 
-    if (!productNumber || !productName) {
-      return NextResponse.json({ error: 'ProductName and ProductNumber are required' }, { status: 400 })
+    if (!productNumber) {
+      return NextResponse.json({ error: 'ProductNumber is required' }, { status: 400 })
+    }
+     if (!productName) {
+      return NextResponse.json({ error: 'ProductName is required' }, { status: 400 })
     }
     const refinedUnitId =
       typeof unitId === "string" && unitId.trim() !== "" ? unitId : null;
@@ -89,9 +92,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(product, { status: 201 })
   } catch (error: any) {
     console.error('Error creating product:', error)
-
     if (error.code === 'P2002') {
-      return NextResponse.json({ error: 'Product name already exists' }, { status: 409 })
+      const target = error.meta?.target
+      const targets = Array.isArray(target) ? target.map(String).join(',').toLowerCase() : String(target || '').toLowerCase()
+
+      if (targets.includes('productnumber') || targets.includes('product_number')) {
+      return NextResponse.json({ error: 'Product number already exists!' }, { status: 409 })
+      }
+      if (targets.includes('productname') || targets.includes('product_name')) {
+      return NextResponse.json({ error: 'Product name already exists!' }, { status: 409 })
+      }
+
+      return NextResponse.json({ error: 'Unique constraint failed' }, { status: 409 })
     }
 
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

@@ -165,8 +165,22 @@ export async function DELETE(
     })
 
     return NextResponse.json({ message: 'Product deleted successfully' })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error deleting product:', error)
+    if (error.code === 'P2002') {
+      const target = error.meta?.target
+      const targets = Array.isArray(target) ? target.map(String).join(',').toLowerCase() : String(target || '').toLowerCase()
+
+      if (targets.includes('productnumber') || targets.includes('product_number')) {
+      return NextResponse.json({ error: 'Product number already exists!' }, { status: 409 })
+      }
+      if (targets.includes('productname') || targets.includes('product_name')) {
+      return NextResponse.json({ error: 'Product name already exists!' }, { status: 409 })
+      }
+
+      return NextResponse.json({ error: 'Unique constraint failed' }, { status: 409 })
+    }
+
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

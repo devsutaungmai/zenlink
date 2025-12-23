@@ -160,12 +160,12 @@ export async function GET(request: NextRequest) {
     doc.setFont('helvetica', 'bold')
     doc.text('Fakturadato:', rightX, yPos)
     doc.setFont('helvetica', 'normal')
-    doc.text(formatDate(invoice.createdAt), 170, yPos, { align: 'right' })
+    doc.text(formatDate(invoice.sentAt ?? invoice.createdAt), 170, yPos, { align: 'right' })
 
     doc.setFont('helvetica', 'bold')
     doc.text('Forfallsdato:', rightX, yPos + 5)
     doc.setFont('helvetica', 'normal')
-    doc.text(formatDate(new Date(invoice.createdAt.getTime() + 14*24*60*60*1000)), 170, yPos + 5, { align: 'right' })
+    doc.text(formatDate(invoice.dueDate ?? invoice.createdAt), 170, yPos + 5, { align: 'right' })
 
     doc.setFont('helvetica', 'bold')
     doc.text('Bankkonto:', rightX, yPos + 10)

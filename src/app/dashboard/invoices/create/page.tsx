@@ -43,6 +43,7 @@ export interface Product {
     id: string
     productName: string
     salesPrice: number
+    discountPercentage: number
 }
 
 export interface Project {
@@ -170,7 +171,26 @@ export default function CreateInvoicePage() {
     useEffect(() => {
         fetchCustomers()
         fetchProducts()
-    }, [])
+
+        setFormData(prev => {
+            if (prev.invoiceLines.length > 0) return prev;
+
+            return {
+                ...prev,
+                invoiceLines: [
+                    {
+                        productId: '',
+                        quantity: 1,
+                        pricePerUnit: 0,
+                        discountPercentage: 0
+                    }
+                ]
+            };
+        });
+
+        setNetTotals(prev => (prev.length > 0 ? prev : [0]));
+    }, []);
+
     useEffect(() => {
         if (copyMode && invoiceId) {
             fetchInvoice();
@@ -764,7 +784,7 @@ export default function CreateInvoicePage() {
                                 <>
                                     <div className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] min-w-[250px]">
                                         <label htmlFor="sentAt" className="block text-sm font-medium text-gray-700 mb-2">
-                                            Invoice Date (sentAt) *
+                                            Invoice Date (SentAt) *
                                         </label>
                                         <input
                                             type="date"
@@ -875,8 +895,6 @@ export default function CreateInvoicePage() {
                         </div>
                     </div>}
 
-
-
                     <div className="bg-gradient-to-br rounded-xl border p-6">
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-lg font-semibold text-gray-900 mb-4">Order Lines</h2>
@@ -884,6 +902,7 @@ export default function CreateInvoicePage() {
                                 type="button"
                                 onClick={handleNewOrderLine}
                                 disabled={loading}
+                                className="px-4 py-2 rounded-lg bg-[#31BCFF] text-white hover:bg-[#0ea5e9] transition-colors"
                             >New Order Line</button>
                         </div>
                         {formData.invoiceLines.map((line, index) => (
@@ -901,7 +920,9 @@ export default function CreateInvoicePage() {
                                             const updatedLines = [...formData.invoiceLines];
                                             updatedLines[index].productId = e.target.value;
                                             updatedLines[index].pricePerUnit = product?.salesPrice ?? 0;
+                                            updatedLines[index].discountPercentage = product?.discountPercentage ?? 0;
                                             setFormData({ ...formData, invoiceLines: updatedLines });
+                                            updateLineTotal(index);
                                         }}
                                         className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
                                     >
@@ -1022,7 +1043,7 @@ export default function CreateInvoicePage() {
                                         type='button'
                                         onClick={() => handleCopyOrderLine(line, Number(netTotals[index]))}
                                     >
-                                        <svg className="w-8 h-8 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2h-6a2 2 0 01-2-2V7z" />
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H7a2 2 0 00-2 2v7a2 2 0 002 2h7a2 2 0 002-2v-1" />
                                         </svg>
@@ -1132,5 +1153,4 @@ export default function CreateInvoicePage() {
             />}
         </div>
     )
-
 }

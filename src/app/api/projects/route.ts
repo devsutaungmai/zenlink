@@ -62,8 +62,12 @@ export async function POST(request: NextRequest) {
     const formData = await request.json()
     const { name, projectNumber, customerId, categoryId, startDate, endDate,active } = formData
 
-    if (!name || !projectNumber) {
-      return NextResponse.json({ error: 'Name and ProjectNumber are required' }, { status: 400 })
+    if (!name) {
+      return NextResponse.json({ error: 'Name is required' }, { status: 400 })
+    }
+
+     if (!projectNumber) {
+      return NextResponse.json({ error: 'Project Number is required' }, { status: 400 })
     }
 
     const refinedCustomerId = customerId || null
@@ -114,8 +118,18 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Error creating project:', error)
 
-    if (error.code === 'P2002') {
-      return NextResponse.json({ error: 'Project number already exists' }, { status: 409 })
+     if (error.code === 'P2002') {
+      const target = error.meta?.target
+      const targets = Array.isArray(target) ? target.map(String).join(',').toLowerCase() : String(target || '').toLowerCase()
+
+      if (targets.includes('projectnumber') || targets.includes('project_number')) {
+      return NextResponse.json({ error: 'Project number already exists!' }, { status: 409 })
+      }
+      if (targets.includes('projectname') || targets.includes('project_name')) {
+      return NextResponse.json({ error: 'Project name already exists!' }, { status: 409 })
+      }
+
+      return NextResponse.json({ error: 'Unique constraint failed' }, { status: 409 })
     }
 
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

@@ -87,6 +87,8 @@ export default function InvoicesPage() {
 
             const data = await res.json()
 
+            console.log('Fetched invoices:', data)
+
             if (Array.isArray(data)) {
                 setInvoices(data)
             } else {
@@ -316,7 +318,9 @@ export default function InvoicesPage() {
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="text-sm text-gray-900">
-                                                {new Date(invoice.invoiceDate).toLocaleDateString()}
+                                                {/* {new Date(invoice.invoiceDate).toLocaleDateString()}
+                                                 */}
+                                                 {invoice.sentAt ? new Date(invoice.sentAt).toLocaleDateString() : '-'}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">

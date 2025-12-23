@@ -215,7 +215,7 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
 
                         <div>
                             <label htmlFor="projectNumber" className="block text-sm font-medium text-gray-700 mb-2">
-                                Project Number
+                                Project Number *
                             </label>
                             <input
                                 type="text"
