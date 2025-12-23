@@ -1062,7 +1062,7 @@ model LedgerEntry {
   business       Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   voucherId      String
-  voucher        Voucher      @relation(fields: [voucherId], references: [id])
+  voucher        Voucher      @relation(fields: [voucherId], references: [id], onDelete: Cascade)
 
   description    String?
 
@@ -1363,6 +1363,7 @@ model Voucher {
   invoice        Invoice?
   payment        CustomerPayment?
 
+  @@unique([businessId, year, sequence]) 
   @@index([businessId, year, sequence])
 }
 

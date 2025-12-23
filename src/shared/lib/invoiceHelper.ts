@@ -351,30 +351,34 @@ async function generateCreditNoteNumber(businessId: string): Promise<string> {
 }
 
 
-export async function generateVoucherNumber(businessId: string, type: VoucherType, tx?: Prisma.TransactionClient) {
+export async function generateVoucherNumber(
+  businessId: string,
+  type: VoucherType,
+  tx?: Prisma.TransactionClient
+) {
   const year = new Date().getFullYear();
-  const BASE = 0;
   const txClient = tx || prisma;
 
-  // Lock the business row to serialize voucher generation
-  // This ensures only ONE request can generate vouchers at a time per business
+  // ✅ Lock the business row
   await txClient.$executeRaw`
     SELECT 1 FROM "Business" 
     WHERE id = ${businessId} 
     FOR UPDATE
   `;
 
-  // Now safe to generate sequence - no race condition possible
-
-  // Find last voucher for this business + year
+  // ✅ Find the last sequence for this business + year
   const lastVoucher = await txClient.voucher.findFirst({
     where: { businessId, year },
     orderBy: { sequence: "desc" }
   });
 
   const nextSeq = lastVoucher ? lastVoucher.sequence + 1 : 1;
+  
+  // ✅ Format: businessId-year-sequence
+  // Example: cmjba1dlg0000pgutvum2gxvn-2025-1
+  const voucherNumber = `${businessId}-${year}-${nextSeq}`;
 
-  const voucherNumber = `${year}-${BASE + nextSeq}`;
+  console.log('Generated voucherNumber:', voucherNumber);
 
   // Create voucher row
   const voucher = await txClient.voucher.create({
@@ -390,6 +394,43 @@ export async function generateVoucherNumber(businessId: string, type: VoucherTyp
   return voucher;
 }
 
+// src/shared/lib/voucherHelper.ts
+
+export function formatVoucherNumberForDisplay(voucherNumber: string): string {
+  // Split: "cmjba1dlg0000pgutvum2gxvn-2025-1" 
+  // Returns: "2025-1"
+  const parts = voucherNumber.split('-');
+  
+  if (parts.length >= 3) {
+    // Get last two parts: year and sequence
+    const year = parts[parts.length - 2];
+    const sequence = parts[parts.length - 1];
+    return `${year}-${sequence}`;
+  }
+  
+  // Fallback if format is unexpected
+  return voucherNumber;
+}
+
+export function parseVoucherNumber(voucherNumber: string) {
+  // Split: "cmjba1dlg0000pgutvum2gxvn-2025-1"
+  const parts = voucherNumber.split('-');
+  
+  if (parts.length >= 3) {
+    const sequence = parts[parts.length - 1];
+    const year = parts[parts.length - 2];
+    const businessId = parts.slice(0, -2).join('-'); // Handle if businessId contains dashes
+    
+    return {
+      businessId,
+      year: parseInt(year),
+      sequence: parseInt(sequence),
+      displayNumber: `${year}-${sequence}`
+    };
+  }
+  
+  return null;
+}
 
 /**
 * Post invoice to ledger when status changes to SENT
