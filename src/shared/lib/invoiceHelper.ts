@@ -55,10 +55,11 @@ export function calculateInvoiceTotals(
   }
 }
 
-export async function generateInvoiceNumber() {
+export async function generateInvoiceNumber(tx?: Prisma.TransactionClient): Promise<string> {
   const year = new Date().getFullYear()
+  const txClient = tx || prisma;
 
-  const lastInvoice = await prisma.invoice.findFirst({
+  const lastInvoice = await txClient.invoice.findFirst({
     where: { invoiceNumber: { startsWith: `INV-${year}` } },
     orderBy: { invoiceNumber: 'desc' }
   })
@@ -350,13 +351,13 @@ async function generateCreditNoteNumber(businessId: string): Promise<string> {
 }
 
 
-export async function generateVoucherNumber(businessId: string, type: VoucherType) {
-  return await prisma.$transaction(async (tx) => {
+export async function generateVoucherNumber( businessId: string, type: VoucherType,tx?: Prisma.TransactionClient) {
     const year = new Date().getFullYear();
     const BASE = 0;
+    const txClient = tx || prisma;
 
     // Find last voucher for this business + year
-    const lastVoucher = await tx.voucher.findFirst({
+    const lastVoucher = await txClient.voucher.findFirst({
       where: { businessId, year },
       orderBy: { sequence: "desc" }
     });
@@ -366,7 +367,7 @@ export async function generateVoucherNumber(businessId: string, type: VoucherTyp
     const voucherNumber = `${year}-${BASE + nextSeq}`;
 
     // Create voucher row
-    const voucher = await tx.voucher.create({
+    const voucher = await txClient.voucher.create({
       data: {
         businessId,
         year,
@@ -377,7 +378,6 @@ export async function generateVoucherNumber(businessId: string, type: VoucherTyp
     });
 
     return voucher;
-  });
 }
 
 

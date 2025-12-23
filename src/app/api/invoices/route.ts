@@ -155,78 +155,77 @@ export async function POST(request: NextRequest) {
             { status: 404 }
           )
         }
+        const invoice = await prisma.$transaction(async (tx) => {
+          const invoiceNumber = await generateInvoiceNumber(tx);
 
-        const invoiceNumber = await generateInvoiceNumber();
+          console.log('Creating invoice with number:', invoiceNumber);
 
-        console.log('Creating invoice with number:', invoiceNumber);
+          const invoiceData: any = {
+            invoiceNumber: invoiceNumber,
+            customerId,
+            businessId,
 
-        const invoiceData: any = {
-          invoiceNumber: invoiceNumber,
-          customerId,
-          businessId,
-
-          // Invoice totals
-          totalExclVAT: totalExclVAT,
-          vatPercentage: 25,
-          vatAmount: vatAmount,
-          totalInclVAT: totalInclVAT,
-          notes,
-          status: status,
-          sentAt: new Date(sentAt) ?? new Date(),
-          dueDay: dueDay ?? 14,
+            // Invoice totals
+            totalExclVAT: totalExclVAT,
+            vatPercentage: 25,
+            vatAmount: vatAmount,
+            totalInclVAT: totalInclVAT,
+            notes,
+            status: status,
+            sentAt: new Date(sentAt) ?? new Date(),
+            dueDay: dueDay ?? 14,
 
 
-          // Create invoice line with product
-          invoiceLines: {
-            create: invoiceLinesData
-          }
-        }
-
-        if (contactPersonId && contactPersonId.trim() !== '') {
-          invoiceData.contactPersonId = contactPersonId
-        }
-
-        if (projectId && projectId.trim() !== '') {
-          invoiceData.projectId = projectId
-        }
-
-        if (departmentId && departmentId.trim() !== '') {
-          invoiceData.departmentId = departmentId
-        }
-
-        if (deliveryAddress && deliveryAddress.trim() !== '') {
-          invoiceData.deliveryAddress = deliveryAddress
-        }
-
-        if (paidAt && paidAt.trim() !== "") {
-          invoiceData.dueDate = new Date(paidAt)
-          invoiceData.paidAt = new Date(paidAt)
-        } else {
-          const sentDate = invoiceData.sentAt;
-          const paidDate = new Date(sentDate);
-          paidDate.setDate(paidDate.getDate() + Number(invoiceData.dueDay))
-          invoiceData.dueDate = paidDate;
-          invoiceData.paidAt = paidDate;
-
-        }
-
-        // Create invoice with nested invoice line
-        const invoice = await prisma.invoice.create({
-          data: invoiceData,
-          include: {
-            customer: true,
+            // Create invoice line with product
             invoiceLines: {
-              include: {
-                product: true
-              }
+              create: invoiceLinesData
             }
           }
-        })
 
-        if (invoice.status === "SENT") {
-          // Generate voucher and update invoice in a transaction
-          const updatedInvoice = await prisma.$transaction(async (tx) => {
-            const voucher = await generateVoucherNumber(businessId, VoucherType.INVOICE);
+          if (contactPersonId && contactPersonId.trim() !== '') {
+            invoiceData.contactPersonId = contactPersonId
+          }
+
+          if (projectId && projectId.trim() !== '') {
+            invoiceData.projectId = projectId
+          }
+
+          if (departmentId && departmentId.trim() !== '') {
+            invoiceData.departmentId = departmentId
+          }
+
+          if (deliveryAddress && deliveryAddress.trim() !== '') {
+            invoiceData.deliveryAddress = deliveryAddress
+          }
+
+          if (paidAt && paidAt.trim() !== "") {
+            invoiceData.dueDate = new Date(paidAt)
+            invoiceData.paidAt = new Date(paidAt)
+          } else {
+            const sentDate = invoiceData.sentAt;
+            const paidDate = new Date(sentDate);
+            paidDate.setDate(paidDate.getDate() + Number(invoiceData.dueDay))
+            invoiceData.dueDate = paidDate;
+            invoiceData.paidAt = paidDate;
+
+          }
+
+          // Create invoice with nested invoice line
+          const invoice = await prisma.invoice.create({
+            data: invoiceData,
+            include: {
+              customer: true,
+              invoiceLines: {
+                include: {
+                  product: true
+                }
+              }
+            }
+          })
+
+          if (invoice.status === "SENT") {
+            // Generate voucher and update invoice in a transaction
+            const voucher = await generateVoucherNumber(businessId, VoucherType.INVOICE, tx);
 
             const updated = await tx.invoice.update({
               where: { id: invoice.id },
@@ -234,9 +233,13 @@ export async function POST(request: NextRequest) {
             });
 
             return updated;
-          });
+          }
 
-          // Now the invoice has voucherId committed to DB
+          return invoice;
+
+        });
+
+        if (invoice.status === "SENT") {
           await invoiceToLedgerPosting(invoice.id);
         }
 
