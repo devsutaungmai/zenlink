@@ -49,6 +49,8 @@ interface EmployeeSettingsData {
   requireHoursPerMonth: boolean
   requireBankAccount: boolean
   requireDepartment: boolean
+  requireEmployeeGroup: boolean
+  requireRole: boolean
   requireSalaryRate: boolean
   incompleteProfileBehavior: 'SHOW_WARNING' | 'BLOCK_SCHEDULING' | 'NONE'
   defaultDepartmentId: string | null
@@ -103,6 +105,8 @@ const defaultSettings: EmployeeSettingsData = {
   requireHoursPerMonth: true,
   requireBankAccount: false,
   requireDepartment: true,
+  requireEmployeeGroup: false,
+  requireRole: false,
   requireSalaryRate: false,
   incompleteProfileBehavior: 'SHOW_WARNING',
   defaultDepartmentId: null,
@@ -370,6 +374,22 @@ export default function PeopleGeneralSettings() {
                 id="requireDepartment"
                 checked={settings.requireDepartment}
                 onCheckedChange={(checked) => updateSetting('requireDepartment', checked)}
+              />
+            </div>
+            <div className="flex items-center justify-between p-3 border rounded-lg">
+              <Label htmlFor="requireEmployeeGroup">{t('people.general_setting.required_fields.employee_group')}</Label>
+              <Switch
+                id="requireEmployeeGroup"
+                checked={settings.requireEmployeeGroup}
+                onCheckedChange={(checked) => updateSetting('requireEmployeeGroup', checked)}
+              />
+            </div>
+            <div className="flex items-center justify-between p-3 border rounded-lg">
+              <Label htmlFor="requireRole">{t('people.general_setting.required_fields.role')}</Label>
+              <Switch
+                id="requireRole"
+                checked={settings.requireRole}
+                onCheckedChange={(checked) => updateSetting('requireRole', checked)}
               />
             </div>
             <div className="flex items-center justify-between p-3 border rounded-lg">
