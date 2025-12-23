@@ -351,33 +351,43 @@ async function generateCreditNoteNumber(businessId: string): Promise<string> {
 }
 
 
-export async function generateVoucherNumber( businessId: string, type: VoucherType,tx?: Prisma.TransactionClient) {
-    const year = new Date().getFullYear();
-    const BASE = 0;
-    const txClient = tx || prisma;
+export async function generateVoucherNumber(businessId: string, type: VoucherType, tx?: Prisma.TransactionClient) {
+  const year = new Date().getFullYear();
+  const BASE = 0;
+  const txClient = tx || prisma;
 
-    // Find last voucher for this business + year
-    const lastVoucher = await txClient.voucher.findFirst({
-      where: { businessId, year },
-      orderBy: { sequence: "desc" }
-    });
+  // Lock the business row to serialize voucher generation
+  // This ensures only ONE request can generate vouchers at a time per business
+  await txClient.$executeRaw`
+    SELECT 1 FROM "Business" 
+    WHERE id = ${businessId} 
+    FOR UPDATE
+  `;
 
-    const nextSeq = lastVoucher ? lastVoucher.sequence + 1 : 1;
+  // Now safe to generate sequence - no race condition possible
 
-    const voucherNumber = `${year}-${BASE + nextSeq}`;
+  // Find last voucher for this business + year
+  const lastVoucher = await txClient.voucher.findFirst({
+    where: { businessId, year },
+    orderBy: { sequence: "desc" }
+  });
 
-    // Create voucher row
-    const voucher = await txClient.voucher.create({
-      data: {
-        businessId,
-        year,
-        sequence: nextSeq,
-        voucherNumber,
-        type
-      }
-    });
+  const nextSeq = lastVoucher ? lastVoucher.sequence + 1 : 1;
 
-    return voucher;
+  const voucherNumber = `${year}-${BASE + nextSeq}`;
+
+  // Create voucher row
+  const voucher = await txClient.voucher.create({
+    data: {
+      businessId,
+      year,
+      sequence: nextSeq,
+      voucherNumber,
+      type
+    }
+  });
+
+  return voucher;
 }
 
 
