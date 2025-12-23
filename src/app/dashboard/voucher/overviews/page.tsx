@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronLeft, ChevronRight, Search, File, Printer } from "lucide-react";
+import { formatVoucherNumberForDisplay } from "@/shared/lib/invoiceHelper";
 
 export default function VoucherOverview() {
   const [vouchers, setVouchers] = useState<any>([]);
@@ -190,9 +191,9 @@ export default function VoucherOverview() {
                         onClick={() => toggleRow(v.id)}
                         className="text-blue-600 hover:underline font-medium"
                       >
-                        {v.id}
+                        {formatVoucherNumberForDisplay(v.id)}
                       </button>
-                      <span className="text-sm text-muted-foreground">- {v.title}</span>
+                      {/* <span className="text-sm text-muted-foreground">- {v.title}</span> */}
                     </div>
                     <div></div>
                     <div></div>

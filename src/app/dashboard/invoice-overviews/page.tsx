@@ -427,7 +427,6 @@ export default function InvoiceOverview() {
                                                     <div className="text-blue-600 hover:underline cursor-pointer">
                                                         {invoice.customer?.customerName}
                                                     </div>
-                                                    <div className="text-gray-500 text-xs">({invoice.customer?.id})</div>
                                                 </div>
                                             </td>
                                             <td className="px-4 py-3">
