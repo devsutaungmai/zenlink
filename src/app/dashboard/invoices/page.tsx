@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon, Cog6ToothIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon, Cog6ToothIcon, FunnelIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline'
 import { useTranslation } from 'react-i18next'
 import Swal from 'sweetalert2'
 import { useCurrency } from '@/shared/hooks/useCurrency'
@@ -16,6 +16,10 @@ import {
     PaginationPrevious,
 } from "@/components/ui/pagination"
 import { Decimal } from '@prisma/client/runtime/library'
+import { EmailService } from '@/shared/lib/notifications'
+import { Mail, MailIcon } from 'lucide-react'
+import { sendEmail } from '@/shared/lib/invoiceHelper'
+import { useRouter } from 'next/navigation'
 
 
 export enum InvoiceStatus {
@@ -62,15 +66,18 @@ export interface Invoice {
 export default function InvoicesPage() {
     const { t } = useTranslation()
     // const { currencySymbol } = useCurrency()
+    const router = useRouter()
     const [invoices, setInvoices] = useState<Invoice[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [searchTerm, setSearchTerm] = useState('')
+    const [selectedFilter, setSelectedFilter] = useState('all')
 
     // Pagination states
     const [currentPage, setCurrentPage] = useState(1)
     const [itemsPerPage] = useState(10)
-   
+    const [selectedInvoices, setSelectedInvoices] = useState<Set<string>>(new Set())
+
     useEffect(() => {
         fetchInvoices()
     }, [])
@@ -147,9 +154,15 @@ export default function InvoicesPage() {
         }
     }
 
-    const filteredInvoices = invoices.filter(invoice =>
-        invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        invoice.customer?.customerName.toLowerCase().includes(searchTerm.toLowerCase())
+    const filteredInvoices = invoices.filter(invoice => {
+        const matchesSearch = invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            invoice.customer?.customerName.toLowerCase().includes(searchTerm.toLowerCase());
+
+        const matchesFilter = selectedFilter === "all" ||
+            invoice.status.toLowerCase() === selectedFilter.toLowerCase();
+
+        return matchesSearch && matchesFilter;
+    }
     )
 
     // Pagination calculations
@@ -168,7 +181,143 @@ export default function InvoicesPage() {
         // Scroll to top of table when page changes
         window.scrollTo({ top: 0, behavior: 'smooth' })
     }
-   
+
+    const handleFilterClick = (filter: string) => () => {
+        setSelectedFilter(filter)
+        setCurrentPage(1)
+    }
+    const isAllSelected = paginatedInvoices.length > 0 && selectedInvoices.size === paginatedInvoices.length
+    const isPartiallySelected = selectedInvoices.size > 0 && selectedInvoices.size < paginatedInvoices.length
+    const handleSelectAll = () => {
+        if (selectedInvoices.size === paginatedInvoices.length) {
+            setSelectedInvoices(new Set())
+        } else {
+            setSelectedInvoices(new Set(paginatedInvoices.map((inv) => inv.id)))
+        }
+    }
+
+    const handleSelectInvoice = (invoiceId: string) => {
+        const newSelected = new Set(selectedInvoices)
+        if (newSelected.has(invoiceId)) {
+            newSelected.delete(invoiceId)
+        } else {
+            newSelected.add(invoiceId)
+        }
+        setSelectedInvoices(newSelected)
+    }
+
+    const handleSendInvoices = async (sendType: 'send' | 'send_with_email') => {
+        // Validate that selected invoices are all in DRAFT status
+        const selectedInvoicesList = paginatedInvoices.filter(inv =>
+            selectedInvoices.has(inv.id)
+        )
+        const nonDraftInvoices = selectedInvoicesList.filter(
+            inv => inv.status !== InvoiceStatus.DRAFT
+        )
+
+        if (nonDraftInvoices.length > 0) {
+            await Swal.fire({
+                title: 'Error',
+                text: 'Only DRAFT invoices can be sent',
+                icon: 'error',
+                confirmButtonColor: '#31BCFF',
+            })
+            return
+        }
+
+        if (selectedInvoices.size === 0) {
+            await Swal.fire({
+                title: 'Error',
+                text: 'Please select at least one invoice',
+                icon: 'error',
+                confirmButtonColor: '#31BCFF',
+            })
+            return
+        }
+
+        setLoading(true)
+        try {
+            // Step 1: Update invoice status to SENT via API
+            const res = await fetch('/api/invoices/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ids: Array.from(selectedInvoices),
+                    sendType
+                }),
+            })
+
+            if (!res.ok) {
+                const error = await res.json()
+                throw new Error(error.error || 'Failed to send invoices')
+            }
+
+            const result = await res.json()
+            console.log('Send invoices result:', JSON.stringify(result, null, 2))
+
+            // Step 2: If sendType is 'send_with_email', also send emails
+            if (sendType === 'send_with_email') {
+                const emailErrors = []
+
+                // Send email for each successfully updated invoice
+                for (const invoice of result.invoices) {
+                    try {
+                        await sendEmail(invoice.id)
+                    } catch (emailError) {
+                        emailErrors.push({
+                            invoiceNumber: invoice.invoiceNumber,
+                            error: emailError instanceof Error ? emailError.message : 'Failed to send email'
+                        })
+                    }
+                }
+                // Show appropriate success message
+                //   if (emailErrors.length === 0) {
+                //     await Swal.fire({
+                //       title: 'Success!',
+                //       text: `${result.count} invoice(s) sent successfully with email notifications`,
+                //       icon: 'success',
+                //       confirmButtonColor: '#31BCFF',
+                //     })
+                //   } else {
+                //     await Swal.fire({
+                //       title: 'Partial Success',
+                //       html: `
+                //         <p>${result.count} invoice(s) updated to SENT status</p>
+                //         <p class="text-red-600 mt-2">Failed to send ${emailErrors.length} email(s):</p>
+                //         <ul class="text-sm text-left mt-2">
+                //           ${emailErrors.map(e => `<li>${e.invoiceNumber}: ${e.error}</li>`).join('')}
+                //         </ul>
+                //       `,
+                //       icon: 'warning',
+                //       confirmButtonColor: '#31BCFF',
+                //     })
+                //   }
+            } else {
+                // Just show success for status update
+                await Swal.fire({
+                    title: 'Success!',
+                    text: `${result.count} invoice(s) sent successfully`,
+                    icon: 'success',
+                    confirmButtonColor: '#31BCFF',
+                })
+            }
+
+            // Clear selection and refresh
+            setSelectedInvoices(new Set())
+            fetchInvoices()
+            router.refresh()
+
+        } catch (error) {
+            await Swal.fire({
+                title: 'Error',
+                text: error instanceof Error ? error.message : 'An error occurred',
+                icon: 'error',
+                confirmButtonColor: '#31BCFF',
+            })
+        } finally {
+            setLoading(false)
+        }
+    }
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
@@ -232,7 +381,7 @@ export default function InvoicesPage() {
                         />
                     </div>
                 </div>
-                <div className="flex items-center justify-between mt-4 text-sm text-gray-500">
+                {/* <div className="flex items-center justify-between mt-4 text-sm text-gray-500">
                     <span>
                         {filteredInvoices.length > 0
                             ? t('showing_paginated', {
@@ -248,6 +397,33 @@ export default function InvoicesPage() {
                             {t('page_info', { current: currentPage, total: totalPages })}
                         </span>
                     )}
+                </div> */}
+                {/* Filter Buttons */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
+                            <FunnelIcon className="w-4 h-4 flex-shrink-0" />
+                            <span>Filter</span>
+                        </div>
+                        {[
+                            { value: 'all', label: "ALL" },
+                            { value: 'outstanding', label: "OUTSTANDING" },
+                            { value: 'draft', label: "DRAFT" },
+                            { value: 'sent', label: "SENT" },
+                            { value: 'paid', label: "PAID" }
+                        ].map((filter) => (
+                            <button
+                                key={filter.value}
+                                onClick={handleFilterClick(filter.value)}
+                                className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${selectedFilter === filter.value
+                                    ? 'bg-[#31BCFF] text-white shadow-md'
+                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                    }`}
+                            >
+                                {filter.label}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </div>
 
@@ -277,6 +453,17 @@ export default function InvoicesPage() {
                         <table className="w-full">
                             <thead className="bg-gray-50/80">
                                 <tr>
+                                    <th className="px-4 py-4 text-left">
+                                        <input
+                                            type="checkbox"
+                                            checked={isAllSelected}
+                                            ref={(el) => {
+                                                if (el) el.indeterminate = isPartiallySelected
+                                            }}
+                                            onChange={handleSelectAll}
+                                            className="w-4 h-4 text-[#31BCFF] border-gray-300 rounded focus:ring-[#31BCFF] cursor-pointer"
+                                        />
+                                    </th>
                                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Invoice Number
                                     </th>
@@ -306,6 +493,14 @@ export default function InvoicesPage() {
                             <tbody className="divide-y divide-gray-200/50">
                                 {paginatedInvoices.map((invoice) => (
                                     <tr key={invoice.id} className="hover:bg-blue-50/30 transition-colors duration-200">
+                                        <td className="px-4 py-4">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedInvoices.has(invoice.id)}
+                                                onChange={() => handleSelectInvoice(invoice.id)}
+                                                className="w-4 h-4 text-[#31BCFF] border-gray-300 rounded focus:ring-[#31BCFF] cursor-pointer"
+                                            />
+                                        </td>
                                         <td className="px-6 py-4">
                                             <div className="text-sm font-medium text-gray-900">
                                                 {invoice.status !== InvoiceStatus.DRAFT ? invoice.invoiceNumber : "-"}
@@ -320,7 +515,7 @@ export default function InvoicesPage() {
                                             <div className="text-sm text-gray-900">
                                                 {/* {new Date(invoice.invoiceDate).toLocaleDateString()}
                                                  */}
-                                                 {invoice.sentAt ? new Date(invoice.sentAt).toLocaleDateString() : '-'}
+                                                {invoice.sentAt ? new Date(invoice.sentAt).toLocaleDateString() : '-'}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
@@ -346,7 +541,24 @@ export default function InvoicesPage() {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            {invoice.status === InvoiceStatus.DRAFT ? (
+                                            {selectedInvoices.has(invoice.id) && invoice.status === InvoiceStatus.DRAFT ? (
+                                                <div className="flex items-center justify-end gap-2">
+                                                    <button
+                                                        onClick={() => handleSendInvoices('send')}
+                                                        className="p-2 text-green-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200"
+                                                        title="Send Invoice"
+                                                    >
+                                                        <PaperAirplaneIcon className="h-4 w-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleSendInvoices('send_with_email')}
+                                                        className="p-2 text-green-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200"
+                                                        title="Send Invoice"
+                                                    >
+                                                        <MailIcon className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                            ) : invoice.status === InvoiceStatus.DRAFT ? (
                                                 <div className="flex items-center justify-end gap-2">
                                                     <Link
                                                         href={`/dashboard/invoices/${invoice.id}/edit`}
@@ -358,13 +570,12 @@ export default function InvoicesPage() {
                                                     <button
                                                         onClick={() => handleDelete(invoice.id, invoice.invoiceNumber)}
                                                         className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                                                        title={t('employee_groups.delete_group')}
+                                                        title={t("employee_groups.delete_group")}
                                                     >
                                                         <TrashIcon className="h-4 w-4" />
                                                     </button>
                                                 </div>
-                                            ) : ""
-                                            }
+                                            ) : null}
                                         </td>
                                     </tr>
                                 ))}
@@ -427,7 +638,26 @@ export default function InvoicesPage() {
                     )}
 
                     {/* Mobile Cards  */}
-                    <div className="md:hidden space-y-4">
+                    <div className="md:hidden space-y-4 p-4">
+                        {paginatedInvoices.length > 0 && (
+                            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                                <input
+                                    type="checkbox"
+                                    checked={isAllSelected}
+                                    ref={(el) => {
+                                        if (el) el.indeterminate = isPartiallySelected
+                                    }}
+                                    onChange={handleSelectAll}
+                                    className="w-5 h-5 text-[#31BCFF] border-gray-300 rounded focus:ring-[#31BCFF] cursor-pointer"
+                                />
+                                <span className="text-sm font-medium text-gray-700">
+                                    {isAllSelected ? "Deselect All" : "Select All"}
+                                </span>
+                                {selectedInvoices.size > 0 && (
+                                    <span className="ml-auto text-sm text-[#31BCFF] font-medium">{selectedInvoices.size} selected</span>
+                                )}
+                            </div>
+                        )}
                         {paginatedInvoices.map((invoice) => (
                             <div
                                 key={invoice.id}
@@ -436,24 +666,32 @@ export default function InvoicesPage() {
                                 {/* Card Header */}
                                 <div className="p-4 bg-gradient-to-r from-gray-50 to-blue-50/30">
                                     <div className="flex items-start justify-between mb-3">
-                                        <div className="flex-1">
-                                            <div className="flex items-center gap-2 flex-wrap mb-2">
-                                                <span className="text-base font-bold text-gray-900">
-                                                    {invoice.status !== InvoiceStatus.DRAFT ? invoice.invoiceNumber : "-"}
+                                        <div className="flex items-start gap-3 flex-1">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedInvoices.has(invoice.id)}
+                                                onChange={() => handleSelectInvoice(invoice.id)}
+                                                className="w-5 h-5 mt-0.5 text-[#31BCFF] border-gray-300 rounded focus:ring-[#31BCFF] cursor-pointer"
+                                            />
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2 flex-wrap mb-2">
+                                                    <span className="text-base font-bold text-gray-900">
+                                                        {invoice.status !== InvoiceStatus.DRAFT ? invoice.invoiceNumber : "-"}
 
-                                                </span>
-                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                    {invoice.status}
-                                                </span>
-                                            </div>
-                                            <p className="text-sm text-gray-600">
-                                                {invoice.customer?.customerName}
-                                            </p>
-                                            {invoice.product && (
-                                                <p className="text-xs text-blue-600 mt-1">
-                                                    📦 {invoice.product.productName}
+                                                    </span>
+                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                        {invoice.status}
+                                                    </span>
+                                                </div>
+                                                <p className="text-sm text-gray-600">
+                                                    {invoice.customer?.customerName}
                                                 </p>
-                                            )}
+                                                {invoice.product && (
+                                                    <p className="text-xs text-blue-600 mt-1">
+                                                        📦 {invoice.product.productName}
+                                                    </p>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
 
@@ -519,7 +757,24 @@ export default function InvoicesPage() {
 
                                     {/* Action Buttons */}
                                     <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-200">
-                                        {invoice.status === InvoiceStatus.DRAFT ? (
+                                        {selectedInvoices.has(invoice.id) && invoice.status === InvoiceStatus.DRAFT ? (
+                                            <>
+                                                <button
+                                                    onClick={() => handleSendInvoices('send')}
+                                                    className="p-2 text-green-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200"
+                                                    title="Send Invoice"
+                                                >
+                                                    <PaperAirplaneIcon className="h-5 w-5" />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleSendInvoices('send_with_email')}
+                                                    className="p-2 text-green-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200"
+                                                    title="Send Invoice"
+                                                >
+                                                    <MailIcon className="h-5 w-5" />
+                                                </button>
+                                            </>
+                                        ) : invoice.status === InvoiceStatus.DRAFT ? (
                                             <>
                                                 <Link
                                                     href={`/dashboard/invoices/${invoice.id}/edit`}
@@ -531,20 +786,12 @@ export default function InvoicesPage() {
                                                 <button
                                                     onClick={() => handleDelete(invoice.id, invoice.invoiceNumber)}
                                                     className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                                                    title={t('employee_groups.delete_group')}
+                                                    title={t("employee_groups.delete_group")}
                                                 >
                                                     <TrashIcon className="h-5 w-5" />
                                                 </button>
                                             </>
-                                        ) : (
-                                            <button
-                                                onClick={() => handleDelete(invoice.id, invoice.invoiceNumber)}
-                                                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                                                title={t('employee_groups.delete_group')}
-                                            >
-                                                <TrashIcon className="h-5 w-5" />
-                                            </button>
-                                        )}
+                                        ) : null}
                                     </div>
                                 </div>
                             </div>

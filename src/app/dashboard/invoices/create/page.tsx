@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Button } from '@/components/ui/button'
 import { useInvoiceSettings } from '@/shared/hooks/useInvoiceSettings'
 import Cog6ToothIcon from '@heroicons/react/24/solid/Cog6ToothIcon'
+import { CustomerCombobox } from '@/components/invoice/CustomerCombobox'
 
 export interface Customer {
     id: string
@@ -740,23 +741,13 @@ export default function CreateInvoicePage() {
                                 <label htmlFor="customerId" className="block text-sm font-medium text-gray-700 mb-2">
                                     Customer *
                                 </label>
-                                <select
-                                    id="customerId"
-                                    required
+
+                                <CustomerCombobox
+                                    customers={customers}
                                     value={formData.customerId || ""}
-                                    onChange={(e) => {
-                                        e.preventDefault()
-                                        handleCustomerChange(e.target.value)
-                                    }}
-                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                                >
-                                    <option value="">Select Customer</option>
-                                    {customers.map((cus) => (
-                                        <option key={cus.id} value={cus.id}>
-                                            {cus.customerName}
-                                        </option>
-                                    ))}
-                                </select>
+                                    onChange={handleCustomerChange}
+                                    placeholder="Select Customer"
+                                />
                             </div>
 
                             {visibleFields.showContactPerson && (

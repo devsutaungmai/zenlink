@@ -12,6 +12,7 @@ import { useInvoiceSettings } from '@/shared/hooks/useInvoiceSettings'
 import { calculateInvoiceTotals, exportToPDF, sendEmail } from '@/shared/lib/invoiceHelper'
 import InvoiceSummaryCalculation from '@/components/invoice/InvoiceSummaryCalculation'
 import { set } from 'zod'
+import { CustomerCombobox } from '@/components/invoice/CustomerCombobox'
 
 interface Customer {
     id: string
@@ -222,7 +223,7 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
         const invoiceStatus = action === "send_invoice_with_email" || action === "send_invoice_without_email" ? "SENT" : "DRAFT";
         let { seller, ...filteredData } = formData
         filteredData = { ...filteredData, status: invoiceStatus }
-        // console.log("Submitting data:", filteredData);
+        console.log("Submitting data:", filteredData);
         try {
             const res = await fetch(`/api/invoices/${resolvedParams.id}`, {
                 method: 'PUT',
@@ -328,7 +329,7 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                                 <label htmlFor="customerId" className="block text-sm font-medium text-gray-700 mb-2">
                                     Customer *
                                 </label>
-                                <select
+                                {/* <select
                                     id="customerId"
                                     required
                                     value={formData.customerId || ''}
@@ -342,7 +343,13 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                                             {cus.customerName}
                                         </option>
                                     ))}
-                                </select>
+                                </select> */}
+                                <CustomerCombobox
+                                    customers={customers}
+                                    value={formData.customerId || ""}
+                                    onChange={(customerId) => setFormData({ ...formData, customerId })}
+                                    placeholder="Select Customer"
+                                />
                                 <p className="text-xs mt-2 text-blue-400">Customer is already assigned </p>
                             </div>
 
