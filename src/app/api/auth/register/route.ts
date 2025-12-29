@@ -3,6 +3,9 @@ import bcrypt from 'bcryptjs'
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
 import { PERMISSION_INFO, DEFAULT_ROLES } from '@/shared/lib/permissions'
+import { waitUntil } from '@vercel/functions'
+
+export const maxDuration = 60
 
 export async function POST(req: Request) {
   try {
@@ -53,47 +56,7 @@ export async function POST(req: Request) {
       return { newUser, newBusiness }
     })
 
-    try {
-      const allPermissions = Object.values(PERMISSION_INFO)
-      
-      await prisma.permission.createMany({
-        data: allPermissions.map((perm) => ({
-          code: perm.code,
-          name: perm.name,
-          description: perm.description,
-          category: perm.category
-        })),
-        skipDuplicates: true
-      })
-
-      const roleEntries = Object.entries(DEFAULT_ROLES)
-      await Promise.all(
-        roleEntries.map(async ([key, roleData]) => {
-          try {
-            await prisma.role.create({
-              data: {
-                name: roleData.name,
-                description: roleData.description,
-                isSystem: roleData.isSystem,
-                isDefault: (roleData as any).isDefault || false,
-                businessId: result.newBusiness.id,
-                permissions: {
-                  create: roleData.permissions.map((permCode: string) => ({
-                    permission: {
-                      connect: { code: permCode }
-                    }
-                  }))
-                }
-              }
-            })
-          } catch (err: any) {
-            if (err.code !== 'P2002') throw err
-          }
-        })
-      )
-    } catch (roleError) {
-      console.error('Error initializing default roles:', roleError)
-    }
+    waitUntil(seedRolesAndPermissions(result.newBusiness.id))
 
     const res = NextResponse.json({ 
       success: true,
@@ -142,6 +105,51 @@ export async function POST(req: Request) {
       { error: 'Failed to create account' },
       { status: 500 }
     )
+  }
+}
+
+async function seedRolesAndPermissions(businessId: string) {
+  try {
+    const allPermissions = Object.values(PERMISSION_INFO)
+    
+    await prisma.permission.createMany({
+      data: allPermissions.map((perm) => ({
+        code: perm.code,
+        name: perm.name,
+        description: perm.description,
+        category: perm.category
+      })),
+      skipDuplicates: true
+    })
+
+    const roleEntries = Object.entries(DEFAULT_ROLES)
+    await Promise.all(
+      roleEntries.map(async ([key, roleData]) => {
+        try {
+          await prisma.role.create({
+            data: {
+              name: roleData.name,
+              description: roleData.description,
+              isSystem: roleData.isSystem,
+              isDefault: (roleData as any).isDefault || false,
+              businessId: businessId,
+              permissions: {
+                create: roleData.permissions.map((permCode: string) => ({
+                  permission: {
+                    connect: { code: permCode }
+                  }
+                }))
+              }
+            }
+          })
+        } catch (err: any) {
+          if (err.code !== 'P2002') throw err
+        }
+      })
+    )
+    console.log('Roles and permissions seeded successfully for business:', businessId)
+  } catch (error) {
+    console.error('Error seeding roles and permissions:', error)
   }
 }
 
