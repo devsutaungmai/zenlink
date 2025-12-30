@@ -417,10 +417,14 @@ export default function InvoiceOverview() {
                                                 </button>
                                             </td>
                                             <td className="px-4 py-3">
-                                                <span className="text-sm font-medium text-blue-600 hover:underline cursor-pointer">
-                                                    {invoice.status !== InvoiceStatus.DRAFT ? invoice.invoiceNumber : "-"}
+                                                <Link
+                                                    href={`/dashboard/invoices/create?invoiceId=${invoice.id}&copy=true&overview=true`}
+                                                >
+                                                    <span className="text-sm font-medium text-blue-600 hover:underline cursor-pointer">
+                                                        {invoice.status !== InvoiceStatus.DRAFT ? invoice.invoiceNumber : "-"}
 
-                                                </span>
+                                                    </span>
+                                                </Link>
                                             </td>
                                             <td className="px-4 py-3">
                                                 <div className="text-sm">

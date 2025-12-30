@@ -89,6 +89,7 @@ export default function CreateInvoicePage() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const copyMode = searchParams.get('copy') === "true";
+    const overviewMode = searchParams.get('overview') === "true";
     const invoiceId = searchParams.get('invoiceId') ?? "";
     const { t } = useTranslation()
     const [loading, setLoading] = useState(false)
@@ -204,7 +205,6 @@ export default function CreateInvoicePage() {
             fetchCustomers()
         }
     }, [customerDialog, loadingCustomer])
-
 
     // Calculate paidAt whenever sentAt or dueDay changes
     useEffect(() => {
@@ -549,22 +549,27 @@ export default function CreateInvoicePage() {
                 <div className="flex items-center justify-between">
                     <div>
                         <div className="flex items-center gap-3 mb-2">
-                            <Link
+                            {overviewMode ? <Link
+                                href="/dashboard/invoice-overviews"
+                                className="p-2 hover:bg-white/50 rounded-lg transition-colors"
+                            >
+                                <ArrowLeftIcon className="w-5 h-5 text-gray-600" />
+                            </Link> : <Link
                                 href="/dashboard/invoices"
                                 className="p-2 hover:bg-white/50 rounded-lg transition-colors"
                             >
                                 <ArrowLeftIcon className="w-5 h-5 text-gray-600" />
-                            </Link>
+                            </Link>}
                             <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                                Create Invoice
+                                {overviewMode ? "Invoice Details" : "Create Invoice"}
                             </h1>
                         </div>
-                        <p className="mt-2 text-gray-600 ml-14">
+                        {overviewMode ? null : <p className="mt-2 text-gray-600 ml-14">
                             Add a new invoice to send
-                        </p>
+                        </p>}
                     </div>
                     <div className="hidden md:flex items-center space-x-2">
-                        <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+                        {overviewMode ? null : <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
                             <DialogTrigger asChild>
                                 <button className="inline-flex items-center justify-center px-4 py-3 rounded-2xl bg-white text-gray-700 font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 border border-gray-200">
                                     <Cog6ToothIcon className="w-5 h-5 mr-2" />
@@ -711,7 +716,7 @@ export default function CreateInvoicePage() {
                                     </Button>
                                 </div>
                             </DialogContent>
-                        </Dialog>
+                        </Dialog>}
                         <div className="w-12 h-12 bg-[#31BCFF]/10 rounded-xl flex items-center justify-center">
                             <svg className="w-6 h-6 text-[#31BCFF]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
@@ -727,13 +732,13 @@ export default function CreateInvoicePage() {
                     <div className="bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-xl border border-slate-200 p-6">
                         <div className="flex items-center justify-between mb-4">
                             <h2 className="text-lg font-semibold text-gray-900">Customer Information</h2>
-                            <button
+                            {!overviewMode && <button
                                 type="button"
                                 onClick={() => setCustomerDialog(true)}
                                 className="px-4 py-2 rounded-lg bg-[#31BCFF] text-white hover:bg-[#0ea5e9] transition-colors"
                             >
                                 Add New Customer
-                            </button>
+                            </button>}
                         </div>
 
                         <div className="flex flex-wrap gap-6 mb-6">
@@ -747,6 +752,7 @@ export default function CreateInvoicePage() {
                                     value={formData.customerId || ""}
                                     onChange={handleCustomerChange}
                                     placeholder="Select Customer"
+                                    overviewMode={overviewMode}
                                 />
                             </div>
 
@@ -889,12 +895,12 @@ export default function CreateInvoicePage() {
                     <div className="bg-gradient-to-br rounded-xl border p-6">
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-lg font-semibold text-gray-900 mb-4">Order Lines</h2>
-                            <button
+                            {!overviewMode && <button
                                 type="button"
                                 onClick={handleNewOrderLine}
                                 disabled={loading}
                                 className="px-4 py-2 rounded-lg bg-[#31BCFF] text-white hover:bg-[#0ea5e9] transition-colors"
-                            >New Order Line</button>
+                            >New Order Line</button>}
                         </div>
                         {formData.invoiceLines.map((line, index) => (
                             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-10" key={index}>
@@ -1020,7 +1026,7 @@ export default function CreateInvoicePage() {
                                         className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
                                     />
                                 </div>
-                                <div className='items-end flex space-x-4 mb-3 '>
+                                {overviewMode ? null : <div className='items-end flex space-x-4 mb-3 '>
                                     <button
                                         type='button'
                                         onClick={() => deleteInvoiceLine(index)}
@@ -1041,7 +1047,7 @@ export default function CreateInvoicePage() {
 
                                     </button>
 
-                                </div>
+                                </div>}
 
                             </div>
                         ))}
@@ -1066,7 +1072,7 @@ export default function CreateInvoicePage() {
                     <InvoiceSummaryCalculation invoiceLines={formData.invoiceLines} />
 
                     {/* Form Actions */}
-                    <div className="flex items-center justify-end gap-4 pt-6 border-t border-gray-200">
+                    {overviewMode ? null : <div className="flex items-center justify-end gap-4 pt-6 border-t border-gray-200">
                         <Link
                             href="/dashboard/invoices"
                             className="px-6 py-3 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium hover:bg-gray-50 transition-colors duration-200"
@@ -1131,7 +1137,7 @@ export default function CreateInvoicePage() {
                                 </div>
                             )}
                         </div>
-                    </div>
+                    </div>}
                 </form>
             </div>
             {customerDialog && <CustomerDialog

@@ -15,6 +15,7 @@ interface CustomerComboboxProps {
   placeholder?: string
   emptyMessage?: string
   disabled?: boolean
+  overviewMode?: boolean
 }
 
 export function CustomerCombobox({
@@ -24,6 +25,7 @@ export function CustomerCombobox({
   placeholder = "Select Customer",
   emptyMessage = "No customer found.",
   disabled = false,
+  overviewMode = false,
 }: CustomerComboboxProps) {
   const [open, setOpen] = React.useState(false)
   const [inputValue, setInputValue] = React.useState("")
@@ -142,7 +144,7 @@ export function CustomerCombobox({
           onChange={handleInputChange}
           onFocus={handleInputFocus}
           onKeyDown={handleKeyDown}
-          disabled={disabled}
+          disabled={disabled || overviewMode}
           placeholder={placeholder}
           className={`block w-full px-4 py-3 pr-10 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] focus:outline-none transition-all duration-200 ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
           role="combobox"
