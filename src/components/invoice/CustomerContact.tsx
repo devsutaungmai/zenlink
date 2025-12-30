@@ -7,6 +7,7 @@ import { z } from 'zod'
 interface CustomerContactProps {
     oncustomerContactsChange?: (customerContacts: CustomerContact[]) => void
     defaultValues?: CustomerContact[]
+    overviewMode?: boolean
 }
 
 export interface CustomerContact {
@@ -34,6 +35,7 @@ const contactFieldSchema = {
 export default function CustomerContactComponent({
     oncustomerContactsChange,
     defaultValues,
+    overviewMode
 }: CustomerContactProps) {
     const [isExpanded, setIsExpanded] = useState(true)
     const [customerContacts, setCustomerContacts] = useState<CustomerContact[]>([])
@@ -152,13 +154,13 @@ export default function CustomerContactComponent({
                                 : `${customerContacts.length} contact${customerContacts.length > 1 ? 's' : ''} added`
                             }
                         </p>
-                        <button
+                        {!overviewMode && <button
                             type="button"
                             onClick={handleNewContact}
                             className="inline-flex items-center px-4 py-2 bg-[#31BCFF] text-white rounded-md hover:bg-[#28AEE6] focus:outline-none transition-colors"
                         >
                             Add New Contact
-                        </button>
+                        </button>}
                     </div>
 
                     {customerContacts && customerContacts.length > 0 &&
@@ -286,7 +288,7 @@ export default function CustomerContactComponent({
                                         </div>
                                     </div>
                                 </div>
-                                <div className='flex justify-end space-x-2'>
+                               {!overviewMode && <div className='flex justify-end space-x-2'>
                                     <button
                                         type='button'
                                         onClick={() => CopyContact(contact)}
@@ -310,7 +312,7 @@ export default function CustomerContactComponent({
                                         </svg>
                                         Delete
                                     </button>
-                                </div>
+                                </div>}
                             </div>
                         ))
                     }

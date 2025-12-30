@@ -428,9 +428,13 @@ export default function InvoiceOverview() {
                                             </td>
                                             <td className="px-4 py-3">
                                                 <div className="text-sm">
-                                                    <div className="text-blue-600 hover:underline cursor-pointer">
-                                                        {invoice.customer?.customerName}
-                                                    </div>
+                                                    <Link
+                                                        href={`/dashboard/customers/create?customerId=${invoice.customer?.id}&overview=true`}
+                                                    >
+                                                        <div className="text-blue-600 hover:underline cursor-pointer">
+                                                            {invoice.customer?.customerName}
+                                                        </div>
+                                                    </Link>
                                                 </div>
                                             </td>
                                             <td className="px-4 py-3">
@@ -697,7 +701,11 @@ export default function InvoiceOverview() {
 
                                         </h3>
                                     </div>
-                                    <p className="text-xs text-gray-600 ml-6">{invoice.customer?.customerName}</p>
+                                    <Link
+                                        href={`/dashboard/customers/create?customerId=${invoice.customer?.id}&overview=true`}
+                                    >
+                                        <p className="text-xs text-gray-600 ml-6">{invoice.customer?.customerName}</p>
+                                    </Link>
                                 </div>
                                 <div className="text-right">
                                     <span className="inline-block px-2 py-1 text-xs font-medium bg-gray-100 rounded">
