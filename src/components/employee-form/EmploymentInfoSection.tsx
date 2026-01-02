@@ -65,10 +65,10 @@ export function EmploymentInfoSection({
 
   return (
     <>
-      {canViewSensitive && (
+      {canViewSensitive && validationSettings?.requireSocialSecurityNo === true && (
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            {t('employees.form.social_security_no')} {validationSettings?.requireSocialSecurityNo === true && <span className="text-red-500">*</span>}
+            {t('employees.form.social_security_no')} <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -76,7 +76,7 @@ export function EmploymentInfoSection({
             value={formData.socialSecurityNo}
             onChange={onSSNChange}
             className={getFieldStyle('socialSecurityNo')}
-            required={validationSettings?.requireSocialSecurityNo === true}
+            required
             disabled={readOnly}
           />
           {validationErrors.socialSecurityNo && (
@@ -85,9 +85,10 @@ export function EmploymentInfoSection({
         </div>
       )}
 
-    <div>
+    {validationSettings?.requireEmployeeNo !== false && (
+      <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          {t('employees.form.employee_number')} {validationSettings?.requireEmployeeNo !== false && <span className="text-red-500">*</span>}
+          {t('employees.form.employee_number')} <span className="text-red-500">*</span>
         </label>
         
         <div className="items-center gap-2">
@@ -97,7 +98,7 @@ export function EmploymentInfoSection({
               value={formData.employeeNo}
               onChange={onChange}
               className="block w-full rounded-md border border-gray-300 px-3 py-2 bg-gray-50 text-gray-500"
-              required={validationSettings?.requireEmployeeNo !== false}
+              required
               disabled={readOnly}
             />
             {fetchingNextNumber && (
@@ -108,51 +109,56 @@ export function EmploymentInfoSection({
         {validationErrors.employeeNo && (
           <p className="mt-1 text-sm text-red-500">{validationErrors.employeeNo}</p>
         )}
-    </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          {t('employees.form.date_of_hire')} {validationSettings?.requireDateOfHire !== false && <span className="text-red-500">*</span>}
-        </label>
-        <DatePicker
-          date={formData.dateOfHire}
-          onDateChange={(date) => onDateChange(date || null, 'dateOfHire')}
-          className={getFieldStyle('dateOfHire')}
-          placeholder="Select date of hire"
-          dateFormat="dd/MM/yyyy"
-          yearRange={{
-            from: new Date().getFullYear() - 10,
-            to: new Date().getFullYear() + 1
-          }}
-          disabled={readOnly}
-        />
-        {validationErrors.dateOfHire && (
-          <p className="mt-1 text-sm text-red-500">{validationErrors.dateOfHire}</p>
-        )}
       </div>
+    )}
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          {t('employees.form.hours_per_month')} {validationSettings?.requireHoursPerMonth !== false && <span className="text-red-500">*</span>}
-        </label>
-        <input
-          type="number"
-          name="hoursPerMonth"
-          value={formData.hoursPerMonth || 0}
-          onChange={onChange}
-          className={getFieldStyle('hoursPerMonth')}
-          required={validationSettings?.requireHoursPerMonth !== false}
-          disabled={readOnly}
-        />
-        {validationErrors.hoursPerMonth && (
-          <p className="mt-1 text-sm text-red-500">{validationErrors.hoursPerMonth}</p>
-        )}
-      </div>
-
-      {canViewSensitive && (
+      {validationSettings?.requireDateOfHire !== false && (
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            Salary Rate (per hour) {validationSettings?.requireSalaryRate === true && <span className="text-red-500">*</span>}
+            {t('employees.form.date_of_hire')} <span className="text-red-500">*</span>
+          </label>
+          <DatePicker
+            date={formData.dateOfHire}
+            onDateChange={(date) => onDateChange(date || null, 'dateOfHire')}
+            className={getFieldStyle('dateOfHire')}
+            placeholder="Select date of hire"
+            dateFormat="dd/MM/yyyy"
+            yearRange={{
+              from: new Date().getFullYear() - 10,
+              to: new Date().getFullYear() + 1
+            }}
+            disabled={readOnly}
+          />
+          {validationErrors.dateOfHire && (
+            <p className="mt-1 text-sm text-red-500">{validationErrors.dateOfHire}</p>
+          )}
+        </div>
+      )}
+
+      {validationSettings?.requireHoursPerMonth !== false && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            {t('employees.form.hours_per_month')} <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="number"
+            name="hoursPerMonth"
+            value={formData.hoursPerMonth || 0}
+            onChange={onChange}
+            className={getFieldStyle('hoursPerMonth')}
+            required
+            disabled={readOnly}
+          />
+          {validationErrors.hoursPerMonth && (
+            <p className="mt-1 text-sm text-red-500">{validationErrors.hoursPerMonth}</p>
+          )}
+        </div>
+      )}
+
+      {canViewSensitive && validationSettings?.requireSalaryRate === true && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Salary Rate (per hour) <span className="text-red-500">*</span>
           </label>
           <input
             type="number"
@@ -162,7 +168,7 @@ export function EmploymentInfoSection({
             step="0.01"
             min="0.01"
             className={getFieldStyle('salaryRate')}
-            required={validationSettings?.requireSalaryRate === true}
+            required
             disabled={readOnly}
           />
           {validationErrors.salaryRate && (
@@ -171,33 +177,37 @@ export function EmploymentInfoSection({
         </div>
       )}
 
-      <div className="sm:col-span-2">
-        <MultiSelect
-          label={t('employees.form.department')}
-          options={departments}
-          selectedIds={formData.departmentIds}
-          onChange={onDepartmentsChange}
-          placeholder="Select departments..."
-          required={validationSettings?.requireDepartment !== false}
-          error={validationErrors.departmentId || validationErrors.departmentIds}
-          disabled={readOnly}
-        />
-      </div>
+      {validationSettings?.requireDepartment !== false && (
+        <div className="sm:col-span-2">
+          <MultiSelect
+            label={t('employees.form.department')}
+            options={departments}
+            selectedIds={formData.departmentIds}
+            onChange={onDepartmentsChange}
+            placeholder="Select departments..."
+            required
+            error={validationErrors.departmentId || validationErrors.departmentIds}
+            disabled={readOnly}
+          />
+        </div>
+      )}
 
-      <div className="sm:col-span-2">
-        <MultiSelect
-          label={t('employees.form.employee_group')}
-          options={employeeGroups}
-          selectedIds={formData.employeeGroupIds}
-          onChange={onEmployeeGroupsChange}
-          placeholder="Select employee groups..."
-          disabled={readOnly}
-          required={validationSettings?.requireEmployeeGroup !== false}
-          error={validationErrors.employeeGroupId || validationErrors.employeeGroupIds}
-        />
-      </div>
+      {validationSettings?.requireEmployeeGroup !== false && (
+        <div className="sm:col-span-2">
+          <MultiSelect
+            label={t('employees.form.employee_group')}
+            options={employeeGroups}
+            selectedIds={formData.employeeGroupIds}
+            onChange={onEmployeeGroupsChange}
+            placeholder="Select employee groups..."
+            disabled={readOnly}
+            required
+            error={validationErrors.employeeGroupId || validationErrors.employeeGroupIds}
+          />
+        </div>
+      )}
 
-      {filteredRoles.length > 0 && onRolesChange && (
+      {filteredRoles.length > 0 && onRolesChange && validationSettings?.requireRole !== false && (
         <div className="sm:col-span-2">
           <MultiSelect
             label={t('employees.form.access_roles', 'Access Roles')}
@@ -206,7 +216,7 @@ export function EmploymentInfoSection({
             onChange={onRolesChange}
             placeholder={t('employees.form.select_roles', 'Select access roles...')}
             disabled={readOnly}
-            required={validationSettings?.requireRole !== false}
+            required
             error={validationErrors.roleIds}
           />
           <p className="mt-1 text-xs text-gray-500">
@@ -217,10 +227,10 @@ export function EmploymentInfoSection({
         </div>
       )}
 
-      {canViewSensitive && (
+      {canViewSensitive && validationSettings?.requireBankAccount === true && (
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            {t('employees.form.bank_account')} {validationSettings?.requireBankAccount === true && <span className="text-red-500">*</span>}
+            {t('employees.form.bank_account')} <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -228,7 +238,7 @@ export function EmploymentInfoSection({
             value={formData.bankAccount}
             onChange={onChange}
             className={getFieldStyle('bankAccount')}
-            required={validationSettings?.requireBankAccount === true}
+            required
             disabled={readOnly}
           />
           {validationErrors.bankAccount && (
