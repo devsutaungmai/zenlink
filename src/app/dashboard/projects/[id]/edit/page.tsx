@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
 import { useProjectSettings } from '@/shared/hooks/useProjectSettings'
+import { ProjectFieldSettingsDialog } from '@/components/invoice/ProjectFieldSettingsDialog'
 
 interface Customer {
     id: string
@@ -29,7 +30,6 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
     const [initialLoading, setInitialLoading] = useState(true)
     const [customers, setCustomers] = useState<Customer[]>([])
     const [projectCategories, setProjectCategories] = useState<ProjectCategory[]>([])
-    const { settings } = useProjectSettings();
 
     const [formData, setFormData] = useState({
         name: '',
@@ -46,6 +46,25 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
         fetchCustomers()
         fetchProject()
     }, [resolvedParams.id])
+
+    const { settings, refetch } = useProjectSettings();
+    const [visibleFields, setVisibleFields] = useState({
+        showCategory: true,
+        showCustomer: true,
+        showStartDate: true,
+        showEndDate: true,
+    })
+
+    useEffect(() => {
+        if (settings) {
+            setVisibleFields({
+                showCategory: settings.showCategory,
+                showCustomer: settings.showCustomer,
+                showStartDate: settings.showStartDate,
+                showEndDate: settings.showEndDate,
+            })
+        }
+    }, [settings])
 
     const fetchProject = async () => {
         try {
@@ -171,6 +190,10 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
                         </p>
                     </div>
                     <div className="hidden md:flex items-center space-x-2">
+                        <ProjectFieldSettingsDialog initialSettings={visibleFields} onSettingsSaved={(newSettings) => {
+                            setVisibleFields(newSettings)
+
+                        }} onRefresh={refetch} />
                         <div className="w-12 h-12 bg-[#31BCFF]/10 rounded-xl flex items-center justify-center">
                             <svg className="w-6 h-6 text-[#31BCFF]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />

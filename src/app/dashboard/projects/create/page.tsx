@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Button } from '@/components/ui/button'
 import Cog6ToothIcon from '@heroicons/react/24/solid/Cog6ToothIcon'
 import { useProjectSettings } from '@/shared/hooks/useProjectSettings'
+import { ProjectFieldSettingsDialog } from '@/components/invoice/ProjectFieldSettingsDialog'
 
 interface Customer {
     id: string
@@ -37,15 +38,13 @@ export default function CreateProjectPage() {
         customerId: ''
     })
 
-    const { settings } = useProjectSettings();
-    const [settingsOpen, setSettingsOpen] = useState(false)
+    const { settings, refetch } = useProjectSettings();
     const [visibleFields, setVisibleFields] = useState({
         showCategory: true,
         showCustomer: true,
         showStartDate: true,
         showEndDate: true,
     })
-
 
     useEffect(() => {
         if (settings) {
@@ -57,42 +56,7 @@ export default function CreateProjectPage() {
             })
         }
     }, [settings])
-    const handleSaveSettings = async () => {
-
-        setSettingsOpen(false)
-        setLoading(true)
-        try {
-            const res = await fetch('/api/projects/settings', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(visibleFields),
-            })
-
-            if (!res.ok) {
-                const error = await res.json()
-                throw new Error(error.error || 'Failed to save the settings')
-            }
-            Swal.fire({
-                title: t('common.success'),
-                text: 'Settings saved successfully',
-                icon: 'success',
-                confirmButtonColor: '#31BCFF',
-            })
-
-
-        } catch (error) {
-            await Swal.fire({
-                title: 'Error',
-                text: error instanceof Error ? error.message : 'An error occurred',
-                icon: 'error',
-                confirmButtonColor: '#31BCFF',
-            })
-        } finally {
-            setLoading(false)
-        }
-
-    }
-
+   
     useEffect(() => {
         fetchProjectCategories()
         fetchCustomers()
@@ -181,96 +145,10 @@ export default function CreateProjectPage() {
                         </p>
                     </div>
                     <div className="hidden md:flex items-center space-x-2">
-                        <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-                            <DialogTrigger asChild>
-                                <button className="inline-flex items-center justify-center px-4 py-3 rounded-2xl bg-white text-gray-700 font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 border border-gray-200">
-                                    <Cog6ToothIcon className="w-5 h-5 mr-2" />
-                                    Options
-                                </button>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
-                                <DialogHeader>
-                                    <DialogTitle className="text-2xl font-bold">Invoice Field Options</DialogTitle>
-                                    <DialogDescription>
-                                        Select which fields you want to display in the project form
-                                    </DialogDescription>
-                                </DialogHeader>
+                       <ProjectFieldSettingsDialog initialSettings={visibleFields} onSettingsSaved={(newSettings)=>{
+                            setVisibleFields(newSettings)
 
-                                <div className="space-y-4 py-4">
-
-                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                                        <input
-                                            type="checkbox"
-                                            id="showCategory"
-                                            checked={visibleFields.showCategory}
-                                            onChange={(e) =>
-                                                setVisibleFields({ ...visibleFields, showCategory: e.target.checked })
-                                            }
-                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                                        />
-                                        <label htmlFor="showCategory" className="text-base font-medium cursor-pointer flex-1">
-                                            Category
-                                        </label>
-                                    </div>
-
-                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                                        <input
-                                            type="checkbox"
-                                            id="showCustomer"
-                                            checked={visibleFields.showCustomer}
-                                            onChange={(e) =>
-                                                setVisibleFields({ ...visibleFields, showCustomer: e.target.checked })
-                                            }
-                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                                        />
-                                        <label htmlFor="showCustomer" className="text-base font-medium cursor-pointer flex-1">
-                                            Customer
-                                        </label>
-                                    </div>
-
-                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                                        <input
-                                            type="checkbox"
-                                            id="showStartDate"
-                                            checked={visibleFields.showStartDate}
-                                            onChange={(e) =>
-                                                setVisibleFields({ ...visibleFields, showStartDate: e.target.checked })
-                                            }
-                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                                        />
-                                        <label htmlFor="showStartDate" className="text-base font-medium cursor-pointer flex-1">
-                                            Start Date
-                                        </label>
-                                    </div>
-
-                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                                        <input
-                                            type="checkbox"
-                                            id="showEndDate"
-                                            checked={visibleFields.showEndDate}
-                                            onChange={(e) =>
-                                                setVisibleFields({ ...visibleFields, showEndDate: e.target.checked })
-                                            }
-                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                                        />
-                                        <label htmlFor="showEndDate" className="text-base font-medium cursor-pointer flex-1">
-                                            End Date
-                                        </label>
-                                    </div>
-
-
-                                </div>
-
-                                <div className="flex justify-end gap-3 pt-4 border-t">
-                                    <Button variant="outline" onClick={() => setSettingsOpen(false)}>
-                                        Cancel
-                                    </Button>
-                                    <Button onClick={handleSaveSettings} className="bg-[#31BCFF] hover:bg-[#0EA5E9] text-white">
-                                        Save Settings
-                                    </Button>
-                                </div>
-                            </DialogContent>
-                        </Dialog>
+                       }} onRefresh={refetch} />
                         <div className="w-12 h-12 bg-[#31BCFF]/10 rounded-xl flex items-center justify-center">
                             <svg className="w-6 h-6 text-[#31BCFF]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
