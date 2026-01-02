@@ -12,6 +12,7 @@ import CustomerContactComponent, { CustomerContact } from '@/components/invoice/
 import { customerValidationSchema } from '@/components/invoice/validation'
 import z from 'zod'
 import { useCustomerSettings } from '@/shared/hooks/useCustomerSettings'
+import { CustomerFieldSettingsDialog } from '@/components/invoice/CustomerFieldSettingsDialog'
 
 export default function EditCustomersPage({ params }: { params: Promise<{ id: string }> }) {
     const resolvedParams = use(params)
@@ -65,7 +66,42 @@ export default function EditCustomersPage({ params }: { params: Promise<{ id: st
     })
     const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
     const validationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-    const { settings } = useCustomerSettings();
+    const { settings, refetch } = useCustomerSettings();
+    const [visibleFields, setVisibleFields] = useState({
+        showOrganizationNumber: true,
+        showAddress: true,
+        showPostalCode: true,
+        showPostalAddress: true,
+        showPhoneNumber: true,
+        showEmail: true,
+        showDiscountPercentage: true,
+        showDeliveryAddress: true,
+        showDeliveryAddressPostalCode: true,
+        showDeliveryAddressPostalAddress: true,
+        showDepartment: true,
+        showInvoicePaymentTerms: true,
+        showContactPerson: true,
+    })
+
+    useEffect(() => {
+        if (settings) {
+            setVisibleFields({
+                showOrganizationNumber: settings.showOrganizationNumber ?? true,
+                showAddress: settings.showAddress ?? true,
+                showPostalCode: settings.showPostalCode ?? true,
+                showPostalAddress: settings.showPostalAddress ?? true,
+                showPhoneNumber: settings.showPhoneNumber ?? true,
+                showEmail: settings.showEmail ?? true,
+                showDiscountPercentage: settings.showDiscountPercentage ?? true,
+                showDeliveryAddress: settings.showDeliveryAddress ?? true,
+                showDeliveryAddressPostalCode: settings.showDeliveryAddressPostalCode ?? true,
+                showDeliveryAddressPostalAddress: settings.showDeliveryAddressPostalAddress ?? true,
+                showDepartment: settings.showDepartment ?? true,
+                showInvoicePaymentTerms: settings.showInvoicePaymentTerms ?? true,
+                showContactPerson: settings.showContactPerson ?? true,
+            })
+        }
+    }, [settings])
 
     const validateField = (fieldName: string, value: any) => {
         try {
@@ -226,6 +262,10 @@ export default function EditCustomersPage({ params }: { params: Promise<{ id: st
                         </p>
                     </div>
                     <div className="hidden md:flex items-center space-x-2">
+                        <CustomerFieldSettingsDialog initialSettings={visibleFields}
+                            onSettingsSaved={(newSettings) => {
+                                setVisibleFields(newSettings);
+                            }} onRefresh={refetch} />
                         <div className="w-12 h-12 bg-[#31BCFF]/10 rounded-xl flex items-center justify-center">
                             <svg className="w-6 h-6 text-[#31BCFF]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />

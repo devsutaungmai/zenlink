@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
 import { useProductSettings } from '@/shared/hooks/useProductSettings'
+import { ProductFieldSettingsDialog } from '@/components/invoice/ProductFieldSettingsDialog'
 
 interface Unit {
     id: string
@@ -46,7 +47,27 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         productGroupId: '',
         salesAccountId: ''
     })
-    const { settings } = useProductSettings();
+    const { settings, refetch } = useProductSettings();
+    const [visibleFields, setVisibleFields] = useState({
+        showSalesPrice: true,
+        showCostPrice: true,
+        showDiscountPercentage: true,
+        showUnit: true,
+        showProductGroup: true,
+    });
+
+    useEffect(() => {
+        if (settings) {
+            setVisibleFields({
+                showSalesPrice: settings.showSalesPrice,
+                showCostPrice: settings.showCostPrice,
+                showDiscountPercentage: settings.showDiscountPercentage,
+                showUnit: settings.showUnit,
+                showProductGroup: settings.showProductGroup,
+            });
+        }
+    }, [settings]);
+
     useEffect(() => {
         fetchUnits()
         fetchProductGroups()
@@ -68,6 +89,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             console.error('Error fetching units:', error)
         }
     }
+    
 
     const fetchProductGroups = async () => {
         try {
@@ -188,6 +210,16 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                         </p>
                     </div>
                     <div className="hidden md:flex items-center space-x-2">
+                         <ProductFieldSettingsDialog 
+                            initialSettings={visibleFields}
+                            onSettingsSaved={(newSettings) => {
+                                        setVisibleFields(newSettings);
+                                        console.log('Settings saved')
+                                      }}
+                                      onRefresh={() => {
+                                        refetch() 
+                                      }}
+                          />
                         <div className="w-12 h-12 bg-[#31BCFF]/10 rounded-xl flex items-center justify-center">
                             <svg className="w-6 h-6 text-[#31BCFF]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
@@ -248,7 +280,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                         </div>
 
                         <div className="flex flex-wrap gap-6 mt-6">
-                            {settings.showSalesPrice && (
+                            {visibleFields.showSalesPrice && (
                                 <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
                                     <label htmlFor="salesPrice" className="block text-sm font-medium text-gray-700 mb-2">
                                         Sales Price *
@@ -264,7 +296,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                                 </div>
                             )}
 
-                            {settings.showCostPrice && (
+                            {visibleFields.showCostPrice && (
                                 <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
                                     <label htmlFor="costPrice" className="block text-sm font-medium text-gray-700 mb-2">
                                         Cost Price *
@@ -280,7 +312,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                                 </div>
                             )}
 
-                            {settings.showDiscountPercentage && (
+                            {visibleFields.showDiscountPercentage && (
                                 <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
                                     <label htmlFor="discountPercentage" className="block text-sm font-medium text-gray-700 mb-2">
                                         Discount Percentage
@@ -298,7 +330,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                                 </div>
                             )}
 
-                            {settings.showUnit && (
+                            {visibleFields.showUnit && (
                                 <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
                                     <label htmlFor="unitId" className="block text-sm font-medium text-gray-700 mb-2">
                                         Unit *
@@ -319,7 +351,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                                 </div>
                             )}
 
-                            {settings.showProductGroup && (
+                            {visibleFields.showProductGroup && (
                                 <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
                                     <label htmlFor="productGroupId" className="block text-sm font-medium text-gray-700 mb-2">
                                         Product Group *

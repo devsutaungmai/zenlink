@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Button } from '@/components/ui/button'
 import Cog6ToothIcon from '@heroicons/react/24/solid/Cog6ToothIcon'
 import { useCustomerSettings } from '@/shared/hooks/useCustomerSettings'
+import { CustomerFieldSettingsDialog } from '@/components/invoice/CustomerFieldSettingsDialog'
 
 export interface Department {
     id: string
@@ -196,8 +197,7 @@ export default function CreateCustomersPage() {
         }
     }
 
-    const { settings } = useCustomerSettings();
-    const [settingsOpen, setSettingsOpen] = useState(false)
+    const { settings, refetch } = useCustomerSettings();
     const [visibleFields, setVisibleFields] = useState({
         showOrganizationNumber: true,
         showAddress: true,
@@ -213,7 +213,6 @@ export default function CreateCustomersPage() {
         showInvoicePaymentTerms: true,
         showContactPerson: true,
     })
-
 
     useEffect(() => {
         if (settings) {
@@ -234,41 +233,7 @@ export default function CreateCustomersPage() {
             })
         }
     }, [settings])
-    const handleSaveSettings = async () => {
 
-        setSettingsOpen(false)
-        setLoading(true)
-        try {
-            const res = await fetch('/api/customers/settings', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(visibleFields),
-            })
-
-            if (!res.ok) {
-                const error = await res.json()
-                throw new Error(error.error || 'Failed to save the settings')
-            }
-            Swal.fire({
-                title: t('common.success'),
-                text: 'Settings saved successfully',
-                icon: 'success',
-                confirmButtonColor: '#31BCFF',
-            })
-
-
-        } catch (error) {
-            await Swal.fire({
-                title: 'Error',
-                text: error instanceof Error ? error.message : 'An error occurred',
-                icon: 'error',
-                confirmButtonColor: '#31BCFF',
-            })
-        } finally {
-            setLoading(false)
-        }
-
-    }
 
     useEffect(() => {
         if (overviewMode) {
@@ -358,230 +323,10 @@ export default function CreateCustomersPage() {
                         </p>
                     </div>
                     <div className="hidden md:flex items-center space-x-2">
-                        {overviewMode ? null : <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-                            <DialogTrigger asChild>
-                                <button className="inline-flex items-center justify-center px-4 py-3 rounded-2xl bg-white text-gray-700 font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 border border-gray-200">
-                                    <Cog6ToothIcon className="w-5 h-5 mr-2" />
-                                    Options
-                                </button>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
-                                <DialogHeader>
-                                    <DialogTitle className="text-2xl font-bold">Invoice Field Options</DialogTitle>
-                                    <DialogDescription>
-                                        Select which fields you want to display in the project form
-                                    </DialogDescription>
-                                </DialogHeader>
-
-                                <div className="space-y-4 py-4">
-
-                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                                        <input
-                                            type="checkbox"
-                                            id="showOrganizationNumber"
-                                            checked={visibleFields.showOrganizationNumber}
-                                            onChange={(e) =>
-                                                setVisibleFields({ ...visibleFields, showOrganizationNumber: e.target.checked })
-                                            }
-                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                                        />
-                                        <label htmlFor="showOrganizationNumber" className="text-base font-medium cursor-pointer flex-1">
-                                            Organization Number
-                                        </label>
-                                    </div>
-
-                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                                        <input
-                                            type="checkbox"
-                                            id="showAddress"
-                                            checked={visibleFields.showAddress}
-                                            onChange={(e) =>
-                                                setVisibleFields({ ...visibleFields, showAddress: e.target.checked })
-                                            }
-                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                                        />
-                                        <label htmlFor="showAddress" className="text-base font-medium cursor-pointer flex-1">
-                                            Address
-                                        </label>
-                                    </div>
-
-                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                                        <input
-                                            type="checkbox"
-                                            id="showPostalCode"
-                                            checked={visibleFields.showPostalCode}
-                                            onChange={(e) =>
-                                                setVisibleFields({ ...visibleFields, showPostalCode: e.target.checked })
-                                            }
-                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                                        />
-                                        <label htmlFor="showPostalCode" className="text-base font-medium cursor-pointer flex-1">
-                                            Postal Code
-                                        </label>
-                                    </div>
-
-                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                                        <input
-                                            type="checkbox"
-                                            id="showPostalAddress"
-                                            checked={visibleFields.showPostalAddress}
-                                            onChange={(e) =>
-                                                setVisibleFields({ ...visibleFields, showPostalAddress: e.target.checked })
-                                            }
-                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                                        />
-                                        <label htmlFor="showPostalAddress" className="text-base font-medium cursor-pointer flex-1">
-                                            Postal Address
-                                        </label>
-                                    </div>
-
-                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                                        <input
-                                            type="checkbox"
-                                            id="showPhoneNumber"
-                                            checked={visibleFields.showPhoneNumber}
-                                            onChange={(e) =>
-                                                setVisibleFields({ ...visibleFields, showPhoneNumber: e.target.checked })
-                                            }
-                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                                        />
-                                        <label htmlFor="showPhoneNumber" className="text-base font-medium cursor-pointer flex-1">
-                                            Phone Number
-                                        </label>
-                                    </div>
-
-                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                                        <input
-                                            type="checkbox"
-                                            id="showEmail"
-                                            checked={visibleFields.showEmail}
-                                            onChange={(e) =>
-                                                setVisibleFields({ ...visibleFields, showEmail: e.target.checked })
-                                            }
-                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                                        />
-                                        <label htmlFor="showEmail" className="text-base font-medium cursor-pointer flex-1">
-                                            Email
-                                        </label>
-                                    </div>
-
-                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                                        <input
-                                            type="checkbox"
-                                            id="showDiscountPercentage"
-                                            checked={visibleFields.showDiscountPercentage}
-                                            onChange={(e) =>
-                                                setVisibleFields({ ...visibleFields, showDiscountPercentage: e.target.checked })
-                                            }
-                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                                        />
-                                        <label htmlFor="showDiscountPercentage" className="text-base font-medium cursor-pointer flex-1">
-                                            Discount Percentage
-                                        </label>
-                                    </div>
-
-                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                                        <input
-                                            type="checkbox"
-                                            id="showDeliveryAddress"
-                                            checked={visibleFields.showDeliveryAddress}
-                                            onChange={(e) =>
-                                                setVisibleFields({ ...visibleFields, showDeliveryAddress: e.target.checked })
-                                            }
-                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                                        />
-                                        <label htmlFor="showDeliveryAddress" className="text-base font-medium cursor-pointer flex-1">
-                                            Delivery Address
-                                        </label>
-                                    </div>
-
-                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                                        <input
-                                            type="checkbox"
-                                            id="showDeliveryAddressPostalCode"
-                                            checked={visibleFields.showDeliveryAddressPostalCode}
-                                            onChange={(e) =>
-                                                setVisibleFields({ ...visibleFields, showDeliveryAddressPostalCode: e.target.checked })
-                                            }
-                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                                        />
-                                        <label htmlFor="showDeliveryAddressPostalCode" className="text-base font-medium cursor-pointer flex-1">
-                                            Delivery Address Postal Code
-                                        </label>
-                                    </div>
-
-                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                                        <input
-                                            type="checkbox"
-                                            id="showDeliveryAddressPostalAddress"
-                                            checked={visibleFields.showDeliveryAddressPostalAddress}
-                                            onChange={(e) =>
-                                                setVisibleFields({ ...visibleFields, showDeliveryAddressPostalAddress: e.target.checked })
-                                            }
-                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                                        />
-                                        <label htmlFor="showDeliveryAddressPostalAddress" className="text-base font-medium cursor-pointer flex-1">
-                                            Delivery Address Postal Address
-                                        </label>
-                                    </div>
-
-                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                                        <input
-                                            type="checkbox"
-                                            id="showDepartment"
-                                            checked={visibleFields.showDepartment}
-                                            onChange={(e) =>
-                                                setVisibleFields({ ...visibleFields, showDepartment: e.target.checked })
-                                            }
-                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                                        />
-                                        <label htmlFor="showDepartment" className="text-base font-medium cursor-pointer flex-1">
-                                            Department
-                                        </label>
-                                    </div>
-
-                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                                        <input
-                                            type="checkbox"
-                                            id="showInvoicePaymentTerms"
-                                            checked={visibleFields.showInvoicePaymentTerms}
-                                            onChange={(e) =>
-                                                setVisibleFields({ ...visibleFields, showInvoicePaymentTerms: e.target.checked })
-                                            }
-                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                                        />
-                                        <label htmlFor="showInvoicePaymentTerms" className="text-base font-medium cursor-pointer flex-1">
-                                            Invoice Payment Terms
-                                        </label>
-                                    </div>
-
-                                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                                        <input
-                                            type="checkbox"
-                                            id="showContactPerson"
-                                            checked={visibleFields.showContactPerson}
-                                            onChange={(e) =>
-                                                setVisibleFields({ ...visibleFields, showContactPerson: e.target.checked })
-                                            }
-                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                                        />
-                                        <label htmlFor="showContactPerson" className="text-base font-medium cursor-pointer flex-1">
-                                            Contact Person
-                                        </label>
-                                    </div>
-
-                                </div>
-
-                                <div className="flex justify-end gap-3 pt-4 border-t">
-                                    <Button variant="outline" onClick={() => setSettingsOpen(false)}>
-                                        Cancel
-                                    </Button>
-                                    <Button onClick={handleSaveSettings} className="bg-[#31BCFF] hover:bg-[#0EA5E9] text-white">
-                                        Save Settings
-                                    </Button>
-                                </div>
-                            </DialogContent>
-                        </Dialog>}
+                        {overviewMode ? null : <CustomerFieldSettingsDialog initialSettings={visibleFields}
+                            onSettingsSaved={(newSettings) => {
+                                setVisibleFields(newSettings);
+                            }} onRefresh={refetch} />}
                         <div className="w-12 h-12 bg-[#31BCFF]/10 rounded-xl flex items-center justify-center">
                             <svg className="w-6 h-6 text-[#31BCFF]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />

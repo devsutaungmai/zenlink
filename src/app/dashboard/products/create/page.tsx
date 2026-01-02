@@ -10,6 +10,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Button } from '@/components/ui/button'
 import { useProductSettings } from '@/shared/hooks/useProductSettings'
 import Cog6ToothIcon from '@heroicons/react/24/solid/Cog6ToothIcon'
+import { ProductFieldSettingsDialog } from '@/components/invoice/ProductFieldSettingsDialog'
+import { se } from 'date-fns/locale'
 
 interface Unit {
   id: string
@@ -48,8 +50,7 @@ export default function CreateProductPage() {
     salesAccountId: ''
   })
 
-  const { settings } = useProductSettings();
-  const [settingsOpen, setSettingsOpen] = useState(false)
+  const { settings, refetch } = useProductSettings();
   const [visibleFields, setVisibleFields] = useState({
     showSalesPrice: true,
     showCostPrice: true,
@@ -57,7 +58,6 @@ export default function CreateProductPage() {
     showUnit: true,
     showProductGroup: true,
   })
-
 
   useEffect(() => {
     if (settings) {
@@ -67,44 +67,9 @@ export default function CreateProductPage() {
         showDiscountPercentage: settings.showDiscountPercentage,
         showUnit: settings.showUnit,
         showProductGroup: settings.showProductGroup,
-      })
+      });
     }
-  }, [settings])
-  const handleSaveSettings = async () => {
-
-    setSettingsOpen(false)
-    setLoading(true)
-    try {
-      const res = await fetch('/api/products/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(visibleFields),
-      })
-
-      if (!res.ok) {
-        const error = await res.json()
-        throw new Error(error.error || 'Failed to save the settings')
-      }
-      Swal.fire({
-        title: t('common.success'),
-        text: 'Settings saved successfully',
-        icon: 'success',
-        confirmButtonColor: '#31BCFF',
-      })
-
-
-    } catch (error) {
-      await Swal.fire({
-        title: 'Error',
-        text: error instanceof Error ? error.message : 'An error occurred',
-        icon: 'error',
-        confirmButtonColor: '#31BCFF',
-      })
-    } finally {
-      setLoading(false)
-    }
-
-  }
+  }, [settings]);
 
 
   useEffect(() => {
@@ -217,109 +182,16 @@ export default function CreateProductPage() {
             </p>
           </div>
           <div className="hidden md:flex items-center space-x-2">
-            <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-              <DialogTrigger asChild>
-                <button className="inline-flex items-center justify-center px-4 py-3 rounded-2xl bg-white text-gray-700 font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 border border-gray-200">
-                  <Cog6ToothIcon className="w-5 h-5 mr-2" />
-                  Options
-                </button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle className="text-2xl font-bold">Invoice Field Options</DialogTitle>
-                  <DialogDescription>
-                    Select which fields you want to display in the invoice form
-                  </DialogDescription>
-                </DialogHeader>
-
-                <div className="space-y-4 py-4">
-
-                  <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                    <input
-                      type="checkbox"
-                      id="showSalesPrice"
-                      checked={visibleFields.showSalesPrice}
-                      onChange={(e) =>
-                        setVisibleFields({ ...visibleFields, showSalesPrice: e.target.checked })
-                      }
-                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                    />
-                    <label htmlFor="showSalesPrice" className="text-base font-medium cursor-pointer flex-1">
-                      Sales Price
-                    </label>
-                  </div>
-
-                  <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                    <input
-                      type="checkbox"
-                      id="showCostPrice"
-                      checked={visibleFields.showCostPrice}
-                      onChange={(e) =>
-                        setVisibleFields({ ...visibleFields, showCostPrice: e.target.checked })
-                      }
-                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                    />
-                    <label htmlFor="showCostPrice" className="text-base font-medium cursor-pointer flex-1">
-                      Cost Price
-                    </label>
-                  </div>
-
-                  <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                    <input
-                      type="checkbox"
-                      id="showDiscountPercentage"
-                      checked={visibleFields.showDiscountPercentage}
-                      onChange={(e) =>
-                        setVisibleFields({ ...visibleFields, showDiscountPercentage: e.target.checked })
-                      }
-                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                    />
-                    <label htmlFor="showDiscountPercentage" className="text-base font-medium cursor-pointer flex-1">
-                      Discount Percentage
-                    </label>
-                  </div>
-
-                  <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                    <input
-                      type="checkbox"
-                      id="showUnit"
-                      checked={visibleFields.showUnit}
-                      onChange={(e) =>
-                        setVisibleFields({ ...visibleFields, showUnit: e.target.checked })
-                      }
-                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                    />
-                    <label htmlFor="showUnit" className="text-base font-medium cursor-pointer flex-1">
-                      Unit
-                    </label>
-                  </div>
-
-                  <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                    <input
-                      type="checkbox"
-                      id="showProductGroup"
-                      checked={visibleFields.showProductGroup}
-                      onChange={(e) =>
-                        setVisibleFields({ ...visibleFields, showProductGroup: e.target.checked })
-                      }
-                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                    />
-                    <label htmlFor="showProductGroup" className="text-base font-medium cursor-pointer flex-1">
-                      Product Group
-                    </label>
-                  </div>
-                </div>
-
-                <div className="flex justify-end gap-3 pt-4 border-t">
-                  <Button variant="outline" onClick={() => setSettingsOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button onClick={handleSaveSettings} className="bg-[#31BCFF] hover:bg-[#0EA5E9] text-white">
-                    Save Settings
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
+            <ProductFieldSettingsDialog
+              initialSettings={visibleFields}
+              onSettingsSaved={(newSettings) => {
+                setVisibleFields(newSettings);
+                console.log('Settings saved')
+              }}
+              onRefresh={() => {
+                refetch()
+              }}
+            />
             <div className="w-12 h-12 bg-[#31BCFF]/10 rounded-xl flex items-center justify-center">
               <svg className="w-6 h-6 text-[#31BCFF]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
