@@ -320,6 +320,76 @@ export default function InvoicesPage() {
             setLoading(false)
         }
     }
+
+    const handleDeleteInvoices = async () => {
+        // Validate that selected invoices are all in DRAFT status
+        const selectedInvoicesList = paginatedInvoices.filter(inv =>
+            selectedInvoices.includes(inv.id)
+        )
+        const nonDraftInvoices = selectedInvoicesList.filter(
+            inv => inv.status !== InvoiceStatus.DRAFT
+        )
+
+        if (nonDraftInvoices.length > 0) {
+            await Swal.fire({
+                title: 'Error',
+                text: 'Only DRAFT invoices can be sent',
+                icon: 'error',
+                confirmButtonColor: '#31BCFF',
+            })
+            return
+        }
+
+        if (selectedInvoices.length === 0) {
+            await Swal.fire({
+                title: 'Error',
+                text: 'Please select at least one invoice',
+                icon: 'error',
+                confirmButtonColor: '#31BCFF',
+            })
+            return
+        }
+
+        setLoading(true)
+        console.log('Selected invoice IDs to send:', selectedInvoices)
+        try {
+            const res = await fetch('/api/invoices/bulk', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ids: selectedInvoices,
+                }),
+            })
+
+            if (!res.ok) {
+                const error = await res.json()
+                throw new Error(error.error || 'Failed to delete invoices')
+            }
+
+            const result = await res.json()
+            await Swal.fire({
+                title: t('common.success'),
+                text: 'Invoices deleted successfully',
+                icon: 'success',
+                confirmButtonColor: '#31BCFF',
+            })
+
+            // Clear selection and refresh
+            setSelectedInvoices([])
+            fetchInvoices()
+            router.refresh()
+
+        } catch (error) {
+            await Swal.fire({
+                title: 'Error',
+                text: error instanceof Error ? error.message : 'An error occurred',
+                icon: 'error',
+                confirmButtonColor: '#31BCFF',
+            })
+        } finally {
+            setLoading(false)
+        }
+    }
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
@@ -436,7 +506,7 @@ export default function InvoicesPage() {
                         <MagnifyingGlassIcon className="w-8 h-8 text-gray-400" />
                     </div>
                     <h3 className="text-lg font-medium text-gray-900 mb-2">No invoice found</h3>
-                  
+
                     {!searchTerm && (
                         <Link
                             href="/dashboard/invoices/create"
@@ -502,6 +572,13 @@ export default function InvoicesPage() {
                                                     title="Send Selected Invoices with Email"
                                                 >
                                                     <MailIcon className="h-4 w-4" />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteInvoices()}
+                                                    className="p-2 text-green-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200"
+                                                    title="Send Selected Invoices"
+                                                >
+                                                    <TrashIcon className="h-4 w-4" />
                                                 </button>
                                             </div>
                                         ) : (

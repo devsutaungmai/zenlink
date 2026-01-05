@@ -283,10 +283,65 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const { id } = await params
-    const auth = await getCurrentUserOrEmployee()
+  const { id } = await params
+  
+  // Check if it's a bulk delete request
+  if (id === 'bulk') {
+    try {
+      const body = await request.json()
+      const { ids } = body
 
+      console.log('Received IDs for deletion:', ids)
+      
+      if (!ids || !Array.isArray(ids) || ids.length === 0) {
+        return NextResponse.json(
+          { error: 'Invoice IDs are required' },
+          { status: 400 }
+        )
+      }
+
+      const auth = await getCurrentUserOrEmployee()
+      if (!auth) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
+
+      const businessId = await getBusinessId()
+      if (!businessId) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
+
+      // Delete multiple invoices
+      for (const invoiceId of ids) {
+        const invoice = await prisma.invoice.findFirst({
+          where: {
+            id: invoiceId,
+            businessId: businessId
+          }
+        })
+
+        if (!invoice) {
+          continue // Skip not found
+        }
+
+        if (invoice.status !== 'DRAFT') {
+          continue // Skip non-draft
+        }
+
+        await prisma.invoice.delete({
+          where: { id: invoice.id }
+        })
+      }
+
+      return NextResponse.json({ message: 'Invoices deleted successfully' })
+    } catch (error) {
+      console.error('Error in bulk delete:', error)
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    }
+  }
+
+  // Single delete logic (your existing code)
+  try {
+    const auth = await getCurrentUserOrEmployee()
     if (!auth) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -307,7 +362,6 @@ export async function DELETE(
       return NextResponse.json({ error: 'Invoice not found' }, { status: 404 })
     }
 
-    // Delete the invoice (cascade will delete functions)
     await prisma.invoice.delete({
       where: { id: id }
     })

@@ -13,6 +13,7 @@ import { calculateInvoiceTotals, exportToPDF, sendEmail } from '@/shared/lib/inv
 import InvoiceSummaryCalculation from '@/components/invoice/InvoiceSummaryCalculation'
 import { set } from 'zod'
 import { CustomerCombobox } from '@/components/invoice/CustomerCombobox'
+import { InvoiceFieldSettingsDialog } from '@/components/invoice/InvoiceFieldSettingsDialog'
 
 interface Customer {
     id: string
@@ -53,8 +54,33 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
         status: '',
         notes: ''
     })
-    const { settings } = useInvoiceSettings()
+    const { settings, refetch } = useInvoiceSettings()
+    const [visibleFields, setVisibleFields] = useState({
+        showDiscount: true,
+        showPaymentTerms: true,
+        showDepartment: true,
+        showSeller: true,
+        showContactPerson: true,
+        showDeliveryAddress: true,
+        showProject: true,
+        showNote: true
+    })
     const [netTotals, setNetTotals] = useState<Number[]>([]);
+
+    useEffect(() => {
+        if (settings) {
+            setVisibleFields({
+                showDiscount: settings.showDiscount,
+                showPaymentTerms: settings.showPaymentTerms,
+                showDepartment: settings.showDepartment,
+                showSeller: settings.showSeller,
+                showContactPerson: settings.showContactPerson,
+                showDeliveryAddress: settings.showDeliveryAddress,
+                showProject: settings.showProject,
+                showNote: settings.showNote
+            })
+        }
+    }, [settings])
 
     useEffect(() => {
         fetchCustomers()
@@ -305,6 +331,12 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                         </p>
                     </div>
                     <div className="hidden md:flex items-center space-x-2">
+
+                        <InvoiceFieldSettingsDialog
+                            initialSettings={visibleFields}
+                            onSettingsSaved={(newSettings) => setVisibleFields(newSettings)}
+                            onRefresh={refetch}
+                        />
                         <div className="w-12 h-12 bg-[#31BCFF]/10 rounded-xl flex items-center justify-center">
                             <svg className="w-6 h-6 text-[#31BCFF]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
