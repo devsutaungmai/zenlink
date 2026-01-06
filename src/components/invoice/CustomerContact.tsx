@@ -187,6 +187,7 @@ export default function CustomerContactComponent({
                                                 handleFieldBlur(index, 'name');
                                                 validateField(index, 'name', e.target.value);
                                             }}
+                                            disabled={overviewMode}
                                             className={`mt-1 block w-full border ${
                                                 touched[index]?.name && validationErrors[index]?.name 
                                                     ? 'border-red-500' 
@@ -218,6 +219,7 @@ export default function CustomerContactComponent({
                                                 handleFieldBlur(index, 'phoneNumber');
                                                 validateField(index, 'phoneNumber', e.target.value);
                                             }}
+                                            disabled={overviewMode}
                                             className={`mt-1 block w-full border ${
                                                 touched[index]?.phoneNumber && validationErrors[index]?.phoneNumber 
                                                     ? 'border-red-500' 
@@ -249,6 +251,7 @@ export default function CustomerContactComponent({
                                                 handleFieldBlur(index, 'email');
                                                 validateField(index, 'email', e.target.value);
                                             }}
+                                            disabled={overviewMode}
                                             className={`mt-1 block w-full border ${
                                                 touched[index]?.email && validationErrors[index]?.email 
                                                     ? 'border-red-500' 
@@ -280,6 +283,7 @@ export default function CustomerContactComponent({
                                                     setCustomerContacts(updatedContacts);
                                                     oncustomerContactsChange?.(updatedContacts);
                                                 }}
+                                                disabled={overviewMode}
                                                 className="h-4 w-4 text-[#31BCFF] border-gray-300 rounded focus:ring-[#31BCFF]"
                                             />
                                             <span className="ml-2 text-sm text-gray-600">

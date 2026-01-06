@@ -743,6 +743,7 @@ export default function CreateInvoicePage() {
                                             setFormData({ ...formData, invoiceLines: updatedLines });
                                             updateLineTotal(index);
                                         }}
+                                        disabled={overviewMode}
                                         className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
                                     >
                                         <option value="">Select Product</option>
@@ -770,6 +771,7 @@ export default function CreateInvoicePage() {
                                             updateLineTotal(index);
 
                                         }}
+                                        disabled={overviewMode}
                                         className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
                                         placeholder="Enter quantity"
                                     />
@@ -791,6 +793,7 @@ export default function CreateInvoicePage() {
                                             setFormData({ ...formData, invoiceLines: updatedLines })
                                             updateLineTotal(index);
                                         }}
+                                        disabled={overviewMode}
                                         className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
                                         placeholder="Enter price per unit"
                                     />
@@ -811,7 +814,7 @@ export default function CreateInvoicePage() {
                                     />
                                 </div>
 
-                                {visibleFields.showDiscount &&
+                                {visibleFields.showDiscount || formData.invoiceLines[index].discountPercentage > 0 &&
                                     <div>
                                         <label htmlFor="discountPercentage" className="block text-sm font-medium text-gray-700 mb-2">
                                             Discount(%) *
@@ -829,6 +832,7 @@ export default function CreateInvoicePage() {
                                                 setFormData({ ...formData, invoiceLines: updatedLines })
                                                 updateLineTotal(index);
                                             }}
+                                            disabled={overviewMode}
                                             className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
                                             placeholder="Enter discount percentage"
                                         />

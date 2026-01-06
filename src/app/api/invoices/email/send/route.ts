@@ -31,7 +31,17 @@ export async function POST(req: Request) {
     const invoice = await prisma.invoice.findUnique({
       where: { id: invoiceId },
       include: {
-        customer: true,
+        customer: {
+          select: {
+            email: true,
+            contactPersons: { where: { isPrimary: true }, select: { email: true } },
+            customerName: true,
+            address: true,
+            postalCode: true,
+            organizationNumber: true,
+            customerNumber: true
+          }
+        },
         invoiceLines: {
           select: {
             productId: true,
@@ -50,7 +60,8 @@ export async function POST(req: Request) {
     }
 
     // Check if customer has an email
-    if (!invoice.customer.email) {
+    const email = invoice.customer.email || invoice.customer.contactPersons?.[0]?.email;
+    if (!email) {
       return NextResponse.json(
         { error: 'Customer email not found. Please add an email address to the customer.' },
         { status: 400 }
@@ -307,7 +318,7 @@ Denne e-posten er sendt fra økonomisystemet Zenlink (www.zenlink.no).
     // Send email with PDF attachment
     const info = await transporter.sendMail({
       from: `"${invoice.business?.name || 'Zen Link'}" <${process.env.FROM_EMAIL || process.env.GMAIL_USER || 'zenlinkdev@gmail.com'}>`,
-      to: invoice.customer.email,
+      to: email,
       subject: `Faktura ${invoice.invoiceNumber || invoice.id} fra ${invoice.business?.name || 'Zen Link'}`,
       text: emailBody,
       attachments: [

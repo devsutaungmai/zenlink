@@ -99,7 +99,7 @@ export async function exportToPDF(invoiceId: string) {
   }
 }
 
-export async function sendEmail(invoiceId: string) {
+export async function sendEmail(invoiceId: string,type?:string) {
   try {
     const response = await fetch('/api/invoices/email/send', {
       method: 'POST',
@@ -112,7 +112,7 @@ export async function sendEmail(invoiceId: string) {
     if (response.ok) {
       Swal.fire({
         title: 'Success!',
-        text: 'Invoice created and sent email to the customer!',
+        text: type === "invoiced" ? "Email sent to the customer!" : "Invoice created and sent email to the customer!",
         icon: 'success',
         toast: true,
         position: 'top-end',

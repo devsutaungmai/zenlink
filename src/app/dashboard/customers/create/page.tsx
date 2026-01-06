@@ -354,6 +354,7 @@ export default function CreateCustomersPage() {
                                     setFormData({ ...formData, customerName: e.target.value })
                                     debouncedValidation("customerName", e.target.value)
                                 }}
+                                disabled={overviewMode}
                                 onBlur={(e) => validateField("customerName", e.target.value)}
                                 className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.customerName ? "border-red-500" : "border-gray-300"
                                     } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
@@ -378,6 +379,7 @@ export default function CreateCustomersPage() {
                                     setFormData({ ...formData, customerNumber: e.target.value })
                                     debouncedValidation("customerNumber", e.target.value)
                                 }}
+                                disabled={overviewMode}
                                 onBlur={(e) => validateField("customerNumber", e.target.value)}
                                 className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.customerNumber ? "border-red-500" : "border-gray-300"
                                     } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
@@ -402,6 +404,7 @@ export default function CreateCustomersPage() {
                                         setFormData({ ...formData, organizationNumber: e.target.value })
                                         debouncedValidation("organizationNumber", e.target.value)
                                     }}
+                                    disabled={overviewMode}
                                     onBlur={(e) => validateField("organizationNumber", e.target.value)}
                                     className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.organizationNumber ? "border-red-500" : "border-gray-300"
                                         } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
@@ -427,6 +430,7 @@ export default function CreateCustomersPage() {
                                         setFormData({ ...formData, address: e.target.value })
                                         debouncedValidation("address", e.target.value)
                                     }}
+                                    disabled={overviewMode}
                                     onBlur={(e) => validateField("address", e.target.value)}
                                     className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.address ? "border-red-500" : "border-gray-300"
                                         } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
@@ -450,6 +454,7 @@ export default function CreateCustomersPage() {
                                         setFormData({ ...formData, postalCode: e.target.value })
                                         debouncedValidation("postalCode", e.target.value)
                                     }}
+                                    disabled={overviewMode}
                                     onBlur={(e) => validateField("postalCode", e.target.value)}
                                     className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.postalCode ? "border-red-500" : "border-gray-300"
                                         } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
@@ -475,6 +480,7 @@ export default function CreateCustomersPage() {
                                         setFormData({ ...formData, postalAddress: e.target.value })
                                         debouncedValidation("postalAddress", e.target.value)
                                     }}
+                                    disabled={overviewMode}
                                     onBlur={(e) => validateField("postalAddress", e.target.value)}
                                     className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.postalAddress ? "border-red-500" : "border-gray-300"
                                         } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
@@ -500,6 +506,7 @@ export default function CreateCustomersPage() {
                                         setFormData({ ...formData, phoneNumber: e.target.value })
                                         debouncedValidation("phoneNumber", e.target.value)
                                     }}
+                                    disabled={overviewMode}
                                     onBlur={(e) => validateField("phoneNumber", e.target.value)}
                                     className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.phoneNumber ? "border-red-500" : "border-gray-300"
                                         } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
@@ -525,6 +532,7 @@ export default function CreateCustomersPage() {
                                         setFormData({ ...formData, email: e.target.value })
                                         debouncedValidation("email", e.target.value)
                                     }}
+                                    disabled={overviewMode}
                                     onBlur={(e) => validateField("email", e.target.value)}
                                     className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.email ? "border-red-500" : "border-gray-300"
                                         } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
@@ -549,6 +557,7 @@ export default function CreateCustomersPage() {
                                         setFormData({ ...formData, discountPercentage: e.target.value })
                                         debouncedValidation("discountPercentage", e.target.value)
                                     }}
+                                    disabled={overviewMode}
                                     onBlur={(e) => validateField("discountPercentage", e.target.value)}
                                     className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.discountPercentage ? "border-red-500" : "border-gray-300"
                                         } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
@@ -574,6 +583,7 @@ export default function CreateCustomersPage() {
                                         setFormData({ ...formData, deliveryAddress: e.target.value })
                                         debouncedValidation("deliveryAddress", e.target.value)
                                     }}
+                                    disabled={overviewMode}
                                     onBlur={(e) => validateField("deliveryAddress", e.target.value)}
                                     className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.deliveryAddress ? "border-red-500" : "border-gray-300"
                                         } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
@@ -599,6 +609,7 @@ export default function CreateCustomersPage() {
                                         setFormData({ ...formData, deliveryAddressPostalCode: e.target.value })
                                         debouncedValidation("deliveryAddressPostalCode", e.target.value)
                                     }}
+                                    disabled={overviewMode}
                                     onBlur={(e) => validateField("deliveryAddressPostalCode", e.target.value)}
                                     className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.deliveryAddressPostalCode ? "border-red-500" : "border-gray-300"
                                         } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
@@ -624,6 +635,7 @@ export default function CreateCustomersPage() {
                                         setFormData({ ...formData, deliveryAddressPostalAddress: e.target.value })
                                         debouncedValidation("deliveryAddressPostalAddress", e.target.value)
                                     }}
+                                    disabled={overviewMode}
                                     onBlur={(e) => validateField("deliveryAddressPostalAddress", e.target.value)}
                                     className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.deliveryAddressPostalAddress ? "border-red-500" : "border-gray-300"
                                         } bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
@@ -648,6 +660,7 @@ export default function CreateCustomersPage() {
                                         setFormData({ ...formData, departmentId: e.target.value })
                                         debouncedValidation("departmentId", e.target.value)
                                     }}
+                                    disabled={overviewMode}
                                     onBlur={(e) => validateField("departmentId", e.target.value)}
                                     className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.departmentId ? "border-red-500" : "border-gray-300"
                                         } bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}

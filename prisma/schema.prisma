@@ -927,14 +927,14 @@ model Product {
   // Foreign keys for sub tables
   unitId             String?       @map("unit_id")
   productGroupId     String?       @map("product_group_id")
-  salesAccountId     String?       @map("sales_account_id")
+  ledgerAccountId    String?        @map("ledger_account_id")
   invoiceLines       InvoiceLine[] 
 
   // Relations to sub tables
   business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
   unit         Unit?         @relation(fields: [unitId], references: [id], onDelete: SetNull)
   productGroup ProductGroup? @relation(fields: [productGroupId], references: [id], onDelete: SetNull)
-  salesAccount SalesAccount? @relation(fields: [salesAccountId], references: [id], onDelete: SetNull)
+  ledgerAccount LedgerAccount? @relation(fields: [ledgerAccountId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -997,7 +997,7 @@ model LedgerAccount {
   // Relations
   debitEntries          LedgerEntry[] @relation("DebitAccount")
   creditEntries         LedgerEntry[] @relation("CreditAccount")
-  saleAccounts          SalesAccount[]
+  products              Product[]
 
   createdAt             DateTime    @default(now()) @map("created_at")
   updatedAt             DateTime    @updatedAt      @map("updated_at")
@@ -1013,24 +1013,6 @@ enum AccountType {
   EXPENSE
   EQUITY
   APPROPRIATIONS
-}
-
-model SalesAccount {
-  id            String  @id @default(cuid())
-  accountNumber String  @unique @map("account_number")
-  accountName   String  @map("account_name")
-  description   String?
-  isActive      Boolean @default(true) @map("is_active")
-
-  ledgerAccountId String?        @map("ledger_account_id")
-  ledgerAccount   LedgerAccount? @relation(fields: [ledgerAccountId], references: [id], onDelete: SetNull)
-
-  products Product[]
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  @@map("sales_accounts")
 }
 
 model LedgerEntry {

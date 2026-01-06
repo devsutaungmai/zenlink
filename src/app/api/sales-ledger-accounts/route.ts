@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/shared/lib/prisma'
 import { getCurrentUserOrEmployee } from '@/shared/lib/auth'
+import { AccountType } from '@prisma/client'
 
-// GET /api/categories - Get all categories for the business
 export async function GET(request: NextRequest) {
   try {
     const auth = await getCurrentUserOrEmployee()
@@ -11,17 +11,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const raw = await prisma.salesAccount.findMany({
-      include: { ledgerAccount: { select: { accountNumber: true } } },
-      orderBy: { accountName: 'asc' }
+    const ledgerAccounts = await prisma.ledgerAccount.findMany({
+      where: {
+      accountNumber: {
+        gte: 3000,
+        lt: 4000
+      }
+      },
+      orderBy: { accountNumber: 'asc' }
     })
-
-    const categories = raw.map(sa => {
-      const ledgerAccountNumber = sa.ledgerAccount?.accountNumber ?? sa.accountNumber
-      const { ledgerAccount, ...rest } = sa
-      return { ...rest, accountNumber: ledgerAccountNumber }
-    })
-    return NextResponse.json(categories)
+    return NextResponse.json(ledgerAccounts, { status: 200 })
   } catch (error) {
     console.error('Error fetching categories:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

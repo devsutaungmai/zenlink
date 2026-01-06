@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon, Cog6ToothIcon, FunnelIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon, Cog6ToothIcon, FunnelIcon, PaperAirplaneIcon, PaperClipIcon } from '@heroicons/react/24/outline'
 import { useTranslation } from 'react-i18next'
 import Swal from 'sweetalert2'
 import { useCurrency } from '@/shared/hooks/useCurrency'
@@ -18,7 +18,7 @@ import {
 import { Decimal } from '@prisma/client/runtime/library'
 import { EmailService } from '@/shared/lib/notifications'
 import { Mail, MailIcon } from 'lucide-react'
-import { sendEmail } from '@/shared/lib/invoiceHelper'
+import { exportToPDF, sendEmail } from '@/shared/lib/invoiceHelper'
 import { useRouter } from 'next/navigation'
 
 
@@ -77,6 +77,12 @@ export default function InvoicesPage() {
     const [currentPage, setCurrentPage] = useState(1)
     const [itemsPerPage] = useState(10)
     const [selectedInvoices, setSelectedInvoices] = useState<string[]>([])
+    const [loadingEmail, setLoadingEmail] = useState<Record<string, boolean>>({});
+    const handleSendEmail = async (invoiceId: string) => {
+        setLoadingEmail(prev => ({ ...prev, [invoiceId]: true }));
+        await sendEmail(invoiceId,"invoiced");
+        setLoadingEmail(prev => ({ ...prev, [invoiceId]: false }));
+    }
 
     useEffect(() => {
         fetchInvoices()
@@ -321,6 +327,34 @@ export default function InvoicesPage() {
         }
     }
 
+    const handlePDf = async (invoiceId: string) => {
+            try {
+                const pdfSuccess = await exportToPDF(invoiceId)
+                if (pdfSuccess) {
+                    await Swal.fire({
+                        title: "Success!",
+                        text: "PDF downloaded",
+                        icon: "success",
+                        confirmButtonColor: "#31BCFF",
+                    })
+                } else {
+                    await Swal.fire({
+                        title: "Partial Success",
+                        text: "PDF download failed",
+                        icon: "warning",
+                        confirmButtonColor: "#31BCFF",
+                    })
+                }
+            } catch (error) {
+                await Swal.fire({
+                    title: "Partial Success",
+                    text: "PDF download failed",
+                    icon: "warning",
+                    confirmButtonColor: "#31BCFF",
+                })
+            }
+        }
+
     const handleDeleteInvoices = async () => {
         // Validate that selected invoices are all in DRAFT status
         const selectedInvoicesList = paginatedInvoices.filter(inv =>
@@ -479,9 +513,8 @@ export default function InvoicesPage() {
                         </div>
                         {[
                             { value: 'all', label: "ALL" },
-                            { value: 'outstanding', label: "OUTSTANDING" },
                             { value: 'draft', label: "DRAFT" },
-                            { value: 'sent', label: "SENT" },
+                            { value: 'outstanding', label: "OUTSTANDING" },
                             { value: 'paid', label: "PAID" }
                         ].map((filter) => (
                             <button
@@ -655,7 +688,32 @@ export default function InvoicesPage() {
                                                         <TrashIcon className="h-4 w-4" />
                                                     </button>
                                                 </div>
-                                            ) : null}
+                                            ) : (<div className="flex items-center justify-end gap-2">
+                                                <button className="p-1 hover:bg-gray-200 rounded" onClick={() => handlePDf(invoice.id)}>
+                                                    <PaperClipIcon className="h-4 w-4 text-gray-400" />
+                                                </button>
+
+
+                                                <button
+                                                    onClick={() => handleSendEmail(invoice.id)}
+                                                    disabled={loadingEmail[invoice.id]}
+                                                    className={`p-2 rounded-lg transition-all duration-200 ${loadingEmail[invoice.id]
+                                                        ? 'text-gray-300 bg-gray-50 cursor-not-allowed'
+                                                        : 'text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50'
+                                                        }`}
+                                                >
+                                                    {loadingEmail[invoice.id] ? (
+                                                        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                        </svg>
+                                                    ) : (
+                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25H4.5a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                                                        </svg>
+                                                    )}
+                                                </button>
+                                            </div>)}
                                         </td>
                                     </tr>
                                 ))}

@@ -121,9 +121,12 @@ export default function InvoiceOverview() {
                 throw new Error(`HTTP error! status: ${res.status}`)
             }
 
-            const data = await res.json()
+            let data = await res.json()
 
             if (Array.isArray(data)) {
+                data = data.filter((invoice: Invoice) =>
+                    invoice.status.toLowerCase() !== (InvoiceStatus.DRAFT.toLowerCase())
+                )
                 setInvoices(data)
             } else {
                 console.error("API did not return an array:", data)
@@ -211,7 +214,7 @@ export default function InvoiceOverview() {
 
     const handleSendEmail = async (invoiceId: string) => {
         setLoadingEmail(prev => ({ ...prev, [invoiceId]: true }));
-        await sendEmail(invoiceId);
+        await sendEmail(invoiceId,"invoiced");
         setLoadingEmail(prev => ({ ...prev, [invoiceId]: false }));
     }
     return (

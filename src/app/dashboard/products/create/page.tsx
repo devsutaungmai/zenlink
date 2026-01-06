@@ -6,12 +6,8 @@ import { useTranslation } from 'react-i18next'
 import Link from 'next/link'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
 import { useProductSettings } from '@/shared/hooks/useProductSettings'
-import Cog6ToothIcon from '@heroicons/react/24/solid/Cog6ToothIcon'
 import { ProductFieldSettingsDialog } from '@/components/invoice/ProductFieldSettingsDialog'
-import { se } from 'date-fns/locale'
 
 interface Unit {
   id: string
@@ -24,10 +20,10 @@ interface ProductGroup {
   name: string
 }
 
-interface SalesAccount {
+interface LedgerAccount {
   id: string
   accountNumber: string
-  accountName: string
+  name: string
 }
 
 export default function CreateProductPage() {
@@ -36,7 +32,7 @@ export default function CreateProductPage() {
   const [loading, setLoading] = useState(false)
   const [units, setUnits] = useState<Unit[]>([])
   const [productGroups, setProductGroups] = useState<ProductGroup[]>([])
-  const [salesAccounts, setSalesAccounts] = useState<SalesAccount[]>([])
+  const [salesLedgerAccounts, setSalesLedgerAccounts] = useState<LedgerAccount[]>([])
 
   const [formData, setFormData] = useState({
     active: true,
@@ -47,7 +43,7 @@ export default function CreateProductPage() {
     discountPercentage: 0,
     unitId: '',
     productGroupId: '',
-    salesAccountId: ''
+    ledgerAccountId: ''
   })
 
   const { settings, refetch } = useProductSettings();
@@ -75,7 +71,7 @@ export default function CreateProductPage() {
   useEffect(() => {
     fetchUnits()
     fetchProductGroups()
-    fetchSalesAccounts()
+    fetchSalesLedgerAccounts()
   }, [])
 
   const fetchUnits = async () => {
@@ -108,18 +104,18 @@ export default function CreateProductPage() {
     }
   }
 
-  const fetchSalesAccounts = async () => {
+  const fetchSalesLedgerAccounts = async () => {
     try {
-      const res = await fetch('/api/sales-accounts')
+      const res = await fetch('/api/sales-ledger-accounts')
       if (res.ok) {
         const data = await res.json()
-        setSalesAccounts(data)
+        setSalesLedgerAccounts(data)
         if (data.length > 0) {
-          setFormData(prev => ({ ...prev, salesAccountId: data[0].id }))
+          setFormData(prev => ({ ...prev, ledgerAccountId: data[0].id }))
         }
       }
     } catch (error) {
-      console.error('Error fetching sales accounts:', error)
+      console.error('Error fetching sales ledger accounts:', error)
     }
   }
 
@@ -347,20 +343,20 @@ export default function CreateProductPage() {
 
             {/* Sales Account - always visible */}
             <div className='mt-4'>
-              <label htmlFor="salesAccountId" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="ledgerAccountId" className="block text-sm font-medium text-gray-700 mb-2">
                 Sales Account *
               </label>
               <select
-                id="salesAccountId"
+                id="ledgerAccountId"
                 required
-                value={formData.salesAccountId || ""}
-                onChange={(e) => setFormData({ ...formData, salesAccountId: e.target.value })}
+                value={formData.ledgerAccountId || ""}
+                onChange={(e) => setFormData({ ...formData, ledgerAccountId: e.target.value })}
                 className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
               >
                 <option value="">--Select Sales Account--</option>
-                {salesAccounts.map((sa) => (
+                {salesLedgerAccounts.map((sa) => (
                   <option key={sa.id} value={sa.id}>
-                    {sa.accountNumber} - {sa.accountName}
+                    {sa.accountNumber} - {sa.name}
                   </option>
                 ))}
               </select>

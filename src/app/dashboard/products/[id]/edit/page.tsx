@@ -20,10 +20,10 @@ interface ProductGroup {
     name: string
 }
 
-interface SalesAccount {
+interface LedgerAccount {
     id: string
     accountNumber: string
-    accountName: string
+    name: string
 }
 
 export default function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
@@ -33,7 +33,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     const [loading, setLoading] = useState(false)
     const [units, setUnits] = useState<Unit[]>([])
     const [productGroups, setProductGroups] = useState<ProductGroup[]>([])
-    const [salesAccounts, setSalesAccounts] = useState<SalesAccount[]>([])
+    const [salesLedgerAccounts, setSalesLedgerAccounts] = useState<LedgerAccount[]>([])
     const [fetchingLoading, setFetchingLoading] = useState(true)
 
     const [formData, setFormData] = useState({
@@ -45,7 +45,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         discountPercentage: 0,
         unitId: '',
         productGroupId: '',
-        salesAccountId: ''
+        ledgerAccountId: ''
     })
     const { settings, refetch } = useProductSettings();
     const [visibleFields, setVisibleFields] = useState({
@@ -71,7 +71,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     useEffect(() => {
         fetchUnits()
         fetchProductGroups()
-        fetchSalesAccounts()
+        fetchSalesLedgerAccounts()
         fetchProduct()
     }, [resolvedParams.id])
 
@@ -106,18 +106,18 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         }
     }
 
-    const fetchSalesAccounts = async () => {
+    const fetchSalesLedgerAccounts = async () => {
         try {
-            const res = await fetch('/api/sales-accounts')
+            const res = await fetch('/api/sales-ledger-accounts')
             if (res.ok) {
                 const data = await res.json()
-                setSalesAccounts(data)
+                setSalesLedgerAccounts(data)
                 if (data.length > 0) {
-                    setFormData(prev => ({ ...prev, salesAccountId: data[0].id }))
+                    setFormData(prev => ({ ...prev, ledgerAccountId: data[0].id }))
                 }
             }
         } catch (error) {
-            console.error('Error fetching sales accounts:', error)
+            console.error('Error fetching sales ledger accounts:', error)
         }
     }
 
@@ -135,7 +135,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                     discountPercentage: data.discountPercentage || '',
                     unitId: data.unitId || '',
                     productGroupId: data.productGroupId || '',
-                    salesAccountId: data.salesAccountId || ''
+                    ledgerAccountId: data.ledgerAccountId || ''
                 })
             }
         } catch (error) {
@@ -375,20 +375,20 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
 
                         {/* Sales Account - always visible */}
                         <div className='mt-4'>
-                            <label htmlFor="salesAccountId" className="block text-sm font-medium text-gray-700 mb-2">
+                            <label htmlFor="ledgerAccountId" className="block text-sm font-medium text-gray-700 mb-2">
                                 Sales Account *
                             </label>
                             <select
-                                id="salesAccountId"
+                                id="ledgerAccountId"
                                 required
-                                value={formData.salesAccountId || ""}
-                                onChange={(e) => setFormData({ ...formData, salesAccountId: e.target.value })}
+                                value={formData.ledgerAccountId || ""}
+                                onChange={(e) => setFormData({ ...formData, ledgerAccountId: e.target.value })}
                                 className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
                             >
                                 <option value="">--Select Sales Account--</option>
-                                {salesAccounts.map((sa) => (
+                                {salesLedgerAccounts.map((sa) => (
                                     <option key={sa.id} value={sa.id}>
-                                        {sa.accountNumber} - {sa.accountName}
+                                        {sa.accountNumber} - {sa.name}
                                     </option>
                                 ))}
                             </select>
