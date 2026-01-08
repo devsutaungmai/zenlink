@@ -99,7 +99,7 @@ export async function exportToPDF(invoiceId: string) {
   }
 }
 
-export async function sendEmail(invoiceId: string,type?:string) {
+export async function sendEmail(invoiceId: string, type?: string) {
   try {
     const response = await fetch('/api/invoices/email/send', {
       method: 'POST',
@@ -248,11 +248,7 @@ export async function createCreditNote(params: {
           include: {
             product: {
               include: {
-                salesAccount: {
-                  include: {
-                    ledgerAccount: true
-                  }
-                }
+                ledgerAccount: true
               }
             }
           }
@@ -373,7 +369,7 @@ export async function generateVoucherNumber(
   });
 
   const nextSeq = lastVoucher ? lastVoucher.sequence + 1 : 1;
-  
+
   // ✅ Format: businessId-year-sequence
   // Example: cmjba1dlg0000pgutvum2gxvn-2025-1
   const voucherNumber = `${businessId}-${year}-${nextSeq}`;
@@ -400,14 +396,14 @@ export function formatVoucherNumberForDisplay(voucherNumber: string): string {
   // Split: "cmjba1dlg0000pgutvum2gxvn-2025-1" 
   // Returns: "2025-1"
   const parts = voucherNumber.split('-');
-  
+
   if (parts.length >= 3) {
     // Get last two parts: year and sequence
     const year = parts[parts.length - 2];
     const sequence = parts[parts.length - 1];
     return `${year}-${sequence}`;
   }
-  
+
   // Fallback if format is unexpected
   return voucherNumber;
 }
@@ -415,12 +411,12 @@ export function formatVoucherNumberForDisplay(voucherNumber: string): string {
 export function parseVoucherNumber(voucherNumber: string) {
   // Split: "cmjba1dlg0000pgutvum2gxvn-2025-1"
   const parts = voucherNumber.split('-');
-  
+
   if (parts.length >= 3) {
     const sequence = parts[parts.length - 1];
     const year = parts[parts.length - 2];
     const businessId = parts.slice(0, -2).join('-'); // Handle if businessId contains dashes
-    
+
     return {
       businessId,
       year: parseInt(year),
@@ -428,7 +424,7 @@ export function parseVoucherNumber(voucherNumber: string) {
       displayNumber: `${year}-${sequence}`
     };
   }
-  
+
   return null;
 }
 
@@ -451,11 +447,7 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
         include: {
           product: {
             include: {
-              salesAccount: {
-                include: {
-                  ledgerAccount: true
-                }
-              }
+              ledgerAccount: true
             }
           }
         }
@@ -514,8 +506,8 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
     }
 
     for (const line of invoice.invoiceLines) {
-      const salesAccount = line.product.salesAccount;
-      if (!salesAccount?.ledgerAccountId) {
+      const ledgerAccountId = line.product.ledgerAccount?.id;
+      if (!ledgerAccountId) {
         throw new Error(`Product ${line.productName} has no linked ledger account`);
       }
 
@@ -531,7 +523,7 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
             voucherId: invoice.voucherId ?? "",
             documentDate,
             postingDate,
-            debitAccountId: salesAccount.ledgerAccountId,
+            debitAccountId: ledgerAccountId,
             creditAccountId: accountsReceivable.id,
             amount: lineTotal,
             projectId: invoice.projectId,
@@ -550,7 +542,7 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
             documentDate,
             postingDate,
             debitAccountId: accountsReceivable.id,
-            creditAccountId: salesAccount.ledgerAccountId,
+            creditAccountId: ledgerAccountId,
             amount: lineTotal,
             projectId: invoice.projectId,
             departmentId: invoice.departmentId,
@@ -684,7 +676,7 @@ export async function generateLedgerReport(
   accountNumbers?: number[]
 ) {
   // const whereClause: any = { businessId, isActive: true };
-  accountNumbers = [1500, 1920, 3200, 1900, 2701]
+  // accountNumbers = [1500, 1920, 3200, 3000, 1900, 2701]
   const whereClause: any = {};
   if (accountNumbers && accountNumbers.length > 0) {
     whereClause.accountNumber = { in: accountNumbers };
@@ -768,7 +760,9 @@ export async function generateLedgerReport(
     let runningBalance = openingBalance;
 
     // Group 1500 entries ONLY for INVOICE_POST and CREDIT_NOTE
-    const shouldGroupByInvoice = account.accountNumber === 1500 || account.accountNumber === 3200;
+    const shouldGroupByInvoice =
+      account.accountNumber === 1500 ||
+      (account.accountNumber >= 3000 && account.accountNumber < 4000);
 
     let ledgerEntries;
 

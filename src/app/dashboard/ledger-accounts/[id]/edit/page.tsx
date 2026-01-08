@@ -23,6 +23,7 @@ export default function EditLedgerAccountPage({ params }: { params: Promise<{ id
     const resolvedParams = use(params)
     const router = useRouter()
     const [loading, setLoading] = useState(false)
+    const [isAccountInUse, setIsAccountInUse] = useState(false)
 
     const [formData, setFormData] = useState<AccountLedgerForm>({
         accountNumber: 0,
@@ -37,6 +38,7 @@ export default function EditLedgerAccountPage({ params }: { params: Promise<{ id
 
     useEffect(() => {
         fetchLedgerAccount()
+        checkledgerAccountInUse(resolvedParams.id)
     }, [resolvedParams.id])
 
     const fetchLedgerAccount = async () => {
@@ -59,6 +61,26 @@ export default function EditLedgerAccountPage({ params }: { params: Promise<{ id
             }
         } catch (error) {
             console.error('Error fetching LedgerAccount:', error)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+     const checkledgerAccountInUse = async (id: string): Promise<void> => {
+         try {
+            setLoading(true)
+            const res = await fetch(`/api/ledger/accounts/${id}/in-use`)
+
+            if (!res.ok) {
+                throw new Error(`HTTP error! status: ${res.status}`)
+            }
+
+            const data = await res.json()
+            setIsAccountInUse(data.inUse)
+
+        } catch (error) {
+            console.error('Error fetching ledger account in use status:', error)
+            setIsAccountInUse(false)
         } finally {
             setLoading(false)
         }
@@ -145,9 +167,16 @@ export default function EditLedgerAccountPage({ params }: { params: Promise<{ id
                                 id="accountNumber"
                                 required
                                 value={formData.accountNumber || ''}
+                                disabled={isAccountInUse}
                                 onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value ? parseInt(e.target.value, 10) : 0 })}
-                                className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                className={`block w-full px-4 py-3 rounded-xl border backdrop-blur-sm placeholder-gray-500 transition-all duration-200 ${
+                                    isAccountInUse
+                                        ? 'border-gray-200 bg-gray-100 text-gray-500 cursor-not-allowed opacity-70'
+                                        : 'border-gray-300 bg-white/70 text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF]'
+                                }`}
                                 placeholder="Enter account number"
+                                title={isAccountInUse ? 'Account number cannot be edited because this account is in use' : 'Enter account number'}
+                                aria-disabled={isAccountInUse}
                             />
                         </div>
 

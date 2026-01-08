@@ -814,7 +814,7 @@ export default function CreateInvoicePage() {
                                     />
                                 </div>
 
-                                {visibleFields.showDiscount || formData.invoiceLines[index].discountPercentage > 0 &&
+                                {(visibleFields.showDiscount || formData.invoiceLines[index].discountPercentage > 0) &&
                                     <div>
                                         <label htmlFor="discountPercentage" className="block text-sm font-medium text-gray-700 mb-2">
                                             Discount(%) *
