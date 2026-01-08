@@ -137,7 +137,7 @@ export async function PUT(
     const invoiceLinesData: any = []
 
     for (const line of invoiceLines) {
-      const { productId, quantity, pricePerUnit, discountPercentage = 0 } = line
+      const { productId, quantity, pricePerUnit, discountPercentage = 0, vatPercentage } = line
 
       // Validate line data
       if (!productId || !quantity || !pricePerUnit) {
@@ -163,12 +163,14 @@ export async function PUT(
       const qty = Number(quantity)
       const price = Number(pricePerUnit)
       const discount = Number(discountPercentage) || 0
+      const vatPerc = Number(vatPercentage) || 0
 
       // Calculate line totals using helper function
       const calculations = calculateInvoiceTotals(
         qty,
         price,
-        discount
+        discount,
+        vatPerc
       )
 
       totalExclVAT += calculations.totalExclVAT

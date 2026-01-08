@@ -140,6 +140,7 @@ model Business {
   employeeSettings         EmployeeSettings?         @relation("EmployeeSettings")
   projectFormSettings      ProjectFormSettings?      @relation("ProjectFormSettings")
   customerFormSettings     CustomerFormSettings?     @relation("CustomerFormSettings")
+  vatCodes                 VatCode[]
 }
 
 model Employee {
@@ -978,7 +979,8 @@ model LedgerAccount {
   isActive              Boolean     @default(true) @map("is_active")
   
   // New fields from Excel
-  vatCode               String?     @map("vat_code")              // Mva-kode
+  vatCodeId             String?     @map("vat_code_id")              // Mva-kode
+  vatCode               VatCode?    @relation(fields: [vatCodeId], references: [id], onDelete: SetNull)
   vatSpecification      String?     @map("vat_specification")      // Mva-spesifikasjon
   reportGroup           String?     @map("report_group")           // Rapportgruppe
   saftStandardAccount   String?     @map("saft_standard_account")  // SAF-T standardkonto
@@ -1004,6 +1006,35 @@ model LedgerAccount {
 
   @@unique([accountNumber, businessId]) // Unique per business, or global if businessId is null
   @@map("ledger_accounts")
+}
+
+model VatCode {
+  id                      String    @id @default(cuid())
+  code                    String    @map("code")                      // Kode (0, 1, 11, 12, etc.)
+  name                    String    @map("name")                      // Navn
+  rate                    Decimal   @map("rate") @db.Decimal(5, 2)    // Sats (0%, 25%, 15%, etc.)
+  description             String    @map("description")               // Beskrivelse
+  isActive                Boolean   @default(true) @map("is_active")  // Aktiv (Ja/Nei)
+  
+  // Date fields
+  validFrom               DateTime? @map("valid_from")                // Gyldig fra
+  validTo                 DateTime? @map("valid_to")                  // Gyldig til
+  
+  // Account references
+  offsetAccountNumber     String?   @map("offset_account_number")     // Avgiftskonto
+  settlementAccountNumber String?   @map("settlement_account_number") // Avsetningskonto
+  
+  // NULL businessId means it's a default/template VAT code
+  businessId              String?   @map("business_id")
+  business                Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  ledgerAccounts         LedgerAccount[] // Accounts using this VAT code
+  
+  createdAt               DateTime  @default(now()) @map("created_at")
+  updatedAt               DateTime  @updatedAt @map("updated_at")
+  
+  @@unique([code, businessId]) // Unique per business, or global if businessId is null
+  @@map("vat_codes")
 }
 
 enum AccountType {

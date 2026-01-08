@@ -20,7 +20,14 @@ export async function GET(request: NextRequest) {
 
     const categories = await prisma.product.findMany({
       where: {
-        businessId: businessId
+        businessId: businessId,
+      },
+      include: {
+        ledgerAccount: {
+          select: {
+            vatCode: { select: { code: true, rate: true } },
+          }
+        }
       },
       orderBy: {
         productName: 'asc'
@@ -65,7 +72,7 @@ export async function POST(request: NextRequest) {
     if (!productNumber) {
       return NextResponse.json({ error: 'ProductNumber is required' }, { status: 400 })
     }
-     if (!productName) {
+    if (!productName) {
       return NextResponse.json({ error: 'ProductName is required' }, { status: 400 })
     }
     const refinedUnitId =
@@ -97,10 +104,10 @@ export async function POST(request: NextRequest) {
       const targets = Array.isArray(target) ? target.map(String).join(',').toLowerCase() : String(target || '').toLowerCase()
 
       if (targets.includes('productnumber') || targets.includes('product_number')) {
-      return NextResponse.json({ error: 'Product number already exists!' }, { status: 409 })
+        return NextResponse.json({ error: 'Product number already exists!' }, { status: 409 })
       }
       if (targets.includes('productname') || targets.includes('product_name')) {
-      return NextResponse.json({ error: 'Product name already exists!' }, { status: 409 })
+        return NextResponse.json({ error: 'Product name already exists!' }, { status: 409 })
       }
 
       return NextResponse.json({ error: 'Unique constraint failed' }, { status: 409 })

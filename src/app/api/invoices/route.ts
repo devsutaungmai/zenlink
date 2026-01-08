@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
 
         for (const line of invoiceLines) {
 
-          const { productId, quantity, pricePerUnit, discountPercentage = 0 } = line;
+          const { productId, quantity, pricePerUnit, discountPercentage = 0, vatAmount } = line;
           // Validate line data
           if (!productId || !quantity || !pricePerUnit) {
             return NextResponse.json(

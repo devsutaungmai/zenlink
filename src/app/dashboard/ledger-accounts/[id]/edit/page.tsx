@@ -16,7 +16,14 @@ interface AccountLedgerForm {
     industrySpecification: string
     reportGroup: string
     saftStandardAccount: string
-    vatCode: string
+    vatCodeId: string
+}
+
+interface VatCode {
+    id: string
+    code: string
+    name: string
+    rate: number
 }
 
 export default function EditLedgerAccountPage({ params }: { params: Promise<{ id: string }> }) {
@@ -24,6 +31,7 @@ export default function EditLedgerAccountPage({ params }: { params: Promise<{ id
     const router = useRouter()
     const [loading, setLoading] = useState(false)
     const [isAccountInUse, setIsAccountInUse] = useState(false)
+    const [vatCodes, setVatCodes] = useState<VatCode[]>([]);
 
     const [formData, setFormData] = useState<AccountLedgerForm>({
         accountNumber: 0,
@@ -33,7 +41,7 @@ export default function EditLedgerAccountPage({ params }: { params: Promise<{ id
         industrySpecification: '',
         reportGroup: '',
         saftStandardAccount: '',
-        vatCode: ''
+        vatCodeId: ''
     })
 
     useEffect(() => {
@@ -56,7 +64,7 @@ export default function EditLedgerAccountPage({ params }: { params: Promise<{ id
                     industrySpecification: data.industrySpecification || '',
                     reportGroup: data.reportGroup || '',
                     saftStandardAccount: data.saftStandardAccount || '',
-                    vatCode: data.vatCode || ''
+                    vatCodeId: data.vatCodeId || ''
                 })
             }
         } catch (error) {
@@ -122,6 +130,36 @@ export default function EditLedgerAccountPage({ params }: { params: Promise<{ id
             setLoading(false)
         }
     }
+
+     const fetchVatCodes = async () => {
+        try {
+            setLoading(true);
+            const res = await fetch('/api/ledger/vat-codes', {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' },
+            })
+
+            if (!res.ok) {
+                const error = await res.json()
+                throw new Error(error.error || 'Failed to fetch VAT codes')
+            }
+
+            const data = await res.json()
+
+            setVatCodes(Array.isArray(data) ? data : data.vatCodes ?? [])
+
+        } catch (error) {
+            console.error('Error fetching VAT codes:', error)
+            return []
+        }
+        finally {
+            setLoading(false);
+        }
+    }
+
+    useEffect(() => {
+        fetchVatCodes();
+    }, []);
 
     return (
         <div className="space-y-6">
@@ -217,17 +255,23 @@ export default function EditLedgerAccountPage({ params }: { params: Promise<{ id
                         </div>
 
                         <div>
-                            <label htmlFor="vatCode" className="block text-sm font-medium text-gray-700 mb-2">
+                            <label htmlFor="vatCodeId" className="block text-sm font-medium text-gray-700 mb-2">
                                 VAT Code
                             </label>
-                            <input
-                                type="text"
-                                id="vatCode"
-                                value={formData.vatCode}
-                                onChange={(e) => setFormData({ ...formData, vatCode: e.target.value })}
-                                className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                                placeholder="Enter VAT code"
-                            />
+                            <select
+                                id="vatCodeId"
+                                required
+                                value={formData.vatCodeId}
+                                onChange={(e) => setFormData({ ...formData, vatCodeId: e.target.value })}
+                                className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                            >
+                                <option value="">Select VAT Code</option>
+                                {vatCodes.map((vatCode) => (
+                                    <option key={vatCode.id} value={vatCode.id}>
+                                        {vatCode.code} - {vatCode.name} ({vatCode.rate}%)
+                                    </option>
+                                ))}
+                            </select>
                         </div>
 
 

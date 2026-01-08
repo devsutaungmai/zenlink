@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
 import { AccountType } from '@prisma/client'
+import { set } from 'date-fns'
 
 
 interface AccountLedgerForm {
@@ -16,7 +17,14 @@ interface AccountLedgerForm {
     industrySpecification: string
     reportGroup: string
     saftStandardAccount: string
-    vatCode: string
+    vatCodeId: string
+}
+
+interface VatCode {
+    id: string
+    code: string
+    name: string
+    rate: number
 }
 
 export default function CreateLedgerAccountPage() {
@@ -31,8 +39,9 @@ export default function CreateLedgerAccountPage() {
         industrySpecification: '',
         reportGroup: '',
         saftStandardAccount: '',
-        vatCode: ''
+        vatCodeId: ''
     })
+    const [vatCodes, setVatCodes] = useState<VatCode[]>([]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -70,6 +79,36 @@ export default function CreateLedgerAccountPage() {
             setLoading(false)
         }
     }
+
+    const fetchVatCodes = async () => {
+        try {
+            setLoading(true);
+            const res = await fetch('/api/ledger/vat-codes', {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' },
+            })
+
+            if (!res.ok) {
+                const error = await res.json()
+                throw new Error(error.error || 'Failed to fetch VAT codes')
+            }
+
+            const data = await res.json()
+
+            setVatCodes(Array.isArray(data) ? data : data.vatCodes ?? [])
+
+        } catch (error) {
+            console.error('Error fetching VAT codes:', error)
+            return []
+        }
+        finally {
+            setLoading(false);
+        }
+    }
+
+    useEffect(() => {
+        fetchVatCodes();
+    }, []);
 
     return (
         <div className="space-y-6">
@@ -158,20 +197,26 @@ export default function CreateLedgerAccountPage() {
                         </div>
 
                         <div>
-                            <label htmlFor="vatCode" className="block text-sm font-medium text-gray-700 mb-2">
+                            <label htmlFor="vatCodeId" className="block text-sm font-medium text-gray-700 mb-2">
                                 VAT Code
                             </label>
-                            <input
-                                type="text"
-                                id="vatCode"
-                                value={formData.vatCode}
-                                onChange={(e) => setFormData({ ...formData, vatCode: e.target.value })}
-                                className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                                placeholder="Enter VAT code"
-                            />
+                            <select
+                                id="vatCodeId"
+                                required
+                                value={formData.vatCodeId}
+                                onChange={(e) => setFormData({ ...formData, vatCodeId: e.target.value })}
+                                className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                            >
+                                <option value="">Select VAT Code</option>
+                                {vatCodes?.map((vatCode) => (
+                                    <option key={vatCode.id} value={vatCode.id}>
+                                        {vatCode.code} - {vatCode.name} ({vatCode.rate}%)
+                                    </option>
+                                ))}
+                            </select>
                         </div>
 
-                       
+
                     </div>
 
 
@@ -219,18 +264,18 @@ export default function CreateLedgerAccountPage() {
                         />
                     </div>
 
-                     <div className="flex items-center gap-3 mt-8">
-                            <input
-                                id="isActive"
-                                type="checkbox"
-                                checked={formData.isActive}
-                                onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                                className="h-5 w-5 text-[#31BCFF] border-gray-300 rounded focus:ring-[#31BCFF]/50"
-                            />
-                            <label htmlFor="isActive" className="text-sm font-medium text-gray-700">
-                                Active
-                            </label>
-                        </div>
+                    <div className="flex items-center gap-3 mt-8">
+                        <input
+                            id="isActive"
+                            type="checkbox"
+                            checked={formData.isActive}
+                            onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                            className="h-5 w-5 text-[#31BCFF] border-gray-300 rounded focus:ring-[#31BCFF]/50"
+                        />
+                        <label htmlFor="isActive" className="text-sm font-medium text-gray-700">
+                            Active
+                        </label>
+                    </div>
 
                     {/* Form Actions */}
                     <div className="flex items-center justify-end gap-4 pt-6 border-t border-gray-200">

@@ -1,4 +1,4 @@
-import { AccountType, InvoiceDueDateType, PaymentTimeUnit, PrismaClient } from '@prisma/client'
+import { AccountType, PrismaClient } from '@prisma/client'
 import path from 'path';
 import ExcelJS from 'exceljs';
 import { fileURLToPath } from 'url';
@@ -58,6 +58,35 @@ function getAccountType(accountNumber: number): AccountType {
     case 9: return AccountType.INCOME;
     default: return AccountType.ASSET;
   }
+}
+
+function parsePercentage(value: any): number {
+  if (!value) return 0;
+  const str = String(value).replace('%', '').trim();
+  const num = parseFloat(str);
+  return isNaN(num) ? 0 : num;
+}
+
+function parseDate(value: any): Date | null {
+  if (!value) return null;
+  
+  // If it's already a Date object
+  if (value instanceof Date) return value;
+  
+  // If it's a string in format DD.MM.YYYY
+  if (typeof value === 'string') {
+    const parts = value.split('.');
+    if (parts.length === 3) {
+      const day = parseInt(parts[0]);
+      const month = parseInt(parts[1]) - 1; // Month is 0-indexed
+      const year = parseInt(parts[2]);
+      if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+        return new Date(year, month, day);
+      }
+    }
+  }
+  
+  return null;
 }
 
 async function importLedgerAccounts() {
@@ -265,6 +294,178 @@ export async function copyDefaultAccountsToBusiness(businessId: string) {
   }
 }
 
+export async function importMvaCodes() {
+  try {
+    // Check if default MVA codes already exist
+    const existingCount = await prisma.vatCode.count({
+      where: { businessId: null }
+    });
+
+    if (existingCount > 0) {
+      console.log(`Default MVA codes already exist (${existingCount} codes). Skipping import.`);
+      return;
+    }
+
+    console.log('📊 Starting MVA code import (no existing data found)...');
+
+    const filePath = path.join(__dirname, 'data', 'Mva-koder.xlsx');
+    console.log('📁 Reading file from:', filePath);
+
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.readFile(filePath);
+
+    const worksheet = workbook.worksheets[0];
+    if (!worksheet) {
+      throw new Error('No worksheet found in Excel file');
+    }
+
+    console.log('Worksheet name:', worksheet.name);
+    console.log('Row count:', worksheet.rowCount);
+
+    // Inspect first 5 rows
+    console.log('\n🔍 Inspecting first 5 rows:');
+    for (let i = 1; i <= 5; i++) {
+      const row = worksheet.getRow(i);
+      console.log(`\nRow ${i}:`);
+      row.eachCell((cell, colNumber) => {
+        console.log(`   Column ${colNumber}: "${getCellValue(cell.value)}"`);
+      });
+    }
+
+    // Find header row (looking for "Aktiv", "Kode", "Navn", etc.)
+    let headerRowNumber = 0;
+    for (let i = 1; i <= 10; i++) {
+      const row = worksheet.getRow(i);
+      let hasAktiv = false;
+      let hasKode = false;
+      
+      row.eachCell((cell) => {
+        const value = getCellValue(cell.value);
+        if (value === 'Aktiv') hasAktiv = true;
+        if (value === 'Kode') hasKode = true;
+      });
+      
+      if (hasAktiv && hasKode) {
+        headerRowNumber = i;
+        console.log(`\n✅ Found header row at row ${i}`);
+        break;
+      }
+    }
+
+    if (headerRowNumber === 0) {
+      throw new Error('Could not find header row with "Aktiv" and "Kode" columns');
+    }
+
+    const headerRow = worksheet.getRow(headerRowNumber);
+    const headers: { [key: string]: number } = {};
+
+    headerRow.eachCell((cell, colNumber) => {
+      const header = getCellValue(cell.value);
+      if (header) {
+        headers[header] = colNumber;
+        console.log(`   Header found: "${header}" at column ${colNumber}`);
+      }
+    });
+
+    console.log('\n📋 All headers:', Object.keys(headers));
+
+    const data: any[] = [];
+
+    // Start reading data from the row after headers
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber <= headerRowNumber) return; // Skip header rows
+
+      const rowData: any = {};
+      Object.entries(headers).forEach(([header, colNumber]) => {
+        const cell = row.getCell(colNumber);
+        rowData[header] = getCellValue(cell.value);
+      });
+
+      // Only add non-empty rows (must have Kode)
+      if (rowData['Kode'] !== null && rowData['Kode'] !== undefined && rowData['Kode'] !== '') {
+        data.push(rowData);
+      }
+    });
+
+    console.log(`\nFound ${data.length} MVA codes to import`);
+
+    // Log first 3 rows to debug
+    console.log('\n🔍 First 3 data rows:');
+    data.slice(0, 3).forEach((row, idx) => {
+      console.log(`   Row ${idx + 1}:`, {
+        Aktiv: row['Aktiv'],
+        Kode: row['Kode'],
+        Navn: row['Navn'],
+        Sats: row['Sats']
+      });
+    });
+
+    let imported = 0;
+    let skipped = 0;
+    let invalidRows = 0;
+
+    for (const row of data) {
+      const code = row['Kode'];
+
+      if (!code || !row['Navn']) {
+        invalidRows++;
+        continue;
+      }
+
+      try {
+        const existing = await prisma.vatCode.findFirst({
+          where: {
+            code: String(code),
+            businessId: null
+          }
+        });
+
+        if (existing) {
+          skipped++;
+          continue;
+        }
+
+        await prisma.vatCode.create({
+          data: {
+            code: String(code),
+            name: row['Navn'] || '',
+            rate: parsePercentage(row['Sats']),
+            description: row['Beskrivelse'] || '',
+            isActive: parseNorwegianBoolean(row['Aktiv']),
+            validFrom: parseDate(row['Gyldig fra']),
+            validTo: parseDate(row['Gyldig til']),
+            offsetAccountNumber: row['Avgiftskonto'] || null,
+            settlementAccountNumber: row['Avsetningskonto'] || null,
+            businessId: null // Default template codes
+          }
+        });
+
+        imported++;
+
+        if (imported === 1) {
+          console.log('\n✅ First MVA code created successfully!');
+        }
+
+        if (imported % 10 === 0) {
+          console.log(`Imported ${imported} MVA codes...`);
+        }
+      } catch (error) {
+        console.error(`Error importing MVA code ${code} (${row['Navn']}):`, error);
+        invalidRows++;
+      }
+    }
+
+    console.log(`\n📊 Final Summary:`);
+    console.log(`   ✅ Imported: ${imported}`);
+    console.log(`   ⏭️  Skipped: ${skipped}`);
+    console.log(`   ⚠️  Invalid: ${invalidRows}`);
+    console.log(`   📝 Total: ${data.length}`);
+  } catch (error) {
+    console.error('❌ Error during MVA code import:', error);
+    throw error;
+  }
+}
+
 async function main() {
   //   // First, get the first business to use as default
   const business = await prisma.business.findFirst()
@@ -276,7 +477,7 @@ async function main() {
 
   // 1. Import default ledger accounts
   await importLedgerAccounts();
-
+  await importMvaCodes();
 }
 
 main()
