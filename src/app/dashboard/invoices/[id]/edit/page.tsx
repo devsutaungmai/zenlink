@@ -205,6 +205,7 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                     productId: '',
                     quantity: 1,
                     pricePerUnit: 0,
+                    vatPercentage: 0,
                     discountPercentage: 0
                 }
             ]
@@ -221,6 +222,7 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                     productId: copiedInvoiceLine.productId,
                     quantity: copiedInvoiceLine.quantity,
                     pricePerUnit: copiedInvoiceLine.pricePerUnit,
+                    vatPercentage: copiedInvoiceLine.vatPercentage,
                     discountPercentage: copiedInvoiceLine.discountPercentage
                 }
             ]

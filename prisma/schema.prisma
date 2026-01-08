@@ -1119,8 +1119,7 @@ model Invoice {
 
   // Summary calculations
   totalExclVAT  Decimal @map("total_excl_vat") @db.Decimal(10, 2)
-  vatAmount     Decimal @map("vat_amount") @db.Decimal(10, 2)
-  vatPercentage Decimal @default(25) @map("vat_percentage") @db.Decimal(5, 2)
+  totalVatAmount Decimal @default(0) @map("total_vat_amount") @db.Decimal(10, 2)
   totalInclVAT  Decimal @map("total_incl_vat") @db.Decimal(10, 2)
  
   invoicepaymentTermsId String?       @map("invoice_payment_terms_id")
@@ -1164,6 +1163,8 @@ model InvoiceLine {
   quantity           Int      @default(0)
   pricePerUnit       Decimal  @map("price_per_unit") @db.Decimal(10, 2)
   discountPercentage Decimal? @default(0) @map("discount_percentage") @db.Decimal(5, 2)
+  vatAmount          Decimal? @default(0) @map("vat_amount") @db.Decimal(10, 2)
+  vatPercentage      Decimal? @default(0) @map("vat_percentage") @db.Decimal(5, 2)
 
   // Calculated fields (stored for history)
   subtotal       Decimal @map("subtotal") @db.Decimal(10, 2) // quantity × pricePerUnit

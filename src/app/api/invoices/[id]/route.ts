@@ -183,15 +183,16 @@ export async function PUT(
         subtotal: calculations.subtotal,
         discountAmount: calculations.discountAmount,
         lineTotal: calculations.totalExclVAT,
+        vatAmount:calculations.vatAmount,
+        vatPercentage: vatPerc,
         productName: product.productName,
         productNumber: product.productNumber || ''
       })
     }
 
     // Calculate invoice-level VAT (after summing all lines)
-    const vatPercentage = 25
-    const vatAmount = Math.round(totalExclVAT * (vatPercentage / 100) * 100) / 100
-    const totalInclVAT = Math.round((totalExclVAT + vatAmount) * 100) / 100
+    const totalVatAmount = invoiceLinesData.reduce((total: any, line: any)=> total + line.vatAmount,0)
+    const totalInclVAT = totalExclVAT + totalVatAmount  // Correct calculation
 
     // Update invoice with transaction (delete old lines, create new ones)
     const invoice = await prisma.$transaction(async (tx) => {
@@ -202,8 +203,7 @@ export async function PUT(
       const invoiceData: any = {
         customerId,
         totalExclVAT,
-        vatPercentage,
-        vatAmount,
+        totalVatAmount: totalVatAmount,
         totalInclVAT,
         notes,
         status: status,

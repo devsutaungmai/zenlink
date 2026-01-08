@@ -217,8 +217,7 @@ export async function createCreditNote(params: {
 
         // Negative amounts for credit note
         totalExclVAT: -originalInvoice.totalExclVAT,
-        vatAmount: -originalInvoice.vatAmount,
-        vatPercentage: originalInvoice.vatPercentage,
+        totalVatAmount: -originalInvoice.totalVatAmount,
         totalInclVAT: -originalInvoice.totalInclVAT,
 
         // Link to original invoice
@@ -553,7 +552,7 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
     }
 
     // VAT Entry
-    const vatAmount = Math.abs(parseFloat(invoice.vatAmount.toString()));
+    const vatAmount = Math.abs(parseFloat(invoice.totalVatAmount.toString()));
 
     if (vatAmount > 0) {
       if (isCreditNote) {
@@ -599,7 +598,7 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
   return {
     success: true,
     message: `${isCreditNote ? 'Credit note' : 'Invoice'} ${invoice.invoiceNumber} posted to ledger`,
-    entriesCreated: invoice.invoiceLines.length + (Number(invoice.vatAmount) > 0 ? 1 : 0)
+    entriesCreated: invoice.invoiceLines.length + (Number(invoice.totalVatAmount) > 0 ? 1 : 0)
   };
 }
 

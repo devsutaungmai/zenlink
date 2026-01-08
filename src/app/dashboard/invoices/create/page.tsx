@@ -42,11 +42,18 @@ export interface Customer {
 }
 
 export interface Product {
-    id: string
-    productName: string
-    salesPrice: number
-    discountPercentage: number
+  id: string
+  productName: string
+  salesPrice: number
+  discountPercentage: number
+  ledgerAccount?: {
+    vatCode?: {
+      code: number
+      rate: number
+    }
+  }
 }
+
 
 export interface Project {
     id: string
@@ -65,6 +72,7 @@ export interface InvoiceLine {
     productId: string;
     quantity: number;
     pricePerUnit: number;
+    vatPercentage: number;
     discountPercentage: number;
     subtotal?: number;
     discountAmount?: number;
@@ -184,6 +192,7 @@ export default function CreateInvoicePage() {
                         productId: '',
                         quantity: 1,
                         pricePerUnit: 0,
+                        vatPercentage: 0,
                         discountPercentage: 0
                     }
                 ]
@@ -402,6 +411,7 @@ export default function CreateInvoicePage() {
                     productId: '',
                     quantity: 1,
                     pricePerUnit: 0,
+                    vatPercentage: 0,
                     discountPercentage: 0
                 }
             ]
@@ -418,6 +428,7 @@ export default function CreateInvoicePage() {
                     productId: copiedInvoiceLine.productId,
                     quantity: copiedInvoiceLine.quantity,
                     pricePerUnit: copiedInvoiceLine.pricePerUnit,
+                    vatPercentage: copiedInvoiceLine.vatPercentage,
                     discountPercentage: copiedInvoiceLine.discountPercentage
                 }
             ]
@@ -740,6 +751,7 @@ export default function CreateInvoicePage() {
                                             updatedLines[index].productId = e.target.value;
                                             updatedLines[index].pricePerUnit = product?.salesPrice ?? 0;
                                             updatedLines[index].discountPercentage = product?.discountPercentage ?? 0;
+                                            updatedLines[index].vatPercentage = product?.ledgerAccount?.vatCode?.code ?? 0;
                                             setFormData({ ...formData, invoiceLines: updatedLines });
                                             updateLineTotal(index);
                                         }}
@@ -800,15 +812,15 @@ export default function CreateInvoicePage() {
                                 </div>
 
                                 <div>
-                                    <label htmlFor="vatPercent" className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label htmlFor="vatPercentage" className="block text-sm font-medium text-gray-700 mb-2">
                                         Vat Percent *
                                     </label>
                                     <input
                                         type="number"
-                                        id="vatPercent"
+                                        id="vatPercentage"
                                         required
                                         step="0.01"
-                                        value="25"
+                                        value={line.vatPercentage || 0.0}
                                         disabled
                                         className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
                                     />

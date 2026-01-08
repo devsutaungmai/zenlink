@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
       businessId = (auth.data as any).department.businessId
     }
 
-    const categories = await prisma.product.findMany({
+    const products = await prisma.product.findMany({
       where: {
         businessId: businessId,
       },
@@ -34,9 +34,9 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    return NextResponse.json(categories)
+    return NextResponse.json(products)
   } catch (error) {
-    console.error('Error fetching categories:', error)
+    console.error('Error fetching products:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

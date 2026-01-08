@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
 
         for (const line of invoiceLines) {
 
-          const { productId, quantity, pricePerUnit, discountPercentage = 0, vatAmount } = line;
+          const { productId, quantity, pricePerUnit, discountPercentage = 0,vatPercentage } = line;
           // Validate line data
           if (!productId || !quantity || !pricePerUnit) {
             return NextResponse.json(
@@ -122,12 +122,14 @@ export async function POST(request: NextRequest) {
           const qty = Number(quantity)
           const price = Number(pricePerUnit)
           const discount = Number(discountPercentage) || 0
+          const vatPerc = Number(vatPercentage)
 
           // Calculate totals
           const calculations = calculateInvoiceTotals(
             qty,
             price,
-            discount
+            discount,
+            vatPerc
           )
 
           totalExclVAT += calculations.totalExclVAT
@@ -140,16 +142,17 @@ export async function POST(request: NextRequest) {
             subtotal: calculations.subtotal,
             discountAmount: calculations.discountAmount,
             lineTotal: calculations.totalExclVAT,
+            vatAmount: calculations.vatAmount,
+            vatPercentage: vatPerc,
             productName: product.productName,
             productNumber: product.productNumber || ''
           })
         }
 
         // Calculate invoice-level VAT (after summing all lines)
-        const vatPercentage = 25
-        const vatAmount = Math.round(totalExclVAT * (vatPercentage / 100) * 100) / 100
-        const totalInclVAT = Math.round((totalExclVAT + vatAmount) * 100) / 100
-
+        // const vatPercentage = 25
+        const totalVatAmount = invoiceLinesData.reduce((total, line)=> total + line.vatAmount,0)
+        const totalInclVAT = totalExclVAT + totalVatAmount  // Correct calculation
         // Verify customer exists
         const customer = await prisma.customer.findUnique({
           where: { id: customerId }
@@ -173,8 +176,7 @@ export async function POST(request: NextRequest) {
 
             // Invoice totals
             totalExclVAT: totalExclVAT,
-            vatPercentage: 25,
-            vatAmount: vatAmount,
+            totalVatAmount: totalVatAmount,
             totalInclVAT: totalInclVAT,
             notes,
             status: status,
