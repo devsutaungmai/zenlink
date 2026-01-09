@@ -5,8 +5,10 @@ import { SMSService, NotificationService } from '@/shared/lib/notifications'
 import { hasAnyServerPermission } from '@/shared/lib/serverPermissions'
 import { PERMISSIONS } from '@/shared/lib/permissions'
 import { canEmployeeBeScheduled } from '@/shared/lib/employeeProfileHelper'
+import { validateShiftCombined, getEmployeeShiftsForValidation } from '@/shared/lib/shiftValidation'
 import jwt from 'jsonwebtoken'
 import { cookies } from 'next/headers'
+import { startOfWeek, endOfWeek } from 'date-fns'
 
 async function getAccessibleDepartmentIds(auth: any): Promise<string[] | null> {
   if (auth.type === 'user') {
@@ -34,11 +36,11 @@ async function getAccessibleDepartmentIds(auth: any): Promise<string[] | null> {
         return userWithRole.assignedRole.departments.map(d => d.departmentId)
       }
     }
-    
+
     return null
   } else {
     const employee = auth.data as any
-    
+
     const employeeRoles = await prisma.employeeRole.findMany({
       where: { employeeId: employee.id },
       include: {
@@ -118,7 +120,7 @@ export async function GET(request: Request) {
         }
       })
 
-      businessId = employeeRecord?.department?.businessId 
+      businessId = employeeRecord?.department?.businessId
         ?? employeeRecord?.employeeGroup?.businessId
         ?? employeeRecord?.user?.businessId
         ?? null
@@ -141,21 +143,21 @@ export async function GET(request: Request) {
     }
 
     let whereCondition: any = {}
-    
+
     if (startDate && endDate) {
       whereCondition.date = {
         gte: new Date(startDate),
         lte: new Date(endDate)
       }
     }
-    
+
     if (employeeId) {
       whereCondition.employeeId = employeeId
     }
 
     // Get accessible departments for the current user/employee
     let accessibleDepartmentIds: string[] | null = null
-    
+
     if (currentUser) {
       const auth = { type: 'user' as const, data: currentUser }
       accessibleDepartmentIds = await getAccessibleDepartmentIds(auth)
@@ -191,7 +193,7 @@ export async function GET(request: Request) {
         ]
       })
     }
-    
+
     const shifts = await prisma.shift.findMany({
       where: whereCondition,
       include: {
@@ -272,8 +274,53 @@ export async function GET(request: Request) {
         date: 'asc'
       }
     })
-    
-    return NextResponse.json(shifts)
+
+    const shiftsWithValidation = await Promise.all(shifts.map(async (shift) => {
+      if (!shift.employeeId) {
+        return { ...shift, validation: null }
+      }
+
+      try {
+        const shiftDate = new Date(shift.date)
+        const weekStart = startOfWeek(shiftDate, { weekStartsOn: 1 })
+        const weekEnd = endOfWeek(shiftDate, { weekStartsOn: 1 })
+
+        const existingShifts = await getEmployeeShiftsForValidation(
+          shift.employeeId,
+          weekStart,
+          weekEnd,
+          shift.id
+        )
+
+        const validationResult = await validateShiftCombined(
+          {
+            id: shift.id,
+            date: shift.date,
+            startTime: shift.startTime,
+            endTime: shift.endTime || '',
+            breakStart: shift.breakStart?.toISOString().split('T')[1]?.substring(0, 5) || null,
+            breakEnd: shift.breakEnd?.toISOString().split('T')[1]?.substring(0, 5) || null,
+            employeeId: shift.employeeId,
+          },
+          existingShifts
+        )
+
+        return {
+          ...shift,
+          validation: {
+            hasLaborLawViolations: validationResult.laborLaw.violations.length > 0,
+            hasContractDeviations: validationResult.contract?.hasDeviations || false,
+            laborLawViolationCount: validationResult.laborLaw.violations.length,
+            contractDeviationCount: validationResult.contract?.deviations.length || 0,
+          }
+        }
+      } catch (error) {
+        console.error(`Error validating shift ${shift.id}:`, error)
+        return { ...shift, validation: null }
+      }
+    }))
+
+    return NextResponse.json(shiftsWithValidation)
   } catch (error) {
     console.error('Failed to fetch shifts:', error)
     return NextResponse.json(
@@ -325,7 +372,7 @@ export async function POST(req: Request) {
       PERMISSIONS.SCHEDULE_CREATE,
       PERMISSIONS.SHIFTS_CREATE
     ])
-    
+
     if (!canCreate) {
       return NextResponse.json(
         { error: 'You do not have permission to create shifts' },
@@ -334,7 +381,7 @@ export async function POST(req: Request) {
     }
 
     const rawData = await req.json();
-    
+
     console.log('Received shift data:', JSON.stringify(rawData, null, 2));
 
     if (currentUser && rawData.employeeId) {
@@ -343,6 +390,15 @@ export async function POST(req: Request) {
           id: rawData.employeeId,
           user: {
             businessId: currentUser.businessId
+          }
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              pin: true,
+              password: true
+            }
           }
         }
       })
@@ -356,11 +412,8 @@ export async function POST(req: Request) {
 
       // Check if employee profile is complete enough for scheduling
       const schedulingCheck = await canEmployeeBeScheduled(currentUser.businessId, {
-        address: employee.address,
-        bankAccount: employee.bankAccount,
-        mobile: employee.mobile,
-        email: employee.email,
-        socialSecurityNo: employee.socialSecurityNo
+        id: employee.id,
+        user: employee.user
       })
 
       if (!schedulingCheck.allowed) {

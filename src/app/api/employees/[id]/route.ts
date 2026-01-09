@@ -115,6 +115,8 @@ export async function PUT(
           employeeGroupId: employeeGroupIds.length > 0 ? employeeGroupIds[0] : null,
           profilePhoto: data.profilePhoto !== undefined ? data.profilePhoto : currentEmployee.profilePhoto,
           salaryRate: data.salaryRate !== undefined ? (data.salaryRate ? parseFloat(data.salaryRate) : null) : currentEmployee.salaryRate,
+          contractTypeId: data.contractTypeId !== undefined ? data.contractTypeId : currentEmployee.contractTypeId,
+          ftePercent: data.ftePercent !== undefined ? (data.ftePercent ? parseFloat(data.ftePercent) : null) : currentEmployee.ftePercent,
           departments: {
             create: departmentIds.map((deptId: string, index: number) => ({
               departmentId: deptId,

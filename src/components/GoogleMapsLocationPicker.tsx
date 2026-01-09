@@ -39,7 +39,7 @@ export default function GoogleMapsLocationPicker({
   const [locationName, setLocationName] = useState(initialLocation?.name || '')
 
   const initializeMap = useCallback(async () => {
-    if (!mapRef.current || isMapLoaded) return
+    if (!mapRef.current) return
 
     try {
       const loader = new Loader({
@@ -197,6 +197,12 @@ export default function GoogleMapsLocationPicker({
       initializeMap()
     }
   }, [isOpen, initializeMap])
+
+  useEffect(() => {
+    if (!isOpen) {
+      setIsMapLoaded(false)
+    }
+  }, [isOpen])
 
   useEffect(() => {
     if (selectedLocation && isMapLoaded) {

@@ -30,7 +30,7 @@ model User {
 // Role model - admin can create custom roles
 model Role {
   id          String           @id @default(cuid())
-  name        String           // e.g., "Admin", "Manager", "Employee"
+  name        String // e.g., "Admin", "Manager", "Employee"
   description String?
   isSystem    Boolean          @default(false) // System roles can't be deleted
   isDefault   Boolean          @default(false) // Default role for new employees
@@ -40,7 +40,7 @@ model Role {
   updatedAt   DateTime         @updatedAt
   users       User[]
   permissions RolePermission[]
-  employees   EmployeeRole[]   // Many-to-many relation with employees
+  employees   EmployeeRole[] // Many-to-many relation with employees
   departments RoleDepartment[] // Many-to-many relation with departments
 
   @@unique([name, businessId])
@@ -65,9 +65,9 @@ model RoleDepartment {
 model Permission {
   id          String           @id @default(cuid())
   code        String           @unique // e.g., "employees.view", "employees.create"
-  name        String           // Human readable name
+  name        String // Human readable name
   description String?
-  category    String           // e.g., "Employees", "Schedule", "Reports"
+  category    String // e.g., "Employees", "Schedule", "Reports"
   createdAt   DateTime         @default(now())
   roles       RolePermission[]
 }
@@ -130,20 +130,22 @@ model Business {
   products                 Product[]
   invoices                 Invoice[]
   InvoicePaymentTerms      InvoicePaymentTerms[]
-  invoiceFormSettings      InvoiceFormSettings?     @relation("InvoiceFormSettings")
+  invoiceFormSettings      InvoiceFormSettings?      @relation("InvoiceFormSettings")
   projects                 Project[]
   customerPayments         CustomerPayment[]
   ledgerAccounts           LedgerAccount[]
   ledgerEntries            LedgerEntry[]
   vouchers                 Voucher[]
-  productFormSettings      ProductFormSettings?      @relation("ProductFormSettings")                       
+  productFormSettings      ProductFormSettings?      @relation("ProductFormSettings")
   employeeSettings         EmployeeSettings?         @relation("EmployeeSettings")
   projectFormSettings      ProjectFormSettings?      @relation("ProjectFormSettings")
   customerFormSettings     CustomerFormSettings?     @relation("CustomerFormSettings")
+  laborLawProfiles         LaborLawProfile[]
+  contractTypes            ContractType[]
 }
 
 model Employee {
-  id                  String                    @id @default(cuid())
+  id                  String                  @id @default(cuid())
   userId              String
   firstName           String
   lastName            String
@@ -156,45 +158,50 @@ model Employee {
   bankAccount         String
   hoursPerMonth       Float?
   dateOfHire          DateTime
-  isTeamLeader        Boolean                   @default(false)
-  departmentId        String?                   // Optional - kept for backward compatibility
-  createdAt           DateTime                  @default(now())
-  updatedAt           DateTime                  @updatedAt
-  employeeGroupId     String?                   // Kept for backward compatibility
-  email               String?                   @unique
+  isTeamLeader        Boolean                 @default(false)
+  departmentId        String? // Optional - kept for backward compatibility
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+  employeeGroupId     String? // Kept for backward compatibility
+  email               String?                 @unique
   profilePhoto        String?
   salaryRate          Float?
+  contractTypeId      String?
+  ftePercent          Float?
   attendances         Attendance[]
   availabilities      Availability[]
-  contractsAsPerson   Contract[]                @relation("ContractPerson")
+  contractsAsPerson   Contract[]              @relation("ContractPerson")
   contracts           Contract[]
-  department          Department?               @relation(fields: [departmentId], references: [id])
-  employeeGroup       EmployeeGroup?            @relation("EmployeeToGroup", fields: [employeeGroupId], references: [id])
-  user                User                      @relation(fields: [userId], references: [id])
+  department          Department?             @relation(fields: [departmentId], references: [id])
+  employeeGroup       EmployeeGroup?          @relation("EmployeeToGroup", fields: [employeeGroupId], references: [id])
+  user                User                    @relation(fields: [userId], references: [id])
   employeePayRules    EmployeePayRule[]
-  notifications       Notification[]            @relation("NotificationRecipient")
+  notifications       Notification[]          @relation("NotificationRecipient")
   payrollEntries      PayrollEntry[]
   shifts              Shift[]
-  fromShiftExchanges  ShiftExchange[]           @relation("FromEmployee")
-  toShiftExchanges    ShiftExchange[]           @relation("ToEmployee")
+  fromShiftExchanges  ShiftExchange[]         @relation("FromEmployee")
+  toShiftExchanges    ShiftExchange[]         @relation("ToEmployee")
   sickLeaves          SickLeave[]
   sickPayCalculations SickPayCalculation[]
   timeEntries         TimeEntry[]
   workPlans           WorkPlan[]
   functions           EmployeeFunction[]
-  departments         EmployeeDepartment[]      // Many-to-many relation
-  employeeGroups      EmployeeEmployeeGroup[]   // Many-to-many relation
-  employeeRoles       EmployeeRole[]            // Many-to-many relation with roles
+  departments         EmployeeDepartment[] // Many-to-many relation
+  employeeGroups      EmployeeEmployeeGroup[] // Many-to-many relation
+  employeeRoles       EmployeeRole[] // Many-to-many relation with roles
+  contractType        ContractType?           @relation(fields: [contractTypeId], references: [id])
+
+  @@index([contractTypeId])
 }
 
 model EmployeeRole {
-  id           String     @id @default(cuid())
-  employeeId   String
-  roleId       String
-  isPrimary    Boolean    @default(false)
-  createdAt    DateTime   @default(now())
-  employee     Employee   @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  id         String   @id @default(cuid())
+  employeeId String
+  roleId     String
+  isPrimary  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  role       Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@unique([employeeId, roleId])
   @@index([employeeId])
@@ -230,23 +237,23 @@ model EmployeeEmployeeGroup {
 }
 
 model EmployeeGroup {
-  id                    String                   @id @default(cuid())
+  id                    String                  @id @default(cuid())
   name                  String
   hourlyWage            Float
   wagePerShift          Float
-  defaultWageType       WageType                 @default(HOURLY)
+  defaultWageType       WageType                @default(HOURLY)
   salaryCode            String?
-  createdAt             DateTime                 @default(now())
-  updatedAt             DateTime                 @default(now())
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @default(now())
   businessId            String
   contracts             Contract[]
   contractTemplates     ContractTemplate[]
-  employees             Employee[]               @relation("EmployeeToGroup")
-  business              Business                 @relation(fields: [businessId], references: [id])
+  employees             Employee[]              @relation("EmployeeToGroup")
+  business              Business                @relation(fields: [businessId], references: [id])
   functions             DepartmentFunction[]
   employeeGroupPayRules EmployeeGroupPayRule[]
   shifts                Shift[]
-  employeesMulti        EmployeeEmployeeGroup[]  // Many-to-many relation
+  employeesMulti        EmployeeEmployeeGroup[] // Many-to-many relation
 
   @@unique([name, businessId])
 }
@@ -290,29 +297,29 @@ model Department {
   employees          Employee[]
   projects           Project[]
   punchClockProfiles PunchClockProfile[]
-  categories         DepartmentCategory[]   // Old relation - kept for backward compatibility
-  categoriesManyMany CategoryDepartment[]   // New many-to-many relation
+  categories         DepartmentCategory[] // Old relation - kept for backward compatibility
+  categoriesManyMany CategoryDepartment[] // New many-to-many relation
   shifts             Shift[]
   customers          Customer[]
-  invoices           Invoice[] 
+  invoices           Invoice[]
   ledgerEntries      LedgerEntry[]
-  employeesMulti     EmployeeDepartment[]   // Many-to-many relation
-  roles              RoleDepartment[]       // Many-to-many relation with roles
+  employeesMulti     EmployeeDepartment[] // Many-to-many relation
+  roles              RoleDepartment[] // Many-to-many relation with roles
 }
 
 model DepartmentCategory {
-  id           String                  @id @default(cuid())
+  id           String               @id @default(cuid())
   name         String
   description  String?
   color        String?
   businessId   String
-  departmentId String?                 // Deprecated: kept for backward compatibility
-  createdAt    DateTime                @default(now())
-  updatedAt    DateTime                @updatedAt
-  business     Business                @relation("BusinessCategories", fields: [businessId], references: [id], onDelete: Cascade)
-  department   Department?             @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  departmentId String? // Deprecated: kept for backward compatibility
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  business     Business             @relation("BusinessCategories", fields: [businessId], references: [id], onDelete: Cascade)
+  department   Department?          @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   functions    DepartmentFunction[]
-  departments  CategoryDepartment[]    // Many-to-many relation
+  departments  CategoryDepartment[] // Many-to-many relation
 
   @@unique([name, businessId])
   @@index([businessId])
@@ -334,15 +341,15 @@ model CategoryDepartment {
 }
 
 model DepartmentFunction {
-  id         String             @id @default(cuid())
-  name       String
-  categoryId String
-  color      String?
-  createdAt  DateTime           @default(now())
-  updatedAt  DateTime           @updatedAt
-  category   DepartmentCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  shifts     Shift[]
-  employees  EmployeeFunction[]
+  id             String             @id @default(cuid())
+  name           String
+  categoryId     String
+  color          String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  category       DepartmentCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  shifts         Shift[]
+  employees      EmployeeFunction[]
   employeeGroups EmployeeGroup[]
 
   @@unique([name, categoryId])
@@ -378,12 +385,12 @@ model PunchClockProfile {
 }
 
 model ProjectCategory {
-  id        String    @id @default(cuid())
-  name      String    @unique
-  projects  Project[] // One category can have many projects
+  id       String    @id @default(cuid())
+  name     String    @unique
+  projects Project[] // One category can have many projects
 
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model ProjectFormSettings {
@@ -392,38 +399,38 @@ model ProjectFormSettings {
   business   Business @relation("ProjectFormSettings", fields: [businessId], references: [id], onDelete: Cascade)
   deviceId   String?
 
-  showCategory   Boolean @default(true)
-  showCustomer   Boolean @default(true)
-  showStartDate  Boolean @default(true)
-  showEndDate    Boolean @default(true)
+  showCategory  Boolean @default(true)
+  showCustomer  Boolean @default(true)
+  showStartDate Boolean @default(true)
+  showEndDate   Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   @@index([businessId])
 }
 
 model Project {
-  id           String      @id @default(cuid())
-  customerId   String?     @map("customer_id")
-  customer     Customer?   @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  name         String      // Prosjektnummer - project number/identifier
-  projectNumber  String?   @unique
-  active       Boolean     @default(true) // Aktiv - checkbox to activate
-  status       String?     // Status (nullable)
-  categoryId   String?           @map("category_id")
-  category     ProjectCategory?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  startDate    DateTime?   // Startdato (nullable)
-  endDate      DateTime?   // Sluttdato (nullable)
-  departmentId String?
-  department   Department?  @relation(fields: [departmentId], references: [id])
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @default(now())
-  timeEntries  TimeEntry[]
-  invoices     Invoice[] 
-  businessId     String
-  business       Business   @relation(fields: [businessId], references: [id])
-  ledgerEntries   LedgerEntry[]
+  id            String           @id @default(cuid())
+  customerId    String?          @map("customer_id")
+  customer      Customer?        @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  name          String // Prosjektnummer - project number/identifier
+  projectNumber String?          @unique
+  active        Boolean          @default(true) // Aktiv - checkbox to activate
+  status        String? // Status (nullable)
+  categoryId    String?          @map("category_id")
+  category      ProjectCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  startDate     DateTime? // Startdato (nullable)
+  endDate       DateTime? // Sluttdato (nullable)
+  departmentId  String?
+  department    Department?      @relation(fields: [departmentId], references: [id])
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @default(now())
+  timeEntries   TimeEntry[]
+  invoices      Invoice[]
+  businessId    String
+  business      Business         @relation(fields: [businessId], references: [id])
+  ledgerEntries LedgerEntry[]
 }
 
 model TimeEntry {
@@ -848,18 +855,18 @@ model Customer {
   businessId                   String
 
   // Relations to sub tables
-  business       Business        @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  contactPersons ContactPerson[]
-  customerGroups CustomerGroup[]
-  projects       Project[]
-  invoices       Invoice[]
-  customerPayments CustomerPayment[]
-  departmentId   String?      
-  department     Department?       @relation(fields: [departmentId], references: [id],onDelete: SetNull)
-  invoicepaymentTermsId String?       @map("invoice_payment_terms_id")
+  business              Business             @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  contactPersons        ContactPerson[]
+  customerGroups        CustomerGroup[]
+  projects              Project[]
+  invoices              Invoice[]
+  customerPayments      CustomerPayment[]
+  departmentId          String?
+  department            Department?          @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  invoicepaymentTermsId String?              @map("invoice_payment_terms_id")
   InvoicePaymentTerms   InvoicePaymentTerms? @relation(fields: [invoicepaymentTermsId], references: [id], onDelete: SetNull)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt             DateTime             @default(now()) @map("created_at")
+  updatedAt             DateTime             @updatedAt @map("updated_at")
 
   @@map("customers")
 }
@@ -875,9 +882,9 @@ model ContactPerson {
   email       String?
   isPrimary   Boolean @default(false) @map("is_primary")
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  invoices  Invoice[] 
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  invoices  Invoice[]
 
   @@map("contact_persons")
 }
@@ -901,16 +908,16 @@ model ProductFormSettings {
   businessId String   @unique
   business   Business @relation("ProductFormSettings", fields: [businessId], references: [id], onDelete: Cascade)
 
-  deviceId   String?
-  
-  showSalesPrice       Boolean @default(true)
-  showCostPrice        Boolean @default(true)
-  showDiscountPercentage     Boolean @default(true)
-  showUnit             Boolean @default(true)
-  showProductGroup     Boolean @default(true)
-  
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  deviceId String?
+
+  showSalesPrice         Boolean @default(true)
+  showCostPrice          Boolean @default(true)
+  showDiscountPercentage Boolean @default(true)
+  showUnit               Boolean @default(true)
+  showProductGroup       Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([businessId])
 }
@@ -928,7 +935,7 @@ model Product {
   unitId             String?       @map("unit_id")
   productGroupId     String?       @map("product_group_id")
   salesAccountId     String?       @map("sales_account_id")
-  invoiceLines       InvoiceLine[] 
+  invoiceLines       InvoiceLine[]
 
   // Relations to sub tables
   business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
@@ -971,36 +978,36 @@ model ProductGroup {
 }
 
 model LedgerAccount {
-  id                    String      @id @default(cuid())
-  accountNumber         Int         @map("account_number")
-  name                  String      @map("name")
-  type                  AccountType @map("type")
-  isActive              Boolean     @default(true) @map("is_active")
-  
+  id            String      @id @default(cuid())
+  accountNumber Int         @map("account_number")
+  name          String      @map("name")
+  type          AccountType @map("type")
+  isActive      Boolean     @default(true) @map("is_active")
+
   // New fields from Excel
-  vatCode               String?     @map("vat_code")              // Mva-kode
-  vatSpecification      String?     @map("vat_specification")      // Mva-spesifikasjon
-  reportGroup           String?     @map("report_group")           // Rapportgruppe
-  saftStandardAccount   String?     @map("saft_standard_account")  // SAF-T standardkonto
-  industrySpecification String?     @map("industry_specification") // Næringsspesifikasjon
-  
+  vatCode               String? @map("vat_code") // Mva-kode
+  vatSpecification      String? @map("vat_specification") // Mva-spesifikasjon
+  reportGroup           String? @map("report_group") // Rapportgruppe
+  saftStandardAccount   String? @map("saft_standard_account") // SAF-T standardkonto
+  industrySpecification String? @map("industry_specification") // Næringsspesifikasjon
+
   // Project and Department settings
-  allowProject          Boolean     @default(false) @map("allow_project")
-  requireProject        Boolean     @default(false) @map("require_project")
-  allowDepartment       Boolean     @default(false) @map("allow_department")
-  requireDepartment     Boolean     @default(false) @map("require_department")
-  
+  allowProject      Boolean @default(false) @map("allow_project")
+  requireProject    Boolean @default(false) @map("require_project")
+  allowDepartment   Boolean @default(false) @map("allow_department")
+  requireDepartment Boolean @default(false) @map("require_department")
+
   // NULL businessId means it's a default/template account
-  businessId            String?     @map("business_id")
-  business              Business?   @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  businessId String?   @map("business_id")
+  business   Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   // Relations
-  debitEntries          LedgerEntry[] @relation("DebitAccount")
-  creditEntries         LedgerEntry[] @relation("CreditAccount")
-  saleAccounts          SalesAccount[]
+  debitEntries  LedgerEntry[]  @relation("DebitAccount")
+  creditEntries LedgerEntry[]  @relation("CreditAccount")
+  saleAccounts  SalesAccount[]
 
-  createdAt             DateTime    @default(now()) @map("created_at")
-  updatedAt             DateTime    @updatedAt      @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@unique([accountNumber, businessId]) // Unique per business, or global if businessId is null
   @@map("ledger_accounts")
@@ -1034,49 +1041,49 @@ model SalesAccount {
 }
 
 model LedgerEntry {
-  id             String      @id @default(cuid())
+  id String @id @default(cuid())
 
-  invoiceId      String?     @map("invoice_id")
-  invoice        Invoice?    @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  invoiceId String?  @map("invoice_id")
+  invoice   Invoice? @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
-  entryType      LedgerEntryType  @default(INVOICE_POST) @map("entry_type")
+  entryType LedgerEntryType @default(INVOICE_POST) @map("entry_type")
 
-  documentDate   DateTime?   @map("document_date")
-  postingDate    DateTime?   @map("posting_date")
-  amount         Decimal     @db.Decimal(10, 2)
+  documentDate DateTime? @map("document_date")
+  postingDate  DateTime? @map("posting_date")
+  amount       Decimal   @db.Decimal(10, 2)
 
   // Debit & Credit Accounts
-  debitAccountId  String?     @map("debit_account_id")
-  debitAccount    LedgerAccount? @relation("DebitAccount", fields: [debitAccountId], references: [id], onDelete: SetNull)
+  debitAccountId String?        @map("debit_account_id")
+  debitAccount   LedgerAccount? @relation("DebitAccount", fields: [debitAccountId], references: [id], onDelete: SetNull)
 
-  creditAccountId String?     @map("credit_account_id")
+  creditAccountId String?        @map("credit_account_id")
   creditAccount   LedgerAccount? @relation("CreditAccount", fields: [creditAccountId], references: [id], onDelete: SetNull)
 
-  projectId      String?      @map("project_id")
-  project        Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  projectId String?  @map("project_id")
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
 
-  departmentId   String?      @map("department_id")
-  department     Department?  @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  departmentId String?     @map("department_id")
+  department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
 
-  businessId     String       @map("business_id")
-  business       Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  businessId String   @map("business_id")
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
-  voucherId      String
-  voucher        Voucher      @relation(fields: [voucherId], references: [id], onDelete: Cascade)
+  voucherId String
+  voucher   Voucher @relation(fields: [voucherId], references: [id], onDelete: Cascade)
 
-  description    String?
+  description String?
 
-  createdAt      DateTime     @default(now()) @map("created_at")
-  updatedAt      DateTime     @updatedAt      @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("ledger_entries")
 }
 
 enum LedgerEntryType {
-  INVOICE_POST           // When invoice is sent (group for 1500)
-  PAYMENT_RECEIVED       // When customer pays (don't group for 1500)
-  CREDIT_NOTE            // When credit note is issued (group for 1500)
-  MANUAL_ADJUSTMENT      // Manual entries
+  INVOICE_POST // When invoice is sent (group for 1500)
+  PAYMENT_RECEIVED // When customer pays (don't group for 1500)
+  CREDIT_NOTE // When credit note is issued (group for 1500)
+  MANUAL_ADJUSTMENT // Manual entries
 }
 
 model Invoice {
@@ -1090,16 +1097,16 @@ model Invoice {
   customerId String   @map("customer_id")
   customer   Customer @relation(fields: [customerId], references: [id], onDelete: Restrict)
 
-  projectId   String? @map("project_id")
-  project     Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  projectId String?  @map("project_id")
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
 
-  departmentId String? @map("department_id")
+  departmentId String?     @map("department_id")
   department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
 
-  contactPersonId String? @map("contact_person_id")
+  contactPersonId String?        @map("contact_person_id")
   contactPerson   ContactPerson? @relation(fields: [contactPersonId], references: [id], onDelete: SetNull)
 
-   // Credit note relationship
+  // Credit note relationship
   creditedInvoiceId String?   @map("credited_invoice_id")
   creditedInvoice   Invoice?  @relation("CreditNotes", fields: [creditedInvoiceId], references: [id], onDelete: SetNull)
   creditNotes       Invoice[] @relation("CreditNotes")
@@ -1109,16 +1116,16 @@ model Invoice {
   vatAmount     Decimal @map("vat_amount") @db.Decimal(10, 2)
   vatPercentage Decimal @default(25) @map("vat_percentage") @db.Decimal(5, 2)
   totalInclVAT  Decimal @map("total_incl_vat") @db.Decimal(10, 2)
- 
-  invoicepaymentTermsId String?       @map("invoice_payment_terms_id")
+
+  invoicepaymentTermsId String?              @map("invoice_payment_terms_id")
   InvoicePaymentTerms   InvoicePaymentTerms? @relation(fields: [invoicepaymentTermsId], references: [id], onDelete: SetNull)
 
   // Additional fields
-  notes  String?
-  sentAt DateTime? @map("sent_at")
-  paidAt DateTime? @map("paid_at")
-  dueDay Int      @default(0)
-  deliveryAddress  String?  @map("delivery_address")
+  notes           String?
+  sentAt          DateTime? @map("sent_at")
+  paidAt          DateTime? @map("paid_at")
+  dueDay          Int       @default(0)
+  deliveryAddress String?   @map("delivery_address")
 
   // Relations
   invoiceLines InvoiceLine[]
@@ -1127,10 +1134,10 @@ model Invoice {
 
   paymentAllocations PaymentAllocation[]
 
-  ledgerEntries     LedgerEntry[]
+  ledgerEntries LedgerEntry[]
 
-  voucherId     String?       @unique
-  voucher       Voucher?      @relation(fields: [voucherId], references: [id])
+  voucherId String?  @unique
+  voucher   Voucher? @relation(fields: [voucherId], references: [id])
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -1175,36 +1182,36 @@ enum InvoiceStatus {
   OVERDUE // Past due date
   CANCELLED // Cancelled
   OUTSTANDING //  sent and not paid yet
-  CREDITED        // Original invoice that was credited
-  CREDIT_NOTE     // Credit note issued
+  CREDITED // Original invoice that was credited
+  CREDIT_NOTE // Credit note issued
 
   @@map("invoice_status")
 }
 
 // Payment Terms Model
 model InvoicePaymentTerms {
-  id          String              @id @default(cuid())
-  invoiceDueDateType    InvoiceDueDateType @default(DAYS_AFTER) @map("invoice_due_date_type")
+  id                     String             @id @default(cuid())
+  invoiceDueDateType     InvoiceDueDateType @default(DAYS_AFTER) @map("invoice_due_date_type")
   invoiceDueDateValue    Int                @default(14) @map("invoice_due_date_value") // 14 days, 1 month, etc.
   invoiceDueDateUnit     PaymentTimeUnit    @default(DAYS) @map("invoice_due_date_unit") // DAYS or MONTHS
   defaultDiscountPercent Decimal?           @default(0) @map("default_discount_percent") @db.Decimal(5, 2)
-  
-  // Relations
-  customers   Customer[]          // One payment term can be used by many customers
-  invoices    Invoice[]           // One payment term can be used by many invoices
-  businessId  String              @map("business_id")
-  business    Business            @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
-  createdAt   DateTime            @default(now()) @map("created_at")
-  updatedAt   DateTime            @updatedAt @map("updated_at")
+  // Relations
+  customers  Customer[] // One payment term can be used by many customers
+  invoices   Invoice[] // One payment term can be used by many invoices
+  businessId String     @map("business_id")
+  business   Business   @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("invoice_payment_terms")
 }
 
 // Invoice Due Date Type Enum
 enum InvoiceDueDateType {
-  DAYS_AFTER  // Calculate due date as X days/months after invoice date
-  FIXED_DATE  // Due date is always 1st of the month
+  DAYS_AFTER // Calculate due date as X days/months after invoice date
+  FIXED_DATE // Due date is always 1st of the month
 
   @@map("invoice_due_date_type")
 }
@@ -1218,22 +1225,23 @@ enum PaymentTimeUnit {
 }
 
 model LaborLawSettings {
-  id                      String   @id @default(cuid())
-  businessId              String
-  countryCode             String
-  maxHoursPerDay          Float    @default(9)
-  maxHoursPerWeek         Float    @default(40)
-  maxOvertimePerDay       Float    @default(4)
-  maxOvertimePerWeek      Float    @default(10)
-  maxConsecutiveDays      Int      @default(6)
-  minRestHoursBetweenShifts Float  @default(11)
-  longShiftThreshold      Float    @default(5.5)
-  minBreakForLongShifts   Int      @default(30)
-  overtimeThreshold       Float    @default(9)
-  isActive                Boolean  @default(true)
-  createdAt               DateTime @default(now())
-  updatedAt               DateTime @updatedAt
-  business                Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  id                        String            @id @default(cuid())
+  businessId                String
+  countryCode               String
+  maxHoursPerDay            Float             @default(9)
+  maxHoursPerWeek           Float             @default(40)
+  maxOvertimePerDay         Float             @default(4)
+  maxOvertimePerWeek        Float             @default(10)
+  maxConsecutiveDays        Int               @default(6)
+  minRestHoursBetweenShifts Float             @default(11)
+  longShiftThreshold        Float             @default(5.5)
+  minBreakForLongShifts     Int               @default(30)
+  overtimeThreshold         Float             @default(9)
+  isActive                  Boolean           @default(true)
+  createdAt                 DateTime          @default(now())
+  updatedAt                 DateTime          @updatedAt
+  business                  Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  laborLawProfiles          LaborLawProfile[]
 
   @@unique([businessId, countryCode])
   @@index([businessId])
@@ -1283,42 +1291,43 @@ enum WageType {
   HOURLY
   PER_SHIFT
 }
+
 model InvoiceFormSettings {
   id         String   @id @default(cuid())
   businessId String   @unique
   business   Business @relation("InvoiceFormSettings", fields: [businessId], references: [id], onDelete: Cascade)
   deviceId   String?
-  
-  showContactPerson    Boolean @default(true)
-  showDeliveryAddress  Boolean @default(true)
-  showPaymentTerms     Boolean @default(true)
-  showDepartment       Boolean @default(true)
-  showSeller           Boolean @default(true)
-  showDiscount         Boolean @default(true)
-  showProject          Boolean @default(true)
-  showNote             Boolean @default(true) 
-  
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  
+
+  showContactPerson   Boolean @default(true)
+  showDeliveryAddress Boolean @default(true)
+  showPaymentTerms    Boolean @default(true)
+  showDepartment      Boolean @default(true)
+  showSeller          Boolean @default(true)
+  showDiscount        Boolean @default(true)
+  showProject         Boolean @default(true)
+  showNote            Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([businessId])
 }
 
 model CustomerPayment {
-  id            String      @id @default(cuid())
-  customerId    String
-  businessId    String
-  paymentDate   DateTime
-  method        PaymentMethod
-  amount        Decimal      @db.Decimal(10,2)
+  id          String        @id @default(cuid())
+  customerId  String
+  businessId  String
+  paymentDate DateTime
+  method      PaymentMethod
+  amount      Decimal       @db.Decimal(10, 2)
 
-  customer      Customer     @relation(fields: [customerId], references: [id])
-  business      Business     @relation(fields: [businessId], references: [id])
+  customer Customer @relation(fields: [customerId], references: [id])
+  business Business @relation(fields: [businessId], references: [id])
 
-  allocations   PaymentAllocation[]
+  allocations PaymentAllocation[]
 
-  voucherId     String?    @unique
-  voucher       Voucher?   @relation(fields: [voucherId], references: [id])
+  voucherId String?  @unique
+  voucher   Voucher? @relation(fields: [voucherId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1326,18 +1335,18 @@ model CustomerPayment {
 
 //pivot table of CustomerPayment and Invoice
 model PaymentAllocation {
-  id                String          @id @default(cuid())
-  
+  id String @id @default(cuid())
+
   customerPaymentId String          @map("customer_payment_id")
   customerPayment   CustomerPayment @relation(fields: [customerPaymentId], references: [id], onDelete: Cascade)
-  
-  invoiceId         String          @map("invoice_id")
-  invoice           Invoice         @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
-  
-  amountAllocated   Decimal         @map("amount_allocated") @db.Decimal(10, 2)
-  
-  createdAt         DateTime        @default(now()) @map("created_at")
-  
+
+  invoiceId String  @map("invoice_id")
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+
+  amountAllocated Decimal @map("amount_allocated") @db.Decimal(10, 2)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
   @@map("payment_allocations")
 }
 
@@ -1349,24 +1358,23 @@ enum VoucherType {
 }
 
 model Voucher {
-  id            String        @id @default(cuid())
+  id            String      @id @default(cuid())
   businessId    String
   year          Int
   sequence      Int
-  voucherNumber String        @unique
+  voucherNumber String      @unique
   type          VoucherType
-  createdAt     DateTime      @default(now())
+  createdAt     DateTime    @default(now())
 
-  business      Business      @relation(fields: [businessId], references: [id])
+  business Business @relation(fields: [businessId], references: [id])
 
-  ledgerEntries  LedgerEntry[]
-  invoice        Invoice?
-  payment        CustomerPayment?
+  ledgerEntries LedgerEntry[]
+  invoice       Invoice?
+  payment       CustomerPayment?
 
-  @@unique([businessId, year, sequence]) 
+  @@unique([businessId, year, sequence])
   @@index([businessId, year, sequence])
 }
-
 
 enum PaymentMethod {
   BANK
@@ -1456,53 +1464,121 @@ enum IncompleteProfileBehavior {
 }
 
 model EmployeeSettings {
-  id                          String                    @id @default(cuid())
-  businessId                  String                    @unique
-  business                    Business                  @relation("EmployeeSettings", fields: [businessId], references: [id], onDelete: Cascade)
-  
+  id         String   @id @default(cuid())
+  businessId String   @unique
+  business   Business @relation("EmployeeSettings", fields: [businessId], references: [id], onDelete: Cascade)
+
   // Required Profile Fields
-  requireFirstName            Boolean                   @default(true)
-  requireLastName             Boolean                   @default(true)
-  requireBirthday             Boolean                   @default(true)
-  requireGender               Boolean                   @default(true)
-  requireAddress              Boolean                   @default(false)
-  requirePhone                Boolean                   @default(true)
-  requireEmail                Boolean                   @default(false)
-  requireSocialSecurityNo     Boolean                   @default(false)
-  requireEmployeeNo           Boolean                   @default(true)
-  requireDateOfHire           Boolean                   @default(true)
-  requireHoursPerMonth        Boolean                   @default(true)
-  requireBankAccount          Boolean                   @default(false)
-  requireDepartment           Boolean                   @default(true)
-  requireEmployeeGroup        Boolean                   @default(false)
-  requireRole                 Boolean                   @default(false)
-  requireSalaryRate           Boolean                   @default(false)
-  incompleteProfileBehavior   IncompleteProfileBehavior @default(SHOW_WARNING)
-  
+  requireFirstName          Boolean                   @default(true)
+  requireLastName           Boolean                   @default(true)
+  requireBirthday           Boolean                   @default(true)
+  requireGender             Boolean                   @default(true)
+  requireAddress            Boolean                   @default(false)
+  requirePhone              Boolean                   @default(true)
+  requireEmail              Boolean                   @default(false)
+  requireSocialSecurityNo   Boolean                   @default(false)
+  requireEmployeeNo         Boolean                   @default(true)
+  requireDateOfHire         Boolean                   @default(true)
+  requireHoursPerMonth      Boolean                   @default(true)
+  requireBankAccount        Boolean                   @default(false)
+  requireDepartment         Boolean                   @default(true)
+  requireEmployeeGroup      Boolean                   @default(false)
+  requireRole               Boolean                   @default(false)
+  requireSalaryRate         Boolean                   @default(false)
+  incompleteProfileBehavior IncompleteProfileBehavior @default(SHOW_WARNING)
+
   // Default Settings for New Employees
-  defaultDepartmentId         String?
-  defaultEmployeeGroupId      String?
-  defaultRoleId               String?
-  
+  defaultDepartmentId    String?
+  defaultEmployeeGroupId String?
+  defaultRoleId          String?
+
   // Visibility & Access Rules
-  rolesCanViewEmployees       String[]                  @default([])
-  employeesCanSeeContactInfo  Boolean                   @default(true)
-  limitVisibilityByDepartment Boolean                   @default(false)
-  
+  rolesCanViewEmployees       String[] @default([])
+  employeesCanSeeContactInfo  Boolean  @default(true)
+  limitVisibilityByDepartment Boolean  @default(false)
+
   // Onboarding Rules
-  onboardingRequiredFields    String[]                  @default([])
-  requireManagerApproval      Boolean                   @default(false)
-  sendMissingInfoReminder     Boolean                   @default(true)
-  reminderDaysAfterHire       Int                       @default(7)
-  
+  onboardingRequiredFields String[] @default([])
+  requireManagerApproval   Boolean  @default(false)
+  sendMissingInfoReminder  Boolean  @default(true)
+  reminderDaysAfterHire    Int      @default(7)
+
   // General HR Preferences
-  defaultLanguage             String                    @default("en")
-  employeeNotificationsEnabled Boolean                  @default(true)
-  employeesCanEditProfile     Boolean                   @default(true)
-  employeeEditableFields      String[]                  @default(["phone", "address", "profilePhoto"])
-  
-  createdAt                   DateTime                  @default(now())
-  updatedAt                   DateTime                  @updatedAt
+  defaultLanguage              String   @default("en")
+  employeeNotificationsEnabled Boolean  @default(true)
+  employeesCanEditProfile      Boolean  @default(true)
+  employeeEditableFields       String[] @default(["phone", "address", "profilePhoto"])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([businessId])
+}
+
+// ============================================
+// CONTRACT RULES MODULE
+// ============================================
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  SEASONAL_TEMPORARY
+  HOURLY
+  MONTHLY_SALARY
+}
+
+enum OvertimeExemption {
+  MANAGERIAL_POSITION
+  HIGHLY_INDEPENDENT_POSITION
+}
+
+enum ContractWarningType {
+  YELLOW_IN_PLANNER
+  EMAIL_NOTIFICATION
+  BLOCK_SCHEDULING
+}
+
+model LaborLawProfile {
+  id                 String            @id @default(cuid())
+  name               String
+  description        String?
+  laborLawSettingsId String?
+  businessId         String
+  isDefault          Boolean           @default(false)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  business           Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  laborLawSettings   LaborLawSettings? @relation(fields: [laborLawSettingsId], references: [id])
+  contractTypes      ContractType[]
+
+  @@unique([name, businessId])
+  @@index([businessId])
+  @@index([laborLawSettingsId])
+}
+
+model ContractType {
+  id                           String              @id @default(cuid())
+  name                         String
+  employmentType               EmploymentType      @default(FULL_TIME)
+  defaultFtePercent            Float               @default(100)
+  agreedWeeklyHours            Float?
+  maxPlannedWeeklyHours        Float?
+  overtimeAllowed              Boolean             @default(true)
+  overtimeExemptRoleIds        String[]            @default([])
+  maxWeekendsPerMonth          Int?
+  customBreakMinutes           Int?
+  warningType                  ContractWarningType @default(YELLOW_IN_PLANNER)
+  notifyManagerOnDeviation     Boolean             @default(false)
+  allowSchedulingWithDeviation Boolean             @default(true)
+  laborLawProfileId            String
+  laborLawProfile              LaborLawProfile     @relation(fields: [laborLawProfileId], references: [id])
+  businessId                   String
+  business                     Business            @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  createdAt                    DateTime            @default(now())
+  updatedAt                    DateTime            @updatedAt
+  employees                    Employee[]
+
+  @@unique([name, businessId])
+  @@index([businessId])
+  @@index([laborLawProfileId])
 }

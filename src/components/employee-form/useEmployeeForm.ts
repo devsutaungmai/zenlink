@@ -1,7 +1,7 @@
-import { useState, useRef, useEffect, useMemo } from 'react'
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { z } from 'zod'
 import { Sex } from '@prisma/client'
-import { EmployeeFormData } from './types'
+import { EmployeeFormData, ContractType } from './types'
 import { createEmployeeValidationSchema, EmployeeSettingsForValidation, defaultValidationSettings } from './validation'
 import { parseMobileNumber } from './constants'
 
@@ -19,6 +19,22 @@ export function useEmployeeForm({ initialData }: UseEmployeeFormProps) {
   const [isFormValid, setIsFormValid] = useState(false)
   const [validationSettings, setValidationSettings] = useState<EmployeeSettingsForValidation>(defaultValidationSettings)
   const [settingsLoaded, setSettingsLoaded] = useState(false)
+  const [contractTypes, setContractTypes] = useState<ContractType[]>([])
+
+  useEffect(() => {
+    const fetchContractTypes = async () => {
+      try {
+        const res = await fetch('/api/contract-types')
+        if (res.ok) {
+          const data = await res.json()
+          setContractTypes(data.contractTypes || [])
+        }
+      } catch (error) {
+        console.error('Failed to fetch contract types:', error)
+      }
+    }
+    fetchContractTypes()
+  }, [])
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -44,25 +60,26 @@ export function useEmployeeForm({ initialData }: UseEmployeeFormProps) {
             requireRole: settings.requireRole ?? defaultValidationSettings.requireRole,
             requireSalaryRate: settings.requireSalaryRate ?? defaultValidationSettings.requireSalaryRate,
           })
-          
+
           // Apply default values only for new employee (no initialData)
           if (!initialData) {
             setFormData(prev => {
               const updates: Partial<EmployeeFormData> = {}
-              
+
               if (settings.defaultDepartmentId && prev.departmentIds.length === 0) {
                 updates.departmentIds = [settings.defaultDepartmentId]
                 updates.departmentId = settings.defaultDepartmentId
               }
-              
+
               if (settings.defaultEmployeeGroupId && prev.employeeGroupIds.length === 0) {
                 updates.employeeGroupIds = [settings.defaultEmployeeGroupId]
+                updates.employeeGroupId = settings.defaultEmployeeGroupId
               }
-              
+
               if (settings.defaultRoleId && prev.roleIds.length === 0) {
                 updates.roleIds = [settings.defaultRoleId]
               }
-              
+
               if (Object.keys(updates).length > 0) {
                 return { ...prev, ...updates }
               }
@@ -79,16 +96,16 @@ export function useEmployeeForm({ initialData }: UseEmployeeFormProps) {
     fetchSettings()
   }, [initialData])
 
-  const validationSchema = useMemo(() => 
-    createEmployeeValidationSchema(validationSettings), 
+  const validationSchema = useMemo(() =>
+    createEmployeeValidationSchema(validationSettings),
     [validationSettings]
   )
-  
+
   const ssnValidationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const emailValidationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const employeeNoValidationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const validationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  
+
   const validationCacheRef = useRef<Map<string, { result: boolean, timestamp: number }>>(new Map())
   const CACHE_DURATION = 30000
 
@@ -109,11 +126,14 @@ export function useEmployeeForm({ initialData }: UseEmployeeFormProps) {
       isTeamLeader: false,
       departmentId: '',
       departmentIds: [],
+      employeeGroupId: '',
       employeeGroupIds: [],
       roleIds: [],
       email: '',
       profilePhoto: null,
       salaryRate: undefined,
+      contractTypeId: null,
+      ftePercent: null,
       ...initialData
     }
 
@@ -143,7 +163,7 @@ export function useEmployeeForm({ initialData }: UseEmployeeFormProps) {
       baseData.countryCode = countryCode
       baseData.mobile = mobile
     }
-    
+
     return baseData
   })
 
@@ -167,12 +187,12 @@ export function useEmployeeForm({ initialData }: UseEmployeeFormProps) {
         return false
       }
 
-      const hasUniqueErrors = Object.keys(validationErrors).some(key => 
-        validationErrors[key] && 
-        validationErrors[key] !== '' && 
+      const hasUniqueErrors = Object.keys(validationErrors).some(key =>
+        validationErrors[key] &&
+        validationErrors[key] !== '' &&
         (key === 'socialSecurityNo' || key === 'email' || key === 'employeeNo')
       )
-      
+
       if (hasUniqueErrors) {
         return false
       }
@@ -251,7 +271,7 @@ export function useEmployeeForm({ initialData }: UseEmployeeFormProps) {
     }
 
     setValidatingSSN(true)
-    
+
     try {
       const response = await fetch('/api/employees/check-social-security', {
         method: 'POST',
@@ -267,7 +287,7 @@ export function useEmployeeForm({ initialData }: UseEmployeeFormProps) {
         if (!data.available) {
           setValidationErrors(prev => ({
             ...prev,
-            socialSecurityNo: data.existingEmployee 
+            socialSecurityNo: data.existingEmployee
               ? `Social security number already in use by ${data.existingEmployee.name}`
               : 'Social security number already in use'
           }))
@@ -291,7 +311,7 @@ export function useEmployeeForm({ initialData }: UseEmployeeFormProps) {
     }
 
     setValidatingEmail(true)
-    
+
     try {
       const response = await fetch('/api/employees/check-email', {
         method: 'POST',
@@ -308,7 +328,7 @@ export function useEmployeeForm({ initialData }: UseEmployeeFormProps) {
         if (!data.available) {
           setValidationErrors(prev => ({
             ...prev,
-            email: data.existingEmployee 
+            email: data.existingEmployee
               ? `Email already in used`
               : 'Email already in used'
           }))
@@ -356,7 +376,7 @@ export function useEmployeeForm({ initialData }: UseEmployeeFormProps) {
     }
 
     setValidatingEmployeeNo(true)
-    
+
     try {
       const response = await fetch('/api/employees/check-employee-number', {
         method: 'POST',
@@ -370,11 +390,11 @@ export function useEmployeeForm({ initialData }: UseEmployeeFormProps) {
       if (response.ok) {
         const data = await response.json()
         setValidationCache(cacheKey, data.available)
-        
+
         if (!data.available) {
           setValidationErrors(prev => ({
             ...prev,
-            employeeNo: data.existingEmployee 
+            employeeNo: data.existingEmployee
               ? `Employee number already in use by ${data.existingEmployee.name}`
               : 'Employee number already in use'
           }))
@@ -420,7 +440,7 @@ export function useEmployeeForm({ initialData }: UseEmployeeFormProps) {
       const timeoutId = setTimeout(() => {
         fetchNextEmployeeNumber()
       }, 300)
-      
+
       return () => clearTimeout(timeoutId)
     }
   }, [employeeNumberMode, initialData?.employeeNo])
@@ -435,6 +455,14 @@ export function useEmployeeForm({ initialData }: UseEmployeeFormProps) {
       }))
     }
   }, [initialData?.mobile])
+
+  const handleContractTypeChange = useCallback((contractTypeId: string | null, ftePercent: number | null) => {
+    setFormData(prev => ({
+      ...prev,
+      contractTypeId,
+      ftePercent,
+    }))
+  }, [])
 
   return {
     formData,
@@ -459,5 +487,7 @@ export function useEmployeeForm({ initialData }: UseEmployeeFormProps) {
     validateEmployeeNumberUniqueness,
     validationSettings,
     settingsLoaded,
+    contractTypes,
+    handleContractTypeChange,
   }
 }

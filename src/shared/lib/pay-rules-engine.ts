@@ -1,5 +1,6 @@
 import { prisma } from '@/shared/lib/prisma'
 import { Decimal } from '@prisma/client/runtime/library'
+import { ContractValidator, getEmployeeContractInfo } from './contractValidation'
 
 interface PayCalculationInput {
   employeeId: string
@@ -104,8 +105,25 @@ export class PayRulesEngine {
     // Calculate base rates
     const baseRates = this.calculateBaseRates(applicableRules, employee)
 
-    // Calculate overtime based on overtime rules
-    const overtimeCalculation = this.calculateOvertime(shiftDetails, applicableRules)
+    // Check contract rules for overtime eligibility
+    const contractInfo = await getEmployeeContractInfo(employeeId)
+    let isOvertimeEligible = true
+    let overtimeExemptReason: string | null = null
+
+    if (contractInfo) {
+      const contractValidator = new ContractValidator(
+        contractInfo.contractType,
+        contractInfo.ftePercent,
+        contractInfo.employeeRoleIds
+      )
+      isOvertimeEligible = contractValidator.isOvertimeEligible()
+      overtimeExemptReason = contractValidator.getOvertimeExemptReason()
+    }
+
+    // Calculate overtime based on overtime rules (only if eligible per contract)
+    const overtimeCalculation = isOvertimeEligible 
+      ? this.calculateOvertime(shiftDetails, applicableRules)
+      : this.calculateNoOvertime(shiftDetails)
 
     // Calculate final pay amounts
     const regularPay = overtimeCalculation.totalRegularHours * baseRates.regularRate
@@ -272,6 +290,24 @@ export class PayRulesEngine {
       totalRegularHours: Math.round(totalRegularHours * 100) / 100,
       totalOvertimeHours: Math.round(totalOvertimeHours * 100) / 100,
       dailyBreakdown
+    }
+  }
+
+  /**
+   * Calculate hours when overtime is not eligible (all hours are regular)
+   */
+  private calculateNoOvertime(shiftDetails: any[]) {
+    const totalRegularHours = shiftDetails.reduce((sum, shift) => sum + shift.hours, 0)
+    
+    return {
+      totalRegularHours: Math.round(totalRegularHours * 100) / 100,
+      totalOvertimeHours: 0,
+      dailyBreakdown: shiftDetails.map(shift => ({
+        date: shift.date,
+        regularHours: shift.hours,
+        overtimeHours: 0,
+        overtimeRule: 'Overtime not eligible per contract'
+      }))
     }
   }
 

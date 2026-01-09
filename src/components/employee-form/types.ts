@@ -23,6 +23,16 @@ export interface EmployeeFormData {
   profilePhoto?: string | null
   salaryRate?: number
   id?: string
+  contractTypeId?: string | null
+  ftePercent?: number | null
+}
+
+export interface ContractType {
+  id: string
+  name: string
+  employmentType: string
+  defaultFtePercent: number
+  overtimeAllowed: boolean
 }
 
 export interface Role {

@@ -22,6 +22,8 @@ import BusinessInfoSettings from '@/components/BusinessInfoSettings'
 import ContractTemplateForm from '@/components/ContractTemplateForm'
 import ShiftTypeSettings from '@/components/ShiftTypeSettings'
 import PeopleGeneralSettings from '@/components/PeopleGeneralSettings'
+import ContractRulesSettings from '@/components/ContractRulesSettings'
+import LaborLawProfilesSettings from '@/components/LaborLawProfilesSettings'
 import { useTranslation } from 'react-i18next'
 import { usePermissions } from '@/shared/lib/usePermissions'
 import { PERMISSIONS } from '@/shared/lib/permissions'
@@ -121,9 +123,16 @@ export default function SettingsPage() {
             component: PeopleGeneralSettings
           },
           {
+            id: 'people-labor-law-profiles',
+            name: 'Labor Law Profiles',
+            description: 'Manage labor law profile presets',
+            component: LaborLawProfilesSettings
+          },
+          {
             id: 'people-contract-rules',
-            name: t('people.menu.contract_rules.title'),
-            description: t('people.menu.contract_rules.description')
+            name: t('people.menu.contract_rules.title') || 'Contract Rules',
+            description: t('people.menu.contract_rules.description') || 'Define contract types and employment conditions',
+            component: ContractRulesSettings
           },
           {
             id: 'people-contract-setup',

@@ -67,6 +67,9 @@ export async function POST(request: NextRequest) {
   try {
     const { employeeId, businessId, shiftId, punchInTime } = await request.json()
 
+    const auth = await getCurrentUserOrEmployee()
+    const isAdmin = auth?.type === 'user' && (auth.data as any)?.role === 'ADMIN'
+
     if (!employeeId || !businessId) {
       return NextResponse.json({ error: 'Employee ID and Business ID are required' }, { status: 400 })
     }
@@ -101,8 +104,9 @@ export async function POST(request: NextRequest) {
         businessId,
         shiftId: shiftId || null,
         punchInTime: punchInTime ? new Date(punchInTime) : new Date(),
-        // For unscheduled work (no shiftId), require admin approval
-        approved: shiftId ? true : false
+        approved: shiftId ? true : (isAdmin ? true : false),
+        approvedAt: (shiftId || isAdmin) ? new Date() : null,
+        approvedBy: (shiftId || isAdmin) ? (isAdmin ? ((auth.data as any).id) : 'system') : null
       },
       include: {
         employee: {

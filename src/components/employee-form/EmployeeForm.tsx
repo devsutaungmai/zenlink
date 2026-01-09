@@ -42,6 +42,8 @@ export default function EmployeeForm({
     validateEmailUniqueness,
     validateEmployeeNumberUniqueness,
     validationSettings,
+    contractTypes,
+    handleContractTypeChange,
   } = useEmployeeForm({ initialData })
 
   const getFieldStyle = (fieldName: string) => {
@@ -244,12 +246,14 @@ export default function EmployeeForm({
             departments={departments}
             employeeGroups={employeeGroups}
             roles={roles}
+            contractTypes={contractTypes}
             employeeNumberMode={employeeNumberMode}
             fetchingNextNumber={fetchingNextNumber}
             onSSNChange={(e) => {
               handleChange(e)
               validateSocialSecurityNumber(e.target.value)
             }}
+            onContractTypeChange={handleContractTypeChange}
             readOnly={readOnly}
             canViewSensitive={canViewSensitive}
             validationSettings={validationSettings}

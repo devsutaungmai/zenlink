@@ -2,6 +2,7 @@ import { format } from 'date-fns'
 import { Employee } from '@prisma/client'
 import { useCurrency } from '@/shared/hooks/useCurrency'
 import { ShiftWithRelations } from '@/types/schedule'
+import { AlertTriangle, AlertCircle } from 'lucide-react'
 
 interface SpanningShiftCardProps {
   shift: ShiftWithRelations
@@ -57,6 +58,16 @@ export default function SpanningShiftCard({
   const cardWidth = total > 1 ? `calc((100% - 16px) / ${total})` : 'calc(100% - 16px)'
   const horizontalOffset = index * (100 / total)
   
+  const hasLaborLawViolations = shift.validation?.hasLaborLawViolations || false
+  const hasContractDeviations = shift.validation?.hasContractDeviations || false
+  
+  let borderColor = shift.approved ? '#84cc16' : '#31BCFF'
+  if (hasLaborLawViolations) {
+    borderColor = '#dc2626' // red-600
+  } else if (hasContractDeviations) {
+    borderColor = '#eab308' // yellow-500
+  }
+
   return (
     <div
       className="absolute shift-card pointer-events-auto z-20 p-1 sm:p-2"
@@ -67,14 +78,13 @@ export default function SpanningShiftCard({
         left: `calc(8px + ${horizontalOffset}%)`,
         minHeight: '20px',
         backgroundColor: shift.approved ? undefined : '#31BCFF',
-        borderColor: shift.approved ? '#84cc16' : '#31BCFF',
+        borderColor: borderColor,
         color: shift.approved ? '#365314' : 'white',
-        borderWidth: '1px',
+        borderWidth: hasLaborLawViolations || hasContractDeviations ? '2px' : '1px',
         borderRadius: '0.375rem',
         boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
         cursor: 'pointer',
         overflow: 'hidden',
-        // Add a subtle shadow to help distinguish overlapping cards
         zIndex: 20 + index, 
       }}
       onDoubleClick={(e) => {
@@ -85,6 +95,18 @@ export default function SpanningShiftCard({
       title={`${shift.function?.name || 'No function'} | ${shift.startTime.substring(0, 5)} - ${endTimeDisplay} | ${currentEmployee ? `${currentEmployee.firstName} ${currentEmployee.lastName}` : 'Unassigned'}`}
       draggable={false}
     >
+      {/* Validation warnings indicator */}
+      {(hasLaborLawViolations || hasContractDeviations) && height > 24 && (
+        <div className="flex items-center gap-1 mb-0.5">
+          {hasLaborLawViolations && (
+            <AlertTriangle className="h-3 w-3 text-red-600" />
+          )}
+          {hasContractDeviations && (
+            <AlertCircle className="h-3 w-3 text-yellow-600" />
+          )}
+        </div>
+      )}
+      
       {/* Function name - most prominent */}
       {shift.function && (
         <div className="font-bold text-xs truncate mb-0.5">

@@ -2,7 +2,7 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { DatePicker } from '@/components/ui/date-picker'
 import { MultiSelect } from '@/components/ui/multi-select'
-import { EmployeeFormData, Role } from './types'
+import { EmployeeFormData, Role, ContractType } from './types'
 import { EmployeeSettingsForValidation } from './validation'
 
 interface EmploymentInfoSectionProps {
@@ -14,9 +14,11 @@ interface EmploymentInfoSectionProps {
   onDepartmentsChange: (departmentIds: string[]) => void
   onEmployeeGroupsChange: (employeeGroupIds: string[]) => void
   onRolesChange?: (roleIds: string[]) => void
+  onContractTypeChange?: (contractTypeId: string | null, ftePercent: number | null) => void
   departments: Array<{ id: string; name: string }>
   employeeGroups: Array<{ id: string; name: string }>
   roles?: Role[]
+  contractTypes?: ContractType[]
   employeeNumberMode: 'manual' | 'automatic'
   fetchingNextNumber: boolean
   onSSNChange: (e: React.ChangeEvent<HTMLInputElement>) => void
@@ -34,9 +36,11 @@ export function EmploymentInfoSection({
   onDepartmentsChange,
   onEmployeeGroupsChange,
   onRolesChange,
+  onContractTypeChange,
   departments,
   employeeGroups,
   roles = [],
+  contractTypes = [],
   employeeNumberMode,
   fetchingNextNumber,
   onSSNChange,
@@ -223,6 +227,38 @@ export function EmploymentInfoSection({
             {formData.departmentIds.length > 0 
               ? t('employees.form.access_roles_hint_filtered', 'Showing roles available for selected departments and roles without department restrictions.')
               : t('employees.form.access_roles_hint', 'Select departments first to see department-specific roles. Roles without department restrictions are always shown.')}
+          </p>
+        </div>
+      )}
+
+      {contractTypes.length > 0 && onContractTypeChange && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            {t('employees.form.contract_type', 'Contract Type')}
+          </label>
+          <select
+            name="contractTypeId"
+            value={formData.contractTypeId || ''}
+            onChange={(e) => {
+              const selectedId = e.target.value || null
+              const selectedType = contractTypes.find(ct => ct.id === selectedId)
+              onContractTypeChange(
+                selectedId, 
+                selectedType?.defaultFtePercent ?? null
+              )
+            }}
+            className={getFieldStyle('contractTypeId')}
+            disabled={readOnly}
+          >
+            <option value="">{t('employees.form.select_contract_type', 'Select contract type...')}</option>
+            {contractTypes.map((ct) => (
+              <option key={ct.id} value={ct.id}>
+                {ct.name} ({ct.defaultFtePercent}% FTE)
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-gray-500">
+            {t('employees.form.contract_type_hint', 'Contract type determines overtime eligibility and weekly hour limits.')}
           </p>
         </div>
       )}
