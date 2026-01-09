@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/pagination"
 import type { Decimal } from "@prisma/client/runtime/library"
 import Link from "next/link"
-import { exportToPDF, sendEmail } from "@/shared/lib/invoiceHelper"
+import { exportToPDF, formatInvoiceNumberForDisplay, sendEmail } from "@/shared/lib/invoiceHelper"
 import Swal from "sweetalert2"
 import RegisterPaymentDialog from "@/components/invoice/RegisterPaymentDialog"
 import CreditNoteDialog from "@/components/invoice/CreditNoteDialog"
@@ -424,7 +424,7 @@ export default function InvoiceOverview() {
                                                     href={`/dashboard/invoices/create?invoiceId=${invoice.id}&copy=true&overview=true`}
                                                 >
                                                     <span className="text-sm font-medium text-blue-600 hover:underline cursor-pointer">
-                                                        {invoice.status !== InvoiceStatus.DRAFT ? invoice.invoiceNumber : "-"}
+                                                        {invoice.status !== InvoiceStatus.DRAFT ? formatInvoiceNumberForDisplay(invoice.invoiceNumber) : "-"}
 
                                                     </span>
                                                 </Link>
@@ -700,8 +700,7 @@ export default function InvoiceOverview() {
                                             className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mt-1"
                                         />
                                         <h3 className="font-semibold text-blue-600 text-sm">
-                                            {invoice.status !== InvoiceStatus.DRAFT ? invoice.invoiceNumber : "-"}
-
+                                            {invoice.status !== InvoiceStatus.DRAFT ? formatInvoiceNumberForDisplay(invoice.invoiceNumber) : "-"}
                                         </h3>
                                     </div>
                                     <Link

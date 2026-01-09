@@ -141,6 +141,7 @@ model Business {
   projectFormSettings      ProjectFormSettings?      @relation("ProjectFormSettings")
   customerFormSettings     CustomerFormSettings?     @relation("CustomerFormSettings")
   vatCodes                 VatCode[]
+  invoiceGeneralSetting   InvoiceGeneralSetting?   @relation("InvoiceGeneralSetting")
 }
 
 model Employee {
@@ -1092,9 +1093,38 @@ enum LedgerEntryType {
   MANUAL_ADJUSTMENT      // Manual entries
 }
 
+model InvoiceGeneralSetting {
+  id          String   @id @default(cuid())
+  businessId  String   @unique @map("business_id")
+  business    Business @relation("InvoiceGeneralSetting", fields: [businessId], references: [id], onDelete: Cascade)
+
+  // Invoice numbering settings
+  firstInvoiceNumber    Int     @default(1) @map("first_invoice_number")
+  firstCreditNoteNumber Int     @default(1) @map("first_credit_note_number")
+  
+  // Customer number series
+  customerNumberSeriesStart Int?    @map("customer_number_series_start") // e.g., 10000
+  customerNumberSeriesEnd   Int?    @map("customer_number_series_end")   // e.g., 19999
+  nextCustomerNumber        Int?    @map("next_customer_number")
+  
+  // Bank account settings
+  defaultBankAccount        String? @map("default_bank_account")
+  
+  // Additional settings
+  defaultPaymentTermsDays   Int?    @default(30) @map("default_payment_terms_days")
+  defaultDueDays            Int?    @default(30) @map("default_due_days")
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("invoice_general_settings")
+}
+
 model Invoice {
   id            String        @id @default(cuid())
   invoiceNumber String        @unique @map("invoice_number")
+  year          Int          
+  sequence      Int  
   invoiceDate   DateTime      @default(now()) @map("invoice_date")
   dueDate       DateTime?     @map("due_date")
   status        InvoiceStatus @default(DRAFT)
@@ -1146,6 +1176,9 @@ model Invoice {
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([businessId, year, sequence])
+  @@index([businessId, year, sequence])
 
   @@map("invoices")
 }

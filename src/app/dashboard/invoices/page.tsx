@@ -18,7 +18,7 @@ import {
 import { Decimal } from '@prisma/client/runtime/library'
 import { EmailService } from '@/shared/lib/notifications'
 import { Mail, MailIcon } from 'lucide-react'
-import { exportToPDF, sendEmail } from '@/shared/lib/invoiceHelper'
+import { exportToPDF, formatInvoiceNumberForDisplay, sendEmail } from '@/shared/lib/invoiceHelper'
 import { useRouter } from 'next/navigation'
 
 
@@ -633,7 +633,7 @@ export default function InvoicesPage() {
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="text-sm font-medium text-gray-900">
-                                                {invoice.status !== InvoiceStatus.DRAFT ? invoice.invoiceNumber : "-"}
+                                                {invoice.status !== InvoiceStatus.DRAFT ? formatInvoiceNumberForDisplay(invoice.invoiceNumber) : "-"}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
@@ -834,7 +834,7 @@ export default function InvoicesPage() {
                                             <div className="flex-1">
                                                 <div className="flex items-center gap-2 flex-wrap mb-2">
                                                     <span className="text-base font-bold text-gray-900">
-                                                        {invoice.status !== InvoiceStatus.DRAFT ? invoice.invoiceNumber : "-"}
+                                                        {invoice.status !== InvoiceStatus.DRAFT ? formatInvoiceNumberForDisplay(invoice.invoiceNumber) : "-"}
 
                                                     </span>
                                                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">

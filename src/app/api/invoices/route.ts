@@ -165,12 +165,14 @@ export async function POST(request: NextRequest) {
           )
         }
         const invoice = await prisma.$transaction(async (tx) => {
-          const invoiceNumber = await generateInvoiceNumber(tx);
+          const { year, sequence, invoiceNumber } = await generateInvoiceNumber(businessId, tx);
 
           console.log('Creating invoice with number:', invoiceNumber);
 
           const invoiceData: any = {
             invoiceNumber: invoiceNumber,
+            year: year,
+            sequence: sequence,
             customerId,
             businessId,
 
@@ -219,7 +221,7 @@ export async function POST(request: NextRequest) {
           }
 
           // Create invoice with nested invoice line
-          const invoice = await prisma.invoice.create({
+          const invoice = await tx.invoice.create({
             data: invoiceData,
             include: {
               customer: true,

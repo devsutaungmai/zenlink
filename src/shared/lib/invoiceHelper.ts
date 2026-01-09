@@ -55,25 +55,56 @@ export function calculateInvoiceTotals(
   }
 }
 
-export async function generateInvoiceNumber(tx?: Prisma.TransactionClient): Promise<string> {
-  const year = new Date().getFullYear()
+// export async function generateInvoiceNumber(tx?: Prisma.TransactionClient): Promise<string> {
+//   const year = new Date().getFullYear()
+//   const txClient = tx || prisma;
+
+//   const lastInvoice = await txClient.invoice.findFirst({
+//     where: { invoiceNumber: { startsWith: `INV-${year}` } },
+//     orderBy: { invoiceNumber: 'desc' }
+//   })
+
+//   let nextNumber = 1
+
+//   if (lastInvoice) {
+//     const parts = lastInvoice.invoiceNumber.split('-')
+//     nextNumber = parseInt(parts[2]) + 1
+//   }
+
+//   return `INV-${year}-${String(nextNumber).padStart(6, '0')}`
+// }
+
+export async function generateInvoiceNumber(
+  businessId: string,
+  tx?: Prisma.TransactionClient
+) {
+  const year = new Date().getFullYear();
   const txClient = tx || prisma;
 
+  await txClient.$executeRaw`
+    SELECT 1 FROM "Business"
+    WHERE id = ${businessId}
+    FOR UPDATE
+  `;
+  // Get invoice settings for the starting number
+  const settings = await txClient.invoiceGeneralSetting.findUnique({
+    where: { businessId }
+  });
+
   const lastInvoice = await txClient.invoice.findFirst({
-    where: { invoiceNumber: { startsWith: `INV-${year}` } },
-    orderBy: { invoiceNumber: 'desc' }
-  })
+    where: { businessId, year },
+    orderBy: { sequence: 'desc' }
+  });
 
-  let nextNumber = 1
+  const firstInvoiceNumber = settings?.firstInvoiceNumber || 1;
+  const nextSeq = lastInvoice ? lastInvoice.sequence + 1 : firstInvoiceNumber;
 
-  if (lastInvoice) {
-    const parts = lastInvoice.invoiceNumber.split('-')
-    nextNumber = parseInt(parts[2]) + 1
-  }
-
-  return `INV-${year}-${String(nextNumber).padStart(6, '0')}`
+  return {
+    year,
+    sequence: nextSeq,
+    invoiceNumber: `${businessId}-${year}-${nextSeq}`
+  };
 }
-
 
 export async function exportToPDF(invoiceId: string) {
   try {
@@ -186,12 +217,13 @@ export async function createCreditNote(params: {
     throw new Error('Cannot credit a credit note');
   }
 
-  // Generate credit note number
-  const creditNoteNumber = await generateCreditNoteNumber(originalInvoice.businessId);
-
   let creditNote: any = null;
 
   await prisma.$transaction(async (tx) => {
+
+  // Generate credit note number
+  const { year, sequence, creditNoteNumber } = await generateCreditNoteNumber(originalInvoice.businessId,tx);
+
     // 1. Update original invoice status to CREDITED
     await tx.invoice.update({
       where: { id: originalInvoiceId },
@@ -201,10 +233,14 @@ export async function createCreditNote(params: {
       }
     });
 
+    const voucher = await generateVoucherNumber(businessId, VoucherType.CREDIT_NOTE,tx);
+
     // 2. Create credit note (new invoice with negative amounts)
     creditNote = await tx.invoice.create({
       data: {
         invoiceNumber: creditNoteNumber,
+        year: year,
+        sequence: sequence,
         invoiceDate: creditNoteDate,
         dueDate: creditNoteDate, // Credit notes don't have due dates
         status: InvoiceStatus.CREDIT_NOTE,
@@ -224,6 +260,7 @@ export async function createCreditNote(params: {
         creditedInvoiceId: originalInvoiceId,
 
         notes: reason || `Kreditnota for faktura ${originalInvoice.invoiceNumber}`,
+        voucherId: voucher.id,
 
         invoiceLines: {
           create: originalInvoice.invoiceLines.map(line => ({
@@ -254,16 +291,6 @@ export async function createCreditNote(params: {
         }
       }
     });
-    if (creditNote) {
-      const voucher = await generateVoucherNumber(businessId, VoucherType.CREDIT_NOTE);
-
-      await tx.invoice.update({
-        where: { id: creditNote.id },
-        data: { voucherId: voucher.id }
-      });
-    }
-
-
   });
 
   // 3. Post credit note to ledger using the standard function
@@ -277,7 +304,7 @@ export async function createCreditNote(params: {
   return {
     success: true,
     creditNote,
-    message: `Credit note ${creditNoteNumber} created for invoice ${originalInvoice.invoiceNumber}`
+    message: `Credit note created for invoice ${originalInvoice.invoiceNumber}`
   };
 }
 
@@ -285,66 +312,31 @@ export async function createCreditNote(params: {
  * Generate next credit note number
  * Format: CN-YYYY-NNNN (e.g., CN-2025-0001)
  */
-async function generateCreditNoteNumber(businessId: string): Promise<string> {
+export async function generateCreditNoteNumber(businessId: string, tx?: Prisma.TransactionClient) {  
   const year = new Date().getFullYear();
-  const prefix = `CN-${year}-`;
+  const txClient = tx || prisma;
 
-  // Find the highest credit note number for this year and business
-  const lastCreditNote = await prisma.invoice.findFirst({
+  // ✅ Lock the business row
+  await txClient.$executeRaw`
+    SELECT 1 FROM "Business" 
+    WHERE id = ${businessId} 
+    FOR UPDATE
+  `;
+
+  const last = await txClient.invoice.findFirst({
     where: {
       businessId,
-      invoiceNumber: {
-        startsWith: prefix
-      }
+      year
     },
-    orderBy: {
-      invoiceNumber: 'desc'
-    }
+    orderBy: { sequence: 'desc' }
   });
 
-  let nextNumber = 1;
+  const sequence = last ? last.sequence + 1 : 1;
 
-  if (lastCreditNote && lastCreditNote.invoiceNumber) {
-    try {
-      // Extract the number part (e.g., "CN-2025-0001" -> "0001")
-      const parts = lastCreditNote.invoiceNumber.split('-');
-      if (parts.length === 3) {
-        const lastNumber = parseInt(parts[2]);
-        if (!isNaN(lastNumber)) {
-          nextNumber = lastNumber + 1;
-        }
-      }
-    } catch (error) {
-      console.error('Error parsing credit note number:', error);
-      // Fall back to nextNumber = 1
-    }
-  }
+  const creditNoteNumber = `CN-${businessId}-${year}-${sequence.toString().padStart(4, '0')}`;
 
-  // Keep trying until we find a unique number (in case of race conditions)
-  let attempts = 0;
-  const maxAttempts = 10;
-
-  while (attempts < maxAttempts) {
-    const candidateNumber = `${prefix}${nextNumber.toString().padStart(4, '0')}`;
-
-    // Check if this number already exists
-    const existing = await prisma.invoice.findUnique({
-      where: {
-        invoiceNumber: candidateNumber
-      }
-    });
-
-    if (!existing) {
-      return candidateNumber;
-    }
-
-    nextNumber++;
-    attempts++;
-  }
-
-  throw new Error('Failed to generate unique credit note number after multiple attempts');
+  return { year, sequence, creditNoteNumber };
 }
-
 
 export async function generateVoucherNumber(
   businessId: string,
@@ -405,6 +397,37 @@ export function formatVoucherNumberForDisplay(voucherNumber: string): string {
 
   // Fallback if format is unexpected
   return voucherNumber;
+}
+
+export function formatInvoiceNumberForDisplay(number: string): string {
+  // Credit note
+  if (number.startsWith('CN-')) {
+    return formatCreditNoteNumberForDisplay(number);
+  }
+
+  // Normal invoice
+  const parts = number.split('-');
+
+  if (parts.length >= 3) {
+    const sequence = parts[parts.length - 1];
+    return sequence;
+  }
+
+  return number;
+}
+
+export function formatCreditNoteNumberForDisplay(creditNoteNumber: string): string {
+  // Expected format: "CN-cmjba1dlg0000pgutvum2gxvn-2025-1888"
+  const parts = creditNoteNumber.split('-');
+
+  if (parts.length >= 4) {
+    const cn = parts[parts.length - 4];
+    const year = parts[parts.length - 2];
+    const sequence = parts[parts.length - 1];
+    return `${cn}-${year}-${sequence}`; // Remove leading zeros
+  }
+
+  return creditNoteNumber; // Fallback
 }
 
 export function parseVoucherNumber(voucherNumber: string) {

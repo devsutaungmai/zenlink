@@ -25,6 +25,7 @@ import PeopleGeneralSettings from '@/components/PeopleGeneralSettings'
 import { useTranslation } from 'react-i18next'
 import { usePermissions } from '@/shared/lib/usePermissions'
 import { PERMISSIONS } from '@/shared/lib/permissions'
+import GeneralSetting from '@/components/invoice/settings/GeneralSettings'
 
 interface SettingSubmenu {
   id: string
@@ -162,6 +163,14 @@ export default function SettingsPage() {
         component: ShiftTypeSettings
       })
     }
+
+    sections.push({
+        id: 'invoice-settings',
+        name: 'Invoice Settings',
+        description: "Manage your invoice preferences",
+        icon: ShieldCheckIcon,
+        component: GeneralSetting
+      })
     
     return sections
   }, [t, canManageContractTemplates, canManageLaborLaw, canManagePunchClock, canManageBusiness, canManageShiftTypes])
