@@ -36,9 +36,11 @@ export default function AttendanceApprovalManagement() {
   const fetchAttendances = async () => {
     setLoading(true)
     try {
+      const startIso = new Date(`${dateRange.startDate}T00:00:00`).toISOString()
+      const endIso = new Date(`${dateRange.endDate}T23:59:59.999`).toISOString()
       const params = new URLSearchParams({
-        startDate: dateRange.startDate,
-        endDate: dateRange.endDate
+        startDate: startIso,
+        endDate: endIso
       })
 
       if (filter !== 'all') {

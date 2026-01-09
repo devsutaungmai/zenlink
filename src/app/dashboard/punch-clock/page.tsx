@@ -6,8 +6,8 @@ import { PunchClockSkeleton } from '@/components/skeletons/CommonSkeletons'
 import { useUser } from '@/shared/lib/useUser'
 import Image from 'next/image'
 import Swal from 'sweetalert2'
-import { 
-  ClockIcon, 
+import {
+  ClockIcon,
   UserGroupIcon,
   CalendarIcon,
   MagnifyingGlassIcon,
@@ -154,6 +154,16 @@ export default function PunchClockPage() {
     punchInTime: '',
     punchOutTime: ''
   })
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [createFormData, setCreateFormData] = useState({
+    employeeId: '',
+    punchInDate: getCurrentDateISO(),
+    punchInTime: '',
+    punchOutTime: '',
+    shiftId: ''
+  })
+  const [isCreating, setIsCreating] = useState(false)
+  const [selectedCreateShift, setSelectedCreateShift] = useState<Shift | null>(null)
   const filtersInitializedRef = useRef(false)
 
   const isAdmin = user?.role === 'ADMIN'
@@ -173,6 +183,40 @@ export default function PunchClockPage() {
       setInitialLoadComplete(true)
     }
   }
+
+  // When admin selects an employee or date in the create modal, try to auto-select an approved shift
+  useEffect(() => {
+    const fetchShiftForCreate = async () => {
+      const { employeeId, punchInDate } = createFormData
+      setSelectedCreateShift(null)
+
+      if (!employeeId || !punchInDate) return
+
+      try {
+        // Query shifts for that employee and date (use same date for start/end)
+        const start = new Date(`${punchInDate}T00:00:00`).toISOString()
+        const end = new Date(`${punchInDate}T23:59:59.999`).toISOString()
+        const res = await fetch(`/api/shifts?employeeId=${employeeId}&startDate=${start}&endDate=${end}`)
+        if (!res.ok) return
+        const shifts = await res.json()
+        if (!Array.isArray(shifts)) return
+
+        // Prefer a shift that is approved (status or approved flag depending on model)
+        const approvedShift = shifts.find((s: any) => s.status === 'APPROVED' || s.approved === true)
+        if (approvedShift) {
+          setCreateFormData(prev => ({ ...prev, shiftId: approvedShift.id }))
+          setSelectedCreateShift(approvedShift)
+        } else {
+          setCreateFormData(prev => ({ ...prev, shiftId: '' }))
+          setSelectedCreateShift(null)
+        }
+      } catch (err) {
+        console.error('Error fetching shifts for create modal:', err)
+      }
+    }
+
+    fetchShiftForCreate()
+  }, [createFormData.employeeId, createFormData.punchInDate])
 
   useEffect(() => {
     initializeData()
@@ -256,8 +300,10 @@ export default function PunchClockPage() {
     if (!dateRange) return null
 
     const params = new URLSearchParams()
-    params.append('startDate', dateRange.startDate)
-    params.append('endDate', dateRange.endDate)
+    const startIso = new Date(`${dateRange.startDate}T00:00:00`).toISOString()
+    const endIso = new Date(`${dateRange.endDate}T23:59:59.999`).toISOString()
+    params.append('startDate', startIso)
+    params.append('endDate', endIso)
 
     if (business?.id) {
       params.append('businessId', business.id)
@@ -381,8 +427,8 @@ export default function PunchClockPage() {
   const displayedAttendance = attendanceRecords
 
   const formatTime = (timeString: string) => {
-    return new Date(timeString).toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
+    return new Date(timeString).toLocaleTimeString('en-US', {
+      hour: '2-digit',
       minute: '2-digit',
       hour12: false
     })
@@ -394,8 +440,8 @@ export default function PunchClockPage() {
   }
 
   const formatDate = (timeString: string) => {
-    return new Date(timeString).toLocaleDateString('en-US', { 
-      month: 'short', 
+    return new Date(timeString).toLocaleDateString('en-US', {
+      month: 'short',
       day: 'numeric',
       year: 'numeric'
     })
@@ -404,11 +450,11 @@ export default function PunchClockPage() {
   const calculateWorkDuration = (punchIn: string, punchOut?: string | null) => {
     const startTime = new Date(punchIn)
     const endTime = punchOut ? new Date(punchOut) : new Date()
-    
+
     const diffMs = endTime.getTime() - startTime.getTime()
     const hours = Math.floor(diffMs / (1000 * 60 * 60))
     const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
-    
+
     return `${hours}h ${minutes}m`
   }
 
@@ -416,7 +462,7 @@ export default function PunchClockPage() {
     if (!record.shift) return null
 
     const punchInTime = new Date(record.punchInTime)
-    
+
     // Parse shift start time properly
     let shiftStartTime: Date
     if (record.shift.date && record.shift.startTime) {
@@ -424,7 +470,7 @@ export default function PunchClockPage() {
       const datePart = shiftDate.toISOString().split('T')[0]
       const timePart = record.shift.startTime.includes(':') ? record.shift.startTime : `${record.shift.startTime}:00`
       const timeWithSeconds = timePart.split(':').length === 2 ? `${timePart}:00` : timePart
-      
+
       shiftStartTime = new Date(`${datePart}T${timeWithSeconds}`)
     } else {
       return null
@@ -433,7 +479,7 @@ export default function PunchClockPage() {
     if (isNaN(shiftStartTime.getTime())) {
       return null
     }
-    
+
     let status = []
 
     // Check if punched in early or late
@@ -447,17 +493,17 @@ export default function PunchClockPage() {
     // Check if punched out early (only if punched out and shift has end time)
     if (record.punchOutTime && record.shift.endTime) {
       const punchOutTime = new Date(record.punchOutTime)
-      
+
       const shiftDate = new Date(record.shift.date)
       const datePart = shiftDate.toISOString().split('T')[0]
       const timePart = record.shift.endTime.includes(':') ? record.shift.endTime : `${record.shift.endTime}:00`
       const timeWithSeconds = timePart.split(':').length === 2 ? `${timePart}:00` : timePart
-      
+
       const shiftEndTime = new Date(`${datePart}T${timeWithSeconds}`)
-      
+
       if (!isNaN(shiftEndTime.getTime())) {
         const timeDiffOut = shiftEndTime.getTime() - punchOutTime.getTime()
-        
+
         if (timeDiffOut > 300000) { // 5 minutes early
           status.push({ type: 'early-out', text: 'Early Out', color: 'bg-orange-100 text-orange-800' })
         }
@@ -474,15 +520,15 @@ export default function PunchClockPage() {
     }
 
     const punchInTime = new Date(record.punchInTime)
-    
+
     let shiftStartTime: Date
-    
+
     if (record.shift.date && record.shift.startTime) {
       const shiftDate = new Date(record.shift.date)
       const datePart = shiftDate.toISOString().split('T')[0]
       const timePart = record.shift.startTime.includes(':') ? record.shift.startTime : `${record.shift.startTime}:00`
       const timeWithSeconds = timePart.split(':').length === 2 ? `${timePart}:00` : timePart
-      
+
       const isoString = `${datePart}T${timeWithSeconds}`
       shiftStartTime = new Date(isoString)
     } else {
@@ -535,7 +581,7 @@ export default function PunchClockPage() {
         </span>
       )
     }
-    
+
     return (
       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
         <CheckCircleIcon className="w-3 h-3 mr-1" />
@@ -595,7 +641,7 @@ export default function PunchClockPage() {
   const handleEditRecord = (record: Attendance) => {
     if (!isAdmin) return
     setEditingRecord(record)
-    
+
     // Format time to HH:MM for input fields
     const formatTimeForInput = (timeString: string) => {
       const date = new Date(timeString)
@@ -604,7 +650,7 @@ export default function PunchClockPage() {
       const minutes = date.getMinutes().toString().padStart(2, '0')
       return `${hours}:${minutes}`
     }
-    
+
     setEditFormData({
       punchInTime: record.punchInTime ? formatTimeForInput(record.punchInTime) : '',
       punchOutTime: record.punchOutTime ? formatTimeForInput(record.punchOutTime) : ''
@@ -618,7 +664,7 @@ export default function PunchClockPage() {
     try {
       // Convert time strings to full datetime strings
       const today = new Date(editingRecord.punchInTime).toDateString()
-      
+
       const punchInDateTime = new Date(`${today} ${editFormData.punchInTime}`)
       const punchOutDateTime = editFormData.punchOutTime ? new Date(`${today} ${editFormData.punchOutTime}`) : null
 
@@ -728,6 +774,114 @@ export default function PunchClockPage() {
     }
   }
 
+  // Create attendance for employee (Admin only)
+  const handleCreateAttendance = async () => {
+    if (!isAdmin || !business) return
+
+    if (!createFormData.employeeId) {
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        icon: 'warning',
+        title: 'Please select an employee'
+      })
+      return
+    }
+
+    if (!createFormData.punchInTime) {
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        icon: 'warning',
+        title: 'Please enter punch in time'
+      })
+      return
+    }
+
+    setIsCreating(true)
+    try {
+      // Create punch in datetime
+      const punchInDateTime = new Date(`${createFormData.punchInDate}T${createFormData.punchInTime}:00`)
+
+      // Create attendance record (punch in)
+      const response = await fetch('/api/attendance', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          employeeId: createFormData.employeeId,
+          businessId: business.id,
+          shiftId: createFormData.shiftId || null,
+          punchInTime: punchInDateTime.toISOString()
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to create attendance')
+      }
+
+      const { attendance } = await response.json()
+
+      // If punch out time is provided, update the attendance record
+      if (createFormData.punchOutTime) {
+        const punchOutDateTime = new Date(`${createFormData.punchInDate}T${createFormData.punchOutTime}:00`)
+
+        await fetch(`/api/attendance/${attendance.id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            punchInTime: punchInDateTime.toISOString(),
+            punchOutTime: punchOutDateTime.toISOString()
+          })
+        })
+      }
+
+      setShowCreateModal(false)
+      setCreateFormData({
+        employeeId: '',
+        punchInDate: getCurrentDateISO(),
+        punchInTime: '',
+        punchOutTime: '',
+        shiftId: ''
+      })
+
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        icon: 'success',
+        title: 'Attendance created successfully'
+      })
+
+      await fetchAttendance()
+    } catch (error) {
+      console.error('Error creating attendance:', error)
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        icon: 'error',
+        title: error instanceof Error ? error.message : 'Failed to create attendance'
+      })
+    } finally {
+      setIsCreating(false)
+    }
+  }
+
   const exportToCSV = async () => {
     if (!isAdmin) return
 
@@ -756,15 +910,16 @@ export default function PunchClockPage() {
                 : t('status.completed')
 
         return [
-        `${record.employee.firstName} ${record.employee.lastName}`,
-        record.employee.employeeNo,
-        record.employee.department.name,
-        formatTime(record.punchInTime),
-        record.punchOutTime ? formatTime(record.punchOutTime) : 'Still working',
-        calculateWorkDuration(record.punchInTime, record.punchOutTime),
-        statusLabel,
-        record.shift ? `${record.shift.startTime} - ${record.shift.endTime || 'Active'}` : 'No shift'
-      ]})
+          `${record.employee.firstName} ${record.employee.lastName}`,
+          record.employee.employeeNo,
+          record.employee.department.name,
+          formatTime(record.punchInTime),
+          record.punchOutTime ? formatTime(record.punchOutTime) : 'Still working',
+          calculateWorkDuration(record.punchInTime, record.punchOutTime),
+          statusLabel,
+          record.shift ? `${record.shift.startTime} - ${record.shift.endTime || 'Active'}` : 'No shift'
+        ]
+      })
 
       const csvContent = [headers, ...csvData]
         .map(row => row.map(field => `"${field}"`).join(','))
@@ -789,7 +944,7 @@ export default function PunchClockPage() {
 
   const exportToPDF = async () => {
     if (!isAdmin) return
-    
+
     try {
       const dateRange = getDateRange()
       const params = new URLSearchParams({
@@ -810,7 +965,7 @@ export default function PunchClockPage() {
 
       const downloadUrl = `/api/attendance/export/pdf?${params.toString()}`
       const response = await fetch(downloadUrl)
-      
+
       if (response.ok) {
         const blob = await response.blob()
         const filename = `attendance_${dateRange?.startDate || selectedDate}.pdf`
@@ -833,7 +988,7 @@ export default function PunchClockPage() {
       <div className="p-6">
         <div className="text-center text-red-600">
           {t('error.failed_to_load')}: {error}
-          <button 
+          <button
             onClick={initializeData}
             className="ml-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
           >
@@ -871,8 +1026,8 @@ export default function PunchClockPage() {
               </div>
               <div className="flex items-center gap-2 text-blue-600 font-medium">
                 <ClockIcon className="w-4 h-4 flex-shrink-0" />
-                <span>{currentTime.toLocaleTimeString('en-US', { 
-                  hour: '2-digit', 
+                <span>{currentTime.toLocaleTimeString('en-US', {
+                  hour: '2-digit',
                   minute: '2-digit',
                   second: '2-digit',
                   hour12: false
@@ -896,39 +1051,39 @@ export default function PunchClockPage() {
               </select>
             </div>
             {dateRangeType === 'single' && (
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-              <div className="flex-1">
-                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-                  {t('header.select_start_date')}
-                </label>
-                <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => {
-                    setPage(1)
-                    setSelectedDate(e.target.value)
-                  }}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] text-sm"
-                />
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                <div className="flex-1">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
+                    {t('header.select_start_date')}
+                  </label>
+                  <input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => {
+                      setPage(1)
+                      setSelectedDate(e.target.value)
+                    }}
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] text-sm"
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
+                    {t('header.select_end_date')}
+                  </label>
+                  <input
+                    type="date"
+                    value={selectedEndDate}
+                    onChange={(e) => {
+                      setPage(1)
+                      setSelectedEndDate(e.target.value)
+                    }}
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] text-sm"
+                  />
+                </div>
               </div>
-              <div className="flex-1">
-                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-                  {t('header.select_end_date')}
-                </label>
-                <input
-                  type="date"
-                  value={selectedEndDate}
-                  onChange={(e) => {
-                    setPage(1)
-                    setSelectedEndDate(e.target.value)
-                  }}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] text-sm"
-                />
-              </div>
-          </div>
 
             )}
-            
+
             {dateRangeType === 'week' && (
               <div className="w-full sm:w-auto">
                 <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
@@ -945,7 +1100,7 @@ export default function PunchClockPage() {
                 />
               </div>
             )}
-            
+
             {dateRangeType === 'month' && (
               <div className="w-full sm:w-auto">
                 <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
@@ -986,7 +1141,7 @@ export default function PunchClockPage() {
                 className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] text-sm"
               />
             </div>
-            
+
             <div className="w-full sm:w-auto sm:min-w-[200px]">
               <select
                 value={selectedEmployee}
@@ -1025,20 +1180,27 @@ export default function PunchClockPage() {
                     setSelectedFilter(filter.value)
                     setPage(1)
                   }}
-                  className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${
-                    selectedFilter === filter.value
-                      ? 'bg-[#31BCFF] text-white shadow-md'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
+                  className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${selectedFilter === filter.value
+                    ? 'bg-[#31BCFF] text-white shadow-md'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
                 >
                   {filter.label}
                 </button>
               ))}
             </div>
 
-            {/* Export Options - Admin Only */}
+            {/* Admin Actions */}
             {isAdmin && (
               <div className="flex items-center gap-2">
+                <Button
+                  onClick={() => setShowCreateModal(true)}
+                  className="inline-flex items-center bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm flex-1 sm:flex-none"
+                  size="sm"
+                >
+                  <PlayIcon className="w-4 h-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Create </span>Attendance
+                </Button>
                 <Button
                   variant="outline"
                   onClick={exportToCSV}
@@ -1076,7 +1238,7 @@ export default function PunchClockPage() {
             )}
           </div>
         </div>
-        
+
         {displayedAttendance.length === 0 ? (
           <div className="text-center py-12">
             <ClockIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
@@ -1146,252 +1308,250 @@ export default function PunchClockPage() {
                             <div className="text-sm font-medium text-gray-900">
                               {record.employee.firstName} {record.employee.lastName}
                             </div>
-                          <div className="text-sm text-gray-500">
-                            #{record.employee.employeeNo}
+                            <div className="text-sm text-gray-500">
+                              #{record.employee.employeeNo}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{record.employee.department.name}</div>
-                      {record.employee.employeeGroup && (
-                        <div className="text-sm text-gray-500">{record.employee.employeeGroup.name}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{record.employee.department.name}</div>
+                        {record.employee.employeeGroup && (
+                          <div className="text-sm text-gray-500">{record.employee.employeeGroup.name}</div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className={`text-sm ${getPunchInTimeStyle(record)}`}>
+                          {formatTime(record.punchInTime)}
+                        </div>
+                        <div className="text-sm text-gray-500">{formatDate(record.punchInTime)}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {record.punchOutTime ? (
+                          <div>
+                            <div className="text-sm text-gray-900">{formatTime(record.punchOutTime)}</div>
+                            <div className="text-sm text-gray-500">{formatDate(record.punchOutTime)}</div>
+                          </div>
+                        ) : (
+                          <span className="text-sm text-gray-500">{t('status.still_working')}</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">
+                          {calculateWorkDuration(record.punchInTime, record.punchOutTime)}
+                        </div>
+                        {/* Show early/late status indicators */}
+                        {getEarlyLateStatus(record)?.map((status, index) => (
+                          <span key={index} className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium mt-1 mr-1 ${status.color}`}>
+                            {status.text}
+                          </span>
+                        ))}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {getStatusBadge(record)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {record.shift ? (
+                          <div>
+                            <div className="text-sm text-gray-900">
+                              {formatShiftTime(record.shift.startTime)} - {record.shift.endTime ? formatShiftTime(record.shift.endTime) : 'Active'}
+                            </div>
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${record.shift.status === 'WORKING' ? 'bg-green-100 text-green-800' :
+                              record.shift.status === 'COMPLETED' ? 'bg-blue-100 text-blue-800' :
+                                'bg-gray-100 text-gray-800'
+                              }`}>
+                              {record.shift.status}
+                            </span>
+                          </div>
+                        ) : (
+                          <div>
+                            <span className="text-sm text-gray-500">{t('status.no_shift')}</span>
+                            {renderUnscheduledStatus(record)}
+                          </div>
+                        )}
+                      </td>
+                      {isAdmin && (
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleEditRecord(record)}
+                              className="inline-flex items-center px-3 py-1 text-sm font-medium rounded-lg text-blue-600 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                            >
+                              <PencilIcon className="w-4 h-4 mr-1" />
+                              Edit
+                            </button>
+
+                            {/* Show approval buttons for unscheduled work that needs approval */}
+                            {!record.shift && getAttendanceStatus(record) === 'pending' && (
+                              <>
+                                <button
+                                  onClick={() => handleAttendanceApproval(record.id, true)}
+                                  className="inline-flex items-center px-3 py-1 text-sm font-medium rounded-lg text-green-600 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                                >
+                                  <CheckCircleIcon className="w-4 h-4 mr-1" />
+                                  Approve
+                                </button>
+                                <button
+                                  onClick={() => handleAttendanceApproval(record.id, false)}
+                                  className="inline-flex items-center px-3 py-1 text-sm font-medium rounded-lg text-red-600 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                                >
+                                  <XCircleIcon className="w-4 h-4 mr-1" />
+                                  Reject
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </td>
                       )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className={`text-sm ${getPunchInTimeStyle(record)}`}>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="lg:hidden divide-y divide-gray-200">
+              {displayedAttendance.map((record) => (
+                <div key={record.id} className="p-4 hover:bg-gray-50">
+                  {/* Employee Info */}
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mb-4">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className="flex-shrink-0">
+                        {record.employee.profilePhoto ? (
+                          <Image
+                            src={record.employee.profilePhoto}
+                            alt={`${record.employee.firstName} ${record.employee.lastName}`}
+                            width={48}
+                            height={48}
+                            className="rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="h-12 w-12 rounded-full bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] flex items-center justify-center">
+                            <span className="text-sm font-medium text-white">
+                              {record.employee.firstName.charAt(0)}{record.employee.lastName.charAt(0)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-semibold text-gray-900 truncate">
+                          {record.employee.firstName} {record.employee.lastName}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          #{record.employee.employeeNo}
+                        </div>
+                        <div className="text-xs text-gray-600 mt-0.5">
+                          {record.employee.department.name}
+                          {record.employee.employeeGroup && (
+                            <span className="ml-1">• {record.employee.employeeGroup.name}</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex sm:flex-none items-start sm:items-center sm:justify-end">
+                      {getStatusBadge(record)}
+                    </div>
+                  </div>
+
+                  {/* Time Info */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                    <div className="rounded-xl border border-gray-100 bg-gray-50 p-3">
+                      <div className="text-xs text-gray-500 mb-1">{t('table.columns.punch_in')}</div>
+                      <div className={`text-base font-semibold ${getPunchInTimeStyle(record)}`}>
                         {formatTime(record.punchInTime)}
                       </div>
-                      <div className="text-sm text-gray-500">{formatDate(record.punchInTime)}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-xs text-gray-500">{formatDate(record.punchInTime)}</div>
+                    </div>
+                    <div className="rounded-xl border border-gray-100 bg-gray-50 p-3">
+                      <div className="text-xs text-gray-500 mb-1">{t('table.columns.punch_out')}</div>
                       {record.punchOutTime ? (
-                        <div>
-                          <div className="text-sm text-gray-900">{formatTime(record.punchOutTime)}</div>
-                          <div className="text-sm text-gray-500">{formatDate(record.punchOutTime)}</div>
-                        </div>
+                        <>
+                          <div className="text-base font-semibold text-gray-900">
+                            {formatTime(record.punchOutTime)}
+                          </div>
+                          <div className="text-xs text-gray-500">{formatDate(record.punchOutTime)}</div>
+                        </>
                       ) : (
                         <span className="text-sm text-gray-500">{t('status.still_working')}</span>
                       )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {calculateWorkDuration(record.punchInTime, record.punchOutTime)}
-                      </div>
-                      {/* Show early/late status indicators */}
+                    </div>
+                  </div>
+
+                  {/* Duration and Status */}
+                  <div className="mb-4 rounded-xl border border-gray-100 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.08)] p-3">
+                    <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+                      <span>{t('table.columns.duration')}</span>
+                      <span className="text-[10px] uppercase tracking-wide text-gray-400">{t('status.worked', { defaultValue: 'Worked' })}</span>
+                    </div>
+                    <div className="text-lg font-semibold text-gray-900">
+                      {calculateWorkDuration(record.punchInTime, record.punchOutTime)}
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-2">
                       {getEarlyLateStatus(record)?.map((status, index) => (
-                        <span key={index} className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium mt-1 mr-1 ${status.color}`}>
+                        <span key={index} className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${status.color}`}>
                           {status.text}
                         </span>
                       ))}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {getStatusBadge(record)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {record.shift ? (
-                        <div>
-                          <div className="text-sm text-gray-900">
-                            {formatShiftTime(record.shift.startTime)} - {record.shift.endTime ? formatShiftTime(record.shift.endTime) : 'Active'}
-                          </div>
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                            record.shift.status === 'WORKING' ? 'bg-green-100 text-green-800' :
-                            record.shift.status === 'COMPLETED' ? 'bg-blue-100 text-blue-800' :
+                    </div>
+                  </div>
+
+                  {/* Shift Info */}
+                  <div className="mb-4 rounded-xl border border-gray-100 bg-gray-50 p-3">
+                    <div className="text-xs text-gray-500 mb-1">{t('table.columns.shift_info')}</div>
+                    {record.shift ? (
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <div className="text-sm font-medium text-gray-900">
+                          {formatShiftTime(record.shift.startTime)} - {record.shift.endTime ? formatShiftTime(record.shift.endTime) : 'Active'}
+                        </div>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${record.shift.status === 'WORKING' ? 'bg-green-100 text-green-800' :
+                          record.shift.status === 'COMPLETED' ? 'bg-blue-100 text-blue-800' :
                             'bg-gray-100 text-gray-800'
                           }`}>
-                            {record.shift.status}
-                          </span>
-                        </div>
-                      ) : (
-                        <div>
-                          <span className="text-sm text-gray-500">{t('status.no_shift')}</span>
-                          {renderUnscheduledStatus(record)}
-                        </div>
-                      )}
-                    </td>
-                    {isAdmin && (
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleEditRecord(record)}
-                            className="inline-flex items-center px-3 py-1 text-sm font-medium rounded-lg text-blue-600 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                          >
-                            <PencilIcon className="w-4 h-4 mr-1" />
-                            Edit
-                          </button>
-                          
-                          {/* Show approval buttons for unscheduled work that needs approval */}
-                          {!record.shift && getAttendanceStatus(record) === 'pending' && (
-                            <>
-                              <button
-                                onClick={() => handleAttendanceApproval(record.id, true)}
-                                className="inline-flex items-center px-3 py-1 text-sm font-medium rounded-lg text-green-600 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-                              >
-                                <CheckCircleIcon className="w-4 h-4 mr-1" />
-                                Approve
-                              </button>
-                              <button
-                                onClick={() => handleAttendanceApproval(record.id, false)}
-                                className="inline-flex items-center px-3 py-1 text-sm font-medium rounded-lg text-red-600 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-                              >
-                                <XCircleIcon className="w-4 h-4 mr-1" />
-                                Reject
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Mobile Card View */}
-          <div className="lg:hidden divide-y divide-gray-200">
-            {displayedAttendance.map((record) => (
-              <div key={record.id} className="p-4 hover:bg-gray-50">
-                {/* Employee Info */}
-                <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mb-4">
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="flex-shrink-0">
-                      {record.employee.profilePhoto ? (
-                        <Image
-                          src={record.employee.profilePhoto}
-                          alt={`${record.employee.firstName} ${record.employee.lastName}`}
-                          width={48}
-                          height={48}
-                          className="rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="h-12 w-12 rounded-full bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] flex items-center justify-center">
-                          <span className="text-sm font-medium text-white">
-                            {record.employee.firstName.charAt(0)}{record.employee.lastName.charAt(0)}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-semibold text-gray-900 truncate">
-                        {record.employee.firstName} {record.employee.lastName}
+                          {record.shift.status}
+                        </span>
                       </div>
-                      <div className="text-xs text-gray-500">
-                        #{record.employee.employeeNo}
-                      </div>
-                      <div className="text-xs text-gray-600 mt-0.5">
-                        {record.employee.department.name}
-                        {record.employee.employeeGroup && (
-                          <span className="ml-1">• {record.employee.employeeGroup.name}</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex sm:flex-none items-start sm:items-center sm:justify-end">
-                    {getStatusBadge(record)}
-                  </div>
-                </div>
-
-                {/* Time Info */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-                  <div className="rounded-xl border border-gray-100 bg-gray-50 p-3">
-                    <div className="text-xs text-gray-500 mb-1">{t('table.columns.punch_in')}</div>
-                    <div className={`text-base font-semibold ${getPunchInTimeStyle(record)}`}>
-                      {formatTime(record.punchInTime)}
-                    </div>
-                    <div className="text-xs text-gray-500">{formatDate(record.punchInTime)}</div>
-                  </div>
-                  <div className="rounded-xl border border-gray-100 bg-gray-50 p-3">
-                    <div className="text-xs text-gray-500 mb-1">{t('table.columns.punch_out')}</div>
-                    {record.punchOutTime ? (
-                      <>
-                        <div className="text-base font-semibold text-gray-900">
-                          {formatTime(record.punchOutTime)}
-                        </div>
-                        <div className="text-xs text-gray-500">{formatDate(record.punchOutTime)}</div>
-                      </>
                     ) : (
-                      <span className="text-sm text-gray-500">{t('status.still_working')}</span>
+                      <div>
+                        <span className="text-sm text-gray-500">{t('status.no_shift')}</span>
+                        {renderUnscheduledStatus(record)}
+                      </div>
                     )}
                   </div>
-                </div>
 
-                {/* Duration and Status */}
-                <div className="mb-4 rounded-xl border border-gray-100 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.08)] p-3">
-                  <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
-                    <span>{t('table.columns.duration')}</span>
-                    <span className="text-[10px] uppercase tracking-wide text-gray-400">{t('status.worked', { defaultValue: 'Worked' })}</span>
-                  </div>
-                  <div className="text-lg font-semibold text-gray-900">
-                    {calculateWorkDuration(record.punchInTime, record.punchOutTime)}
-                  </div>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {getEarlyLateStatus(record)?.map((status, index) => (
-                      <span key={index} className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${status.color}`}>
-                        {status.text}
-                      </span>
-                    ))}
-                  </div>
-                </div>
+                  {/* Admin Actions */}
+                  {isAdmin && (
+                    <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-100">
+                      <button
+                        onClick={() => handleEditRecord(record)}
+                        className="flex-1 sm:flex-none inline-flex items-center justify-center px-3 py-2 text-xs font-medium rounded-lg text-blue-600 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <PencilIcon className="w-4 h-4 mr-1" />
+                        Edit
+                      </button>
 
-                {/* Shift Info */}
-                <div className="mb-4 rounded-xl border border-gray-100 bg-gray-50 p-3">
-                  <div className="text-xs text-gray-500 mb-1">{t('table.columns.shift_info')}</div>
-                  {record.shift ? (
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                      <div className="text-sm font-medium text-gray-900">
-                        {formatShiftTime(record.shift.startTime)} - {record.shift.endTime ? formatShiftTime(record.shift.endTime) : 'Active'}
-                      </div>
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                        record.shift.status === 'WORKING' ? 'bg-green-100 text-green-800' :
-                        record.shift.status === 'COMPLETED' ? 'bg-blue-100 text-blue-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
-                        {record.shift.status}
-                      </span>
-                    </div>
-                  ) : (
-                    <div>
-                      <span className="text-sm text-gray-500">{t('status.no_shift')}</span>
-                      {renderUnscheduledStatus(record)}
+                      {!record.shift && getAttendanceStatus(record) === 'pending' && (
+                        <>
+                          <button
+                            onClick={() => handleAttendanceApproval(record.id, true)}
+                            className="flex-1 sm:flex-none inline-flex items-center justify-center px-3 py-2 text-xs font-medium rounded-lg text-green-600 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-green-500"
+                          >
+                            <CheckCircleIcon className="w-4 h-4 mr-1" />
+                            Approve
+                          </button>
+                          <button
+                            onClick={() => handleAttendanceApproval(record.id, false)}
+                            className="flex-1 sm:flex-none inline-flex items-center justify-center px-3 py-2 text-xs font-medium rounded-lg text-red-600 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500"
+                          >
+                            <XCircleIcon className="w-4 h-4 mr-1" />
+                            Reject
+                          </button>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>
-
-                {/* Admin Actions */}
-                {isAdmin && (
-                  <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-100">
-                    <button
-                      onClick={() => handleEditRecord(record)}
-                      className="flex-1 sm:flex-none inline-flex items-center justify-center px-3 py-2 text-xs font-medium rounded-lg text-blue-600 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <PencilIcon className="w-4 h-4 mr-1" />
-                      Edit
-                    </button>
-                    
-                    {!record.shift && getAttendanceStatus(record) === 'pending' && (
-                      <>
-                        <button
-                          onClick={() => handleAttendanceApproval(record.id, true)}
-                          className="flex-1 sm:flex-none inline-flex items-center justify-center px-3 py-2 text-xs font-medium rounded-lg text-green-600 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-green-500"
-                        >
-                          <CheckCircleIcon className="w-4 h-4 mr-1" />
-                          Approve
-                        </button>
-                        <button
-                          onClick={() => handleAttendanceApproval(record.id, false)}
-                          className="flex-1 sm:flex-none inline-flex items-center justify-center px-3 py-2 text-xs font-medium rounded-lg text-red-600 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500"
-                        >
-                          <XCircleIcon className="w-4 h-4 mr-1" />
-                          Reject
-                        </button>
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
           </>
         )}
       </div>
@@ -1402,11 +1562,11 @@ export default function PunchClockPage() {
             {totalCountDisplay === 0
               ? t('table.empty_summary', { defaultValue: 'No records found' })
               : t('table.pagination_summary', {
-                  defaultValue: 'Showing {{start}}-{{end}} of {{total}} records',
-                  start: paginationStart,
-                  end: paginationEnd,
-                  total: totalCountDisplay
-                })}
+                defaultValue: 'Showing {{start}}-{{end}} of {{total}} records',
+                start: paginationStart,
+                end: paginationEnd,
+                total: totalCountDisplay
+              })}
           </div>
           <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
             <div className="flex items-center gap-2 text-sm text-gray-600 w-full sm:w-auto justify-center sm:justify-start">
@@ -1514,6 +1674,115 @@ export default function PunchClockPage() {
               className="bg-[#31BCFF] hover:bg-[#0EA5E9]"
             >
               Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Attendance Modal - Admin Only */}
+      <Dialog open={isAdmin && showCreateModal} onOpenChange={setShowCreateModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create Attendance Record</DialogTitle>
+            <DialogDescription>
+              Create a new attendance record for an employee
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Employee *
+              </label>
+              <select
+                value={createFormData.employeeId}
+                onChange={(e) => setCreateFormData(prev => ({ ...prev, employeeId: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] text-sm"
+              >
+                <option value="">Select an employee...</option>
+                {employees.map((employee) => (
+                  <option key={employee.id} value={employee.id}>
+                    {employee.firstName} {employee.lastName} - {employee.department?.name || 'No Department'}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Date *
+              </label>
+              <Input
+                type="date"
+                value={createFormData.punchInDate}
+                onChange={(e) => setCreateFormData(prev => ({ ...prev, punchInDate: e.target.value }))}
+              />
+            </div>
+
+            {selectedCreateShift && (
+              <div className="p-3 bg-gray-50 rounded border border-gray-100">
+                <div className="text-sm font-medium text-gray-900">Selected Shift</div>
+                <div className="text-sm text-gray-700">
+                  {selectedCreateShift.date} — {selectedCreateShift.startTime} - {selectedCreateShift.endTime || 'Open'}
+                </div>
+                <div className="text-xs text-gray-500">
+                  {selectedCreateShift.employeeGroup?.name || selectedCreateShift.department?.name || ''}
+                </div>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Punch In Time *
+              </label>
+              <Input
+                type="time"
+                step="60"
+                value={createFormData.punchInTime}
+                onChange={(e) => setCreateFormData(prev => ({ ...prev, punchInTime: e.target.value }))}
+                className="font-mono text-lg tracking-wider"
+                placeholder="HH:MM"
+              />
+              <p className="text-xs text-gray-500 mt-1">Format: 09:00 (9:00 AM)</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Punch Out Time (Optional)
+              </label>
+              <Input
+                type="time"
+                step="60"
+                value={createFormData.punchOutTime}
+                onChange={(e) => setCreateFormData(prev => ({ ...prev, punchOutTime: e.target.value }))}
+                className="font-mono text-lg tracking-wider"
+                placeholder="HH:MM"
+              />
+              <p className="text-xs text-gray-500 mt-1">Leave empty to create an active shift</p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowCreateModal(false)
+                setCreateFormData({
+                  employeeId: '',
+                  punchInDate: getCurrentDateISO(),
+                  punchInTime: '',
+                  punchOutTime: ''
+                })
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCreateAttendance}
+              disabled={isCreating}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {isCreating ? 'Creating...' : 'Create Attendance'}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -40,12 +40,13 @@ export default function ApplyTemplateModal({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
-  
+
   // Form state
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('')
   const [applyToDate, setApplyToDate] = useState<Date>(new Date())
   const [existingShiftsOption, setExistingShiftsOption] = useState<ExistingShiftsOption>('keep')
   const [isApplying, setIsApplying] = useState(false)
+  const [templateTypeFilter, setTemplateTypeFilter] = useState<'all' | 'day' | 'week'>('all')
 
   // Get selected template
   const selectedTemplate = useMemo(() => {
@@ -76,12 +77,33 @@ export default function ApplyTemplateModal({
     }
   }
 
-  // Filter templates by search query
+  // Filter templates by search query and type
   const filteredTemplates = useMemo(() => {
-    if (!searchQuery.trim()) return templates
-    const query = searchQuery.toLowerCase()
-    return templates.filter(t => t.name.toLowerCase().includes(query))
-  }, [templates, searchQuery])
+    let filtered = templates
+
+    // Filter by type
+    if (templateTypeFilter !== 'all') {
+      filtered = filtered.filter(t => t.length === templateTypeFilter)
+    }
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase()
+      filtered = filtered.filter(t => t.name.toLowerCase().includes(query))
+    }
+
+    return filtered
+  }, [templates, searchQuery, templateTypeFilter])
+
+  // Reset selected template when filter changes
+  useEffect(() => {
+    if (selectedTemplateId) {
+      const selectedStillVisible = filteredTemplates.some(t => t.id === selectedTemplateId)
+      if (!selectedStillVisible) {
+        setSelectedTemplateId('')
+      }
+    }
+  }, [templateTypeFilter, filteredTemplates, selectedTemplateId])
 
   // Navigate date
   const handlePrevDate = () => {
@@ -113,7 +135,7 @@ export default function ApplyTemplateModal({
 
   const handleApply = async () => {
     if (!selectedTemplateId) return
-    
+
     setIsApplying(true)
     try {
       await onApply({
@@ -134,7 +156,7 @@ export default function ApplyTemplateModal({
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-end">
       <div className="fixed inset-0 bg-black/30" onClick={onClose} />
-      
+
       {/* Side Panel */}
       <div className="relative bg-white shadow-xl w-full max-w-sm h-full overflow-hidden flex flex-col animate-slide-in-right">
         {/* Header */}
@@ -162,7 +184,52 @@ export default function ApplyTemplateModal({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               {t('templates.select', 'Select')}
             </label>
-            
+
+            {/* Template Type Filter */}
+            <div className="flex items-center gap-4 mb-3">
+              <label className="flex items-center gap-2 cursor-pointer group">
+                <input
+                  type="radio"
+                  name="templateType"
+                  value="all"
+                  checked={templateTypeFilter === 'all'}
+                  onChange={() => setTemplateTypeFilter('all')}
+                  className="w-4 h-4 text-[#31BCFF] border-gray-300 focus:ring-[#31BCFF]"
+                />
+                <span className={`text-sm ${templateTypeFilter === 'all' ? 'text-gray-900 font-medium' : 'text-gray-600 group-hover:text-gray-900'}`}>
+                  {t('common.all', 'All')}
+                </span>
+              </label>
+
+              <label className="flex items-center gap-2 cursor-pointer group">
+                <input
+                  type="radio"
+                  name="templateType"
+                  value="day"
+                  checked={templateTypeFilter === 'day'}
+                  onChange={() => setTemplateTypeFilter('day')}
+                  className="w-4 h-4 text-[#31BCFF] border-gray-300 focus:ring-[#31BCFF]"
+                />
+                <span className={`text-sm ${templateTypeFilter === 'day' ? 'text-gray-900 font-medium' : 'text-gray-600 group-hover:text-gray-900'}`}>
+                  {t('templates.length_day', 'Day')}
+                </span>
+              </label>
+
+              <label className="flex items-center gap-2 cursor-pointer group">
+                <input
+                  type="radio"
+                  name="templateType"
+                  value="week"
+                  checked={templateTypeFilter === 'week'}
+                  onChange={() => setTemplateTypeFilter('week')}
+                  className="w-4 h-4 text-[#31BCFF] border-gray-300 focus:ring-[#31BCFF]"
+                />
+                <span className={`text-sm ${templateTypeFilter === 'week' ? 'text-gray-900 font-medium' : 'text-gray-600 group-hover:text-gray-900'}`}>
+                  {t('templates.length_week', 'Week')}
+                </span>
+              </label>
+            </div>
+
             {loading ? (
               <div className="flex items-center justify-center py-8">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#31BCFF]"></div>
@@ -247,7 +314,7 @@ export default function ApplyTemplateModal({
                     {t('templates.update_existing', 'Update existing, and add new shifts')}
                   </span>
                 </label>
-                
+
                 <label className="flex items-start gap-3 cursor-pointer group">
                   <input
                     type="radio"
@@ -261,7 +328,7 @@ export default function ApplyTemplateModal({
                     {t('templates.delete_all', 'Delete all and add new shifts')}
                   </span>
                 </label>
-                
+
                 <label className="flex items-start gap-3 cursor-pointer group">
                   <input
                     type="radio"

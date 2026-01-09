@@ -37,7 +37,7 @@ export async function checkEmployeeProfileStatus(
   }
 
   const issues: string[] = []
-  
+
   const hasPinSet = !!(employee.user?.pin && employee.user.pin.length > 0)
   const isInvited = !!(employee.user?.password && employee.user.password.length > 0)
 
@@ -49,7 +49,7 @@ export async function checkEmployeeProfileStatus(
   }
 
   return {
-    isComplete: issues.length === 0,
+    isComplete: hasPinSet || isInvited,
     hasPinSet,
     isInvited,
     issues,
@@ -88,7 +88,7 @@ export async function getSchedulableEmployees(
   return employees.filter(employee => {
     const hasPinSet = !!(employee.user?.pin && employee.user.pin.length > 0)
     const isInvited = !!(employee.user?.password && employee.user.password.length > 0)
-    return hasPinSet && isInvited
+    return hasPinSet || isInvited
   })
 }
 

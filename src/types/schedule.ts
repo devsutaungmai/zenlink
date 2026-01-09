@@ -48,4 +48,10 @@ export type ShiftWithRelations = Shift & {
       }
     }
   }>
+  validation?: {
+    hasLaborLawViolations: boolean
+    hasContractDeviations: boolean
+    laborLawViolationCount: number
+    contractDeviationCount: number
+  }
 }

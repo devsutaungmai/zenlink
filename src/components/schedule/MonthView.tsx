@@ -3,6 +3,7 @@ import { format, addDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSa
 import { Employee, EmployeeGroup } from '@prisma/client'
 import { ShiftWithRelations } from '@/types/schedule'
 import { PlusIcon } from '@heroicons/react/24/outline'
+import { AlertTriangle, AlertCircle } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -272,28 +273,37 @@ export default function MonthView({
                 return (
                   <button
                     key={shift.id}
+                    className={`w-full text-left p-3 sm:p-4 rounded-lg transition-colors ${
+                      shift.validation?.hasLaborLawViolations
+                        ? 'border-2 border-red-500 bg-red-50 hover:bg-red-100'
+                        : shift.validation?.hasContractDeviations
+                          ? 'border-2 border-yellow-500 bg-yellow-50 hover:bg-yellow-100'
+                          : shift.approved 
+                            ? 'border border-green-200 bg-green-50 hover:bg-green-100' 
+                            : 'border border-blue-200 bg-blue-50 hover:bg-blue-100'
+                    }`}
                     onClick={() => {
-                      onEditShift(shift)
                       setSelectedDayShifts(null)
+                      onEditShift(shift)
                     }}
-                    className="w-full text-left p-3 sm:p-4 rounded-lg border-2 transition-all active:scale-[0.98] hover:shadow-md"
-                    style={{
-                      borderColor: functionColor || (
-                        shiftStatus === 'CANCELLED' ? '#fecaca' :
-                        shiftStatus === 'WORKING' ? '#bfdbfe' :
-                        '#31BCFF'
-                      ),
-                      backgroundColor: functionColor ? `${functionColor}15` : (
-                        shiftStatus === 'CANCELLED' ? '#fef2f2' :
-                        shiftStatus === 'WORKING' ? '#eff6ff' :
-                        '#f0f9ff'
-                      )
+                    onTouchEnd={(e) => {
+                      e.preventDefault()
+                      setSelectedDayShifts(null)
+                      onEditShift(shift)
                     }}
                   >
                     <div className="flex items-start sm:items-center justify-between gap-3">
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm sm:text-base text-gray-900 truncate">
-                          {employee ? `${employee.firstName} ${employee.lastName}` : 'Unknown Employee'}
+                        <div className="flex items-center gap-2">
+                          {shift.validation?.hasLaborLawViolations && (
+                            <AlertTriangle className="h-4 w-4 text-red-600 flex-shrink-0" />
+                          )}
+                          {shift.validation?.hasContractDeviations && (
+                            <AlertCircle className="h-4 w-4 text-yellow-600 flex-shrink-0" />
+                          )}
+                          <div className="font-medium text-sm sm:text-base text-gray-900 truncate">
+                            {employee ? `${employee.firstName} ${employee.lastName}` : 'Unknown Employee'}
+                          </div>
                         </div>
                         <div className="text-xs sm:text-sm text-gray-600 mt-1">
                           {shift.startTime} - {shift.endTime || 'Active'}
