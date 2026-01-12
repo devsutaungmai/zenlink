@@ -697,86 +697,139 @@ export async function generateLedgerReport(
   endDate: Date,
   accountNumbers?: number[]
 ) {
-  // const whereClause: any = { businessId, isActive: true };
-  // accountNumbers = [1500, 1920, 3200, 3000, 1900, 2701]
+  // Define which accounts to include
   const whereClause: any = {};
+ // Filter accounts: use provided numbers OR default to 1500-4000 range
   if (accountNumbers && accountNumbers.length > 0) {
     whereClause.accountNumber = { in: accountNumbers };
+  } else {
+    whereClause.accountNumber = {
+      gte: 1500,
+      lte: 4000
+    };
   }
 
+  // Step 1: Fetch all accounts (same as before)
   const accounts = await prisma.ledgerAccount.findMany({
     where: whereClause,
     orderBy: { accountNumber: 'asc' }
   });
 
-  const accountGroups = [];
+  const dayBeforeStart = new Date(startDate);
+  dayBeforeStart.setDate(dayBeforeStart.getDate() - 1);
+  dayBeforeStart.setHours(23, 59, 59, 999);
 
-  for (const account of accounts) {
-    // Calculate opening balance using PROPER ACCOUNTING PRINCIPLES
-    const dayBeforeStart = new Date(startDate);
-    dayBeforeStart.setDate(dayBeforeStart.getDate() - 1);
-    dayBeforeStart.setHours(23, 59, 59, 999);
+  // ========== OPTIMIZATION START ==========
+  
+  // Step 2: Get all account IDs
+  const accountIds = accounts.map(a => a.id);
 
-    const openingBalance = await getAccountBalance(
-      account.id,
+  // Step 3: Fetch ALL entries for ALL accounts in ONE query (instead of looping)
+  // BEFORE: You did this INSIDE the loop, one query per account
+  // AFTER: We do it ONCE for all accounts
+  const allEntries = await prisma.ledgerEntry.findMany({
+    where: {
       businessId,
-      undefined,
-      dayBeforeStart
-    );
-
-    // Get entries in date range
-    const entries = await prisma.ledgerEntry.findMany({
-      where: {
-        businessId,
-        OR: [
-          { debitAccountId: account.id },
-          { creditAccountId: account.id }
-        ],
-        postingDate: {
-          gte: startDate,
-          lte: endDate
+      OR: [
+        { debitAccountId: { in: accountIds } },  // Get entries where ANY account is debited
+        { creditAccountId: { in: accountIds } }  // Get entries where ANY account is credited
+      ],
+      postingDate: {
+        gte: startDate,
+        lte: endDate
+      }
+    },
+    include: {
+      voucher: {
+        select: {
+          id: true,
+          voucherNumber: true
         }
       },
-      include: {
-        // include voucher at the ledgerEntry level so voucherNumber corresponds to ledgerEntry.voucherId
-        voucher: {
-          select: {
-            id: true,
-            voucherNumber: true
-          }
-        },
-        invoice: {
-          select: {
-            invoiceNumber: true,
-            status: true,
-            voucher: { // keep invoice.voucher as well if needed, but prefer entry.voucher at usage
-              select: {
-                id: true,
-                voucherNumber: true
-              }
-            },
-            customer: {
-              select: {
-                id: true,
-                customerName: true
-              }
+      invoice: {
+        select: {
+          invoiceNumber: true,
+          status: true,
+          voucher: {
+            select: {
+              id: true,
+              voucherNumber: true
+            }
+          },
+          customer: {
+            select: {
+              id: true,
+              customerName: true
             }
           }
-        },
-        debitAccount: true,
-        creditAccount: true
+        }
       },
-      orderBy: [
-        { postingDate: 'asc' },
-        { createdAt: 'asc' }
-      ]
-    });
+      debitAccount: true,
+      creditAccount: true
+    },
+    orderBy: [
+      { postingDate: 'asc' },
+      { createdAt: 'asc' }
+    ]
+  });
+
+  // Step 4: Calculate ALL opening balances in PARALLEL (instead of one-by-one)
+  // BEFORE: You did await getAccountBalance() inside the loop - each one waited for the previous
+  // AFTER: Promise.all() runs them all at the same time
+  const openingBalances = await Promise.all(
+    accounts.map(account => 
+      getAccountBalance(
+        account.id,
+        businessId,
+        undefined,
+        dayBeforeStart
+      )
+    )
+  );
+
+  // Step 5: Organize entries by account for quick lookup
+  // This creates a Map where: key = accountId, value = array of entries for that account
+  const entriesByAccount = new Map<string | null, typeof allEntries>();
+  
+  allEntries.forEach(entry => {
+    // Each entry appears in TWO accounts: debit and credit
+    const debitId = entry.debitAccountId;
+    const creditId = entry.creditAccountId;
+    
+    // Initialize arrays if they don't exist
+    if (!entriesByAccount.has(debitId)) {
+      entriesByAccount.set(debitId, []);
+    }
+    if (!entriesByAccount.has(creditId)) {
+      entriesByAccount.set(creditId, []);
+    }
+    
+    // Add this entry to both accounts
+    entriesByAccount.get(debitId)!.push(entry);
+    entriesByAccount.get(creditId)!.push(entry);
+  });
+
+  // ========== OPTIMIZATION END ==========
+
+  const accountGroups = [];
+
+  // Step 6: Process each account (YOUR ORIGINAL LOGIC - UNCHANGED!)
+  for (let i = 0; i < accounts.length; i++) {
+    const account = accounts[i];
+    
+    // Get pre-calculated opening balance from Step 4
+    const openingBalance = openingBalances[i];
+    
+    // Get pre-fetched entries from Step 5 (instead of querying database)
+    const entries = entriesByAccount.get(account.id) || [];
 
     // Skip accounts with no activity and zero opening balance
     if (entries.length === 0 && Math.abs(openingBalance) < 0.01) {
       continue;
     }
 
+    // ========== YOUR ORIGINAL LOGIC BELOW - NO CHANGES ==========
+    
     // For calculating running balance, use PROPER ACCOUNTING
     const isNormalDebit = account.type === 'ASSET' || account.type === 'EXPENSE';
     let runningBalance = openingBalance;
@@ -823,7 +876,7 @@ export async function generateLedgerReport(
           entry.entryType === LedgerEntryType.CREDIT_NOTE
         ) {
           const groupKey = entry.invoiceId || `no-invoice-${entry.id}`;
-          const voucherNo = entry.voucher.voucherNumber || `V-${entry.id.slice(-8)}`;
+          const voucherNo = entry.voucher?.voucherNumber || `V-${entry.id.slice(-8)}`;
           const customerName = entry.invoice?.customer?.customerName || '';
           const customerId = entry.invoice?.customer?.id || '';
 
@@ -924,7 +977,7 @@ export async function generateLedgerReport(
 
         runningBalance += trueMovement;
 
-        const voucherNo = entry.voucher.voucherNumber || `V-${entry.id.slice(-8)}`;
+        const voucherNo = entry.voucher?.voucherNumber || `V-${entry.id.slice(-8)}`;
 
         const isVATEntry =
           entry.creditAccount?.accountNumber === 2740 ||
@@ -966,3 +1019,4 @@ export async function generateLedgerReport(
     totalBalance: accountGroups.reduce((sum, acc) => sum + acc.closingBalance, 0)
   };
 }
+
