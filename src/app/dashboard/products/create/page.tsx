@@ -24,6 +24,10 @@ interface LedgerAccount {
   id: string
   accountNumber: string
   name: string
+  vatCode: {
+    name: string
+    rate: number
+  }
 }
 
 export default function CreateProductPage() {
@@ -356,7 +360,7 @@ export default function CreateProductPage() {
                 <option value="">--Select Sales Account--</option>
                 {salesLedgerAccounts.map((sa) => (
                   <option key={sa.id} value={sa.id}>
-                    {sa.accountNumber} - {sa.name}
+                    {sa.accountNumber} - {sa.name} - {sa.vatCode?.name ?? ""} ({sa.vatCode?.rate ?? 0}%)
                   </option>
                 ))}
               </select>

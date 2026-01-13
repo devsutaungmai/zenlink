@@ -24,8 +24,13 @@ interface Product {
     id: string
     productName: string
     salesPrice: number
+    ledgerAccount?: {
+    vatCode?: {
+      code: number
+      rate: number
+    }
+  }
 }
-
 
 export default function EditInvoicePage({ params }: { params: Promise<{ id: string }> }) {
     const resolvedParams = use(params)
@@ -206,7 +211,8 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                     quantity: 1,
                     pricePerUnit: 0,
                     vatPercentage: 0,
-                    discountPercentage: 0
+                    discountPercentage: 0,
+                    productName: ''
                 }
             ]
         }))
@@ -223,7 +229,8 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                     quantity: copiedInvoiceLine.quantity,
                     pricePerUnit: copiedInvoiceLine.pricePerUnit,
                     vatPercentage: copiedInvoiceLine.vatPercentage,
-                    discountPercentage: copiedInvoiceLine.discountPercentage
+                    discountPercentage: copiedInvoiceLine.discountPercentage,
+                    productName: copiedInvoiceLine.productName
                 }
             ]
         }))
@@ -523,10 +530,6 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                             </div>
                         </div>
                     </div>}
-
-
-
-
                     <div className="bg-gradient-to-br rounded-xl border p-6">
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-lg font-semibold text-gray-900 mb-4">Order Lines</h2>
@@ -551,6 +554,8 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                                             const updatedLines = [...formData.invoiceLines];
                                             updatedLines[index].productId = e.target.value;
                                             updatedLines[index].pricePerUnit = product?.salesPrice ?? 0;
+                                            updatedLines[index].vatPercentage = (product?.ledgerAccount?.vatCode?.rate ?? 0);
+                                            updatedLines[index].productName = product?.productName;
                                             setFormData({ ...formData, invoiceLines: updatedLines });
                                         }}
                                         className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
@@ -614,7 +619,7 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                                         id="vatPercent"
                                         required
                                         step="0.01"
-                                        value="25"
+                                        value={line.vatPercentage || 0}
                                         disabled
                                         className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
                                     />

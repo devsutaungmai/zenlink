@@ -24,6 +24,10 @@ interface LedgerAccount {
     id: string
     accountNumber: string
     name: string
+    vatCode: {
+        name: string
+        rate: number
+    }
 }
 
 export default function EditProductPage({ params }: { params: Promise<{ id: string }> }) {

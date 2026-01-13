@@ -18,6 +18,14 @@ export async function GET(request: NextRequest) {
         lt: 4000
       }
       },
+      include:{
+        vatCode: {
+          select: {
+            name: true,
+            rate: true
+          }
+        }
+      },
       orderBy: { accountNumber: 'asc' }
     })
     return NextResponse.json(ledgerAccounts, { status: 200 })

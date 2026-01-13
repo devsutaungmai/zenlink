@@ -62,10 +62,24 @@ function getAccountType(accountNumber: number): AccountType {
 
 function parsePercentage(value: any): number {
   if (!value) return 0;
-  const str = String(value).replace('%', '').trim();
-  const num = parseFloat(str);
-  return isNaN(num) ? 0 : num;
+  
+  const str = String(value).trim();
+  
+  // Remove % symbol if present
+  const cleanStr = str.replace('%', '');
+  const num = parseFloat(cleanStr);
+  
+  if (isNaN(num)) return 0;
+  
+  // If the value is a decimal (0.25), convert to percentage (25)
+  if (num < 1 && num > 0) {
+    return num * 100;
+  }
+  
+  // Otherwise return as-is (already a whole number like 25)
+  return num;
 }
+
 
 function parseDate(value: any): Date | null {
   if (!value) return null;
@@ -328,7 +342,7 @@ export async function importMvaCodes() {
       const row = worksheet.getRow(i);
       console.log(`\nRow ${i}:`);
       row.eachCell((cell, colNumber) => {
-        console.log(`   Column ${colNumber}: "${getCellValue(cell.value)}"`);
+        console.log(`Column ${colNumber}: "${getCellValue(cell.value)}"`);
       });
     }
 

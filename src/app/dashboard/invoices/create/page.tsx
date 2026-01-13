@@ -412,7 +412,8 @@ export default function CreateInvoicePage() {
                     quantity: 1,
                     pricePerUnit: 0,
                     vatPercentage: 0,
-                    discountPercentage: 0
+                    discountPercentage: 0,
+                    productName: '',
                 }
             ]
         }))
@@ -429,7 +430,8 @@ export default function CreateInvoicePage() {
                     quantity: copiedInvoiceLine.quantity,
                     pricePerUnit: copiedInvoiceLine.pricePerUnit,
                     vatPercentage: copiedInvoiceLine.vatPercentage,
-                    discountPercentage: copiedInvoiceLine.discountPercentage
+                    discountPercentage: copiedInvoiceLine.discountPercentage,
+                    productName: copiedInvoiceLine.productName,
                 }
             ]
         }))
@@ -751,7 +753,8 @@ export default function CreateInvoicePage() {
                                             updatedLines[index].productId = e.target.value;
                                             updatedLines[index].pricePerUnit = product?.salesPrice ?? 0;
                                             updatedLines[index].discountPercentage = product?.discountPercentage ?? 0;
-                                            updatedLines[index].vatPercentage = product?.ledgerAccount?.vatCode?.code ?? 0;
+                                            updatedLines[index].vatPercentage = (product?.ledgerAccount?.vatCode?.rate ?? 0);
+                                            updatedLines[index].productName = product?.productName;
                                             setFormData({ ...formData, invoiceLines: updatedLines });
                                             updateLineTotal(index);
                                         }}
@@ -813,7 +816,7 @@ export default function CreateInvoicePage() {
 
                                 <div>
                                     <label htmlFor="vatPercentage" className="block text-sm font-medium text-gray-700 mb-2">
-                                        Vat Percent *
+                                        Vat Percent (%) *
                                     </label>
                                     <input
                                         type="number"

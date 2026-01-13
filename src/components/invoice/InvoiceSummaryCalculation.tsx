@@ -24,11 +24,12 @@ export default function InvoiceSummaryCalculation({ invoiceLines }: InvoiceSumma
     });
 
     useEffect(() => {
+        console.log('Recalculating summary totals...', invoiceLines);
         let finalNetAmount = 0;
         let finalVatAmount = 0;
         let FinalTotalAmount = 0;
        invoiceLines.forEach(line => {
-          const {totalExclVAT,vatAmount,totalInclVAT}= calculateInvoiceTotals(line.quantity, line.pricePerUnit, line.discountPercentage, 25);
+          const {totalExclVAT,vatAmount,totalInclVAT}= calculateInvoiceTotals(line.quantity, line.pricePerUnit, line.discountPercentage, line.vatPercentage);
             finalNetAmount += totalExclVAT;
             finalVatAmount += vatAmount;
             FinalTotalAmount += totalInclVAT;
@@ -48,15 +49,24 @@ export default function InvoiceSummaryCalculation({ invoiceLines }: InvoiceSumma
             <InformationCircleIcon className="h-5 w-5 text-gray-400" />
         </div>
         <div className="px-6 py-4 space-y-4">
-            <div className="flex items-center justify-between">
+           
+            {invoiceLines.map((line,index) => (
+                <div key={index} className="flex items-center justify-between">
+                    <span className="text-gray-700">{line.productName} - VAT ({line.vatPercentage}%)</span>
+                    <span className="text-gray-900 font-medium">
+                        {((line.quantity * line.pricePerUnit * (1 - line.discountPercentage / 100)) * (line.vatPercentage / 100)).toFixed(2)}
+                    </span>
+                </div>
+            ))}
+             <div className="flex items-center justify-between">
                 <span className="text-gray-700">Net Amount</span>
                 <span className="text-gray-900 font-medium">
                    {summary.netAmount.toFixed(2)}
                 </span>
             </div>
-            <div className="flex items-center justify-between">
-                <span className="text-gray-700">VAT AMOUNT (25%)</span>
-                <span className="text-gray-900 font-medium">
+            <div className="flex items-center justify-between border-t border-gray-200 pt-4">
+                <span className="text-gray-700 font-semibold">Total VAT AMOUNT</span>
+                <span className="text-gray-900 font-semibold">
                     {summary.vatAmount.toFixed(2)}
                 </span>
             </div>

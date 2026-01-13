@@ -48,15 +48,12 @@ export async function GET(
             quantity: true,
             pricePerUnit: true,
             discountPercentage: true,
-            product: {
-              select: {
-                id: true,
-                productName: true
-              }
-            }
-          }
+            vatPercentage: true,
+            productName: true,
+            productNumber: true
         }
       }
+    }
     })
 
     if (!invoice) {
