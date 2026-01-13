@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/shared/lib/auth'
 import { prisma } from '@/shared/lib/prisma'
 import { calculatePayroll } from '@/shared/lib/salary-calculator'
+import { getEmployeeContractInfo, ContractValidator } from '@/shared/lib/contractValidation'
 
 export async function POST(request: NextRequest) {
   try {
@@ -47,6 +48,20 @@ export async function POST(request: NextRequest) {
       include: {
         department: true,
         employeeGroup: true,
+        contractType: {
+          include: {
+            laborLawProfile: {
+              include: {
+                laborLawSettings: true
+              }
+            }
+          }
+        },
+        employeeRoles: {
+          select: {
+            roleId: true
+          }
+        },
         attendances: {
           where: {
             punchInTime: {
@@ -108,6 +123,21 @@ export async function POST(request: NextRequest) {
         continue
       }
 
+      let isOvertimeEligible = true
+      let overtimeExemptReason = null
+
+      if (employee.contractType) {
+        const employeeRoleIds = employee.employeeRoles.map(er => er.roleId)
+        const contractValidator = new ContractValidator(
+          employee.contractType,
+          employee.ftePercent,
+          employeeRoleIds
+        )
+        
+        isOvertimeEligible = contractValidator.isOvertimeEligible()
+        overtimeExemptReason = contractValidator.getOvertimeExemptReason()
+      }
+
       const payrollCalc = calculatePayroll({
         employee,
         shifts: shiftsMap,
@@ -115,7 +145,17 @@ export async function POST(request: NextRequest) {
         overtimeMultiplier: 1.5
       })
 
-      if (payrollCalc.regularHours === 0 && payrollCalc.overtimeHours === 0) {
+      let adjustedOvertimeHours = payrollCalc.overtimeHours
+      let adjustedOvertimePay = payrollCalc.overtimePay
+      
+      if (!isOvertimeEligible) {
+        adjustedOvertimeHours = 0
+        adjustedOvertimePay = 0
+      }
+
+      const adjustedGrossPay = payrollCalc.regularPay + adjustedOvertimePay
+
+      if (payrollCalc.regularHours === 0 && adjustedOvertimeHours === 0) {
         skippedEmployees.push({
           id: employee.id,
           name: `${employee.firstName} ${employee.lastName}`,
@@ -125,7 +165,7 @@ export async function POST(request: NextRequest) {
       }
 
       const deductions = 0
-      const netPay = payrollCalc.grossPay - deductions
+      const netPay = adjustedGrossPay - deductions
 
       let notes = ''
       if (payrollCalc.adjustments.length > 0) {
@@ -135,15 +175,19 @@ export async function POST(request: NextRequest) {
           ).join('\n')
       }
 
+      if (!isOvertimeEligible && overtimeExemptReason) {
+        notes += (notes ? '\n\n' : '') + `Overtime Exempt: ${overtimeExemptReason}`
+      }
+
       const payrollEntry = await prisma.payrollEntry.create({
         data: {
           employeeId: employee.id,
           payrollPeriodId: payrollPeriodId,
           regularHours: payrollCalc.regularHours,
-          overtimeHours: payrollCalc.overtimeHours,
+          overtimeHours: adjustedOvertimeHours,
           regularRate: payrollCalc.regularRate,
           overtimeRate: payrollCalc.overtimeRate,
-          grossPay: payrollCalc.grossPay,
+          grossPay: adjustedGrossPay,
           deductions: deductions,
           netPay: netPay,
           bonuses: 0,

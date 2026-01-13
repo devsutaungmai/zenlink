@@ -563,13 +563,13 @@ export default function PayrollEntriesPage() {
               <span className="hidden sm:inline">Generate Entries</span>
               <span className="sm:hidden">Generate</span>
             </Link>
-            <Link
+            {/* <Link
               href="/dashboard/payroll-entries/create"
               className="inline-flex items-center justify-center px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white text-sm sm:text-base font-medium shadow-lg hover:shadow-xl transition-all duration-200 sm:hover:scale-105 group"
             >
               <PlusIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
               {t('create_entry')}
-            </Link>
+            </Link> */}
           </div>
         </div>
       </div>
