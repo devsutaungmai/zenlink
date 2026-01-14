@@ -842,6 +842,8 @@ model CustomerFormSettings {
 model Customer {
   id                           String   @id @default(cuid())
   active                       Boolean  @default(true)
+  sequence                     Int
+  year                         Int          
   customerNumber               String   @unique @map("customer_number")
   customerName                 String   @map("customer_name")
   organizationNumber           String?  @map("organization_number")
@@ -1110,8 +1112,8 @@ model InvoiceGeneralSetting {
   firstCreditNoteNumber Int     @default(1) @map("first_credit_note_number")
   
   // Customer number series
-  customerNumberSeriesStart Int?    @map("customer_number_series_start") // e.g., 10000
-  customerNumberSeriesEnd   Int?    @map("customer_number_series_end")   // e.g., 19999
+  customerNumberSeriesStart Int? @default(10000)   @map("customer_number_series_start") // e.g., 10000
+  customerNumberSeriesEnd   Int? @default(19999)   @map("customer_number_series_end")   // e.g., 19999
   nextCustomerNumber        Int?    @map("next_customer_number")
   
   // Bank account settings

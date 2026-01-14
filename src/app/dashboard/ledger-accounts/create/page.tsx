@@ -144,6 +144,18 @@ export default function CreateLedgerAccountPage() {
             {/* Form Container */}
             <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg p-6">
                 <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className="flex justify-end items-center gap-3 mt-8">
+                        <input
+                            id="isActive"
+                            type="checkbox"
+                            checked={formData.isActive}
+                            onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                            className="h-5 w-5 text-[#31BCFF] border-gray-300 rounded focus:ring-[#31BCFF]/50"
+                        />
+                        <label htmlFor="isActive" className="text-sm font-medium text-gray-700">
+                            Active
+                        </label>
+                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label htmlFor="accountNumber" className="block text-sm font-medium text-gray-700 mb-2">
@@ -262,19 +274,6 @@ export default function CreateLedgerAccountPage() {
                             className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
                             placeholder="Enter SAFT standard account"
                         />
-                    </div>
-
-                    <div className="flex items-center gap-3 mt-8">
-                        <input
-                            id="isActive"
-                            type="checkbox"
-                            checked={formData.isActive}
-                            onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                            className="h-5 w-5 text-[#31BCFF] border-gray-300 rounded focus:ring-[#31BCFF]/50"
-                        />
-                        <label htmlFor="isActive" className="text-sm font-medium text-gray-700">
-                            Active
-                        </label>
                     </div>
 
                     {/* Form Actions */}

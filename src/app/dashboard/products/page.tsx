@@ -45,6 +45,12 @@ interface Product {
   salesPrice: number
   costPrice: number
   discountPercentage?: number | null
+  ledgerAccount: {
+    vatCode: {
+      code: string
+      rate: number
+    }
+  }
 
   // Foreign keys
   unitId?: string | null
@@ -260,6 +266,9 @@ export default function ProductsPage() {
                     Cost Price
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Vat Percentage
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Discount %
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -286,15 +295,17 @@ export default function ProductsPage() {
                       <div className="text-sm text-gray-900">{Number(product.costPrice).toFixed(2)}</div>
                     </td>
                     <td className="px-6 py-4">
+                      <div className="text-sm text-gray-900">{(product.ledgerAccount?.vatCode?.rate ?? 0)}%</div>
+                    </td>
+                    <td className="px-6 py-4">
                       <div className="text-sm text-gray-900">
                         {product.discountPercentage ? `${product.discountPercentage}%` : "-"}
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          product.active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
-                        }`}
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${product.active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+                          }`}
                       >
                         {product.active ? "Active" : "Inactive"}
                       </span>
@@ -382,9 +393,8 @@ export default function ProductsPage() {
                         {product.productName}
                       </h3>
                       <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                          product.active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
-                        }`}
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${product.active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+                          }`}
                       >
                         {product.active ? "Active" : "Inactive"}
                       </span>
@@ -438,6 +448,10 @@ export default function ProductsPage() {
                   <div className="bg-gray-50 rounded-lg p-3">
                     <div className="text-xs text-gray-500 mb-1">Cost Price</div>
                     <div className="text-sm font-medium text-gray-900">{Number(product.costPrice).toFixed(2)}</div>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <div className="text-xs text-gray-500 mb-1">Vat Percentage</div>
+                    <div className="text-sm font-medium text-gray-900">{(product.ledgerAccount?.vatCode?.rate ?? 0)}%</div>
                   </div>
                 </div>
 

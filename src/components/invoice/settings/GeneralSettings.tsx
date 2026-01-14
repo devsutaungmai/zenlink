@@ -26,8 +26,8 @@ export default function GeneralSetting() {
   const [formData, setFormData] = useState<GeneralSetting>({
     firstInvoiceNumber: 1,
     firstCreditNoteNumber: 1,
-    customerNumberSeriesStart: null,
-    customerNumberSeriesEnd: null,
+    customerNumberSeriesStart: 1000,
+    customerNumberSeriesEnd: 19999,
     defaultBankAccount: '',
     defaultPaymentTermsDays: 30,
     defaultDueDays: 30
@@ -49,8 +49,8 @@ export default function GeneralSetting() {
           const settings = {
             firstInvoiceNumber: data.settings.firstInvoiceNumber || 1,
             firstCreditNoteNumber: data.settings.firstCreditNoteNumber || 1,
-            customerNumberSeriesStart: data.settings.customerNumberSeriesStart,
-            customerNumberSeriesEnd: data.settings.customerNumberSeriesEnd,
+            customerNumberSeriesStart: data.settings.customerNumberSeriesStart || 10000,
+            customerNumberSeriesEnd: data.settings.customerNumberSeriesEnd || 19999,
             defaultBankAccount: data.settings.defaultBankAccount || '',
             defaultPaymentTermsDays: data.settings.defaultPaymentTermsDays || 30,
             defaultDueDays: data.settings.defaultDueDays || 30
@@ -185,7 +185,7 @@ export default function GeneralSetting() {
                 className="mt-1"
               />
               <p className="text-xs text-gray-500 mt-1">
-                The starting number for your invoices. Format: businessId-year-{formData.firstInvoiceNumber}
+                The starting number for your invoices. Format:{formData.firstInvoiceNumber}
               </p>
             </div>
 
@@ -200,7 +200,7 @@ export default function GeneralSetting() {
                 className="mt-1"
               />
               <p className="text-xs text-gray-500 mt-1">
-                The starting number for credit notes. Format: CN-businessId-year-{formData.firstCreditNoteNumber.toString().padStart(4, '0')}
+                The starting number for credit notes. Format: CN-{formData.firstCreditNoteNumber.toString().padStart(4, '0')}
               </p>
             </div>
           </div>
@@ -222,9 +222,10 @@ export default function GeneralSetting() {
               <Input
                 id="customerNumberSeriesStart"
                 type="number"
-                min="1"
+                min="10000"
                 placeholder="e.g., 10000"
                 value={formData.customerNumberSeriesStart || ''}
+                disabled
                 onChange={(e) => handleInputChange('customerNumberSeriesStart', e.target.value ? parseInt(e.target.value) : null)}
                 className="mt-1"
               />
@@ -238,8 +239,9 @@ export default function GeneralSetting() {
               <Input
                 id="customerNumberSeriesEnd"
                 type="number"
-                min="1"
+                min="19999"
                 placeholder="e.g., 19999"
+                disabled
                 value={formData.customerNumberSeriesEnd || ''}
                 onChange={(e) => handleInputChange('customerNumberSeriesEnd', e.target.value ? parseInt(e.target.value) : null)}
                 className="mt-1"

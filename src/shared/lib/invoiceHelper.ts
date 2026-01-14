@@ -55,25 +55,6 @@ export function calculateInvoiceTotals(
   }
 }
 
-// export async function generateInvoiceNumber(tx?: Prisma.TransactionClient): Promise<string> {
-//   const year = new Date().getFullYear()
-//   const txClient = tx || prisma;
-
-//   const lastInvoice = await txClient.invoice.findFirst({
-//     where: { invoiceNumber: { startsWith: `INV-${year}` } },
-//     orderBy: { invoiceNumber: 'desc' }
-//   })
-
-//   let nextNumber = 1
-
-//   if (lastInvoice) {
-//     const parts = lastInvoice.invoiceNumber.split('-')
-//     nextNumber = parseInt(parts[2]) + 1
-//   }
-
-//   return `INV-${year}-${String(nextNumber).padStart(6, '0')}`
-// }
-
 export async function generateInvoiceNumber(
   businessId: string,
   tx?: Prisma.TransactionClient
@@ -221,8 +202,8 @@ export async function createCreditNote(params: {
 
   await prisma.$transaction(async (tx) => {
 
-  // Generate credit note number
-  const { year, sequence, creditNoteNumber } = await generateCreditNoteNumber(originalInvoice.businessId,tx);
+    // Generate credit note number
+    const { year, sequence, creditNoteNumber } = await generateCreditNoteNumber(originalInvoice.businessId, tx);
 
     // 1. Update original invoice status to CREDITED
     await tx.invoice.update({
@@ -233,7 +214,7 @@ export async function createCreditNote(params: {
       }
     });
 
-    const voucher = await generateVoucherNumber(businessId, VoucherType.CREDIT_NOTE,tx);
+    const voucher = await generateVoucherNumber(businessId, VoucherType.CREDIT_NOTE, tx);
 
     // 2. Create credit note (new invoice with negative amounts)
     creditNote = await tx.invoice.create({
@@ -312,7 +293,7 @@ export async function createCreditNote(params: {
  * Generate next credit note number
  * Format: CN-YYYY-NNNN (e.g., CN-2025-0001)
  */
-export async function generateCreditNoteNumber(businessId: string, tx?: Prisma.TransactionClient) {  
+export async function generateCreditNoteNumber(businessId: string, tx?: Prisma.TransactionClient) {
   const year = new Date().getFullYear();
   const txClient = tx || prisma;
 
@@ -379,6 +360,53 @@ export async function generateVoucherNumber(
   });
 
   return voucher;
+}
+
+export async function generateCustomerNumber(
+  businessId: string,
+  tx?: Prisma.TransactionClient
+) {
+  const year = new Date().getFullYear();
+  const txClient = tx || prisma;
+
+  await txClient.$executeRaw`
+    SELECT 1 FROM "Business"
+    WHERE id = ${businessId}
+    FOR UPDATE
+  `;
+  // Get invoice settings for the starting number
+  const settings = await txClient.invoiceGeneralSetting.findUnique({
+    where: { businessId }
+  });
+
+  const lastCustomer = await txClient.customer.findFirst({
+    where: { businessId, year },
+    orderBy: { sequence: 'desc' }
+  });
+
+  const firstCustomerNumber = settings?.customerNumberSeriesStart || 10000;
+  const nextSeq = lastCustomer ? lastCustomer.sequence + 1 : firstCustomerNumber;
+
+  if (nextSeq > (settings?.customerNumberSeriesEnd || 19999)) {
+    throw new Error('Customer number series exceeded the maximum limit for the year.');
+  }
+
+  return {
+    year,
+    sequence: nextSeq,
+    customerNumber: `${businessId}-${year}-${nextSeq}`
+  };
+}
+
+export function formatCustomerNumberForDisplay(number: string): string {
+  const parts = number.split('-');
+
+  if (parts.length >= 3) {
+    const sequence = parts[parts.length - 1];
+    return sequence;
+  }
+
+  return number;
 }
 
 // src/shared/lib/voucherHelper.ts
@@ -699,7 +727,7 @@ export async function generateLedgerReport(
 ) {
   // Define which accounts to include
   const whereClause: any = {};
- // Filter accounts: use provided numbers OR default to 1500-4000 range
+  // Filter accounts: use provided numbers OR default to 1500-4000 range
   if (accountNumbers && accountNumbers.length > 0) {
     whereClause.accountNumber = { in: accountNumbers };
   } else {
@@ -720,7 +748,7 @@ export async function generateLedgerReport(
   dayBeforeStart.setHours(23, 59, 59, 999);
 
   // ========== OPTIMIZATION START ==========
-  
+
   // Step 2: Get all account IDs
   const accountIds = accounts.map(a => a.id);
 
@@ -777,7 +805,7 @@ export async function generateLedgerReport(
   // BEFORE: You did await getAccountBalance() inside the loop - each one waited for the previous
   // AFTER: Promise.all() runs them all at the same time
   const openingBalances = await Promise.all(
-    accounts.map(account => 
+    accounts.map(account =>
       getAccountBalance(
         account.id,
         businessId,
@@ -790,12 +818,12 @@ export async function generateLedgerReport(
   // Step 5: Organize entries by account for quick lookup
   // This creates a Map where: key = accountId, value = array of entries for that account
   const entriesByAccount = new Map<string | null, typeof allEntries>();
-  
+
   allEntries.forEach(entry => {
     // Each entry appears in TWO accounts: debit and credit
     const debitId = entry.debitAccountId;
     const creditId = entry.creditAccountId;
-    
+
     // Initialize arrays if they don't exist
     if (!entriesByAccount.has(debitId)) {
       entriesByAccount.set(debitId, []);
@@ -803,7 +831,7 @@ export async function generateLedgerReport(
     if (!entriesByAccount.has(creditId)) {
       entriesByAccount.set(creditId, []);
     }
-    
+
     // Add this entry to both accounts
     entriesByAccount.get(debitId)!.push(entry);
     entriesByAccount.get(creditId)!.push(entry);
@@ -816,10 +844,10 @@ export async function generateLedgerReport(
   // Step 6: Process each account (YOUR ORIGINAL LOGIC - UNCHANGED!)
   for (let i = 0; i < accounts.length; i++) {
     const account = accounts[i];
-    
+
     // Get pre-calculated opening balance from Step 4
     const openingBalance = openingBalances[i];
-    
+
     // Get pre-fetched entries from Step 5 (instead of querying database)
     const entries = entriesByAccount.get(account.id) || [];
 
@@ -829,7 +857,7 @@ export async function generateLedgerReport(
     }
 
     // ========== YOUR ORIGINAL LOGIC BELOW - NO CHANGES ==========
-    
+
     // For calculating running balance, use PROPER ACCOUNTING
     const isNormalDebit = account.type === 'ASSET' || account.type === 'EXPENSE';
     let runningBalance = openingBalance;

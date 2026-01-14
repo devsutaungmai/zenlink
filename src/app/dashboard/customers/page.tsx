@@ -12,6 +12,7 @@ import {
 } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 import Swal from "sweetalert2"
+import { formatCustomerNumberForDisplay } from "@/shared/lib/invoiceHelper"
 
 interface Customer {
   id: string
@@ -239,7 +240,7 @@ export default function CustomersPage() {
                     <tr key={customer.id} className="hover:bg-blue-50/50 transition-colors duration-150">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#31BCFF]/10 text-[#31BCFF]">
-                          {customer.customerNumber}
+                          {formatCustomerNumberForDisplay(customer.customerNumber)}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">

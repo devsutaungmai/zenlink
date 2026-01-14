@@ -13,6 +13,7 @@ import { customerValidationSchema } from '@/components/invoice/validation'
 import z from 'zod'
 import { useCustomerSettings } from '@/shared/hooks/useCustomerSettings'
 import { CustomerFieldSettingsDialog } from '@/components/invoice/CustomerFieldSettingsDialog'
+import { formatCustomerNumberForDisplay } from '@/shared/lib/invoiceHelper'
 
 export default function EditCustomersPage({ params }: { params: Promise<{ id: string }> }) {
     const resolvedParams = use(params)
@@ -311,7 +312,7 @@ export default function EditCustomersPage({ params }: { params: Promise<{ id: st
                                 type="text"
                                 id="customerNumber"
                                 required
-                                value={formData.customerNumber}
+                                value={formatCustomerNumberForDisplay(formData.customerNumber)}
                                 onChange={(e) => {
                                     setFormData({ ...formData, customerNumber: e.target.value })
                                     debouncedValidation("customerNumber", e.target.value)

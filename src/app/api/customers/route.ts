@@ -62,11 +62,11 @@ export async function POST(request: NextRequest) {
     }
 
     const formData = await request.json()
-    const { customerName, customerNumber, customerPaymentTerm, customerContacts, ...restData } = formData
+    const { customerName, customerNumber,defaultCustomerNumber, customerPaymentTerm, customerContacts, ...restData } = formData
 
     console.log('Creating customer with data:', JSON.stringify(formData))
 
-    if (!customerName || !customerNumber) {
+    if (!customerName || !defaultCustomerNumber) {
       return NextResponse.json({ error: 'CustomerName and CustomerNumber are required' }, { status: 400 })
     }
     if (restData.discountPercentage === "" || restData.discountPercentage === null || restData.discountPercentage === undefined) {
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
         discountPercentage:
           !restData.discountPercentage ? 0 : Number(restData.discountPercentage),
         customerName,
-        customerNumber,
+        customerNumber: defaultCustomerNumber,
         businessId,
         invoicepaymentTermsId: paymentTermsId,
         ...(restData.departmentId && restData.departmentId !== "" ? { departmentId: restData.departmentId } : {departmentId: null}),

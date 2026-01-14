@@ -15,6 +15,10 @@ import { Button } from '@/components/ui/button'
 import Cog6ToothIcon from '@heroicons/react/24/solid/Cog6ToothIcon'
 import { useCustomerSettings } from '@/shared/hooks/useCustomerSettings'
 import { CustomerFieldSettingsDialog } from '@/components/invoice/CustomerFieldSettingsDialog'
+import { formatCustomerNumberForDisplay, generateCustomerNumber, getBusinessId } from '@/shared/lib/invoiceHelper'
+import { set } from 'date-fns'
+import { get } from 'http'
+import { del } from '@vercel/blob'
 
 export interface Department {
     id: string
@@ -52,7 +56,10 @@ export default function CreateCustomersPage() {
     // Update formData state
     const [formData, setFormData] = useState<{
         customerName: string
+        sequence: number
+        year: number
         customerNumber: string
+        defaultCustomerNumber?: string
         organizationNumber: string
         address: string
         postalCode: string
@@ -68,6 +75,8 @@ export default function CreateCustomersPage() {
         customerContacts?: CustomerContact[]
     }>({
         customerName: "",
+        sequence: 0,
+        year: new Date().getFullYear(),
         customerNumber: "",
         organizationNumber: "",
         address: "",
@@ -116,7 +125,29 @@ export default function CreateCustomersPage() {
 
     useEffect(() => {
         fetchDepartments();
+        getDefaultCustomerNumber();
     }, [])
+
+    const getDefaultCustomerNumber = async () => {
+        try {
+            const res = await fetch('/api/customers/next-number');
+            const data = await res.json();
+
+            const defaultNumber = formatCustomerNumberForDisplay(data.customerNumber);
+
+            setFormData(prev => ({
+                ...prev,
+                customerNumber: defaultNumber,
+                defaultCustomerNumber: data.customerNumber,
+                sequence: data.sequence,
+                year: data.year
+            }));
+        } catch (error) {
+            console.error('Error fetching customerDefaultNumber:', error)
+        }
+
+    };
+
     const fetchDepartments = async () => {
         try {
             const res = await fetch('/api/departments')
@@ -268,6 +299,8 @@ export default function CreateCustomersPage() {
                 }
                 setFormData({
                     customerName: data.customerName || '',
+                    sequence: data.sequence || 0,
+                    year: data.year || new Date().getFullYear(),
                     customerNumber: data.customerNumber || '',
                     organizationNumber: data.organizationNumber || '',
                     address: data.address || '',
@@ -374,7 +407,7 @@ export default function CreateCustomersPage() {
                                 type="text"
                                 id="customerNumber"
                                 required
-                                value={formData.customerNumber}
+                                value={formData.customerNumber ?? ''}
                                 onChange={(e) => {
                                     setFormData({ ...formData, customerNumber: e.target.value })
                                     debouncedValidation("customerNumber", e.target.value)
