@@ -16,12 +16,15 @@ interface PunchClockProfile {
   id: string
   name: string
   business: {
+    id: string
     name: string
     address: string
   }
-  department: {
+  departments?: {
+    id: string
     name: string
-  }
+  }[]
+  departmentIds?: string[]
 }
 
 export default function PunchClockPage() {
@@ -178,8 +181,13 @@ export default function PunchClockPage() {
             <div className="flex items-center gap-3">
               <UserIcon className="w-5 h-5 text-gray-400" />
               <div>
-                <div className="font-medium text-gray-900">{profile.department.name}</div>
-                <div className="text-gray-500">Department</div>
+                <div className="font-medium text-gray-900">
+                  {profile.departments && profile.departments.length > 0 
+                    ? profile.departments.map(d => d.name).join(', ')
+                    : 'No departments'
+                  }
+                </div>
+                <div className="text-gray-500">Department{profile.departments && profile.departments.length > 1 ? 's' : ''}</div>
               </div>
             </div>
           </div>

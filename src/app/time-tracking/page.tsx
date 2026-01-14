@@ -185,7 +185,21 @@ export default function TimeTrackingPage() {
         return
       }
 
-      const res = await fetch(`/api/time-tracking/employees?businessName=${encodeURIComponent(businessName)}`)
+      let url = `/api/time-tracking/employees?businessName=${encodeURIComponent(businessName)}`
+      
+      const storedProfile = localStorage.getItem('punchClockProfile')
+      if (storedProfile) {
+        try {
+          const profileData = JSON.parse(storedProfile)
+          if (profileData.departmentIds && profileData.departmentIds.length > 0) {
+            url += `&departmentIds=${encodeURIComponent(JSON.stringify(profileData.departmentIds))}`
+          }
+        } catch (e) {
+          console.error('Error parsing profile for department filter:', e)
+        }
+      }
+
+      const res = await fetch(url)
       if (res.ok) {
         const employeesData = await res.json()
         setEmployees(employeesData)
@@ -215,7 +229,21 @@ export default function TimeTrackingPage() {
       endDate.setHours(23, 59, 59, 999)
       
       const todayDateString = startDate.toISOString().split('T')[0]
-      const res = await fetch(`/api/time-tracking/shifts?businessName=${encodeURIComponent(businessName)}&startDate=${todayDateString}&endDate=${endDate.toISOString().split('T')[0]}`)
+      let url = `/api/time-tracking/shifts?businessName=${encodeURIComponent(businessName)}&startDate=${todayDateString}&endDate=${endDate.toISOString().split('T')[0]}`
+      
+      const storedProfile = localStorage.getItem('punchClockProfile')
+      if (storedProfile) {
+        try {
+          const profileData = JSON.parse(storedProfile)
+          if (profileData.departmentIds && profileData.departmentIds.length > 0) {
+            url += `&departmentIds=${encodeURIComponent(JSON.stringify(profileData.departmentIds))}`
+          }
+        } catch (e) {
+          console.error('Error parsing profile for department filter:', e)
+        }
+      }
+
+      const res = await fetch(url)
       if (res.ok) {
         const shiftsData = await res.json()
         const todaysShifts = Array.isArray(shiftsData)

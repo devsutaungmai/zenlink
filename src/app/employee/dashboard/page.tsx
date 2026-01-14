@@ -300,52 +300,35 @@ function EmployeeDashboardContent() {
 
   const fetchEmployeeData = async () => {
     try {
-      let employeeData;
+      const url = employeeId 
+        ? `/api/employee/dashboard?employeeId=${employeeId}`
+        : '/api/employee/dashboard'
       
-      if (employeeId) {
-        // If coming from PIN login, fetch specific employee data
-        const res = await fetch(`/api/employees/${employeeId}`)
-        if (!res.ok) {
-          throw new Error('Failed to fetch employee data')
+      const res = await fetch(url)
+      
+      if (!res.ok) {
+        if (res.status === 401) {
+          router.push('/employee/login')
+          return
         }
-        employeeData = await res.json()
-        
-        // Set a temporary session for this employee (you might want to implement proper session management)
-        // For now, we'll just proceed with the employee data
+        throw new Error('Failed to fetch dashboard data')
+      }
+      
+      const data = await res.json()
+      
+      setEmployee(data.employee)
+      setActiveShift(data.activeShift)
+      setTodayShift(data.todayShift)
+      setUpcomingShifts(data.upcomingShifts || [])
+      setPendingExchanges(data.pendingExchanges || [])
+      setPendingRequestsCount(data.pendingRequestsCount || 0)
+      setCurrentAttendance(data.currentAttendance)
+      
+      if (data.activeShift?.breakStart && !data.activeShift?.breakEnd) {
+        setIsOnBreak(true)
       } else {
-        // Normal employee session flow
-        const res = await fetch('/api/employee/me')
-        if (!res.ok) {
-          if (res.status === 401) {
-            router.push('/employee/login')
-            return
-          }
-          throw new Error('Failed to fetch employee data')
-        }
-        employeeData = await res.json()
+        setIsOnBreak(false)
       }
-
-      setEmployee(employeeData)
-
-      const activeShiftRes = await fetch(`/api/shifts/active?employeeId=${employeeData.id}`)
-      if (activeShiftRes.ok) {
-        const activeShiftResponse = await activeShiftRes.json()
-        const activeShiftData = activeShiftResponse.activeShift
-        setActiveShift(activeShiftData)
-
-        if (activeShiftData && activeShiftData.breakStart && !activeShiftData.breakEnd) {
-          setIsOnBreak(true)
-        } else {
-          setIsOnBreak(false)
-        }
-      }
-
-      await fetchTodayShift(employeeData.id)
-      await fetchUpcomingShifts(employeeData.id)
-
-      await fetchPendingRequestsCount(employeeData.id)
-
-      await fetchCurrentAttendance(employeeData.id)
     } catch (error) {
       console.error('Error fetching employee data:', error)
       setError('Failed to load employee data')

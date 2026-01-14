@@ -19,7 +19,18 @@ export async function GET() {
       include: {
         department: {
           select: {
+            id: true,
             name: true
+          }
+        },
+        departments: {
+          include: {
+            department: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
           }
         }
       },
@@ -28,16 +39,22 @@ export async function GET() {
       }
     })
 
-    // Transform to include departmentName and activationCode
-    const transformedProfiles = profiles.map(profile => ({
-      id: profile.id,
-      name: profile.name,
-      departmentId: profile.departmentId,
-      departmentName: profile.department.name,
-      isActive: profile.isActive,
-      activationCode: profile.activationCode,
-      createdAt: profile.createdAt.toISOString()
-    }))
+    const transformedProfiles = profiles.map(profile => {
+      const departmentIds = profile.departments.map(d => d.departmentId)
+      const departmentNames = profile.departments.map(d => d.department.name)
+      
+      return {
+        id: profile.id,
+        name: profile.name,
+        departmentId: profile.departmentId,
+        departmentName: profile.department?.name || null,
+        departmentIds,
+        departmentNames,
+        isActive: profile.isActive,
+        activationCode: profile.activationCode,
+        createdAt: profile.createdAt.toISOString()
+      }
+    })
 
     return NextResponse.json(transformedProfiles)
   } catch (error) {
@@ -60,26 +77,25 @@ export async function POST(request: Request) {
     }
 
     const data = await request.json()
-    const { name, departmentId, isActive } = data
+    const { name, departmentIds, isActive } = data
 
-    if (!name || !departmentId) {
+    if (!name || !departmentIds || !Array.isArray(departmentIds) || departmentIds.length === 0) {
       return NextResponse.json(
-        { error: 'Name and department are required' },
+        { error: 'Name and at least one department are required' },
         { status: 400 }
       )
     }
 
-    // Check if department exists and belongs to user's business
-    const department = await prisma.department.findFirst({
+    const departments = await prisma.department.findMany({
       where: {
-        id: departmentId,
+        id: { in: departmentIds },
         businessId: currentUser.businessId
       }
     })
 
-    if (!department) {
+    if (departments.length !== departmentIds.length) {
       return NextResponse.json(
-        { error: 'Department not found' },
+        { error: 'One or more departments not found' },
         { status: 404 }
       )
     }
@@ -87,14 +103,23 @@ export async function POST(request: Request) {
     const profile = await prisma.punchClockProfile.create({
       data: {
         name,
-        departmentId,
         isActive: isActive ?? true,
-        businessId: currentUser.businessId
+        businessId: currentUser.businessId,
+        departments: {
+          create: departmentIds.map((deptId: string) => ({
+            departmentId: deptId
+          }))
+        }
       },
       include: {
-        department: {
-          select: {
-            name: true
+        departments: {
+          include: {
+            department: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
           }
         }
       }
@@ -103,8 +128,8 @@ export async function POST(request: Request) {
     const transformedProfile = {
       id: profile.id,
       name: profile.name,
-      departmentId: profile.departmentId,
-      departmentName: profile.department.name,
+      departmentIds: profile.departments.map(d => d.departmentId),
+      departmentNames: profile.departments.map(d => d.department.name),
       isActive: profile.isActive,
       createdAt: profile.createdAt.toISOString()
     }

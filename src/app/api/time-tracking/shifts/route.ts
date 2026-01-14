@@ -8,6 +8,7 @@ export async function GET(request: Request) {
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
     const employeeId = searchParams.get('employeeId')
+    const departmentIds = searchParams.get('departmentIds')
 
     if (!businessName) {
       return NextResponse.json(
@@ -48,12 +49,21 @@ export async function GET(request: Request) {
       )
     }
 
+    const parsedDepartmentIds = departmentIds ? JSON.parse(departmentIds) : null
+
     const whereClause: any = {
       employee: {
         user: {
           businessId: business.id
         }
       }
+    }
+
+    if (parsedDepartmentIds && Array.isArray(parsedDepartmentIds) && parsedDepartmentIds.length > 0) {
+      whereClause.employee.OR = [
+        { departmentId: { in: parsedDepartmentIds } },
+        { departments: { some: { departmentId: { in: parsedDepartmentIds } } } }
+      ]
     }
 
     if (startDate || endDate) {

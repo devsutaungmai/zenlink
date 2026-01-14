@@ -283,30 +283,31 @@ model Contract {
 }
 
 model Department {
-  id                 String               @id @default(cuid())
-  name               String
-  address            String
-  createdAt          DateTime             @default(now())
-  updatedAt          DateTime             @default(now())
-  address2           String?
-  city               String
-  country            String
-  number             String?
-  phone              String
-  postCode           String?
-  businessId         String
-  business           Business             @relation(fields: [businessId], references: [id])
-  employees          Employee[]
-  projects           Project[]
-  punchClockProfiles PunchClockProfile[]
-  categories         DepartmentCategory[] // Old relation - kept for backward compatibility
-  categoriesManyMany CategoryDepartment[] // New many-to-many relation
-  shifts             Shift[]
-  customers          Customer[]
-  invoices           Invoice[]
-  ledgerEntries      LedgerEntry[]
-  employeesMulti     EmployeeDepartment[] // Many-to-many relation
-  roles              RoleDepartment[] // Many-to-many relation with roles
+  id                          String                        @id @default(cuid())
+  name                        String
+  address                     String
+  createdAt                   DateTime                      @default(now())
+  updatedAt                   DateTime                      @default(now())
+  address2                    String?
+  city                        String
+  country                     String
+  number                      String?
+  phone                       String
+  postCode                    String?
+  businessId                  String
+  business                    Business                      @relation(fields: [businessId], references: [id])
+  employees                   Employee[]
+  projects                    Project[]
+  punchClockProfiles          PunchClockProfile[]
+  punchClockProfilesMulti     PunchClockProfileDepartment[]
+  categories                  DepartmentCategory[]
+  categoriesManyMany          CategoryDepartment[]
+  shifts                      Shift[]
+  customers                   Customer[]
+  invoices                    Invoice[]
+  ledgerEntries               LedgerEntry[]
+  employeesMulti              EmployeeDepartment[]
+  roles                       RoleDepartment[]
 }
 
 model DepartmentCategory {
@@ -372,18 +373,33 @@ model EmployeeFunction {
 }
 
 model PunchClockProfile {
-  id             String     @id @default(cuid())
+  id             String                        @id @default(cuid())
   name           String
-  departmentId   String
-  isActive       Boolean    @default(true)
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @default(now())
+  departmentId   String?
+  isActive       Boolean                       @default(true)
+  createdAt      DateTime                      @default(now())
+  updatedAt      DateTime                      @default(now())
   businessId     String
   activationCode String?
-  business       Business   @relation(fields: [businessId], references: [id])
-  department     Department @relation(fields: [departmentId], references: [id])
+  business       Business                      @relation(fields: [businessId], references: [id])
+  department     Department?                   @relation(fields: [departmentId], references: [id])
+  departments    PunchClockProfileDepartment[]
+  attendances    Attendance[]
 
   @@unique([name, businessId])
+}
+
+model PunchClockProfileDepartment {
+  id                  String            @id @default(cuid())
+  punchClockProfileId String
+  departmentId        String
+  createdAt           DateTime          @default(now())
+  punchClockProfile   PunchClockProfile @relation(fields: [punchClockProfileId], references: [id], onDelete: Cascade)
+  department          Department        @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  @@unique([punchClockProfileId, departmentId])
+  @@index([punchClockProfileId])
+  @@index([departmentId])
 }
 
 model ProjectCategory {
@@ -609,20 +625,24 @@ model PayrollEntry {
 }
 
 model Attendance {
-  id           String    @id @default(cuid())
-  employeeId   String
-  businessId   String
-  shiftId      String?
-  punchInTime  DateTime
-  punchOutTime DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @default(now())
-  approved     Boolean   @default(true)
-  approvedAt   DateTime?
-  approvedBy   String?
-  business     Business  @relation(fields: [businessId], references: [id])
-  employee     Employee  @relation(fields: [employeeId], references: [id])
-  shift        Shift?    @relation(fields: [shiftId], references: [id])
+  id                  String             @id @default(cuid())
+  employeeId          String
+  businessId          String
+  shiftId             String?
+  punchClockProfileId String?
+  punchInTime         DateTime
+  punchOutTime        DateTime?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @default(now())
+  approved            Boolean            @default(true)
+  approvedAt          DateTime?
+  approvedBy          String?
+  business            Business           @relation(fields: [businessId], references: [id])
+  employee            Employee           @relation(fields: [employeeId], references: [id])
+  shift               Shift?             @relation(fields: [shiftId], references: [id])
+  punchClockProfile   PunchClockProfile? @relation(fields: [punchClockProfileId], references: [id])
+
+  @@index([punchClockProfileId])
 }
 
 model Notification {
