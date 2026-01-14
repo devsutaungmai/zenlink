@@ -1,7 +1,7 @@
 import { getCurrentUserOrEmployee } from '@/shared/lib/auth'
 import Swal from 'sweetalert2'
 import { prisma } from './prisma'
-import { InvoiceStatus, LedgerEntryType, Prisma, VoucherType } from '@prisma/client'
+import { AccountType, InvoiceStatus, LedgerEntryType, Prisma, VoucherType } from '@prisma/client'
 import { isValid } from 'date-fns'
 
 export interface InvoiceCalculation {
@@ -1048,3 +1048,38 @@ export async function generateLedgerReport(
   };
 }
 
+
+export function getAccountType(accountNumber: number): AccountType {
+  // Check specific ranges first (order matters!)
+  
+  // 2000-2080 -> EQUITY (overrides general 2xxx LIABILITY rule)
+  if (accountNumber >= 2000 && accountNumber <= 2080) {
+    return AccountType.EQUITY;
+  }
+  
+  // 8100-8170 -> EXPENSE (overrides general 8xxx INCOME rule)
+  if (accountNumber >= 8100 && accountNumber <= 8170) {
+    return AccountType.EXPENSE;
+  }
+  
+  // 8300-8990 -> APPROPRIATIONS (overrides general 8xxx INCOME rule)
+  if (accountNumber >= 8300 && accountNumber <= 8990) {
+    return AccountType.APPROPRIATIONS;
+  }
+  
+  // General rules based on first digit
+  const firstDigit = Math.floor(accountNumber / 1000);
+  
+  switch (firstDigit) {
+    case 1: return AccountType.ASSET;
+    case 2: return AccountType.LIABILITY;  // 2081-2999
+    case 3: return AccountType.EQUITY;
+    case 4:
+    case 5:
+    case 6:
+    case 7: return AccountType.EXPENSE;
+    case 8: return AccountType.INCOME;     // 8000-8099, 8171-8299
+    case 9: return AccountType.INCOME;
+    default: return AccountType.ASSET;
+  }
+}

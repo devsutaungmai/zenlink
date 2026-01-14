@@ -7,6 +7,7 @@ import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
 import { AccountType } from '@prisma/client'
 import { set } from 'date-fns'
+import { getAccountType } from '@/shared/lib/invoiceHelper'
 
 
 interface AccountLedgerForm {
@@ -166,7 +167,11 @@ export default function CreateLedgerAccountPage() {
                                 id="accountNumber"
                                 required
                                 value={formData.accountNumber || ''}
-                                onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value ? parseInt(e.target.value, 10) : 0 })}
+                                onChange={(e) => {
+                                    setFormData({ ...formData, accountNumber: e.target.value ? parseInt(e.target.value, 10) : 0 })
+                                    const accountType = getAccountType(parseInt(e.target.value, 10));
+                                    setFormData(prev => ({ ...prev, type: accountType }));
+                                }}
                                 className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
                                 placeholder="Enter account number"
                             />
@@ -200,11 +205,13 @@ export default function CreateLedgerAccountPage() {
                                 onChange={(e) => setFormData({ ...formData, type: e.target.value as AccountType })}
                                 className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
                             >
-                                <option value="ASSET">Asset</option>
-                                <option value="LIABILITY">Liability</option>
-                                <option value="EQUITY">Equity</option>
-                                <option value="REVENUE">Revenue</option>
-                                <option value="EXPENSE">Expense</option>
+                                <option value="EXPENSE">EXPENSE</option>
+                                <option value="APPROPRIATIONS">APPROPRIATIONS</option>
+                                <option value="ASSET">ASSET</option>
+                                <option value="LIABILITY">LIABILITY</option>
+                                <option value="EQUITY">EQUITY</option>
+                                <option value="INCOME">INCOME</option>
+
                             </select>
                         </div>
 
