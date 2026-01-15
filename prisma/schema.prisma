@@ -144,6 +144,7 @@ model Business {
   invoiceGeneralSetting   InvoiceGeneralSetting?   @relation("InvoiceGeneralSetting")
   laborLawProfiles         LaborLawProfile[]
   contractTypes            ContractType[]
+  businessLedgerVatCodes   BusinessLedgerAccountVatCode[]
 }
 
 model Employee {
@@ -1010,7 +1011,7 @@ model LedgerAccount {
 
   // New fields from Excel
   vatCodeId             String?     @map("vat_code_id")              // Mva-kode
-  vatCode               VatCode?    @relation(fields: [vatCodeId], references: [id], onDelete: SetNull)
+  vatCode               VatCode?    @relation("DefaultVatCode",fields: [vatCodeId], references: [id], onDelete: SetNull)
   vatSpecification      String?     @map("vat_specification")      // Mva-spesifikasjon
   reportGroup           String?     @map("report_group")           // Rapportgruppe
   saftStandardAccount   String?     @map("saft_standard_account")  // SAF-T standardkonto
@@ -1026,6 +1027,8 @@ model LedgerAccount {
   businessId String?   @map("business_id")
   business   Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
+  businessVatCodes BusinessLedgerAccountVatCode[]
+
   // Relations
   debitEntries          LedgerEntry[] @relation("DebitAccount")
   creditEntries         LedgerEntry[] @relation("CreditAccount")
@@ -1037,6 +1040,25 @@ model LedgerAccount {
   @@unique([accountNumber, businessId]) // Unique per business, or global if businessId is null
   @@map("ledger_accounts")
 }
+
+model BusinessLedgerAccountVatCode {
+  id              String        @id @default(cuid())
+  businessId      String        @map("business_id")
+  ledgerAccountId String        @map("ledger_account_id")
+  vatCodeId       String        @map("vat_code_id")
+  
+  business       Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  ledgerAccount  LedgerAccount @relation(fields: [ledgerAccountId], references: [id], onDelete: Cascade)
+  vatCode        VatCode       @relation("CustomVatCode", fields: [vatCodeId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  // A business can only have one custom VAT code per ledger account
+  @@unique([businessId, ledgerAccountId])
+  @@map("business_ledger_account_vat_codes")
+}
+
 
 model VatCode {
   id                      String    @id @default(cuid())
@@ -1058,7 +1080,10 @@ model VatCode {
   businessId              String?   @map("business_id")
   business                Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
-  ledgerAccounts         LedgerAccount[] // Accounts using this VAT code
+  defaultForAccounts      LedgerAccount[] @relation("DefaultVatCode")
+
+  // Custom VAT codes assigned by businesses
+  businessLedgerAccounts  BusinessLedgerAccountVatCode[] @relation("CustomVatCode")
   
   createdAt               DateTime  @default(now()) @map("created_at")
   updatedAt               DateTime  @updatedAt @map("updated_at")

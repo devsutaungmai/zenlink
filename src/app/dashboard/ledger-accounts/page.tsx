@@ -253,7 +253,7 @@ export default function LedgerAccountsPage() {
                                             {account.businessId !== null ? (
                                                 <div className="flex items-center justify-end gap-2">
                                                     <Link
-                                                        href={`/dashboard/ledger-accounts/${account.id}/edit`}
+                                                        href={`/dashboard/ledger-accounts/${account.id}/edit?default=false`}
                                                         className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
                                                         title="Edit Account"
                                                     >
@@ -267,7 +267,17 @@ export default function LedgerAccountsPage() {
                                                         <TrashIcon className="h-4 w-4" />
                                                     </button>
                                                 </div>
-                                            ) : null
+                                            ) : (
+                                                <div className="flex items-center justify-end gap-2">
+                                                    <Link
+                                                        href={`/dashboard/ledger-accounts/${account.id}/edit?default=true`}
+                                                        className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
+                                                        title="Edit Account"
+                                                    >
+                                                        <PencilIcon className="h-4 w-4" />
+                                                    </Link>
+                                                </div>
+                                            )
                                             }
                                         </td>
                                     </tr>

@@ -14,6 +14,8 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
+import { ColumnVisibilityToggle } from "@/components/invoice/column-visibility-toggle"
+import { useColumnVisibility } from "@/hooks/use-column-visibility"
 
 interface Unit {
   id: string
@@ -71,6 +73,31 @@ export default function ProductsPage() {
 
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage] = useState(10)
+
+  // Define columns configuration
+  const COLUMNS = [
+    { key: "productNumber", label: "Product Number" },
+    { key: "productName", label: "Product Name" },
+    { key: "salesPrice", label: "Sales Price" },
+    { key: "costPrice", label: "Cost Price" },
+    { key: "vatRate", label: "VAT %" },
+    { key: "discount", label: "Discount %" },
+    { key: "status", label: "Status" },
+  ]
+
+  const { columns, toggleColumn, resetColumns, isColumnVisible } = useColumnVisibility({
+    storageKey: "products-columns",
+    initialColumns: COLUMNS,
+    defaultVisibility: {
+      productNumber: true,
+      productName: true,
+      salesPrice: true,
+      costPrice: true,
+      vatRate: true,
+      discount: true,
+      status: true,
+    },
+  })
 
   useEffect(() => {
     fetchProducts()
@@ -251,65 +278,106 @@ export default function ProductsPage() {
         <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg overflow-hidden">
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50/80">
+            <thead className="bg-muted/50">
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Product Number
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Product Name
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Sales Price
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Cost Price
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Vat Percentage
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Discount %
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("actions")}
+                  {isColumnVisible("productNumber") && (
+                    <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Product Number
+                    </th>
+                  )}
+                  {isColumnVisible("productName") && (
+                    <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Product Name
+                    </th>
+                  )}
+                  {isColumnVisible("salesPrice") && (
+                    <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Sales Price
+                    </th>
+                  )}
+                  {isColumnVisible("costPrice") && (
+                    <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Cost Price
+                    </th>
+                  )}
+                  {isColumnVisible("vatRate") && (
+                    <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      VAT %
+                    </th>
+                  )}
+                  {isColumnVisible("discount") && (
+                    <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Discount %
+                    </th>
+                  )}
+                  {isColumnVisible("status") && (
+                    <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Status
+                    </th>
+                  )}
+                  <th className="px-6 py-4 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    <div className="flex items-center justify-end gap-2">
+                      <span>Actions</span>
+                      <ColumnVisibilityToggle
+                        columns={columns}
+                        onColumnToggle={toggleColumn}
+                        onResetColumns={resetColumns}
+                      />
+                    </div>
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200/50">
                 {paginatedProducts.map((product) => (
                   <tr key={product.id} className="hover:bg-blue-50/30 transition-colors duration-200">
-                    <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-gray-900">{product.productNumber}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">{product.productName}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">{Number(product.salesPrice).toFixed(2)}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">{Number(product.costPrice).toFixed(2)}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">{(product.ledgerAccount?.vatCode?.rate ?? 0)}%</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">
-                        {product.discountPercentage ? `${product.discountPercentage}%` : "-"}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${product.active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+                    {isColumnVisible("productNumber") && (
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-medium text-gray-900">{product.productNumber}</div>
+                      </td>
+                    )}
+
+                    {isColumnVisible("productName") && (
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-900">{product.productName}</div>
+                      </td>
+                    )}
+
+                    {isColumnVisible("salesPrice") && (
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-900">{Number(product.salesPrice).toFixed(2)}</div>
+                      </td>
+                    )}
+
+                    {isColumnVisible("costPrice") && (
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-900">{Number(product.costPrice).toFixed(2)}</div>
+                      </td>
+                    )}
+
+                    {isColumnVisible("vatRate") && (
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-900">{(product.ledgerAccount?.vatCode?.rate ?? 0)}%</div>
+                      </td>
+                    )}
+
+                    {isColumnVisible("discount") && (
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-900">{product.discountPercentage ? `${product.discountPercentage}%` : "-"}</div>
+                      </td>
+                    )}
+
+                    {isColumnVisible("status") && (
+                      <td className="px-6 py-4">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            product.active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
                           }`}
-                      >
-                        {product.active ? "Active" : "Inactive"}
-                      </span>
-                    </td>
+                        >
+                          {product.active ? "Active" : "Inactive"}
+                        </span>
+                      </td>
+                    )}
+
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2">
                         <Link
@@ -327,6 +395,7 @@ export default function ProductsPage() {
                           <TrashIcon className="h-4 w-4" />
                         </button>
                       </div>
+                      <ColumnVisibilityToggle columns={columns} onColumnToggle={toggleColumn} onResetColumns={resetColumns} />
                     </td>
                   </tr>
                 ))}
@@ -390,13 +459,13 @@ export default function ProductsPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="text-lg font-semibold text-gray-900 group-hover:text-[#31BCFF] transition-colors duration-200">
-                        {product.productName}
+                        {isColumnVisible("productName") && product.productName}
                       </h3>
                       <span
                         className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${product.active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
                           }`}
                       >
-                        {product.active ? "Active" : "Inactive"}
+                        {isColumnVisible("status") && (product.active ? "Active" : "Inactive")}
                       </span>
                     </div>
                   </div>
@@ -441,21 +510,21 @@ export default function ProductsPage() {
 
                 {/* Price Information */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-gray-50 rounded-lg p-3">
+                 {isColumnVisible("salesPrice") && <div className="bg-gray-50 rounded-lg p-3">
                     <div className="text-xs text-gray-500 mb-1">Sales Price</div>
                     <div className="text-sm font-medium text-gray-900">{Number(product.salesPrice).toFixed(2)}</div>
-                  </div>
-                  <div className="bg-gray-50 rounded-lg p-3">
+                  </div>}
+                 {isColumnVisible("costPrice") && <div className="bg-gray-50 rounded-lg p-3">
                     <div className="text-xs text-gray-500 mb-1">Cost Price</div>
                     <div className="text-sm font-medium text-gray-900">{Number(product.costPrice).toFixed(2)}</div>
-                  </div>
-                  <div className="bg-gray-50 rounded-lg p-3">
+                  </div>}
+                  {isColumnVisible("vatRate") && <div className="bg-gray-50 rounded-lg p-3">
                     <div className="text-xs text-gray-500 mb-1">Vat Percentage</div>
                     <div className="text-sm font-medium text-gray-900">{(product.ledgerAccount?.vatCode?.rate ?? 0)}%</div>
-                  </div>
+                  </div>}
                 </div>
 
-                {product.discountPercentage && (
+                {isColumnVisible("discount") && product.discountPercentage && (
                   <div className="mt-3 bg-orange-50 rounded-lg p-3">
                     <div className="text-xs text-gray-500 mb-1">Discount</div>
                     <div className="text-sm font-medium text-orange-700">{product.discountPercentage}%</div>

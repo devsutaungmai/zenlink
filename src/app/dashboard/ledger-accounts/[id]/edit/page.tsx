@@ -7,6 +7,7 @@ import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
 import { AccountType } from '@prisma/client'
 import { getAccountType } from '@/shared/lib/invoiceHelper'
+import { fa } from 'zod/v4/locales'
 
 
 interface AccountLedgerForm {
@@ -18,6 +19,9 @@ interface AccountLedgerForm {
     reportGroup: string
     saftStandardAccount: string
     vatCodeId: string
+    businessVatCodes?: {
+        vatCodeId: string
+    }
 }
 
 interface VatCode {
@@ -27,8 +31,10 @@ interface VatCode {
     rate: number
 }
 
-export default function EditLedgerAccountPage({ params }: { params: Promise<{ id: string }> }) {
+export default function EditLedgerAccountPage({ params,searchParams }: { params: Promise<{ id: string }>, searchParams: Promise<{ default?: string }> }) {
     const resolvedParams = use(params)
+    const resolvedSearchParams = use(searchParams)
+    const defaultLedgerAccount = resolvedSearchParams?.default === 'true';
     const router = useRouter()
     const [loading, setLoading] = useState(false)
     const [isAccountInUse, setIsAccountInUse] = useState(false)
@@ -53,7 +59,7 @@ export default function EditLedgerAccountPage({ params }: { params: Promise<{ id
     const fetchLedgerAccount = async () => {
         setLoading(true);
         try {
-            const res = await fetch(`/api/ledger/accounts/${resolvedParams.id}`)
+            const res = await fetch(`/api/ledger/accounts/${resolvedParams.id}?default=${defaultLedgerAccount}`)
             if (res.ok) {
                 const data = await res.json()
                 console.log("LedgerAccount", JSON.stringify(data));
@@ -65,7 +71,7 @@ export default function EditLedgerAccountPage({ params }: { params: Promise<{ id
                     industrySpecification: data.industrySpecification || '',
                     reportGroup: data.reportGroup || '',
                     saftStandardAccount: data.saftStandardAccount || '',
-                    vatCodeId: data.vatCodeId || ''
+                    vatCodeId: data.vatCodeId || data.businessVatCodes[0].vatCodeId || ''
                 })
             }
         } catch (error) {
