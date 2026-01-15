@@ -109,19 +109,31 @@ export default function DashboardNavbar() {
   ]
 
   const filteredNavigation = useMemo(() => {
-    if (isAdmin) return adminNavigation
-    
+    if (isAdmin) {
+      return adminNavigation
+        .map(item => {
+          if (item.children) {
+            const filteredChildren = item.children.filter(child => child.permissionKey !== 'yourHours')
+            if (filteredChildren.length === 0) return null
+            return { ...item, children: filteredChildren }
+          }
+
+          if (item.permissionKey === 'yourHours') return null
+
+          return item
+        })
+        .filter((item): item is NavigationItem => item !== null)
+    }
+
     return adminNavigation
       .map(item => {
-        // If item has children, filter them based on permissions
         if (item.children) {
           const filteredChildren = item.children.filter(child => {
             if (!child.permissionKey) return true
             const requiredPermissions = NAV_PERMISSIONS[child.permissionKey]
             return hasAnyPermission(requiredPermissions)
           })
-          
-          // Only include parent if it has visible children
+
           if (filteredChildren.length === 0) return null
           
           return { ...item, children: filteredChildren }

@@ -10,8 +10,8 @@ import { useTranslation } from 'react-i18next'
 interface PunchClockProfile {
   id: string
   name: string
-  departmentId: string
-  departmentName: string
+  departmentIds: string[]
+  departmentNames: string[]
   isActive: boolean
   activationCode?: string
   createdAt: string
@@ -77,11 +77,10 @@ export default function PunchClockProfiles() {
     setShowCreateModal(true)
   }
 
-  const handleSaveProfile = async (profileData: { name: string; departmentId: string; isActive: boolean }) => {
+  const handleSaveProfile = async (profileData: { name: string; departmentIds: string[]; isActive: boolean }) => {
     setSubmitting(true)
     try {
       if (editingProfile) {
-        // Update existing profile
         const response = await fetch(`/api/punch-clock-profiles/${editingProfile.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -97,7 +96,6 @@ export default function PunchClockProfiles() {
           throw new Error('Failed to update profile')
         }
       } else {
-        // Create new profile
         const response = await fetch('/api/punch-clock-profiles', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -106,11 +104,6 @@ export default function PunchClockProfiles() {
 
         if (response.ok) {
           const newProfile = await response.json()
-          // Add department name from departments list
-          const department = departments.find(d => d.id === profileData.departmentId)
-          if (department) {
-            newProfile.departmentName = department.name
-          }
           setProfiles([newProfile, ...profiles])
         } else {
           throw new Error('Failed to create profile')
@@ -118,7 +111,7 @@ export default function PunchClockProfiles() {
       }
     } catch (error) {
       console.error('Error saving profile:', error)
-      throw error // Re-throw so the modal can handle it
+      throw error
     } finally {
       setSubmitting(false)
     }
@@ -158,7 +151,7 @@ export default function PunchClockProfiles() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: profile.name,
-          departmentId: profile.departmentId,
+          departmentIds: profile.departmentIds,
           isActive: !profile.isActive
         })
       })
@@ -284,7 +277,12 @@ export default function PunchClockProfiles() {
                       <div className="text-sm font-medium text-gray-900">{profile.name}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{profile.departmentName}</div>
+                      <div className="text-sm text-gray-900">
+                        {profile.departmentNames?.length > 0 
+                          ? profile.departmentNames.join(', ')
+                          : 'No departments'
+                        }
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <Badge

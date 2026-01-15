@@ -5,6 +5,7 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const businessName = searchParams.get('businessName')
+    const departmentIds = searchParams.get('departmentIds')
 
     if (!businessName) {
       return NextResponse.json(
@@ -45,12 +46,23 @@ export async function GET(request: Request) {
       )
     }
 
+    const parsedDepartmentIds = departmentIds ? JSON.parse(departmentIds) : null
+
+    const employeeWhere: any = {
+      user: {
+        businessId: business.id
+      }
+    }
+
+    if (parsedDepartmentIds && Array.isArray(parsedDepartmentIds) && parsedDepartmentIds.length > 0) {
+      employeeWhere.OR = [
+        { departmentId: { in: parsedDepartmentIds } },
+        { departments: { some: { departmentId: { in: parsedDepartmentIds } } } }
+      ]
+    }
+
     const employees = await prisma.employee.findMany({
-      where: {
-        user: {
-          businessId: business.id
-        }
-      },
+      where: employeeWhere,
       select: {
         id: true,
         firstName: true,

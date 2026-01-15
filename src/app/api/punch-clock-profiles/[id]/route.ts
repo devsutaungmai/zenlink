@@ -17,17 +17,16 @@ export async function PUT(
     }
 
     const data = await request.json()
-    const { name, departmentId, isActive } = data
+    const { name, departmentIds, isActive } = data
     const profileId = id
 
-    if (!name || !departmentId) {
+    if (!name || !departmentIds || !Array.isArray(departmentIds) || departmentIds.length === 0) {
       return NextResponse.json(
-        { error: 'Name and department are required' },
+        { error: 'Name and at least one department are required' },
         { status: 400 }
       )
     }
 
-    // Check if profile exists and belongs to user's business
     const existingProfile = await prisma.punchClockProfile.findFirst({
       where: {
         id: profileId,
@@ -42,17 +41,16 @@ export async function PUT(
       )
     }
 
-    // Check if department exists and belongs to user's business
-    const department = await prisma.department.findFirst({
+    const departments = await prisma.department.findMany({
       where: {
-        id: departmentId,
+        id: { in: departmentIds },
         businessId: currentUser.businessId
       }
     })
 
-    if (!department) {
+    if (departments.length !== departmentIds.length) {
       return NextResponse.json(
-        { error: 'Department not found' },
+        { error: 'One or more departments not found' },
         { status: 404 }
       )
     }
@@ -63,13 +61,23 @@ export async function PUT(
       },
       data: {
         name,
-        departmentId,
-        isActive: isActive ?? true
+        isActive: isActive ?? true,
+        departments: {
+          deleteMany: {},
+          create: departmentIds.map((deptId: string) => ({
+            departmentId: deptId
+          }))
+        }
       },
       include: {
-        department: {
-          select: {
-            name: true
+        departments: {
+          include: {
+            department: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
           }
         }
       }
@@ -78,14 +86,14 @@ export async function PUT(
     const transformedProfile = {
       id: updatedProfile.id,
       name: updatedProfile.name,
-      departmentId: updatedProfile.departmentId,
-      departmentName: updatedProfile.department.name,
+      departmentIds: updatedProfile.departments.map(d => d.departmentId),
+      departmentNames: updatedProfile.departments.map(d => d.department.name),
       isActive: updatedProfile.isActive,
       createdAt: updatedProfile.createdAt.toISOString()
     }
 
     return NextResponse.json(transformedProfile)
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to update punch clock profile:', error)
     
     if (error.code === 'P2002') {

@@ -12,12 +12,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Find a profile with the matching activation code
     const profile = await prisma.punchClockProfile.findFirst({
       where: {
         activationCode: activationCode.toUpperCase(),
         businessId,
-        isActive: true, // Only active profiles can be activated
+        isActive: true,
       },
       include: {
         business: {
@@ -27,11 +26,15 @@ export async function POST(request: NextRequest) {
             address: true,
           }
         },
-        department: {
-          select: {
-            id: true,
-            name: true,
-            address: true,
+        departments: {
+          include: {
+            department: {
+              select: {
+                id: true,
+                name: true,
+                address: true,
+              }
+            }
           }
         }
       }
@@ -44,7 +47,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Return the profile information (without sensitive data)
+    const profileDepartments = profile.departments.map(d => ({
+      id: d.department.id,
+      name: d.department.name,
+      address: d.department.address,
+    }))
+
     return NextResponse.json({
       success: true,
       profile: {
@@ -52,7 +60,8 @@ export async function POST(request: NextRequest) {
         name: profile.name,
         isActive: profile.isActive,
         business: profile.business,
-        department: profile.department,
+        departments: profileDepartments,
+        departmentIds: profile.departments.map(d => d.departmentId),
         createdAt: profile.createdAt,
       },
       message: `Successfully connected to ${profile.name} profile`,

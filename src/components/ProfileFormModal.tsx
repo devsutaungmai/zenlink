@@ -7,17 +7,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { useTranslation } from 'react-i18next'
+import { XMarkIcon } from '@heroicons/react/24/outline'
 
 interface Department {
   id: string
@@ -27,8 +21,8 @@ interface Department {
 interface PunchClockProfile {
   id: string
   name: string
-  departmentId: string
-  departmentName: string
+  departmentIds: string[]
+  departmentNames: string[]
   isActive: boolean
   createdAt: string
 }
@@ -36,7 +30,7 @@ interface PunchClockProfile {
 interface ProfileFormModalProps {
   isOpen: boolean
   onClose: () => void
-  onSave: (data: { name: string; departmentId: string; isActive: boolean }) => Promise<void>
+  onSave: (data: { name: string; departmentIds: string[]; isActive: boolean }) => Promise<void>
   profile?: PunchClockProfile | null
   departments: Department[]
   loading?: boolean
@@ -52,25 +46,24 @@ export default function ProfileFormModal({
 }: ProfileFormModalProps) {
   const [formData, setFormData] = useState({
     name: '',
-    departmentId: '',
+    departmentIds: [] as string[],
     isActive: true
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { t } = useTranslation('settings')
 
-  // Update form data when profile changes
   useEffect(() => {
     if (profile) {
       setFormData({
         name: profile.name,
-        departmentId: profile.departmentId,
+        departmentIds: profile.departmentIds || [],
         isActive: profile.isActive
       })
     } else {
       setFormData({
         name: '',
-        departmentId: '',
+        departmentIds: [],
         isActive: true
       })
     }
@@ -88,8 +81,8 @@ export default function ProfileFormModal({
       newErrors.name = 'Profile name must be less than 50 characters'
     }
 
-    if (!formData.departmentId) {
-      newErrors.departmentId = 'Department is required'
+    if (formData.departmentIds.length === 0) {
+      newErrors.departmentIds = 'At least one department is required'
     }
 
     setErrors(newErrors)
@@ -109,7 +102,6 @@ export default function ProfileFormModal({
       handleClose()
     } catch (error) {
       console.error('Error saving profile:', error)
-      // You might want to show a toast notification here
     } finally {
       setIsSubmitting(false)
     }
@@ -118,7 +110,7 @@ export default function ProfileFormModal({
   const handleClose = () => {
     setFormData({
       name: '',
-      departmentId: '',
+      departmentIds: [],
       isActive: true
     })
     setErrors({})
@@ -127,10 +119,29 @@ export default function ProfileFormModal({
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }))
-    // Clear error for this field when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }))
     }
+  }
+
+  const handleDepartmentToggle = (departmentId: string) => {
+    setFormData(prev => {
+      const isSelected = prev.departmentIds.includes(departmentId)
+      const newDepartmentIds = isSelected
+        ? prev.departmentIds.filter(id => id !== departmentId)
+        : [...prev.departmentIds, departmentId]
+      return { ...prev, departmentIds: newDepartmentIds }
+    })
+    if (errors.departmentIds) {
+      setErrors(prev => ({ ...prev, departmentIds: '' }))
+    }
+  }
+
+  const handleRemoveDepartment = (departmentId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      departmentIds: prev.departmentIds.filter(id => id !== departmentId)
+    }))
   }
 
   return (
@@ -162,27 +173,53 @@ export default function ProfileFormModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="department">
+            <Label>
               {t('punch_clock.profile_setting.modal.department_label')}  <span className="text-red-500">*</span>
             </Label>
-            <Select
-              value={formData.departmentId}
-              onValueChange={(value) => handleInputChange('departmentId', value)}
-              disabled={isSubmitting}
-            >
-              <SelectTrigger className={errors.departmentId ? 'border-red-500 focus:border-red-500' : ''}>
-                <SelectValue placeholder={t('punch_clock.profile_setting.modal.department_placeholder')} />
-              </SelectTrigger>
-              <SelectContent>
-                {departments.map((department) => (
-                  <SelectItem key={department.id} value={department.id}>
-                    {department.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.departmentId && (
-              <p className="text-sm text-red-500">{errors.departmentId}</p>
+            
+            {formData.departmentIds.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-2">
+                {formData.departmentIds.map(deptId => {
+                  const dept = departments.find(d => d.id === deptId)
+                  return dept ? (
+                    <span
+                      key={deptId}
+                      className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-sm"
+                    >
+                      {dept.name}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveDepartment(deptId)}
+                        className="hover:text-blue-600"
+                        disabled={isSubmitting}
+                      >
+                        <XMarkIcon className="h-4 w-4" />
+                      </button>
+                    </span>
+                  ) : null
+                })}
+              </div>
+            )}
+            
+            <div className={`border rounded-md p-2 max-h-40 overflow-y-auto ${errors.departmentIds ? 'border-red-500' : 'border-gray-300'}`}>
+              {departments.map((department) => (
+                <label
+                  key={department.id}
+                  className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={formData.departmentIds.includes(department.id)}
+                    onChange={() => handleDepartmentToggle(department.id)}
+                    disabled={isSubmitting}
+                    className="h-4 w-4 text-[#31BCFF] focus:ring-[#31BCFF] border-gray-300 rounded"
+                  />
+                  <span className="text-sm">{department.name}</span>
+                </label>
+              ))}
+            </div>
+            {errors.departmentIds && (
+              <p className="text-sm text-red-500">{errors.departmentIds}</p>
             )}
           </div>
 

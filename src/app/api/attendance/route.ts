@@ -65,7 +65,7 @@ async function getAccessibleDepartmentIds(auth: any): Promise<string[] | null> {
 
 export async function POST(request: NextRequest) {
   try {
-    const { employeeId, businessId, shiftId, punchInTime } = await request.json()
+    const { employeeId, businessId, shiftId, punchInTime, punchClockProfileId } = await request.json()
 
     const auth = await getCurrentUserOrEmployee()
     const isAdmin = auth?.type === 'user' && (auth.data as any)?.role === 'ADMIN'
@@ -74,16 +74,52 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Employee ID and Business ID are required' }, { status: 400 })
     }
 
-    // Check if employee exists
     const employee = await prisma.employee.findUnique({
-      where: { id: employeeId }
+      where: { id: employeeId },
+      include: {
+        departments: {
+          select: { departmentId: true }
+        }
+      }
     })
 
     if (!employee) {
       return NextResponse.json({ error: 'Employee not found' }, { status: 404 })
     }
 
-    // Check if there's already an active attendance record (punched in but not out)
+    if (punchClockProfileId) {
+      const profile = await prisma.punchClockProfile.findFirst({
+        where: {
+          id: punchClockProfileId,
+          businessId,
+          isActive: true
+        },
+        include: {
+          departments: {
+            select: { departmentId: true }
+          }
+        }
+      })
+
+      if (!profile) {
+        return NextResponse.json({ 
+          error: 'Invalid punch clock profile' 
+        }, { status: 400 })
+      }
+
+      const profileDepartmentIds = profile.departments.map(d => d.departmentId)
+      const employeeDepartmentIds = employee.departments.map(d => d.departmentId)
+      const hasMatchingDepartment = employeeDepartmentIds.some(deptId => 
+        profileDepartmentIds.includes(deptId)
+      )
+
+      if (profileDepartmentIds.length > 0 && !hasMatchingDepartment) {
+        return NextResponse.json({ 
+          error: 'Employee is not assigned to any department linked to this punch clock profile' 
+        }, { status: 403 })
+      }
+    }
+
     const existingAttendance = await prisma.attendance.findFirst({
       where: {
         employeeId,
@@ -97,12 +133,12 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Create attendance record
     const attendance = await prisma.attendance.create({
       data: {
         employeeId,
         businessId,
         shiftId: shiftId || null,
+        punchClockProfileId: punchClockProfileId || null,
         punchInTime: punchInTime ? new Date(punchInTime) : new Date(),
         approved: shiftId ? true : (isAdmin ? true : false),
         approvedAt: (shiftId || isAdmin) ? new Date() : null,
