@@ -13,6 +13,8 @@ import {
 import { useTranslation } from "react-i18next"
 import Swal from "sweetalert2"
 import { formatCustomerNumberForDisplay } from "@/shared/lib/invoiceHelper"
+import { useColumnVisibility } from "@/hooks/use-column-visibility"
+import { ColumnVisibilityToggle } from "@/components/invoice/column-visibility-toggle"
 
 interface Customer {
   id: string
@@ -38,6 +40,29 @@ export default function CustomersPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
+
+  // Customer columns + usage
+  const COLUMNS = [
+    { key: "customerNumber", label: "Customer Number" },
+    { key: "customerName", label: "Customer Name" },
+    { key: "email", label: "Email" },
+    { key: "phoneNumber", label: "Phone" },
+    { key: "address", label: "Address" },
+    { key: "active", label: "Status" },
+  ]
+
+  const { columns, toggleColumn, resetColumns, isColumnVisible } = useColumnVisibility({
+    storageKey: "customers-columns",
+    initialColumns: COLUMNS,
+    defaultVisibility: {
+      customerNumber: true,
+      customerName: true,
+      email: true,
+      phoneNumber: true,
+      address: true,
+      active: true,
+    },
+  })
 
   useEffect(() => {
     fetchCustomers()
@@ -212,60 +237,95 @@ export default function CustomersPage() {
               <table className="w-full">
                 <thead>
                   <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Customer No.
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Customer Name
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Email
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Phone
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Address
-                    </th>
-                    <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Actions
+                    {isColumnVisible("customerNumber") && (
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">
+                        Customer No.
+                      </th>
+                    )}
+
+                    {isColumnVisible("customerName") && (
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">
+                        Customer Name
+                      </th>
+                    )}
+
+                    {isColumnVisible("email") && (
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">
+                        Email
+                      </th>
+                    )}
+
+                    {isColumnVisible("phoneNumber") && (
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">
+                        Phone
+                      </th>
+                    )}
+
+                    {isColumnVisible("address") && (
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">
+                        Address
+                      </th>
+                    )}
+
+                    {isColumnVisible("active") && (
+                      <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase">
+                        Status
+                      </th>
+                    )}
+
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase">
+                      <div className="flex items-center justify-end gap-2">
+                        <span>Actions</span>
+                        <ColumnVisibilityToggle
+                          columns={columns}
+                          onColumnToggle={toggleColumn}
+                          onResetColumns={resetColumns}
+                        />
+                      </div>
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {paginatedCustomers.map((customer) => (
                     <tr key={customer.id} className="hover:bg-blue-50/50 transition-colors duration-150">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#31BCFF]/10 text-[#31BCFF]">
-                          {formatCustomerNumberForDisplay(customer.customerNumber)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm font-medium text-gray-900">{customer.customerName}</span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm text-gray-600">{customer.email || "-"}</span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm text-gray-600">{customer.phoneNumber || "-"}</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-sm text-gray-600 truncate max-w-[200px] block">
-                          {customer.address || "-"}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                      {isColumnVisible("customerNumber") && (
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#31BCFF]/10 text-[#31BCFF]">
+                            {formatCustomerNumberForDisplay(customer.customerNumber)}
+                          </span>
+                        </td>
+                      )}
+                      {isColumnVisible("customerName") && (
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="text-sm font-medium text-gray-900">{customer.customerName}</span>
+                        </td>
+                      )}
+
+                      {isColumnVisible("email") && (
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="text-sm text-gray-600">{customer.email || "-"}</span>
+                        </td>
+                      )}
+                      {isColumnVisible("phoneNumber") && (
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="text-sm text-gray-600">{customer.phoneNumber || "-"}</span>
+                        </td>
+                      )}
+                      {isColumnVisible("address") && (
+                        <td className="px-6 py-4">
+                          <span className="text-sm text-gray-600 truncate max-w-[200px] block">
+                            {customer.address || "-"}
+                          </span>
+                        </td>
+                      )}
+                      {isColumnVisible("active") && <td className="px-6 py-4 whitespace-nowrap text-center">
                         <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            customer.active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
-                          }`}
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${customer.active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+                            }`}
                         >
                           {customer.active ? "Active" : "Inactive"}
                         </span>
-                      </td>
+                      </td>}
                       <td className="px-6 py-4 whitespace-nowrap text-right">
                         <div className="flex items-center justify-end gap-2">
                           <Link
@@ -310,9 +370,8 @@ export default function CustomersPage() {
                       <button
                         key={page}
                         onClick={() => handlePageChange(page)}
-                        className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors duration-200 ${
-                          currentPage === page ? "bg-[#31BCFF] text-white" : "text-gray-600 hover:bg-gray-100"
-                        }`}
+                        className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors duration-200 ${currentPage === page ? "bg-[#31BCFF] text-white" : "text-gray-600 hover:bg-gray-100"
+                          }`}
                       >
                         {page}
                       </button>
@@ -341,17 +400,16 @@ export default function CustomersPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#31BCFF]/10 text-[#31BCFF]">
-                        {customer.customerNumber}
+                        {isColumnVisible("customerNumber") && customer.customerNumber}
                       </span>
                       <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          customer.active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
-                        }`}
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${customer.active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+                          }`}
                       >
-                        {customer.active ? "Active" : "Inactive"}
+                        {isColumnVisible("active") && customer.active ? "Active" : "Inactive"}
                       </span>
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-900 mt-2">{customer.customerName}</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 mt-2">{isColumnVisible("customerName") && customer.customerName}</h3>
                   </div>
                   <div className="flex items-center gap-2">
                     <Link
@@ -382,7 +440,7 @@ export default function CustomersPage() {
                           d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M21 8v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8"
                         />
                       </svg>
-                      <span className="truncate">{customer.email}</span>
+                      <span className="truncate">{isColumnVisible("email") && customer.email}</span>
                     </div>
                   )}
                   {customer.phoneNumber && (
@@ -395,7 +453,7 @@ export default function CustomersPage() {
                           d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
                         />
                       </svg>
-                      <span className="truncate">{customer.phoneNumber}</span>
+                      <span className="truncate">{isColumnVisible("phoneNumber") && customer.phoneNumber}</span>
                     </div>
                   )}
                   {customer.address && (
@@ -414,7 +472,7 @@ export default function CustomersPage() {
                           d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
                         />
                       </svg>
-                      <span className="truncate">{customer.address}</span>
+                      <span className="truncate">{isColumnVisible("address") && customer.address}</span>
                     </div>
                   )}
                 </div>
