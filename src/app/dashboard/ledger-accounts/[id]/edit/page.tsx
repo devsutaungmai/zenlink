@@ -71,7 +71,7 @@ export default function EditLedgerAccountPage({ params,searchParams }: { params:
                     industrySpecification: data.industrySpecification || '',
                     reportGroup: data.reportGroup || '',
                     saftStandardAccount: data.saftStandardAccount || '',
-                    vatCodeId: data.vatCodeId || data.businessVatCodes[0].vatCodeId || ''
+                    vatCodeId: data.vatCodeId || data.businessVatCodes[0]?.vatCodeId || ''
                 })
             }
         } catch (error) {
@@ -225,7 +225,7 @@ export default function EditLedgerAccountPage({ params,searchParams }: { params:
                                 id="accountNumber"
                                 required
                                 value={formData.accountNumber || ''}
-                                disabled={isAccountInUse}
+                                disabled={isAccountInUse || defaultLedgerAccount}
                                 onChange={(e) => {
                                     setFormData({ ...formData, accountNumber: e.target.value ? parseInt(e.target.value, 10) : 0 })
                                     const accountType = getAccountType(parseInt(e.target.value, 10));

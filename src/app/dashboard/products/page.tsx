@@ -395,7 +395,6 @@ export default function ProductsPage() {
                           <TrashIcon className="h-4 w-4" />
                         </button>
                       </div>
-                      <ColumnVisibilityToggle columns={columns} onColumnToggle={toggleColumn} onResetColumns={resetColumns} />
                     </td>
                   </tr>
                 ))}
