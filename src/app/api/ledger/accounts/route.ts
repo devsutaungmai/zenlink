@@ -62,15 +62,32 @@ export async function POST(request: NextRequest) {
 
     console.log('Creating ledgerAccount with data:', JSON.stringify(formData))
 
-    if (!accountNumber || !name || !type ) {
+    if (!accountNumber || !name || !type) {
       return NextResponse.json({ error: 'AccountNumber and Name and Type are required' }, { status: 400 })
     }
 
-    const product = await prisma.ledgerAccount.create({
+    const alreadyExitLA = await prisma.ledgerAccount.findFirst({
+      where: {
+        accountNumber,
+        OR: [
+          { businessId },          // same business
+          { businessId: null },    // global/shared account
+        ],
+      },
+    })
+    if (alreadyExitLA) {
+      return NextResponse.json(
+        { error: 'AccountNumber already exists for this business or globally' },
+        { status: 400 }
+      )
+    }
+
+
+    const ledgerAccount = await prisma.ledgerAccount.create({
       data: { ...formData, businessId }
     })
 
-    return NextResponse.json(product, { status: 201 })
+    return NextResponse.json(ledgerAccount, { status: 201 })
   } catch (error: any) {
     console.error('Error creating ledgerAccount:', error)
 

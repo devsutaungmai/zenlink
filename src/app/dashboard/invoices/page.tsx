@@ -20,6 +20,8 @@ import { EmailService } from '@/shared/lib/notifications'
 import { Mail, MailIcon } from 'lucide-react'
 import { exportToPDF, formatInvoiceNumberForDisplay, sendEmail } from '@/shared/lib/invoiceHelper'
 import { useRouter } from 'next/navigation'
+import { useColumnVisibility } from '@/hooks/use-column-visibility'
+import { ColumnVisibilityToggle } from '@/components/invoice/column-visibility-toggle'
 
 
 export enum InvoiceStatus {
@@ -80,9 +82,33 @@ export default function InvoicesPage() {
     const [loadingEmail, setLoadingEmail] = useState<Record<string, boolean>>({});
     const handleSendEmail = async (invoiceId: string) => {
         setLoadingEmail(prev => ({ ...prev, [invoiceId]: true }));
-        await sendEmail(invoiceId,"invoiced");
+        await sendEmail(invoiceId, "invoiced");
         setLoadingEmail(prev => ({ ...prev, [invoiceId]: false }));
     }
+
+    const COLUMNS = [
+        { key: "invoiceNumber", label: "Invoice Number" },
+        { key: "customer", label: "Customer" },
+        { key: "sentAt", label: "Invoice Date" },
+        { key: "status", label: "Status" },
+        { key: "totalExclVAT", label: "Total (excl. VAT)" },
+        { key: "vatAmount", label: "VAT" },
+        { key: "totalInclVAT", label: "Total (incl. VAT)" },
+    ];
+
+    const { columns, toggleColumn, resetColumns, isColumnVisible } = useColumnVisibility({
+        storageKey: "invoices-columns",
+        initialColumns: COLUMNS,
+        defaultVisibility: {
+            invoiceNumber: true,
+            customer: true,
+            sentAt: true,
+            status: true,
+            totalExclVAT: true,
+            vatAmount: true,
+            totalInclVAT: true,
+        },
+    });
 
     useEffect(() => {
         fetchInvoices()
@@ -328,24 +354,16 @@ export default function InvoicesPage() {
     }
 
     const handlePDf = async (invoiceId: string) => {
-            try {
-                const pdfSuccess = await exportToPDF(invoiceId)
-                if (pdfSuccess) {
-                    await Swal.fire({
-                        title: "Success!",
-                        text: "PDF downloaded",
-                        icon: "success",
-                        confirmButtonColor: "#31BCFF",
-                    })
-                } else {
-                    await Swal.fire({
-                        title: "Partial Success",
-                        text: "PDF download failed",
-                        icon: "warning",
-                        confirmButtonColor: "#31BCFF",
-                    })
-                }
-            } catch (error) {
+        try {
+            const pdfSuccess = await exportToPDF(invoiceId)
+            if (pdfSuccess) {
+                await Swal.fire({
+                    title: "Success!",
+                    text: "PDF downloaded",
+                    icon: "success",
+                    confirmButtonColor: "#31BCFF",
+                })
+            } else {
                 await Swal.fire({
                     title: "Partial Success",
                     text: "PDF download failed",
@@ -353,7 +371,15 @@ export default function InvoicesPage() {
                     confirmButtonColor: "#31BCFF",
                 })
             }
+        } catch (error) {
+            await Swal.fire({
+                title: "Partial Success",
+                text: "PDF download failed",
+                icon: "warning",
+                confirmButtonColor: "#31BCFF",
+            })
         }
+    }
 
     const handleDeleteInvoices = async () => {
         // Validate that selected invoices are all in DRAFT status
@@ -424,6 +450,7 @@ export default function InvoicesPage() {
             setLoading(false)
         }
     }
+
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
@@ -447,6 +474,8 @@ export default function InvoicesPage() {
             </div>
         )
     }
+
+
 
     return (
         <div className="space-y-6">
@@ -567,56 +596,65 @@ export default function InvoicesPage() {
                                             className="w-4 h-4 text-[#31BCFF] border-gray-300 rounded focus:ring-[#31BCFF] cursor-pointer"
                                         />
                                     </th>
-                                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                   {isColumnVisible('invoiceNumber')&&<th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Invoice Number
-                                    </th>
-                                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    </th>}
+                                    {isColumnVisible('customer')&&<th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Customer
-                                    </th>
-                                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    </th>}
+                                   {isColumnVisible('sentAt')&&<th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Invoice Date
-                                    </th>
-                                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    </th>}
+                                    {isColumnVisible('status')&&<th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Status
-                                    </th>
-                                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    </th>}
+                                    {isColumnVisible('totalExclVAT')&&<th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Total Excl VAT
-                                    </th>
-                                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    </th>}
+                                    {isColumnVisible('vatAmount')&&<th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         VAT Amount
-                                    </th>
-                                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    </th>}
+                                    {isColumnVisible('totalInclVAT')&&<th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Total Incl VAT
-                                    </th>
+                                    </th>}
                                     <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        {hasSelectedInvoices ? (
-                                            <div className="flex items-center justify-end gap-2">
-                                                <span className="text-[#31BCFF] mr-2">{selectedInvoices.length} selected</span>
-                                                <button
-                                                    onClick={() => handleSendInvoices("send")}
-                                                    className="p-2 text-green-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200"
-                                                    title="Send Selected Invoices"
-                                                >
-                                                    <PaperAirplaneIcon className="h-4 w-4" />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleSendInvoices("send_with_email")}
-                                                    className="p-2 text-green-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200"
-                                                    title="Send Selected Invoices with Email"
-                                                >
-                                                    <MailIcon className="h-4 w-4" />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDeleteInvoices()}
-                                                    className="p-2 text-green-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200"
-                                                    title="Send Selected Invoices"
-                                                >
-                                                    <TrashIcon className="h-4 w-4" />
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            t("actions")
-                                        )}
+                                        <div className="flex items-center justify-end gap-2">
+
+                                            {hasSelectedInvoices ? (
+                                                <>
+                                                    <span className="text-[#31BCFF] mr-2">{selectedInvoices.length} selected</span>
+                                                    <button
+                                                        onClick={() => handleSendInvoices("send")}
+                                                        className="p-2 text-green-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200"
+                                                        title="Send Selected Invoices"
+                                                    >
+                                                        <PaperAirplaneIcon className="h-4 w-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleSendInvoices("send_with_email")}
+                                                        className="p-2 text-green-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200"
+                                                        title="Send Selected Invoices with Email"
+                                                    >
+                                                        <MailIcon className="h-4 w-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteInvoices()}
+                                                        className="p-2 text-green-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200"
+                                                        title="Send Selected Invoices"
+                                                    >
+                                                        <TrashIcon className="h-4 w-4" />
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                t("actions")
+                                            )}
+                                            <ColumnVisibilityToggle
+                                                columns={columns}
+                                                onColumnToggle={toggleColumn}
+                                                onResetColumns={resetColumns}
+                                            />
+                                        </div>
+
                                     </th>
                                 </tr>
                             </thead>
@@ -631,45 +669,45 @@ export default function InvoicesPage() {
                                                 className="w-4 h-4 text-[#31BCFF] border-gray-300 rounded focus:ring-[#31BCFF] cursor-pointer"
                                             />)}
                                         </td>
-                                        <td className="px-6 py-4">
+                                       {isColumnVisible('invoiceNumber')&&<td className="px-6 py-4">
                                             <div className="text-sm font-medium text-gray-900">
                                                 {invoice.status !== InvoiceStatus.DRAFT ? formatInvoiceNumberForDisplay(invoice.invoiceNumber) : "-"}
                                             </div>
-                                        </td>
-                                        <td className="px-6 py-4">
+                                        </td>}
+                                        {isColumnVisible('customer')&&<td className="px-6 py-4">
                                             <div className="text-sm text-gray-900">
                                                 {invoice.customer?.customerName}
                                             </div>
-                                        </td>
-                                        <td className="px-6 py-4">
+                                        </td>}
+                                       {isColumnVisible('sentAt')&& <td className="px-6 py-4">
                                             <div className="text-sm text-gray-900">
                                                 {/* {new Date(invoice.invoiceDate).toLocaleDateString()}
                                                  */}
                                                 {invoice.sentAt ? new Date(invoice.sentAt).toLocaleDateString() : '-'}
                                             </div>
-                                        </td>
-                                        <td className="px-6 py-4">
+                                        </td>}
+                                       {isColumnVisible('status')&&<td className="px-6 py-4">
                                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                                 {invoice.status}
                                             </span>
-                                        </td>
-                                        <td className="px-6 py-4">
+                                        </td>}
+                                       {isColumnVisible('totalExclVAT')&&<td className="px-6 py-4">
                                             <div className="text-sm text-gray-900">
                                                 {Number(invoice?.totalExclVAT ?? 0).toFixed(2)}
                                             </div>
-                                        </td>
-                                        <td className="px-6 py-4">
+                                        </td>}
+                                        {isColumnVisible('vatAmount')&&<td className="px-6 py-4">
                                             <div className="text-sm text-gray-900">
                                                 {Number(invoice?.vatAmount ?? 0).toFixed(2)}
 
                                             </div>
-                                        </td>
-                                        <td className="px-6 py-4">
+                                        </td>}
+                                       {isColumnVisible('totalInclVAT')&&<td className="px-6 py-4">
                                             <div className="text-sm font-medium text-gray-900">
                                                 {Number(invoice?.totalInclVAT ?? 0).toFixed(2)}
 
                                             </div>
-                                        </td>
+                                        </td>}
                                         <td className="px-6 py-4">
                                             {(!hasSelectedInvoices && invoice.status === InvoiceStatus.DRAFT) ? (
                                                 <div className="flex items-center justify-end gap-2">
@@ -814,6 +852,13 @@ export default function InvoicesPage() {
                                         </button>
                                     </div>
                                 )}
+                                <div className="flex item-center gap-2">
+                                     <ColumnVisibilityToggle
+                                                columns={columns}
+                                                onColumnToggle={toggleColumn}
+                                                onResetColumns={resetColumns}
+                                            />
+                                </div>
                             </div>
                         )}
                         {paginatedInvoices.map((invoice) => (
@@ -833,22 +878,17 @@ export default function InvoicesPage() {
                                             />)}
                                             <div className="flex-1">
                                                 <div className="flex items-center gap-2 flex-wrap mb-2">
-                                                    <span className="text-base font-bold text-gray-900">
+                                                {isColumnVisible('invoiceNumber')&&<span className="text-base font-bold text-gray-900">
                                                         {invoice.status !== InvoiceStatus.DRAFT ? formatInvoiceNumberForDisplay(invoice.invoiceNumber) : "-"}
 
-                                                    </span>
-                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                    </span>}
+                                                   {isColumnVisible('status')&&<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                                         {invoice.status}
-                                                    </span>
+                                                    </span>}
                                                 </div>
-                                                <p className="text-sm text-gray-600">
+                                                {isColumnVisible('customer')&&<p className="text-sm text-gray-600">
                                                     {invoice.customer?.customerName}
-                                                </p>
-                                                {invoice.product && (
-                                                    <p className="text-xs text-blue-600 mt-1">
-                                                        📦 {invoice.product.productName}
-                                                    </p>
-                                                )}
+                                                </p>}
                                             </div>
                                         </div>
                                     </div>
@@ -862,37 +902,37 @@ export default function InvoicesPage() {
                                         <div className="bg-gray-50 rounded-lg p-3">
                                             <div className="text-xs text-gray-500 mb-1">Invoice Date</div>
                                             <div className="text-sm font-medium text-gray-900">
-                                                {new Date(invoice.invoiceDate).toLocaleDateString()}
+                                                {invoice.sentAt ? new Date(invoice.sentAt).toLocaleDateString() : '-'}
                                             </div>
                                         </div>
-                                        <div className="bg-gray-50 rounded-lg p-3">
+                                        {/* <div className="bg-gray-50 rounded-lg p-3">
                                             <div className="text-xs text-gray-500 mb-1">Due Date</div>
                                             <div className="text-sm font-medium text-gray-900">
                                                 {invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : '-'}
                                             </div>
-                                        </div>
+                                        </div> */}
                                     </div>
 
                                     {/* Financial Breakdown */}
                                     <div className="bg-blue-50/50 rounded-lg p-3 space-y-2">
-                                        <div className="flex items-center justify-between text-sm">
+                                       {isColumnVisible('totalExclVAT')&&<div className="flex items-center justify-between text-sm">
                                             <span className="text-gray-600">Total Excl VAT</span>
                                             <span className="font-medium text-gray-900">
                                                 {Number(invoice.totalExclVAT).toFixed(2)}
                                             </span>
-                                        </div>
-                                        <div className="flex items-center justify-between text-sm">
+                                        </div>}
+                                       {isColumnVisible('vatAmount')&&<div className="flex items-center justify-between text-sm">
                                             <span className="text-gray-600">VAT Amount</span>
                                             <span className="font-medium text-gray-900">
                                                 {Number(invoice.vatAmount).toFixed(2)}
                                             </span>
-                                        </div>
-                                        <div className="flex items-center justify-between text-sm pt-2 border-t border-blue-200">
+                                        </div>}
+                                       {isColumnVisible('totalInclVAT')&&<div className="flex items-center justify-between text-sm pt-2 border-t border-blue-200">
                                             <span className="font-semibold text-gray-900">Total Incl VAT</span>
                                             <span className="font-bold text-gray-900">
                                                 {Number(invoice.totalInclVAT).toFixed(2)}
                                             </span>
-                                        </div>
+                                        </div>}
                                     </div>
 
                                     {/* Notes */}

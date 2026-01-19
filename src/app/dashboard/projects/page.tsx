@@ -12,6 +12,8 @@ import {
 } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 import Swal from "sweetalert2"
+import { useColumnVisibility } from "@/hooks/use-column-visibility"
+import { ColumnVisibilityToggle } from "@/components/invoice/column-visibility-toggle"
 
 interface Customer {
   id: string
@@ -50,6 +52,26 @@ export default function ProjectPage() {
   useEffect(() => {
     setCurrentPage(1)
   }, [searchTerm])
+
+  const COLUMNS = [
+    { key: "projectNumber", label: "Project Number" },
+    { key: "name", label: "Project Name" },
+    { key: "customer", label: "Customer" },
+    { key: "category", label: "Category" },
+    { key: "active", label: "Status" },
+  ]
+
+  const { columns, toggleColumn, resetColumns, isColumnVisible } = useColumnVisibility({
+    storageKey: "projects-columns",
+    initialColumns: COLUMNS,
+    defaultVisibility: {
+      projectNumber: true,
+      name: true,
+      customer: true,
+      category: true,
+      active: true,
+    },
+  })
 
   const fetchProjects = async () => {
     try {
@@ -216,52 +238,78 @@ export default function ProjectPage() {
               <table className="w-full">
                 <thead>
                   <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+                   {isColumnVisible("projectNumber") && (
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                       Project No.
                     </th>
+                   )}
+                   {isColumnVisible("name") && (
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                       Project Name
                     </th>
+                   )}
+                   {isColumnVisible("customer") && (
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                       Customer
                     </th>
+                   )}
+                   {isColumnVisible("category") && (
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                       Category
                     </th>
+                   )}
+                   {isColumnVisible("active") && (
                     <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
                       Status
                     </th>
+                   )}
                     <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Actions
+                      <div className="flex items-center justify-end gap-2">
+                        <span>Actions</span>
+                        <ColumnVisibilityToggle
+                          columns={columns}
+                          onColumnToggle={toggleColumn}
+                          onResetColumns={resetColumns}
+                        />
+                      </div>
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {paginatedProjects.map((project) => (
                     <tr key={project.id} className="hover:bg-blue-50/50 transition-colors duration-150">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#31BCFF]/10 text-[#31BCFF]">
-                          {project.projectNumber || "-"}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm font-medium text-gray-900">{project.name}</span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm text-gray-600">{project.customer?.customerName || "-"}</span>
-                      </td>
+                      {isColumnVisible("projectNumber") && (
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#31BCFF]/10 text-[#31BCFF]">
+                            {project.projectNumber || "-"}
+                          </span>
+                        </td>
+                      )}
+                      {isColumnVisible("name") && (
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="text-sm font-medium text-gray-900">{project.name}</span>
+                        </td>
+                      )}
+                      {isColumnVisible("customer") && (
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="text-sm text-gray-600">{project.customer?.customerName || "-"}</span>
+                        </td>
+                      )}
+                     {isColumnVisible("category") && (
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="text-sm text-gray-600">{project.category?.name || "-"}</span>
                       </td>
+                     )}
+                     {isColumnVisible("active") && (
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            project.active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
-                          }`}
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${project.active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+                            }`}
                         >
                           {project.active ? "Active" : "Inactive"}
                         </span>
                       </td>
+                    )}
                       <td className="px-6 py-4 whitespace-nowrap text-right">
                         <div className="flex items-center justify-end gap-2">
                           <Link
@@ -306,9 +354,8 @@ export default function ProjectPage() {
                       <button
                         key={page}
                         onClick={() => handlePageChange(page)}
-                        className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors duration-200 ${
-                          currentPage === page ? "bg-[#31BCFF] text-white" : "text-gray-600 hover:bg-gray-100"
-                        }`}
+                        className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors duration-200 ${currentPage === page ? "bg-[#31BCFF] text-white" : "text-gray-600 hover:bg-gray-100"
+                          }`}
                       >
                         {page}
                       </button>
@@ -336,18 +383,21 @@ export default function ProjectPage() {
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
+                     {isColumnVisible("projectNumber") && (
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#31BCFF]/10 text-[#31BCFF]">
-                        {project.projectNumber || "-"}
+                        {project.projectNumber}
                       </span>
+                     )}
+                     {isColumnVisible("active") && project.active !== null && (
                       <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          project.active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
-                        }`}
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${project.active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+                          }`}
                       >
                         {project.active ? "Active" : "Inactive"}
                       </span>
+                     )}
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-900 mt-2">{project.name}</h3>
+                    {isColumnVisible("name") && <h3 className="text-lg font-semibold text-gray-900 mt-2">{project.name}</h3>}
                   </div>
                   <div className="flex items-center gap-2">
                     <Link
@@ -364,11 +414,16 @@ export default function ProjectPage() {
                     >
                       <TrashIcon className="h-4 w-4" />
                     </button>
+                     <ColumnVisibilityToggle
+                          columns={columns}
+                          onColumnToggle={toggleColumn}
+                          onResetColumns={resetColumns}
+                        />
                   </div>
                 </div>
 
                 <div className="space-y-2 text-sm">
-                  {project.customer?.customerName && (
+                  {isColumnVisible("customer") && project.customer?.customerName && (
                     <div className="flex items-center text-gray-600">
                       <svg className="w-4 h-4 mr-2 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path
@@ -381,7 +436,7 @@ export default function ProjectPage() {
                       <span className="truncate">{project.customer.customerName}</span>
                     </div>
                   )}
-                  {project.category?.name && (
+                  {isColumnVisible("category") && project.category?.name && (
                     <div className="flex items-center text-gray-600">
                       <svg className="w-4 h-4 mr-2 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path

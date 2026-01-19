@@ -34,7 +34,9 @@ export async function GET(request: NextRequest) {
             quantity: true,
             pricePerUnit: true,
             discountPercentage: true,
-            product: true
+            product: true,
+            vatPercentage: true,
+            vatAmount: true
           }
         },
         business: true
@@ -51,7 +53,7 @@ export async function GET(request: NextRequest) {
     const invoiceLinesData: any = []
 
     for (const line of invoice.invoiceLines) {
-      const { productId, quantity, pricePerUnit, discountPercentage } = line
+      const { productId, quantity, pricePerUnit, discountPercentage,vatPercentage } = line
 
       if (!productId || !quantity || !pricePerUnit) {
         return NextResponse.json(
@@ -74,7 +76,8 @@ export async function GET(request: NextRequest) {
       const calculations = calculateInvoiceTotals(
         quantity,
         Number(pricePerUnit),
-        Number(discountPercentage)
+        Number(discountPercentage),
+        Number(vatPercentage)
       )
 
       totalExclVAT += calculations.totalExclVAT
@@ -88,7 +91,8 @@ export async function GET(request: NextRequest) {
         discountPercentage,
         netAmount: calculations.totalExclVAT,
         totalAmount: calculations.totalInclVAT,
-        vatPercentage: invoice.vatPercentage,
+        vatPercentage: Number(vatPercentage),
+        totalVatAmount,
         productName: product.productName,
         productNumber: product.productNumber || ''
       })
@@ -245,7 +249,7 @@ export async function GET(request: NextRequest) {
     doc.text('SUM', summaryX, finalY)
     doc.text(`kr ${formatCurrency(totalAmountAfterDiscount)}`, 196, finalY, { align: 'right' })
 
-    doc.text(`MVA (${invoice.vatPercentage}%)`, summaryX, finalY + 5)
+    doc.text(`TOTAL MVA%)`, summaryX, finalY + 5)
     doc.text(`kr ${formatCurrency(TotalVatAmount)}`, 196, finalY + 5, { align: 'right' })
 
     doc.line(summaryX, finalY + 8, 196, finalY + 8)

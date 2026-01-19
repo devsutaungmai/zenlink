@@ -32,6 +32,9 @@ import { exportToPDF, formatInvoiceNumberForDisplay, sendEmail } from "@/shared/
 import Swal from "sweetalert2"
 import RegisterPaymentDialog from "@/components/invoice/RegisterPaymentDialog"
 import CreditNoteDialog from "@/components/invoice/CreditNoteDialog"
+import { useColumnVisibility } from "@/hooks/use-column-visibility"
+import { is } from "zod/v4/locales"
+import { ColumnVisibilityToggle } from "@/components/invoice/column-visibility-toggle"
 
 export enum InvoiceStatus {
     DRAFT = "DRAFT", // Not sent yet
@@ -106,6 +109,34 @@ export default function InvoiceOverview() {
     const [loadingPayment, setLoadingPayment] = useState<boolean>(false);
     const [loadingCredit, setLoadingCredit] = useState<boolean>(false);
     const [loadingEmail, setLoadingEmail] = useState<Record<string, boolean>>({});
+    const COLUMNS = [
+        { key: "invoiceNumber", label: "Invoice no." },
+        { key: "customer", label: "Customer" },
+        { key: "project", label: "Project" },
+        { key: "status", label: "Status" },
+        { key: "sentAt", label: "Invoice date" },
+        { key: "dueDate", label: "Due date" },
+        { key: "totalInclVAT", label: "Amount incl. VAT" },
+        { key: "paid", label: "Paid" },
+        { key: "outstanding", label: "Outstanding" },
+    ];
+
+
+    const { columns, toggleColumn, resetColumns, isColumnVisible } = useColumnVisibility({
+        storageKey: "invoices-columns",
+        initialColumns: COLUMNS,
+        defaultVisibility: {
+            invoiceNumber: true,
+            customer: true,
+            project: true,
+            status: true,
+            sentAt: true,
+            dueDate: true,
+            totalInclVAT: true,
+            paid: true,
+            outstanding: true,
+        }
+    });
 
     useEffect(() => {
         fetchInvoices()
@@ -214,7 +245,7 @@ export default function InvoiceOverview() {
 
     const handleSendEmail = async (invoiceId: string) => {
         setLoadingEmail(prev => ({ ...prev, [invoiceId]: true }));
-        await sendEmail(invoiceId,"invoiced");
+        await sendEmail(invoiceId, "invoiced");
         setLoadingEmail(prev => ({ ...prev, [invoiceId]: false }));
     }
     return (
@@ -348,6 +379,11 @@ export default function InvoiceOverview() {
                                 <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-10 sm:w-10">
                                     <ArrowDownTrayIcon className="h-5 w-5" />
                                 </Button>
+                                 <ColumnVisibilityToggle
+                                            columns={columns}
+                                            onColumnToggle={toggleColumn}
+                                            onResetColumns={resetColumns}
+                                        />
                             </div>
                         </div>
                     </div>
@@ -367,35 +403,36 @@ export default function InvoiceOverview() {
                                         />
                                     </th>
                                     <th className="w-12 px-2 py-3"></th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                                    {isColumnVisible('invoiceNumber') && <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                                         Invoice no.
-                                    </th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                                    </th>}
+                                    {isColumnVisible('customer') && <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                                         Customer
-                                    </th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                                    </th>}
+                                    {isColumnVisible('project') && <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                                         Project
-                                    </th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                                    </th>}
+                                    {isColumnVisible('status') && <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                                         Status
-                                    </th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                                    </th>}
+                                    {isColumnVisible('sentAt') && <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                                         Invoice date
-                                    </th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                                    </th>}
+                                    {isColumnVisible('dueDate') && <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                                         Due date
-                                    </th>
-                                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-600 uppercase tracking-wider">
+                                    </th>}
+                                    {isColumnVisible('totalInclVAT') && <th className="px-4 py-3 text-right text-xs font-medium text-gray-600 uppercase tracking-wider">
                                         Amount incl. VAT
-                                    </th>
-                                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-600 uppercase tracking-wider">
+                                    </th>}
+                                    {isColumnVisible('paid') && <th className="px-4 py-3 text-right text-xs font-medium text-gray-600 uppercase tracking-wider">
                                         Paid
-                                    </th>
-                                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-600 uppercase tracking-wider">
+                                    </th>}
+                                    {isColumnVisible('outstanding') && <th className="px-4 py-3 text-right text-xs font-medium text-gray-600 uppercase tracking-wider">
                                         Outstanding
+                                    </th>}
+                                    <th className="w-12 px-2 py-3"></th>
+                                    <th className="w-12 px-2 py-3">
                                     </th>
-                                    <th className="w-12 px-2 py-3"></th>
-                                    <th className="w-12 px-2 py-3"></th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200">
@@ -419,7 +456,7 @@ export default function InvoiceOverview() {
                                                     )}
                                                 </button>
                                             </td>
-                                            <td className="px-4 py-3">
+                                            {isColumnVisible('invoiceNumber') && <td className="px-4 py-3">
                                                 <Link
                                                     href={`/dashboard/invoices/create?invoiceId=${invoice.id}&copy=true&overview=true`}
                                                 >
@@ -429,7 +466,8 @@ export default function InvoiceOverview() {
                                                     </span>
                                                 </Link>
                                             </td>
-                                            <td className="px-4 py-3">
+                                            }   
+                                            {isColumnVisible('customer') && <td className="px-4 py-3">
                                                 <div className="text-sm">
                                                     <Link
                                                         href={`/dashboard/customers/create?customerId=${invoice.customer?.id}&overview=true`}
@@ -439,16 +477,14 @@ export default function InvoiceOverview() {
                                                         </div>
                                                     </Link>
                                                 </div>
-                                            </td>
-                                            <td className="px-4 py-3">
-                                                {invoice.project && (
-                                                    <div className="text-sm">
-                                                        <div className="text-blue-600 hover:underline cursor-pointer">{invoice.project?.name}</div>
-                                                        <div className="text-gray-500 text-xs">({invoice.project?.id})</div>
-                                                    </div>
-                                                )}
-                                            </td>
-                                            <td className="px-4 py-3">
+                                            </td>}
+                                            {isColumnVisible('project') && invoice.project && <td className="px-4 py-3">
+                                                <div className="text-sm">
+                                                    <div className="text-blue-600 hover:underline cursor-pointer">{invoice.project?.name}</div>
+                                                    <div className="text-gray-500 text-xs">({invoice.project?.id})</div>
+                                                </div>
+                                            </td>}
+                                            {isColumnVisible('status') && <td className="px-4 py-3">
                                                 <span
                                                     className={`text-sm ${invoice.status === InvoiceStatus.OUTSTANDING
                                                         ? "text-gray-900"
@@ -459,20 +495,20 @@ export default function InvoiceOverview() {
                                                 >
                                                     {invoice.status}
                                                 </span>
-                                            </td>
-                                            <td className="px-4 py-3 text-sm text-gray-900">
+                                            </td>}
+                                            {isColumnVisible('sentAt') && <td className="px-4 py-3 text-sm text-gray-900">
                                                 {invoice.sentAt ? new Date(invoice.sentAt).toLocaleDateString() : ""}
-                                            </td>
-                                            <td className="px-4 py-3 text-sm text-gray-900">
+                                            </td>}
+                                            {isColumnVisible('dueDate') && <td className="px-4 py-3 text-sm text-gray-900">
                                                 {invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : ""}
-                                            </td>
-                                            <td className="px-4 py-3 text-sm text-gray-900 text-right">{invoice.totalInclVAT.toString()}</td>
-                                            <td className="px-4 py-3 text-sm text-gray-900 text-right">
+                                            </td>}
+                                            {isColumnVisible('totalInclVAT') && <td className="px-4 py-3 text-sm text-gray-900 text-right">{invoice.totalInclVAT.toString()}</td>}
+                                            {isColumnVisible('paid') && <td className="px-4 py-3 text-sm text-gray-900 text-right">
                                                 {invoice.status === InvoiceStatus.PAID ? invoice.totalInclVAT.toString() : 0.0}
-                                            </td>
-                                            <td className="px-4 py-3 text-sm text-gray-900 text-right">
+                                            </td>}
+                                            {isColumnVisible('outstanding') && <td className="px-4 py-3 text-sm text-gray-900 text-right">
                                                 {invoice.status === InvoiceStatus.PAID ? 0.0 : invoice.totalInclVAT.toString()}
-                                            </td>
+                                            </td>}
                                             <td className="px-2 py-3">
                                                 <button className="p-1 hover:bg-gray-200 rounded" onClick={() => handlePDf(invoice.id)}>
                                                     <PaperClipIcon className="h-4 w-4 text-gray-400" />
@@ -699,48 +735,48 @@ export default function InvoiceOverview() {
                                             onChange={() => toggleSelectInvoice(invoice.id)}
                                             className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mt-1"
                                         />
-                                        <h3 className="font-semibold text-blue-600 text-sm">
+                                      {isColumnVisible('invoiceNumber') &&<h3 className="font-semibold text-blue-600 text-sm">
                                             {invoice.status !== InvoiceStatus.DRAFT ? formatInvoiceNumberForDisplay(invoice.invoiceNumber) : "-"}
-                                        </h3>
+                                        </h3>}
                                     </div>
-                                    <Link
+                                   { isColumnVisible('customer')&&<Link
                                         href={`/dashboard/customers/create?customerId=${invoice.customer?.id}&overview=true`}
                                     >
                                         <p className="text-xs text-gray-600 ml-6">{invoice.customer?.customerName}</p>
-                                    </Link>
+                                    </Link>}
                                 </div>
-                                <div className="text-right">
+                               { isColumnVisible('status')&&<div className="text-right">
                                     <span className="inline-block px-2 py-1 text-xs font-medium bg-gray-100 rounded">
                                         {invoice.status}
                                     </span>
-                                </div>
+                                </div>}
                             </div>
 
                             {/* Card Details Grid */}
                             <div className="grid grid-cols-2 gap-3 text-xs">
-                                <div>
+                                {isColumnVisible('totalInclVAT')&&<div>
                                     <p className="text-gray-600">Amount</p>
                                     <p className="font-semibold text-gray-900">{invoice.totalInclVAT.toString()}</p>
-                                </div>
-                                <div>
+                                </div>}
+                                {isColumnVisible('outstanding')&&<div>
                                     <p className="text-gray-600">Outstanding</p>
                                     <p className="font-semibold text-gray-900">
                                         {invoice.status === InvoiceStatus.PAID ? "0.0" : invoice.totalInclVAT.toString()}
                                     </p>
-                                </div>
-                                <div>
+                                </div>}
+                               { isColumnVisible('sentAt')&&<div>
                                     <p className="text-gray-600">Invoice Date</p>
                                     <p className="font-semibold text-gray-900">
                                         {invoice.sentAt ? new Date(invoice.sentAt).toLocaleDateString() : "-"}
                                     </p>
-                                </div>
-                                <div>
+                                </div>}
+                                {isColumnVisible('dueDate')&&<div>
                                     <p className="text-gray-600">Due Date</p>
                                     <p className="font-semibold text-gray-900">
                                         {invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : "-"}
                                     </p>
-                                </div>
-                                {invoice.project && (
+                                </div>}
+                                {isColumnVisible('project')&&invoice.project && (
                                     <div className="col-span-2">
                                         <p className="text-gray-600">Project</p>
                                         <p className="font-semibold text-blue-600">{invoice.project.name}</p>
