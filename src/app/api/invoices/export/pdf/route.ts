@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/shared/lib/prisma'
 import { getCurrentUser } from '@/shared/lib/auth'
-import { calculateInvoiceTotals, getBusinessId } from '@/shared/lib/invoiceHelper'
+import { calculateInvoiceTotals, formatInvoiceNumberForDisplay, getBusinessId } from '@/shared/lib/invoiceHelper'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
@@ -190,7 +190,7 @@ export async function GET(request: NextRequest) {
     doc.line(rightX, yPos + 23, 196, yPos + 23)
     doc.setFont('helvetica', 'bold')
     doc.text('Fakturanummer: ',rightX, yPos + 28)
-    doc.text(invoice.invoiceNumber || invoice.id, 173, yPos + 28, { align: 'right' })
+    doc.text(formatInvoiceNumberForDisplay(invoice.invoiceNumber) || invoice.id, 173, yPos + 28, { align: 'right' })
 
     //
     // ===== INVOICE TABLE (same as POST layout) =====
@@ -249,7 +249,7 @@ export async function GET(request: NextRequest) {
     doc.text('SUM', summaryX, finalY)
     doc.text(`kr ${formatCurrency(totalAmountAfterDiscount)}`, 196, finalY, { align: 'right' })
 
-    doc.text(`TOTAL MVA%)`, summaryX, finalY + 5)
+    doc.text(`TOTAL MVA(%)`, summaryX, finalY + 5)
     doc.text(`kr ${formatCurrency(TotalVatAmount)}`, 196, finalY + 5, { align: 'right' })
 
     doc.line(summaryX, finalY + 8, 196, finalY + 8)

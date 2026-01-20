@@ -20,16 +20,26 @@ interface Customer {
     customerName: string
 }
 
+interface VatCode {
+    name: string
+    rate: number
+}
+
+interface BusinessVatCode {
+    vatCode: VatCode
+}
+
 interface Product {
     id: string
     productName: string
     salesPrice: number
     ledgerAccount?: {
-    vatCode?: {
-      code: number
-      rate: number
+        vatCode?: {
+            code: number
+            rate: number
+        },
+        businessVatCodes: BusinessVatCode[]
     }
-  }
 }
 
 export default function EditInvoicePage({ params }: { params: Promise<{ id: string }> }) {
@@ -70,7 +80,6 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
         showProject: true,
         showNote: true
     })
-    const [netTotals, setNetTotals] = useState<Number[]>([]);
 
     useEffect(() => {
         if (settings) {
@@ -174,13 +183,7 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                     status: data.status || '',
                     notes: data.notes || ''
                 })
-                setNetTotals(data.invoiceLines.map((line: InvoiceLine) => {
-                    const qty = Number(line.quantity) || 0;
-                    const price = Number(line.pricePerUnit) || 0;
-                    const discount = Number(line.discountPercentage) || 0;
-                    const { totalExclVAT } = calculateInvoiceTotals(qty, price, discount, 25);
-                    return totalExclVAT;
-                }));
+
             }
         } catch (error) {
             console.error('Error fetching invoice:', error)
@@ -198,7 +201,6 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
         console.log("Deleting....")
         const updatedInvoices = formData.invoiceLines.filter((_, i) => i !== index);
         setFormData(prev => ({ ...prev, invoiceLines: updatedInvoices }));
-        setNetTotals((prevNetTotals) => prevNetTotals.filter((_, i) => i !== index));
     }
 
     const handleNewOrderLine = () => {
@@ -216,7 +218,6 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                 }
             ]
         }))
-        setNetTotals((prevNetTotals) => ([...prevNetTotals, 0]));
     }
 
     const handleCopyOrderLine = (copiedInvoiceLine: InvoiceLine, netTotal: number) => {
@@ -234,7 +235,6 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                 }
             ]
         }))
-        setNetTotals((prevNetTotals) => ([...prevNetTotals, netTotal]));
     }
 
     const updateLineTotal = (index: number) => {
@@ -245,12 +245,18 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
         const discount = Number(line.discountPercentage) || 0;
 
         const { totalExclVAT } = calculateInvoiceTotals(qty, price, discount, 25);
-        setNetTotals((prevNetTotals) => {
-            const newNetTotals = [...prevNetTotals];
-            newNetTotals[index] = totalExclVAT;
-            return newNetTotals;
-        });
+
     };
+
+    // Helper function to update a specific invoice line
+    const updateInvoiceLine = (index: number, updates: Partial<InvoiceLine>) => {
+        setFormData(prev => ({
+            ...prev,
+            invoiceLines: prev.invoiceLines.map((line, i) =>
+                i === index ? { ...line, ...updates } : line
+            )
+        }))
+    }
 
     const handleSubmit = async (e: React.FormEvent, action: 'update' | 'print' | 'send_invoice_with_email' | 'send_invoice_without_email') => {
         e.preventDefault()
@@ -539,156 +545,187 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                                 disabled={loading}
                             >New Order Line</button>
                         </div>
-                        {formData.invoiceLines.map((line, index) => (
-                            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-10" key={index}>
-                                <div>
-                                    <label htmlFor="productId" className="block text-sm font-medium text-gray-700 mb-2">
-                                        Product *
-                                    </label>
-                                    <select
-                                        id="productId"
-                                        required
-                                        value={line.productId || ''}
-                                        onChange={(e) => {
-                                            const product = products.find(p => p.id === e.target.value);
-                                            const updatedLines = [...formData.invoiceLines];
-                                            updatedLines[index].productId = e.target.value;
-                                            updatedLines[index].pricePerUnit = product?.salesPrice ?? 0;
-                                            updatedLines[index].vatPercentage = (product?.ledgerAccount?.vatCode?.rate ?? 0);
-                                            updatedLines[index].productName = product?.productName;
-                                            setFormData({ ...formData, invoiceLines: updatedLines });
-                                        }}
-                                        className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                                    >
-                                        <option value="">Select Product</option>
-                                        {products.map((pr) => (
-                                            <option key={pr.id} value={pr.id}>
-                                                {pr.productName}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label htmlFor="quantity" className="block text-sm font-medium text-gray-700 mb-2">
-                                        Quantity *
-                                    </label>
-                                    <input
-                                        type="number"
-                                        id="quantity"
-                                        required
-                                        min="1"
-                                        value={line.quantity || ""}
-                                        onChange={(e) => {
-                                            const updatedLines = [...formData.invoiceLines];
-                                            updatedLines[index].quantity = parseFloat(e.target.value);
-                                            setFormData({ ...formData, invoiceLines: updatedLines })
-                                            updateLineTotal(index);
-                                        }}
-                                        className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                                        placeholder="Enter quantity"
-                                    />
-                                </div>
+                        {formData.invoiceLines.map((line, index) => {
+                            // Calculate net total for display
+                            const qty = Number(line.quantity) || 0;
+                            const price = Number(line.pricePerUnit) || 0;
+                            const discount = Number(line.discountPercentage) || 0;
+                            const vat = Number(line.vatPercentage) || 0;
+                            const { totalExclVAT } = calculateInvoiceTotals(qty, price, discount, vat);
 
-                                <div>
-                                    <label htmlFor="pricePerUnit" className="block text-sm font-medium text-gray-700 mb-2">
-                                        Price Per Unit *
-                                    </label>
-                                    <input
-                                        type="number"
-                                        id="pricePerUnit"
-                                        required
-                                        step="0.01"
-                                        value={line.pricePerUnit || 0.0}
-                                        onChange={(e) => {
-                                            const updatedLines = [...formData.invoiceLines];
-                                            updatedLines[index].pricePerUnit = parseFloat(e.target.value);
-                                            setFormData({ ...formData, invoiceLines: updatedLines })
-                                            updateLineTotal(index);
-                                        }}
-                                        className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                                        placeholder="Enter price per unit"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label htmlFor="vatPercent" className="block text-sm font-medium text-gray-700 mb-2">
-                                        Vat Percent *
-                                    </label>
-                                    <input
-                                        type="number"
-                                        id="vatPercent"
-                                        required
-                                        step="0.01"
-                                        value={line.vatPercentage || 0}
-                                        disabled
-                                        className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
-                                    />
-                                </div>
-
-
-                                {settings.showDiscount &&
+                            return (
+                                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-10" key={index}>
                                     <div>
-                                        <label htmlFor="discountPercentage" className="block text-sm font-medium text-gray-700 mb-2">
-                                            Discount(%) *
+                                        <label htmlFor="productId" className="block text-sm font-medium text-gray-700 mb-2">
+                                            Product *
+                                        </label>
+                                        <select
+                                            id="productId"
+                                            required
+                                            value={line.productId || ''}
+
+                                            onChange={(e) => {
+                                                const product = products.find(p => p.id === e.target.value);
+                                                const businessVat = product?.ledgerAccount?.businessVatCodes?.[0]?.vatCode;
+                                                const vatRate = businessVat?.rate ?? product?.ledgerAccount?.vatCode?.rate ?? 0;
+
+                                                // Create new array and new object references
+                                                updateInvoiceLine(index, {
+                                                    productId: e.target.value,
+                                                    pricePerUnit: product?.salesPrice ?? 0,
+                                                    vatPercentage: Number(vatRate),
+                                                    productName: product?.productName,
+                                                })
+                                            }}
+                                            className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                        >
+                                            <option value="">Select Product</option>
+                                            {products.map((pr) => (
+                                                <option key={pr.id} value={pr.id}>
+                                                    {pr.productName}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label htmlFor="quantity" className="block text-sm font-medium text-gray-700 mb-2">
+                                            Quantity *
                                         </label>
                                         <input
                                             type="number"
-                                            id="discountPercentage"
-                                            step="0.01"
-                                            min="0"
-                                            max="100"
-                                            value={line.discountPercentage || ""}
+                                            id="quantity"
+                                            required
+                                            min="1"
+                                            value={line.quantity || ""}
                                             onChange={(e) => {
-                                                const updatedLines = [...formData.invoiceLines];
-                                                updatedLines[index].discountPercentage = parseFloat(e.target.value);
-                                                setFormData({ ...formData, invoiceLines: updatedLines })
+
+                                                updateInvoiceLine(index, { quantity: parseFloat(e.target.value) })
+
+                                            }}
+                                            className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                            placeholder="Enter quantity"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label htmlFor="pricePerUnit" className="block text-sm font-medium text-gray-700 mb-2">
+                                            Price Per Unit *
+                                        </label>
+                                        <input
+                                            type="number"
+                                            id="pricePerUnit"
+                                            required
+                                            step="0.01"
+                                            value={line.pricePerUnit || 0.0}
+                                            onChange={(e) => {
+                                                updateInvoiceLine(index, {
+                                                    pricePerUnit: parseFloat(e.target.value)
+                                                });
+                                                setFormData(prev => ({
+                                                    ...prev, invoiceLines: prev.invoiceLines.map((line, i) =>
+                                                        i === index ?
+                                                            { ...line, pricePerUnit: parseFloat(e.target.value) }
+                                                            : line
+                                                    )
+                                                }))
                                                 updateLineTotal(index);
                                             }}
                                             className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                                            placeholder="Enter discount percentage"
+                                            placeholder="Enter price per unit"
                                         />
                                     </div>
-                                }
 
-                                <div>
-                                    <label htmlFor="netTotal" className="block text-sm font-medium text-gray-700 mb-2">
-                                        Net Total
-                                    </label>
-                                    <input
-                                        type="number"
-                                        id="netTotal"
-                                        required
-                                        step="0.01"
-                                        value={(netTotals[index] || 0).toFixed(2)}
-                                        disabled
-                                        className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
-                                    />
+                                    <div>
+                                        <label htmlFor="vatPercent" className="block text-sm font-medium text-gray-700 mb-2">
+                                            Vat Percent *
+                                        </label>
+                                        <input
+                                            type="number"
+                                            id="vatPercent"
+                                            required
+                                            step="0.01"
+                                            value={line.vatPercentage || 0}
+                                            disabled
+                                            className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                                        />
+                                    </div>
+
+
+                                    {settings.showDiscount &&
+                                        <div>
+                                            <label htmlFor="discountPercentage" className="block text-sm font-medium text-gray-700 mb-2">
+                                                Discount(%) *
+                                            </label>
+                                            <input
+                                                type="number"
+                                                id="discountPercentage"
+                                                step="0.01"
+                                                min="0"
+                                                max="100"
+                                                value={line.discountPercentage || ""}
+                                                onChange={(e) => {
+
+                                                    updateInvoiceLine(index, {
+                                                        discountPercentage: parseFloat(e.target.value)
+                                                    });
+                                                    // setFormData(prev => ({
+                                                    //     ...prev, invoiceLines: prev.invoiceLines.map((line, i) =>
+                                                    //         i === index
+                                                    //             ? { ...line, discountPercentage: parseFloat(e.target.value) }
+                                                    //             : line
+                                                    //     )
+                                                    // }))
+                                                    // const updatedLines = [...formData.invoiceLines];
+                                                    // updatedLines[index].discountPercentage = parseFloat(e.target.value);
+                                                    // setFormData({ ...formData, invoiceLines: updatedLines })
+                                                    // updateLineTotal(index);
+                                                }}
+                                                className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                                placeholder="Enter discount percentage"
+                                            />
+                                        </div>
+                                    }
+
+                                    <div>
+                                        <label htmlFor="netTotal" className="block text-sm font-medium text-gray-700 mb-2">
+                                            Net Total
+                                        </label>
+                                        <input
+                                            type="number"
+                                            id="netTotal"
+                                            required
+                                            step="0.01"
+                                            value={(totalExclVAT || 0).toFixed(2)}
+                                            disabled
+                                            className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                                        />
+                                    </div>
+                                    <div className='items-end flex space-x-4 mb-3'>
+                                        <button
+                                            type='button'
+                                            onClick={() => deleteInvoiceLine(index)}
+                                        >
+                                            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+
+                                        </button>
+                                        <button
+                                            type='button'
+                                            onClick={() => handleCopyOrderLine(line, Number(totalExclVAT || 0))}
+                                        >
+                                            <svg className="w-8 h-8 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2h-6a2 2 0 01-2-2V7z" />
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H7a2 2 0 00-2 2v7a2 2 0 002 2h7a2 2 0 002-2v-1" />
+                                            </svg>
+
+                                        </button>
+
+                                    </div>
+
                                 </div>
-                                <div className='items-end flex space-x-4 mb-3'>
-                                    <button
-                                        type='button'
-                                        onClick={() => deleteInvoiceLine(index)}
-                                    >
-                                        <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                        </svg>
-
-                                    </button>
-                                    <button
-                                        type='button'
-                                        onClick={() => handleCopyOrderLine(line, Number(netTotals[index] || 0))}
-                                    >
-                                        <svg className="w-8 h-8 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2h-6a2 2 0 01-2-2V7z" />
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H7a2 2 0 00-2 2v7a2 2 0 002 2h7a2 2 0 002-2v-1" />
-                                        </svg>
-
-                                    </button>
-
-                                </div>
-
-                            </div>
-                        ))}
+                            )
+                        })}
                     </div>
 
                     {/* Notes Section */}

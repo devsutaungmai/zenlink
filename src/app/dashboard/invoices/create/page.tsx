@@ -41,17 +41,27 @@ export interface Customer {
 
 }
 
+interface VatCode {
+    name: string
+    rate: number
+}
+
+interface BusinessVatCode {
+    vatCode: VatCode
+}
+
 export interface Product {
-  id: string
-  productName: string
-  salesPrice: number
-  discountPercentage: number
-  ledgerAccount?: {
-    vatCode?: {
-      code: number
-      rate: number
+    id: string
+    productName: string
+    salesPrice: number
+    discountPercentage: number
+    ledgerAccount?: {
+        vatCode?: {
+            code: number
+            rate: number
+        },
+        businessVatCodes: BusinessVatCode[]
     }
-  }
 }
 
 
@@ -750,10 +760,17 @@ export default function CreateInvoicePage() {
                                         onChange={(e) => {
                                             const product = products.find(p => p.id === e.target.value);
                                             const updatedLines = [...formData.invoiceLines];
+                                            const businessVat =
+                                                product?.ledgerAccount?.businessVatCodes?.[0]?.vatCode
+
+                                            const vatRate =
+                                                businessVat?.rate ??
+                                                product?.ledgerAccount?.vatCode?.rate ??
+                                                0
                                             updatedLines[index].productId = e.target.value;
                                             updatedLines[index].pricePerUnit = product?.salesPrice ?? 0;
                                             updatedLines[index].discountPercentage = product?.discountPercentage ?? 0;
-                                            updatedLines[index].vatPercentage = (product?.ledgerAccount?.vatCode?.rate ?? 0);
+                                            updatedLines[index].vatPercentage = Number(vatRate);
                                             updatedLines[index].productName = product?.productName;
                                             setFormData({ ...formData, invoiceLines: updatedLines });
                                             updateLineTotal(index);

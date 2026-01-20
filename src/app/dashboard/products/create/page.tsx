@@ -20,6 +20,15 @@ interface ProductGroup {
   name: string
 }
 
+interface VatCode {
+  name: string
+  rate: number
+}
+
+interface BusinessVatCode {
+  vatCode: VatCode
+}
+
 interface LedgerAccount {
   id: string
   accountNumber: string
@@ -28,6 +37,7 @@ interface LedgerAccount {
     name: string
     rate: number
   }
+  businessVatCodes: BusinessVatCode[]
 }
 
 export default function CreateProductPage() {
@@ -345,10 +355,10 @@ export default function CreateProductPage() {
               )}
             </div>
 
-            {/* Sales Account - always visible */}
+            {/* Ledger Account - always visible */}
             <div className='mt-4'>
               <label htmlFor="ledgerAccountId" className="block text-sm font-medium text-gray-700 mb-2">
-                Sales Account *
+                Ledger Account *
               </label>
               <select
                 id="ledgerAccountId"
@@ -357,12 +367,22 @@ export default function CreateProductPage() {
                 onChange={(e) => setFormData({ ...formData, ledgerAccountId: e.target.value })}
                 className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
               >
-                <option value="">--Select Sales Account--</option>
-                {salesLedgerAccounts.map((sa) => (
-                  <option key={sa.id} value={sa.id}>
-                    {sa.accountNumber} - {sa.name} - {sa.vatCode?.name ?? ""} ({sa.vatCode?.rate ?? 0}%)
-                  </option>
-                ))}
+                <option value="">--Select Ledger Account--</option>
+                {salesLedgerAccounts.map((sa) => {
+                  const businessVat = sa.businessVatCodes?.[0]?.vatCode
+
+                  return (
+                    <option key={sa.id} value={sa.id}>
+                      {sa.accountNumber} - {sa.name} -{" "}
+                      {businessVat
+                        ? `${businessVat.name} (${businessVat.rate}%)`
+                        : sa.vatCode
+                          ? `${sa.vatCode.name} (${sa.vatCode.rate}%)`
+                          : "0%" }
+                    </option>
+                  )
+                })}
+
               </select>
             </div>
 

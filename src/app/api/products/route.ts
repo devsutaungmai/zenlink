@@ -26,7 +26,12 @@ export async function GET(request: NextRequest) {
         ledgerAccount: {
           select: {
             vatCode: { select: { code: true, rate: true } },
-          }
+            businessVatCodes: {
+              where: { businessId },
+              include: { vatCode: { select: { name: true, rate: true } } }
+            }
+          },
+
         }
       },
       orderBy: {

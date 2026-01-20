@@ -39,6 +39,13 @@ interface SalesAccount {
   isActive: boolean
 }
 
+interface BusinessVatCode {
+  vatCode: {
+    code: string
+    rate: number
+  }
+}
+
 interface Product {
   id: string
   active: boolean
@@ -52,6 +59,7 @@ interface Product {
       code: string
       rate: number
     }
+    businessVatCodes: BusinessVatCode[]
   }
 
   // Foreign keys
@@ -278,7 +286,7 @@ export default function ProductsPage() {
         <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg overflow-hidden">
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full">
-            <thead className="bg-muted/50">
+              <thead className="bg-muted/50">
                 <tr>
                   {isColumnVisible("productNumber") && (
                     <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
@@ -356,9 +364,16 @@ export default function ProductsPage() {
 
                     {isColumnVisible("vatRate") && (
                       <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900">{(product.ledgerAccount?.vatCode?.rate ?? 0)}%</div>
+                        <div className="text-sm text-gray-900">
+                          {product.ledgerAccount.businessVatCodes.length > 0
+                            ? `${product.ledgerAccount.businessVatCodes[0].vatCode.rate}%`
+                            : product.ledgerAccount.vatCode
+                              ? `${product.ledgerAccount.vatCode.rate}%`
+                              : ""}
+                        </div>
                       </td>
                     )}
+
 
                     {isColumnVisible("discount") && (
                       <td className="px-6 py-4">
@@ -369,9 +384,8 @@ export default function ProductsPage() {
                     {isColumnVisible("status") && (
                       <td className="px-6 py-4">
                         <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            product.active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
-                          }`}
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${product.active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+                            }`}
                         >
                           {product.active ? "Active" : "Inactive"}
                         </span>
@@ -509,11 +523,11 @@ export default function ProductsPage() {
 
                 {/* Price Information */}
                 <div className="grid grid-cols-2 gap-3">
-                 {isColumnVisible("salesPrice") && <div className="bg-gray-50 rounded-lg p-3">
+                  {isColumnVisible("salesPrice") && <div className="bg-gray-50 rounded-lg p-3">
                     <div className="text-xs text-gray-500 mb-1">Sales Price</div>
                     <div className="text-sm font-medium text-gray-900">{Number(product.salesPrice).toFixed(2)}</div>
                   </div>}
-                 {isColumnVisible("costPrice") && <div className="bg-gray-50 rounded-lg p-3">
+                  {isColumnVisible("costPrice") && <div className="bg-gray-50 rounded-lg p-3">
                     <div className="text-xs text-gray-500 mb-1">Cost Price</div>
                     <div className="text-sm font-medium text-gray-900">{Number(product.costPrice).toFixed(2)}</div>
                   </div>}

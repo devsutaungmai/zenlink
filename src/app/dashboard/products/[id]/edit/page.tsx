@@ -20,6 +20,15 @@ interface ProductGroup {
     name: string
 }
 
+interface VatCode {
+    name: string
+    rate: number
+}
+
+interface BusinessVatCode {
+    vatCode: VatCode
+}
+
 interface LedgerAccount {
     id: string
     accountNumber: string
@@ -28,6 +37,7 @@ interface LedgerAccount {
         name: string
         rate: number
     }
+    businessVatCodes: BusinessVatCode[]
 }
 
 export default function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
@@ -93,7 +103,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             console.error('Error fetching units:', error)
         }
     }
-    
+
 
     const fetchProductGroups = async () => {
         try {
@@ -214,16 +224,16 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                         </p>
                     </div>
                     <div className="hidden md:flex items-center space-x-2">
-                         <ProductFieldSettingsDialog 
+                        <ProductFieldSettingsDialog
                             initialSettings={visibleFields}
                             onSettingsSaved={(newSettings) => {
-                                        setVisibleFields(newSettings);
-                                        console.log('Settings saved')
-                                      }}
-                                      onRefresh={() => {
-                                        refetch() 
-                                      }}
-                          />
+                                setVisibleFields(newSettings);
+                                console.log('Settings saved')
+                            }}
+                            onRefresh={() => {
+                                refetch()
+                            }}
+                        />
                         <div className="w-12 h-12 bg-[#31BCFF]/10 rounded-xl flex items-center justify-center">
                             <svg className="w-6 h-6 text-[#31BCFF]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
@@ -390,11 +400,20 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                                 className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
                             >
                                 <option value="">--Select Sales Account--</option>
-                                {salesLedgerAccounts.map((sa) => (
-                                    <option key={sa.id} value={sa.id}>
-                                        {sa.accountNumber} - {sa.name}
-                                    </option>
-                                ))}
+                                {salesLedgerAccounts.map((sa) => {
+                                    const businessVat = sa.businessVatCodes?.[0]?.vatCode
+
+                                    return (
+                                        <option key={sa.id} value={sa.id}>
+                                            {sa.accountNumber} - {sa.name} -{" "}
+                                            {businessVat
+                                                ? `${businessVat.name} (${businessVat.rate}%)`
+                                                : sa.vatCode
+                                                    ? `${sa.vatCode.name} (${sa.vatCode.rate}%)`
+                                                    : "0%"}
+                                        </option>
+                                    )
+                                })}
                             </select>
                         </div>
 

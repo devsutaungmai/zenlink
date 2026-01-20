@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
 import { prisma } from '@/shared/lib/prisma';
 import { getCurrentUser } from '@/shared/lib/auth';
-import { calculateInvoiceTotals, getBusinessId } from '@/shared/lib/invoiceHelper';
+import { calculateInvoiceTotals, formatInvoiceNumberForDisplay, getBusinessId } from '@/shared/lib/invoiceHelper';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -48,6 +48,7 @@ export async function POST(req: Request) {
             quantity: true,
             pricePerUnit: true,
             discountPercentage: true,
+            vatPercentage: true,
             product: true
           }
         },
@@ -75,7 +76,7 @@ export async function POST(req: Request) {
     const invoiceLinesData: any = [];
 
     for (const line of invoice.invoiceLines) {
-      const { productId, quantity, pricePerUnit, discountPercentage } = line;
+      const { productId, quantity, pricePerUnit, discountPercentage,vatPercentage} = line;
 
       if (!productId || !quantity || !pricePerUnit) {
         return NextResponse.json(
@@ -98,7 +99,8 @@ export async function POST(req: Request) {
       const calculations = calculateInvoiceTotals(
         quantity,
         Number(pricePerUnit),
-        Number(discountPercentage)
+        Number(discountPercentage),
+        Number(vatPercentage)
       );
       
       totalExclVAT += calculations.totalExclVAT;
@@ -112,7 +114,7 @@ export async function POST(req: Request) {
         discountPercentage,
         netAmount: calculations.totalExclVAT,
         totalAmount: calculations.totalInclVAT,
-        vatPercentage: invoice.vatPercentage,
+        vatPercentage: vatPercentage,
         productName: product.productName,
         productNumber: product.productNumber || ''
       });
@@ -201,7 +203,7 @@ export async function POST(req: Request) {
     doc.line(rightX, yPos + 23, 196, yPos + 23);
     doc.setFont('helvetica', 'bold');
     doc.text('Fakturanummer:', rightX, yPos + 28);
-    doc.text(invoice.invoiceNumber || invoice.id, 173, yPos + 28, { align: 'right' });
+    doc.text(formatInvoiceNumberForDisplay(invoice.invoiceNumber) || invoice.id, 173, yPos + 28, { align: 'right' });
 
     // Invoice items table
     const tableData = invoiceLinesData.map((line: any) => [
@@ -259,7 +261,7 @@ export async function POST(req: Request) {
     doc.text('SUM', summaryX, finalY);
     doc.text(`kr ${formatCurrency(totalExclVAT)}`, 196, finalY, { align: 'right' });
     
-    doc.text(`MVA (${invoice.vatPercentage}%)`, summaryX, finalY + 5);
+    doc.text(`MVA`, summaryX, finalY + 5);
     doc.text(`kr ${formatCurrency(totalVatAmount)}`, 196, finalY + 5, { align: 'right' });
     
     // Total line
@@ -313,13 +315,13 @@ Denne e-posten er sendt fra økonomisystemet Zenlink (www.zenlink.no).
       throw new Error(`Email service unavailable: ${verifyError instanceof Error ? verifyError.message : 'Unknown error'}`);
     }
 
-    const filename = `Faktura-${invoice.invoiceNumber || invoice.id}.pdf`;
+    const filename = `Faktura-${formatInvoiceNumberForDisplay(invoice.invoiceNumber) || invoice.id}.pdf`;
 
     // Send email with PDF attachment
     const info = await transporter.sendMail({
       from: `"${invoice.business?.name || 'Zen Link'}" <${process.env.FROM_EMAIL || process.env.GMAIL_USER || 'zenlinkdev@gmail.com'}>`,
       to: email,
-      subject: `Faktura ${invoice.invoiceNumber || invoice.id} fra ${invoice.business?.name || 'Zen Link'}`,
+      subject: `Faktura ${formatInvoiceNumberForDisplay(invoice.invoiceNumber) || invoice.id} fra ${invoice.business?.name || 'Zen Link'}`,
       text: emailBody,
       attachments: [
         {
