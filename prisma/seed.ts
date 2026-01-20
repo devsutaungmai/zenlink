@@ -225,6 +225,11 @@ async function importLedgerAccounts() {
       }
 
       try {
+        const vatCode = await prisma.vatCode.findFirst({
+          where: {businessId: null},
+          orderBy:{createdAt: 'asc'}
+        });
+        const vatCodeId = vatCode?.id ?? null;
         const existing = await prisma.ledgerAccount.findFirst({
           where: {
             accountNumber,
@@ -243,7 +248,7 @@ async function importLedgerAccounts() {
             name: row['Navn'] || '',
             type: getAccountType(accountNumber),
             isActive: parseNorwegianBoolean(row['Aktiv']),
-            vatCode: row['Mva-kode'] || null,
+            vatCodeId: vatCodeId,
             vatSpecification: row['Mva-spesifikasjon'] || null,
             reportGroup: row['Rapportgruppe'] || null,
             saftStandardAccount: row['SAF-T standardkonto'] || null,
@@ -490,8 +495,8 @@ async function main() {
   }
 
   // 1. Import default ledger accounts
-  await importLedgerAccounts();
   await importMvaCodes();
+  await importLedgerAccounts();
 }
 
 main()
