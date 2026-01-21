@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { ExclamationTriangleIcon, ArrowPathIcon, HomeIcon } from '@heroicons/react/24/outline'
 import { Button } from '@/components/ui/button'
+import * as Sentry from '@sentry/nextjs'
 
 interface ErrorPageProps {
   error: Error & { digest?: string }
@@ -11,6 +12,7 @@ interface ErrorPageProps {
 
 export default function ErrorPage({ error, reset }: ErrorPageProps) {
   useEffect(() => {
+    Sentry.captureException(error)
     console.error('Application error:', error)
   }, [error])
 

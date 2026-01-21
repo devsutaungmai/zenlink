@@ -6,6 +6,7 @@ import { PunchClockSkeleton } from '@/components/skeletons/CommonSkeletons'
 import { useUser } from '@/shared/lib/useUser'
 import Image from 'next/image'
 import Swal from 'sweetalert2'
+import * as Sentry from '@sentry/nextjs'
 import {
   ClockIcon,
   UserGroupIcon,
@@ -867,6 +868,16 @@ export default function PunchClockPage() {
 
       await fetchAttendance()
     } catch (error) {
+      Sentry.captureException(error, {
+        tags: {
+          feature: 'punch-clock',
+          action: 'create-attendance'
+        },
+        extra: {
+          employeeId: createFormData.employeeId,
+          businessId: business?.id
+        }
+      })
       console.error('Error creating attendance:', error)
       Swal.fire({
         toast: true,

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/shared/lib/prisma'
 import { getCurrentUser } from '@/shared/lib/auth'
+import { captureApiError } from '@/shared/lib/sentry'
 import jwt from 'jsonwebtoken'
 import { cookies } from 'next/headers'
 
@@ -250,6 +251,7 @@ export async function GET(request: Request) {
     })
 
   } catch (error) {
+    captureApiError(error, { route: '/api/employee/dashboard', method: 'GET' })
     console.error('Error fetching employee dashboard data:', error)
     return NextResponse.json(
       { error: 'Failed to fetch dashboard data' },

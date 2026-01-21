@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/shared/lib/prisma'
 import { requireAuth } from '@/shared/lib/auth'
+import { captureApiError } from '@/shared/lib/sentry'
 import bcrypt from 'bcryptjs'
 import nodemailer from 'nodemailer'
 
@@ -115,6 +116,7 @@ export async function PATCH(
     })
 
   } catch (error) {
+    captureApiError(error, { route: '/api/employees/[id]/pin', method: 'PATCH' })
     console.error('Error updating PIN:', error)
     return NextResponse.json(
       { error: 'Internal server error' },

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/shared/lib/prisma'
 import { getCurrentUserOrEmployee } from '@/shared/lib/auth'
+import { captureApiError } from '@/shared/lib/sentry'
 
 async function getAccessibleDepartmentIds(auth: any): Promise<string[] | null> {
   if (auth.type === 'user') {
@@ -170,6 +171,7 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
+    captureApiError(error, { route: '/api/attendance', method: 'POST' })
     console.error('Error creating attendance:', error)
     return NextResponse.json({ 
       error: 'Failed to punch in' 
@@ -456,6 +458,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(attendances)
 
   } catch (error) {
+    captureApiError(error, { route: '/api/attendance', method: 'GET' })
     console.error('Error fetching attendance:', error)
     return NextResponse.json({ 
       error: 'Failed to fetch attendance records' 
@@ -500,6 +503,7 @@ export async function PATCH(request: NextRequest) {
       updatedCount: updatedAttendances.count
     })
   } catch (error) {
+    captureApiError(error, { route: '/api/attendance', method: 'PATCH' })
     console.error('Error updating attendance approval:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
