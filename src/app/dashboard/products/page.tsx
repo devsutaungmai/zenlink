@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/pagination"
 import { ColumnVisibilityToggle } from "@/components/invoice/column-visibility-toggle"
 import { useColumnVisibility } from "@/hooks/use-column-visibility"
+import { Switch } from "@/components/ui/switch"
 
 interface Unit {
   id: string
@@ -197,6 +198,43 @@ export default function ProductsPage() {
     window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
+  const handleStatusChange = async (productId: string, newStatus: boolean) => {
+    try {
+      const res = await fetch(`/api/products/${productId}/toggle-active`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id: productId, active: newStatus }),
+      })
+
+      if (res.ok) {
+        const updatedProduct = await res.json()
+        setProducts((prevProducts) =>
+          prevProducts.map((product) =>
+            product.id === productId ? { ...product, active: updatedProduct.active } : product,
+          ),
+        )
+      } else {
+        // throw new Error("Failed to update product status")
+        await Swal.fire({
+          title: t("common.error"),
+          text: "Failed to update product status",
+          icon: "error",
+          confirmButtonColor: "#31BCFF",
+        })  
+      }
+    } catch (error) {
+      console.error("Error updating product status:", error)
+      await Swal.fire({
+        title: t("common.error"),
+        text: "Failed to update product status",
+        icon: "error",
+        confirmButtonColor: "#31BCFF",
+      })
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -369,7 +407,7 @@ export default function ProductsPage() {
                             ? `${product.ledgerAccount.businessVatCodes[0].vatCode.rate}%`
                             : product.ledgerAccount.vatCode
                               ? `${product.ledgerAccount.vatCode.rate}%`
-                              : ""}
+                              : "0%"}
                         </div>
                       </td>
                     )}
@@ -383,15 +421,21 @@ export default function ProductsPage() {
 
                     {isColumnVisible("status") && (
                       <td className="px-6 py-4">
-                        <span
+                        {/* <span
                           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${product.active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
                             }`}
                         >
                           {product.active ? "Active" : "Inactive"}
-                        </span>
+                        </span> */}
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            id="status"
+                            checked={product.active}
+                            onCheckedChange={(checked) => handleStatusChange(product.id, checked)}
+                          />
+                        </div>
                       </td>
                     )}
-
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2">
                         <Link

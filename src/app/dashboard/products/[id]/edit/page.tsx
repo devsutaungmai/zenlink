@@ -95,9 +95,9 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             if (res.ok) {
                 const data = await res.json()
                 setUnits(data)
-                if (data.length > 0) {
-                    setFormData(prev => ({ ...prev, unitId: data[0].id }))
-                }
+                // if (data.length > 0) {
+                //     setFormData(prev => ({ ...prev, unitId: data[0].id }))
+                // }
             }
         } catch (error) {
             console.error('Error fetching units:', error)
@@ -111,9 +111,9 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             if (res.ok) {
                 const data = await res.json()
                 setProductGroups(data)
-                if (data.length > 0) {
-                    setFormData(prev => ({ ...prev, productGroupId: data[0].id }))
-                }
+                // if (data.length > 0) {
+                //     setFormData(prev => ({ ...prev, productGroupId: data[0].id }))
+                // }
             }
         } catch (error) {
             console.error('Error fetching product groups:', error)
@@ -126,9 +126,9 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             if (res.ok) {
                 const data = await res.json()
                 setSalesLedgerAccounts(data)
-                if (data.length > 0) {
-                    setFormData(prev => ({ ...prev, ledgerAccountId: data[0].id }))
-                }
+                // if (data.length > 0) {
+                //     setFormData(prev => ({ ...prev, ledgerAccountId: data[0].id }))
+                // }
             }
         } catch (error) {
             console.error('Error fetching sales ledger accounts:', error)
@@ -390,7 +390,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                         {/* Sales Account - always visible */}
                         <div className='mt-4'>
                             <label htmlFor="ledgerAccountId" className="block text-sm font-medium text-gray-700 mb-2">
-                                Sales Account *
+                                Ledger Account *
                             </label>
                             <select
                                 id="ledgerAccountId"
@@ -402,7 +402,6 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                                 <option value="">--Select Sales Account--</option>
                                 {salesLedgerAccounts.map((sa) => {
                                     const businessVat = sa.businessVatCodes?.[0]?.vatCode
-
                                     return (
                                         <option key={sa.id} value={sa.id}>
                                             {sa.accountNumber} - {sa.name} -{" "}

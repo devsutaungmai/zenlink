@@ -55,7 +55,7 @@ export interface Invoice {
 
     // Summary calculations
     totalExclVAT: Decimal
-    vatAmount: Decimal
+    totalVatAmount: Decimal
     vatPercentage: Decimal
     totalInclVAT: Decimal
 
@@ -596,25 +596,25 @@ export default function InvoicesPage() {
                                             className="w-4 h-4 text-[#31BCFF] border-gray-300 rounded focus:ring-[#31BCFF] cursor-pointer"
                                         />
                                     </th>
-                                   {isColumnVisible('invoiceNumber')&&<th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    {isColumnVisible('invoiceNumber') && <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Invoice Number
                                     </th>}
-                                    {isColumnVisible('customer')&&<th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    {isColumnVisible('customer') && <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Customer
                                     </th>}
-                                   {isColumnVisible('sentAt')&&<th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    {isColumnVisible('sentAt') && <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Invoice Date
                                     </th>}
-                                    {isColumnVisible('status')&&<th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    {isColumnVisible('status') && <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Status
                                     </th>}
-                                    {isColumnVisible('totalExclVAT')&&<th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    {isColumnVisible('totalExclVAT') && <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Total Excl VAT
                                     </th>}
-                                    {isColumnVisible('vatAmount')&&<th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    {isColumnVisible('vatAmount') && <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         VAT Amount
                                     </th>}
-                                    {isColumnVisible('totalInclVAT')&&<th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    {isColumnVisible('totalInclVAT') && <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Total Incl VAT
                                     </th>}
                                     <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -669,40 +669,54 @@ export default function InvoicesPage() {
                                                 className="w-4 h-4 text-[#31BCFF] border-gray-300 rounded focus:ring-[#31BCFF] cursor-pointer"
                                             />)}
                                         </td>
-                                       {isColumnVisible('invoiceNumber')&&<td className="px-6 py-4">
+                                        {isColumnVisible('invoiceNumber') && <td className="px-6 py-4">
                                             <div className="text-sm font-medium text-gray-900">
-                                                {invoice.status !== InvoiceStatus.DRAFT ? formatInvoiceNumberForDisplay(invoice.invoiceNumber) : "-"}
+                                                <Link
+                                                    href={`/dashboard/invoices/create?invoiceId=${invoice.id}&copy=true&overview=true`}
+                                                >
+                                                    <span className="text-sm font-medium text-blue-600 hover:underline cursor-pointer">
+
+                                                    {invoice.status !== InvoiceStatus.DRAFT ? formatInvoiceNumberForDisplay(invoice.invoiceNumber) : "-"}
+                                                    </span>
+                                                </Link>
                                             </div>
                                         </td>}
-                                        {isColumnVisible('customer')&&<td className="px-6 py-4">
+                                        {isColumnVisible('customer') && <td className="px-6 py-4">
                                             <div className="text-sm text-gray-900">
-                                                {invoice.customer?.customerName}
+                                                <Link
+                                                    href={`/dashboard/customers/create?customerId=${invoice.customer?.id}&overview=true`}
+                                                >
+                                                    <span className="text-sm font-medium text-blue-600 hover:underline cursor-pointer">
+
+                                                    {invoice.customer?.customerName}
+                                                    </span>
+                                                </Link>
                                             </div>
                                         </td>}
-                                       {isColumnVisible('sentAt')&& <td className="px-6 py-4">
+                                        {isColumnVisible('sentAt') && <td className="px-6 py-4">
                                             <div className="text-sm text-gray-900">
                                                 {/* {new Date(invoice.invoiceDate).toLocaleDateString()}
                                                  */}
                                                 {invoice.sentAt ? new Date(invoice.sentAt).toLocaleDateString() : '-'}
                                             </div>
                                         </td>}
-                                       {isColumnVisible('status')&&<td className="px-6 py-4">
+                                        {isColumnVisible('status') && <td className="px-6 py-4">
                                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                                 {invoice.status}
                                             </span>
                                         </td>}
-                                       {isColumnVisible('totalExclVAT')&&<td className="px-6 py-4">
+                                        {isColumnVisible('totalExclVAT') && <td className="px-6 py-4">
                                             <div className="text-sm text-gray-900">
                                                 {Number(invoice?.totalExclVAT ?? 0).toFixed(2)}
                                             </div>
                                         </td>}
-                                        {isColumnVisible('vatAmount')&&<td className="px-6 py-4">
+                                        {isColumnVisible('vatAmount') && <td className="px-6 py-4">
                                             <div className="text-sm text-gray-900">
-                                                {Number(invoice?.vatAmount ?? 0).toFixed(2)}
+                                                {Number(invoice?.totalVatAmount ?? 0).toFixed(2)}
 
                                             </div>
                                         </td>}
-                                       {isColumnVisible('totalInclVAT')&&<td className="px-6 py-4">
+                                        {isColumnVisible('totalInclVAT') && <td className="px-6 py-4">
                                             <div className="text-sm font-medium text-gray-900">
                                                 {Number(invoice?.totalInclVAT ?? 0).toFixed(2)}
 
@@ -853,11 +867,11 @@ export default function InvoicesPage() {
                                     </div>
                                 )}
                                 <div className="flex item-center gap-2">
-                                     <ColumnVisibilityToggle
-                                                columns={columns}
-                                                onColumnToggle={toggleColumn}
-                                                onResetColumns={resetColumns}
-                                            />
+                                    <ColumnVisibilityToggle
+                                        columns={columns}
+                                        onColumnToggle={toggleColumn}
+                                        onResetColumns={resetColumns}
+                                    />
                                 </div>
                             </div>
                         )}
@@ -878,16 +892,19 @@ export default function InvoicesPage() {
                                             />)}
                                             <div className="flex-1">
                                                 <div className="flex items-center gap-2 flex-wrap mb-2">
-                                                {isColumnVisible('invoiceNumber')&&<span className="text-base font-bold text-gray-900">
-                                                        {invoice.status !== InvoiceStatus.DRAFT ? formatInvoiceNumberForDisplay(invoice.invoiceNumber) : "-"}
-
+                                                    {isColumnVisible('invoiceNumber') && <span className="text-base font-bold text-gray-900">
+                                                        <Link
+                                                            href={`/dashboard/invoices/create?invoiceId=${invoice.id}&copy=true&overview=true`}
+                                                        >{invoice.status !== InvoiceStatus.DRAFT ? formatInvoiceNumberForDisplay(invoice.invoiceNumber) : "-"}</Link>
                                                     </span>}
-                                                   {isColumnVisible('status')&&<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                    {isColumnVisible('status') && <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                                         {invoice.status}
                                                     </span>}
                                                 </div>
-                                                {isColumnVisible('customer')&&<p className="text-sm text-gray-600">
-                                                    {invoice.customer?.customerName}
+                                                {isColumnVisible('customer') && <p className="text-sm text-gray-600">
+                                                    <Link
+                                                        href={`/dashboard/customers/create?customerId=${invoice.customer?.id}&overview=true`}
+                                                    >{invoice.customer?.customerName}</Link>
                                                 </p>}
                                             </div>
                                         </div>
@@ -915,19 +932,19 @@ export default function InvoicesPage() {
 
                                     {/* Financial Breakdown */}
                                     <div className="bg-blue-50/50 rounded-lg p-3 space-y-2">
-                                       {isColumnVisible('totalExclVAT')&&<div className="flex items-center justify-between text-sm">
+                                        {isColumnVisible('totalExclVAT') && <div className="flex items-center justify-between text-sm">
                                             <span className="text-gray-600">Total Excl VAT</span>
                                             <span className="font-medium text-gray-900">
                                                 {Number(invoice.totalExclVAT).toFixed(2)}
                                             </span>
                                         </div>}
-                                       {isColumnVisible('vatAmount')&&<div className="flex items-center justify-between text-sm">
+                                        {isColumnVisible('vatAmount') && <div className="flex items-center justify-between text-sm">
                                             <span className="text-gray-600">VAT Amount</span>
                                             <span className="font-medium text-gray-900">
-                                                {Number(invoice.vatAmount).toFixed(2)}
+                                                {Number(invoice.totalVatAmount).toFixed(2)}
                                             </span>
                                         </div>}
-                                       {isColumnVisible('totalInclVAT')&&<div className="flex items-center justify-between text-sm pt-2 border-t border-blue-200">
+                                        {isColumnVisible('totalInclVAT') && <div className="flex items-center justify-between text-sm pt-2 border-t border-blue-200">
                                             <span className="font-semibold text-gray-900">Total Incl VAT</span>
                                             <span className="font-bold text-gray-900">
                                                 {Number(invoice.totalInclVAT).toFixed(2)}

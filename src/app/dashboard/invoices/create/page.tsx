@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { ArrowLeftIcon, ArrowDownIcon } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
 import { Contact } from 'lucide-react'
-import { calculateInvoiceTotals, exportToPDF, sendEmail } from '@/shared/lib/invoiceHelper'
+import { calculateInvoiceTotals, exportToPDF, formatInvoiceNumberForDisplay, sendEmail } from '@/shared/lib/invoiceHelper'
 import { Decimal } from '@prisma/client/runtime/library'
 import InvoiceSummaryCalculation from '@/components/invoice/InvoiceSummaryCalculation'
 import { se } from 'date-fns/locale'
@@ -91,6 +91,7 @@ export interface InvoiceLine {
     productNumber?: string;
 }
 export interface InvoiceFormData {
+    invoiceNumber: string,
     customerId: string,
     contactPersonId: string,
     deliveryAddress: string,
@@ -121,6 +122,7 @@ export default function CreateInvoicePage() {
     const [fetchingCustomer, setFetchingCustomer] = useState(false)
     const [fetchingLoading, setFetchingLoading] = useState(false);
     const [formData, setFormData] = useState<InvoiceFormData>({
+        invoiceNumber:'',
         customerId: '',
         contactPersonId: '',
         deliveryAddress: '',
@@ -277,6 +279,7 @@ export default function CreateInvoicePage() {
                 }
 
                 setFormData({
+                    invoiceNumber: data.invoiceNumber || '',
                     customerId: data.customerId || '',
                     contactPersonId: data.contactPersonId || '',
                     deliveryAddress: data.deliveryAddress || '',
@@ -529,6 +532,14 @@ export default function CreateInvoicePage() {
             setLoading(false)
         }
     }
+    const handleBack = () => {
+        if (window.history.length > 1) {
+            router.back()
+        } else {
+            router.push("/dashboard/invoices")
+        }
+    }
+
 
     return (
         <div className="space-y-6">
@@ -537,19 +548,11 @@ export default function CreateInvoicePage() {
                 <div className="flex items-center justify-between">
                     <div>
                         <div className="flex items-center gap-3 mb-2">
-                            {overviewMode ? <Link
-                                href="/dashboard/invoice-overviews"
-                                className="p-2 hover:bg-white/50 rounded-lg transition-colors"
-                            >
+                            <button onClick={handleBack}>
                                 <ArrowLeftIcon className="w-5 h-5 text-gray-600" />
-                            </Link> : <Link
-                                href="/dashboard/invoices"
-                                className="p-2 hover:bg-white/50 rounded-lg transition-colors"
-                            >
-                                <ArrowLeftIcon className="w-5 h-5 text-gray-600" />
-                            </Link>}
+                            </button>
                             <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                                {overviewMode ? "Invoice Details" : "Create Invoice"}
+                                {overviewMode ? `Invoice Details (Invoice Number -${formatInvoiceNumberForDisplay(formData.invoiceNumber)})` : "Create Invoice"}
                             </h1>
                         </div>
                         {overviewMode ? null : <p className="mt-2 text-gray-600 ml-14">

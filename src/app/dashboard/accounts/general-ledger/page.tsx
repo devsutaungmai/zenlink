@@ -26,6 +26,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
 import { on } from "events"
 import { formatVoucherNumberForDisplay } from "@/shared/lib/invoiceHelper"
+import { Description } from "@/components/invoice/Description"
 
 interface LedgerEntry {
   id: string
@@ -36,6 +37,7 @@ interface LedgerEntry {
   vatCode?: string
   currency?: string
   amount: number
+  customerId?: string
   hasAttachment?: boolean
 }
 
@@ -485,7 +487,13 @@ function AccountSection({
               <span className="text-blue-600 hover:underline cursor-pointer text-sm">{formatVoucherNumberForDisplay(entry.voucherNo)}</span>
             </td>
             <td className="border-r border-border p-3 text-sm">{entry.date}</td>
-            <td className="max-w-md truncate border-r border-border p-3 text-sm">{entry.description}</td>
+            <td className="max-w-md truncate border-r border-border p-3 text-sm">
+              <Description
+                description={entry.description}
+                invoiceId={entry.id}
+                customerId={entry.customerId}
+              />
+            </td>
             <td className="border-r border-border p-3 text-sm">{account.code === "3200" ? entry.vatCode : ""}</td>
             <td className="border-r border-border p-3 text-sm">{entry.currency}</td>
             <td className="text-right font-medium border-r border-border p-3 text-sm tabular-nums">
@@ -633,3 +641,4 @@ function MobileAccountSection({
     </div>
   ): null
 }
+

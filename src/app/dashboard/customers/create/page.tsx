@@ -19,6 +19,7 @@ import { formatCustomerNumberForDisplay, generateCustomerNumber, getBusinessId }
 import { set } from 'date-fns'
 import { get } from 'http'
 import { del } from '@vercel/blob'
+import { ro } from 'date-fns/locale'
 
 export interface Department {
     id: string
@@ -329,6 +330,14 @@ export default function CreateCustomersPage() {
         }
     }
 
+    const handleBack = () => {
+        if (window.history.length > 1) {
+            router.back()
+        } else {
+            router.push("/dashboard/customers")
+        }
+    }
+
     return (
         <div className="space-y-6">
             {/* Header Section */}
@@ -336,17 +345,9 @@ export default function CreateCustomersPage() {
                 <div className="flex items-center justify-between">
                     <div>
                         <div className="flex items-center gap-3 mb-2">
-                            {overviewMode ? <Link
-                                href="/dashboard/invoice-overviews"
-                                className="p-2 hover:bg-white/50 rounded-lg transition-colors"
-                            >
+                            <button onClick={handleBack}>
                                 <ArrowLeftIcon className="w-5 h-5 text-gray-600" />
-                            </Link> : <Link
-                                href="/dashboard/customers"
-                                className="p-2 hover:bg-white/50 rounded-lg transition-colors"
-                            >
-                                <ArrowLeftIcon className="w-5 h-5 text-gray-600" />
-                            </Link>}
+                            </button>
                             <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
                                 {overviewMode ? "Customer Details" : "Create Customer"}
                             </h1>

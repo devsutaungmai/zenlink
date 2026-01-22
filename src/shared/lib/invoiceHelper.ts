@@ -240,7 +240,7 @@ export async function createCreditNote(params: {
         // Link to original invoice
         creditedInvoiceId: originalInvoiceId,
 
-        notes: reason || `Kreditnota for faktura ${originalInvoice.invoiceNumber}`,
+        notes: reason || `Kreditnota for faktura ${formatInvoiceNumberForDisplay(originalInvoice.invoiceNumber)} opprettet automatisk. customer: ${originalInvoice.customer?.customerName || ''}`,
         voucherId: voucher.id,
 
         invoiceLines: {
@@ -490,7 +490,8 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
     include: {
       customer: {
         select: {
-          customerName: true
+          id: true,
+          customerName: true,
         }
       },
       invoiceLines: {
@@ -578,7 +579,7 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
             amount: lineTotal,
             projectId: invoice.projectId,
             departmentId: invoice.departmentId,
-            description: `Kreditnota ${invoice.invoiceNumber}`
+            description: `Kredit nota ${formatInvoiceNumberForDisplay(invoice.invoiceNumber)} til ${invoice.customer?.customerName || 'customer'} ${invoice.customer?.id || ''}`
           }
         });
       } else {
@@ -596,7 +597,7 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
             amount: lineTotal,
             projectId: invoice.projectId,
             departmentId: invoice.departmentId,
-            description: `Faktura nummer ${invoice.invoiceNumber} til ${invoice.customer?.customerName || 'customer'}`
+            description: `Faktura nummer ${formatInvoiceNumberForDisplay(invoice.invoiceNumber)} til ${invoice.customer?.customerName || 'customer'} ${invoice.customer?.id || ''}`
           }
         });
       }
@@ -621,7 +622,7 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
             amount: vatAmount,
             projectId: invoice.projectId,
             departmentId: invoice.departmentId,
-            description: `Kreditnota ${invoice.invoiceNumber} - MVA`
+            description: `Kredit nota ${formatInvoiceNumberForDisplay(invoice.invoiceNumber)} till ${invoice.customer?.customerName || 'customer'} ${invoice.customer?.id || ''}`
           }
         });
       } else {
@@ -639,7 +640,7 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
             amount: vatAmount,
             projectId: invoice.projectId,
             departmentId: invoice.departmentId,
-            description: `Faktura nummer ${invoice.invoiceNumber} - MVA`
+            description: `Faktura nummer ${formatInvoiceNumberForDisplay(invoice.invoiceNumber)} til ${invoice.customer?.customerName || 'customer'} ${invoice.customer?.id || ''}`
           }
         });
       }
@@ -787,7 +788,8 @@ export async function generateLedgerReport(
           customer: {
             select: {
               id: true,
-              customerName: true
+              customerName: true,
+              customerNumber: true
             }
           }
         }
@@ -907,6 +909,7 @@ export async function generateLedgerReport(
           const voucherNo = entry.voucher?.voucherNumber || `V-${entry.id.slice(-8)}`;
           const customerName = entry.invoice?.customer?.customerName || '';
           const customerId = entry.invoice?.customer?.id || '';
+          const invoiceDisplayNumber = entry.invoice?.invoiceNumber ? formatInvoiceNumberForDisplay(entry.invoice?.invoiceNumber) : '';
 
           if (!groupedMap.has(groupKey)) {
             groupedMap.set(groupKey, {
@@ -914,7 +917,7 @@ export async function generateLedgerReport(
               voucherNo,
               date: entry.postingDate || new Date(),
               description: entry.invoiceId
-                ? `Faktura nummer ${voucherNo} til ${customerName} (${customerId})`
+                ? `Faktura nummer ${invoiceDisplayNumber} til (${customerName}) ${customerId}`
                 : entry.description || '',
               displayAmount: displayAmount,
               trueMovement: trueMovement
