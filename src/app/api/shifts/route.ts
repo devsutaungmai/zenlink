@@ -5,7 +5,7 @@ import { SMSService, NotificationService } from '@/shared/lib/notifications'
 import { hasAnyServerPermission } from '@/shared/lib/serverPermissions'
 import { PERMISSIONS } from '@/shared/lib/permissions'
 import { canEmployeeBeScheduled } from '@/shared/lib/employeeProfileHelper'
-import { validateShiftCombined, getEmployeeShiftsForValidation } from '@/shared/lib/shiftValidation'
+import { validateShiftCombined, getEmployeeShiftsForValidation, getBatchEmployeeShiftsForValidation } from '@/shared/lib/shiftValidation'
 import jwt from 'jsonwebtoken'
 import { cookies } from 'next/headers'
 import { startOfWeek, endOfWeek } from 'date-fns'
@@ -275,22 +275,32 @@ export async function GET(request: Request) {
       }
     })
 
+    const allEmployeeIds = Array.from(new Set(shifts.filter(s => s.employeeId).map(s => s.employeeId!)))
+    
+    const minDate = shifts.length > 0 
+      ? new Date(Math.min(...shifts.map(s => new Date(s.date).getTime())))
+      : new Date()
+    const maxDate = shifts.length > 0
+      ? new Date(Math.max(...shifts.map(s => new Date(s.date).getTime())))
+      : new Date()
+
+    const weekStartDate = startOfWeek(minDate, { weekStartsOn: 1 })
+    const weekEndDate = endOfWeek(maxDate, { weekStartsOn: 1 })
+
+    const batchShiftsMap = await getBatchEmployeeShiftsForValidation(
+      allEmployeeIds,
+      weekStartDate,
+      weekEndDate
+    )
+
     const shiftsWithValidation = await Promise.all(shifts.map(async (shift) => {
       if (!shift.employeeId) {
         return { ...shift, validation: null }
       }
 
       try {
-        const shiftDate = new Date(shift.date)
-        const weekStart = startOfWeek(shiftDate, { weekStartsOn: 1 })
-        const weekEnd = endOfWeek(shiftDate, { weekStartsOn: 1 })
-
-        const existingShifts = await getEmployeeShiftsForValidation(
-          shift.employeeId,
-          weekStart,
-          weekEnd,
-          shift.id
-        )
+        const employeeShifts = batchShiftsMap.get(shift.employeeId) || []
+        const existingShifts = employeeShifts.filter(s => s.id !== shift.id)
 
         const validationResult = await validateShiftCombined(
           {

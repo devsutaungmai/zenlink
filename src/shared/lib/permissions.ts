@@ -12,6 +12,9 @@ export const PERMISSION_CATEGORIES = {
   CATEGORIES: 'Categories',
   FUNCTIONS: 'Functions',
   ROLES: 'Roles & Permissions',
+  INVOICES: 'Invoices',
+  CUSTOMERS: 'Customers',
+  PRODUCTS: 'Products',
 } as const
 
 export type PermissionCategory = typeof PERMISSION_CATEGORIES[keyof typeof PERMISSION_CATEGORIES]
@@ -138,6 +141,31 @@ export const PERMISSIONS = {
   ROLES_EDIT: 'roles.edit',
   ROLES_DELETE: 'roles.delete',
   ROLES_ASSIGN: 'roles.assign',
+  
+  // Invoices
+  INVOICES_VIEW: 'invoices.view',
+  INVOICES_CREATE: 'invoices.create',
+  INVOICES_EDIT: 'invoices.edit',
+  INVOICES_DELETE: 'invoices.delete',
+  INVOICES_SEND: 'invoices.send',
+  INVOICES_EXPORT: 'invoices.export',
+  INVOICES_MARK_PAID: 'invoices.mark_paid',
+  INVOICES_CREDIT_NOTE: 'invoices.credit_note',
+  INVOICES_SETTINGS: 'invoices.settings',
+  
+  // Customers
+  CUSTOMERS_VIEW: 'customers.view',
+  CUSTOMERS_CREATE: 'customers.create',
+  CUSTOMERS_EDIT: 'customers.edit',
+  CUSTOMERS_DELETE: 'customers.delete',
+  CUSTOMERS_SETTINGS: 'customers.settings',
+  
+  // Products
+  PRODUCTS_VIEW: 'products.view',
+  PRODUCTS_CREATE: 'products.create',
+  PRODUCTS_EDIT: 'products.edit',
+  PRODUCTS_DELETE: 'products.delete',
+  PRODUCTS_SETTINGS: 'products.settings',
 } as const
 
 export type Permission = typeof PERMISSIONS[keyof typeof PERMISSIONS]
@@ -695,6 +723,126 @@ export const PERMISSION_INFO: Record<Permission, PermissionInfo> = {
     name: 'Assign Roles',
     description: 'Assign roles to users',
     category: PERMISSION_CATEGORIES.ROLES,
+  },
+  
+  // Invoices
+  [PERMISSIONS.INVOICES_VIEW]: {
+    code: PERMISSIONS.INVOICES_VIEW,
+    name: 'View Invoices',
+    description: 'View invoice list and details',
+    category: PERMISSION_CATEGORIES.INVOICES,
+  },
+  [PERMISSIONS.INVOICES_CREATE]: {
+    code: PERMISSIONS.INVOICES_CREATE,
+    name: 'Create Invoices',
+    description: 'Create new invoices',
+    category: PERMISSION_CATEGORIES.INVOICES,
+  },
+  [PERMISSIONS.INVOICES_EDIT]: {
+    code: PERMISSIONS.INVOICES_EDIT,
+    name: 'Edit Invoices',
+    description: 'Modify existing invoices',
+    category: PERMISSION_CATEGORIES.INVOICES,
+  },
+  [PERMISSIONS.INVOICES_DELETE]: {
+    code: PERMISSIONS.INVOICES_DELETE,
+    name: 'Delete Invoices',
+    description: 'Remove invoices from the system',
+    category: PERMISSION_CATEGORIES.INVOICES,
+  },
+  [PERMISSIONS.INVOICES_SEND]: {
+    code: PERMISSIONS.INVOICES_SEND,
+    name: 'Send Invoices',
+    description: 'Send invoices via email to customers',
+    category: PERMISSION_CATEGORIES.INVOICES,
+  },
+  [PERMISSIONS.INVOICES_EXPORT]: {
+    code: PERMISSIONS.INVOICES_EXPORT,
+    name: 'Export Invoices',
+    description: 'Export invoices to PDF',
+    category: PERMISSION_CATEGORIES.INVOICES,
+  },
+  [PERMISSIONS.INVOICES_MARK_PAID]: {
+    code: PERMISSIONS.INVOICES_MARK_PAID,
+    name: 'Mark as Paid',
+    description: 'Register customer payments',
+    category: PERMISSION_CATEGORIES.INVOICES,
+  },
+  [PERMISSIONS.INVOICES_CREDIT_NOTE]: {
+    code: PERMISSIONS.INVOICES_CREDIT_NOTE,
+    name: 'Create Credit Notes',
+    description: 'Issue credit notes for invoices',
+    category: PERMISSION_CATEGORIES.INVOICES,
+  },
+  [PERMISSIONS.INVOICES_SETTINGS]: {
+    code: PERMISSIONS.INVOICES_SETTINGS,
+    name: 'Invoice Settings',
+    description: 'Configure invoice form and general settings',
+    category: PERMISSION_CATEGORIES.INVOICES,
+  },
+  
+  // Customers
+  [PERMISSIONS.CUSTOMERS_VIEW]: {
+    code: PERMISSIONS.CUSTOMERS_VIEW,
+    name: 'View Customers',
+    description: 'View customer list and details',
+    category: PERMISSION_CATEGORIES.CUSTOMERS,
+  },
+  [PERMISSIONS.CUSTOMERS_CREATE]: {
+    code: PERMISSIONS.CUSTOMERS_CREATE,
+    name: 'Create Customers',
+    description: 'Add new customers',
+    category: PERMISSION_CATEGORIES.CUSTOMERS,
+  },
+  [PERMISSIONS.CUSTOMERS_EDIT]: {
+    code: PERMISSIONS.CUSTOMERS_EDIT,
+    name: 'Edit Customers',
+    description: 'Modify customer information',
+    category: PERMISSION_CATEGORIES.CUSTOMERS,
+  },
+  [PERMISSIONS.CUSTOMERS_DELETE]: {
+    code: PERMISSIONS.CUSTOMERS_DELETE,
+    name: 'Delete Customers',
+    description: 'Remove customers from the system',
+    category: PERMISSION_CATEGORIES.CUSTOMERS,
+  },
+  [PERMISSIONS.CUSTOMERS_SETTINGS]: {
+    code: PERMISSIONS.CUSTOMERS_SETTINGS,
+    name: 'Customer Settings',
+    description: 'Configure customer form settings',
+    category: PERMISSION_CATEGORIES.CUSTOMERS,
+  },
+  
+  // Products
+  [PERMISSIONS.PRODUCTS_VIEW]: {
+    code: PERMISSIONS.PRODUCTS_VIEW,
+    name: 'View Products',
+    description: 'View product list and details',
+    category: PERMISSION_CATEGORIES.PRODUCTS,
+  },
+  [PERMISSIONS.PRODUCTS_CREATE]: {
+    code: PERMISSIONS.PRODUCTS_CREATE,
+    name: 'Create Products',
+    description: 'Add new products',
+    category: PERMISSION_CATEGORIES.PRODUCTS,
+  },
+  [PERMISSIONS.PRODUCTS_EDIT]: {
+    code: PERMISSIONS.PRODUCTS_EDIT,
+    name: 'Edit Products',
+    description: 'Modify product information',
+    category: PERMISSION_CATEGORIES.PRODUCTS,
+  },
+  [PERMISSIONS.PRODUCTS_DELETE]: {
+    code: PERMISSIONS.PRODUCTS_DELETE,
+    name: 'Delete Products',
+    description: 'Remove products from the system',
+    category: PERMISSION_CATEGORIES.PRODUCTS,
+  },
+  [PERMISSIONS.PRODUCTS_SETTINGS]: {
+    code: PERMISSIONS.PRODUCTS_SETTINGS,
+    name: 'Product Settings',
+    description: 'Configure product form settings',
+    category: PERMISSION_CATEGORIES.PRODUCTS,
   },
 }
 
