@@ -262,9 +262,8 @@ export default function SchedulePage() {
 
 
   useEffect(() => {
-    // Only fetch shifts when date or employee changes
     fetchShifts()
-  }, [currentDate, selectedEmployeeId, startDate, endDate])
+  }, [startDate, endDate, selectedEmployeeId])
 
   useEffect(() => {
     fetchAvailability()
@@ -386,7 +385,7 @@ export default function SchedulePage() {
     }
   }
 
-  const fetchShifts = async () => {
+  const fetchShifts = useCallback(async () => {
     try {
       setLoading(true)
       const start = format(startDate, 'yyyy-MM-dd')
@@ -398,7 +397,8 @@ export default function SchedulePage() {
       }
       
       const res = await fetch(url, {
-        headers: { 'Cache-Control': 'max-age=60' }
+        headers: { 'Cache-Control': 'max-age=60' },
+        next: { revalidate: 60 }
       })
       
       if (!res.ok) {
@@ -413,7 +413,7 @@ export default function SchedulePage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [startDate, endDate, selectedEmployeeId])
 
   const getAvailabilityStatus = useCallback((employeeId: string, date: string) => {
     if (!employeeId || !date) return undefined
@@ -772,9 +772,26 @@ export default function SchedulePage() {
       }
     }
 
-    setLoading(true);
     const successToastKey = formData.id ? 'toasts.shift_updated' : 'toasts.shift_created'
     const failureToastKey = formData.id ? 'toasts.shift_update_failed' : 'toasts.shift_create_failed'
+    
+    const optimisticShift = {
+      ...formData,
+      id: formData.id || `temp-${Date.now()}`,
+      date: new Date(formData.date),
+      employee: formData.employeeId ? employees.find(e => e.id === formData.employeeId) : null,
+      department: formData.departmentId ? departments.find(d => d.id === formData.departmentId) : null,
+      function: formData.functionId ? functions.find(f => f.id === formData.functionId) : null,
+      shiftTypeConfig: formData.shiftTypeId ? shiftTypes.find(st => st.id === formData.shiftTypeId) : null,
+    }
+    
+    if (formData.id) {
+      setShifts(prev => prev.map(s => s.id === formData.id ? { ...s, ...optimisticShift } : s))
+    } else {
+      setShifts(prev => [...prev, optimisticShift as any])
+    }
+    setShowShiftModal(false)
+    
     try {
       const method = formData.id ? 'PUT' : 'POST';
       const url = formData.id 
@@ -789,7 +806,6 @@ export default function SchedulePage() {
 
       if (res.ok) {
         await fetchShifts();
-        setShowShiftModal(false);
         
         Swal.fire({
           text: t(successToastKey),
@@ -804,6 +820,12 @@ export default function SchedulePage() {
         });
       } else {
         const errorData = await res.json();
+        
+        if (formData.id) {
+          await fetchShifts()
+        } else {
+          setShifts(prev => prev.filter(s => s.id !== optimisticShift.id))
+        }
         
         Swal.fire({
           text: errorData.error || t(failureToastKey),
@@ -820,6 +842,12 @@ export default function SchedulePage() {
     } catch (error) {
       console.error('Error submitting shift form:', error)
       
+      if (formData.id) {
+        await fetchShifts()
+      } else {
+        setShifts(prev => prev.filter(s => s.id !== optimisticShift.id))
+      }
+      
       Swal.fire({
         text: t(failureToastKey),
         toast: true,
@@ -831,8 +859,6 @@ export default function SchedulePage() {
           popup: 'swal-toast-wide'
         }
       })
-    } finally {
-      setLoading(false)
     }
   };
 

@@ -234,3 +234,55 @@ export function isOvertimeEligibleForEmployee(contractResult: ContractValidation
     reason: contractResult.overtimeExemptReason,
   }
 }
+
+export async function getBatchEmployeeShiftsForValidation(
+  employeeIds: string[],
+  startDate: Date,
+  endDate: Date
+): Promise<Map<string, ShiftValidationInput[]>> {
+  if (employeeIds.length === 0) {
+    return new Map()
+  }
+
+  const shifts = await prisma.shift.findMany({
+    where: {
+      employeeId: {
+        in: employeeIds
+      },
+      date: {
+        gte: startDate,
+        lte: endDate,
+      },
+    },
+    select: {
+      id: true,
+      date: true,
+      startTime: true,
+      endTime: true,
+      breakStart: true,
+      breakEnd: true,
+      employeeId: true,
+    },
+  })
+
+  const shiftsByEmployee = new Map<string, ShiftValidationInput[]>()
+
+  shifts.forEach(s => {
+    const employeeId = s.employeeId || ''
+    if (!shiftsByEmployee.has(employeeId)) {
+      shiftsByEmployee.set(employeeId, [])
+    }
+
+    shiftsByEmployee.get(employeeId)!.push({
+      id: s.id,
+      date: s.date,
+      startTime: s.startTime,
+      endTime: s.endTime || '',
+      breakStart: s.breakStart?.toISOString().split('T')[1]?.substring(0, 5) || null,
+      breakEnd: s.breakEnd?.toISOString().split('T')[1]?.substring(0, 5) || null,
+      employeeId: employeeId,
+    })
+  })
+
+  return shiftsByEmployee
+}
