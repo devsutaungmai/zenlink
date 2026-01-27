@@ -291,13 +291,13 @@ export default function PayrollPeriodsPage() {
                 <div className="flex items-center text-gray-600">
                   <ClockIcon className="w-4 h-4 mr-2 opacity-60" />
                   <span className="truncate">
-                    Created {new Date(period.createdAt).toLocaleDateString()}
+                    {t('card.created')} {new Date(period.createdAt).toLocaleDateString()}
                   </span>
                 </div>
                 <div className="flex items-center text-gray-600">
                   <CalendarIcon className="w-4 h-4 mr-2 opacity-60" />
                   <span className="truncate">
-                    {Math.ceil((new Date(period.endDate).getTime() - new Date(period.startDate).getTime()) / (1000 * 60 * 60 * 24))} days duration
+                    {Math.ceil((new Date(period.endDate).getTime() - new Date(period.startDate).getTime()) / (1000 * 60 * 60 * 24))} {t('card.days_duration')}
                   </span>
                 </div>
               </div>

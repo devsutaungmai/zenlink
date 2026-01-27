@@ -35,7 +35,10 @@
       "status": "Status",
       "shift_info": "Vaktinformasjon",
       "actions": "Handlinger"
-    }
+    },
+    "pagination_summary": "Viser {{start}}-{{end}} av {{total}} poster",
+    "rows_per_page": "Rader per side",
+    "empty_summary": "Ingen poster funnet"
   },
   "actions": {
     "edit": "Rediger",
@@ -50,11 +53,17 @@
     "create_title": "Opprett oppmøteregistrering",
     "create_description": "Opprett en ny oppmøteregistrering for en medarbeider",
     "employee": "Medarbeider",
+    "date": "Dato",
     "punch_in_time": "Inn-stemplingstid",
     "punch_out_time": "Ut-stemplingstid",
+    "punch_out_optional": "Ut-stemplingstid (Valgfritt)",
+    "leave_empty_hint": "La stå tom for å opprette en aktiv vakt",
+    "selected_shift": "Valgt vakt",
     "cancel": "Avbryt",
     "save_changes": "Lagre endringer",
-    "select_employee": "Velg en medarbeider..."
+    "select_employee": "Velg en medarbeider...",
+    "create": "Opprett oppmøte",
+    "creating": "Oppretter..."
   },
   "status": {
     "working": "Jobber",

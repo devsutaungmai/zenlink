@@ -54,7 +54,21 @@
     "available": "Tilgjengelig",
     "unavailable": "Ikke tilgjengelig",
     "today": "I dag",
-    "has_note": "Har notat"
+    "has_note": "Har notat",
+    "selected": "Valgt"
+  },
+  "actions": {
+    "mark_available": "Merk tilgjengelig",
+    "mark_unavailable": "Merk utilgjengelig",
+    "clear_selection": "Fjern valg",
+    "select_all_days": "Velg alle dager",
+    "updating": "Oppdaterer..."
+  },
+  "stats": {
+    "pending_requests": "Ventende forespørsler"
+  },
+  "tips": {
+    "click_to_select": "💡 Klikk på kalenderdagene dine for å velge, og merk deretter som tilgjengelig/utilgjengelig"
   },
   "loading": "Laster tilgjengelighetsdata...",
   "error": {

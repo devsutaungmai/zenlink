@@ -8,6 +8,7 @@ import {
   ArrowLeftIcon
 } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
+import { useTranslation } from 'react-i18next'
 
 interface Department {
   id: string
@@ -35,6 +36,7 @@ interface PayrollPeriod {
 
 export default function GeneratePayrollEntriesPage() {
   const router = useRouter()
+  const { t } = useTranslation('payroll-entries')
   
   const [departments, setDepartments] = useState<Department[]>([])
   const [employeeGroups, setEmployeeGroups] = useState<EmployeeGroup[]>([])
@@ -84,8 +86,8 @@ export default function GeneratePayrollEntriesPage() {
     } catch (error) {
       console.error('Error fetching data:', error)
       await Swal.fire({
-        title: 'Error!',
-        text: 'Failed to load data for payroll generation.',
+        title: t('generate.error_title'),
+        text: t('generate.error_load_data'),
         icon: 'error',
         confirmButtonColor: '#31BCFF',
       })
@@ -97,8 +99,8 @@ export default function GeneratePayrollEntriesPage() {
   const handleGenerate = async () => {
     if (!selectedPayrollPeriod) {
       await Swal.fire({
-        title: 'Missing Information',
-        text: 'Please select a payroll period.',
+        title: t('generate.missing_period_title'),
+        text: t('generate.missing_period_text'),
         icon: 'warning',
         confirmButtonColor: '#31BCFF',
       })
@@ -132,14 +134,14 @@ export default function GeneratePayrollEntriesPage() {
 
       if (response.ok) {
         await Swal.fire({
-          title: 'Success!',
+          title: t('generate.success_title'),
           html: `
             <div class="text-left">
-              <p><strong>✅ Created:</strong> ${data.created} payroll entries</p>
-              <p><strong>⚠️ Skipped:</strong> ${data.skipped} employees</p>
+              <p><strong>✅ ${t('generate.created_entries')}:</strong> ${data.created} ${t('generate.payroll_entries')}</p>
+              <p><strong>⚠️ ${t('generate.skipped_employees')}:</strong> ${data.skipped} ${t('generate.employees_label')}</p>
               ${data.skippedEmployees.length > 0 ? 
                 `<div class="mt-3">
-                  <p><strong>Skipped employees:</strong></p>
+                  <p><strong>${t('generate.skipped_employees_label')}:</strong></p>
                   <ul class="text-sm text-gray-600 mt-1">
                     ${data.skippedEmployees.map((emp: any) => 
                       `<li>• ${emp.name}: ${emp.reason}</li>`
@@ -161,8 +163,8 @@ export default function GeneratePayrollEntriesPage() {
     } catch (error) {
       console.error('Error generating payroll entries:', error)
       await Swal.fire({
-        title: 'Error!',
-        text: error instanceof Error ? error.message : 'Failed to generate payroll entries',
+        title: t('generate.error_title'),
+        text: error instanceof Error ? error.message : t('generate.error_generate'),
         icon: 'error',
         confirmButtonColor: '#31BCFF',
       })
@@ -175,7 +177,7 @@ export default function GeneratePayrollEntriesPage() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#31BCFF]"></div>
-        <span className="ml-4 text-gray-600">Loading data...</span>
+        <span className="ml-4 text-gray-600">{t('generate.loading')}</span>
       </div>
     )
   }
@@ -192,14 +194,14 @@ export default function GeneratePayrollEntriesPage() {
                 className="inline-flex items-center text-gray-600 hover:text-[#31BCFF] transition-colors duration-200"
               >
                 <ArrowLeftIcon className="w-5 h-5 mr-2" />
-                Back to Payroll Entries
+                {t('generate.back_to_entries')}
               </Link>
             </div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-              Generate Payroll Entries
+              {t('generate.title')}
             </h1>
             <p className="mt-2 text-gray-600">
-              Create payroll entries automatically from approved attendance records
+              {t('generate.subtitle')}
             </p>
           </div>
         </div>
@@ -211,7 +213,7 @@ export default function GeneratePayrollEntriesPage() {
           {/* Payroll Period Selection */}
           <div>
             <label htmlFor="payrollPeriod" className="block text-sm font-medium text-gray-700 mb-2">
-              Payroll Period <span className="text-red-500">*</span>
+              {t('generate.payroll_period_required')}
             </label>
             <select
               id="payrollPeriod"
@@ -219,7 +221,7 @@ export default function GeneratePayrollEntriesPage() {
               onChange={(e) => setSelectedPayrollPeriod(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF]"
             >
-              <option value="">Select payroll period...</option>
+              <option value="">{t('generate.select_payroll_period')}</option>
               {payrollPeriods.map((period) => (
                 <option key={period.id} value={period.id}>
                   {period.name} ({new Date(period.startDate).toLocaleDateString()} - {new Date(period.endDate).toLocaleDateString()})
@@ -227,17 +229,17 @@ export default function GeneratePayrollEntriesPage() {
               ))}
             </select>
             <p className="mt-1 text-sm text-gray-500">
-              Attendance data will be pulled from the period&apos;s date range
+              {t('generate.period_hint')}
             </p>
           </div>
 
           {/* Department Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-3">
-              Departments (Optional)
+              {t('generate.departments')}
             </label>
             {departments.length === 0 ? (
-              <p className="text-sm text-gray-500 py-4 px-3 bg-gray-50 rounded-lg">No departments available</p>
+              <p className="text-sm text-gray-500 py-4 px-3 bg-gray-50 rounded-lg">{t('generate.no_departments')}</p>
             ) : (
               <div className="border border-gray-300 rounded-lg max-h-40 overflow-y-auto bg-white">
                 {departments.map((dept) => (
@@ -261,8 +263,8 @@ export default function GeneratePayrollEntriesPage() {
             )}
             <p className="mt-2 text-sm text-gray-500">
               {selectedDepartments.length > 0 
-                ? `${selectedDepartments.length} department(s) selected`
-                : 'Select departments to filter employees, or leave empty to include all departments'
+                ? t('generate.departments_selected', { count: selectedDepartments.length })
+                : t('generate.departments_hint')
               }
             </p>
           </div>
@@ -270,10 +272,10 @@ export default function GeneratePayrollEntriesPage() {
           {/* Employee Group Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-3">
-              Employee Groups (Optional)
+              {t('generate.employee_groups')}
             </label>
             {employeeGroups.length === 0 ? (
-              <p className="text-sm text-gray-500 py-4 px-3 bg-gray-50 rounded-lg">No employee groups available</p>
+              <p className="text-sm text-gray-500 py-4 px-3 bg-gray-50 rounded-lg">{t('generate.no_groups')}</p>
             ) : (
               <div className="border border-gray-300 rounded-lg max-h-40 overflow-y-auto bg-white">
                 {employeeGroups.map((group) => (
@@ -297,8 +299,8 @@ export default function GeneratePayrollEntriesPage() {
             )}
             <p className="mt-2 text-sm text-gray-500">
               {selectedEmployeeGroups.length > 0 
-                ? `${selectedEmployeeGroups.length} group(s) selected`
-                : 'Select employee groups to filter employees, or leave empty to include all groups'
+                ? t('generate.groups_selected', { count: selectedEmployeeGroups.length })
+                : t('generate.groups_hint')
               }
             </p>
           </div>
@@ -306,10 +308,10 @@ export default function GeneratePayrollEntriesPage() {
           {/* Employee Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-3">
-              Individual Employees (Optional)
+              {t('generate.employees')}
             </label>
             {employees.length === 0 ? (
-              <p className="text-sm text-gray-500 py-4 px-3 bg-gray-50 rounded-lg">No employees available</p>
+              <p className="text-sm text-gray-500 py-4 px-3 bg-gray-50 rounded-lg">{t('generate.no_employees')}</p>
             ) : (
               <div className="border border-gray-300 rounded-lg max-h-48 overflow-y-auto bg-white">
                 {employees.map((emp) => (
@@ -336,8 +338,8 @@ export default function GeneratePayrollEntriesPage() {
             )}
             <p className="mt-2 text-sm text-gray-500">
               {selectedEmployees.length > 0 
-                ? `${selectedEmployees.length} employee(s) selected`
-                : 'Select specific employees, or leave empty to include all employees matching the above filters'
+                ? t('generate.employees_selected', { count: selectedEmployees.length })
+                : t('generate.employees_hint')
               }
             </p>
           </div>
@@ -348,7 +350,7 @@ export default function GeneratePayrollEntriesPage() {
               href="/dashboard/payroll-entries"
               className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors duration-200"
             >
-              Cancel
+              {t('generate.cancel')}
             </Link>
             <button
               onClick={handleGenerate}
@@ -358,12 +360,12 @@ export default function GeneratePayrollEntriesPage() {
               {generating ? (
                 <>
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                  Generating...
+                  {t('generate.generating')}
                 </>
               ) : (
                 <>
                   <DocumentTextIcon className="w-5 h-5 mr-2" />
-                  Generate Payroll Entries
+                  {t('generate.generate_button')}
                 </>
               )}
             </button>

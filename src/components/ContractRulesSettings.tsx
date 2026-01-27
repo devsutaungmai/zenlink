@@ -65,12 +65,12 @@ interface ContractType {
   updatedAt: string
 }
 
-const EMPLOYMENT_TYPE_LABELS: Record<string, string> = {
-  FULL_TIME: 'Full-Time',
-  PART_TIME: 'Part-Time',
-  SEASONAL_TEMPORARY: 'Seasonal/Temporary',
-  HOURLY: 'Hourly',
-  MONTHLY_SALARY: 'Monthly Salary',
+const EMPLOYMENT_TYPE_KEYS: Record<string, string> = {
+  FULL_TIME: 'FULL_TIME',
+  PART_TIME: 'PART_TIME',
+  SEASONAL_TEMPORARY: 'SEASONAL_TEMPORARY',
+  HOURLY: 'HOURLY',
+  MONTHLY_SALARY: 'MONTHLY_SALARY',
 }
 
 
@@ -193,8 +193,8 @@ export default function ContractRulesSettings() {
     if (!formData.name?.trim()) {
       Swal.fire({
         icon: 'error',
-        title: 'Validation Error',
-        text: 'Contract type name is required',
+        title: t('contract_rules.validation_error'),
+        text: t('contract_rules.name_required_error'),
       })
       return
     }
@@ -202,8 +202,8 @@ export default function ContractRulesSettings() {
     if (!formData.laborLawProfileId) {
       Swal.fire({
         icon: 'error',
-        title: 'Validation Error',
-        text: 'Labor law profile is required',
+        title: t('contract_rules.validation_error'),
+        text: t('contract_rules.profile_required_error'),
       })
       return
     }
@@ -226,8 +226,8 @@ export default function ContractRulesSettings() {
       if (response.ok) {
         Swal.fire({
           icon: 'success',
-          title: editingId ? 'Updated' : 'Created',
-          text: `Contract type ${editingId ? 'updated' : 'created'} successfully`,
+          title: editingId ? t('contract_rules.update') : t('contract_rules.create'),
+          text: editingId ? t('contract_rules.updated_success') : t('contract_rules.created_success'),
           timer: 1500,
           showConfirmButton: false,
         })
@@ -237,16 +237,16 @@ export default function ContractRulesSettings() {
         const error = await response.json()
         Swal.fire({
           icon: 'error',
-          title: 'Error',
-          text: error.error || 'Failed to save contract type',
+          title: t('contract_rules.error'),
+          text: error.error || t('contract_rules.save_failed'),
         })
       }
     } catch (error) {
       console.error('Error saving contract type:', error)
       Swal.fire({
         icon: 'error',
-        title: 'Error',
-        text: 'Failed to save contract type',
+        title: t('contract_rules.error'),
+        text: t('contract_rules.save_failed'),
       })
     } finally {
       setIsSaving(false)
@@ -256,11 +256,11 @@ export default function ContractRulesSettings() {
   const handleDelete = async (contractType: ContractType) => {
     const result = await Swal.fire({
       icon: 'warning',
-      title: 'Delete Contract Type',
-      text: `Are you sure you want to delete "${contractType.name}"?`,
+      title: t('contract_rules.delete_contract_type'),
+      text: t('contract_rules.delete_confirm', { name: contractType.name }),
       showCancelButton: true,
       confirmButtonColor: '#ef4444',
-      confirmButtonText: 'Delete',
+      confirmButtonText: t('contract_rules.delete'),
     })
 
     if (result.isConfirmed) {
@@ -272,8 +272,8 @@ export default function ContractRulesSettings() {
         if (response.ok) {
           Swal.fire({
             icon: 'success',
-            title: 'Deleted',
-            text: 'Contract type deleted successfully',
+            title: t('contract_rules.delete'),
+            text: t('contract_rules.deleted_success'),
             timer: 1500,
             showConfirmButton: false,
           })
@@ -282,16 +282,16 @@ export default function ContractRulesSettings() {
           const error = await response.json()
           Swal.fire({
             icon: 'error',
-            title: 'Error',
-            text: error.error || 'Failed to delete contract type',
+            title: t('contract_rules.error'),
+            text: error.error || t('contract_rules.delete_failed'),
           })
         }
       } catch (error) {
         console.error('Error deleting contract type:', error)
         Swal.fire({
           icon: 'error',
-          title: 'Error',
-          text: 'Failed to delete contract type',
+          title: t('contract_rules.error'),
+          text: t('contract_rules.delete_failed'),
         })
       }
     }
@@ -301,23 +301,23 @@ export default function ContractRulesSettings() {
     <Card className="mb-6 border-blue-200 bg-blue-50/50">
       <CardHeader className="pb-4">
         <CardTitle className="text-lg">
-          {editingId ? 'Edit Contract Type' : 'New Contract Type'}
+          {editingId ? t('contract_rules.edit_contract_type') : t('contract_rules.new_contract_type')}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Name *</Label>
+            <Label htmlFor="name">{t('contract_rules.name_required')}</Label>
             <Input
               id="name"
               value={formData.name || ''}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="e.g., Full-Time Employee"
+              placeholder={t('contract_rules.name_placeholder')}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="employmentType">Employment Type</Label>
+            <Label htmlFor="employmentType">{t('contract_rules.employment_type')}</Label>
             <Select
               value={formData.employmentType}
               onValueChange={(value) => setFormData({ ...formData, employmentType: value as any })}
@@ -326,21 +326,21 @@ export default function ContractRulesSettings() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {Object.entries(EMPLOYMENT_TYPE_LABELS).map(([value, label]) => (
-                  <SelectItem key={value} value={value}>{label}</SelectItem>
+                {Object.entries(EMPLOYMENT_TYPE_KEYS).map(([value, key]) => (
+                  <SelectItem key={value} value={value}>{t(`contract_rules.employment_types.${key}`)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="laborLawProfile">Labor Law Profile *</Label>
+            <Label htmlFor="laborLawProfile">{t('contract_rules.labor_law_profile_required')}</Label>
             <Select
               value={formData.laborLawProfileId}
               onValueChange={(value) => setFormData({ ...formData, laborLawProfileId: value })}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select profile" />
+                <SelectValue placeholder={t('contract_rules.select_profile')} />
               </SelectTrigger>
               <SelectContent>
                 {laborLawProfiles.map((profile) => (
@@ -353,7 +353,7 @@ export default function ContractRulesSettings() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="defaultFtePercent">Default FTE %</Label>
+            <Label htmlFor="defaultFtePercent">{t('contract_rules.default_fte')}</Label>
             <Input
               id="defaultFtePercent"
               type="number"
@@ -365,7 +365,7 @@ export default function ContractRulesSettings() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="agreedWeeklyHours">Agreed Weekly Hours</Label>
+            <Label htmlFor="agreedWeeklyHours">{t('contract_rules.agreed_weekly_hours')}</Label>
             <Input
               id="agreedWeeklyHours"
               type="number"
@@ -373,12 +373,12 @@ export default function ContractRulesSettings() {
               step="0.5"
               value={formData.agreedWeeklyHours || ''}
               onChange={(e) => setFormData({ ...formData, agreedWeeklyHours: e.target.value ? Number(e.target.value) : null })}
-              placeholder="e.g., 37.5"
+              placeholder={t('contract_rules.agreed_weekly_hours_placeholder')}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="maxPlannedWeeklyHours">Max Planned Weekly Hours</Label>
+            <Label htmlFor="maxPlannedWeeklyHours">{t('contract_rules.max_planned_weekly_hours')}</Label>
             <Input
               id="maxPlannedWeeklyHours"
               type="number"
@@ -386,13 +386,13 @@ export default function ContractRulesSettings() {
               step="0.5"
               value={formData.maxPlannedWeeklyHours || ''}
               onChange={(e) => setFormData({ ...formData, maxPlannedWeeklyHours: e.target.value ? Number(e.target.value) : null })}
-              placeholder="e.g., 45"
+              placeholder={t('contract_rules.max_planned_weekly_hours_placeholder')}
             />
           </div>
         </div>
 
         <div className="border-t pt-4">
-          <h4 className="font-medium mb-4">Overtime Settings</h4>
+          <h4 className="font-medium mb-4">{t('contract_rules.overtime_settings')}</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="flex items-center space-x-2">
               <Switch
@@ -400,29 +400,29 @@ export default function ContractRulesSettings() {
                 checked={formData.overtimeAllowed}
                 onCheckedChange={(checked) => setFormData({ ...formData, overtimeAllowed: checked })}
               />
-              <Label htmlFor="overtimeAllowed">Overtime Allowed</Label>
+              <Label htmlFor="overtimeAllowed">{t('contract_rules.overtime_allowed')}</Label>
             </div>
 
             <div className="space-y-2 md:col-span-2">
-              <Label>Overtime Exemptions (Roles)</Label>
+              <Label>{t('contract_rules.overtime_exemptions')}</Label>
               <MultiSelect
                 options={roles.map(r => ({ id: r.id, name: r.name }))}
                 selectedIds={selectedRoleIds}
                 onChange={setSelectedRoleIds}
-                placeholder="Select roles exempt from overtime..."
+                placeholder={t('contract_rules.select_roles_exempt')}
               />
               <p className="text-xs text-gray-500">
-                Select roles that are exempt from overtime calculations
+                {t('contract_rules.roles_exempt_hint')}
               </p>
             </div>
           </div>
         </div>
 
         <div className="border-t pt-4">
-          <h4 className="font-medium mb-4">Contract Limits</h4>
+          <h4 className="font-medium mb-4">{t('contract_rules.contract_limits')}</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="maxWeekendsPerMonth">Max Weekends per Month</Label>
+              <Label htmlFor="maxWeekendsPerMonth">{t('contract_rules.max_weekends_per_month')}</Label>
               <Input
                 id="maxWeekendsPerMonth"
                 type="number"
@@ -430,19 +430,19 @@ export default function ContractRulesSettings() {
                 max="5"
                 value={formData.maxWeekendsPerMonth || ''}
                 onChange={(e) => setFormData({ ...formData, maxWeekendsPerMonth: e.target.value ? Number(e.target.value) : null })}
-                placeholder="Leave empty for no limit"
+                placeholder={t('contract_rules.leave_empty_no_limit')}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="customBreakMinutes">Custom Break (minutes)</Label>
+              <Label htmlFor="customBreakMinutes">{t('contract_rules.custom_break_minutes')}</Label>
               <Input
                 id="customBreakMinutes"
                 type="number"
                 min="0"
                 value={formData.customBreakMinutes || ''}
                 onChange={(e) => setFormData({ ...formData, customBreakMinutes: e.target.value ? Number(e.target.value) : null })}
-                placeholder="Leave empty to use legal minimum"
+                placeholder={t('contract_rules.leave_empty_legal_min')}
               />
             </div>
           </div>
@@ -451,7 +451,7 @@ export default function ContractRulesSettings() {
         <div className="flex justify-end space-x-2 pt-4 border-t">
           <Button variant="outline" onClick={handleCancel} disabled={isSaving}>
             <X className="h-4 w-4 mr-2" />
-            Cancel
+            {t('contract_rules.cancel')}
           </Button>
           <Button onClick={handleSave} disabled={isSaving}>
             {isSaving ? (
@@ -459,7 +459,7 @@ export default function ContractRulesSettings() {
             ) : (
               <Save className="h-4 w-4 mr-2" />
             )}
-            {editingId ? 'Update' : 'Create'}
+            {editingId ? t('contract_rules.update') : t('contract_rules.create')}
           </Button>
         </div>
       </CardContent>
@@ -478,15 +478,15 @@ export default function ContractRulesSettings() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold">Contract Rules</h2>
+          <h2 className="text-xl font-semibold">{t('contract_rules.title')}</h2>
           <p className="text-sm text-gray-500">
-            Define contract types with specific employment conditions and limits
+            {t('contract_rules.description')}
           </p>
         </div>
         {!isCreating && !editingId && (
           <Button onClick={handleCreate}>
             <Plus className="h-4 w-4 mr-2" />
-            New Contract Type
+            {t('contract_rules.new_contract_type')}
           </Button>
         )}
       </div>
@@ -496,7 +496,7 @@ export default function ContractRulesSettings() {
           <CardContent className="py-4">
             <div className="flex items-center space-x-2 text-yellow-800">
               <AlertTriangle className="h-5 w-5" />
-              <span>Please create a Labor Law Profile first before adding contract types.</span>
+              <span>{t('contract_rules.create_profile_first')}</span>
             </div>
           </CardContent>
         </Card>
@@ -508,9 +508,9 @@ export default function ContractRulesSettings() {
         <Card>
           <CardContent className="py-12 text-center">
             <FileText className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-            <p className="text-gray-500">No contract types defined yet</p>
+            <p className="text-gray-500">{t('contract_rules.no_contract_types')}</p>
             <p className="text-sm text-gray-400 mt-1">
-              Create contract types to define employment conditions for your employees
+              {t('contract_rules.no_contract_types_hint')}
             </p>
           </CardContent>
         </Card>
@@ -519,15 +519,15 @@ export default function ContractRulesSettings() {
           <table className="w-full border-collapse">
             <thead>
               <tr className="border-b bg-gray-50">
-                <th className="text-left p-3 font-medium text-sm">Name</th>
-                <th className="text-left p-3 font-medium text-sm">Employment Type</th>
-                <th className="text-left p-3 font-medium text-sm">FTE %</th>
-                <th className="text-left p-3 font-medium text-sm">Weekly Hours</th>
-                <th className="text-left p-3 font-medium text-sm">Labor Law Profile</th>
-                <th className="text-left p-3 font-medium text-sm">Employees</th>
-                <th className="text-left p-3 font-medium text-sm">Overtime</th>
-                <th className="text-left p-3 font-medium text-sm">Exempt Roles</th>
-                <th className="text-right p-3 font-medium text-sm">Actions</th>
+                <th className="text-left p-3 font-medium text-sm">{t('contract_rules.table.name')}</th>
+                <th className="text-left p-3 font-medium text-sm">{t('contract_rules.table.employment_type')}</th>
+                <th className="text-left p-3 font-medium text-sm">{t('contract_rules.table.fte')}</th>
+                <th className="text-left p-3 font-medium text-sm">{t('contract_rules.table.weekly_hours')}</th>
+                <th className="text-left p-3 font-medium text-sm">{t('contract_rules.table.labor_law_profile')}</th>
+                <th className="text-left p-3 font-medium text-sm">{t('contract_rules.table.employees')}</th>
+                <th className="text-left p-3 font-medium text-sm">{t('contract_rules.table.overtime')}</th>
+                <th className="text-left p-3 font-medium text-sm">{t('contract_rules.table.exempt_roles')}</th>
+                <th className="text-right p-3 font-medium text-sm">{t('contract_rules.table.actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -541,7 +541,7 @@ export default function ContractRulesSettings() {
                   </td>
                   <td className="p-3">
                     <Badge variant="outline" className="text-xs">
-                      {EMPLOYMENT_TYPE_LABELS[ct.employmentType]}
+                      {t(`contract_rules.employment_types.${ct.employmentType}`)}
                     </Badge>
                   </td>
                   <td className="p-3 text-sm">{ct.defaultFtePercent}%</td>
@@ -565,11 +565,11 @@ export default function ContractRulesSettings() {
                   <td className="p-3 text-sm">
                     {ct.overtimeAllowed ? (
                       <Badge variant="secondary" className="text-xs bg-green-100 text-green-800">
-                        Allowed
+                        {t('contract_rules.overtime_status.allowed')}
                       </Badge>
                     ) : (
                       <Badge variant="secondary" className="text-xs">
-                        Not Allowed
+                        {t('contract_rules.overtime_status.not_allowed')}
                       </Badge>
                     )}
                   </td>
@@ -591,7 +591,7 @@ export default function ContractRulesSettings() {
                         )}
                       </div>
                     ) : (
-                      <span className="text-gray-400">None</span>
+                      <span className="text-gray-400">{t('contract_rules.none')}</span>
                     )}
                   </td>
                   <td className="p-3">

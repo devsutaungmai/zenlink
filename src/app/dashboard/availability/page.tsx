@@ -632,7 +632,7 @@ export default function AdminAvailabilityPage() {
                 <ClockIcon className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-600 flex-shrink-0" />
                 <div className="min-w-0">
                   <p className="text-xl sm:text-2xl font-bold text-yellow-600 truncate">{stats.pendingRequests}</p>
-                  <p className="text-xs sm:text-sm text-gray-600 truncate">Pending Requests</p>
+                  <p className="text-xs sm:text-sm text-gray-600 truncate">{t('stats.pending_requests')}</p>
                 </div>
               </div>
             </CardContent>
@@ -690,16 +690,16 @@ export default function AdminAvailabilityPage() {
                 <span className="truncate">
                   {currentEmployees.length > 0 
                     ? (isEmployee 
-                        ? t('showing_your_calendar')
-                        : t('showing_paginated', { 
+                        ? t('search.showing_your_calendar')
+                        : t('search.showing_paginated', { 
                             start: (currentPage - 1) * employeesPerPage + 1, 
                             end: Math.min(currentPage * employeesPerPage, filteredEmployees.length), 
                             total: filteredEmployees.length 
                           })
                       )
                     : (isEmployee 
-                        ? t('no_availability_data')
-                        : t('showing_zero', { total: filteredEmployees.length })
+                        ? t('search.no_availability_data')
+                        : t('search.showing_zero', { total: filteredEmployees.length })
                       )
                   }
                 </span>
@@ -986,20 +986,20 @@ export default function AdminAvailabilityPage() {
                     disabled={selectedDates.size === 0 || submitting}
                     className="bg-green-600 hover:bg-green-700 text-white"
                   >
-                    {submitting ? 'Updating...' : 'Mark Available'}
+                    {submitting ? t('actions.updating') : t('actions.mark_available')}
                   </Button>
                   <Button
                     onClick={() => submitAvailability(false)}
                     disabled={selectedDates.size === 0 || submitting}
                     variant="destructive"
                   >
-                    {submitting ? 'Updating...' : 'Mark Unavailable'}
+                    {submitting ? t('actions.updating') : t('actions.mark_unavailable')}
                   </Button>
                   <Button
                     onClick={clearSelection}
                     variant="outline"
                   >
-                    Clear Selection
+                    {t('actions.clear_selection')}
                   </Button>
                 </div>
               )}
@@ -1011,7 +1011,7 @@ export default function AdminAvailabilityPage() {
                   variant="outline"
                   size="sm"
                 >
-                  Select All Days
+                  {t('actions.select_all_days')}
                 </Button>
               </div>
             </div>
@@ -1025,25 +1025,25 @@ export default function AdminAvailabilityPage() {
           <div className="flex flex-wrap items-center gap-3 sm:gap-6 text-xs sm:text-sm">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded flex-shrink-0"></div>
-              <span>Available</span>
+              <span>{t('legend.available')}</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 sm:w-4 sm:h-4 bg-red-500 rounded flex-shrink-0"></div>
-              <span>Unavailable</span>
+              <span>{t('legend.unavailable')}</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-blue-500 rounded flex-shrink-0"></div>
-              <span>Today</span>
+              <span>{t('legend.today')}</span>
             </div>
             {isEmployee && (
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 sm:w-4 sm:h-4 bg-purple-500 rounded flex-shrink-0"></div>
-                <span>Selected</span>
+                <span>{t('legend.selected')}</span>
               </div>
             )}
             {isEmployee && (
               <div className="flex items-center gap-2 text-xs text-gray-500 w-full mt-2">
-                <span>💡 Click on your calendar days to select, then mark as available/unavailable</span>
+                <span>{t('tips.click_to_select')}</span>
               </div>
             )}
           </div>

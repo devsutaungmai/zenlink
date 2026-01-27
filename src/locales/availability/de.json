@@ -54,7 +54,21 @@
     "available": "Verfügbar",
     "unavailable": "Nicht verfügbar",
     "today": "Heute",
-    "has_note": "Hat Notiz"
+    "has_note": "Hat Notiz",
+    "selected": "Ausgewählt"
+  },
+  "actions": {
+    "mark_available": "Als verfügbar markieren",
+    "mark_unavailable": "Als nicht verfügbar markieren",
+    "clear_selection": "Auswahl löschen",
+    "select_all_days": "Alle Tage auswählen",
+    "updating": "Aktualisiere..."
+  },
+  "stats": {
+    "pending_requests": "Ausstehende Anfragen"
+  },
+  "tips": {
+    "click_to_select": "💡 Klicken Sie auf Ihre Kalendertage, um sie auszuwählen, und markieren Sie sie dann als verfügbar/nicht verfügbar"
   },
   "loading": "Lade Verfügbarkeitsdaten...",
   "error": {

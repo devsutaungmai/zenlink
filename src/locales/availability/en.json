@@ -54,7 +54,21 @@
     "available": "Available",
     "unavailable": "Unavailable",
     "today": "Today",
-    "has_note": "Has Note"
+    "has_note": "Has Note",
+    "selected": "Selected"
+  },
+  "actions": {
+    "mark_available": "Mark Available",
+    "mark_unavailable": "Mark Unavailable",
+    "clear_selection": "Clear Selection",
+    "select_all_days": "Select All Days",
+    "updating": "Updating..."
+  },
+  "stats": {
+    "pending_requests": "Pending Requests"
+  },
+  "tips": {
+    "click_to_select": "💡 Click on your calendar days to select, then mark as available/unavailable"
   },
   "loading": "Loading availability data...",
   "error": {

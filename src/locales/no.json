@@ -372,7 +372,8 @@
       "wage_type": "Lønnstype",
       "hourly_wage": "Timelønn",
       "wage_shift": "Lønn/Skift",
-      "employees": "Medarbeidere"
+      "employees": "Medarbeidere",
+      "actions": "Handlinger"
     },
     "wage_types": {
       "hourly": "Timelønn",
@@ -752,6 +753,7 @@
     "shift_request": "Skiftforespørsel"
   },
   "common": {
+    "showing": "Viser {{current}} av {{total}}",
     "loading": "Laster...",
     "error": "Feil",
     "success": "Suksess",

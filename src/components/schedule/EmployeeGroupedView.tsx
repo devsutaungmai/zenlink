@@ -252,10 +252,11 @@ export default function EmployeeGroupedView({
                                   <button
                                     key={shift.id}
                                     onClick={() => onEditShift(shift)}
-                                    className={`w-full rounded-xl text-white font-medium flex flex-col items-center justify-center gap-0.5 py-2 transition-all active:scale-95 cursor-pointer ${
-                                      shift.status === 'CANCELLED' ? 'bg-red-500' :
-                                      shift.status === 'WORKING' ? 'bg-blue-500' :
-                                      'bg-[#31BCFF]'
+                                    className={`w-full rounded-xl font-medium flex flex-col items-center justify-center gap-0.5 py-2 transition-all active:scale-95 cursor-pointer ${
+                                      shift.status === 'CANCELLED' ? 'bg-red-500 text-white' :
+                                      shift.status === 'WORKING' ? 'bg-blue-500 text-white' :
+                                      shift.approved ? 'bg-lime-200 text-lime-900 border-2 border-lime-500' :
+                                      'bg-[#31BCFF] text-white'
                                     }`}
                                   >
                                     <span className="text-xs leading-tight">
@@ -379,22 +380,35 @@ export default function EmployeeGroupedView({
                       </button>
                     ) : (
                       <>
-                        {dayShifts.slice(0, 2).map((shift, shiftIndex) => (
-                          <div
-                            key={shift.id}
-                            onClick={() => onEditShift(shift)}
-                            className="mb-1 cursor-pointer"
-                          >
-                            <div className="rounded p-2 text-xs border bg-red-100 border-red-300">
-                              <div className="font-medium text-gray-900">
-                                {shift.function?.name || 'No Function'}
-                              </div>
-                              <div className="text-gray-700 mt-0.5">
-                                {shift.startTime} - {shift.endTime || 'Active'}
+                        {dayShifts.slice(0, 2).map((shift, shiftIndex) => {
+                          const backgroundColor = shift.approved ? '#d9f99d' : (shift.function?.color || '#dbeafe')
+                          const borderColor = shift.approved ? '#84cc16' : (shift.function?.color || '#93c5fd')
+                          const textColor = shift.approved ? '#365314' : '#1f2937'
+                          
+                          return (
+                            <div
+                              key={shift.id}
+                              onClick={() => onEditShift(shift)}
+                              className="mb-1 cursor-pointer"
+                            >
+                              <div 
+                                className="rounded p-2 text-xs border"
+                                style={{
+                                  backgroundColor: backgroundColor,
+                                  borderColor: borderColor,
+                                  borderWidth: shift.approved ? '2px' : '1px'
+                                }}
+                              >
+                                <div className="font-medium" style={{ color: textColor }}>
+                                  {shift.function?.name || 'No Function'}
+                                </div>
+                                <div className="mt-0.5" style={{ color: textColor, opacity: 0.8 }}>
+                                  {shift.startTime} - {shift.endTime || 'Active'}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          )
+                        })}
                         {dayShifts.length > 2 && (
                           <button
                             onClick={() => handleShowMoreShifts(dayShifts, date, `${employee.firstName} ${employee.lastName}`)}

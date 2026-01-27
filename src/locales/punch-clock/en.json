@@ -35,7 +35,10 @@
       "status": "Status",
       "shift_info": "Shift Info",
       "actions": "Actions"
-    }
+    },
+    "pagination_summary": "Showing {{start}}-{{end}} of {{total}} records",
+    "rows_per_page": "Rows per page",
+    "empty_summary": "No records found"
   },
   "actions": {
     "edit": "Edit",
@@ -50,11 +53,17 @@
     "create_title": "Create Attendance Record",
     "create_description": "Create a new attendance record for an employee",
     "employee": "Employee",
+    "date": "Date",
     "punch_in_time": "Punch In Time",
     "punch_out_time": "Punch Out Time",
+    "punch_out_optional": "Punch Out Time (Optional)",
+    "leave_empty_hint": "Leave empty to create an active shift",
+    "selected_shift": "Selected Shift",
     "cancel": "Cancel",
     "save_changes": "Save Changes",
-    "select_employee": "Select an employee..."
+    "select_employee": "Select an employee...",
+    "create": "Create Attendance",
+    "creating": "Creating..."
   },
   "status": {
     "working": "Working",

@@ -35,7 +35,10 @@
       "status": "Status",
       "shift_info": "Schichtinformation",
       "actions": "Aktionen"
-    }
+    },
+    "pagination_summary": "Zeige {{start}}-{{end}} von {{total}} Einträgen",
+    "rows_per_page": "Zeilen pro Seite",
+    "empty_summary": "Keine Einträge gefunden"
   },
   "actions": {
     "edit": "Bearbeiten",
@@ -50,11 +53,17 @@
     "create_title": "Anwesenheitsaufzeichnung erstellen",
     "create_description": "Erstellen Sie eine neue Anwesenheitsaufzeichnung für einen Mitarbeiter",
     "employee": "Mitarbeiter",
+    "date": "Datum",
     "punch_in_time": "Einstempelzeit",
     "punch_out_time": "Ausstempelzeit",
+    "punch_out_optional": "Ausstempelzeit (Optional)",
+    "leave_empty_hint": "Leer lassen, um eine aktive Schicht zu erstellen",
+    "selected_shift": "Ausgewählte Schicht",
     "cancel": "Abbrechen",
     "save_changes": "Änderungen speichern",
-    "select_employee": "Wählen Sie einen Mitarbeiter..."
+    "select_employee": "Wählen Sie einen Mitarbeiter...",
+    "create": "Anwesenheit erstellen",
+    "creating": "Erstelle..."
   },
   "status": {
     "working": "Arbeitend",

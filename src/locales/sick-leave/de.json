@@ -27,11 +27,18 @@
     "department": "Abteilung",
     "start_date": "Startdatum",
     "end_date": "Enddatum",
+    "period": "Zeitraum",
+    "duration": "Dauer",
     "days": "Tage",
+    "day": "Tag",
+    "day_plural": "Tage",
     "reason": "Grund",
+    "document": "Dokument",
     "status": "Status",
+    "submitted": "Eingereicht",
     "actions": "Aktionen",
-    "no_requests": "Keine Krankmeldungsanträge gefunden"
+    "no_requests": "Keine Krankmeldungsanträge gefunden",
+    "view": "Ansehen"
   },
   "actions": {
     "approve": "Genehmigen",
@@ -42,10 +49,12 @@
   },
   "filters": {
     "all": "Alle Anträge",
+    "all_status": "Alle Status",
     "pending": "Ausstehend",
     "approved": "Genehmigt",
     "rejected": "Abgelehnt",
-    "my_requests": "Meine Anträge"
+    "my_requests": "Meine Anträge",
+    "search_placeholder": "Mitarbeiter suchen..."
   },
   "search": {
     "placeholder": "Nach Mitarbeitername oder Grund suchen..."

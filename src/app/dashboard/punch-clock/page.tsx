@@ -1721,7 +1721,7 @@ export default function PunchClockPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Date *
+                {t('modals.date')} *
               </label>
               <Input
                 type="date"
@@ -1732,7 +1732,7 @@ export default function PunchClockPage() {
 
             {selectedCreateShift && (
               <div className="p-3 bg-gray-50 rounded border border-gray-100">
-                <div className="text-sm font-medium text-gray-900">Selected Shift</div>
+                <div className="text-sm font-medium text-gray-900">{t('modals.selected_shift')}</div>
                 <div className="text-sm text-gray-700">
                   {selectedCreateShift.date} — {selectedCreateShift.startTime} - {selectedCreateShift.endTime || 'Open'}
                 </div>
@@ -1744,7 +1744,7 @@ export default function PunchClockPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Punch In Time *
+                {t('modals.punch_in_time')} *
               </label>
               <Input
                 type="time"
@@ -1759,7 +1759,7 @@ export default function PunchClockPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Punch Out Time (Optional)
+                {t('modals.punch_out_optional')}
               </label>
               <Input
                 type="time"
@@ -1769,7 +1769,7 @@ export default function PunchClockPage() {
                 className="font-mono text-lg tracking-wider"
                 placeholder="HH:MM"
               />
-              <p className="text-xs text-gray-500 mt-1">Leave empty to create an active shift</p>
+              <p className="text-xs text-gray-500 mt-1">{t('modals.leave_empty_hint')}</p>
             </div>
           </div>
 
@@ -1786,14 +1786,14 @@ export default function PunchClockPage() {
                 })
               }}
             >
-              Cancel
+              {t('modals.cancel')}
             </Button>
             <Button
               onClick={handleCreateAttendance}
               disabled={isCreating}
               className="bg-green-600 hover:bg-green-700"
             >
-              {isCreating ? 'Creating...' : 'Create Attendance'}
+              {isCreating ? t('modals.creating') : t('modals.create')}
             </Button>
           </DialogFooter>
         </DialogContent>

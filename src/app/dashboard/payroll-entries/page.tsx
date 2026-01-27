@@ -557,11 +557,11 @@ export default function PayrollEntriesPage() {
             <Link
               href="/dashboard/payroll-entries/generate"
               className="inline-flex items-center justify-center px-4 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-gradient-to-r from-green-500 to-green-600 text-white text-sm sm:text-base font-medium shadow-lg hover:shadow-xl transition-all duration-200 sm:hover:scale-105 group"
-              title="Generate payroll entries from attendance data"
+              title={t('actions.generate_entries_tooltip')}
             >
               <DocumentTextIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
-              <span className="hidden sm:inline">Generate Entries</span>
-              <span className="sm:hidden">Generate</span>
+              <span className="hidden sm:inline">{t('actions.generate_entries')}</span>
+              <span className="sm:hidden">{t('actions.generate_entries_short')}</span>
             </Link>
             {/* <Link
               href="/dashboard/payroll-entries/create"
@@ -1018,9 +1018,9 @@ export default function PayrollEntriesPage() {
       <Dialog open={showExportModal} onOpenChange={setShowExportModal}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle className="text-lg sm:text-xl font-bold">Export Payroll Entries</DialogTitle>
+            <DialogTitle className="text-lg sm:text-xl font-bold">{t('export_modal.title')}</DialogTitle>
             <DialogDescription className="text-sm">
-              Choose the export format for your payroll data
+              {t('export_modal.description')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 sm:space-y-4 py-4 sm:py-6">
@@ -1069,7 +1069,7 @@ export default function PayrollEntriesPage() {
               onClick={() => setShowExportModal(false)}
               className="w-full px-4 py-2 text-sm sm:text-base border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
             >
-              Cancel
+              {t('export_modal.cancel')}
             </button>
           </DialogFooter>
         </DialogContent>

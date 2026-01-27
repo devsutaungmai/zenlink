@@ -8,7 +8,7 @@
   "showing": "Viser {{count}} av {{total}} perioder",
   
   "filters": {
-    "all_status": "All Status",
+    "all_status": "Alle statuser",
     "all_years": "Alle År"
   },
   
@@ -101,5 +101,10 @@
     "max_length": "Må ikke være mer enn {{max}} tegn"
   },
   
-  "loading": "Laster..."
+  "loading": "Laster...",
+  
+  "card": {
+    "created": "Opprettet",
+    "days_duration": "dagers varighet"
+  }
 }

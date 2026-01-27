@@ -126,8 +126,8 @@ export default function LaborLawProfilesSettings() {
     if (!formData.name?.trim()) {
       Swal.fire({
         icon: 'error',
-        title: 'Validation Error',
-        text: 'Profile name is required',
+        title: t('labor_law_profiles.validation_error'),
+        text: t('labor_law_profiles.name_required_error'),
       })
       return
     }
@@ -150,8 +150,8 @@ export default function LaborLawProfilesSettings() {
       if (response.ok) {
         Swal.fire({
           icon: 'success',
-          title: editingId ? 'Updated' : 'Created',
-          text: `Labor law profile ${editingId ? 'updated' : 'created'} successfully`,
+          title: editingId ? t('labor_law_profiles.update') : t('labor_law_profiles.create'),
+          text: editingId ? t('labor_law_profiles.updated_success') : t('labor_law_profiles.created_success'),
           timer: 1500,
           showConfirmButton: false,
         })
@@ -161,16 +161,16 @@ export default function LaborLawProfilesSettings() {
         const error = await response.json()
         Swal.fire({
           icon: 'error',
-          title: 'Error',
-          text: error.error || 'Failed to save profile',
+          title: t('labor_law_profiles.error'),
+          text: error.error || t('labor_law_profiles.save_failed'),
         })
       }
     } catch (error) {
       console.error('Error saving profile:', error)
       Swal.fire({
         icon: 'error',
-        title: 'Error',
-        text: 'Failed to save profile',
+        title: t('labor_law_profiles.error'),
+        text: t('labor_law_profiles.save_failed'),
       })
     } finally {
       setIsSaving(false)
@@ -181,19 +181,19 @@ export default function LaborLawProfilesSettings() {
     if ((profile._count?.contractTypes || 0) > 0) {
       Swal.fire({
         icon: 'error',
-        title: 'Cannot Delete',
-        text: 'This profile is linked to contract types. Please remove those links first.',
+        title: t('labor_law_profiles.cannot_delete'),
+        text: t('labor_law_profiles.cannot_delete_linked'),
       })
       return
     }
 
     const result = await Swal.fire({
       icon: 'warning',
-      title: 'Delete Profile',
-      text: `Are you sure you want to delete "${profile.name}"?`,
+      title: t('labor_law_profiles.delete_profile'),
+      text: t('labor_law_profiles.delete_confirm', { name: profile.name }),
       showCancelButton: true,
       confirmButtonColor: '#ef4444',
-      confirmButtonText: 'Delete',
+      confirmButtonText: t('labor_law_profiles.delete'),
     })
 
     if (result.isConfirmed) {
@@ -205,8 +205,8 @@ export default function LaborLawProfilesSettings() {
         if (response.ok) {
           Swal.fire({
             icon: 'success',
-            title: 'Deleted',
-            text: 'Profile deleted successfully',
+            title: t('labor_law_profiles.delete'),
+            text: t('labor_law_profiles.deleted_success'),
             timer: 1500,
             showConfirmButton: false,
           })
@@ -215,8 +215,8 @@ export default function LaborLawProfilesSettings() {
           const error = await response.json()
           Swal.fire({
             icon: 'error',
-            title: 'Error',
-            text: error.error || 'Failed to delete profile',
+            title: t('labor_law_profiles.error'),
+            text: error.error || t('labor_law_profiles.delete_failed'),
           })
         }
       } catch (error) {
@@ -253,15 +253,15 @@ export default function LaborLawProfilesSettings() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold">Labor Law Profiles</h2>
+          <h2 className="text-xl font-semibold">{t('labor_law_profiles.title')}</h2>
           <p className="text-sm text-gray-500">
-            Create named profiles that link to specific labor law rules
+            {t('labor_law_profiles.description')}
           </p>
         </div>
         {!isCreating && !editingId && (
           <Button onClick={handleCreate}>
             <Plus className="h-4 w-4 mr-2" />
-            New Profile
+            {t('labor_law_profiles.new_profile')}
           </Button>
         )}
       </div>
@@ -270,36 +270,36 @@ export default function LaborLawProfilesSettings() {
         <Card className="border-blue-200 bg-blue-50/50">
           <CardHeader className="pb-4">
             <CardTitle className="text-lg">
-              {editingId ? 'Edit Profile' : 'New Profile'}
+              {editingId ? t('labor_law_profiles.edit_profile') : t('labor_law_profiles.new_profile')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Name *</Label>
+                <Label htmlFor="name">{t('labor_law_profiles.name_required')}</Label>
                 <Input
                   id="name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g., Standard Norwegian Rules"
+                  placeholder={t('labor_law_profiles.name_placeholder')}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="laborLawSettings">Labor Law Rules</Label>
+                <Label htmlFor="laborLawSettings">{t('labor_law_profiles.labor_law_rules')}</Label>
                 <Select
                   value={formData.laborLawSettingsId || 'none'}
                   onValueChange={(value) => setFormData({ ...formData, laborLawSettingsId: value === 'none' ? '' : value })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select labor law rules" />
+                    <SelectValue placeholder={t('labor_law_profiles.select_labor_law_rules')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">None (Use defaults)</SelectItem>
+                    <SelectItem value="none">{t('labor_law_profiles.none_use_defaults')}</SelectItem>
                     {laborLawSettings.map((setting) => (
                       <SelectItem key={setting.id} value={setting.id}>
                         {setting.countryCode} - Max {setting.maxHoursPerDay}h/day, {setting.maxHoursPerWeek}h/week
-                        {setting.isActive && ' (Active)'}
+                        {setting.isActive && ` (${t('labor_law_profiles.active')})`}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -308,12 +308,12 @@ export default function LaborLawProfilesSettings() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">{t('labor_law_profiles.description_label')}</Label>
               <textarea
                 id="description"
                 value={formData.description}
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Optional description..."
+                placeholder={t('labor_law_profiles.description_placeholder')}
                 rows={2}
                 className="flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
               />
@@ -325,13 +325,13 @@ export default function LaborLawProfilesSettings() {
                 checked={formData.isDefault}
                 onCheckedChange={(checked) => setFormData({ ...formData, isDefault: checked })}
               />
-              <Label htmlFor="isDefault">Set as default profile</Label>
+              <Label htmlFor="isDefault">{t('labor_law_profiles.set_as_default')}</Label>
             </div>
 
             <div className="flex justify-end space-x-2 pt-4 border-t">
               <Button variant="outline" onClick={handleCancel} disabled={isSaving}>
                 <X className="h-4 w-4 mr-2" />
-                Cancel
+                {t('labor_law_profiles.cancel')}
               </Button>
               <Button onClick={handleSave} disabled={isSaving}>
                 {isSaving ? (
@@ -339,7 +339,7 @@ export default function LaborLawProfilesSettings() {
                 ) : (
                   <Save className="h-4 w-4 mr-2" />
                 )}
-                {editingId ? 'Update' : 'Create'}
+                {editingId ? t('labor_law_profiles.update') : t('labor_law_profiles.create')}
               </Button>
             </div>
           </CardContent>
@@ -350,9 +350,9 @@ export default function LaborLawProfilesSettings() {
         <Card>
           <CardContent className="py-12 text-center">
             <Shield className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-            <p className="text-gray-500">No labor law profiles defined yet</p>
+            <p className="text-gray-500">{t('labor_law_profiles.no_profiles')}</p>
             <p className="text-sm text-gray-400 mt-1">
-              Create profiles to link labor law rules with contract types
+              {t('labor_law_profiles.no_profiles_hint')}
             </p>
           </CardContent>
         </Card>
@@ -361,11 +361,11 @@ export default function LaborLawProfilesSettings() {
           <table className="w-full">
             <thead>
               <tr className="border-b bg-gray-50">
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Name</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Labor Law Rules</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Contract Types</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Description</th>
-                <th className="px-4 py-3 text-right text-sm font-medium text-gray-600">Actions</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">{t('labor_law_profiles.table.name')}</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">{t('labor_law_profiles.table.labor_law_rules')}</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">{t('labor_law_profiles.table.contract_types')}</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">{t('labor_law_profiles.table.description')}</th>
+                <th className="px-4 py-3 text-right text-sm font-medium text-gray-600">{t('labor_law_profiles.table.actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -380,7 +380,7 @@ export default function LaborLawProfilesSettings() {
                       {profile.isDefault && (
                         <Badge className="bg-yellow-100 text-yellow-800">
                           <Star className="h-3 w-3 mr-1" />
-                          Default
+                          {t('labor_law_profiles.default_badge')}
                         </Badge>
                       )}
                     </div>
@@ -393,7 +393,7 @@ export default function LaborLawProfilesSettings() {
                         {profile.laborLawSettings.maxHoursPerWeek}h/week
                       </span>
                     ) : (
-                      <span className="text-gray-400">Using defaults</span>
+                      <span className="text-gray-400">{t('labor_law_profiles.using_defaults')}</span>
                     )}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600">

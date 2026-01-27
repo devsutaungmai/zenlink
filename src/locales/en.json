@@ -330,7 +330,8 @@
       "wage_type": "Wage Type",
       "hourly_wage": "Hourly Wage",
       "wage_shift": "Wage/Shift",
-      "employees": "Employees"
+      "employees": "Employees",
+      "actions": "Actions"
     },
     "wage_types": {
       "hourly": "Hourly",
@@ -536,7 +537,8 @@
       "group_filter_active": "Only employees in the selected employee group are shown.",
       "all_employees_shown": "All employees in the business are shown.",
       "auto_set_group": "Automatically set to {{group}} because of the selected function.",
-      "select_linked_groups": "Select one of the linked employee groups to control which employees are available."
+      "select_linked_groups": "Select one of the linked employee groups to control which employees are available.",
+      "delete_shift": "Delete Shift"
     },
     "page_info": "Page {{current}} of {{total}}",
     "no_shifts_found": "No shifts found",
@@ -729,6 +731,7 @@
     "shift_request": "Shift Request"
   },
   "common": {
+    "showing": "Showing {{current}} of {{total}}",
     "loading": "Loading...",
     "error": "Error",
     "success": "Success",

@@ -1547,7 +1547,7 @@ export default function ShiftForm({
                   }}
                   disabled={loading}
                 >
-                  {t('shifts.delete_shift')}
+                  {t('shifts.form.delete_shift')}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>

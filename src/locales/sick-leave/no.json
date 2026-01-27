@@ -27,11 +27,18 @@
     "department": "Avdeling",
     "start_date": "Startdato",
     "end_date": "Sluttdato",
+    "period": "Periode",
+    "duration": "Varighet",
     "days": "Dager",
+    "day": "dag",
+    "day_plural": "dager",
     "reason": "Årsak",
+    "document": "Dokument",
     "status": "Status",
+    "submitted": "Innsendt",
     "actions": "Handlinger",
-    "no_requests": "Ingen sykmeldingsforespørsler funnet"
+    "no_requests": "Ingen sykmeldingsforespørsler funnet",
+    "view": "Vis"
   },
   "actions": {
     "approve": "Godkjenn",
@@ -42,10 +49,12 @@
   },
   "filters": {
     "all": "Alle forespørsler",
+    "all_status": "Alle statuser",
     "pending": "Venter",
     "approved": "Godkjent",
     "rejected": "Avvist",
-    "my_requests": "Mine forespørsler"
+    "my_requests": "Mine forespørsler",
+    "search_placeholder": "Søk medarbeidere..."
   },
   "search": {
     "placeholder": "Søk etter medarbeidernavn eller årsak..."

@@ -393,7 +393,8 @@
       "wage_type": "Lohntyp",
       "hourly_wage": "Stundenlohn",
       "wage_shift": "Lohn/Schicht",
-      "employees": "Mitarbeiter"
+      "employees": "Mitarbeiter",
+      "actions": "Aktionen"
     },
     "wage_types": {
       "hourly": "Stündlich",
@@ -753,6 +754,7 @@
     "shift_request": "Schichtanfrage"
   },
   "common": {
+    "showing": "Zeige {{current}} von {{total}}",
     "loading": "Laden...",
     "error": "Fehler",
     "success": "Erfolg",
