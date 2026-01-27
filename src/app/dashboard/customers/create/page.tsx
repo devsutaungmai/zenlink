@@ -408,7 +408,7 @@ export default function CreateCustomersPage() {
                                 type="text"
                                 id="customerNumber"
                                 required
-                                value={formData.customerNumber ?? ''}
+                                value={overviewMode ? formatCustomerNumberForDisplay(formData.customerNumber) : formData.customerNumber ?? ''}
                                 onChange={(e) => {
                                     setFormData({ ...formData, customerNumber: e.target.value })
                                     debouncedValidation("customerNumber", e.target.value)
