@@ -917,7 +917,7 @@ export async function generateLedgerReport(
               voucherNo,
               date: entry.postingDate || new Date(),
               description: entry.invoiceId
-                ? `Faktura nummer ${invoiceDisplayNumber} til (${customerName}) ${customerId}`
+                ? `Faktura nummer ${invoiceDisplayNumber} til ${customerName} ${customerId}`
                 : entry.description || '',
               displayAmount: displayAmount,
               trueMovement: trueMovement
