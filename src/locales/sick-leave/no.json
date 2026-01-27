@@ -70,7 +70,19 @@
     "start_date_required": "Startdato er påkrevd",
     "end_date_required": "Sluttdato er påkrevd",
     "end_before_start": "Sluttdato kan ikke være før startdato",
+    "dates_required": "Startdato og sluttdato er påkrevd",
+    "end_date_before_start": "Sluttdato kan ikke være før startdato",
     "reason_required": "Årsak er påkrevd"
+  },
+  "banner": {
+    "approved_count": "{{count}} godkjent",
+    "pending_count": "{{count}} ventende"
+  },
+  "stats": {
+    "approved": "Godkjent",
+    "pending": "Ventende",
+    "total": "Totalt antall forespørsler",
+    "documented": "Med dokumenter"
   },
   "loading": "Laster sykmeldingsdata...",
   "empty_state": {

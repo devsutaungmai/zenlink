@@ -7,11 +7,17 @@
     "completed": "Completed",
     "select_date": "Select Date",
     "select_start_date": "Select Start Date",
-    "select_end_date": "Select End Date"
+    "select_end_date": "Select End Date",
+    "date_range_type": "Date Range Type",
+    "single_day": "Single Day",
+    "week": "Week",
+    "month": "Month",
+    "week_starting": "Week Starting"
   },
   "search": {
     "placeholder": "Search employees or departments...",
-    "filter_label": "Filter:"
+    "filter_label": "Filter:",
+    "all_employees": "All Employees"
   },
   "filters": {
     "all": "All",
@@ -27,8 +33,28 @@
       "punch_out": "Punch Out",
       "duration": "Duration",
       "status": "Status",
-      "shift_info": "Shift Info"
+      "shift_info": "Shift Info",
+      "actions": "Actions"
     }
+  },
+  "actions": {
+    "edit": "Edit",
+    "approve": "Approve",
+    "reject": "Reject",
+    "create": "Create",
+    "attendance": "Attendance",
+    "export": "Export"
+  },
+  "modals": {
+    "edit_title": "Edit Attendance Record",
+    "create_title": "Create Attendance Record",
+    "create_description": "Create a new attendance record for an employee",
+    "employee": "Employee",
+    "punch_in_time": "Punch In Time",
+    "punch_out_time": "Punch Out Time",
+    "cancel": "Cancel",
+    "save_changes": "Save Changes",
+    "select_employee": "Select an employee..."
   },
   "status": {
     "working": "Working",

@@ -59,5 +59,16 @@
   "back_to_categories": "Zurück zu Kategorien",
   "save_category": "Kategorie speichern",
   "saving": "Wird gespeichert...",
-  "category_placeholder": "z.B. Küche, Bar, Rezeption"
+  "category_placeholder": "z.B. Küche, Bar, Rezeption",
+  "employee_groups_label": "Mitarbeitergruppen",
+  "employee_groups_optional": "(optional)",
+  "employee_groups_empty": "Noch keine Mitarbeitergruppen verfügbar.",
+  "employee_groups_select_all": "Alle Gruppen auswählen",
+  "employee_groups_selected_all": "Alle Gruppen ausgewählt",
+  "employee_groups_selected_count": "{{count}} von {{total}} Gruppen ausgewählt",
+  "total_employees": "Mitarbeiter insgesamt",
+  "name_label": "Kategoriename",
+  "description_label": "Beschreibung",
+  "departments_label": "Abteilungen",
+  "showing": "Zeige"
 }

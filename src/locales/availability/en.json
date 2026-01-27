@@ -9,7 +9,12 @@
   },
   "search": {
     "placeholder": "Search employees...",
-    "showing": "Showing",
+    "placeholder_availability": "Search availability...",
+    "showing": "Showing {{start}} to {{end}} of {{total}} employees",
+    "showing_paginated": "Showing {{start}} to {{end}} of {{total}} employees",
+    "showing_your_calendar": "Showing your availability calendar",
+    "no_availability_data": "No availability data found",
+    "showing_zero": "Showing 0 of {{total}} employees",
     "of": "of",
     "employees": "employees"
   },
@@ -30,6 +35,7 @@
     "page": "Page",
     "of": "of"
   },
+  "page_info": "Page {{current}} of {{total}}",
   "calendar": {
     "employee": "Employee",
     "months": [

@@ -9,7 +9,12 @@
   },
   "search": {
     "placeholder": "Mitarbeiter suchen...",
-    "showing": "Zeige",
+    "placeholder_availability": "Verfügbarkeit suchen...",
+    "showing": "Zeige {{start}} bis {{end}} von {{total}} Mitarbeitern",
+    "showing_paginated": "Zeige {{start}} bis {{end}} von {{total}} Mitarbeitern",
+    "showing_your_calendar": "Zeige Ihren Verfügbarkeitskalender",
+    "no_availability_data": "Keine Verfügbarkeitsdaten gefunden",
+    "showing_zero": "Zeige 0 von {{total}} Mitarbeitern",
     "of": "von",
     "employees": "Mitarbeitern"
   },
@@ -25,11 +30,12 @@
     "list": "Liste"
   },
   "pagination": {
-    "previous": "Vorherige",
-    "next": "Nächste",
+    "previous": "Zurück",
+    "next": "Weiter",
     "page": "Seite",
     "of": "von"
   },
+  "page_info": "Seite {{current}} von {{total}}",
   "calendar": {
     "employee": "Mitarbeiter",
     "months": [

@@ -1,4 +1,5 @@
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 import { 
   UserIcon, 
   ClockIcon, 
@@ -21,32 +22,33 @@ interface EmployeeFormTabsProps {
   tabs: Tab[]
 }
 
+// Note: Tab names should be translated in the component using these tabs
 export const defaultEmployeeTabs: Tab[] = [
   {
     id: 'details',
-    name: 'Details',
+    name: 'employees.tabs.details',
     icon: UserIcon,
   },
   {
     id: 'shifts',
-    name: 'Shifts',
+    name: 'employees.tabs.shifts',
     icon: ClockIcon,
   },
   {
     id: 'payslips',
-    name: 'Payslips',
+    name: 'employees.tabs.payslips',
     icon: DocumentTextIcon,
   },
   {
     id: 'sickleave',
-    name: 'Sick Leave',
+    name: 'employees.tabs.sick_leave',
     icon: HeartIcon,
   }
 ]
 
 export const contractTab: Tab = {
   id: 'contracts',
-  name: 'Contracts',
+  name: 'employees.tabs.contracts',
   icon: DocumentDuplicateIcon,
 }
 
@@ -55,6 +57,8 @@ export function EmployeeFormTabs({
   onTabChange, 
   tabs 
 }: EmployeeFormTabsProps) {
+  const { t } = useTranslation()
+  
   return (
     <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg">
       <div className="border-b border-gray-200/50">
@@ -72,7 +76,7 @@ export function EmployeeFormTabs({
                 } flex-shrink-0 whitespace-nowrap py-3 sm:py-4 px-3 sm:px-4 border-b-2 font-medium text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 transition-colors duration-200`}
               >
                 <Icon className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-                <span className="hidden xs:inline">{tab.name}</span>
+                <span className="hidden xs:inline">{t(tab.name)}</span>
               </button>
             )
           })}

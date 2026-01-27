@@ -82,7 +82,7 @@ export function ContactInfoSection({
                         type="text"
                         value={countrySearch}
                         onChange={(e) => setCountrySearch(e.target.value)}
-                        placeholder="Search country..."
+                        placeholder={t('employees.form.search_country')}
                         className="block w-full pl-10 pr-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#31BCFF] focus:border-[#31BCFF]"
                       />
                     </div>
@@ -119,7 +119,7 @@ export function ContactInfoSection({
               name="mobile"
               value={formData.mobile}
               onChange={onChange}
-              placeholder="12345678"
+              placeholder={t('employees.form.mobile_placeholder')}
               inputMode="numeric"
               pattern="[0-9]*"
               maxLength={8}
@@ -129,7 +129,7 @@ export function ContactInfoSection({
             />
           </div>
           <p className="mt-1 text-xs text-gray-500">
-            Enter exactly 8 digits. Full number will be: {formData.mobile.startsWith('+') ? formData.mobile : formData.countryCode + formData.mobile}
+            {t('employees.form.mobile_helper', { fullNumber: formData.mobile.startsWith('+') ? formData.mobile : formData.countryCode + formData.mobile })}
           </p>
           {validationErrors.mobile && (
             <p className="mt-1 text-sm text-red-500">{validationErrors.mobile}</p>
@@ -148,12 +148,12 @@ export function ContactInfoSection({
             value={formData.email || ''}
             onChange={onChange}
             className={getFieldStyle('email')}
-            placeholder="employee@company.com"
+            placeholder={t('employees.form.email_placeholder')}
             required
             disabled={readOnly}
           />
           <p className="mt-1 text-xs text-gray-500">
-            Will be used for account setup and notifications.
+            {t('employees.form.email_helper')}
           </p>
           {validationErrors.email && (
             <p className="mt-1 text-sm text-red-500">{validationErrors.email}</p>

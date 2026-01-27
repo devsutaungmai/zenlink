@@ -59,5 +59,16 @@
   "back_to_categories": "Tilbake til kategorier",
   "save_category": "Lagre kategori",
   "saving": "Lagrer...",
-  "category_placeholder": "f.eks., Kjøkken, Bar, Resepsjon"
+  "category_placeholder": "f.eks., Kjøkken, Bar, Resepsjon",
+  "employee_groups_label": "Medarbeidergrupper",
+  "employee_groups_optional": "(valgfritt)",
+  "employee_groups_empty": "Ingen medarbeidergrupper tilgjengelig ennå.",
+  "employee_groups_select_all": "Velg alle grupper",
+  "employee_groups_selected_all": "Alle grupper valgt",
+  "employee_groups_selected_count": "Valgt {{count}} av {{total}} grupper",
+  "total_employees": "Totalt antall medarbeidere",
+  "name_label": "Kategorinavn",
+  "description_label": "Beskrivelse",
+  "departments_label": "Avdelinger",
+  "showing": "Viser"
 }

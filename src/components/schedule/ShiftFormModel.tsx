@@ -9,6 +9,7 @@ import {
 
 import ShiftForm from "../ShiftForm"
 import { Employee, EmployeeGroup } from '@prisma/client'
+import { useTranslation } from 'react-i18next'
 
 interface ShiftFormModalProps {
   isOpen: boolean
@@ -37,6 +38,7 @@ export default function ShiftFormModal({
   canEditShifts = true,
   canDeleteShifts = true
 }: ShiftFormModalProps) {
+  const { t } = useTranslation()
   const formKey = initialData?.id || 'new-shift'
   
   return (
@@ -44,7 +46,7 @@ export default function ShiftFormModal({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {!canEditShifts ? 'View Shift' : (initialData?.id ? 'Edit Shift' : 'Create New Shift')}
+            {!canEditShifts ? t('shifts.view_shift') : (initialData?.id ? t('shifts.edit_shift') : t('shifts.create_shift'))}
           </DialogTitle>
         </DialogHeader>
         <ShiftForm

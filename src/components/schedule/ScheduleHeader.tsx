@@ -320,6 +320,7 @@ export default function ScheduleHeader({
               className="px-3 py-2 rounded-md border border-gray-300 hover:bg-gray-50 bg-white flex items-center gap-2"
             >
               <FunnelIcon className="w-4 h-4" />
+              <span>{t('header.filters')}</span>
               {activeFilterCount > 0 && (
                 <span className="bg-[#31BCFF] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                   {activeFilterCount}

@@ -1049,16 +1049,16 @@ export default function PunchClockPage() {
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-6">
             <div className="w-full sm:w-auto">
               <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-                Date Range Type
+                {t('header.date_range_type')}
               </label>
               <select
                 value={dateRangeType}
                 onChange={(e) => handleDateRangeTypeChange(e.target.value as 'single' | 'week' | 'month')}
                 className="block w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] text-sm"
               >
-                <option value="single">Single Day</option>
-                <option value="week">Week</option>
-                <option value="month">Month</option>
+                <option value="single">{t('header.single_day')}</option>
+                <option value="week">{t('header.week')}</option>
+                <option value="month">{t('header.month')}</option>
               </select>
             </div>
             {dateRangeType === 'single' && (
@@ -1098,7 +1098,7 @@ export default function PunchClockPage() {
             {dateRangeType === 'week' && (
               <div className="w-full sm:w-auto">
                 <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-                  Week Starting
+                  {t('header.week_starting')}
                 </label>
                 <input
                   type="date"
@@ -1115,7 +1115,7 @@ export default function PunchClockPage() {
             {dateRangeType === 'month' && (
               <div className="w-full sm:w-auto">
                 <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-                  Month
+                  {t('header.month')}
                 </label>
                 <input
                   type="month"
@@ -1162,7 +1162,7 @@ export default function PunchClockPage() {
                 }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] text-sm"
               >
-                <option value="">All Employees</option>
+                <option value="">{t('search.all_employees')}</option>
                 {employees.map((employee) => (
                   <option key={employee.id} value={employee.id}>
                     {employee.firstName} {employee.lastName}
@@ -1210,7 +1210,7 @@ export default function PunchClockPage() {
                   size="sm"
                 >
                   <PlayIcon className="w-4 h-4 mr-1 sm:mr-2" />
-                  <span className="hidden sm:inline">Create </span>Attendance
+                  <span className="hidden sm:inline">{t('actions.create')} </span>{t('actions.attendance')}
                 </Button>
                 <Button
                   variant="outline"
@@ -1219,7 +1219,7 @@ export default function PunchClockPage() {
                   size="sm"
                 >
                   <TableCellsIcon className="w-4 h-4 mr-1 sm:mr-2" />
-                  <span className="hidden sm:inline">Export </span>CSV
+                  <span className="hidden sm:inline">{t('actions.export')} </span>CSV
                 </Button>
                 <Button
                   onClick={exportToPDF}
@@ -1227,7 +1227,7 @@ export default function PunchClockPage() {
                   size="sm"
                 >
                   <DocumentTextIcon className="w-4 h-4 mr-1 sm:mr-2" />
-                  <span className="hidden sm:inline">Export </span>PDF
+                  <span className="hidden sm:inline">{t('actions.export')} </span>PDF
                 </Button>
               </div>
             )}
@@ -1288,7 +1288,7 @@ export default function PunchClockPage() {
                     </th>
                     {isAdmin && (
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
+                        {t('table.columns.actions')}
                       </th>
                     )}
                   </tr>
@@ -1389,7 +1389,7 @@ export default function PunchClockPage() {
                               className="inline-flex items-center px-3 py-1 text-sm font-medium rounded-lg text-blue-600 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                             >
                               <PencilIcon className="w-4 h-4 mr-1" />
-                              Edit
+                              {t('actions.edit')}
                             </button>
 
                             {/* Show approval buttons for unscheduled work that needs approval */}
@@ -1400,14 +1400,14 @@ export default function PunchClockPage() {
                                   className="inline-flex items-center px-3 py-1 text-sm font-medium rounded-lg text-green-600 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
                                 >
                                   <CheckCircleIcon className="w-4 h-4 mr-1" />
-                                  Approve
+                                  {t('actions.approve')}
                                 </button>
                                 <button
                                   onClick={() => handleAttendanceApproval(record.id, false)}
                                   className="inline-flex items-center px-3 py-1 text-sm font-medium rounded-lg text-red-600 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
                                 >
                                   <XCircleIcon className="w-4 h-4 mr-1" />
-                                  Reject
+                                  {t('actions.reject')}
                                 </button>
                               </>
                             )}
@@ -1537,7 +1537,7 @@ export default function PunchClockPage() {
                         className="flex-1 sm:flex-none inline-flex items-center justify-center px-3 py-2 text-xs font-medium rounded-lg text-blue-600 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
                         <PencilIcon className="w-4 h-4 mr-1" />
-                        Edit
+                        {t('actions.edit')}
                       </button>
 
                       {!record.shift && getAttendanceStatus(record) === 'pending' && (
@@ -1627,10 +1627,10 @@ export default function PunchClockPage() {
       <Dialog open={isAdmin && showEditModal} onOpenChange={setShowEditModal}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Edit Attendance Record</DialogTitle>
+            <DialogTitle>{t('modals.edit_title')}</DialogTitle>
             <DialogDescription>
               {editingRecord && (
-                <>Employee: {editingRecord.employee.firstName} {editingRecord.employee.lastName}</>
+                <>{t('modals.employee')}: {editingRecord.employee.firstName} {editingRecord.employee.lastName}</>
               )}
             </DialogDescription>
           </DialogHeader>
@@ -1639,7 +1639,7 @@ export default function PunchClockPage() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Punch In Time
+                  {t('modals.punch_in_time')}
                 </label>
                 <Input
                   type="time"
@@ -1656,7 +1656,7 @@ export default function PunchClockPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Punch Out Time
+                  {t('modals.punch_out_time')}
                 </label>
                 <Input
                   type="time"
@@ -1678,13 +1678,13 @@ export default function PunchClockPage() {
               variant="outline"
               onClick={() => setShowEditModal(false)}
             >
-              Cancel
+              {t('modals.cancel')}
             </Button>
             <Button
               onClick={handleSaveEdit}
               className="bg-[#31BCFF] hover:bg-[#0EA5E9]"
             >
-              Save Changes
+              {t('modals.save_changes')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1694,23 +1694,23 @@ export default function PunchClockPage() {
       <Dialog open={isAdmin && showCreateModal} onOpenChange={setShowCreateModal}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Create Attendance Record</DialogTitle>
+            <DialogTitle>{t('modals.create_title')}</DialogTitle>
             <DialogDescription>
-              Create a new attendance record for an employee
+              {t('modals.create_description')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Employee *
+                {t('modals.employee')} *
               </label>
               <select
                 value={createFormData.employeeId}
                 onChange={(e) => setCreateFormData(prev => ({ ...prev, employeeId: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] text-sm"
               >
-                <option value="">Select an employee...</option>
+                <option value="">{t('modals.select_employee')}</option>
                 {employees.map((employee) => (
                   <option key={employee.id} value={employee.id}>
                     {employee.firstName} {employee.lastName} - {employee.department?.name || 'No Department'}

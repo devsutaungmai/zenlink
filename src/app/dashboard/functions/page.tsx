@@ -290,11 +290,11 @@ export default function FunctionsPage() {
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 mb-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-gray-500">Employees</p>
+                    <p className="text-sm text-gray-500">{t('employees_count')}</p>
                     <p className="text-2xl font-bold text-gray-900">{func._count.employees}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Shifts</p>
+                    <p className="text-sm text-gray-500">{t('shifts_count')}</p>
                     <p className="text-2xl font-bold text-gray-900">{func._count.shifts}</p>
                   </div>
                 </div>

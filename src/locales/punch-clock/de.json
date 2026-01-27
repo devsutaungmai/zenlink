@@ -5,11 +5,19 @@
     "records_today": "Aufzeichnungen heute",
     "currently_working": "Arbeitet derzeit",
     "completed": "Abgeschlossen",
-    "select_date": "Datum auswählen"
+    "select_date": "Datum auswählen",
+    "select_start_date": "Startdatum auswählen",
+    "select_end_date": "Enddatum auswählen",
+    "date_range_type": "Datumsbereichstyp",
+    "single_day": "Einzelner Tag",
+    "week": "Woche",
+    "month": "Monat",
+    "week_starting": "Woche beginnt"
   },
   "search": {
     "placeholder": "Mitarbeiter oder Abteilungen suchen...",
-    "filter_label": "Filter:"
+    "filter_label": "Filter:",
+    "all_employees": "Alle Mitarbeiter"
   },
   "filters": {
     "all": "Alle",
@@ -25,8 +33,28 @@
       "punch_out": "Ausstempeln",
       "duration": "Dauer",
       "status": "Status",
-      "shift_info": "Schichtinformation"
+      "shift_info": "Schichtinformation",
+      "actions": "Aktionen"
     }
+  },
+  "actions": {
+    "edit": "Bearbeiten",
+    "approve": "Genehmigen",
+    "reject": "Ablehnen",
+    "create": "Erstellen",
+    "attendance": "Anwesenheit",
+    "export": "Exportieren"
+  },
+  "modals": {
+    "edit_title": "Anwesenheitsaufzeichnung bearbeiten",
+    "create_title": "Anwesenheitsaufzeichnung erstellen",
+    "create_description": "Erstellen Sie eine neue Anwesenheitsaufzeichnung für einen Mitarbeiter",
+    "employee": "Mitarbeiter",
+    "punch_in_time": "Einstempelzeit",
+    "punch_out_time": "Ausstempelzeit",
+    "cancel": "Abbrechen",
+    "save_changes": "Änderungen speichern",
+    "select_employee": "Wählen Sie einen Mitarbeiter..."
   },
   "status": {
     "working": "Arbeitend",

@@ -620,7 +620,7 @@ export default function AdminAvailabilityPage() {
                 <XCircleIcon className="w-6 h-6 sm:w-8 sm:h-8 text-red-600 flex-shrink-0" />
                 <div className="min-w-0">
                   <p className="text-xl sm:text-2xl font-bold text-red-600 truncate">{stats.unavailableToday}</p>
-                  <p className="text-xs sm:text-sm text-gray-600 truncate">Unavailable Today</p>
+                  <p className="text-xs sm:text-sm text-gray-600 truncate">{t('header.unavailable_today')}</p>
                 </div>
               </div>
             </CardContent>
@@ -650,7 +650,7 @@ export default function AdminAvailabilityPage() {
                   <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <Input
                     type="text"
-                    placeholder={isEmployee ? "Search availability..." : "Search employees..."}
+                    placeholder={isEmployee ? t('search.placeholder_availability') : t('search.placeholder')}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10 text-sm"
@@ -663,9 +663,9 @@ export default function AdminAvailabilityPage() {
                 onChange={(e) => setSelectedFilter(e.target.value)}
                 className="w-full sm:w-48 h-10 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF]"
               >
-                <option value="all">All Employees</option>
-                <option value="available">Available Today</option>
-                <option value="unavailable">Unavailable Today</option>
+                <option value="all">{t('filters.all_employees')}</option>
+                <option value="available">{t('filters.available_today')}</option>
+                <option value="unavailable">{t('filters.unavailable_today')}</option>
               </select>
               
               {!isEmployee && (
@@ -674,7 +674,7 @@ export default function AdminAvailabilityPage() {
                   onChange={(e) => setSelectedDepartment(e.target.value)}
                   className="w-full sm:w-48 h-10 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF]"
                 >
-                  <option key="all-depts" value="all">All Departments</option>
+                  <option key="all-depts" value="all">{t('filters.all_departments')}</option>
                   {uniqueDepartments.map(dept => dept && (
                     <option key={`dept-${dept.id}`} value={dept.id}>
                       {dept.name}
@@ -690,7 +690,7 @@ export default function AdminAvailabilityPage() {
                 <span className="truncate">
                   {currentEmployees.length > 0 
                     ? (isEmployee 
-                        ? `Showing your availability calendar`
+                        ? t('showing_your_calendar')
                         : t('showing_paginated', { 
                             start: (currentPage - 1) * employeesPerPage + 1, 
                             end: Math.min(currentPage * employeesPerPage, filteredEmployees.length), 
@@ -698,15 +698,15 @@ export default function AdminAvailabilityPage() {
                           })
                       )
                     : (isEmployee 
-                        ? `No availability data found`
-                        : `Showing 0 of ${filteredEmployees.length} employees`
+                        ? t('no_availability_data')
+                        : t('showing_zero', { total: filteredEmployees.length })
                       )
                   }
                 </span>
                 
                 {/* View mode toggle */}
                 <div className="flex items-center gap-2">
-                  <span className="flex-shrink-0">View:</span>
+                  <span className="flex-shrink-0">{t('view_mode.view')}</span>
                   <div className="flex rounded-md border border-gray-300 overflow-hidden">
                     <button
                       onClick={() => setViewMode('calendar')}
@@ -716,7 +716,7 @@ export default function AdminAvailabilityPage() {
                           : 'bg-white text-gray-700 hover:bg-gray-50'
                       }`}
                     >
-                      Calendar
+                      {t('view_mode.calendar')}
                     </button>
                     <button
                       onClick={() => setViewMode('list')}
@@ -726,7 +726,7 @@ export default function AdminAvailabilityPage() {
                           : 'bg-white text-gray-700 hover:bg-gray-50'
                       }`}
                     >
-                      List
+                      {t('view_mode.list')}
                     </button>
                   </div>
                 </div>
@@ -886,12 +886,12 @@ export default function AdminAvailabilityPage() {
                           {!todayAvailability || todayAvailability.isAvailable ? (
                             <>
                               <CheckCircleIcon className="w-4 h-4 flex-shrink-0" />
-                              <span>Available Today</span>
+                              <span>{t('list.available_today')}</span>
                             </>
                           ) : (
                             <>
                               <XCircleIcon className="w-4 h-4 flex-shrink-0" />
-                              <span>Unavailable Today</span>
+                              <span>{t('list.unavailable_today')}</span>
                             </>
                           )}
                         </div>

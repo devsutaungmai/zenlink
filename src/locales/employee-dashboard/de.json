@@ -124,6 +124,38 @@
   "common": {
     "general": "Allgemein",
     "active": "Aktiv",
-    "tbd": "TBD"
+    "tbd": "TBD",
+    "loading": "Lädt...",
+    "error": "Fehler",
+    "retry": "Erneut versuchen",
+    "close": "Schließen",
+    "save": "Speichern",
+    "cancel": "Abbrechen"
+  },
+  "dashboard": {
+    "admin_metrics": {
+      "most_active": "Aktivster Mitarbeiter",
+      "shift_health": "Schichtabschluss",
+      "weekly_pie_title": "Zugewiesen vs Abgeschlossen (Woche)",
+      "hours": "Stunden",
+      "completed_shifts": "Abgeschlossene Schichten",
+      "total_hours": "Teamstunden (Woche)",
+      "no_activity": "Wir benötigen mehr aktuelle Aktivität, um einen aktivsten Mitarbeiter hervorzuheben.",
+      "completed": "Abgeschlossen",
+      "assigned_shifts": "Zugewiesene Schichten",
+      "remaining": "Verbleibend"
+    }
+  },
+  "table": {
+    "name": "Name",
+    "hourly_wage": "Stundenlohn",
+    "wage_shift": "Lohn pro Schicht",
+    "employees": "Mitarbeiter",
+    "actions": "Aktionen"
+  },
+  "cards": {
+    "employee": "Mitarbeiter",
+    "shifts": "Schichten",
+    "showing": "Zeige"
   }
 }

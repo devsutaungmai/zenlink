@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { CameraIcon, TrashIcon, UserCircleIcon } from '@heroicons/react/24/outline'
 import Image from 'next/image'
 
@@ -15,6 +16,7 @@ export default function ProfilePhotoUpload({
   onPhotoChange,
   disabled = false,
 }: ProfilePhotoUploadProps) {
+  const { t } = useTranslation()
   const [photoUrl, setPhotoUrl] = useState<string | null>(currentPhotoUrl || null)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -27,13 +29,13 @@ export default function ProfilePhotoUpload({
     // Validate file type
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
     if (!allowedTypes.includes(file.type)) {
-      setError('Only JPEG, PNG, and WebP images are allowed')
+      setError(t('employees.form.photo_type_error'))
       return
     }
 
     // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
-      setError('File size must be less than 5MB')
+      setError(t('employees.form.photo_size_error'))
       return
     }
 
@@ -55,14 +57,14 @@ export default function ProfilePhotoUpload({
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to upload photo')
+        throw new Error(data.error || t('employees.form.photo_upload_failed'))
       }
 
       setPhotoUrl(data.url)
       onPhotoChange(data.url)
     } catch (err) {
       console.error('Upload error:', err)
-      setError(err instanceof Error ? err.message : 'Failed to upload photo')
+      setError(err instanceof Error ? err.message : t('employees.form.photo_upload_failed'))
     } finally {
       setUploading(false)
       // Reset input
@@ -85,14 +87,14 @@ export default function ProfilePhotoUpload({
 
       if (!response.ok) {
         const data = await response.json()
-        throw new Error(data.error || 'Failed to delete photo')
+        throw new Error(data.error || t('employees.form.photo_delete_failed'))
       }
 
       setPhotoUrl(null)
       onPhotoChange(null)
     } catch (err) {
       console.error('Delete error:', err)
-      setError(err instanceof Error ? err.message : 'Failed to delete photo')
+      setError(err instanceof Error ? err.message : t('employees.form.photo_delete_failed'))
     } finally {
       setUploading(false)
     }
@@ -101,7 +103,7 @@ export default function ProfilePhotoUpload({
   return (
     <div className="space-y-4">
       <label className="block text-sm font-medium text-gray-700">
-        Profile Photo
+        {t('employees.form.profile_photo')}
       </label>
 
       <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
@@ -136,7 +138,7 @@ export default function ProfilePhotoUpload({
               className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#31BCFF] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <CameraIcon className="h-5 w-5 mr-2 flex-shrink-0" />
-              {photoUrl ? 'Change Photo' : 'Upload Photo'}
+              {photoUrl ? t('employees.form.change_photo') : t('employees.form.upload_photo')}
             </button>
 
             {photoUrl && (
@@ -147,7 +149,7 @@ export default function ProfilePhotoUpload({
                 className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-red-300 rounded-md shadow-sm text-sm font-medium text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <TrashIcon className="h-5 w-5 mr-2 flex-shrink-0" />
-                Remove
+                {t('employees.form.remove_photo')}
               </button>
             )}
           </div>
@@ -162,7 +164,7 @@ export default function ProfilePhotoUpload({
           />
 
           <p className="text-xs text-gray-500 text-center sm:text-left">
-            JPG, PNG or WebP. Max size 5MB.
+            {t('employees.form.photo_format_hint')}
           </p>
 
           {error && (

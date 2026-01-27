@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { AutoBreakType, ShiftType, WageType } from '@prisma/client'
 import { useUser } from '@/shared/lib/useUser'
+import { useTranslation } from 'react-i18next'
 import { ShiftExchange } from '@/shared/types'
 import Swal from 'sweetalert2'
 import {
@@ -163,6 +164,7 @@ export default function ShiftForm({
   showDate = true,
   readOnly = false,
 }: ShiftFormProps) {
+  const { t } = useTranslation()
   const { user } = useUser()
 
   const safeEmployees = Array.isArray(employees) ? employees : []
@@ -924,14 +926,14 @@ export default function ShiftForm({
       {readOnly && !isEmployee && (
         <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
           <p className="text-sm text-blue-700">
-            You are viewing this shift in read-only mode. You don&apos;t have permission to edit shifts.
+            {t('shifts.form.read_only_notice')}
           </p>
         </div>
       )}
       {isEmployee && (
         <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
           <p className="text-sm text-yellow-700">
-            As an employee, you can view shifts but cannot create or edit them.
+            {t('shifts.form.employee_notice')}
           </p>
         </div>
       )}
@@ -947,7 +949,7 @@ export default function ShiftForm({
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
           >
-            Basic Information
+            {t('shifts.form.basic_information')}
           </button>
           <button
             type="button"
@@ -957,7 +959,7 @@ export default function ShiftForm({
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
           >
-            Break Time
+            {t('shifts.form.break_time')}
           </button>
           {initialData?.id && shiftExchanges.length > 0 && (
             <button
@@ -968,7 +970,7 @@ export default function ShiftForm({
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
             >
-              Exchange History
+              {t('shifts.form.exchange_history')}
               <span className="ml-1.5 inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-white bg-blue-600 rounded-full">
                 {shiftExchanges.length}
               </span>
@@ -983,7 +985,7 @@ export default function ShiftForm({
           {showDate && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Date <span className="text-red-500">*</span>
+                {t('shifts.form.date')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -994,14 +996,14 @@ export default function ShiftForm({
                 className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isDisabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                 required
               />
-              <p className="mt-1 text-xs text-gray-500">Format: DD/MM/YYYY</p>
+              <p className="mt-1 text-xs text-gray-500">{t('shifts.form.format_date')}</p>
             </div>
           )}
 
           {/* Shift Type */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Shift Type <span className="text-red-500">*</span>
+              {t('shifts.form.shift_type')} <span className="text-red-500">*</span>
             </label>
             <select
               value={formData.shiftTypeId || formData.shiftType || ''}
@@ -1058,7 +1060,7 @@ export default function ShiftForm({
               ))}
             </select>
             {loadingShiftTypes && (
-              <p className="mt-1 text-xs text-gray-500">Loading shift types...</p>
+              <p className="mt-1 text-xs text-gray-500">{t('shifts.form.loading_shift_types')}</p>
             )}
           </div>
 
@@ -1066,7 +1068,7 @@ export default function ShiftForm({
           {showStartTime && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Start Time <span className="text-red-500">*</span>
+                {t('shifts.form.start_time')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="time"
@@ -1082,7 +1084,7 @@ export default function ShiftForm({
           {/* End Time */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              End Time <span className="text-red-500">*</span>
+              {t('shifts.form.end_time')} <span className="text-red-500">*</span>
             </label>
             <input
               type="time"
@@ -1097,7 +1099,7 @@ export default function ShiftForm({
           {/* Department */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Department <span className="text-red-500">*</span>
+              {t('shifts.form.department')} <span className="text-red-500">*</span>
             </label>
             <select
               value={formData.departmentId || ''}
@@ -1106,7 +1108,7 @@ export default function ShiftForm({
               className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isDisabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
               required
             >
-              <option value="">Select department</option>
+              <option value="">{t('shifts.form.select_department')}</option>
               {departments.map((dept) => (
                 <option key={dept.id} value={dept.id}>
                   {dept.name}
@@ -1118,7 +1120,7 @@ export default function ShiftForm({
           {/* Category */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Category {formData.departmentId && <span className="text-red-500">*</span>}
+              {t('shifts.form.category')} {formData.departmentId && <span className="text-red-500">*</span>}
             </label>
             <select
               value={formData.categoryId || ''}
@@ -1128,7 +1130,7 @@ export default function ShiftForm({
               required={!!formData.departmentId}
             >
               <option value="">
-                {!formData.departmentId ? 'Select department first' : loadingCategories ? 'Loading...' : 'Select category'}
+                {!formData.departmentId ? t('shifts.form.select_department_first') : loadingCategories ? t('shifts.form.loading') : t('shifts.form.select_category')}
               </option>
               {categories.map((cat) => (
                 <option key={cat.id} value={cat.id}>
@@ -1141,7 +1143,7 @@ export default function ShiftForm({
           {/* Function */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Function {formData.categoryId && <span className="text-red-500">*</span>}
+              {t('shifts.form.function')} {formData.categoryId && <span className="text-red-500">*</span>}
             </label>
             <select
               value={formData.functionId || ''}
@@ -1151,7 +1153,7 @@ export default function ShiftForm({
               required={!!formData.categoryId}
             >
               <option value="">
-                {!formData.categoryId ? 'Select category first' : loadingFunctions ? 'Loading...' : 'Select function'}
+                {!formData.categoryId ? t('shifts.form.select_category_first') : loadingFunctions ? t('shifts.form.loading') : t('shifts.form.select_function')}
               </option>
               {functions.map((func) => (
                 <option key={func.id} value={func.id}>
@@ -1178,7 +1180,7 @@ export default function ShiftForm({
           {showEmployee && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Employee {formData.functionId && <span className="text-red-500">*</span>}
+                {t('shifts.form.employee')} {formData.functionId && <span className="text-red-500">*</span>}
               </label>
               <select
                 value={formData.employeeId || ''}
@@ -1228,7 +1230,7 @@ export default function ShiftForm({
 
           {/* Employee Group */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Employee Group</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('shifts.form.employee_group')}</label>
             <select
               value={formData.employeeGroupId || ''}
               onChange={(e) => setFormData({ ...formData, employeeGroupId: e.target.value || undefined })}
@@ -1270,7 +1272,7 @@ export default function ShiftForm({
           {/* Wage */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Wage ($) <span className="text-red-500">*</span>
+              {t('shifts.form.wage')} <span className="text-red-500">*</span>
             </label>
             <input
               type="number"
@@ -1289,7 +1291,7 @@ export default function ShiftForm({
 
           {/* Notes */}
           <div className="sm:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('shifts.form.notes')}</label>
             <textarea
               value={formData.note || ''}
               onChange={(e) => setFormData({ ...formData, note: e.target.value || undefined })}
@@ -1309,7 +1311,7 @@ export default function ShiftForm({
                 disabled={isDisabled}
                 className={`rounded border-gray-300 text-[#31BCFF] focus:ring-[#31BCFF] h-4 w-4 ${isDisabled ? 'cursor-not-allowed' : ''}`}
               />
-              <span className="text-sm font-medium text-gray-700">Approved</span>
+              <span className="text-sm font-medium text-gray-700">{t('shifts.form.approved')}</span>
             </label>
           </div>
         </div>
@@ -1321,8 +1323,8 @@ export default function ShiftForm({
           {/* Break Toggle */}
           <div className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg">
             <div className="flex-1 mr-3">
-              <h3 className="text-sm font-medium text-gray-900">Enable Break Time</h3>
-              <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Add break periods to this shift</p>
+              <h3 className="text-sm font-medium text-gray-900">{t('shifts.form.enable_break_time')}</h3>
+              <p className="text-xs sm:text-sm text-gray-500 mt-0.5">{t('shifts.form.add_break_periods')}</p>
             </div>
             <label className="flex items-center flex-shrink-0">
               <input
@@ -1340,7 +1342,7 @@ export default function ShiftForm({
             <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Break Start Time
+                  {t('shifts.form.break_start_time')}
                 </label>
                 <input
                   type="time"
@@ -1349,12 +1351,12 @@ export default function ShiftForm({
                   disabled={isDisabled}
                   className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isDisabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                 />
-                <p className="mt-1 text-xs text-gray-500">Time when break period starts</p>
+                <p className="mt-1 text-xs text-gray-500">{t('shifts.form.break_start_hint')}</p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Break End Time
+                  {t('shifts.form.break_end_time')}
                 </label>
                 <input
                   type="time"
@@ -1363,7 +1365,7 @@ export default function ShiftForm({
                   disabled={isDisabled}
                   className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isDisabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                 />
-                <p className="mt-1 text-xs text-gray-500">Time when break period ends</p>
+                <p className="mt-1 text-xs text-gray-500">{t('shifts.form.break_end_hint')}</p>
               </div>
 
               {/* Paid Break */}
@@ -1376,9 +1378,9 @@ export default function ShiftForm({
                     disabled={isDisabled}
                     className={`rounded border-gray-300 text-[#31BCFF] focus:ring-[#31BCFF] h-4 w-4 ${isDisabled ? 'cursor-not-allowed' : ''}`}
                   />
-                  <span className="text-sm font-medium text-gray-700">Paid Break</span>
+                  <span className="text-sm font-medium text-gray-700">{t('shifts.form.paid_break')}</span>
                 </label>
-                <p className="mt-1 text-xs text-gray-500">Check if this break time should be included in payroll calculations</p>
+                <p className="mt-1 text-xs text-gray-500">{t('shifts.form.paid_break_hint')}</p>
               </div>
 
               {/* Break Duration Display */}
@@ -1386,7 +1388,7 @@ export default function ShiftForm({
                 <div className="sm:col-span-2">
                   <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
                     <p className="text-xs sm:text-sm text-blue-700">
-                      <strong>Break Duration:</strong> {calculateBreakDuration(formData.breakStart, formData.breakEnd)}
+                      <strong>{t('shifts.form.break_duration')}</strong> {calculateBreakDuration(formData.breakStart, formData.breakEnd)}
                     </p>
                   </div>
                 </div>
@@ -1396,7 +1398,7 @@ export default function ShiftForm({
 
           {/* Break Time Guidelines */}
           <div className="p-3 sm:p-4 bg-amber-50 border border-amber-200 rounded-lg">
-            <h4 className="text-xs sm:text-sm font-medium text-amber-800 mb-2">Break Time Guidelines</h4>
+            <h4 className="text-xs sm:text-sm font-medium text-amber-800 mb-2">{t('shifts.form.break_guidelines')}</h4>
             <ul className="text-xs sm:text-sm text-amber-700 space-y-1">
               <li>• Unpaid breaks are automatically deducted from total worked hours</li>
               <li>• Paid breaks are included in payroll calculations and not deducted from hours</li>
@@ -1525,18 +1527,18 @@ export default function ShiftForm({
                 disabled={loading}
                 className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
               >
-                Delete Shift
+                {t('shifts.form.delete_shift')}
               </button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Delete this shift?</AlertDialogTitle>
+                <AlertDialogTitle>{t('shifts.form.delete_confirm_title')}</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This action cannot be undone. The shift will be permanently removed from the schedule.
+                  {t('shifts.form.delete_confirm_message')}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
+                <AlertDialogCancel disabled={loading}>{t('shifts.form.cancel')}</AlertDialogCancel>
                 <AlertDialogAction
                   className="bg-red-600 hover:bg-red-700 focus:ring-red-500"
                   onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
@@ -1545,7 +1547,7 @@ export default function ShiftForm({
                   }}
                   disabled={loading}
                 >
-                  Delete
+                  {t('shifts.delete_shift')}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -1557,7 +1559,7 @@ export default function ShiftForm({
             onClick={onCancel}
             className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#31BCFF]"
           >
-            {readOnly ? 'Close' : 'Cancel'}
+            {readOnly ? t('shifts.form.close') : t('shifts.form.cancel')}
           </button>
           {!readOnly && (
             <button
@@ -1568,7 +1570,7 @@ export default function ShiftForm({
               }`}
               title={isEmployee ? "Employees cannot create or edit shifts" : ""}
             >
-              {loading ? 'Saving...' : isEmployee ? 'Not Authorized' : 'Save'}
+              {loading ? t('shifts.form.saving') : isEmployee ? t('shifts.form.not_authorized') : t('shifts.form.save')}
             </button>
           )}
         </div>

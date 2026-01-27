@@ -112,5 +112,15 @@
     "dates_required": "Start date and end date are required",
     "end_date_before_start": "End date cannot be before start date",
     "reason_required": "Reason is required"
+  },
+  "banner": {
+    "approved_count": "{{count}} approved",
+    "pending_count": "{{count}} pending"
+  },
+  "stats": {
+    "approved": "Approved",
+    "pending": "Pending",
+    "total": "Total Requests",
+    "documented": "With Documents"
   }
 }

@@ -66,11 +66,23 @@
     }
   },
   "validation": {
-    "employee_required": "Bitte wählen Sie einen Mitarbeiter aus",
+    "employee_required": "Bitte wählen Sie einen Mitarbeiter",
     "start_date_required": "Startdatum ist erforderlich",
     "end_date_required": "Enddatum ist erforderlich",
     "end_before_start": "Enddatum kann nicht vor dem Startdatum liegen",
+    "dates_required": "Startdatum und Enddatum sind erforderlich",
+    "end_date_before_start": "Enddatum kann nicht vor dem Startdatum liegen",
     "reason_required": "Grund ist erforderlich"
+  },
+  "banner": {
+    "approved_count": "{{count}} genehmigt",
+    "pending_count": "{{count}} ausstehend"
+  },
+  "stats": {
+    "approved": "Genehmigt",
+    "pending": "Ausstehend",
+    "total": "Gesamtanfragen",
+    "documented": "Mit Dokumenten"
   },
   "loading": "Lade Krankmeldungsdaten...",
   "empty_state": {

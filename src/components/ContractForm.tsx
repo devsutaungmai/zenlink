@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useUser } from '@/shared/lib/useUser'
 import Swal from 'sweetalert2'
 import { Employee, EmployeeGroup } from '@prisma/client'
@@ -23,6 +24,7 @@ interface ContractTemplate {
 }
 
 export default function ContractForm({ onClose, onContractCreated, initialEmployeeId }: ContractFormProps) {
+  const { t } = useTranslation()
   const [formData, setFormData] = useState({
     employeeId: initialEmployeeId || '',
     employeeGroupId: '',
@@ -145,14 +147,14 @@ export default function ContractForm({ onClose, onContractCreated, initialEmploy
         timer: 3000,
         timerProgressBar: true,
         icon: 'success',
-        title: 'Contract created successfully!'
+        title: t('contracts.form.success_created')
       })
       onClose()
     } else {
       Swal.fire({
         icon: 'error',
-        title: 'Oops...',
-        text: 'Something went wrong!',
+        title: t('contracts.form.error_title'),
+        text: t('contracts.form.error_message'),
       })
     }
   }
@@ -161,14 +163,14 @@ export default function ContractForm({ onClose, onContractCreated, initialEmploy
     <div className="bg-white rounded-xl shadow-sm border border-gray-200">
       <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
         <div className="flex items-center gap-4">
-          <h2 className="text-lg font-semibold text-gray-900">Create New Contract</h2>
+          <h2 className="text-lg font-semibold text-gray-900">{t('contracts.form.create_title')}</h2>
           {canShowPreview && (
             <button
               type="button"
               onClick={() => setShowPreview(!showPreview)}
               className="px-3 py-1 text-sm bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors duration-200"
             >
-              {showPreview ? 'Hide Preview' : 'Show Preview'}
+              {showPreview ? t('contracts.form.hide_preview') : t('contracts.form.show_preview')}
             </button>
           )}
         </div>
@@ -180,44 +182,44 @@ export default function ContractForm({ onClose, onContractCreated, initialEmploy
         <div className={`${showPreview ? 'w-1/2 border-r border-gray-200' : 'w-full'}`}>
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Employee</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('contracts.form.employee')}</label>
               <select
                 value={formData.employeeId}
                 onChange={(e) => setFormData({ ...formData, employeeId: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                 required
               >
-                <option value="">Select Employee</option>
+                <option value="">{t('contracts.form.select_employee')}</option>
                 {employees.map(e => <option key={e.id} value={e.id}>{e.firstName} {e.lastName}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Employee Group</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('contracts.form.employee_group')}</label>
               <select
                 value={formData.employeeGroupId}
                 onChange={(e) => setFormData({ ...formData, employeeGroupId: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                 required
               >
-                <option value="">Select Employee Group</option>
+                <option value="">{t('contracts.form.select_employee_group')}</option>
                 {employeeGroups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Contract Template</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('contracts.form.contract_template')}</label>
               <select
                 value={formData.contractTemplateId}
                 onChange={(e) => setFormData({ ...formData, contractTemplateId: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                 required
               >
-                <option value="">Select Contract Template</option>
+                <option value="">{t('contracts.form.select_template')}</option>
                 {contractTemplates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
               </select>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Contract Start Date</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('contracts.form.start_date')}</label>
                 <input
                   type="date"
                   value={formData.startDate}
@@ -227,7 +229,7 @@ export default function ContractForm({ onClose, onContractCreated, initialEmploy
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Contract Expiration Date (Optional)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('contracts.form.end_date')}</label>
                 <input
                   type="date"
                   value={formData.endDate}
@@ -237,23 +239,23 @@ export default function ContractForm({ onClose, onContractCreated, initialEmploy
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Contract Person</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('contracts.form.contract_person')}</label>
               <select
                 value={formData.contractPersonId}
                 onChange={(e) => setFormData({ ...formData, contractPersonId: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                 required
               >
-                <option value="">Select Employee</option>
+                <option value="">{t('contracts.form.select_employee')}</option>
                 {employees.map(e => <option key={e.id} value={e.id}>{e.firstName} {e.lastName}</option>)}
               </select>
             </div>
             <div className="flex justify-end space-x-4">
               <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">
-                Cancel
+                {t('contracts.form.cancel')}
               </button>
               <button type="submit" className="px-4 py-2 bg-[#31BCFF] text-white rounded-lg hover:bg-[#2ba3e4]">
-                Create Contract
+                {t('contracts.form.create_button')}
               </button>
             </div>
           </form>
@@ -262,7 +264,7 @@ export default function ContractForm({ onClose, onContractCreated, initialEmploy
         {/* Preview Section */}
         {showPreview && canShowPreview && selectedData.contractTemplate && (
           <div className="w-1/2 p-6 bg-gray-50">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Contract Preview</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('contracts.form.preview_title')}</h3>
             <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm max-h-96 overflow-y-auto">
               {/* Template Header */}
               <div className="mb-4 pb-4 border-b border-gray-200">
@@ -298,27 +300,27 @@ export default function ContractForm({ onClose, onContractCreated, initialEmploy
               <div className="mt-6 pt-4 border-t border-gray-200">
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="font-medium text-gray-500">Employee:</span>
+                    <span className="font-medium text-gray-500">{t('contracts.form.employee')}:</span>
                     <div className="text-gray-900">
-                      {selectedData.employee ? `${selectedData.employee.firstName} ${selectedData.employee.lastName}` : 'Not selected'}
+                      {selectedData.employee ? `${selectedData.employee.firstName} ${selectedData.employee.lastName}` : t('contracts.form.not_selected')}
                     </div>
                   </div>
                   <div>
-                    <span className="font-medium text-gray-500">Start Date:</span>
+                    <span className="font-medium text-gray-500">{t('contracts.form.start_date')}:</span>
                     <div className="text-gray-900">
-                      {formData.startDate ? new Date(formData.startDate).toLocaleDateString() : 'Not set'}
+                      {formData.startDate ? new Date(formData.startDate).toLocaleDateString() : t('contracts.form.not_set')}
                     </div>
                   </div>
                   <div>
-                    <span className="font-medium text-gray-500">End Date:</span>
+                    <span className="font-medium text-gray-500">{t('contracts.form.end_date')}:</span>
                     <div className="text-gray-900">
-                      {formData.endDate ? new Date(formData.endDate).toLocaleDateString() : 'Indefinite'}
+                      {formData.endDate ? new Date(formData.endDate).toLocaleDateString() : t('contracts.form.indefinite')}
                     </div>
                   </div>
                   <div>
-                    <span className="font-medium text-gray-500">Contract Person:</span>
+                    <span className="font-medium text-gray-500">{t('contracts.form.contract_person')}:</span>
                     <div className="text-gray-900">
-                      {selectedData.contractPerson ? `${selectedData.contractPerson.firstName} ${selectedData.contractPerson.lastName}` : 'Not selected'}
+                      {selectedData.contractPerson ? `${selectedData.contractPerson.firstName} ${selectedData.contractPerson.lastName}` : t('contracts.form.not_selected')}
                     </div>
                   </div>
                 </div>
@@ -328,7 +330,7 @@ export default function ContractForm({ onClose, onContractCreated, initialEmploy
             {!selectedData.employee && (
               <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                 <p className="text-sm text-yellow-700">
-                  Select an employee to see personalized contract details.
+                  {t('contracts.form.select_employee_hint')}
                 </p>
               </div>
             )}

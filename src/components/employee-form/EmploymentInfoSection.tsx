@@ -125,7 +125,7 @@ export function EmploymentInfoSection({
             date={formData.dateOfHire}
             onDateChange={(date) => onDateChange(date || null, 'dateOfHire')}
             className={getFieldStyle('dateOfHire')}
-            placeholder="Select date of hire"
+            placeholder={t('employees.form.date_of_hire_placeholder')}
             dateFormat="dd/MM/yyyy"
             yearRange={{
               from: new Date().getFullYear() - 10,
@@ -162,7 +162,7 @@ export function EmploymentInfoSection({
       {canViewSensitive && validationSettings?.requireSalaryRate === true && (
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            Salary Rate (per hour) <span className="text-red-500">*</span>
+            {t('employees.form.salary_rate')} <span className="text-red-500">*</span>
           </label>
           <input
             type="number"
@@ -188,7 +188,7 @@ export function EmploymentInfoSection({
             options={departments}
             selectedIds={formData.departmentIds}
             onChange={onDepartmentsChange}
-            placeholder="Select departments..."
+            placeholder={t('employees.form.select_departments')}
             required
             error={validationErrors.departmentId || validationErrors.departmentIds}
             disabled={readOnly}
@@ -203,7 +203,7 @@ export function EmploymentInfoSection({
             options={employeeGroups}
             selectedIds={formData.employeeGroupIds}
             onChange={onEmployeeGroupsChange}
-            placeholder="Select employee groups..."
+            placeholder={t('employees.form.select_employee_groups')}
             disabled={readOnly}
             required
             error={validationErrors.employeeGroupId || validationErrors.employeeGroupIds}
@@ -218,7 +218,7 @@ export function EmploymentInfoSection({
             options={filteredRoles.map(r => ({ id: r.id, name: r.name }))}
             selectedIds={formData.roleIds.filter(id => filteredRoles.some(r => r.id === id))}
             onChange={onRolesChange}
-            placeholder={t('employees.form.select_roles', 'Select access roles...')}
+            placeholder={t('employees.form.select_roles')}
             disabled={readOnly}
             required
             error={validationErrors.roleIds}
@@ -234,7 +234,7 @@ export function EmploymentInfoSection({
       {contractTypes.length > 0 && onContractTypeChange && (
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            {t('employees.form.contract_type', 'Contract Type')}
+            {t('employees.form.contract_type')}
           </label>
           <select
             name="contractTypeId"
@@ -250,10 +250,10 @@ export function EmploymentInfoSection({
             className={getFieldStyle('contractTypeId')}
             disabled={readOnly}
           >
-            <option value="">{t('employees.form.select_contract_type', 'Select contract type...')}</option>
+            <option value="">{t('employees.form.select_contract_type')}</option>
             {contractTypes.map((ct) => (
               <option key={ct.id} value={ct.id}>
-                {ct.name} ({ct.defaultFtePercent}% FTE)
+                {t('employees.form.contract_type_option', { name: ct.name, ftePercent: ct.defaultFtePercent })}
               </option>
             ))}
           </select>

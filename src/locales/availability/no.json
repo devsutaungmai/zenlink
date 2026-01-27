@@ -9,7 +9,12 @@
   },
   "search": {
     "placeholder": "Søk medarbeidere...",
-    "showing": "Viser",
+    "placeholder_availability": "Søk tilgjengelighet...",
+    "showing": "Viser {{start}} til {{end}} av {{total}} medarbeidere",
+    "showing_paginated": "Viser {{start}} til {{end}} av {{total}} medarbeidere",
+    "showing_your_calendar": "Viser din tilgjengelighetskalender",
+    "no_availability_data": "Ingen tilgjengelighetsdata funnet",
+    "showing_zero": "Viser 0 av {{total}} medarbeidere",
     "of": "av",
     "employees": "medarbeidere"
   },
@@ -30,6 +35,7 @@
     "page": "Side",
     "of": "av"
   },
+  "page_info": "Side {{current}} av {{total}}",
   "calendar": {
     "employee": "Medarbeider",
     "months": [
