@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/shared/lib/prisma'
 import { getCurrentUser } from '@/shared/lib/auth'
-import { calculateInvoiceTotals, formatInvoiceNumberForDisplay, getBusinessId } from '@/shared/lib/invoiceHelper'
+import { calculateInvoiceTotals, formatCustomerNumberForDisplay, formatInvoiceNumberForDisplay, getBusinessId } from '@/shared/lib/invoiceHelper'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
@@ -51,6 +51,8 @@ export async function GET(request: NextRequest) {
     let totalVatAmount = 0
     let totalIncVAT = 0
     const invoiceLinesData: any = []
+    const vatMap :Map<number,{netAmount: number,vatAmount: number}> = new Map();
+    let vatPayableBreakdowns:any = [];
 
     for (const line of invoice.invoiceLines) {
       const { productId, quantity, pricePerUnit, discountPercentage,vatPercentage } = line
@@ -79,7 +81,15 @@ export async function GET(request: NextRequest) {
         Number(discountPercentage),
         Number(vatPercentage)
       )
-
+      const current = vatMap.get(Number(vatPercentage))||{netAmount:0,vatAmount:0};
+      vatMap.set(Number(vatPercentage), {netAmount: current.netAmount + calculations.totalExclVAT, vatAmount: current.vatAmount + calculations.vatAmount});
+      vatPayableBreakdowns = Array.from(vatMap.entries())
+            .map(([vatPercentage, amounts]) => ({
+                vatPercentage,
+                netAmount: amounts.netAmount,
+                vatAmount: amounts.vatAmount,
+            }))
+            .sort((a, b) => b.vatPercentage - a.vatPercentage); // Sort descending
       totalExclVAT += calculations.totalExclVAT
       totalVatAmount += calculations.vatAmount
       totalIncVAT += calculations.totalInclVAT
@@ -87,11 +97,12 @@ export async function GET(request: NextRequest) {
       invoiceLinesData.push({
         productId,
         quantity,
-        pricePerUnit,
+        pricePerUnit, 
         discountPercentage,
         netAmount: calculations.totalExclVAT,
         totalAmount: calculations.totalInclVAT,
         vatPercentage: Number(vatPercentage),
+        vatAmount: line.vatAmount,
         totalVatAmount,
         productName: product.productName,
         productNumber: product.productNumber || ''
@@ -156,7 +167,7 @@ export async function GET(request: NextRequest) {
     doc.text(invoice.customer.address || '[Firmaadresse]', 14, yPos + 10)
     doc.text(invoice.customer.postalCode || '[Firmapostnummer]', 14, yPos + 15)
     doc.text(`Org. nr.: ${invoice.customer.organizationNumber || '[Organisasjonsnr.]'}`, 14, yPos + 20)
-    doc.text(`Kundenummer: ${invoice.customer.customerNumber || '[Kundenummer]'}`, 14, yPos + 25)
+    doc.text(`Kundenummer: ${formatCustomerNumberForDisplay(invoice.customer.customerNumber)|| '[Kundenummer]'}`, 14, yPos + 25)
 
     // Invoice details (right)
     const rightX = 120
@@ -179,7 +190,7 @@ export async function GET(request: NextRequest) {
     doc.setFont('helvetica', 'bold')
     doc.text('Kundenummer:', rightX, yPos + 15)
     doc.setFont('helvetica', 'normal')
-    doc.text(invoice.customer.customerNumber || '[Kundenummer]', 170, yPos + 15, { align: 'right' })
+    doc.text(formatCustomerNumberForDisplay(invoice.customer.customerNumber) || '[Kundenummer]', 170, yPos + 15, { align: 'right' })
 
     doc.setFont('helvetica', 'bold')
     doc.text('Kid:', rightX, yPos + 20)
@@ -195,7 +206,11 @@ export async function GET(request: NextRequest) {
     //
     // ===== INVOICE TABLE (same as POST layout) =====
     //
-    const tableData = invoiceLinesData.map((line: any) => [
+
+    const tableData = invoiceLinesData.map((line: any) => { 
+        
+
+      return[
       line.productName,
       line.quantity.toString(),
       'Stk',
@@ -203,8 +218,10 @@ export async function GET(request: NextRequest) {
       `${line.discountPercentage || 0}%`,
       `${line.vatPercentage}%`,
       formatCurrency(line.netAmount),
-      formatCurrency(line.totalAmount)
-    ])
+      formatCurrency(line.totalAmount),
+    ]
+
+    })
 
     autoTable(doc, {
       startY: yPos + 35,
@@ -249,17 +266,27 @@ export async function GET(request: NextRequest) {
     doc.text('SUM', summaryX, finalY)
     doc.text(`kr ${formatCurrency(totalAmountAfterDiscount)}`, 196, finalY, { align: 'right' })
 
-    doc.text(`TOTAL MVA(%)`, summaryX, finalY + 5)
-    doc.text(`kr ${formatCurrency(TotalVatAmount)}`, 196, finalY + 5, { align: 'right' })
+    doc.line(summaryX, finalY + 1, 196, finalY + 1)
 
-    doc.line(summaryX, finalY + 8, 196, finalY + 8)
+    vatPayableBreakdowns.forEach((line:any,index:number) => {
+    const y = finalY + 5 + index * 5
+    doc.text(`VAT AMOUNT(${line.vatPercentage}%) of ${line.netAmount}`, summaryX, y)
+    doc.text(`kr ${formatCurrency(line.vatAmount)}`, 196, y, { align: 'right' })
+    });
+
+    const totalVatY = finalY + 5 + invoiceLinesData.length * 5
+
+    doc.text(`TOTAL VAT AMOUNT(%)`, summaryX, totalVatY)
+    doc.text(`kr ${formatCurrency(TotalVatAmount)}`, 196, totalVatY, { align: 'right' })
+
+    doc.line(summaryX, totalVatY + 3, 196, totalVatY + 3)
 
     doc.setFont('helvetica', 'bold')
     doc.setFontSize(12)
-    doc.text('Sum å betale', summaryX, finalY + 13)
-    doc.text(`kr ${formatCurrency(totalIncVATAmount)}`, 196, finalY + 13, { align: 'right' })
+    doc.text('Sum å betale', summaryX, totalVatY + 8)
+    doc.text(`kr ${formatCurrency(totalIncVATAmount)}`, 196, totalVatY + 13, { align: 'right' })
 
-    doc.line(14, finalY + 20, 196, finalY + 20)
+    doc.line(14, totalVatY + 15, 196, totalVatY + 15)
 
     //
     // ===== SEND PDF BACK =====

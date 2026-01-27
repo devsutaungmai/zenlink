@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/shared/lib/prisma'
 import { getCurrentUserOrEmployee, requireAuth } from '@/shared/lib/auth'
 import { calculateInvoiceTotals, generateInvoiceNumber, generateVoucherNumber, getBusinessId, invoiceToLedgerPosting } from '@/shared/lib/invoiceHelper'
-import { VoucherType } from '@prisma/client'
+import { InvoiceStatus, VoucherType } from '@prisma/client'
 
 // GET /api/invoices
 export async function GET(request: NextRequest) {
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
 
         for (const line of invoiceLines) {
 
-          const { productId, quantity, pricePerUnit, discountPercentage = 0,vatPercentage } = line;
+          const { productId, quantity, pricePerUnit, discountPercentage = 0, vatPercentage } = line;
           // Validate line data
           if (!productId || !quantity || !pricePerUnit) {
             return NextResponse.json(
@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
 
         // Calculate invoice-level VAT (after summing all lines)
         // const vatPercentage = 25
-        const totalVatAmount = invoiceLinesData.reduce((total, line)=> total + line.vatAmount,0)
+        const totalVatAmount = invoiceLinesData.reduce((total, line) => total + line.vatAmount, 0)
         const totalInclVAT = totalExclVAT + totalVatAmount  // Correct calculation
         // Verify customer exists
         const customer = await prisma.customer.findUnique({
@@ -164,15 +164,27 @@ export async function POST(request: NextRequest) {
             { status: 404 }
           )
         }
-        const invoice = await prisma.$transaction(async (tx) => {
-          const { year, sequence, invoiceNumber } = await generateInvoiceNumber(businessId, tx);
 
-          console.log('Creating invoice with number:', invoiceNumber);
+        const invoice = await prisma.$transaction(async (tx) => {
+          const currentYear = new Date().getFullYear()
+          let sequenceNumber;
+          let forYear;
+          let forInvoiceNumber;
+          if (status === InvoiceStatus.SENT) {
+            const { year, sequence, invoiceNumber } = await generateInvoiceNumber(businessId, tx);
+            sequenceNumber = sequence;
+            forYear = year;
+            forInvoiceNumber = invoiceNumber;
+          } else if (status === InvoiceStatus.DRAFT) {
+            sequenceNumber = -Math.floor(Math.random() * 1000000); // Use negative timestamp as sequence for uniqueness
+            forYear = currentYear;
+            forInvoiceNumber = `DRAFT-${currentYear}-${Date.now()}`;
+          }
 
           const invoiceData: any = {
-            invoiceNumber: invoiceNumber,
-            year: year,
-            sequence: sequence,
+            invoiceNumber: forInvoiceNumber,
+            year: forYear,
+            sequence: sequenceNumber,
             customerId,
             businessId,
 

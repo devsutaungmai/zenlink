@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/shared/lib/prisma'
-import { generateVoucherNumber, getBusinessId, invoiceToLedgerPosting } from '@/shared/lib/invoiceHelper'
+import { generateInvoiceNumber, generateVoucherNumber, getBusinessId, invoiceToLedgerPosting } from '@/shared/lib/invoiceHelper'
 import { InvoiceStatus, VoucherType } from '@prisma/client'
 
 // POST /api/invoices/send
@@ -31,13 +31,15 @@ export async function POST(
       }
 
       if (existingInvoice.status === InvoiceStatus.DRAFT) {
-        const voucher = await generateVoucherNumber(businessId, VoucherType.INVOICE);
+        await prisma.$transaction(async (tx) => {
+          const voucher = await generateVoucherNumber(businessId, VoucherType.INVOICE);
+          const { year, sequence, invoiceNumber } = await generateInvoiceNumber(businessId, tx)
 
-        await prisma.invoice.update({
-          where: { id: existingInvoice.id },
-          data: { voucherId: voucher.id, status: InvoiceStatus.SENT }
+          await tx.invoice.update({
+            where: { id: existingInvoice.id },
+            data: { voucherId: voucher.id, status: InvoiceStatus.SENT, invoiceNumber: invoiceNumber, sequence: sequence, year: year }
+          });
         });
-
         await invoiceToLedgerPosting(existingInvoice.id);
         processedInvoices.push(existingInvoice.id)
       } else {

@@ -73,7 +73,7 @@ export async function generateInvoiceNumber(
   });
 
   const lastInvoice = await txClient.invoice.findFirst({
-    where: { businessId, year },
+    where: { businessId, year, status: InvoiceStatus.OUTSTANDING },
     orderBy: { sequence: 'desc' }
   });
 
