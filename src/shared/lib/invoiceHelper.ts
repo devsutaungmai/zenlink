@@ -914,7 +914,7 @@ export async function generateLedgerReport(
           if (!groupedMap.has(groupKey)) {
             groupedMap.set(groupKey, {
               invoiceId: entry.invoiceId,
-              voucherNo,
+              voucherNo, 
               date: entry.postingDate || new Date(),
               description: entry.invoiceId
                 ? `Faktura nummer ${invoiceDisplayNumber} til ${customerName} ${customerId}`
