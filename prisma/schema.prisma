@@ -1059,7 +1059,6 @@ model BusinessLedgerAccountVatCode {
   @@map("business_ledger_account_vat_codes")
 }
 
-
 model VatCode {
   id                      String    @id @default(cuid())
   code                    String    @map("code")                      // Kode (0, 1, 11, 12, etc.)

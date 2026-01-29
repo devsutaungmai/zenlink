@@ -93,11 +93,9 @@ export default function InvoiceSummaryCalculation({ invoiceLines }: InvoiceSumma
                         {vatBreakdowns.map((breakdown, index) => (
                             <div key={`${breakdown.vatPercentage}-${index}`} className="flex items-center justify-between">
                                 <span className="text-gray-700">
-                                    VAT ({breakdown.vatPercentage}%) of {breakdown.netAmount.toFixed(2)}
+                                    VAT ({breakdown.vatPercentage}%) of {breakdown.netAmount.toFixed(2)} - {breakdown.vatAmount.toFixed(2)}
                                 </span>
-                                <span className="text-gray-900 font-medium">
-                                    {breakdown.vatAmount.toFixed(2)}
-                                </span>
+                               
                             </div>
                         ))}
                     </div>

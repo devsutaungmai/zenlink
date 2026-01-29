@@ -9,11 +9,13 @@ import {
   MagnifyingGlassIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  FunnelIcon,
 } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 import Swal from "sweetalert2"
 import { useColumnVisibility } from "@/hooks/use-column-visibility"
 import { ColumnVisibilityToggle } from "@/components/invoice/column-visibility-toggle"
+import { Switch } from "@/components/ui/switch"
 
 interface Customer {
   id: string
@@ -44,6 +46,7 @@ export default function ProjectPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
+  const [selectedFilter, setSelectedFilter] = useState('all')
 
   useEffect(() => {
     fetchProjects()
@@ -138,11 +141,20 @@ export default function ProjectPage() {
       })
     }
   }
-
+  const handleFilterClick = (filter: string) => () => {
+    setSelectedFilter(filter)
+    setCurrentPage(1)
+  }
   const filteredprojects = projects.filter(
-    (project) =>
-      project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      project.projectNumber?.toLowerCase().includes(searchTerm.toLowerCase()),
+    (project) => {
+      const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        project.projectNumber?.toLowerCase().includes(searchTerm.toLowerCase())
+      const matchesFilter =
+        selectedFilter === 'all' ||
+        (selectedFilter === 'active' && project.active) ||
+        (selectedFilter === 'inactive' && !project.active)
+      return matchesSearch && matchesFilter
+    }
   )
 
   const totalPages = Math.ceil(filteredprojects.length / itemsPerPage)
@@ -153,6 +165,43 @@ export default function ProjectPage() {
     setCurrentPage(page)
     window.scrollTo({ top: 0, behavior: "smooth" })
   }
+
+  const handleStatusChange = async (projectId: string, newStatus: boolean) => {
+      try {
+        const res = await fetch(`/api/projects/${projectId}/toggle-active`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ id: projectId, active: newStatus }),
+        })
+  
+        if (res.ok) {
+          const updatedProject = await res.json()
+          setProjects((prevProjects) =>
+            prevProjects.map((project) =>
+              project.id === projectId ? { ...project, active: updatedProject.active } : project,
+            ),
+          )
+        } else {
+          // throw new Error("Failed to update project status")
+          await Swal.fire({
+            title: t("common.error"),
+            text: "Failed to update project status",
+            icon: "error",
+            confirmButtonColor: "#31BCFF",
+          })
+        }
+      } catch (error) {
+        console.error("Error updating project status:", error)
+        await Swal.fire({
+          title: t("common.error"),
+          text: "Failed to update project status",
+          icon: "error",
+          confirmButtonColor: "#31BCFF",
+        })
+      }
+    }
 
   if (loading) {
     return (
@@ -208,6 +257,31 @@ export default function ProjectPage() {
             Showing {paginatedProjects.length} of {filteredprojects.length}
           </div>
         </div>
+        {/* Filter Buttons */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
+              <FunnelIcon className="w-4 h-4 flex-shrink-0" />
+              <span>Filter</span>
+            </div>
+            {[
+              { value: 'all', label: "ALL" },
+              { value: 'active', label: "ACTIVE" },
+              { value: 'inactive', label: "INACTIVE" },
+            ].map((filter) => (
+              <button
+                key={filter.value}
+                onClick={handleFilterClick(filter.value)}
+                className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${selectedFilter === filter.value
+                  ? 'bg-[#31BCFF] text-white shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Empty State */}
@@ -238,31 +312,31 @@ export default function ProjectPage() {
               <table className="w-full">
                 <thead>
                   <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
-                   {isColumnVisible("projectNumber") && (
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Project No.
-                    </th>
-                   )}
-                   {isColumnVisible("name") && (
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Project Name
-                    </th>
-                   )}
-                   {isColumnVisible("customer") && (
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Customer
-                    </th>
-                   )}
-                   {isColumnVisible("category") && (
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Category
-                    </th>
-                   )}
-                   {isColumnVisible("active") && (
-                    <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Status
-                    </th>
-                   )}
+                    {isColumnVisible("projectNumber") && (
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        Project No.
+                      </th>
+                    )}
+                    {isColumnVisible("name") && (
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        Project Name
+                      </th>
+                    )}
+                    {isColumnVisible("customer") && (
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        Customer
+                      </th>
+                    )}
+                    {isColumnVisible("category") && (
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        Category
+                      </th>
+                    )}
+                    {isColumnVisible("active") && (
+                      <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        Status
+                      </th>
+                    )}
                     <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
                       <div className="flex items-center justify-end gap-2">
                         <span>Actions</span>
@@ -295,21 +369,28 @@ export default function ProjectPage() {
                           <span className="text-sm text-gray-600">{project.customer?.customerName || "-"}</span>
                         </td>
                       )}
-                     {isColumnVisible("category") && (
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm text-gray-600">{project.category?.name || "-"}</span>
-                      </td>
-                     )}
-                     {isColumnVisible("active") && (
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${project.active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
-                            }`}
-                        >
-                          {project.active ? "Active" : "Inactive"}
-                        </span>
-                      </td>
-                    )}
+                      {isColumnVisible("category") && (
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="text-sm text-gray-600">{project.category?.name || "-"}</span>
+                        </td>
+                      )}
+                      {isColumnVisible("active") && (
+                        <td className="px-6 py-4">
+                          {/* <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${project.active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+                              }`}
+                          >
+                            {project.active ? "Active" : "Inactive"}
+                          </span> */}
+                          <div className="flex items-center">
+                          <Switch
+                            id="status"
+                            checked={project.active}
+                            onCheckedChange={(checked) => handleStatusChange(project.id, checked)}
+                          />
+                        </div>
+                        </td>
+                      )}
                       <td className="px-6 py-4 whitespace-nowrap text-right">
                         <div className="flex items-center justify-end gap-2">
                           <Link
@@ -383,19 +464,26 @@ export default function ProjectPage() {
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                     {isColumnVisible("projectNumber") && (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#31BCFF]/10 text-[#31BCFF]">
-                        {project.projectNumber}
-                      </span>
-                     )}
-                     {isColumnVisible("active") && project.active !== null && (
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${project.active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
-                          }`}
-                      >
-                        {project.active ? "Active" : "Inactive"}
-                      </span>
-                     )}
+                      {isColumnVisible("projectNumber") && (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#31BCFF]/10 text-[#31BCFF]">
+                          {project.projectNumber}
+                        </span>
+                      )}
+                      {isColumnVisible("active") && project.active !== null && (
+                        // <span
+                        //   className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${project.active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+                        //     }`}
+                        // >
+                        //   {project.active ? "Active" : "Inactive"}
+                        // </span>
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            id="status"
+                            checked={project.active}
+                            onCheckedChange={(checked) => handleStatusChange(project.id, checked)}
+                          />
+                        </div>
+                      )}
                     </div>
                     {isColumnVisible("name") && <h3 className="text-lg font-semibold text-gray-900 mt-2">{project.name}</h3>}
                   </div>
@@ -414,11 +502,11 @@ export default function ProjectPage() {
                     >
                       <TrashIcon className="h-4 w-4" />
                     </button>
-                     <ColumnVisibilityToggle
-                          columns={columns}
-                          onColumnToggle={toggleColumn}
-                          onResetColumns={resetColumns}
-                        />
+                    <ColumnVisibilityToggle
+                      columns={columns}
+                      onColumnToggle={toggleColumn}
+                      onResetColumns={resetColumns}
+                    />
                   </div>
                 </div>
 

@@ -30,6 +30,7 @@ export default function EditCustomersPage({ params }: { params: Promise<{ id: st
     })
     const [formData, setFormData] = useState<{
         customerName: string
+        active: boolean
         customerNumber: string
         organizationNumber: string
         address: string
@@ -46,6 +47,7 @@ export default function EditCustomersPage({ params }: { params: Promise<{ id: st
         customerContacts?: CustomerContact[]
     }>({
         customerName: "",
+        active: false,
         customerNumber: "",
         organizationNumber: "",
         address: "",
@@ -170,6 +172,7 @@ export default function EditCustomersPage({ params }: { params: Promise<{ id: st
                 }
                 setFormData({
                     customerName: data.customerName || '',
+                    active: data.active || false,
                     customerNumber: data.customerNumber || '',
                     organizationNumber: data.organizationNumber || '',
                     address: data.address || '',
@@ -279,6 +282,18 @@ export default function EditCustomersPage({ params }: { params: Promise<{ id: st
             {/* Form Container */}
             <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg p-6">
                 <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className="flex justify-end items-center gap-3 mt-8">
+                        <input
+                            id="active"
+                            type="checkbox"
+                            checked={formData.active}
+                            onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
+                            className="h-5 w-5 text-[#31BCFF] border-gray-300 rounded focus:ring-[#31BCFF]/50"
+                        />
+                        <label htmlFor="active" className="text-sm font-medium text-gray-700">
+                            Active
+                        </label>
+                    </div>
                     {/* Row 1: Customer Name + Customer Number (always visible) */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>

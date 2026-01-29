@@ -9,12 +9,14 @@ import {
   MagnifyingGlassIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  FunnelIcon,
 } from "@heroicons/react/24/outline"
 import { useTranslation } from "react-i18next"
 import Swal from "sweetalert2"
 import { formatCustomerNumberForDisplay } from "@/shared/lib/invoiceHelper"
 import { useColumnVisibility } from "@/hooks/use-column-visibility"
 import { ColumnVisibilityToggle } from "@/components/invoice/column-visibility-toggle"
+import { Switch } from "@/components/ui/switch"
 
 interface Customer {
   id: string
@@ -50,6 +52,7 @@ export default function CustomersPage() {
     { key: "address", label: "Address" },
     { key: "active", label: "Status" },
   ]
+  const [selectedFilter, setSelectedFilter] = useState('all')
 
   const { columns, toggleColumn, resetColumns, isColumnVisible } = useColumnVisibility({
     storageKey: "customers-columns",
@@ -137,11 +140,21 @@ export default function CustomersPage() {
       })
     }
   }
+   const handleFilterClick = (filter: string) => () => {
+        setSelectedFilter(filter)
+        setCurrentPage(1)
+    }
 
   const filteredCustomers = customers.filter(
-    (customer) =>
-      customer.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.customerNumber.toLowerCase().includes(searchTerm.toLowerCase()),
+    (customer) => {
+      const matchesSearch = customer.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        customer.customerNumber.toLowerCase().includes(searchTerm.toLowerCase())
+      const matchesFilter =
+        selectedFilter === 'all' ||
+        (selectedFilter === 'active' && customer.active) ||
+        (selectedFilter === 'inactive' && !customer.active)
+      return matchesSearch && matchesFilter
+    }
   )
 
   const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage)
@@ -152,6 +165,43 @@ export default function CustomersPage() {
     setCurrentPage(page)
     window.scrollTo({ top: 0, behavior: "smooth" })
   }
+
+    const handleStatusChange = async (customerId: string, newStatus: boolean) => {
+      try {
+        const res = await fetch(`/api/customers/${customerId}/toggle-active`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ id: customerId, active: newStatus }),
+        })
+  
+        if (res.ok) {
+          const updatedCustomer = await res.json()
+          setCustomers((prevCustomers) =>
+            prevCustomers.map((customer) =>
+              customer.id === customerId ? { ...customer, active: updatedCustomer.active } : customer,
+            ),
+          )
+        } else {
+          // throw new Error("Failed to update customer status")
+          await Swal.fire({
+            title: t("common.error"),
+            text: "Failed to update customer status",
+            icon: "error",
+            confirmButtonColor: "#31BCFF",
+          })
+        }
+      } catch (error) {
+        console.error("Error updating customer status:", error)
+        await Swal.fire({
+          title: t("common.error"),
+          text: "Failed to update customer status",
+          icon: "error",
+          confirmButtonColor: "#31BCFF",
+        })
+      }
+    }
 
   if (loading) {
     return (
@@ -207,6 +257,31 @@ export default function CustomersPage() {
             Showing {paginatedCustomers.length} of {filteredCustomers.length}
           </div>
         </div>
+         {/* Filter Buttons */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
+                            <FunnelIcon className="w-4 h-4 flex-shrink-0" />
+                            <span>Filter</span>
+                        </div>
+                        {[
+                            { value: 'all', label: "ALL" },
+                            { value: 'active', label: "ACTIVE" },
+                            { value: 'inactive', label: "INACTIVE" },
+                        ].map((filter) => (
+                            <button
+                                key={filter.value}
+                                onClick={handleFilterClick(filter.value)}
+                                className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${selectedFilter === filter.value
+                                    ? 'bg-[#31BCFF] text-white shadow-md'
+                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                    }`}
+                            >
+                                {filter.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
       </div>
 
       {/* Empty State */}
@@ -319,12 +394,19 @@ export default function CustomersPage() {
                         </td>
                       )}
                       {isColumnVisible("active") && <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <span
+                        {/* <span
                           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${customer.active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
                             }`}
                         >
                           {customer.active ? "Active" : "Inactive"}
-                        </span>
+                        </span> */}
+                         <div className="flex items-center space-x-2">
+                          <Switch
+                            id="status"
+                            checked={customer.active}
+                            onCheckedChange={(checked) => handleStatusChange(customer.id, checked)}
+                          />
+                        </div>
                       </td>}
                       <td className="px-6 py-4 whitespace-nowrap text-right">
                         <div className="flex items-center justify-end gap-2">

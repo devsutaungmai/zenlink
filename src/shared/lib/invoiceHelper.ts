@@ -498,7 +498,9 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
         include: {
           product: {
             include: {
-              ledgerAccount: true
+              ledgerAccount: {
+                include: { businessVatCodes: { include: { vatCode: true } } }
+              },
             }
           }
         }
@@ -530,6 +532,7 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
   const businessId = invoice.businessId;
   const postingDate = new Date();
   const documentDate = invoice.invoiceDate;
+  let vatListPerLines: any = [];
 
   // Get standard accounts
   const accountsReceivable = await prisma.ledgerAccount.findFirst({
@@ -543,6 +546,7 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
   if (!accountsReceivable || !vatPayable) {
     throw new Error('Required ledger accounts not found (1500, 2701)');
   }
+  const vatMap = new Map<string, number>();
 
   await prisma.$transaction(async (tx) => {
     // Update invoice status (only for normal invoices, not credit notes)
@@ -555,9 +559,29 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
         }
       });
     }
+    const vatAccounts = new Map<number, string>();
+    const ledgerVatCodes = await prisma.ledgerAccount.findMany({ where: { accountNumber: { in: [2701, 2702, 2703, 2704, 2711, 2712, 2713, 2714] } } });
+    ledgerVatCodes.forEach(ledgerVatCode => {
+      vatAccounts.set(ledgerVatCode.accountNumber, ledgerVatCode.id);
+    });
 
     for (const line of invoice.invoiceLines) {
       const ledgerAccountId = line.product.ledgerAccount?.id;
+      let ledgerVatCodeId = vatPayable.id; // default 2701
+
+      const businessVat = line.product.ledgerAccount?.businessVatCodes
+        ?.find(bvc => bvc.businessId === invoice.businessId);
+
+      if (businessVat?.vatCode?.settlementAccountNumber) {
+        const settlementNumber = Number(
+          businessVat.vatCode.settlementAccountNumber
+        );
+
+        ledgerVatCodeId =
+          vatAccounts.get(settlementNumber) ?? vatPayable.id;
+      }
+
+
       if (!ledgerAccountId) {
         throw new Error(`Product ${line.productName} has no linked ledger account`);
       }
@@ -579,7 +603,7 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
             amount: lineTotal,
             projectId: invoice.projectId,
             departmentId: invoice.departmentId,
-            description: `Kredit nota ${formatInvoiceNumberForDisplay(invoice.invoiceNumber)} til ${invoice.customer?.customerName || 'customer'} ${invoice.customer?.id || ''}`
+            description: `(Kredit nota) (${formatInvoiceNumberForDisplay(invoice.invoiceNumber)}) (${invoice.customer?.customerName || 'customer'}) (${invoice.customer?.id || ''})`
           }
         });
       } else {
@@ -597,52 +621,61 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
             amount: lineTotal,
             projectId: invoice.projectId,
             departmentId: invoice.departmentId,
-            description: `Faktura nummer ${formatInvoiceNumberForDisplay(invoice.invoiceNumber)} til ${invoice.customer?.customerName || 'customer'} ${invoice.customer?.id || ''}`
+            description: `(Faktura nummer) (${formatInvoiceNumberForDisplay(invoice.invoiceNumber)}) (${invoice.customer?.customerName || 'customer'}) (${invoice.customer?.id || ''})`
           }
         });
       }
+
+
+      // VAT Entry
+      const vatAmount = Math.abs(parseFloat((line.vatAmount || "0").toString()));
+      if (vatAmount > 0 && ledgerVatCodeId) {
+        const current = vatMap.get(ledgerVatCodeId) || 0;
+        const updatedAmount = current + vatAmount;
+        vatMap.set(ledgerVatCodeId, updatedAmount);
+      }
     }
+    vatListPerLines = Array.from(vatMap.entries()).map(([ledgerVatCodeId, vatAmount]) => ({ ledgerVatCodeId, vatAmount }))
 
-    // VAT Entry
-    const vatAmount = Math.abs(parseFloat(invoice.totalVatAmount.toString()));
-
-    if (vatAmount > 0) {
-      if (isCreditNote) {
-        // CREDIT NOTE: DR 2701 / CR 1500 (REVERSED)
-        await tx.ledgerEntry.create({
-          data: {
-            entryType: LedgerEntryType.CREDIT_NOTE,
-            businessId,
-            invoiceId: invoice.id,
-            voucherId: invoice.voucherId ?? "",
-            documentDate,
-            postingDate,
-            debitAccountId: vatPayable.id,
-            creditAccountId: accountsReceivable.id,
-            amount: vatAmount,
-            projectId: invoice.projectId,
-            departmentId: invoice.departmentId,
-            description: `Kredit nota ${formatInvoiceNumberForDisplay(invoice.invoiceNumber)} till ${invoice.customer?.customerName || 'customer'} ${invoice.customer?.id || ''}`
-          }
-        });
-      } else {
-        // NORMAL INVOICE: DR 1500 / CR 2701
-        await tx.ledgerEntry.create({
-          data: {
-            entryType: LedgerEntryType.INVOICE_POST,
-            businessId,
-            invoiceId: invoice.id,
-            voucherId: invoice.voucherId ?? "",
-            documentDate,
-            postingDate,
-            debitAccountId: accountsReceivable.id,
-            creditAccountId: vatPayable.id,
-            amount: vatAmount,
-            projectId: invoice.projectId,
-            departmentId: invoice.departmentId,
-            description: `Faktura nummer ${formatInvoiceNumberForDisplay(invoice.invoiceNumber)} til ${invoice.customer?.customerName || 'customer'} ${invoice.customer?.id || ''}`
-          }
-        });
+    for (let vat of vatListPerLines) {
+      if (vat.vatAmount > 0) {
+        if (isCreditNote) {
+          // CREDIT NOTE: DR 2701 / CR 1500 (REVERSED)
+          await tx.ledgerEntry.create({
+            data: {
+              entryType: LedgerEntryType.CREDIT_NOTE,
+              businessId,
+              invoiceId: invoice.id,
+              voucherId: invoice.voucherId ?? "",
+              documentDate,
+              postingDate,
+              debitAccountId: vat.ledgerVatCodeId,
+              creditAccountId: accountsReceivable.id,
+              amount: vat.vatAmount,
+              projectId: invoice.projectId,
+              departmentId: invoice.departmentId,
+              description: `(Kredit nota) (${formatInvoiceNumberForDisplay(invoice.invoiceNumber)}) (${invoice.customer?.customerName || 'customer'}) (${invoice.customer?.id || ''})`
+            }
+          });
+        } else {
+          // NORMAL INVOICE: DR 1500 / CR 2701
+          await tx.ledgerEntry.create({
+            data: {
+              entryType: LedgerEntryType.INVOICE_POST,
+              businessId,
+              invoiceId: invoice.id,
+              voucherId: invoice.voucherId ?? "",
+              documentDate,
+              postingDate,
+              debitAccountId: accountsReceivable.id,
+              creditAccountId: vat.ledgerVatCodeId,
+              amount: vat.vatAmount,
+              projectId: invoice.projectId,
+              departmentId: invoice.departmentId,
+              description: `(Faktura nummer) (${formatInvoiceNumberForDisplay(invoice.invoiceNumber)}) (${invoice.customer?.customerName || 'customer'}) (${invoice.customer?.id || ''})`
+            }
+          });
+        }
       }
     }
   });
@@ -653,7 +686,6 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
     entriesCreated: invoice.invoiceLines.length + (Number(invoice.totalVatAmount) > 0 ? 1 : 0)
   };
 }
-
 
 /**
  * Calculate TRUE account balance using proper accounting principles
@@ -917,7 +949,7 @@ export async function generateLedgerReport(
               voucherNo,
               date: entry.postingDate || new Date(),
               description: entry.invoiceId
-                ? `Faktura nummer ${invoiceDisplayNumber} til ${customerName} ${customerId}`
+                ? `(Faktura nummer) (${invoiceDisplayNumber}) (${customerName}) (${customerId})`
                 : entry.description || '',
               displayAmount: displayAmount,
               trueMovement: trueMovement
@@ -1054,25 +1086,25 @@ export async function generateLedgerReport(
 
 export function getAccountType(accountNumber: number): AccountType {
   // Check specific ranges first (order matters!)
-  
+
   // 2000-2080 -> EQUITY (overrides general 2xxx LIABILITY rule)
   if (accountNumber >= 2000 && accountNumber <= 2080) {
     return AccountType.EQUITY;
   }
-  
+
   // 8100-8170 -> EXPENSE (overrides general 8xxx INCOME rule)
   if (accountNumber >= 8100 && accountNumber <= 8170) {
     return AccountType.EXPENSE;
   }
-  
+
   // 8300-8990 -> APPROPRIATIONS (overrides general 8xxx INCOME rule)
   if (accountNumber >= 8300 && accountNumber <= 8990) {
     return AccountType.APPROPRIATIONS;
   }
-  
+
   // General rules based on first digit
   const firstDigit = Math.floor(accountNumber / 1000);
-  
+
   switch (firstDigit) {
     case 1: return AccountType.ASSET;
     case 2: return AccountType.LIABILITY;  // 2081-2999

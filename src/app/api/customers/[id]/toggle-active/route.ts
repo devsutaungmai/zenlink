@@ -2,7 +2,7 @@ import { getCurrentUserOrEmployee } from "@/shared/lib/auth"
 import { prisma } from "@/shared/lib/prisma"
 import { NextRequest, NextResponse } from "next/server"
 
-// POST /api/products/<id>/toggle-active - Change product active status
+// POST /api/customer/<id>/toggle-active - Change customer active status
 export async function POST(request: NextRequest) {
     try {
         const auth = await getCurrentUserOrEmployee()
@@ -28,21 +28,18 @@ export async function POST(request: NextRequest) {
         const formData = await request.json()
         const { id, active } = formData
 
-        console.log('Creating product with data:', JSON.stringify(formData))
-
-
-        const existingProduct = await prisma.product.findFirst({
+        const existingCustomer = await prisma.customer.findFirst({
             where: {
                 id: id,
                 businessId: businessId
             }
         })
 
-        if (!existingProduct) {
-            return NextResponse.json({ error: 'Product not found' }, { status: 404 })
+        if (!existingCustomer) {
+            return NextResponse.json({ error: 'Customer not found' }, { status: 404 })
         }
 
-        const product = await prisma.product.update({
+        const customer = await prisma.customer.update({
             where: {
                 id: id
             },
@@ -50,9 +47,9 @@ export async function POST(request: NextRequest) {
         }
         );
 
-        return NextResponse.json(product, { status: 200 })
+        return NextResponse.json(customer, { status: 200 })
     } catch (error: any) {
-        console.error('Error updating product active:', error)
+        console.error('Error updating customer active:', error)
       
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }

@@ -260,7 +260,7 @@ export async function GET(request: NextRequest) {
     // ===== SUMMARY SECTION (same layout as POST) =====
     //
     const finalY = (doc as any).lastAutoTable.finalY + 10
-    const summaryX = 120
+    const summaryX = 90
 
     doc.setFontSize(10)
     doc.text('SUM', summaryX, finalY)
@@ -270,8 +270,8 @@ export async function GET(request: NextRequest) {
 
     vatPayableBreakdowns.forEach((line:any,index:number) => {
     const y = finalY + 5 + index * 5
-    doc.text(`VAT AMOUNT(${line.vatPercentage}%) of ${line.netAmount}`, summaryX, y)
-    doc.text(`kr ${formatCurrency(line.vatAmount)}`, 196, y, { align: 'right' })
+    doc.text(`VAT AMOUNT(${line.vatPercentage}%) of ${line.netAmount} - kr ${formatCurrency(line.vatAmount)}`, summaryX, y)
+    // doc.text(`kr ${formatCurrency(line.vatAmount)}`, 196, y, { align: 'right' })
     });
 
     const totalVatY = finalY + 5 + invoiceLinesData.length * 5

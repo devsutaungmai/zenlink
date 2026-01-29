@@ -8,35 +8,36 @@ export function Description({
   invoiceId?: string
   customerId?: string
 }) {
-  const parts = description.split(" ")
-  const customerId = parts[5] ?? '';
 
-  // Expected: ["Faktura", "nummer", "1", "til", "Ibadet", "cust_12345"]
-  if (parts.length !== 6) {
+  const matches = description.match(/\(([^)]+)\)/g)
+
+  if (!matches || matches.length < 4) {
     return <span>{description}</span>
   }
+  const descriptionPart = matches[0].replace(/[()]/g, "")
+  const invoiceNumber = matches[1].replace(/[()]/g, "")
+  const customerName = matches[2].replace(/[()]/g, "")
+  const customerId = matches[3].replace(/[()]/g, "")
 
   return (
     <span className="flex gap-1 truncate">
-      <span>{parts[0]}</span>
-      <span>{parts[1]}</span>
+      <span>{descriptionPart}</span>
 
       {/* Invoice number */}
       <Link
         href={`/dashboard/invoices/create?invoiceId=${invoiceId}&copy=true&overview=true`}
         className="text-blue-600 hover:underline"
       >
-        {parts[2]}
+        {invoiceNumber}
       </Link>
 
-      <span>{parts[3]}</span>
 
       {/* Customer */}
       <Link
         href={`/dashboard/customers/create?customerId=${customerId}&overview=true`}
         className="text-blue-600 hover:underline"
       >
-        {parts[4]}
+        ({customerName})
       </Link>
     </span>
   )

@@ -57,6 +57,7 @@ export default function CreateCustomersPage() {
     // Update formData state
     const [formData, setFormData] = useState<{
         customerName: string
+        active: boolean
         sequence: number
         year: number
         customerNumber: string
@@ -76,6 +77,7 @@ export default function CreateCustomersPage() {
         customerContacts?: CustomerContact[]
     }>({
         customerName: "",
+        active: false,
         sequence: 0,
         year: new Date().getFullYear(),
         customerNumber: "",
@@ -300,6 +302,7 @@ export default function CreateCustomersPage() {
                 }
                 setFormData({
                     customerName: data.customerName || '',
+                    active: data.active || false,
                     sequence: data.sequence || 0,
                     year: data.year || new Date().getFullYear(),
                     customerNumber: data.customerNumber || '',
@@ -373,6 +376,18 @@ export default function CreateCustomersPage() {
             {/* Form Container */}
             <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg p-6">
                 <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className="flex justify-end items-center gap-3 mt-8">
+                        <input
+                            id="active"
+                            type="checkbox"
+                            checked={formData.active}
+                            onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
+                            className="h-5 w-5 text-[#31BCFF] border-gray-300 rounded focus:ring-[#31BCFF]/50"
+                        />
+                        <label htmlFor="active" className="text-sm font-medium text-gray-700">
+                            Active
+                        </label>
+                    </div>
                     <div className="flex flex-wrap gap-6">
                         {/* Customer Name - Always visible */}
                         <div className="grow basis-[calc(50%-12px)] min-w-[250px]">

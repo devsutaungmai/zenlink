@@ -17,6 +17,7 @@ import {
 import { ColumnVisibilityToggle } from "@/components/invoice/column-visibility-toggle"
 import { useColumnVisibility } from "@/hooks/use-column-visibility"
 import { Switch } from "@/components/ui/switch"
+import { FunnelIcon } from "lucide-react"
 
 interface Unit {
   id: string
@@ -82,6 +83,7 @@ export default function ProductsPage() {
 
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage] = useState(10)
+  const [selectedFilter, setSelectedFilter] = useState('all')
 
   // Define columns configuration
   const COLUMNS = [
@@ -178,12 +180,21 @@ export default function ProductsPage() {
     }
   }
 
-  const filteredCustomers = products.filter(
-    (product) =>
-      product.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.productNumber.toLowerCase().includes(searchTerm.toLowerCase()),
-  )
+  const handleFilterClick = (filter: string) => () => {
+    setSelectedFilter(filter)
+    setCurrentPage(1)
+  }
 
+  const filteredCustomers = products.filter((product) => {
+   const matchesSearch = product.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    product.productNumber.toLowerCase().includes(searchTerm.toLowerCase())
+   const matchesFilter =
+      selectedFilter === 'all' ||
+      (selectedFilter === 'active' && product.active) ||
+      (selectedFilter === 'inactive' && !product.active)
+
+    return matchesSearch && matchesFilter
+  })
   const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
   const endIndex = startIndex + itemsPerPage
@@ -222,7 +233,7 @@ export default function ProductsPage() {
           text: "Failed to update product status",
           icon: "error",
           confirmButtonColor: "#31BCFF",
-        })  
+        })
       }
     } catch (error) {
       console.error("Error updating product status:", error)
@@ -297,6 +308,31 @@ export default function ProductsPage() {
               Page {currentPage} of {totalPages}
             </span>
           )}
+        </div>
+        {/* Filter Buttons */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
+              <FunnelIcon className="w-4 h-4 flex-shrink-0" />
+              <span>Filter</span>
+            </div>
+            {[
+              { value: 'all', label: "ALL" },
+              { value: 'active', label: "ACTIVE" },
+              { value: 'inactive', label: "INACTIVE" },
+            ].map((filter) => (
+              <button
+                key={filter.value}
+                onClick={handleFilterClick(filter.value)}
+                className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${selectedFilter === filter.value
+                  ? 'bg-[#31BCFF] text-white shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
