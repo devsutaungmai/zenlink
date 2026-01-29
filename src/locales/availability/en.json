@@ -9,7 +9,12 @@
   },
   "search": {
     "placeholder": "Search employees...",
-    "showing": "Showing",
+    "placeholder_availability": "Search availability...",
+    "showing": "Showing {{start}} to {{end}} of {{total}} employees",
+    "showing_paginated": "Showing {{start}} to {{end}} of {{total}} employees",
+    "showing_your_calendar": "Showing your availability calendar",
+    "no_availability_data": "No availability data found",
+    "showing_zero": "Showing 0 of {{total}} employees",
     "of": "of",
     "employees": "employees"
   },
@@ -30,6 +35,7 @@
     "page": "Page",
     "of": "of"
   },
+  "page_info": "Page {{current}} of {{total}}",
   "calendar": {
     "employee": "Employee",
     "months": [
@@ -48,7 +54,21 @@
     "available": "Available",
     "unavailable": "Unavailable",
     "today": "Today",
-    "has_note": "Has Note"
+    "has_note": "Has Note",
+    "selected": "Selected"
+  },
+  "actions": {
+    "mark_available": "Mark Available",
+    "mark_unavailable": "Mark Unavailable",
+    "clear_selection": "Clear Selection",
+    "select_all_days": "Select All Days",
+    "updating": "Updating..."
+  },
+  "stats": {
+    "pending_requests": "Pending Requests"
+  },
+  "tips": {
+    "click_to_select": "💡 Click on your calendar days to select, then mark as available/unavailable"
   },
   "loading": "Loading availability data...",
   "error": {

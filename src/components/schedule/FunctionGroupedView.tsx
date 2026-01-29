@@ -280,17 +280,25 @@ export default function FunctionGroupedView({
                             ) : (
                               <div className="w-full h-full flex flex-col gap-1">
                                 {dayShifts.slice(0, 1).map(shift => {
-                                  const shiftColor = shift.function?.color || (
+                                  const shiftColor = shift.approved ? '#d9f99d' : (
                                     shift.status === 'CANCELLED' ? '#ef4444' :
                                     shift.status === 'WORKING' ? '#3b82f6' :
-                                    '#31BCFF'
+                                    shift.function?.color || '#31BCFF'
                                   )
+                                  const textColor = shift.approved ? '#365314' : 'white'
+                                  const borderColor = shift.approved ? '#84cc16' : 'transparent'
                                   return (
                                   <button
                                     key={shift.id}
                                     onClick={() => onEditShift(shift)}
-                                    className="w-full rounded-xl text-white font-medium flex flex-col items-center justify-center gap-0.5 py-2 transition-all active:scale-95 cursor-pointer"
-                                    style={{ backgroundColor: shiftColor }}
+                                    className="w-full rounded-xl font-medium flex flex-col items-center justify-center gap-0.5 py-2 transition-all active:scale-95 cursor-pointer"
+                                    style={{ 
+                                      backgroundColor: shiftColor,
+                                      color: textColor,
+                                      borderColor: borderColor,
+                                      borderWidth: shift.approved ? '2px' : '0',
+                                      borderStyle: 'solid'
+                                    }}
                                   >
                                     <span className="text-xs leading-tight">
                                       {shift.startTime.substring(0, 5)}
@@ -438,7 +446,9 @@ export default function FunctionGroupedView({
                       <>
                         {dayShifts.slice(0, 2).map((shift, shiftIndex) => {
                           const employee = employees.find(emp => emp.id === shift.employeeId);
-                          const shiftColor = shift.function?.color || '#31BCFF'
+                          const backgroundColor = shift.approved ? '#d9f99d' : (shift.function?.color || '#dbeafe')
+                          const borderColor = shift.approved ? '#84cc16' : (shift.function?.color || '#93c5fd')
+                          const textColor = shift.approved ? '#365314' : '#1f2937'
                           
                           return (
                             <div
@@ -446,7 +456,12 @@ export default function FunctionGroupedView({
                               onClick={() => onEditShift(shift)}
                               className="mb-1 cursor-pointer"
                             >
-                              <div className="rounded p-2 text-xs border text-white font-medium" style={{ backgroundColor: shiftColor, borderColor: shiftColor }}>
+                              <div className="rounded p-2 text-xs border font-medium" style={{ 
+                                backgroundColor: backgroundColor, 
+                                borderColor: borderColor,
+                                color: textColor,
+                                borderWidth: shift.approved ? '2px' : '1px'
+                              }}>
                                 <div className="font-medium">
                                   {employee ? `${employee.firstName} ${employee.lastName}` : 'Unknown'}
                                 </div>

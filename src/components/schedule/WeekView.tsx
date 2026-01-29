@@ -366,10 +366,11 @@ export default function WeekView({
                                   <button
                                     key={shift.id}
                                     onClick={() => onEditShift(shift)}
-                                    className={`w-full h-full rounded-xl text-white font-medium flex flex-col items-center justify-center gap-0.5 transition-all active:scale-95 ${
-                                      shift.status === 'CANCELLED' ? 'bg-red-500' :
-                                      shift.status === 'WORKING' ? 'bg-blue-500' :
-                                      'bg-[#31BCFF]'
+                                    className={`w-full h-full rounded-xl font-medium flex flex-col items-center justify-center gap-0.5 transition-all active:scale-95 ${
+                                      shift.status === 'CANCELLED' ? 'bg-red-500 text-white' :
+                                      shift.status === 'WORKING' ? 'bg-blue-500 text-white' :
+                                      shift.approved ? 'bg-lime-200 text-lime-900 border-2 border-lime-500' :
+                                      'bg-[#31BCFF] text-white'
                                     }`}
                                   >
                                     <span className="text-xs leading-tight">

@@ -6,6 +6,7 @@ import { useCurrency } from '@/shared/hooks/useCurrency'
 import { ShiftWithRelations } from '@/types/schedule'
 import { getShiftSegmentsForDate, ShiftSegment } from './utils'
 import ShiftsModal from './ShiftsModal'
+import { useTranslation } from 'react-i18next'
 
 interface DayGroupsTimelineProps {
   date: Date
@@ -79,6 +80,7 @@ export default function DayGroupsTimeline({
   onAddShift,
   onEditShift
 }: DayGroupsTimelineProps) {
+  const { t } = useTranslation()
   const formattedDate = format(date, 'yyyy-MM-dd')
   const { currencySymbol } = useCurrency()
   const daySegments = useMemo(() => getShiftSegmentsForDate(shifts, date), [shifts, date])
@@ -196,7 +198,7 @@ export default function DayGroupsTimeline({
       <div className="p-3 space-y-3">
         {groupRows.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
-            <p className="text-sm">No groups found</p>
+            <p className="text-sm">{t('schedule.no_groups_found')}</p>
           </div>
         ) : (
           groupRows.map((row) => {
@@ -216,7 +218,7 @@ export default function DayGroupsTimeline({
                         {row.displayName}
                       </div>
                       <div className="text-xs text-gray-500">
-                        {stats.duration} / {stats.shifts} Shift{stats.shifts !== 1 ? 's' : ''}
+                        {stats.duration} / {t('schedule.shifts_count', { count: stats.shifts })}
                       </div>
                     </div>
                   </div>
@@ -292,9 +294,9 @@ export default function DayGroupsTimeline({
           {/* Header Row */}
           <div className="grid grid-cols-[260px_1fr] border-b bg-gray-50">
             <div className="px-4 py-3 flex flex-col gap-1 border-r">
-              <div className="text-xs text-gray-500">{groupRows.length} groups • {daySegments.length} shifts</div>
+              <div className="text-xs text-gray-500">{t('schedule.total_groups_count', { count: groupRows.length })} • {t('schedule.total_shifts_count', { count: daySegments.length })}</div>
               <div className="flex items-center gap-3 text-xs font-medium pt-1">
-                <button className="text-[#31BCFF] hover:text-blue-500">Manage Groups</button>
+                <button className="text-[#31BCFF] hover:text-blue-500">{t('schedule.manage_groups')}</button>
               </div>
             </div>
             <div className="grid grid-cols-24 text-[11px] font-semibold text-gray-500">

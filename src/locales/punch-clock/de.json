@@ -5,11 +5,19 @@
     "records_today": "Aufzeichnungen heute",
     "currently_working": "Arbeitet derzeit",
     "completed": "Abgeschlossen",
-    "select_date": "Datum auswählen"
+    "select_date": "Datum auswählen",
+    "select_start_date": "Startdatum auswählen",
+    "select_end_date": "Enddatum auswählen",
+    "date_range_type": "Datumsbereichstyp",
+    "single_day": "Einzelner Tag",
+    "week": "Woche",
+    "month": "Monat",
+    "week_starting": "Woche beginnt"
   },
   "search": {
     "placeholder": "Mitarbeiter oder Abteilungen suchen...",
-    "filter_label": "Filter:"
+    "filter_label": "Filter:",
+    "all_employees": "Alle Mitarbeiter"
   },
   "filters": {
     "all": "Alle",
@@ -25,8 +33,37 @@
       "punch_out": "Ausstempeln",
       "duration": "Dauer",
       "status": "Status",
-      "shift_info": "Schichtinformation"
-    }
+      "shift_info": "Schichtinformation",
+      "actions": "Aktionen"
+    },
+    "pagination_summary": "Zeige {{start}}-{{end}} von {{total}} Einträgen",
+    "rows_per_page": "Zeilen pro Seite",
+    "empty_summary": "Keine Einträge gefunden"
+  },
+  "actions": {
+    "edit": "Bearbeiten",
+    "approve": "Genehmigen",
+    "reject": "Ablehnen",
+    "create": "Erstellen",
+    "attendance": "Anwesenheit",
+    "export": "Exportieren"
+  },
+  "modals": {
+    "edit_title": "Anwesenheitsaufzeichnung bearbeiten",
+    "create_title": "Anwesenheitsaufzeichnung erstellen",
+    "create_description": "Erstellen Sie eine neue Anwesenheitsaufzeichnung für einen Mitarbeiter",
+    "employee": "Mitarbeiter",
+    "date": "Datum",
+    "punch_in_time": "Einstempelzeit",
+    "punch_out_time": "Ausstempelzeit",
+    "punch_out_optional": "Ausstempelzeit (Optional)",
+    "leave_empty_hint": "Leer lassen, um eine aktive Schicht zu erstellen",
+    "selected_shift": "Ausgewählte Schicht",
+    "cancel": "Abbrechen",
+    "save_changes": "Änderungen speichern",
+    "select_employee": "Wählen Sie einen Mitarbeiter...",
+    "create": "Anwesenheit erstellen",
+    "creating": "Erstelle..."
   },
   "status": {
     "working": "Arbeitend",

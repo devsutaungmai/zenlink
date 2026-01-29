@@ -124,6 +124,38 @@
   "common": {
     "general": "Generell",
     "active": "Aktiv",
-    "tbd": "TBD"
+    "tbd": "TBD",
+    "loading": "Laster...",
+    "error": "Feil",
+    "retry": "Prøv igjen",
+    "close": "Lukk",
+    "save": "Lagre",
+    "cancel": "Avbryt"
+  },
+  "dashboard": {
+    "admin_metrics": {
+      "most_active": "Mest aktive medarbeider",
+      "shift_health": "Skiftfullføring",
+      "weekly_pie_title": "Tildelt vs Fullført (Uke)",
+      "hours": "Timer",
+      "completed_shifts": "Fullførte skift",
+      "total_hours": "Teamtimer (Uke)",
+      "no_activity": "Vi trenger mer nylig aktivitet for å fremheve en mest aktiv medarbeider.",
+      "completed": "Fullført",
+      "assigned_shifts": "Tildelte skift",
+      "remaining": "Gjenstående"
+    }
+  },
+  "table": {
+    "name": "Navn",
+    "hourly_wage": "Timelønn",
+    "wage_shift": "Lønn per skift",
+    "employees": "Medarbeidere",
+    "actions": "Handlinger"
+  },
+  "cards": {
+    "employee": "Medarbeider",
+    "shifts": "Skift",
+    "showing": "Viser"
   }
 }

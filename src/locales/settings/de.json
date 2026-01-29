@@ -240,8 +240,12 @@
         "description": "Definér kontraktregler og politikker"
       },
       "contract_setup": {
-        "title": "Kontraktopsætning",
-        "description": "Konfigurer kontraktskabeloner og opsætning"
+        "title": "Vertragseinrichtung",
+        "description": "Vertragsvorlagen und Einrichtung konfigurieren"
+      },
+      "labor_law_profiles": {
+        "title": "Arbeitsrechtsprofile",
+        "description": "Arbeitsrechtsprofil-Vorlagen verwalten"
       },
       "notifications": {
         "title": "Notifikationer",
@@ -424,8 +428,123 @@
 },
 "shift_types": {
   "menu": {
-    "title": "Vagttyper",
-    "description": "Konfigurer vagttyper og lønberegninger"
+    "title": "Schichttypen",
+    "description": "Schichttypen und Lohnberechnungen konfigurieren"
   }
+},
+"labor_law_profiles": {
+  "title": "Arbeitsrechtsprofile",
+  "description": "Erstellen Sie benannte Profile, die mit spezifischen Arbeitsrechtsregeln verknüpft sind",
+  "new_profile": "Neues Profil",
+  "edit_profile": "Profil bearbeiten",
+  "name": "Name",
+  "name_required": "Name *",
+  "name_placeholder": "z.B. Standard-Norwegische Regeln",
+  "labor_law_rules": "Arbeitsrechtsregeln",
+  "select_labor_law_rules": "Arbeitsrechtsregeln auswählen",
+  "none_use_defaults": "Keine (Standardwerte verwenden)",
+  "description_label": "Beschreibung",
+  "description_placeholder": "Optionale Beschreibung...",
+  "set_as_default": "Als Standardprofil festlegen",
+  "cancel": "Abbrechen",
+  "create": "Erstellen",
+  "update": "Aktualisieren",
+  "table": {
+    "name": "Name",
+    "labor_law_rules": "Arbeitsrechtsregeln",
+    "contract_types": "Vertragstypen",
+    "description": "Beschreibung",
+    "actions": "Aktionen"
+  },
+  "using_defaults": "Verwendet Standardwerte",
+  "default_badge": "Standard",
+  "max_hours_day": "Max {{hours}}h/Tag",
+  "max_hours_week": "{{hours}}h/Woche",
+  "active": "Aktiv",
+  "no_profiles": "Noch keine Arbeitsrechtsprofile definiert",
+  "no_profiles_hint": "Erstellen Sie Profile, um Arbeitsrechtsregeln mit Vertragstypen zu verknüpfen",
+  "validation_error": "Validierungsfehler",
+  "name_required_error": "Profilname ist erforderlich",
+  "created_success": "Arbeitsrechtsprofil erfolgreich erstellt",
+  "updated_success": "Arbeitsrechtsprofil erfolgreich aktualisiert",
+  "deleted_success": "Profil erfolgreich gelöscht",
+  "delete_profile": "Profil löschen",
+  "delete_confirm": "Sind Sie sicher, dass Sie \"{{name}}\" löschen möchten?",
+  "delete": "Löschen",
+  "cannot_delete": "Kann nicht gelöscht werden",
+  "cannot_delete_linked": "Dieses Profil ist mit Vertragstypen verknüpft. Bitte entfernen Sie zuerst diese Verknüpfungen.",
+  "error": "Fehler",
+  "save_failed": "Profil konnte nicht gespeichert werden",
+  "delete_failed": "Profil konnte nicht gelöscht werden"
+},
+"contract_rules": {
+  "title": "Vertragsregeln",
+  "description": "Definieren Sie Vertragstypen mit spezifischen Beschäftigungsbedingungen und Grenzen",
+  "new_contract_type": "Neuer Vertragstyp",
+  "edit_contract_type": "Vertragstyp bearbeiten",
+  "create_profile_first": "Bitte erstellen Sie zuerst ein Arbeitsrechtsprofil, bevor Sie Vertragstypen hinzufügen.",
+  "name": "Name",
+  "name_required": "Name *",
+  "name_placeholder": "z.B. Vollzeit-Mitarbeiter",
+  "employment_type": "Beschäftigungsart",
+  "labor_law_profile": "Arbeitsrechtsprofil",
+  "labor_law_profile_required": "Arbeitsrechtsprofil *",
+  "select_profile": "Profil auswählen",
+  "default_fte": "Standard-Stellenanteil %",
+  "agreed_weekly_hours": "Vereinbarte Wochenstunden",
+  "agreed_weekly_hours_placeholder": "z.B. 37,5",
+  "max_planned_weekly_hours": "Max. geplante Wochenstunden",
+  "max_planned_weekly_hours_placeholder": "z.B. 45",
+  "overtime_settings": "Überstundeneinstellungen",
+  "overtime_allowed": "Überstunden erlaubt",
+  "overtime_exemptions": "Überstundenausnahmen (Rollen)",
+  "select_roles_exempt": "Rollen auswählen, die von Überstunden ausgenommen sind...",
+  "roles_exempt_hint": "Wählen Sie Rollen, die von Überstundenberechnungen ausgenommen sind",
+  "contract_limits": "Vertragsgrenzen",
+  "max_weekends_per_month": "Max. Wochenenden pro Monat",
+  "leave_empty_no_limit": "Leer lassen für keine Begrenzung",
+  "custom_break_minutes": "Benutzerdefinierte Pause (Minuten)",
+  "leave_empty_legal_min": "Leer lassen für gesetzliches Minimum",
+  "cancel": "Abbrechen",
+  "create": "Erstellen",
+  "update": "Aktualisieren",
+  "table": {
+    "name": "Name",
+    "employment_type": "Beschäftigungsart",
+    "fte": "Stellenanteil %",
+    "weekly_hours": "Wochenstunden",
+    "labor_law_profile": "Arbeitsrechtsprofil",
+    "employees": "Mitarbeiter",
+    "overtime": "Überstunden",
+    "exempt_roles": "Ausgenommene Rollen",
+    "actions": "Aktionen"
+  },
+  "employment_types": {
+    "FULL_TIME": "Vollzeit",
+    "PART_TIME": "Teilzeit",
+    "SEASONAL_TEMPORARY": "Saison/Befristet",
+    "HOURLY": "Stundenlohn",
+    "MONTHLY_SALARY": "Monatsgehalt"
+  },
+  "overtime_status": {
+    "allowed": "Erlaubt",
+    "not_allowed": "Nicht erlaubt"
+  },
+  "max_suffix": "max: {{hours}}h",
+  "none": "Keine",
+  "no_contract_types": "Noch keine Vertragstypen definiert",
+  "no_contract_types_hint": "Erstellen Sie Vertragstypen, um Beschäftigungsbedingungen für Ihre Mitarbeiter zu definieren",
+  "validation_error": "Validierungsfehler",
+  "name_required_error": "Vertragstypname ist erforderlich",
+  "profile_required_error": "Arbeitsrechtsprofil ist erforderlich",
+  "created_success": "Vertragstyp erfolgreich erstellt",
+  "updated_success": "Vertragstyp erfolgreich aktualisiert",
+  "deleted_success": "Vertragstyp erfolgreich gelöscht",
+  "delete_contract_type": "Vertragstyp löschen",
+  "delete_confirm": "Sind Sie sicher, dass Sie \"{{name}}\" löschen möchten?",
+  "delete": "Löschen",
+  "error": "Fehler",
+  "save_failed": "Vertragstyp konnte nicht gespeichert werden",
+  "delete_failed": "Vertragstyp konnte nicht gelöscht werden"
 }
 }

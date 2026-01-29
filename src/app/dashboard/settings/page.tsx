@@ -125,8 +125,8 @@ export default function SettingsPage() {
           },
           {
             id: 'people-labor-law-profiles',
-            name: 'Labor Law Profiles',
-            description: 'Manage labor law profile presets',
+            name: t('people.menu.labor_law_profiles.title'),
+            description: t('people.menu.labor_law_profiles.description'),
             component: LaborLawProfilesSettings
           },
           {

@@ -101,5 +101,10 @@
     "max_length": "Must be no more than {{max}} characters"
   },
   
-  "loading": "Loading..."
+  "loading": "Loading...",
+  
+  "card": {
+    "created": "Created",
+    "days_duration": "days duration"
+  }
 }

@@ -127,7 +127,6 @@ export default function MonthView({
                 {dayShifts.length > 0 && (
                   <div className="flex flex-col gap-0.5 w-full items-center">
                     {dayShifts.slice(0, 2).map((shift) => {
-                      const functionColor = shift.function?.color
                       const shiftStatus = shift.status || 'SCHEDULED'
                       
                       return (
@@ -135,10 +134,10 @@ export default function MonthView({
                           key={shift.id}
                           className="w-full h-1 sm:h-1.5 rounded-full"
                           style={{
-                            backgroundColor: functionColor || (
+                            backgroundColor: shift.approved ? '#84cc16' : (
                               shiftStatus === 'CANCELLED' ? '#ef4444' :
                               shiftStatus === 'WORKING' ? '#3b82f6' :
-                              '#31BCFF'
+                              shift.function?.color || '#31BCFF'
                             )
                           }}
                         />
@@ -219,13 +218,17 @@ export default function MonthView({
                       <button
                         key={shift.id}
                         onClick={() => onEditShift(shift)}
-                        className="w-full text-left px-2 py-1 rounded text-xs truncate transition-all hover:shadow-sm text-white font-medium"
+                        className={`w-full text-left px-2 py-1 rounded text-xs truncate transition-all hover:shadow-sm font-medium ${
+                          shift.approved ? 'text-lime-900' : 'text-white'
+                        }`}
                         style={{
-                          backgroundColor: functionColor || (
+                          backgroundColor: shift.approved ? '#d9f99d' : (
                             shiftStatus === 'CANCELLED' ? '#ef4444' :
                             shiftStatus === 'WORKING' ? '#3b82f6' :
-                            '#31BCFF'
-                          )
+                            functionColor || '#31BCFF'
+                          ),
+                          borderColor: shift.approved ? '#84cc16' : 'transparent',
+                          borderWidth: shift.approved ? '2px' : '0'
                         }}
                       >
                         <div className="font-medium truncate">

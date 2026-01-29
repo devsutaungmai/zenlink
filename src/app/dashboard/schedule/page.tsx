@@ -570,45 +570,56 @@ export default function SchedulePage() {
   }
 
   const handleShiftFormSubmit = async (formData: any) => {
-    if (formData.employeeId && formData.date && formData.startTime && formData.endTime) {
-      const existingShift = findOverlappingShift(
-        formData.employeeId,
-        formData.date,
-        formData.startTime,
-        formData.endTime,
-        formData.id
-      )
-      
-      if (existingShift) {
-        const employee = employees.find(emp => emp.id === formData.employeeId);
-        const employeeName = employee ? `${employee.firstName} ${employee.lastName}` : t('labels.this_employee');
-        const endLabel = existingShift.endTime || t('labels.active_shift')
+    // Check if this is an approval-only update (existing shift with only approval status changing)
+    const isApprovalOnlyUpdate = formData.id && shiftInitialData && 
+      formData.approved !== shiftInitialData.approved &&
+      formData.date === shiftInitialData.date &&
+      formData.startTime === shiftInitialData.startTime &&
+      formData.endTime === shiftInitialData.endTime &&
+      formData.employeeId === shiftInitialData.employeeId;
 
-        const conflictTitle = t('alerts.shift_conflict.title', { name: employeeName });
-        const conflictMessage = t('alerts.shift_conflict.message', {
-          date: formData.date,
-          start: existingShift.startTime,
-          end: endLabel
-        });
-
-        Swal.fire({
-          text: t('alerts.shift_conflict.toast', { title: conflictTitle, message: conflictMessage }),
-          toast: true,
-          position: 'top-end',
-          showConfirmButton: false,
-          timer: 4000,
-          timerProgressBar: true,
-          customClass: {
-            popup: 'swal-toast-wide'
-          }
-        });
+    // Skip validation for approval-only updates since the shift already exists
+    if (!isApprovalOnlyUpdate) {
+      if (formData.employeeId && formData.date && formData.startTime && formData.endTime) {
+        const existingShift = findOverlappingShift(
+          formData.employeeId,
+          formData.date,
+          formData.startTime,
+          formData.endTime,
+          formData.id
+        )
         
-        return;
+        if (existingShift) {
+          const employee = employees.find(emp => emp.id === formData.employeeId);
+          const employeeName = employee ? `${employee.firstName} ${employee.lastName}` : t('labels.this_employee');
+          const endLabel = existingShift.endTime || t('labels.active_shift')
+
+          const conflictTitle = t('alerts.shift_conflict.title', { name: employeeName });
+          const conflictMessage = t('alerts.shift_conflict.message', {
+            date: formData.date,
+            start: existingShift.startTime,
+            end: endLabel
+          });
+
+          Swal.fire({
+            text: t('alerts.shift_conflict.toast', { title: conflictTitle, message: conflictMessage }),
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 4000,
+            timerProgressBar: true,
+            customClass: {
+              popup: 'swal-toast-wide'
+            }
+          });
+          
+          return;
+        }
       }
     }
 
-    // Labor Law Validation
-    if (formData.employeeId && formData.startTime && formData.endTime) {
+    // Labor Law Validation - Skip for approval-only updates
+    if (!isApprovalOnlyUpdate && formData.employeeId && formData.startTime && formData.endTime) {
       try {
         const shiftData = {
           id: formData.id,

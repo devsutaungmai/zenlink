@@ -27,11 +27,18 @@
     "department": "Avdeling",
     "start_date": "Startdato",
     "end_date": "Sluttdato",
+    "period": "Periode",
+    "duration": "Varighet",
     "days": "Dager",
+    "day": "dag",
+    "day_plural": "dager",
     "reason": "Årsak",
+    "document": "Dokument",
     "status": "Status",
+    "submitted": "Innsendt",
     "actions": "Handlinger",
-    "no_requests": "Ingen sykmeldingsforespørsler funnet"
+    "no_requests": "Ingen sykmeldingsforespørsler funnet",
+    "view": "Vis"
   },
   "actions": {
     "approve": "Godkjenn",
@@ -42,10 +49,12 @@
   },
   "filters": {
     "all": "Alle forespørsler",
+    "all_status": "Alle statuser",
     "pending": "Venter",
     "approved": "Godkjent",
     "rejected": "Avvist",
-    "my_requests": "Mine forespørsler"
+    "my_requests": "Mine forespørsler",
+    "search_placeholder": "Søk medarbeidere..."
   },
   "search": {
     "placeholder": "Søk etter medarbeidernavn eller årsak..."
@@ -70,7 +79,19 @@
     "start_date_required": "Startdato er påkrevd",
     "end_date_required": "Sluttdato er påkrevd",
     "end_before_start": "Sluttdato kan ikke være før startdato",
+    "dates_required": "Startdato og sluttdato er påkrevd",
+    "end_date_before_start": "Sluttdato kan ikke være før startdato",
     "reason_required": "Årsak er påkrevd"
+  },
+  "banner": {
+    "approved_count": "{{count}} godkjent",
+    "pending_count": "{{count}} ventende"
+  },
+  "stats": {
+    "approved": "Godkjent",
+    "pending": "Ventende",
+    "total": "Totalt antall forespørsler",
+    "documented": "Med dokumenter"
   },
   "loading": "Laster sykmeldingsdata...",
   "empty_state": {

@@ -654,10 +654,10 @@ export default function ContractsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between">
           <div className="mb-4 sm:mb-0">
             <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-              Contracts
+              {t('contracts.title')}
             </h1>
             <p className="mt-2 text-gray-600">
-              Manage employee contracts and agreements.
+              {t('contracts.description')}
             </p>
             {/* Contract status alerts */}
               
@@ -668,7 +668,7 @@ export default function ContractsPage() {
               className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 group"
             >
               <PlusIcon className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
-              Create Contract
+              {t('contracts.create_contract')}
             </button>
           )}
         </div>
@@ -691,10 +691,10 @@ export default function ContractsPage() {
               <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 border border-gray-200/50 shadow-lg">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Total Employees</p>
+                    <p className="text-sm font-medium text-gray-600">{t('contracts.total_employees')}</p>
                     <p className="text-3xl font-bold text-gray-900">{statistics.totalEmployees}</p>
                     <p className="text-xs text-gray-500 mt-1">
-                      {statistics.employeesWithContracts} with contracts
+                      {statistics.employeesWithContracts} {t('contracts.with_contracts')}
                     </p>
                   </div>
                   <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
@@ -712,12 +712,12 @@ export default function ContractsPage() {
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Missing Contracts</p>
+                    <p className="text-sm font-medium text-gray-600">{t('contracts.missing_contracts')}</p>
                     <p className={`text-3xl font-bold ${statistics.employeesWithoutContracts > 0 ? 'text-orange-600' : 'text-gray-900'}`}>
                       {statistics.employeesWithoutContracts}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
-                      {statistics.employeesWithoutContracts > 0 ? 'Click to view list' : 'All employees covered'}
+                      {statistics.employeesWithoutContracts > 0 ? t('contracts.click_to_view') : t('contracts.all_covered')}
                     </p>
                   </div>
                   <div className={`w-12 h-12 ${statistics.employeesWithoutContracts > 0 ? 'bg-orange-100' : 'bg-gray-100'} rounded-xl flex items-center justify-center`}>
@@ -729,7 +729,7 @@ export default function ContractsPage() {
                 {activeFilter === 'missing' && (
                   <div className="mt-2">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                      Active Filter
+                      {t('contracts.active_filter')}
                     </span>
                   </div>
                 )}
@@ -742,12 +742,12 @@ export default function ContractsPage() {
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Expiring This Month</p>
+                    <p className="text-sm font-medium text-gray-600">{t('contracts.expiring_this_month')}</p>
                     <p className={`text-3xl font-bold ${statistics.contractsExpiringThisMonth > 0 ? 'text-amber-600' : 'text-gray-900'}`}>
                       {statistics.contractsExpiringThisMonth}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
-                      {statistics.contractsExpiringThisMonth > 0 ? 'Click to view contracts' : 'No contracts expiring'}
+                      {statistics.contractsExpiringThisMonth > 0 ? t('contracts.click_to_view_contracts') : t('contracts.no_expiring')}
                     </p>
                   </div>
                   <div className={`w-12 h-12 ${statistics.contractsExpiringThisMonth > 0 ? 'bg-amber-100' : 'bg-gray-100'} rounded-xl flex items-center justify-center`}>
@@ -759,7 +759,7 @@ export default function ContractsPage() {
                 {activeFilter === 'expiring' && (
                   <div className="mt-2">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
-                      Active Filter
+                      {t('contracts.active_filter')}
                     </span>
                   </div>
                 )}
@@ -772,12 +772,12 @@ export default function ContractsPage() {
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Expired Contracts</p>
+                    <p className="text-sm font-medium text-gray-600">{t('contracts.expired_contracts')}</p>
                     <p className={`text-3xl font-bold ${statistics.expiredContracts > 0 ? 'text-red-600' : 'text-gray-900'}`}>
                       {statistics.expiredContracts}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
-                      {statistics.expiredContracts > 0 ? 'Click to view contracts' : 'No expired contracts'}
+                      {statistics.expiredContracts > 0 ? t('contracts.click_to_view_contracts') : t('contracts.no_expired')}
                     </p>
                   </div>
                   <div className={`w-12 h-12 ${statistics.expiredContracts > 0 ? 'bg-red-100' : 'bg-gray-100'} rounded-xl flex items-center justify-center`}>
@@ -789,7 +789,7 @@ export default function ContractsPage() {
                 {activeFilter === 'expired' && (
                   <div className="mt-2">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                      Active Filter
+                      {t('contracts.active_filter')}
                     </span>
                   </div>
                 )}
@@ -805,7 +805,7 @@ export default function ContractsPage() {
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search contracts by employee, template, or contract person..."
+                  placeholder={t('contracts.search_placeholder')}
                   className="block w-full pl-12 pr-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
                 />
               </div>
@@ -814,17 +814,17 @@ export default function ContractsPage() {
               <span>
                 {activeFilter === 'missing' ? (
                   filteredMissingEmployees.length > 0 
-                    ? `Showing ${startIndex + 1} to ${Math.min(endIndex, filteredMissingEmployees.length)} of ${filteredMissingEmployees.length} employees without contracts`
-                    : `Showing 0 employees without contracts`
+                    ? t('contracts.showing_employees', { start: startIndex + 1, end: Math.min(endIndex, filteredMissingEmployees.length), total: filteredMissingEmployees.length })
+                    : t('contracts.showing_zero_employees')
                 ) : (
                   filteredContracts.length > 0 
-                    ? `Showing ${startIndex + 1} to ${Math.min(endIndex, filteredContracts.length)} of ${filteredContracts.length} contracts`
-                    : `Showing 0 of ${contracts.length} contracts`
+                    ? t('contracts.showing_contracts', { start: startIndex + 1, end: Math.min(endIndex, filteredContracts.length), total: filteredContracts.length })
+                    : t('contracts.showing_zero_contracts', { total: contracts.length })
                 )}
               </span>
               {totalPages > 1 && (
                 <span className="text-xs text-gray-400">
-                  Page {currentPage} of {totalPages}
+                  {t('contracts.page_of', { current: currentPage, total: totalPages })}
                 </span>
               )}
             </div>
@@ -841,16 +841,16 @@ export default function ContractsPage() {
                   </svg>
                 </div>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  All Employees Have Contracts
+                  {t('contracts.all_have_contracts')}
                 </h3>
                 <p className="text-gray-500 mb-6">
-                  Every employee in your organization has been assigned a contract.
+                  {t('contracts.all_assigned')}
                 </p>
                 <button
                   onClick={() => setActiveFilter('all')}
                   className="inline-flex items-center px-6 py-3 rounded-xl bg-[#31BCFF] text-white font-medium hover:bg-[#31BCFF]/90 transition-colors duration-200"
                 >
-                  View All Contracts
+                  {t('contracts.view_all_contracts')}
                 </button>
               </div>
             ) : (
@@ -861,19 +861,19 @@ export default function ContractsPage() {
                     <MobileCard key={employee.id}>
                       <MobileCardHeader
                         title={`${employee.firstName} ${employee.lastName}`}
-                        subtitle={employee.employeeNo || 'No employee number'}
+                        subtitle={employee.employeeNo || t('contracts.no_employee_number')}
                       />
 
                       <MobileCardGrid columns={2}>
                         <MobileCardField
-                          label="Department"
+                          label={t('contracts.department')}
                           value={employee.department.name}
                         />
                         <MobileCardField
-                          label="Group"
+                          label={t('contracts.group')}
                           value={
                             employee.employeeGroup?.name || (
-                              <span className="text-gray-400 italic">No group assigned</span>
+                              <span className="text-gray-400 italic">{t('contracts.no_group_assigned')}</span>
                             )
                           }
                         />
@@ -881,10 +881,10 @@ export default function ContractsPage() {
 
                       <MobileCardSection>
                         <MobileCardField
-                          label="Email"
+                          label={t('contracts.email')}
                           value={
                             employee.email || (
-                              <span className="text-gray-400 italic">No email</span>
+                              <span className="text-gray-400 italic">{t('contracts.no_email')}</span>
                             )
                           }
                         />
@@ -895,10 +895,10 @@ export default function ContractsPage() {
                           <button
                             onClick={() => openCreateForm(employee.id)}
                             className="inline-flex items-center px-3 py-1.5 rounded-lg bg-orange-100 text-orange-800 text-sm font-medium hover:bg-orange-200 transition-colors duration-200"
-                            title="Create Contract"
+                            title={t('contracts.create_contract')}
                           >
                             <PlusIcon className="w-4 h-4 mr-1" />
-                            Create Contract
+                            {t('contracts.create_contract')}
                           </button>
                         )}
                       </MobileCardActions>
@@ -912,12 +912,12 @@ export default function ContractsPage() {
                     <table className="w-full">
                       <thead className="bg-gray-50/80">
                         <tr>
-                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
-                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee No.</th>
-                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
-                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Group</th>
-                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                          <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('contracts.employee')}</th>
+                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('contracts.employee_no')}</th>
+                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('contracts.department')}</th>
+                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('contracts.group')}</th>
+                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('contracts.email')}</th>
+                          <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{t('common.actions')}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200/50">
@@ -931,7 +931,7 @@ export default function ContractsPage() {
                             <td className="px-6 py-4">
                               <div className="text-sm text-gray-900">
                                 {employee.employeeNo || (
-                                  <span className="text-gray-400 italic">No employee number</span>
+                                  <span className="text-gray-400 italic">{t('contracts.no_employee_number')}</span>
                                 )}
                               </div>
                             </td>
@@ -941,14 +941,14 @@ export default function ContractsPage() {
                             <td className="px-6 py-4">
                               <div className="text-sm text-gray-900">
                                 {employee.employeeGroup?.name || (
-                                  <span className="text-gray-400 italic">No group assigned</span>
+                                  <span className="text-gray-400 italic">{t('contracts.no_group_assigned')}</span>
                                 )}
                               </div>
                             </td>
                             <td className="px-6 py-4">
                               <div className="text-sm text-gray-900">
                                 {employee.email || (
-                                  <span className="text-gray-400 italic">No email</span>
+                                  <span className="text-gray-400 italic">{t('contracts.no_email')}</span>
                                 )}
                               </div>
                             </td>
@@ -958,10 +958,10 @@ export default function ContractsPage() {
                                   <button
                                     onClick={() => openCreateForm(employee.id)}
                                     className="inline-flex items-center px-3 py-1.5 rounded-lg bg-orange-100 text-orange-800 text-sm font-medium hover:bg-orange-200 transition-colors duration-200"
-                                    title="Create Contract"
+                                    title={t('contracts.create_contract')}
                                   >
                                     <PlusIcon className="w-4 h-4 mr-1" />
-                                    Create Contract
+                                    {t('contracts.create_contract')}
                                   </button>
                                 )}
                               </div>
@@ -1035,12 +1035,12 @@ export default function ContractsPage() {
                   <DocumentTextIcon className="w-8 h-8 text-gray-400" />
                 </div>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  {searchTerm ? 'No contracts found' : 'No contracts yet'}
+                  {searchTerm ? t('contracts.no_contracts_found') : t('contracts.no_contracts_yet')}
                 </h3>
                 <p className="text-gray-500 mb-6">
                   {searchTerm 
-                    ? 'Try adjusting your search criteria to find what you\'re looking for.'
-                    : 'Get started by creating your first employee contract.'
+                    ? t('contracts.adjust_search')
+                    : t('contracts.get_started')
                   }
                 </p>
                 {!searchTerm && canCreateContracts && (
@@ -1049,7 +1049,7 @@ export default function ContractsPage() {
                     className="inline-flex items-center px-6 py-3 rounded-xl bg-[#31BCFF] text-white font-medium hover:bg-[#31BCFF]/90 transition-colors duration-200"
                   >
                     <PlusIcon className="w-5 h-5 mr-2" />
-                    Create First Contract
+                    {t('contracts.create_first_contract')}
                   </button>
                 )}
               </div>
@@ -1067,26 +1067,26 @@ export default function ContractsPage() {
 
                       <MobileCardGrid columns={2}>
                         <MobileCardField
-                          label="Group"
+                          label={t('contracts.group')}
                           value={contract.employeeGroup.name}
                         />
                         <MobileCardField
-                          label="Contract Person"
+                          label={t('contracts.contract_person')}
                           value={`${contract.contractPerson.firstName} ${contract.contractPerson.lastName}`}
                         />
                       </MobileCardGrid>
 
                       <MobileCardGrid columns={2}>
                         <MobileCardField
-                          label="Start Date"
+                          label={t('contracts.start_date')}
                           value={formatDate(contract.startDate)}
                         />
                         <MobileCardField
-                          label="End Date"
+                          label={t('contracts.end_date')}
                           value={
                             <>
                               {contract.endDate ? formatDate(contract.endDate) : (
-                                <span className="text-gray-400 italic">No end date</span>
+                                <span className="text-gray-400 italic">{t('contracts.no_end_date')}</span>
                               )}
                               {getExpirationBadge(contract.endDate)}
                             </>
@@ -1098,14 +1098,14 @@ export default function ContractsPage() {
                         <button
                           onClick={() => setPreviewContract(contract)}
                           className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
-                          title="Preview Contract"
+                          title={t('contracts.preview_contract')}
                         >
                           <DocumentTextIcon className="h-5 w-5" />
                         </button>
                         <button
                           onClick={() => handleDownload(contract.id, contract)}
                           className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200"
-                          title="Download PDF"
+                          title={t('contracts.download_pdf')}
                         >
                           <ArrowDownTrayIcon className="h-5 w-5" />
                         </button>
@@ -1113,7 +1113,7 @@ export default function ContractsPage() {
                           <button
                             onClick={() => handleSign(contract)}
                             className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all duration-200"
-                            title="Sign Contract"
+                            title={t('contracts.sign_contract')}
                           >
                             <PencilSquareIcon className="h-5 w-5" />
                           </button>
@@ -1123,7 +1123,7 @@ export default function ContractsPage() {
                             onClick={() => handleDelete(contract)}
                             disabled={!canDeleteContract(contract)}
                             className={`p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 ${!canDeleteContract(contract) ? 'opacity-50 cursor-not-allowed hover:text-gray-400 hover:bg-transparent' : ''}`}
-                            title={canDeleteContract(contract) ? 'Delete Contract' : 'Signed contracts cannot be deleted'}
+                            title={canDeleteContract(contract) ? t('contracts.delete_contract') : t('contracts.signed_cannot_delete')}
                           >
                             <TrashIcon className="h-5 w-5" />
                           </button>
@@ -1139,14 +1139,14 @@ export default function ContractsPage() {
                     <table className="w-full">
                       <thead className="bg-gray-50/80">
                         <tr>
-                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
-                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Template</th>
-                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Group</th>
-                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start Date</th>
-                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">End Date</th>
-                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contract Person</th>
-                          <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('contracts.employee')}</th>
+                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('contracts.template')}</th>
+                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('contracts.group')}</th>
+                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('contracts.start_date')}</th>
+                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('contracts.end_date')}</th>
+                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('contracts.status')}</th>
+                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('contracts.contract_person')}</th>
+                          <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{t('common.actions')}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200/50">
@@ -1169,7 +1169,7 @@ export default function ContractsPage() {
                             <td className="px-6 py-4">
                               <div className="text-sm text-gray-900">
                                 {contract.endDate ? formatDate(contract.endDate) : (
-                                  <span className="text-gray-400 italic">No end date</span>
+                                  <span className="text-gray-400 italic">{t('contracts.no_end_date')}</span>
                                 )}
                                 {getExpirationBadge(contract.endDate)}
                               </div>
@@ -1187,14 +1187,14 @@ export default function ContractsPage() {
                                 <button
                                   onClick={() => setPreviewContract(contract)}
                                   className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
-                                  title="Preview Contract"
+                                  title={t('contracts.preview_contract')}
                                 >
                                   <DocumentTextIcon className="h-4 w-4" />
                                 </button>
                                 <button
                                   onClick={() => handleDownload(contract.id, contract)}
                                   className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200"
-                                  title="Download PDF"
+                                  title={t('contracts.download_pdf')}
                                 >
                                   <ArrowDownTrayIcon className="h-4 w-4" />
                                 </button>
@@ -1202,7 +1202,7 @@ export default function ContractsPage() {
                                   <button
                                     onClick={() => handleSign(contract)}
                                     className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all duration-200"
-                                    title="Sign Contract"
+                                    title={t('contracts.sign_contract')}
                                   >
                                     <PencilSquareIcon className="h-4 w-4" />
                                   </button>
@@ -1212,7 +1212,7 @@ export default function ContractsPage() {
                                     onClick={() => handleDelete(contract)}
                                     disabled={!canDeleteContract(contract)}
                                     className={`p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 ${!canDeleteContract(contract) ? 'opacity-50 cursor-not-allowed hover:text-gray-400 hover:bg-transparent' : ''}`}
-                                    title={canDeleteContract(contract) ? 'Delete Contract' : 'Signed contracts cannot be deleted'}
+                                    title={canDeleteContract(contract) ? t('contracts.delete_contract') : t('contracts.signed_cannot_delete')}
                                   >
                                     <TrashIcon className="h-4 w-4" />
                                   </button>

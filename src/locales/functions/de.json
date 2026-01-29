@@ -55,5 +55,17 @@
   "back_to_functions": "Zurück zu Funktionen",
   "save_function": "Funktion speichern",
   "saving": "Wird gespeichert...",
-  "assigned_employees": "Zugewiesene Mitarbeiter"
+  "assigned_employees": "Zugewiesene Mitarbeiter",
+  "name_label": "Funktionsname",
+  "category_label": "Kategorie",
+  "color_label": "Farbe",
+  "employee_groups_label": "Mitarbeitergruppen",
+  "employee_groups_optional": "(optional)",
+  "employee_groups_empty": "Noch keine Mitarbeitergruppen verfügbar.",
+  "employee_groups_select_all": "Alle Gruppen auswählen",
+  "employee_groups_selected_all": "Alle Gruppen ausgewählt",
+  "employee_groups_selected_count": "{{count}} von {{total}} Gruppen ausgewählt",
+  "employee_groups_helper": "Verknüpfen Sie diese Funktion mit den Gruppen, die sie erben sollen.",
+  "employee_groups_employee_count": "{{count}} Mitarbeiter",
+  "showing": "Zeige"
 }

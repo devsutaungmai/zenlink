@@ -55,5 +55,17 @@
   "back_to_functions": "Tilbake til funksjoner",
   "save_function": "Lagre funksjon",
   "saving": "Lagrer...",
-  "assigned_employees": "Tildelte medarbeidere"
+  "assigned_employees": "Tildelte medarbeidere",
+  "name_label": "Funksjonsnavn",
+  "category_label": "Kategori",
+  "color_label": "Farge",
+  "employee_groups_label": "Medarbeidergrupper",
+  "employee_groups_optional": "(valgfritt)",
+  "employee_groups_empty": "Ingen medarbeidergrupper tilgjengelig ennå.",
+  "employee_groups_select_all": "Velg alle grupper",
+  "employee_groups_selected_all": "Alle grupper valgt",
+  "employee_groups_selected_count": "Valgt {{count}} av {{total}} grupper",
+  "employee_groups_helper": "Koble denne funksjonen til gruppene som skal arve den.",
+  "employee_groups_employee_count": "{{count}} medarbeidere",
+  "showing": "Viser"
 }

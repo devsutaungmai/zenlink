@@ -5,11 +5,19 @@
     "records_today": "Registreringer i dag",
     "currently_working": "Jobber nå",
     "completed": "Fullført",
-    "select_date": "Velg dato"
+    "select_date": "Velg dato",
+    "select_start_date": "Velg startdato",
+    "select_end_date": "Velg sluttdato",
+    "date_range_type": "Datoområdetype",
+    "single_day": "Enkeltdag",
+    "week": "Uke",
+    "month": "Måned",
+    "week_starting": "Uke starter"
   },
   "search": {
     "placeholder": "Søk medarbeidere eller avdelinger...",
-    "filter_label": "Filter:"
+    "filter_label": "Filter:",
+    "all_employees": "Alle medarbeidere"
   },
   "filters": {
     "all": "Alle",
@@ -25,8 +33,37 @@
       "punch_out": "Ut-stempling",
       "duration": "Varighet",
       "status": "Status",
-      "shift_info": "Vaktinformasjon"
-    }
+      "shift_info": "Vaktinformasjon",
+      "actions": "Handlinger"
+    },
+    "pagination_summary": "Viser {{start}}-{{end}} av {{total}} poster",
+    "rows_per_page": "Rader per side",
+    "empty_summary": "Ingen poster funnet"
+  },
+  "actions": {
+    "edit": "Rediger",
+    "approve": "Godkjenn",
+    "reject": "Avvis",
+    "create": "Opprett",
+    "attendance": "Oppmøte",
+    "export": "Eksporter"
+  },
+  "modals": {
+    "edit_title": "Rediger oppmøteregistrering",
+    "create_title": "Opprett oppmøteregistrering",
+    "create_description": "Opprett en ny oppmøteregistrering for en medarbeider",
+    "employee": "Medarbeider",
+    "date": "Dato",
+    "punch_in_time": "Inn-stemplingstid",
+    "punch_out_time": "Ut-stemplingstid",
+    "punch_out_optional": "Ut-stemplingstid (Valgfritt)",
+    "leave_empty_hint": "La stå tom for å opprette en aktiv vakt",
+    "selected_shift": "Valgt vakt",
+    "cancel": "Avbryt",
+    "save_changes": "Lagre endringer",
+    "select_employee": "Velg en medarbeider...",
+    "create": "Opprett oppmøte",
+    "creating": "Oppretter..."
   },
   "status": {
     "working": "Jobber",

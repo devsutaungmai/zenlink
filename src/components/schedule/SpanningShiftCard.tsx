@@ -62,6 +62,9 @@ export default function SpanningShiftCard({
   const hasContractDeviations = shift.validation?.hasContractDeviations || false
   
   let borderColor = shift.approved ? '#84cc16' : '#31BCFF'
+  let backgroundColor = shift.approved ? '#d9f99d' : '#31BCFF' // lime-200 for approved, blue for unapproved
+  let textColor = shift.approved ? '#365314' : 'white' // dark green for approved, white for unapproved
+  
   if (hasLaborLawViolations) {
     borderColor = '#dc2626' // red-600
   } else if (hasContractDeviations) {
@@ -77,9 +80,9 @@ export default function SpanningShiftCard({
         width: cardWidth,
         left: `calc(8px + ${horizontalOffset}%)`,
         minHeight: '20px',
-        backgroundColor: shift.approved ? undefined : '#31BCFF',
+        backgroundColor: backgroundColor,
         borderColor: borderColor,
-        color: shift.approved ? '#365314' : 'white',
+        color: textColor,
         borderWidth: hasLaborLawViolations || hasContractDeviations ? '2px' : '1px',
         borderRadius: '0.375rem',
         boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
@@ -95,18 +98,6 @@ export default function SpanningShiftCard({
       title={`${shift.function?.name || 'No function'} | ${shift.startTime.substring(0, 5)} - ${endTimeDisplay} | ${currentEmployee ? `${currentEmployee.firstName} ${currentEmployee.lastName}` : 'Unassigned'}`}
       draggable={false}
     >
-      {/* Validation warnings indicator */}
-      {(hasLaborLawViolations || hasContractDeviations) && height > 24 && (
-        <div className="flex items-center gap-1 mb-0.5">
-          {hasLaborLawViolations && (
-            <AlertTriangle className="h-3 w-3 text-red-600" />
-          )}
-          {hasContractDeviations && (
-            <AlertCircle className="h-3 w-3 text-yellow-600" />
-          )}
-        </div>
-      )}
-      
       {/* Function name - most prominent */}
       {shift.function && (
         <div className="font-bold text-xs truncate mb-0.5">

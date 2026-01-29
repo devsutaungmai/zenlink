@@ -184,7 +184,7 @@ export default function EmployeeForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="bg-white shadow rounded-lg p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Profile Photo</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">{t('employees.form.profile_photo')}</h3>
         <ProfilePhotoUpload
           currentPhotoUrl={formData.profilePhoto}
           onPhotoChange={(url) => setFormData({ ...formData, profilePhoto: url })}
@@ -193,7 +193,7 @@ export default function EmployeeForm({
       </div>
 
       <div className="bg-white shadow rounded-lg p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Personal Information</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">{t('employees.form.personal_information')}</h3>
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <PersonalInfoSection
             formData={formData}
@@ -208,7 +208,7 @@ export default function EmployeeForm({
       </div>
 
       <div className="bg-white shadow rounded-lg p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Employment Details</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">{t('employees.form.employment_details')}</h3>
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <EmploymentInfoSection
             formData={formData}
@@ -262,7 +262,7 @@ export default function EmployeeForm({
       </div>
 
       <div className="bg-white shadow rounded-lg p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Contact Information</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">{t('employees.form.contact_information')}</h3>
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <ContactInfoSection
             formData={formData}
