@@ -76,7 +76,7 @@ export interface Invoice {
 
     // Summary calculations
     totalExclVAT: Decimal
-    vatAmount: Decimal
+    totalVatAmount: Decimal
     vatPercentage: Decimal
     totalInclVAT: Decimal
 
@@ -117,6 +117,8 @@ export default function InvoiceOverview() {
         { key: "sentAt", label: "Invoice date" },
         { key: "dueDate", label: "Due date" },
         { key: "totalInclVAT", label: "Amount incl. VAT" },
+        { key: "totalExclVAT", label: "Amount excl. VAT" },
+        { key: "totalVatAmount", label: "Total VAT amount" },
         { key: "paid", label: "Paid" },
         { key: "outstanding", label: "Outstanding" },
     ];
@@ -133,6 +135,8 @@ export default function InvoiceOverview() {
             sentAt: true,
             dueDate: true,
             totalInclVAT: true,
+            totalExclVAT: true,
+            totalVatAmount: true,
             paid: true,
             outstanding: true,
         }
@@ -424,6 +428,12 @@ export default function InvoiceOverview() {
                                     {isColumnVisible('totalInclVAT') && <th className="px-4 py-3 text-right text-xs font-medium text-gray-600 uppercase tracking-wider">
                                         Amount incl. VAT
                                     </th>}
+                                    {isColumnVisible('totalExclVAT') && <th className="px-4 py-3 text-right text-xs font-medium text-gray-600 uppercase tracking-wider">
+                                        Net amount
+                                    </th>}
+                                    {isColumnVisible('totalVatAmount') && <th className="px-4 py-3 text-right text-xs font-medium text-gray-600 uppercase tracking-wider">
+                                        Total VAT amount
+                                    </th>}
                                     {isColumnVisible('paid') && <th className="px-4 py-3 text-right text-xs font-medium text-gray-600 uppercase tracking-wider">
                                         Paid
                                     </th>}
@@ -478,10 +488,9 @@ export default function InvoiceOverview() {
                                                     </Link>
                                                 </div>
                                             </td>}
-                                            {isColumnVisible('project') && invoice.project && <td className="px-4 py-3">
+                                            {isColumnVisible('project') && <td className="px-4 py-3">
                                                 <div className="text-sm">
-                                                    <div className="text-blue-600 hover:underline cursor-pointer">{invoice.project?.name}</div>
-                                                    <div className="text-gray-500 text-xs">({invoice.project?.id})</div>
+                                                    <div className="text-blue-600 hover:underline cursor-pointer">{invoice.project ? invoice.project?.name : "-"}</div>
                                                 </div>
                                             </td>}
                                             {isColumnVisible('status') && <td className="px-4 py-3">
@@ -503,6 +512,8 @@ export default function InvoiceOverview() {
                                                 {invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : ""}
                                             </td>}
                                             {isColumnVisible('totalInclVAT') && <td className="px-4 py-3 text-sm text-gray-900 text-right">{invoice.totalInclVAT.toString()}</td>}
+                                            {isColumnVisible('totalExclVAT') && <td className="px-4 py-3 text-sm text-gray-900 text-right">{invoice.totalExclVAT.toString()}</td>}
+                                            {isColumnVisible('totalVatAmount') && <td className="px-4 py-3 text-sm text-gray-900 text-right">{invoice.totalVatAmount?.toString() || "0.00"}</td>}
                                             {isColumnVisible('paid') && <td className="px-4 py-3 text-sm text-gray-900 text-right">
                                                 {invoice.status === InvoiceStatus.PAID ? invoice.totalInclVAT.toString() : 0.0}
                                             </td>}
@@ -757,6 +768,14 @@ export default function InvoiceOverview() {
                                 {isColumnVisible('totalInclVAT')&&<div>
                                     <p className="text-gray-600">Amount</p>
                                     <p className="font-semibold text-gray-900">{invoice.totalInclVAT.toString()}</p>
+                                </div>}
+                                 { isColumnVisible('totalExclVAT')&&<div>
+                                    <p className="text-gray-600">Net Amount</p>
+                                    <p className="font-semibold text-gray-900">{invoice.totalExclVAT.toString()}</p>
+                                </div>}
+                                { isColumnVisible('totalVatAmount')&&<div>
+                                    <p className="text-gray-600">VAT Amount</p>
+                                    <p className="font-semibold text-gray-900">{invoice.totalVatAmount?.toString() || "0.00"}</p>
                                 </div>}
                                 {isColumnVisible('outstanding')&&<div>
                                     <p className="text-gray-600">Outstanding</p>

@@ -530,7 +530,7 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
   }
 
   const businessId = invoice.businessId;
-  const postingDate = new Date();
+  const postingDate = invoice.sentAt && isValid(invoice.sentAt) ? invoice.sentAt : new Date();
   const documentDate = invoice.invoiceDate;
   let vatListPerLines: any = [];
 
@@ -1118,3 +1118,11 @@ export function getAccountType(accountNumber: number): AccountType {
     default: return AccountType.ASSET;
   }
 }
+
+export const formatDateLocal = (date: Date) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+

@@ -57,6 +57,7 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
     const [showDropdown, setShowDropdown] = useState(false)
     const [formData, setFormData] = useState<InvoiceFormData>({
         customerId: '',
+        invoiceNumber: '',
         contactPersonId: '',
         deliveryAddress: '',
         sentAt: new Date().toISOString().split('T')[0],
@@ -171,6 +172,7 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
 
                 setFormData({
                     customerId: data.customerId || '',
+                    invoiceNumber: data.invoiceNumber || '',
                     contactPersonId: data.contactPersonId || '',
                     deliveryAddress: data.deliveryAddress || '',
                     sentAt: data.sentAt ? data.sentAt.split('T')[0] : new Date().toISOString().split('T')[0],

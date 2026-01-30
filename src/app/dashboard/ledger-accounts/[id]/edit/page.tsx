@@ -287,8 +287,13 @@ export default function EditLedgerAccountPage({ params,searchParams }: { params:
                                 id="vatCodeId"
                                 required
                                 value={formData.vatCodeId}
+                                disabled={isAccountInUse}
                                 onChange={(e) => setFormData({ ...formData, vatCodeId: e.target.value })}
-                                className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                className={`block w-full px-4 py-3 rounded-xl border backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 ${
+                                    isAccountInUse
+                                        ? 'border-gray-200 bg-gray-100 text-gray-500 cursor-not-allowed opacity-70'
+                                        : 'border-gray-300 bg-white/70'
+                                }`}
                             >
                                 <option value="">Select VAT Code</option>
                                 {vatCodes.map((vatCode) => (
