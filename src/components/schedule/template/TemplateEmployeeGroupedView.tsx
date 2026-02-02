@@ -3,6 +3,7 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { format } from 'date-fns'
+import { formatDate } from '@/shared/lib/dateLocale'
 import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline'
 
 interface TemplateShift {
@@ -68,7 +69,7 @@ export default function TemplateEmployeeGroupedView({
   onEditShift,
   onDeleteShift
 }: TemplateEmployeeGroupedViewProps) {
-  const { t } = useTranslation('schedule')
+  const { t, i18n } = useTranslation('schedule')
   
   const getEmployeeShifts = (employeeId: string, dayIndex: number) => {
     return shifts.filter(shift => shift.employeeId === employeeId && shift.dayIndex === dayIndex)

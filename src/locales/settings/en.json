@@ -59,7 +59,24 @@
       },
       "buttons": {
         "reset": "Reset to Defaults",
-        "save": "Save Settings"
+        "save": "Save Settings",
+        "saving": "Saving..."
+      },
+      "loading": "Loading settings...",
+      "unsaved_changes": "Unsaved Changes",
+      "saved": "Saved",
+      "country_names": {
+        "DEFAULT": "Custom Rules",
+        "NO": "Norway (Arbeidsmiljøloven)",
+        "TH": "Thailand",
+        "US": "United States",
+        "GB": "United Kingdom",
+        "DE": "Germany"
+      },
+      "toast": {
+        "settings_saved": "Settings Saved: Labor law rules have been updated successfully.",
+        "error_save": "Error: Failed to save labor law settings.",
+        "reset_complete": "Reset Complete: Labor law rules have been reset to Norwegian defaults (Arbeidsmiljøloven)."
       },
       "current_rules_summary": {
         "title": "Current Rules Summary",
@@ -219,7 +236,15 @@
       "status": {
         "active": "Active",
         "inactive": "Inactive"
-      }
+      },
+      "toast": {
+        "delete_confirm": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone.",
+        "delete_success": "Profile deleted successfully.",
+        "delete_error": "Failed to delete profile. Please try again.",
+        "code_generated": "New activation code generated: {{code}}\n\nThis code can be used to activate this punch clock profile.",
+        "code_error": "Failed to generate activation code. Please try again."
+      },
+      "no_departments": "No departments"
     },
     "advance_setting": {
       "title": "Punch Clock - Advance",
@@ -397,7 +422,12 @@
       "edit_profile_button": "Edit Profile"
     },
     "profile_card": {
-      "administrator": "Administrator"
+      "administrator": "Administrator",
+      "employee": "Employee",
+      "manager": "Manager"
+    },
+    "toast": {
+      "load_error": "Failed to load profile"
     },
     "personal_information": {
       "title": "Personal Information",
@@ -618,5 +648,37 @@
     "error": "Error",
     "save_failed": "Failed to save contract type",
     "delete_failed": "Failed to delete contract type"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "mark_all_read": "Mark all read",
+    "loading": "Loading notifications...",
+    "no_notifications": "No notifications yet",
+    "view_details": "View Details",
+    "view_all": "View All Notifications",
+    "mark_as_read": "Mark as read",
+    "time": {
+      "just_now": "Just now",
+      "minutes_ago": "{{count}}m ago",
+      "hours_ago": "{{count}}h ago",
+      "days_ago": "{{count}}d ago"
+    }
+  },
+  "location_picker": {
+    "title": "Select Location",
+    "subtitle": "Search for a location or click on the map",
+    "search_label": "Search Location",
+    "search_placeholder": "Search for a place...",
+    "location_name_label": "Location Name",
+    "location_name_placeholder": "e.g., Main Office, Warehouse",
+    "radius_label": "Radius",
+    "selected_location": "Selected Location",
+    "name": "Name",
+    "address": "Address",
+    "coordinates": "Coordinates",
+    "loading_map": "Loading map...",
+    "cancel": "Cancel",
+    "save_location": "Save Location",
+    "api_key_warning": "Google Maps API key is not configured. Please add NEXT_PUBLIC_GOOGLE_MAPS_API_KEY to your environment variables."
   }
 }

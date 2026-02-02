@@ -29,6 +29,7 @@
   "employees_count": "employees",
   "shifts_count": "shifts",
   "edit": "Edit",
+  "editing": "Editing",
   "delete": "Delete",
   "edit_function": "Edit Function",
   "edit_description": "Update function details and settings",
@@ -55,5 +56,8 @@
   "back_to_functions": "Back to Functions",
   "save_function": "Save Function",
   "saving": "Saving...",
-  "assigned_employees": "Assigned Employees"
+  "assigned_employees": "Assigned Employees",
+  "name_label": "Function Name",
+  "category_label": "Category",
+  "color_label": "Color"
 }

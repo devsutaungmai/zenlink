@@ -12,6 +12,7 @@ import {
   GiftIcon,
   MinusIcon,
 } from '@heroicons/react/24/outline'
+import Swal from 'sweetalert2'
 
 interface SalaryCode {
   id: string
@@ -103,11 +104,27 @@ export default function SalaryCodeManagement() {
         })
       } else {
         const data = await response.json()
-        alert(data.error || 'Failed to save salary code')
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
+          icon: 'error',
+          title: data.error || t('toast.saveFailed')
+        })
       }
     } catch (error) {
       console.error('Error saving salary code:', error)
-      alert('Failed to save salary code')
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        icon: 'error',
+        title: t('toast.saveFailed')
+      })
     }
   }
 
@@ -123,7 +140,18 @@ export default function SalaryCodeManagement() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this salary code?')) {
+    const result = await Swal.fire({
+      title: t('toast.deleteConfirmTitle'),
+      text: t('toast.deleteConfirmText'),
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: t('toast.deleteConfirmButton'),
+      cancelButtonText: t('toast.cancelButton')
+    })
+
+    if (!result.isConfirmed) {
       return
     }
 
@@ -134,13 +162,38 @@ export default function SalaryCodeManagement() {
 
       if (response.ok) {
         await fetchSalaryCodes()
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
+          icon: 'success',
+          title: t('toast.deleteSuccess')
+        })
       } else {
         const data = await response.json()
-        alert(data.error || 'Failed to delete salary code')
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
+          icon: 'error',
+          title: data.error || t('toast.deleteFailed')
+        })
       }
     } catch (error) {
       console.error('Error deleting salary code:', error)
-      alert('Failed to delete salary code')
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        icon: 'error',
+        title: t('toast.deleteFailed')
+      })
     }
   }
 
@@ -212,7 +265,7 @@ export default function SalaryCodeManagement() {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
             <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">
-              {editingCode ? 'Edit Salary Code' : 'Add New Salary Code'}
+              {editingCode ? t('form.editTitle') : t('form.addTitle')}
             </h2>
 
             <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
@@ -225,7 +278,7 @@ export default function SalaryCodeManagement() {
                   value={formData.code}
                   onChange={(e) => setFormData(prev => ({ ...prev, code: e.target.value }))}
                   className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base rounded-lg sm:rounded-xl border-2 border-gray-200 focus:border-[#31BCFF] focus:outline-none"
-                  placeholder="e.g., 120, 1203"
+                  placeholder={t('form.codePlaceholder')}
                   required
                   disabled={!!editingCode} // Don't allow editing code once created
                 />
@@ -240,7 +293,7 @@ export default function SalaryCodeManagement() {
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                   className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base rounded-lg sm:rounded-xl border-2 border-gray-200 focus:border-[#31BCFF] focus:outline-none"
-                  placeholder="e.g., Hourly Wages"
+                  placeholder={t('form.namePlaceholder')}
                   required
                 />
               </div>
@@ -272,7 +325,7 @@ export default function SalaryCodeManagement() {
                   onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                   rows={3}
                   className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base rounded-lg sm:rounded-xl border-2 border-gray-200 focus:border-[#31BCFF] focus:outline-none"
-                  placeholder="Optional description"
+                  placeholder={t('form.descriptionPlaceholder')}
                 />
               </div>
 

@@ -12,6 +12,7 @@ import {
   CogIcon,
 } from '@heroicons/react/24/outline'
 import OvertimeRuleManagement from './OvertimeRuleManagement'
+import Swal from 'sweetalert2'
 
 interface PayRule {
   id: string
@@ -97,6 +98,15 @@ export default function PayRuleManagement() {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editingRule, setEditingRule] = useState<PayRule | null>(null)
+  const [searchTerm, setSearchTerm] = useState('')
+
+  const filteredPayRules = payRules.filter(rule =>
+    rule.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    rule.salaryCode.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    rule.salaryCode.code.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  const activeRulesCount = payRules.filter(rule => rule.isActive).length
   const [formData, setFormData] = useState<PayRuleFormData>({
     name: '',
     description: '',
@@ -190,11 +200,27 @@ export default function PayRuleManagement() {
         resetForm()
       } else {
         const data = await response.json()
-        alert(data.error || 'Failed to save pay rule')
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
+          icon: 'error',
+          title: data.error || t('toast.saveFailed')
+        })
       }
     } catch (error) {
       console.error('Error saving pay rule:', error)
-      alert('Failed to save pay rule')
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        icon: 'error',
+        title: t('toast.saveFailed')
+      })
     }
   }
 
@@ -226,7 +252,18 @@ export default function PayRuleManagement() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this pay rule?')) {
+    const result = await Swal.fire({
+      title: t('toast.deleteConfirmTitle'),
+      text: t('toast.deleteConfirmText'),
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: t('toast.deleteConfirmButton'),
+      cancelButtonText: t('toast.cancelButton')
+    })
+
+    if (!result.isConfirmed) {
       return
     }
 
@@ -237,13 +274,38 @@ export default function PayRuleManagement() {
 
       if (response.ok) {
         await fetchPayRules()
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
+          icon: 'success',
+          title: t('toast.deleteSuccess')
+        })
       } else {
         const data = await response.json()
-        alert(data.error || 'Failed to delete pay rule')
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
+          icon: 'error',
+          title: data.error || t('toast.deleteFailed')
+        })
       }
     } catch (error) {
       console.error('Error deleting pay rule:', error)
-      alert('Failed to delete pay rule')
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        icon: 'error',
+        title: t('toast.deleteFailed')
+      })
     }
   }
 
@@ -347,6 +409,36 @@ export default function PayRuleManagement() {
       {activeTab === 'pay-rules' ? (
         <>
           {/* Pay Rules Content */}
+          {/* Stats and Search */}
+          <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex gap-4 sm:gap-6">
+                <div>
+                  <p className="text-xs sm:text-sm text-gray-500">{t('stats.totalRules')}</p>
+                  <p className="text-xl sm:text-2xl font-bold text-gray-900">{payRules.length}</p>
+                </div>
+                <div>
+                  <p className="text-xs sm:text-sm text-gray-500">{t('stats.activeRules')}</p>
+                  <p className="text-xl sm:text-2xl font-bold text-green-600">{activeRulesCount}</p>
+                </div>
+              </div>
+              <div className="flex-1 max-w-md">
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder={t('searchPlaceholder')}
+                  className="w-full px-4 py-2 text-sm rounded-xl border-2 border-gray-200 focus:border-[#31BCFF] focus:outline-none"
+                />
+              </div>
+            </div>
+            {searchTerm && (
+              <p className="mt-3 text-xs sm:text-sm text-gray-500">
+                {t('showing', { count: filteredPayRules.length, total: payRules.length })}
+              </p>
+            )}
+          </div>
+
           {/* Form Modal */}
           {showForm && (
             <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -586,7 +678,7 @@ export default function PayRuleManagement() {
 
           {/* Pay Rules List */}
           <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg overflow-hidden">
-            {payRules.length === 0 ? (
+            {filteredPayRules.length === 0 ? (
               <div className="p-8 sm:p-12 text-center">
                 <CogIcon className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">{t('emptyState.title')}</h3>
@@ -628,7 +720,7 @@ export default function PayRuleManagement() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200/50">
-                      {payRules.map((rule) => {
+                      {filteredPayRules.map((rule) => {
                         const IconComponent = getRuleTypeIcon(rule.ruleType)
                         return (
                           <tr key={rule.id} className="hover:bg-blue-50/30 transition-colors duration-200">
@@ -700,7 +792,7 @@ export default function PayRuleManagement() {
 
                 {/* Mobile Card View */}
                 <div className="lg:hidden p-4 space-y-3">
-                  {payRules.map((rule) => {
+                  {filteredPayRules.map((rule) => {
                     const IconComponent = getRuleTypeIcon(rule.ruleType)
                     return (
                       <div key={rule.id} className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">

@@ -3,10 +3,12 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
+import { useTranslation } from 'react-i18next'
 import PayrollEntryForm from '@/components/PayrollEntryForm'
 import { PayrollEntry, PayrollEntryFormData } from '@/shared/types'
 
 export default function EditPayrollEntryPage() {
+  const { t } = useTranslation('payroll-entries')
   const router = useRouter()
   const params = useParams()
   const [payrollEntry, setPayrollEntry] = useState<PayrollEntry | null>(null)
@@ -55,11 +57,11 @@ export default function EditPayrollEntryPage() {
       if (response.ok) {
         router.push('/dashboard/payroll-entries')
       } else {
-        alert(result.error || 'Failed to update payroll entry')
+        alert(result.error || t('edit_page.update_failed'))
       }
     } catch (error) {
       console.error('Error updating payroll entry:', error)
-      alert('Failed to update payroll entry')
+      alert(t('edit_page.update_failed'))
     } finally {
       setIsSubmitting(false)
     }
@@ -77,13 +79,13 @@ export default function EditPayrollEntryPage() {
     return (
       <div className="space-y-6">
         <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-12 border border-gray-200/50 shadow-lg text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Payroll Entry Not Found</h1>
-          <p className="text-gray-600 mb-6">The payroll entry you're looking for doesn't exist or has been deleted.</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">{t('edit_page.not_found_title')}</h1>
+          <p className="text-gray-600 mb-6">{t('edit_page.not_found_text')}</p>
           <Link
             href="/dashboard/payroll-entries"
             className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium rounded-xl hover:from-[#31BCFF]/90 hover:to-[#0EA5E9]/90 focus:outline-none focus:ring-2 focus:ring-[#31BCFF]/50 transform hover:scale-105 transition-all duration-200 shadow-lg"
           >
-            Back to Payroll Entries
+            {t('edit_page.back_button')}
           </Link>
         </div>
       </div>
@@ -105,10 +107,10 @@ export default function EditPayrollEntryPage() {
           </Link>
           <div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-              Edit Payroll Entry
+              {t('edit_page.title')}
             </h1>
             <p className="mt-2 text-gray-600">
-              Update payroll entry for {payrollEntry.employee.firstName} {payrollEntry.employee.lastName}
+              {t('edit_page.subtitle', { name: `${payrollEntry.employee.firstName} ${payrollEntry.employee.lastName}` })}
             </p>
           </div>
         </div>
@@ -117,24 +119,25 @@ export default function EditPayrollEntryPage() {
         <div className="bg-white/50 backdrop-blur-sm rounded-xl p-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <p className="text-sm text-gray-600">Employee</p>
+              <p className="text-sm text-gray-600">{t('edit_page.employee')}</p>
               <p className="font-semibold text-gray-900">
                 {payrollEntry.employee.firstName} {payrollEntry.employee.lastName}
                 {payrollEntry.employee.employeeNo && ` (#${payrollEntry.employee.employeeNo})`}
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Payroll Period</p>
+              <p className="text-sm text-gray-600">{t('edit_page.payroll_period')}</p>
               <p className="font-semibold text-gray-900">{payrollEntry.payrollPeriod.name}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Status</p>
+              <p className="text-sm text-gray-600">{t('edit_page.status')}</p>
               <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium border ${
                 payrollEntry.status === 'DRAFT' ? 'bg-yellow-100 text-yellow-800 border-yellow-200' :
                 payrollEntry.status === 'APPROVED' ? 'bg-blue-100 text-blue-800 border-blue-200' :
                 'bg-green-100 text-green-800 border-green-200'
               }`}>
-                {payrollEntry.status}
+                {payrollEntry.status === 'DRAFT' ? t('status.draft') : 
+                 payrollEntry.status === 'APPROVED' ? t('status.approved') : t('status.paid')}
               </span>
             </div>
           </div>

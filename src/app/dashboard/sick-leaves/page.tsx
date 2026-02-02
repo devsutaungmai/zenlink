@@ -374,7 +374,7 @@ export default function SickLeavesPage() {
     const start = new Date(startDate)
     const end = new Date(endDate)
     const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
-    return `${days} day${days > 1 ? 's' : ''}`
+    return `${days} ${days > 1 ? t('table.day_plural') : t('table.day')}`
   }
 
   const stats = useMemo(() => {
@@ -415,9 +415,9 @@ export default function SickLeavesPage() {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-gray-50">
         <div className="text-center p-8 bg-white rounded-lg shadow-md">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Access Denied</h2>
-          <p className="text-gray-600">You do not have permission to view sick leaves.</p>
-          <p className="text-sm text-gray-500 mt-2">Please contact your administrator if you need access.</p>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">{t('access_denied.title')}</h2>
+          <p className="text-gray-600">{t('access_denied.message')}</p>
+          <p className="text-sm text-gray-500 mt-2">{t('access_denied.contact_admin')}</p>
         </div>
       </div>
     )
@@ -444,7 +444,6 @@ export default function SickLeavesPage() {
       <div className="bg-gradient-to-r from-blue-50 via-cyan-50 to-blue-100 border border-blue-100 rounded-2xl p-4 sm:p-6 shadow-sm">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
-            <p className="uppercase text-xs font-semibold text-blue-500 tracking-wider">{t('banner.label', { defaultValue: 'Sick Leave Center' })}</p>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mt-1">
               {isEmployeeUser ? t('employee.title') : t('title')}
             </h1>
@@ -584,7 +583,7 @@ export default function SickLeavesPage() {
                       <Calendar className="h-4 w-4 mr-2 text-gray-400" />
                       <div>
                         <div>{formatDate(sickLeave.startDate)}</div>
-                        <div className="text-gray-500">to {formatDate(sickLeave.endDate)}</div>
+                        <div className="text-gray-500">{t('table.to')} {formatDate(sickLeave.endDate)}</div>
                       </div>
                     </div>
                   </td>

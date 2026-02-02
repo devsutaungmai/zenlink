@@ -59,7 +59,24 @@
       },
       "buttons": {
         "reset": "Tilbakestill til standard",
-        "save": "Lagre innstillinger"
+        "save": "Lagre innstillinger",
+        "saving": "Lagrer..."
+      },
+      "loading": "Laster inn innstillinger...",
+      "unsaved_changes": "Ulagrede endringer",
+      "saved": "Lagret",
+      "country_names": {
+        "DEFAULT": "Egendefinerte regler",
+        "NO": "Norge (Arbeidsmiljøloven)",
+        "TH": "Thailand",
+        "US": "USA",
+        "GB": "Storbritannia",
+        "DE": "Tyskland"
+      },
+      "toast": {
+        "settings_saved": "Innstillinger lagret: Arbeidsrettsregler er oppdatert.",
+        "error_save": "Feil: Kunne ikke lagre arbeidsrettsinnstillinger.",
+        "reset_complete": "Tilbakestilling fullført: Arbeidsrettsregler er tilbakestilt til norske standardverdier (Arbeidsmiljøloven)."
       },
       "current_rules_summary": {
         "title": "Sammendrag av gjeldende regler",
@@ -219,7 +236,15 @@
       "status": {
         "active": "Aktiv",
         "inactive": "Inaktiv"
-      }
+      },
+      "toast": {
+        "delete_confirm": "Er du sikker på at du vil slette \"{{name}}\"? Denne handlingen kan ikke angres.",
+        "delete_success": "Profilen ble slettet.",
+        "delete_error": "Kunne ikke slette profilen. Vennligst prøv igjen.",
+        "code_generated": "Ny aktiveringskode generert: {{code}}\n\nDenne koden kan brukes til å aktivere denne stemplingsurprofilen.",
+        "code_error": "Kunne ikke generere aktiveringskode. Vennligst prøv igjen."
+      },
+      "no_departments": "Ingen avdelinger"
     },
     "advance_setting": {
       "title": "Stemplingsur – Avansert",
@@ -397,7 +422,12 @@
       "edit_profile_button": "Rediger Profil"
     },
     "profile_card": {
-      "administrator": "Administrator"
+      "administrator": "Administrator",
+      "employee": "Medarbeider",
+      "manager": "Leder"
+    },
+    "toast": {
+      "load_error": "Kunne ikke laste profil"
     },
     "personal_information": {
       "title": "Personlig Informasjon",
@@ -529,7 +559,7 @@
     "actions": "Handlinger"
   },
   "using_defaults": "Bruker standardverdier",
-  "default_badge": "Standard",
+  "default_badge": "misligholde",
   "max_hours_day": "Maks {{hours}}t/dag",
   "max_hours_week": "{{hours}}t/uke",
   "active": "Aktiv",
@@ -618,5 +648,37 @@
   "error": "Feil",
   "save_failed": "Kunne ikke lagre kontraktstype",
   "delete_failed": "Kunne ikke slette kontraktstype"
+},
+"notifications": {
+  "title": "Varsler",
+  "mark_all_read": "Merk alle som lest",
+  "loading": "Laster varsler...",
+  "no_notifications": "Ingen varsler enn\u00e5",
+  "view_details": "Vis detaljer",
+  "view_all": "Vis alle varsler",
+  "mark_as_read": "Merk som lest",
+  "time": {
+    "just_now": "Akkurat n\u00e5",
+    "minutes_ago": "{{count}}m siden",
+    "hours_ago": "{{count}}t siden",
+    "days_ago": "{{count}}d siden"
+  }
+},
+"location_picker": {
+  "title": "Velg lokasjon",
+  "subtitle": "S\u00f8k etter en lokasjon eller klikk p\u00e5 kartet",
+  "search_label": "S\u00f8k lokasjon",
+  "search_placeholder": "S\u00f8k etter et sted...",
+  "location_name_label": "Lokasjonsnavn",
+  "location_name_placeholder": "f.eks. Hovedkontor, Lager",
+  "radius_label": "Radius",
+  "selected_location": "Valgt lokasjon",
+  "name": "Navn",
+  "address": "Adresse",
+  "coordinates": "Koordinater",
+  "loading_map": "Laster kart...",
+  "cancel": "Avbryt",
+  "save_location": "Lagre lokasjon",
+  "api_key_warning": "Google Maps API-n\u00f8kkel er ikke konfigurert. Legg til NEXT_PUBLIC_GOOGLE_MAPS_API_KEY i milj\u00f8variablene."
 }
 }

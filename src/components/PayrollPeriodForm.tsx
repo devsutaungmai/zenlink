@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslation } from 'react-i18next'
 import { PayrollPeriodFormData } from '@/shared/types'
 
 interface PayrollPeriodFormProps {
@@ -17,6 +18,7 @@ export default function PayrollPeriodForm({
   isLoading = false,
   mode = 'create'
 }: PayrollPeriodFormProps) {
+  const { t } = useTranslation('payroll-periods')
   const router = useRouter()
   const [formData, setFormData] = useState<PayrollPeriodFormData>({
     name: initialData?.name || '',
@@ -41,15 +43,15 @@ export default function PayrollPeriodForm({
     const newErrors: Record<string, string> = {}
 
     if (!formData.name.trim()) {
-      newErrors.name = 'Period name is required'
+      newErrors.name = t('validation.period_name_required')
     }
 
     if (!formData.startDate) {
-      newErrors.startDate = 'Start date is required'
+      newErrors.startDate = t('validation.start_date_required')
     }
 
     if (!formData.endDate) {
-      newErrors.endDate = 'End date is required'
+      newErrors.endDate = t('validation.end_date_required')
     }
 
     if (formData.startDate && formData.endDate) {
@@ -57,7 +59,7 @@ export default function PayrollPeriodForm({
       const endDate = new Date(formData.endDate)
       
       if (startDate >= endDate) {
-        newErrors.endDate = 'End date must be after start date'
+        newErrors.endDate = t('errors.invalid_date_range')
       }
     }
 
@@ -86,7 +88,7 @@ export default function PayrollPeriodForm({
           {/* Period Name */}
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-              Period Name
+              {t('form.period_name')}
             </label>
             <input
               type="text"
@@ -94,7 +96,7 @@ export default function PayrollPeriodForm({
               name="name"
               value={formData.name}
               onChange={handleChange}
-              placeholder="e.g., January 2025 Payroll"
+              placeholder={t('form.period_name_placeholder')}
               className={`w-full px-4 py-3 rounded-xl border bg-white/70 backdrop-blur-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#31BCFF]/50 ${
                 errors.name 
                   ? 'border-red-300 focus:border-red-500' 
@@ -109,7 +111,7 @@ export default function PayrollPeriodForm({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-2">
-                Start Date
+                {t('form.start_date')}
               </label>
               <input
                 type="date"
@@ -129,7 +131,7 @@ export default function PayrollPeriodForm({
 
             <div>
               <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-2">
-                End Date
+                {t('form.end_date')}
               </label>
               <input
                 type="date"
@@ -151,7 +153,7 @@ export default function PayrollPeriodForm({
           {/* Status */}
           <div>
             <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-2">
-              Status
+              {t('form.status')}
             </label>
             <select
               id="status"
@@ -161,9 +163,9 @@ export default function PayrollPeriodForm({
               className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] hover:border-gray-400"
               disabled={isLoading}
             >
-              <option value="DRAFT">Draft</option>
-              <option value="FINALIZED">Finalized</option>
-              <option value="CLOSED">Closed</option>
+              <option value="DRAFT">{t('form.status_draft')}</option>
+              <option value="FINALIZED">{t('form.status_finalized')}</option>
+              <option value="CLOSED">{t('form.status_closed')}</option>
             </select>
           </div>
         </div>
@@ -176,7 +178,7 @@ export default function PayrollPeriodForm({
             disabled={isLoading}
             className="w-full sm:flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Cancel
+            {t('form.cancel')}
           </button>
           <button
             type="submit"
@@ -189,10 +191,10 @@ export default function PayrollPeriodForm({
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                {mode === 'create' ? 'Creating...' : 'Updating...'}
+                {mode === 'create' ? t('form.creating') : t('form.updating')}
               </>
             ) : (
-              mode === 'create' ? 'Create Period' : 'Update Period'
+              mode === 'create' ? t('form.create') : t('form.update')
             )}
           </button>
         </div>

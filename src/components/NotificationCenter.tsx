@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { BellIcon, XMarkIcon, CheckIcon } from '@heroicons/react/24/outline'
 import { BellIcon as BellSolidIcon } from '@heroicons/react/24/solid'
+import { useTranslation } from 'react-i18next'
 
 interface Notification {
   id: string
@@ -23,6 +24,7 @@ export default function NotificationCenter({ employeeId }: NotificationCenterPro
   const [unreadCount, setUnreadCount] = useState(0)
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const { t } = useTranslation('settings')
 
   // Fetch notifications
   const fetchNotifications = async () => {
@@ -94,10 +96,10 @@ export default function NotificationCenter({ employeeId }: NotificationCenterPro
     const diffHours = Math.floor(diffMins / 60)
     const diffDays = Math.floor(diffHours / 24)
 
-    if (diffMins < 1) return 'Just now'
-    if (diffMins < 60) return `${diffMins}m ago`
-    if (diffHours < 24) return `${diffHours}h ago`
-    if (diffDays < 7) return `${diffDays}d ago`
+    if (diffMins < 1) return t('notifications.time.just_now')
+    if (diffMins < 60) return t('notifications.time.minutes_ago', { count: diffMins })
+    if (diffHours < 24) return t('notifications.time.hours_ago', { count: diffHours })
+    if (diffDays < 7) return t('notifications.time.days_ago', { count: diffDays })
     return date.toLocaleDateString()
   }
 
@@ -174,14 +176,14 @@ export default function NotificationCenter({ employeeId }: NotificationCenterPro
                          w-auto sm:w-96 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-[calc(100vh-5rem)] sm:max-h-96 overflow-hidden">
             {/* Header */}
             <div className="px-3 sm:px-4 py-3 border-b border-gray-200 flex items-center justify-between">
-              <h3 className="text-base sm:text-lg font-medium text-gray-900">Notifications</h3>
+              <h3 className="text-base sm:text-lg font-medium text-gray-900">{t('notifications.title')}</h3>
               <div className="flex items-center gap-1 sm:gap-2">
                 {unreadCount > 0 && (
                   <button
                     onClick={markAllAsRead}
                     className="text-xs sm:text-sm text-blue-600 hover:text-blue-800 whitespace-nowrap"
                   >
-                    Mark all read
+                    {t('notifications.mark_all_read')}
                   </button>
                 )}
                 <button
@@ -198,12 +200,12 @@ export default function NotificationCenter({ employeeId }: NotificationCenterPro
               {loading ? (
                 <div className="p-4 text-center text-gray-500">
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
-                  <p className="mt-2">Loading notifications...</p>
+                  <p className="mt-2">{t('notifications.loading')}</p>
                 </div>
               ) : notifications.length === 0 ? (
                 <div className="p-8 text-center text-gray-500">
                   <BellIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No notifications yet</p>
+                  <p>{t('notifications.no_notifications')}</p>
                 </div>
               ) : (
                 <div className="divide-y divide-gray-100">
@@ -228,7 +230,7 @@ export default function NotificationCenter({ employeeId }: NotificationCenterPro
                               <button
                                 onClick={() => markAsRead(notification.id)}
                                 className="text-blue-600 hover:text-blue-800 flex-shrink-0 p-1"
-                                title="Mark as read"
+                                title={t('notifications.mark_as_read')}
                               >
                                 <CheckIcon className="h-3 w-3 sm:h-4 sm:w-4" />
                               </button>
@@ -254,7 +256,7 @@ export default function NotificationCenter({ employeeId }: NotificationCenterPro
                                 }}
                                 className="text-xs text-blue-600 hover:text-blue-800 bg-blue-100 px-2 py-1 rounded whitespace-nowrap"
                               >
-                                View Details
+                                {t('notifications.view_details')}
                               </button>
                             )}
                           </div>
@@ -277,7 +279,7 @@ export default function NotificationCenter({ employeeId }: NotificationCenterPro
                   }}
                   className="text-xs sm:text-sm text-blue-600 hover:text-blue-800 font-medium w-full text-center py-1"
                 >
-                  View All Notifications
+                  {t('notifications.view_all')}
                 </button>
               </div>
             )}

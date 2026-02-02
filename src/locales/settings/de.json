@@ -58,8 +58,25 @@
         }
       },
       "buttons": {
-        "reset": "Gendan standardindstillinger",
-        "save": "Gem indstillinger"
+        "reset": "Auf Standard zurücksetzen",
+        "save": "Einstellungen speichern",
+        "saving": "Speichern..."
+      },
+      "loading": "Einstellungen werden geladen...",
+      "unsaved_changes": "Ungespeicherte Änderungen",
+      "saved": "Gespeichert",
+      "country_names": {
+        "DEFAULT": "Benutzerdefinierte Regeln",
+        "NO": "Norwegen (Arbeidsmiljøloven)",
+        "TH": "Thailand",
+        "US": "USA",
+        "GB": "Großbritannien",
+        "DE": "Deutschland"
+      },
+      "toast": {
+        "settings_saved": "Einstellungen gespeichert: Arbeitsrechtsregeln wurden erfolgreich aktualisiert.",
+        "error_save": "Fehler: Arbeitsrechtseinstellungen konnten nicht gespeichert werden.",
+        "reset_complete": "Zurücksetzen abgeschlossen: Arbeitsrechtsregeln wurden auf norwegische Standardwerte zurückgesetzt."
       },
       "current_rules_summary": {
         "title": "Oversigt over gældende regler",
@@ -219,7 +236,15 @@
       "status": {
         "active": "Aktiv",
         "inactive": "Inaktiv"
-      }
+      },
+      "toast": {
+        "delete_confirm": "Sind Sie sicher, dass Sie \"{{name}}\" löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.",
+        "delete_success": "Profil erfolgreich gelöscht.",
+        "delete_error": "Profil konnte nicht gelöscht werden. Bitte versuchen Sie es erneut.",
+        "code_generated": "Neuer Aktivierungscode generiert: {{code}}\n\nDieser Code kann verwendet werden, um dieses Stempeluhrprofil zu aktivieren.",
+        "code_error": "Aktivierungscode konnte nicht generiert werden. Bitte versuchen Sie es erneut."
+      },
+      "no_departments": "Keine Abteilungen"
     },
     "advance_setting": {
       "title": "Stempelur – Avanceret",
@@ -546,5 +571,109 @@
   "error": "Fehler",
   "save_failed": "Vertragstyp konnte nicht gespeichert werden",
   "delete_failed": "Vertragstyp konnte nicht gelöscht werden"
+},
+"profile": {
+  "not_found": "Profil nicht gefunden",
+  "unabled_load": "Profilinformationen konnten nicht geladen werden.",
+  "menu": {
+    "title": "Profileinstellungen",
+    "description": "Pers\u00f6nliche Informationen aktualisieren"
+  },
+  "page": {
+    "dashboard": "Dashboard",
+    "breadcrumb": "Profil",
+    "title": "Mein Profil",
+    "description": "Verwalten Sie Ihre pers\u00f6nlichen Informationen und Kontoeinstellungen.",
+    "edit_profile_button": "Profil bearbeiten"
+  },
+  "profile_card": {
+    "administrator": "Administrator",
+    "employee": "Mitarbeiter",
+    "manager": "Manager"
+  },
+  "toast": {
+    "load_error": "Profil konnte nicht geladen werden"
+  },
+  "personal_information": {
+    "title": "Pers\u00f6nliche Informationen",
+    "full_name": "Vollst\u00e4ndiger Name",
+    "email_address": "E-Mail-Adresse",
+    "role": "Rolle"
+  },
+  "business_information": {
+    "title": "Gesch\u00e4ftsinformationen",
+    "business_name": "Firmenname",
+    "business_address": "Firmenadresse",
+    "business_type": "Firmentyp"
+  },
+  "account_details": {
+    "title": "Kontodetails",
+    "member_since": "Mitglied seit",
+    "password": "Passwort"
+  },
+  "actions": {
+    "edit_profile": {
+      "title": "Profil bearbeiten",
+      "description": "Aktualisieren Sie Ihre pers\u00f6nlichen Informationen"
+    },
+    "account_settings": {
+      "title": "Kontoeinstellungen",
+      "description": "Verwalten Sie Ihre Kontopr\u00e4ferenzen"
+    }
+  },
+  "edit_profile_page": {
+    "breadcrumb": "Profil bearbeiten",
+    "title": "Profil bearbeiten",
+    "description": "Aktualisieren Sie Ihre pers\u00f6nlichen Informationen und Kontoeinstellungen.",
+    "section_title": "Profil bearbeiten",
+    "first_name": "Vorname",
+    "last_name": "Nachname",
+    "email_address": "E-Mail-Adresse",
+    "change_password": {
+      "title": "Passwort \u00e4ndern",
+      "button": "Passwort \u00e4ndern",
+      "cancel_button": "Passwort\u00e4nderung abbrechen",
+      "current_password": "Aktuelles Passwort",
+      "new_password": "Neues Passwort",
+      "confirm_password": "Neues Passwort best\u00e4tigen"
+    },
+    "required": "*",
+    "buttons": {
+      "update_profile": "Profil aktualisieren",
+      "updating": "Aktualisieren..."
+    }
+  }
+},
+"notifications": {
+  "title": "Benachrichtigungen",
+  "mark_all_read": "Alle als gelesen markieren",
+  "loading": "Benachrichtigungen werden geladen...",
+  "no_notifications": "Noch keine Benachrichtigungen",
+  "view_details": "Details anzeigen",
+  "view_all": "Alle Benachrichtigungen anzeigen",
+  "mark_as_read": "Als gelesen markieren",
+  "time": {
+    "just_now": "Gerade eben",
+    "minutes_ago": "vor {{count}}m",
+    "hours_ago": "vor {{count}}h",
+    "days_ago": "vor {{count}}d"
+  }
+},
+"location_picker": {
+  "title": "Standort ausw\u00e4hlen",
+  "subtitle": "Suchen Sie nach einem Standort oder klicken Sie auf die Karte",
+  "search_label": "Standort suchen",
+  "search_placeholder": "Nach einem Ort suchen...",
+  "location_name_label": "Standortname",
+  "location_name_placeholder": "z.B. Hauptb\u00fcro, Lager",
+  "radius_label": "Radius",
+  "selected_location": "Ausgew\u00e4hlter Standort",
+  "name": "Name",
+  "address": "Adresse",
+  "coordinates": "Koordinaten",
+  "loading_map": "Karte wird geladen...",
+  "cancel": "Abbrechen",
+  "save_location": "Standort speichern",
+  "api_key_warning": "Google Maps API-Schl\u00fcssel ist nicht konfiguriert. Bitte f\u00fcgen Sie NEXT_PUBLIC_GOOGLE_MAPS_API_KEY zu Ihren Umgebungsvariablen hinzu."
 }
 }

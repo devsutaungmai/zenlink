@@ -2,6 +2,20 @@
   "title": "Overtidsregler Administrasjon",
   "subtitle": "Konfigurer overtidsregler og satser for ulike situasjoner",
   "addOvertimeRule": "Legg til Overtidsregel",
+  "totalRules": "Totale Regler: {{count}}",
+  "activeRules": "Aktive: {{count}}",
+  "searchPlaceholder": "Søk overtidsregler...",
+  "showing": "Viser {{current}} av {{total}} regler",
+  "noRulesFound": "Ingen overtidsregler funnet",
+  "adjustSearch": "Prøv å justere søkeordene dine",
+  "common": {
+    "confirm": "Er du sikker?",
+    "success": "Suksess!",
+    "error": "Feil!"
+  },
+  "deleteConfirmation": "Denne overtidsregelen vil bli permanent slettet.",
+  "deleteSuccess": "Overtidsregelen har blitt slettet.",
+  "deleteError": "Kunne ikke slette overtidsregelen.",
   "form": {
     "editOvertimeRule": "Rediger Overtidsregel",
     "addNewOvertimeRule": "Legg til Ny Overtidsregel",
@@ -25,7 +39,8 @@
   "buttons": {
     "cancel": "Avbryt",
     "create": "Opprett",
-    "update": "Oppdater"
+    "update": "Oppdater",
+    "delete": "Ja, slett den!"
   },
   "emptyState": {
     "title": "Ingen Overtidsregler",

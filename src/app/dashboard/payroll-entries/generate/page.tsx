@@ -235,13 +235,39 @@ export default function GeneratePayrollEntriesPage() {
 
           {/* Department Filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
-              {t('generate.departments')}
-            </label>
+            <div className="flex justify-between items-center mb-3">
+              <label className="block text-sm font-medium text-gray-700">
+                {t('generate.departments')}
+              </label>
+              {departments.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (selectedDepartments.length === departments.length) {
+                      setSelectedDepartments([])
+                    } else {
+                      setSelectedDepartments(departments.map(d => d.id))
+                    }
+                  }}
+                  className="text-xs text-[#31BCFF] hover:text-[#31BCFF]/80 font-medium"
+                >
+                  {selectedDepartments.length === departments.length ? t('form.deselect_all') : t('form.select_all')}
+                </button>
+              )}
+            </div>
             {departments.length === 0 ? (
               <p className="text-sm text-gray-500 py-4 px-3 bg-gray-50 rounded-lg">{t('generate.no_departments')}</p>
             ) : (
               <div className="border border-gray-300 rounded-lg max-h-40 overflow-y-auto bg-white">
+                <label className="flex items-center px-4 py-2 hover:bg-gray-50 cursor-pointer border-b bg-blue-50">
+                  <input
+                    type="checkbox"
+                    checked={selectedDepartments.length === 0}
+                    onChange={() => setSelectedDepartments([])}
+                    className="h-4 w-4 text-[#31BCFF] focus:ring-[#31BCFF] border-gray-300 rounded"
+                  />
+                  <span className="ml-3 text-sm font-medium text-gray-900">{t('form.all')}</span>
+                </label>
                 {departments.map((dept) => (
                   <label key={dept.id} className="flex items-center px-4 py-2 hover:bg-gray-50 cursor-pointer border-b last:border-b-0">
                     <input
@@ -271,13 +297,39 @@ export default function GeneratePayrollEntriesPage() {
 
           {/* Employee Group Filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
-              {t('generate.employee_groups')}
-            </label>
+            <div className="flex justify-between items-center mb-3">
+              <label className="block text-sm font-medium text-gray-700">
+                {t('generate.employee_groups')}
+              </label>
+              {employeeGroups.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (selectedEmployeeGroups.length === employeeGroups.length) {
+                      setSelectedEmployeeGroups([])
+                    } else {
+                      setSelectedEmployeeGroups(employeeGroups.map(g => g.id))
+                    }
+                  }}
+                  className="text-xs text-[#31BCFF] hover:text-[#31BCFF]/80 font-medium"
+                >
+                  {selectedEmployeeGroups.length === employeeGroups.length ? t('form.deselect_all') : t('form.select_all')}
+                </button>
+              )}
+            </div>
             {employeeGroups.length === 0 ? (
               <p className="text-sm text-gray-500 py-4 px-3 bg-gray-50 rounded-lg">{t('generate.no_groups')}</p>
             ) : (
               <div className="border border-gray-300 rounded-lg max-h-40 overflow-y-auto bg-white">
+                <label className="flex items-center px-4 py-2 hover:bg-gray-50 cursor-pointer border-b bg-blue-50">
+                  <input
+                    type="checkbox"
+                    checked={selectedEmployeeGroups.length === 0}
+                    onChange={() => setSelectedEmployeeGroups([])}
+                    className="h-4 w-4 text-[#31BCFF] focus:ring-[#31BCFF] border-gray-300 rounded"
+                  />
+                  <span className="ml-3 text-sm font-medium text-gray-900">{t('form.all')}</span>
+                </label>
                 {employeeGroups.map((group) => (
                   <label key={group.id} className="flex items-center px-4 py-2 hover:bg-gray-50 cursor-pointer border-b last:border-b-0">
                     <input
@@ -307,13 +359,39 @@ export default function GeneratePayrollEntriesPage() {
 
           {/* Employee Filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
-              {t('generate.employees')}
-            </label>
+            <div className="flex justify-between items-center mb-3">
+              <label className="block text-sm font-medium text-gray-700">
+                {t('generate.employees')}
+              </label>
+              {employees.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (selectedEmployees.length === employees.length) {
+                      setSelectedEmployees([])
+                    } else {
+                      setSelectedEmployees(employees.map(e => e.id))
+                    }
+                  }}
+                  className="text-xs text-[#31BCFF] hover:text-[#31BCFF]/80 font-medium"
+                >
+                  {selectedEmployees.length === employees.length ? t('form.deselect_all') : t('form.select_all')}
+                </button>
+              )}
+            </div>
             {employees.length === 0 ? (
               <p className="text-sm text-gray-500 py-4 px-3 bg-gray-50 rounded-lg">{t('generate.no_employees')}</p>
             ) : (
               <div className="border border-gray-300 rounded-lg max-h-48 overflow-y-auto bg-white">
+                <label className="flex items-center px-4 py-2 hover:bg-gray-50 cursor-pointer border-b bg-blue-50">
+                  <input
+                    type="checkbox"
+                    checked={selectedEmployees.length === 0}
+                    onChange={() => setSelectedEmployees([])}
+                    className="h-4 w-4 text-[#31BCFF] focus:ring-[#31BCFF] border-gray-300 rounded"
+                  />
+                  <span className="ml-3 text-sm font-medium text-gray-900">{t('form.all')}</span>
+                </label>
                 {employees.map((emp) => (
                   <label key={emp.id} className="flex items-center px-4 py-2 hover:bg-gray-50 cursor-pointer border-b last:border-b-0">
                     <input

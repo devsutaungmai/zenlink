@@ -3,10 +3,12 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useTranslation } from 'react-i18next'
 import PayrollPeriodForm from '@/components/PayrollPeriodForm'
 import { PayrollPeriodFormData } from '@/shared/types'
 
 export default function CreatePayrollPeriodPage() {
+  const { t } = useTranslation('payroll-periods')
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
 
@@ -27,11 +29,11 @@ export default function CreatePayrollPeriodPage() {
       if (response.ok) {
         router.push('/dashboard/payroll-periods')
       } else {
-        alert(result.error || 'Failed to create payroll period')
+        alert(result.error || t('errors.create_failed'))
       }
     } catch (error) {
       console.error('Error creating payroll period:', error)
-      alert('Failed to create payroll period')
+      alert(t('errors.create_failed'))
     } finally {
       setIsLoading(false)
     }
@@ -52,10 +54,10 @@ export default function CreatePayrollPeriodPage() {
           </Link>
           <div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-              Create Payroll Period
+              {t('create_page.title')}
             </h1>
             <p className="mt-2 text-gray-600">
-              Set up a new payroll processing period
+              {t('create_page.subtitle')}
             </p>
           </div>
         </div>

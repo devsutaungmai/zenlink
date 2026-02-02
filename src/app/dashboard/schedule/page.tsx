@@ -5,7 +5,9 @@ import { format, addDays, addWeeks, subWeeks, startOfWeek, endOfWeek, addMonths,
 import { Employee, EmployeeGroup } from '@prisma/client'
 import { ClockIcon, UsersIcon, UserGroupIcon, Squares2X2Icon } from '@heroicons/react/24/outline'
 import { useTranslation } from 'react-i18next'
-
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import Swal from 'sweetalert2'
 import ScheduleHeader from '@/components/schedule/ScheduleHeader'
 import CreateTemplateModal from '@/components/schedule/CreateTemplateModal'
@@ -58,6 +60,15 @@ export default function SchedulePage() {
   const [selectTemplateMode, setSelectTemplateMode] = useState<'edit' | 'apply'>('edit')
   const [shiftInitialData, setShiftInitialData] = useState<any>(null)
   const [modalViewType, setModalViewType] = useState<'week' | 'day' | 'month'>('week')
+  
+  const [showCreateAttendanceModal, setShowCreateAttendanceModal] = useState(false)
+  const [attendanceShift, setAttendanceShift] = useState<ShiftWithRelations | null>(null)
+  const [attendanceFormData, setAttendanceFormData] = useState({
+    punchInTime: '',
+    punchOutTime: ''
+  })
+  const [isCreatingAttendance, setIsCreatingAttendance] = useState(false)
+  const [business, setBusiness] = useState<{ id: string } | null>(null)
 
   const [currentDate, setCurrentDate] = useState(new Date())
   const [employees, setEmployees] = useState<Employee[]>([])
@@ -277,11 +288,24 @@ export default function SchedulePage() {
         fetchDepartments(),
         fetchCategories(),
         fetchFunctions(),
-        fetchShiftTypes()
+        fetchShiftTypes(),
+        fetchBusiness()
       ])
     }
     fetchStaticData()
   }, [])
+
+  const fetchBusiness = async () => {
+    try {
+      const res = await fetch('/api/business')
+      if (res.ok) {
+        const data = await res.json()
+        setBusiness(data)
+      }
+    } catch (error) {
+      console.error('Error fetching business:', error)
+    }
+  }
 
   const fetchEmployees = async () => {
     try {
@@ -963,6 +987,66 @@ export default function SchedulePage() {
     setShowShiftModal(true);
   };
 
+  const handleOpenCreateAttendance = (shift: ShiftWithRelations) => {
+    setAttendanceShift(shift)
+    setAttendanceFormData({
+      punchInTime: shift.startTime || '09:00',
+      punchOutTime: shift.endTime || '17:00'
+    })
+    setShowCreateAttendanceModal(true)
+  }
+
+  const handleCreateAttendance = async () => {
+    if (!attendanceShift || !attendanceShift.employeeId) return
+
+    setIsCreatingAttendance(true)
+    try {
+      const shiftDate = typeof attendanceShift.date === 'string'
+        ? (attendanceShift.date as string).substring(0, 10)
+        : format(attendanceShift.date as Date, 'yyyy-MM-dd')
+
+      const punchInDateTime = new Date(`${shiftDate}T${attendanceFormData.punchInTime}:00`)
+      const punchOutDateTime = attendanceFormData.punchOutTime 
+        ? new Date(`${shiftDate}T${attendanceFormData.punchOutTime}:00`)
+        : null
+
+      const response = await fetch('/api/attendance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          employeeId: attendanceShift.employeeId,
+          businessId: business?.id,
+          punchInTime: punchInDateTime.toISOString(),
+          punchOutTime: punchOutDateTime?.toISOString() || null,
+          shiftId: attendanceShift.id
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to create attendance')
+      }
+
+      await Swal.fire({
+        icon: 'success',
+        title: t('create_attendance.success'),
+        timer: 1500,
+        showConfirmButton: false
+      })
+
+      setShowCreateAttendanceModal(false)
+      setAttendanceShift(null)
+    } catch (error: any) {
+      await Swal.fire({
+        icon: 'error',
+        title: t('create_attendance.error'),
+        text: error.message
+      })
+    } finally {
+      setIsCreatingAttendance(false)
+    }
+  }
+
   const getShiftPosition = (startTime: string, endTime: string) => {
     const startParts = startTime.split(':');
     const endParts = endTime.split(':');
@@ -1071,6 +1155,7 @@ export default function SchedulePage() {
             setExpandedGroups(newExpanded);
           }}
           onEditShift={handleEditShift}
+          onCreateAttendance={handleOpenCreateAttendance}
           isEmployeeUnavailable={isEmployeeUnavailableOnDate}
           onUnavailableClick={notifyEmployeeUnavailable}
           onAddShift={(data) => {
@@ -1078,6 +1163,7 @@ export default function SchedulePage() {
           }}
           canCreateShifts={canCreateShifts}
           canEditShifts={canEditShifts}
+          canCreateAttendance={canEditShifts}
         />
       )
     }
@@ -1090,6 +1176,7 @@ export default function SchedulePage() {
           employees={filteredEmployees}
           employeeGroups={employeeGroups}
           onEditShift={handleEditShift}
+          onCreateAttendance={handleOpenCreateAttendance}
           selectedEmployeeId={selectedEmployeeId}
           isEmployeeUnavailable={isEmployeeUnavailableOnDate}
           onUnavailableClick={notifyEmployeeUnavailable}
@@ -1099,6 +1186,7 @@ export default function SchedulePage() {
           }}
           canCreateShifts={canCreateShifts}
           canEditShifts={canEditShifts}
+          canCreateAttendance={canEditShifts}
         />
       )
     }
@@ -1111,6 +1199,7 @@ export default function SchedulePage() {
           employees={filteredEmployees}
           functions={filteredFunctions}
           onEditShift={handleEditShift}
+          onCreateAttendance={handleOpenCreateAttendance}
           selectedEmployeeId={selectedEmployeeId}
           isEmployeeUnavailable={isEmployeeUnavailableOnDate}
           onUnavailableClick={notifyEmployeeUnavailable}
@@ -1120,6 +1209,7 @@ export default function SchedulePage() {
           }}
           canCreateShifts={canCreateShifts}
           canEditShifts={canEditShifts}
+          canCreateAttendance={canEditShifts}
         />
       )
     }
@@ -1536,6 +1626,63 @@ export default function SchedulePage() {
             })
           }}
         />
+
+        {/* Create Attendance Modal */}
+        <Dialog open={showCreateAttendanceModal} onOpenChange={setShowCreateAttendanceModal}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>{t('create_attendance.title')}</DialogTitle>
+              <DialogDescription>{t('create_attendance.description')}</DialogDescription>
+            </DialogHeader>
+            {attendanceShift && (
+              <div className="space-y-4 py-4">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-500">{t('create_attendance.employee')}:</span>
+                    <p className="font-medium">
+                      {employees.find(e => e.id === attendanceShift.employeeId)?.firstName}{' '}
+                      {employees.find(e => e.id === attendanceShift.employeeId)?.lastName}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">{t('create_attendance.date')}:</span>
+                    <p className="font-medium">
+                      {typeof attendanceShift.date === 'string'
+                        ? attendanceShift.date.substring(0, 10)
+                        : format(attendanceShift.date, 'yyyy-MM-dd')}
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">{t('create_attendance.punch_in')}</label>
+                    <Input
+                      type="time"
+                      value={attendanceFormData.punchInTime}
+                      onChange={(e) => setAttendanceFormData(prev => ({ ...prev, punchInTime: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">{t('create_attendance.punch_out')}</label>
+                    <Input
+                      type="time"
+                      value={attendanceFormData.punchOutTime}
+                      onChange={(e) => setAttendanceFormData(prev => ({ ...prev, punchOutTime: e.target.value }))}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowCreateAttendanceModal(false)}>
+                {t('create_attendance.cancel')}
+              </Button>
+              <Button onClick={handleCreateAttendance} disabled={isCreatingAttendance}>
+                {isCreatingAttendance ? t('create_attendance.creating') : t('create_attendance.create')}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
   )
 }

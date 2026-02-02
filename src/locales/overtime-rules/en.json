@@ -2,6 +2,20 @@
   "title": "Overtime Rules Management",
   "subtitle": "Configure overtime rules and multipliers for different scenarios",
   "addOvertimeRule": "Add Overtime Rule",
+  "totalRules": "Total Rules: {{count}}",
+  "activeRules": "Active: {{count}}",
+  "searchPlaceholder": "Search overtime rules...",
+  "showing": "Showing {{current}} of {{total}} rules",
+  "noRulesFound": "No overtime rules found",
+  "adjustSearch": "Try adjusting your search terms",
+  "common": {
+    "confirm": "Are you sure?",
+    "success": "Success!",
+    "error": "Error!"
+  },
+  "deleteConfirmation": "This overtime rule will be permanently deleted.",
+  "deleteSuccess": "Overtime rule has been deleted.",
+  "deleteError": "Failed to delete overtime rule.",
   "form": {
     "editOvertimeRule": "Edit Overtime Rule",
     "addNewOvertimeRule": "Add New Overtime Rule",
@@ -25,7 +39,8 @@
   "buttons": {
     "cancel": "Cancel",
     "create": "Create",
-    "update": "Update"
+    "update": "Update",
+    "delete": "Yes, delete it!"
   },
   "emptyState": {
     "title": "No Overtime Rules",

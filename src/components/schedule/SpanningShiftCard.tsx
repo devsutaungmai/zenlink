@@ -2,34 +2,67 @@ import { format } from 'date-fns'
 import { Employee } from '@prisma/client'
 import { useCurrency } from '@/shared/hooks/useCurrency'
 import { ShiftWithRelations } from '@/types/schedule'
-import { AlertTriangle, AlertCircle } from 'lucide-react'
+import { AlertTriangle, AlertCircle, Clock, Pencil, Trash2 } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 
 interface SpanningShiftCardProps {
   shift: ShiftWithRelations
   date: string
   employees: Employee[]
   onEdit: (shift: ShiftWithRelations) => void
+  onCreateAttendance?: (shift: ShiftWithRelations) => void
+  onDelete?: (shift: ShiftWithRelations) => void
   index?: number  // Position in the overlapping group
   total?: number  // Total shifts in the overlapping group
   displayStartTime?: string
   displayEndTime?: string | null
   isContinuation?: boolean
   canEdit?: boolean
+  canCreateAttendance?: boolean
 }
 
 export default function SpanningShiftCard({ 
   shift, 
   date, 
   employees = [], // Provide a default empty array 
-  onEdit, 
+  onEdit,
+  onCreateAttendance,
+  onDelete,
   index = 0, 
   total = 1,
   displayStartTime,
   displayEndTime,
   isContinuation = false,
-  canEdit = true
+  canEdit = true,
+  canCreateAttendance = false
 }: SpanningShiftCardProps) {
   const { currencySymbol } = useCurrency()
+  const { t } = useTranslation('schedule')
+  const [showContextMenu, setShowContextMenu] = useState(false)
+  const [contextMenuPos, setContextMenuPos] = useState({ x: 0, y: 0 })
+  const contextMenuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (contextMenuRef.current && !contextMenuRef.current.contains(event.target as Node)) {
+        setShowContextMenu(false)
+      }
+    }
+    if (showContextMenu) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showContextMenu])
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setContextMenuPos({ x: e.clientX, y: e.clientY })
+    setShowContextMenu(true)
+  }
   const effectiveStart = displayStartTime ?? shift.startTime
   const effectiveEnd = displayEndTime ?? shift.endTime
   const { top, height } = getShiftPosition(effectiveStart, effectiveEnd)
@@ -72,6 +105,7 @@ export default function SpanningShiftCard({
   }
 
   return (
+    <>
     <div
       className="absolute shift-card pointer-events-auto z-20 p-1 sm:p-2"
       style={{
@@ -95,6 +129,7 @@ export default function SpanningShiftCard({
         e.preventDefault()
         onEdit(shift)
       }}
+      onContextMenu={handleContextMenu}
       title={`${shift.function?.name || 'No function'} | ${shift.startTime.substring(0, 5)} - ${endTimeDisplay} | ${currentEmployee ? `${currentEmployee.firstName} ${currentEmployee.lastName}` : 'Unassigned'}`}
       draggable={false}
     >
@@ -130,6 +165,59 @@ export default function SpanningShiftCard({
         </div>
       )}
     </div>
+
+    {/* Context Menu */}
+    {showContextMenu && (
+      <div
+        ref={contextMenuRef}
+        className="fixed bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-[100] min-w-[160px]"
+        style={{
+          left: contextMenuPos.x,
+          top: contextMenuPos.y,
+        }}
+      >
+        {canEdit && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setShowContextMenu(false)
+              onEdit(shift)
+            }}
+            className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+          >
+            <Pencil className="w-4 h-4" />
+            {t('context_menu.edit_shift')}
+          </button>
+        )}
+        {canCreateAttendance && shift.employeeId && shift.approved && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setShowContextMenu(false)
+              onCreateAttendance?.(shift)
+            }}
+            className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+          >
+            <Clock className="w-4 h-4" />
+            {t('context_menu.create_attendance')}
+          </button>
+        )}
+        {onDelete && canEdit && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setShowContextMenu(false)
+              onDelete(shift)
+            }}
+            className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+          >
+            <Trash2 className="w-4 h-4" />
+            {t('context_menu.delete_shift')}
+          </button>
+        )}
+      </div>
+    )}
+    </>
   )
 }
 

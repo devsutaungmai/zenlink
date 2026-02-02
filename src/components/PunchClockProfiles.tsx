@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import ProfileFormModal from '@/components/ProfileFormModal'
 import { useTranslation } from 'react-i18next'
+import Swal from 'sweetalert2'
 
 interface PunchClockProfile {
   id: string
@@ -118,9 +119,17 @@ export default function PunchClockProfiles() {
   }
 
   const handleDeleteProfile = async (profileId: string, profileName: string) => {
-    const confirmed = window.confirm(`Are you sure you want to delete "${profileName}"? This action cannot be undone.`)
+    const result = await Swal.fire({
+      title: t('punch_clock.profile_setting.toast.delete_confirm', { name: profileName }),
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: t('contract_rules.delete'),
+      cancelButtonText: t('contract_rules.cancel')
+    })
 
-    if (!confirmed) {
+    if (!result.isConfirmed) {
       return
     }
 
@@ -131,13 +140,35 @@ export default function PunchClockProfiles() {
 
       if (response.ok) {
         setProfiles(profiles.filter(p => p.id !== profileId))
+        Swal.fire({
+          text: t('punch_clock.profile_setting.toast.delete_success'),
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000,
+          icon: 'success'
+        })
       } else {
         console.error('Failed to delete profile')
-        alert('Failed to delete profile. Please try again.')
+        Swal.fire({
+          text: t('punch_clock.profile_setting.toast.delete_error'),
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000,
+          icon: 'error'
+        })
       }
     } catch (error) {
       console.error('Error deleting profile:', error)
-      alert('Failed to delete profile. Please try again.')
+      Swal.fire({
+        text: t('punch_clock.profile_setting.toast.delete_error'),
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        icon: 'error'
+      })
     }
   }
 
@@ -181,15 +212,32 @@ export default function PunchClockProfiles() {
           p.id === profileId ? { ...p, activationCode } : p
         ))
 
-        // Show the generated code to the user
-        alert(`New activation code generated: ${activationCode}\n\nThis code can be used to activate this punch clock profile.`)
+        Swal.fire({
+          title: t('punch_clock.profile_setting.toast.code_generated', { code: activationCode }),
+          icon: 'success',
+          confirmButtonColor: '#31BCFF'
+        })
       } else {
         console.error('Failed to generate activation code')
-        alert('Failed to generate activation code. Please try again.')
+        Swal.fire({
+          text: t('punch_clock.profile_setting.toast.code_error'),
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000,
+          icon: 'error'
+        })
       }
     } catch (error) {
       console.error('Error generating activation code:', error)
-      alert('Failed to generate activation code. Please try again.')
+      Swal.fire({
+        text: t('punch_clock.profile_setting.toast.code_error'),
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        icon: 'error'
+      })
     }
   }
 
@@ -246,26 +294,26 @@ export default function PunchClockProfiles() {
             </button>
           </div>
         ) : (
-          <div className="overflow-hidden">
+          <div className="overflow-x-auto -mx-6 px-6">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                     {t('punch_clock.profile_setting.table.profile_name')}
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                     {t('punch_clock.profile_setting.table.department')}
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                     {t('punch_clock.profile_setting.table.status')}
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                     {t('punch_clock.profile_setting.table.activation_code')}
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                     {t('punch_clock.profile_setting.table.created')}
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                     {t('punch_clock.profile_setting.table.actions')}
                   </th>
                 </tr>
@@ -273,18 +321,18 @@ export default function PunchClockProfiles() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {profiles.map((profile) => (
                   <tr key={profile.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{profile.name}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
                         {profile.departmentNames?.length > 0 
                           ? profile.departmentNames.join(', ')
-                          : 'No departments'
+                          : t('punch_clock.profile_setting.no_departments')
                         }
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                       <Badge
                         variant={profile.isActive ? "default" : "secondary"}
                         className={`cursor-pointer ${profile.isActive
@@ -296,11 +344,11 @@ export default function PunchClockProfiles() {
                         {profile.isActive ? t('punch_clock.profile_setting.status.active') : t('punch_clock.profile_setting.status.inactive')}
                       </Badge>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center space-x-2">
                         {profile.activationCode ? (
                           <div className="flex items-center space-x-2">
-                            <code className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">
+                            <code className="px-2 py-1 bg-gray-100 rounded text-xs sm:text-sm font-mono">
                               {profile.activationCode}
                             </code>
                             <Button
@@ -318,25 +366,24 @@ export default function PunchClockProfiles() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleGenerateActivationCode(profile.id)}
-                            className="text-[#31BCFF] border-[#31BCFF] hover:bg-[#31BCFF] hover:text-white"
+                            className="text-[#31BCFF] border-[#31BCFF] hover:bg-[#31BCFF] hover:text-white text-xs sm:text-sm"
                           >
-                            <KeyIcon className="h-4 w-4 mr-1" />
+                            <KeyIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                             {t('punch_clock.profile_setting.buttons.generate_code')}
-
                           </Button>
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(profile.createdAt).toLocaleDateString()}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center justify-end space-x-2">
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex items-center justify-end space-x-1 sm:space-x-2">
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => handleEditProfile(profile)}
-                          className="text-gray-600 hover:text-[#31BCFF]"
+                          className="text-gray-600 hover:text-[#31BCFF] p-1 sm:p-2"
                         >
                           <PencilIcon className="h-4 w-4" />
                         </Button>
@@ -344,7 +391,7 @@ export default function PunchClockProfiles() {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleDeleteProfile(profile.id, profile.name)}
-                          className="text-gray-600 hover:text-red-600"
+                          className="text-gray-600 hover:text-red-600 p-1 sm:p-2"
                         >
                           <TrashIcon className="h-4 w-4" />
                         </Button>

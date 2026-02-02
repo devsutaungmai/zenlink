@@ -9,7 +9,7 @@
     "all_categories": "Alle kategorier",
     "all_functions": "Alle funksjoner",
     "select_category_first": "Velg kategori først",
-    "filters": "Filter",
+    "filters": "filtrere",
     "clear_all": "Fjern alle",
     "employees": "Medarbeidere",
     "search_employees_placeholder": "Søk etter medarbeidere...",
@@ -188,5 +188,64 @@
     "go_back": "Gå tilbake til tidsplan",
     "retry": "Prøv igjen",
     "applying": "Bruker..."
+  },
+  "weekdays": {
+    "sun": "Søn",
+    "mon": "Man",
+    "tue": "Tir",
+    "wed": "Ons",
+    "thu": "Tor",
+    "fri": "Fre",
+    "sat": "Lør"
+  },
+  "weekdays_short": {
+    "sun": "S",
+    "mon": "M",
+    "tue": "T",
+    "wed": "O",
+    "thu": "T",
+    "fri": "F",
+    "sat": "L"
+  },
+  "months": {
+    "january": "Januar",
+    "february": "Februar",
+    "march": "Mars",
+    "april": "April",
+    "may": "Mai",
+    "june": "Juni",
+    "july": "Juli",
+    "august": "August",
+    "september": "September",
+    "october": "Oktober",
+    "november": "November",
+    "december": "Desember"
+  },
+  "month_view": {
+    "shifts_count": "{{count}} skift",
+    "shifts_count_plural": "{{count}} skift",
+    "add_shift": "Legg til skift"
+  },
+  "context_menu": {
+    "edit_shift": "Rediger skift",
+    "create_attendance": "Opprett oppmøte",
+    "delete_shift": "Slett skift"
+  },
+  "create_attendance": {
+    "title": "Opprett oppmøte fra skift",
+    "description": "Opprett en oppmøteregistrering for dette planlagte skiftet",
+    "shift_info": "Skiftinformasjon",
+    "employee": "Medarbeider",
+    "date": "Dato",
+    "shift_time": "Skifttid",
+    "punch_in_time": "Innstemplingstid",
+    "punch_out_time": "Utstemplingstid (valgfritt)",
+    "leave_empty_hint": "La stå tomt hvis fortsatt på jobb",
+    "cancel": "Avbryt",
+    "create": "Opprett oppmøte",
+    "creating": "Oppretter...",
+    "success": "Oppmøte opprettet",
+    "error": "Kunne ikke opprette oppmøte",
+    "already_punched_in": "Medarbeider er allerede innstemplet"
   }
 }

@@ -27,6 +27,23 @@
   "inactive": "Inaktiv",
   "edit": "Rediger",
   "delete": "Slet",
+  "form": {
+    "editTitle": "Rediger Lønkode",
+    "addTitle": "Tilføj Ny Lønkode",
+    "codePlaceholder": "f.eks. 120, 1203",
+    "namePlaceholder": "f.eks. Timeløn",
+    "descriptionPlaceholder": "Valgfri beskrivelse"
+  },
+  "toast": {
+    "deleteConfirmTitle": "Er du sikker?",
+    "deleteConfirmText": "Du kan ikke fortryde dette!",
+    "deleteConfirmButton": "Ja, slet den!",
+    "cancelButton": "Annuller",
+    "deleteSuccess": "Lønkode er blevet slettet.",
+    "deleteFailed": "Kunne ikke slette lønkode",
+    "saveFailed": "Kunne ikke gemme lønkode",
+    "cannotDelete": "Kan ikke slette lønkode med tilknyttede lønregler"
+  },
   "categories": {
     "hourly": "Timeløn",
     "overtime": "Overarbejdsbetaling",

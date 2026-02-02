@@ -1,7 +1,21 @@
 {
-  "title": "Overarbejdsregler Administration",
-  "subtitle": "Konfigurer overarbejdsregler og satser for forskellige scenarier",
-  "addOvertimeRule": "Tilføj Overarbejdsregel",
+  "title": "Überstundenregeln Verwaltung",
+  "subtitle": "Konfigurieren Sie Überstundenregeln und Sätze für verschiedene Szenarien",
+  "addOvertimeRule": "Überstundenregel Hinzufügen",
+  "totalRules": "Gesamtregeln: {{count}}",
+  "activeRules": "Aktiv: {{count}}",
+  "searchPlaceholder": "Überstundenregeln suchen...",
+  "showing": "Zeige {{current}} von {{total}} Regeln",
+  "noRulesFound": "Keine Überstundenregeln gefunden",
+  "adjustSearch": "Versuchen Sie, Ihre Suchbegriffe anzupassen",
+  "common": {
+    "confirm": "Sind Sie sicher?",
+    "success": "Erfolg!",
+    "error": "Fehler!"
+  },
+  "deleteConfirmation": "Diese Überstundenregel wird dauerhaft gelöscht.",
+  "deleteSuccess": "Überstundenregel wurde gelöscht.",
+  "deleteError": "Überstundenregel konnte nicht gelöscht werden.",
   "form": {
     "editOvertimeRule": "Rediger Overarbejdsregel",
     "addNewOvertimeRule": "Tilføj Ny Overarbejdsregel",
@@ -23,9 +37,10 @@
     "descriptionPlaceholder": "Valgfri beskrivelse"
   },
   "buttons": {
-    "cancel": "Annuller",
-    "create": "Opret",
-    "update": "Opdater"
+    "cancel": "Abbrechen",
+    "create": "Erstellen",
+    "update": "Aktualisieren",
+    "delete": "Ja, löschen!"
   },
   "emptyState": {
     "title": "Ingen Overarbejdsregler",

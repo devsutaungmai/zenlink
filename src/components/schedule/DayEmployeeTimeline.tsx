@@ -7,6 +7,7 @@ import { ShiftWithRelations } from '@/types/schedule'
 import { getShiftSegmentsForDate, ShiftSegment } from './utils'
 import ShiftsModal from './ShiftsModal'
 import { useTranslation } from 'react-i18next'
+import { formatDate } from '@/shared/lib/dateLocale'
 
 interface DayEmployeeTimelineProps {
   date: Date
@@ -90,10 +91,10 @@ export default function DayEmployeeTimeline({
   onAddShift,
   onEditShift
 }: DayEmployeeTimelineProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const formattedDate = format(date, 'yyyy-MM-dd')
   const { currencySymbol } = useCurrency()
-  const readableDate = format(date, 'EEEE, MMMM d, yyyy')
+  const readableDate = formatDate(date, 'EEEE, MMMM d, yyyy', i18n.language)
   const daySegments = useMemo(() => getShiftSegmentsForDate(shifts, date), [shifts, date])
   const [hoveredCell, setHoveredCell] = useState<{ rowId: string; hour: number } | null>(null)
   const hourWidthPercent = 100 / HOURS.length

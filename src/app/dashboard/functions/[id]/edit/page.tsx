@@ -235,7 +235,7 @@ export default function EditFunctionPage({
             {formData.name && (
               <div className="mt-3 flex items-center text-sm text-gray-500">
                 <div className="w-2 h-2 bg-[#31BCFF] rounded-full mr-2"></div>
-                Editing: {formData.name}
+                {t('editing')}: {formData.name}
               </div>
             )}
           </div>

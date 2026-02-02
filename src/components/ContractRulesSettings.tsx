@@ -260,7 +260,9 @@ export default function ContractRulesSettings() {
       text: t('contract_rules.delete_confirm', { name: contractType.name }),
       showCancelButton: true,
       confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#6b7280',
       confirmButtonText: t('contract_rules.delete'),
+      cancelButtonText: t('contract_rules.cancel'),
     })
 
     if (result.isConfirmed) {
@@ -345,7 +347,7 @@ export default function ContractRulesSettings() {
               <SelectContent>
                 {laborLawProfiles.map((profile) => (
                   <SelectItem key={profile.id} value={profile.id}>
-                    {profile.name} {profile.isDefault && '(Default)'}
+                    {profile.name} {profile.isDefault && `(${t('labor_law_profiles.default_badge')})`}
                   </SelectItem>
                 ))}
               </SelectContent>

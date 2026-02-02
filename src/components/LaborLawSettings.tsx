@@ -168,7 +168,7 @@ export default function LaborLawSettings({ onRulesChange }: LaborLawSettingsProp
       setHasChanges(false)
 
       Swal.fire({
-        text: 'Settings Saved: Labor law rules have been updated successfully.',
+        text: t('labor.setting.toast.settings_saved'),
         toast: true,
         position: 'top-end',
         showConfirmButton: false,
@@ -181,7 +181,7 @@ export default function LaborLawSettings({ onRulesChange }: LaborLawSettingsProp
     } catch (error) {
       console.error('Error saving labor law rules:', error)
       Swal.fire({
-        text: 'Error: Failed to save labor law settings.',
+        text: t('labor.setting.toast.error_save'),
         toast: true,
         position: 'top-end',
         showConfirmButton: false,
@@ -202,7 +202,7 @@ export default function LaborLawSettings({ onRulesChange }: LaborLawSettingsProp
     setHasChanges(true)
 
     Swal.fire({
-      text: 'Reset Complete: Labor law rules have been reset to Norwegian defaults (Arbeidsmiljøloven).',
+      text: t('labor.setting.toast.reset_complete'),
       toast: true,
       position: 'top-end',
       showConfirmButton: false,
@@ -214,22 +214,14 @@ export default function LaborLawSettings({ onRulesChange }: LaborLawSettingsProp
   }
 
   const getCountryName = (code: string): string => {
-    const countryNames: Record<string, string> = {
-      'DEFAULT': 'Custom Rules',
-      'NO': 'Norway (Arbeidsmiljøloven)',
-      'TH': 'Thailand',
-      'US': 'United States',
-      'GB': 'United Kingdom',
-      'DE': 'Germany'
-    }
-    return countryNames[code] || code
+    return t(`labor.setting.country_names.${code}`) || code
   }
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="w-8 h-8 animate-spin text-[#31BCFF]" />
-        <span className="ml-2 text-gray-600">Loading settings...</span>
+        <span className="ml-2 text-gray-600">{t('labor.setting.loading')}</span>
       </div>
     )
   }
@@ -246,7 +238,7 @@ export default function LaborLawSettings({ onRulesChange }: LaborLawSettingsProp
           {hasChanges && (
             <Badge variant="secondary" className="bg-amber-100 text-amber-800">
               <AlertTriangle className="w-3 h-3 mr-1" />
-              Unsaved Changes
+              {t('labor.setting.unsaved_changes')}
             </Badge>
           )}
         </div>
@@ -272,27 +264,27 @@ export default function LaborLawSettings({ onRulesChange }: LaborLawSettingsProp
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="NO">
-                    🇳🇴 Norway (Arbeidsmiljøloven) - Default
+                    🇳🇴 {t('labor.setting.country_names.NO')} - {t('labor_law_profiles.default_badge')}
                     {savedSettings['NO'] && <span className="ml-2 text-green-600">✓</span>}
                   </SelectItem>
                   <SelectItem value="TH">
-                    🇹🇭 Thailand
+                    🇹🇭 {t('labor.setting.country_names.TH')}
                     {savedSettings['TH'] && <span className="ml-2 text-green-600">✓</span>}
                   </SelectItem>
                   <SelectItem value="US">
-                    🇺🇸 United States
+                    🇺🇸 {t('labor.setting.country_names.US')}
                     {savedSettings['US'] && <span className="ml-2 text-green-600">✓</span>}
                   </SelectItem>
                   <SelectItem value="GB">
-                    🇬🇧 United Kingdom
+                    🇬🇧 {t('labor.setting.country_names.GB')}
                     {savedSettings['GB'] && <span className="ml-2 text-green-600">✓</span>}
                   </SelectItem>
                   <SelectItem value="DE">
-                    🇩🇪 Germany
+                    🇩🇪 {t('labor.setting.country_names.DE')}
                     {savedSettings['DE'] && <span className="ml-2 text-green-600">✓</span>}
                   </SelectItem>
                   <SelectItem value="DEFAULT">
-                    Custom Rules
+                    {t('labor.setting.country_names.DEFAULT')}
                     {savedSettings['DEFAULT'] && <span className="ml-2 text-green-600">✓</span>}
                   </SelectItem>
                 </SelectContent>
@@ -303,7 +295,7 @@ export default function LaborLawSettings({ onRulesChange }: LaborLawSettingsProp
                 <strong>{t('labor.setting.country_region.label2')}:</strong> {getCountryName(selectedCountry)}
                 {savedSettings[selectedCountry] && (
                   <Badge variant="outline" className="ml-2 text-green-600 border-green-600">
-                    Saved
+                    {t('labor.setting.saved')}
                   </Badge>
                 )}
                 <br />
@@ -538,7 +530,7 @@ export default function LaborLawSettings({ onRulesChange }: LaborLawSettingsProp
           ) : (
             <Save className="w-4 h-4" />
           )}
-          {isSaving ? 'Saving...' : t('labor.setting.buttons.save')}
+          {isSaving ? t('labor.setting.buttons.saving') : t('labor.setting.buttons.save')}
         </Button>
       </div>
 

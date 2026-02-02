@@ -1,7 +1,10 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { format } from 'date-fns'
+import { useTranslation } from 'react-i18next'
+import { formatDate } from '@/shared/lib/dateLocale'
 import { Employee } from '@prisma/client'
 import { PlusIcon } from '@heroicons/react/24/outline'
+import { Clock, Pencil } from 'lucide-react'
 import { ShiftWithRelations } from '@/types/schedule'
 import { useCurrency } from '@/shared/hooks/useCurrency'
 import ShiftsModal from './ShiftsModal'
@@ -36,11 +39,13 @@ interface FunctionGroupedViewProps {
   functions: FunctionItem[]
   onEditShift: (shift: ShiftWithRelations) => void
   onAddShift?: (data?: { date?: string; functionId?: string; categoryId?: string; departmentId?: string }) => void
+  onCreateAttendance?: (shift: ShiftWithRelations) => void
   selectedEmployeeId?: string | null
   isEmployeeUnavailable?: (employeeId: string, date: string) => boolean
   onUnavailableClick?: (employeeId: string, date: string) => void
   canCreateShifts?: boolean
   canEditShifts?: boolean
+  canCreateAttendance?: boolean
 }
 
 export default function FunctionGroupedView({
@@ -50,12 +55,15 @@ export default function FunctionGroupedView({
   functions,
   onEditShift,
   onAddShift = () => {},
+  onCreateAttendance,
   selectedEmployeeId,
   isEmployeeUnavailable,
   onUnavailableClick,
   canCreateShifts = true,
-  canEditShifts = true
+  canEditShifts = true,
+  canCreateAttendance = false
 }: FunctionGroupedViewProps) {
+  const { t, i18n } = useTranslation('schedule')
   const { currencySymbol } = useCurrency()
   const [modalState, setModalState] = useState<{
     isOpen: boolean
@@ -68,6 +76,33 @@ export default function FunctionGroupedView({
     date: null,
     title: ''
   })
+  const [contextMenu, setContextMenu] = useState<{
+    show: boolean
+    x: number
+    y: number
+    shift: ShiftWithRelations | null
+  }>({ show: false, x: 0, y: 0, shift: null })
+  const contextMenuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (contextMenuRef.current && !contextMenuRef.current.contains(event.target as Node)) {
+        setContextMenu(prev => ({ ...prev, show: false }))
+      }
+    }
+    if (contextMenu.show) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [contextMenu.show])
+
+  const handleShiftContextMenu = (e: React.MouseEvent, shift: ShiftWithRelations) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setContextMenu({ show: true, x: e.clientX, y: e.clientY, shift })
+  }
   
   const groupOverlappingShifts = (shifts: ShiftWithRelations[]) => {
     const sortedShifts = [...shifts].sort((a, b) => {
@@ -185,7 +220,7 @@ export default function FunctionGroupedView({
               return (
                 <div key={i} className="text-center py-3 border-r last:border-r-0">
                   <div className={`text-xs font-medium mb-0.5 ${isToday ? 'text-[#31BCFF]' : 'text-gray-500'}`}>
-                    {format(date, 'EEE')}
+                    {formatDate(date, 'EEE', i18n.language)}
                   </div>
                   <div className={`text-xl font-bold ${isToday ? 'text-[#31BCFF]' : 'text-gray-900'}`}>
                     {format(date, 'd')}
@@ -370,10 +405,10 @@ export default function FunctionGroupedView({
             return (
               <div key={i} className={`p-2 text-center border-r ${isToday ? 'bg-blue-50' : ''}`}>
                 <div className={`text-xs font-semibold ${isToday ? 'text-blue-700' : 'text-gray-900'}`}>
-                  {isToday ? 'Today' : format(date, 'EEE, MMM d')}
+                  {isToday ? t('week_view.today') : formatDate(date, 'EEE, MMM d', i18n.language)}
                 </div>
                 <div className="text-[10px] text-gray-600 mt-0.5">
-                  + {dayShifts.length} Shifts
+                  + {dayShifts.length} {t('week_view.shifts')}
                 </div>
               </div>
             );
@@ -454,6 +489,7 @@ export default function FunctionGroupedView({
                             <div
                               key={shift.id}
                               onClick={() => onEditShift(shift)}
+                              onContextMenu={(e) => handleShiftContextMenu(e, shift)}
                               className="mb-1 cursor-pointer"
                             >
                               <div className="rounded p-2 text-xs border font-medium" style={{ 
@@ -521,6 +557,40 @@ export default function FunctionGroupedView({
         onEditShift={onEditShift}
         canEditShifts={canEditShifts}
       />
+
+      {/* Context Menu */}
+      {contextMenu.show && contextMenu.shift && (
+        <div
+          ref={contextMenuRef}
+          className="fixed bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-[100] min-w-[160px]"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+        >
+          {canEditShifts && (
+            <button
+              onClick={() => {
+                setContextMenu(prev => ({ ...prev, show: false }))
+                onEditShift(contextMenu.shift!)
+              }}
+              className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+            >
+              <Pencil className="w-4 h-4" />
+              {t('context_menu.edit_shift')}
+            </button>
+          )}
+          {canCreateAttendance && contextMenu.shift.employeeId && contextMenu.shift.approved && (
+            <button
+              onClick={() => {
+                setContextMenu(prev => ({ ...prev, show: false }))
+                onCreateAttendance?.(contextMenu.shift!)
+              }}
+              className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+            >
+              <Clock className="w-4 h-4" />
+              {t('context_menu.create_attendance')}
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

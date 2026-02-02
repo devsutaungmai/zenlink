@@ -66,7 +66,7 @@ async function getAccessibleDepartmentIds(auth: any): Promise<string[] | null> {
 
 export async function POST(request: NextRequest) {
   try {
-    const { employeeId, businessId, shiftId, punchInTime, punchClockProfileId } = await request.json()
+    const { employeeId, businessId, shiftId, punchInTime, punchOutTime, punchClockProfileId } = await request.json()
 
     const auth = await getCurrentUserOrEmployee()
     const isAdmin = auth?.type === 'user' && (auth.data as any)?.role === 'ADMIN'
@@ -141,6 +141,7 @@ export async function POST(request: NextRequest) {
         shiftId: shiftId || null,
         punchClockProfileId: punchClockProfileId || null,
         punchInTime: punchInTime ? new Date(punchInTime) : new Date(),
+        punchOutTime: punchOutTime ? new Date(punchOutTime) : null,
         approved: shiftId ? true : (isAdmin ? true : false),
         approvedAt: (shiftId || isAdmin) ? new Date() : null,
         approvedBy: (shiftId || isAdmin) ? (isAdmin ? ((auth.data as any).id) : 'system') : null
@@ -157,11 +158,11 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // If there's a shift, update its status to WORKING
+    // If there's a shift, update its status based on whether punchOutTime is provided
     if (shiftId) {
       await prisma.shift.update({
         where: { id: shiftId },
-        data: { status: 'WORKING' }
+        data: { status: punchOutTime ? 'COMPLETED' : 'WORKING' }
       })
     }
 

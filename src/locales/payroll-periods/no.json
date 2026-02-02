@@ -51,12 +51,30 @@
   
   "form": {
     "period_name": "Periodenavn",
+    "period_name_placeholder": "f.eks. Januar 2025 Lønn",
     "start_date": "Startdato",
     "end_date": "Sluttdato",
+    "status": "Status",
+    "status_draft": "Utkast",
+    "status_finalized": "Ferdigstilt",
+    "status_closed": "Stengt",
     "description": "Beskrivelse",
     "create": "Opprett Periode",
     "update": "Oppdater Periode",
+    "creating": "Oppretter...",
+    "updating": "Oppdaterer...",
     "cancel": "Avbryt"
+  },
+  "create_page": {
+    "title": "Opprett Lønnsperiode",
+    "subtitle": "Sett opp en ny lønnsbehandlingsperiode"
+  },
+  "edit_page": {
+    "title": "Rediger Lønnsperiode",
+    "subtitle": "Oppdater lønnsperiode: {{name}}",
+    "not_found_title": "Lønnsperiode ikke funnet",
+    "not_found_text": "Lønnsperioden du leter etter finnes ikke eller har blitt slettet.",
+    "back_button": "Tilbake til Lønnsperioder"
   },
   
   "confirm": {

@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react'
 import { format } from 'date-fns'
 import { PlusIcon } from '@heroicons/react/24/outline'
 import { useTranslation } from 'react-i18next'
+import { formatDate } from '@/shared/lib/dateLocale'
 import SpanningShiftCard from './SpanningShiftCard'
 import HourColumn from './HourColumn'
 import { Shift as PrismaShift, Employee } from '@prisma/client'
@@ -268,7 +269,7 @@ export default function WeekView({
               return (
                 <div key={i} className="text-center py-3 border-r last:border-r-0">
                   <div className={`text-xs font-medium mb-0.5 ${isToday ? 'text-[#31BCFF]' : 'text-gray-500'}`}>
-                    {format(date, 'EEE')}
+                    {formatDate(date, 'EEE', i18n.language)}
                   </div>
                   <div className={`text-xl font-bold ${isToday ? 'text-[#31BCFF]' : 'text-gray-900'}`}>
                     {format(date, 'd')}
@@ -283,7 +284,7 @@ export default function WeekView({
         <div className="p-3 space-y-3">
           {employees.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              <p className="text-sm">No employees found</p>
+              <p className="text-sm">{t('header.no_employees_found')}</p>
             </div>
           ) : (
             employees.map((employee) => {
@@ -446,8 +447,8 @@ export default function WeekView({
                     <div className={`text-xs text-gray-950 font-bold ${isToday ? 'text-blue-700' : ''}`}>
                       {isToday ? <span className="text-blue-700">{t('week_view.today')}</span> : (
                         <>
-                          <span className="hidden md:inline">{format(date, 'EEE, MMM d')}</span>
-                          <span className="md:hidden">{format(date, 'EEE d')}</span>
+                          <span className="hidden md:inline">{formatDate(date, 'EEE, MMM d', i18n.language)}</span>
+                          <span className="md:hidden">{formatDate(date, 'EEE d', i18n.language)}</span>
                         </>
                       )}
                     </div>

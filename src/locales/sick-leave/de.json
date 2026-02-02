@@ -7,10 +7,14 @@
     "select_employee": "Einen Mitarbeiter auswählen",
     "start_date": "Startdatum",
     "end_date": "Enddatum",
-    "reason": "Grund",
-    "reason_placeholder": "Bitte geben Sie Details zu Ihrer Krankmeldung an...",
-    "doctor_note": "Ärztliches Attest erforderlich",
-    "submit": "Antrag einreichen",
+    "reason": "Grund für Krankmeldung",
+    "reason_placeholder": "Beschreiben Sie Ihre Krankheit oder den Grund für die Abwesenheit...",
+    "doctor_note": "Unterstützende Dokumente",
+    "upload_description": "Ärztliches Attest, Arztbescheinigung oder andere unterstützende Dokumente hochladen (PDF, DOC, DOCX oder Bilder, max. 5MB)",
+    "upload_button": "Klicken Sie, um ein Dokument hochzuladen",
+    "uploading": "Wird hochgeladen...",
+    "submit": "Krankmeldung hinzufügen",
+    "update": "Antrag aktualisieren",
     "submitting": "Wird eingereicht...",
     "cancel": "Abbrechen"
   },
@@ -38,7 +42,13 @@
     "submitted": "Eingereicht",
     "actions": "Aktionen",
     "no_requests": "Keine Krankmeldungsanträge gefunden",
-    "view": "Ansehen"
+    "view": "Ansehen",
+    "to": "bis"
+  },
+  "access_denied": {
+    "title": "Zugriff verweigert",
+    "message": "Sie haben keine Berechtigung, Krankmeldungen anzuzeigen.",
+    "contact_admin": "Bitte wenden Sie sich an Ihren Administrator, wenn Sie Zugriff benötigen."
   },
   "actions": {
     "approve": "Genehmigen",
@@ -91,11 +101,49 @@
     "approved": "Genehmigt",
     "pending": "Ausstehend",
     "total": "Gesamtanfragen",
-    "documented": "Mit Dokumenten"
+    "total_requests": "Gesamtanfragen",
+    "documented": "Mit Dokumenten",
+    "documents": "Mit Dokumenten"
   },
   "loading": "Lade Krankmeldungsdaten...",
   "empty_state": {
     "title": "Keine Krankmeldungsanträge",
     "subtitle": "Es wurden noch keine Krankmeldungsanträge eingereicht."
+  },
+  "no_data": "Keine Krankmeldungsanträge gefunden",
+  "error": "Fehler",
+  "retry": "Erneut versuchen",
+  "employee": {
+    "title": "Meine Krankmeldungen",
+    "subtitle": "Ihre Krankmeldungsanträge anzeigen und verwalten",
+    "request_button": "Krankmeldung beantragen"
+  },
+  "modal": {
+    "add_title": "Krankmeldung hinzufügen",
+    "edit_title": "Krankmeldung bearbeiten"
+  },
+  "success": {
+    "created": "Krankmeldung erfolgreich erstellt!",
+    "updated": "Krankmeldung erfolgreich aktualisiert!",
+    "approved": "Krankmeldung erfolgreich genehmigt!",
+    "rejected": "Krankmeldung erfolgreich abgelehnt!",
+    "deleted": "Krankmeldung erfolgreich gelöscht!",
+    "document_uploaded": "Dokument erfolgreich hochgeladen!"
+  },
+  "errors": {
+    "fetch_failed": "Krankmeldungen konnten nicht abgerufen werden",
+    "fetch_employees_failed": "Mitarbeiter konnten nicht abgerufen werden",
+    "save_failed": "Krankmeldung konnte nicht gespeichert werden",
+    "update_failed": "Krankmeldung konnte nicht aktualisiert werden",
+    "delete_failed": "Krankmeldung konnte nicht gelöscht werden",
+    "upload_failed": "Hochladen fehlgeschlagen",
+    "employee_not_found": "Mitarbeiterinformationen nicht gefunden. Bitte melden Sie sich erneut an.",
+    "unknown": "Ein unbekannter Fehler ist aufgetreten"
+  },
+  "delete": {
+    "confirm_title": "Sind Sie sicher?",
+    "confirm_text": "Dies kann nicht rückgängig gemacht werden!",
+    "confirm_button": "Ja, löschen!",
+    "cancel_button": "Abbrechen"
   }
 }
