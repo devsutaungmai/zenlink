@@ -7,6 +7,7 @@ import {
   CalendarIcon
 } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
+import { useTranslation } from 'react-i18next'
 
 interface Employee {
   id: string
@@ -51,6 +52,7 @@ export default function PendingRequestsModal({
   employeeId, 
   onUpdate 
 }: PendingRequestsModalProps) {
+  const { t, i18n } = useTranslation('employee-dashboard')
   const [pendingRequests, setPendingRequests] = useState<ShiftExchange[]>([])
   const [rejectedRequests, setRejectedRequests] = useState<ShiftExchange[]>([])
   const [loading, setLoading] = useState(false)
@@ -124,7 +126,7 @@ export default function PendingRequestsModal({
           timer: 3000,
           timerProgressBar: true,
           icon: 'success',
-          title: `Request ${action}ed successfully!`
+          title: t('shift_requests.toast_success', { action: t(`shift_requests.actions.${action}`) })
         })
         
         await fetchPendingRequests()
@@ -151,7 +153,7 @@ export default function PendingRequestsModal({
         timer: 3000,
         timerProgressBar: true,
         icon: 'error',
-        title: error instanceof Error ? error.message : `Failed to ${action} request`
+        title: error instanceof Error ? error.message : t('shift_requests.toast_failed_action', { action: t(`shift_requests.actions.${action}`) })
       })
     } finally {
       setResponding(null)
@@ -159,7 +161,7 @@ export default function PendingRequestsModal({
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    return new Date(dateString).toLocaleDateString(i18n.language, {
       weekday: 'short',
       month: 'short',
       day: 'numeric',
@@ -192,10 +194,10 @@ export default function PendingRequestsModal({
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">
-                  Shift Requests
+                  {t('shift_requests.title')}
                 </h3>
                 <p className="text-sm text-gray-600">
-                  Review and respond to shift exchange requests
+                  {t('shift_requests.subtitle')}
                 </p>
               </div>
             </div>
@@ -223,7 +225,7 @@ export default function PendingRequestsModal({
             >
               <div className="flex items-center gap-2">
                 <ClockIcon className="w-4 h-4" />
-                Active Requests
+                {t('shift_requests.tabs.active')}
                 {pendingRequests.length > 0 && (
                   <span className="bg-blue-100 text-blue-600 text-xs px-2 py-0.5 rounded-full">
                     {pendingRequests.length}
@@ -241,7 +243,7 @@ export default function PendingRequestsModal({
             >
               <div className="flex items-center gap-2">
                 <XCircleIcon className="w-4 h-4" />
-                Rejected
+                {t('shift_requests.tabs.rejected')}
                 {rejectedRequests.length > 0 && (
                   <span className="bg-red-100 text-red-600 text-xs px-2 py-0.5 rounded-full">
                     {rejectedRequests.length}
@@ -257,14 +259,14 @@ export default function PendingRequestsModal({
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <span className="ml-3 text-gray-600">Loading requests...</span>
+              <span className="ml-3 text-gray-600">{t('shift_requests.loading')}</span>
             </div>
           ) : activeTab === 'pending' ? (
             pendingRequests.length === 0 ? (
               <div className="text-center py-8">
                 <ClockIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No Active Requests</h3>
-                <p className="text-gray-500">You don't have any shift requests requiring your attention or waiting for admin approval.</p>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">{t('shift_requests.empty_active_title')}</h3>
+                <p className="text-gray-500">{t('shift_requests.empty_active_description')}</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -285,10 +287,10 @@ export default function PendingRequestsModal({
                       </div>
                       <div>
                         <h4 className="font-semibold text-gray-900">
-                          Shift {request.type === 'SWAP' ? 'Swap' : 'Handover'} Request
+                          {t('shift_requests.request_title', { type: request.type === 'SWAP' ? t('shift_requests.types.swap') : t('shift_requests.types.handover') })}
                         </h4>
                         <p className="text-sm text-gray-600">
-                          From: {request.fromEmployee.firstName} {request.fromEmployee.lastName}
+                          {t('shift_requests.from_label')}: {request.fromEmployee.firstName} {request.fromEmployee.lastName}
                         </p>
                         <p className="text-xs text-gray-500">
                           {request.fromEmployee.department.name}
@@ -300,7 +302,7 @@ export default function PendingRequestsModal({
                         ? 'bg-yellow-100 text-yellow-800' 
                         : 'bg-green-100 text-green-800'
                     }`}>
-                      {request.status === 'EMPLOYEE_PENDING' ? 'Pending Response' : 'Accepted - Waiting for Admin Approval'}
+                      {request.status === 'EMPLOYEE_PENDING' ? t('shift_requests.status.pending_response') : t('shift_requests.status.accepted_waiting_admin')}
                     </span>
                   </div>
 
@@ -308,31 +310,31 @@ export default function PendingRequestsModal({
                   <div className="bg-white rounded-lg p-4 mb-4">
                     <div className="flex items-center gap-2 mb-2">
                       <CalendarIcon className="w-4 h-4 text-gray-500" />
-                      <span className="font-medium text-gray-900">Shift Details</span>
+                      <span className="font-medium text-gray-900">{t('shift_requests.shift_details.title')}</span>
                     </div>
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
-                        <span className="text-gray-600">Date:</span>
+                        <span className="text-gray-600">{t('shift_requests.shift_details.date')}:</span>
                         <p className="font-medium">{formatDate(request.shift.date)}</p>
                       </div>
                       <div>
-                        <span className="text-gray-600">Time:</span>
+                        <span className="text-gray-600">{t('shift_requests.shift_details.time')}:</span>
                         <p className="font-medium">
-                          {formatTime(request.shift.startTime)} - {request.shift.endTime ? formatTime(request.shift.endTime) : 'Open End'}
+                          {formatTime(request.shift.startTime)} - {request.shift.endTime ? formatTime(request.shift.endTime) : t('shift_requests.shift_details.open_end')}
                         </p>
                       </div>
                       <div>
-                        <span className="text-gray-600">Type:</span>
+                        <span className="text-gray-600">{t('shift_requests.shift_details.type')}:</span>
                         <p className="font-medium">{request.shift.shiftType}</p>
                       </div>
                       <div>
-                        <span className="text-gray-600">Requested:</span>
+                        <span className="text-gray-600">{t('shift_requests.shift_details.requested')}:</span>
                         <p className="font-medium">{formatDate(request.requestedAt)}</p>
                       </div>
                     </div>
                     {request.reason && (
                       <div className="mt-3 pt-3 border-t border-gray-200">
-                        <span className="text-gray-600 text-sm">Reason:</span>
+                        <span className="text-gray-600 text-sm">{t('shift_requests.shift_details.reason')}:</span>
                         <p className="text-sm text-gray-800 mt-1">{request.reason}</p>
                       </div>
                     )}
@@ -349,12 +351,12 @@ export default function PendingRequestsModal({
                         {responding === request.id ? (
                           <>
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                            Accepting...
+                            {t('shift_requests.accepting')}
                           </>
                         ) : (
                           <>
                             <CheckCircleIcon className="w-5 h-5" />
-                            Accept Request
+                            {t('shift_requests.accept_request')}
                           </>
                         )}
                       </button>
@@ -366,12 +368,12 @@ export default function PendingRequestsModal({
                         {responding === request.id ? (
                           <>
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                            Rejecting...
+                            {t('shift_requests.rejecting')}
                           </>
                         ) : (
                           <>
                             <XCircleIcon className="w-5 h-5" />
-                            Reject Request
+                            {t('shift_requests.reject_request')}
                           </>
                         )}
                       </button>
@@ -383,10 +385,10 @@ export default function PendingRequestsModal({
                     <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                       <div className="flex items-center gap-2">
                         <CheckCircleIcon className="w-5 h-5 text-green-600" />
-                        <span className="text-green-800 font-medium">Request Accepted</span>
+                        <span className="text-green-800 font-medium">{t('shift_requests.accepted_title')}</span>
                       </div>
                       <p className="text-green-700 text-sm mt-1">
-                        You have accepted this request. It's now waiting for admin approval.
+                        {t('shift_requests.accepted_description')}
                       </p>
                     </div>
                   )}
@@ -398,8 +400,8 @@ export default function PendingRequestsModal({
             rejectedRequests.length === 0 ? (
               <div className="text-center py-8">
                 <XCircleIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No Rejected Requests</h3>
-                <p className="text-gray-500">You don't have any rejected shift requests.</p>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">{t('shift_requests.empty_rejected_title')}</h3>
+                <p className="text-gray-500">{t('shift_requests.empty_rejected_description')}</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -420,10 +422,10 @@ export default function PendingRequestsModal({
                         </div>
                         <div>
                           <h4 className="font-semibold text-gray-900">
-                            Shift {request.type === 'SWAP' ? 'Swap' : 'Handover'} Request
+                            {t('shift_requests.request_title', { type: request.type === 'SWAP' ? t('shift_requests.types.swap') : t('shift_requests.types.handover') })}
                           </h4>
                           <p className="text-sm text-gray-600">
-                            From: {request.fromEmployee.firstName} {request.fromEmployee.lastName}
+                            {t('shift_requests.from_label')}: {request.fromEmployee.firstName} {request.fromEmployee.lastName}
                           </p>
                           <p className="text-xs text-gray-500">
                             {request.fromEmployee.department.name}
@@ -433,7 +435,9 @@ export default function PendingRequestsModal({
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         request.status === 'EMPLOYEE_REJECTED' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'
                       }`}>
-                        {request.status === 'EMPLOYEE_REJECTED' ? 'Rejected by You' : 'Rejected by Admin'}
+                        {request.status === 'EMPLOYEE_REJECTED'
+                          ? t('shift_requests.rejected_by_you')
+                          : t('shift_requests.rejected_by_admin')}
                       </span>
                     </div>
 
@@ -441,31 +445,31 @@ export default function PendingRequestsModal({
                     <div className="bg-white rounded-lg p-4">
                       <div className="flex items-center gap-2 mb-2">
                         <CalendarIcon className="w-4 h-4 text-gray-500" />
-                        <span className="font-medium text-gray-900">Shift Details</span>
+                        <span className="font-medium text-gray-900">{t('shift_requests.shift_details.title')}</span>
                       </div>
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
-                          <span className="text-gray-600">Date:</span>
+                          <span className="text-gray-600">{t('shift_requests.shift_details.date')}:</span>
                           <p className="font-medium">{formatDate(request.shift.date)}</p>
                         </div>
                         <div>
-                          <span className="text-gray-600">Time:</span>
+                          <span className="text-gray-600">{t('shift_requests.shift_details.time')}:</span>
                           <p className="font-medium">
-                            {formatTime(request.shift.startTime)} - {request.shift.endTime ? formatTime(request.shift.endTime) : 'Open End'}
+                            {formatTime(request.shift.startTime)} - {request.shift.endTime ? formatTime(request.shift.endTime) : t('shift_requests.shift_details.open_end')}
                           </p>
                         </div>
                         <div>
-                          <span className="text-gray-600">Type:</span>
+                          <span className="text-gray-600">{t('shift_requests.shift_details.type')}:</span>
                           <p className="font-medium">{request.shift.shiftType}</p>
                         </div>
                         <div>
-                          <span className="text-gray-600">Requested:</span>
+                          <span className="text-gray-600">{t('shift_requests.shift_details.requested')}:</span>
                           <p className="font-medium">{formatDate(request.requestedAt)}</p>
                         </div>
                       </div>
                       {request.reason && (
                         <div className="mt-3 pt-3 border-t border-gray-200">
-                          <span className="text-gray-600 text-sm">Reason:</span>
+                          <span className="text-gray-600 text-sm">{t('shift_requests.shift_details.reason')}:</span>
                           <p className="text-sm text-gray-800 mt-1">{request.reason}</p>
                         </div>
                       )}

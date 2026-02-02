@@ -80,5 +80,36 @@
   "error": {
     "failed_to_load": "Failed to load data",
     "retry": "Retry"
+  },
+  "employee_view": {
+    "headline": "Keep track of your day",
+    "no_shift": "No approved shift scheduled for today",
+    "no_shift_hint": "You can still punch in for unscheduled work",
+    "punch_in": "Punch In",
+    "punch_out": "Punch Out",
+    "punching_in": "Punching In...",
+    "punching_out": "Punching Out...",
+    "start_break": "Start Break",
+    "end_break": "End Break",
+    "on_break": "On Break"
+  },
+  "location_modal": {
+    "title": "Location Verification",
+    "subtitle": "Verify you're at your workplace",
+    "location_required": "Location Required",
+    "location_required_description": "To punch in/out, we need to verify you're at an authorized workplace location. This helps ensure accurate time tracking.",
+    "checking_location": "Checking Location...",
+    "check_my_location": "Check My Location",
+    "location_prompt_hint": "You may be prompted to allow location access",
+    "location_verified": "Location Verified",
+    "location_not_authorized": "Location Not Authorized",
+    "location_details": "Location Details",
+    "nearest_workplace": "Nearest workplace",
+    "your_distance": "Your distance",
+    "distance_away": "{{distance}}m away",
+    "required_range": "Required range",
+    "within_range": "Within {{radius}}m",
+    "try_again": "Try Again",
+    "close": "Close"
   }
 }

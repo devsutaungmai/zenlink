@@ -1,7 +1,7 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Bell, Users, Calendar, Clock } from "lucide-react"
+import { Bell, Calendar, Clock } from "lucide-react"
 import { useTranslation } from 'react-i18next'
 import { useRouter } from 'next/navigation'
 
@@ -42,14 +42,6 @@ export default function QuickActionsCard({
           <Button 
             variant="outline" 
             className="border-sky-300 text-sky-700 hover:bg-sky-50 py-3"
-            onClick={() => router.push('/dashboard/teams')}
-          >
-            <Users className="w-4 h-4 mr-2" />
-            {t('quick_actions.team')}
-          </Button>
-          <Button 
-            variant="outline" 
-            className="border-sky-300 text-sky-700 hover:bg-sky-50 py-3"
             onClick={onShowSchedule}
           >
             <Calendar className="w-4 h-4 mr-2" />
@@ -62,14 +54,6 @@ export default function QuickActionsCard({
           >
             <Clock className="w-4 h-4 mr-2" />
             {t('quick_actions.availability')}
-          </Button>
-          <Button 
-            variant="outline" 
-            className="border-sky-300 text-sky-700 hover:bg-sky-50 py-3"
-            onClick={() => router.push('/dashboard/sick-leaves')}
-          >
-            <Bell className="w-4 h-4 mr-2" />
-            {t('quick_actions.sick_leave')}
           </Button>
         </div>
       </CardContent>

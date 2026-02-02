@@ -133,7 +133,7 @@ function EmployeeDashboardContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const employeeId = searchParams.get('employeeId')
-  const { t } = useTranslation('employee-dashboard')
+  const { t, i18n } = useTranslation('employee-dashboard')
   
   const [employee, setEmployee] = useState<Employee | null>(null)
   const [activeShift, setActiveShift] = useState<Shift | null>(null)
@@ -229,7 +229,7 @@ function EmployeeDashboardContent() {
   // Location validation temporarily disabled
 
   const formatTime = (date: Date) => {
-    return date.toLocaleTimeString("en-US", {
+    return date.toLocaleTimeString(i18n.language, {
       hour12: true,
       hour: "numeric",
       minute: "2-digit",
@@ -238,7 +238,7 @@ function EmployeeDashboardContent() {
   }
 
   const formatDate = (date: Date) => {
-    return date.toLocaleDateString("en-US", {
+    return date.toLocaleDateString(i18n.language, {
       weekday: "long",
       year: "numeric",
       month: "long",
@@ -250,7 +250,7 @@ function EmployeeDashboardContent() {
   const formatShiftDate = (dateString: string) => {
     try {
       const date = new Date(dateString)
-      return date.toLocaleDateString('en-US', { 
+      return date.toLocaleDateString(i18n.language, { 
         weekday: 'long', 
         month: 'long', 
         day: 'numeric' 
@@ -806,14 +806,6 @@ function EmployeeDashboardContent() {
                   <Button 
                     variant="outline" 
                     className="border-sky-300 text-sky-700 hover:bg-sky-50 py-3"
-                    onClick={() => router.push('/dashboard/teams')}
-                  >
-                    <Users className="w-4 h-4 mr-2" />
-                    {t('quick_actions.team')}
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="border-sky-300 text-sky-700 hover:bg-sky-50 py-3"
                     onClick={() => {
                       setShowScheduleView(true)
                       if (employee) fetchMonthlyShifts(employee.id, scheduleDate)
@@ -829,14 +821,6 @@ function EmployeeDashboardContent() {
                   >
                     <Clock className="w-4 h-4 mr-2" />
                     {t('quick_actions.availability')}
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="border-sky-300 text-sky-700 hover:bg-sky-50 py-3"
-                    onClick={() => router.push('/dashboard/sick-leaves')}
-                  >
-                    <Bell className="w-4 h-4 mr-2" />
-                    {t('quick_actions.sick_leave')}
                   </Button>
                 </div>
               </CardContent>
@@ -900,7 +884,7 @@ function EmployeeDashboardContent() {
                         {formatShiftDate(todayShift.date)}
                       </h3>
                       <div className="text-2xl font-bold text-sky-600 mb-2">
-                        {todayShift.startTime.substring(0, 5)} - {todayShift.endTime ? todayShift.endTime.substring(0, 5) : 'Active'}
+                        {todayShift.startTime.substring(0, 5)} - {todayShift.endTime ? todayShift.endTime.substring(0, 5) : t('common.active')}
                       </div>
                       {todayShift.employeeGroup && (
                         <div className="flex justify-center gap-4 text-sm text-sky-600">
@@ -1013,10 +997,10 @@ function EmployeeDashboardContent() {
                       
                       const isTomorrow = shiftDate.toDateString() === tomorrow.toDateString()
                       
-                      const dayOfWeek = shiftDate.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase()
+                      const dayOfWeek = shiftDate.toLocaleDateString(i18n.language, { weekday: 'short' }).toUpperCase()
                       const formattedDate = isTomorrow 
                         ? t('upcoming_shifts.tomorrow')
-                        : shiftDate.toLocaleDateString('en-US', { 
+                        : shiftDate.toLocaleDateString(i18n.language, { 
                             month: 'short', 
                             day: 'numeric' 
                           })
@@ -1183,6 +1167,15 @@ function EmployeeDashboardContent() {
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <div className="flex items-center space-x-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowScheduleView(false)}
+                  className="border-sky-300 text-sky-700 hover:bg-sky-50"
+                >
+                  <ChevronLeft className="w-4 h-4 mr-1" />
+                  {t('schedule.back')}
+                </Button>
                 <h2 className="text-xl font-semibold text-sky-700">
                   {t('schedule.title')}
                 </h2>

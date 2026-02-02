@@ -80,5 +80,36 @@
   "error": {
     "failed_to_load": "Daten konnten nicht geladen werden",
     "retry": "Erneut versuchen"
+  },
+  "employee_view": {
+    "headline": "Behalten Sie Ihren Tag im Blick",
+    "no_shift": "Keine genehmigte Schicht für heute geplant",
+    "no_shift_hint": "Sie können trotzdem für ungeplante Arbeit einstempeln",
+    "punch_in": "Einstempeln",
+    "punch_out": "Ausstempeln",
+    "punching_in": "Stempel ein...",
+    "punching_out": "Stempel aus...",
+    "start_break": "Pause starten",
+    "end_break": "Pause beenden",
+    "on_break": "In der Pause"
+  },
+  "location_modal": {
+    "title": "Standortverifizierung",
+    "subtitle": "Bestätigen Sie, dass Sie an Ihrem Arbeitsplatz sind",
+    "location_required": "Standort erforderlich",
+    "location_required_description": "Um ein-/auszustempeln, müssen wir überprüfen, dass Sie sich an einem autorisierten Arbeitsplatz befinden. Dies gewährleistet eine genaue Zeiterfassung.",
+    "checking_location": "Standort wird überprüft...",
+    "check_my_location": "Meinen Standort prüfen",
+    "location_prompt_hint": "Sie werden möglicherweise aufgefordert, den Standortzugriff zu erlauben",
+    "location_verified": "Standort verifiziert",
+    "location_not_authorized": "Standort nicht autorisiert",
+    "location_details": "Standortdetails",
+    "nearest_workplace": "Nächster Arbeitsplatz",
+    "your_distance": "Ihre Entfernung",
+    "distance_away": "{{distance}}m entfernt",
+    "required_range": "Erforderliche Reichweite",
+    "within_range": "Innerhalb von {{radius}}m",
+    "try_again": "Erneut versuchen",
+    "close": "Schließen"
   }
 }

@@ -87,6 +87,7 @@
   },
   "schedule": {
     "title": "Mein Zeitplan",
+    "back": "Zurück",
     "loading": "Zeitplan wird geladen...",
     "no_shifts": "Keine Schichten für diesen Monat geplant",
     "previous_month": "Vorheriger Monat",
@@ -120,6 +121,74 @@
       "november": "November",
       "december": "Dezember"
     }
+  },
+  "shift_requests": {
+    "title": "Schichtanfragen",
+    "subtitle": "Schichttausch-Anfragen prüfen und beantworten",
+    "tabs": {
+      "active": "Aktive Anfragen",
+      "rejected": "Abgelehnt"
+    },
+    "loading": "Anfragen werden geladen...",
+    "empty_active_title": "Keine aktiven Anfragen",
+    "empty_active_description": "Sie haben keine Schichtanfragen, die Ihre Aufmerksamkeit erfordern oder auf eine Admin-Genehmigung warten.",
+    "empty_rejected_title": "Keine abgelehnten Anfragen",
+    "empty_rejected_description": "Sie haben keine abgelehnten Schichtanfragen.",
+    "request_title": "Schicht-{{type}} Anfrage",
+    "types": {
+      "swap": "Tausch",
+      "handover": "Übergabe"
+    },
+    "from_label": "Von",
+    "status": {
+      "pending_response": "Antwort ausstehend",
+      "accepted_waiting_admin": "Akzeptiert – wartet auf Admin-Genehmigung"
+    },
+    "shift_details": {
+      "title": "Schichtdetails",
+      "date": "Datum",
+      "time": "Zeit",
+      "open_end": "Offenes Ende",
+      "type": "Typ",
+      "requested": "Angefragt",
+      "reason": "Grund"
+    },
+    "accepting": "Wird akzeptiert...",
+    "rejecting": "Wird abgelehnt...",
+    "accept_request": "Anfrage akzeptieren",
+    "reject_request": "Anfrage ablehnen",
+    "accepted_title": "Anfrage akzeptiert",
+    "accepted_description": "Sie haben diese Anfrage akzeptiert. Sie wartet nun auf die Admin-Genehmigung.",
+    "rejected_by_you": "Von Ihnen abgelehnt",
+    "rejected_by_admin": "Vom Admin abgelehnt",
+    "actions": {
+      "accept": "akzeptieren",
+      "reject": "ablehnen"
+    },
+    "toast_success": "Anfrage erfolgreich {{action}}t!",
+    "toast_failed_action": "Anfrage konnte nicht {{action}} werden"
+  },
+  "availability_page": {
+    "title": "Meine Verfügbarkeit",
+    "back": "Zurück",
+    "description": "Legen Sie Ihre Verfügbarkeit für jeden Tag fest. Wählen Sie mehrere Tage aus und markieren Sie diese unten als verfügbar oder nicht verfügbar.",
+    "loading_user": "Benutzerdaten werden geladen...",
+    "employee_only": "Diese Seite ist nur für Mitarbeitende zugänglich. Bitte melden Sie sich mit Ihrer Mitarbeiter-PIN an.",
+    "loading_calendar": "Verfügbarkeitskalender wird geladen...",
+    "toast_failed_load": "Verfügbarkeitsdaten konnten nicht geladen werden",
+    "toast_select_date": "Bitte wählen Sie mindestens ein Datum aus",
+    "toast_failed_update": "Verfügbarkeit konnte nicht aktualisiert werden",
+    "available": "Verfügbar",
+    "unavailable": "Nicht verfügbar",
+    "toast_marked": "{{count}} Tag(e) als {{status}} markiert",
+    "selected_days": "{{count}} Tag(e) ausgewählt",
+    "select_hint": "Klicken Sie auf Daten, um sie auszuwählen",
+    "clear_selection": "Auswahl löschen",
+    "mark_unavailable": "Als nicht verfügbar markieren",
+    "mark_available": "Als verfügbar markieren",
+    "legend": "Legende",
+    "selected": "Ausgewählt",
+    "past_date": "Vergangenes Datum"
   },
   "common": {
     "general": "Allgemein",
