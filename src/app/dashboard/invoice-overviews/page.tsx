@@ -480,7 +480,7 @@ export default function InvoiceOverview() {
                                             {isColumnVisible('customer') && <td className="px-4 py-3">
                                                 <div className="text-sm">
                                                     <Link
-                                                        href={`/dashboard/customers/create?customerId=${invoice.customer?.id}&overview=true`}
+                                                         href={`/dashboard/customers/${invoice.customer?.id}/edit?overview=true`}
                                                     >
                                                         <div className="text-blue-600 hover:underline cursor-pointer">
                                                             {invoice.customer?.customerName}
@@ -750,8 +750,8 @@ export default function InvoiceOverview() {
                                             {invoice.status !== InvoiceStatus.DRAFT ? formatInvoiceNumberForDisplay(invoice.invoiceNumber) : "-"}
                                         </h3>}
                                     </div>
-                                   { isColumnVisible('customer')&&<Link
-                                        href={`/dashboard/customers/create?customerId=${invoice.customer?.id}&overview=true`}
+                                   {isColumnVisible('customer')&&<Link
+                                        href={`/dashboard/customers/${invoice.customer?.id}/edit?overview=true`}
                                     >
                                         <p className="text-xs text-gray-600 ml-6">{invoice.customer?.customerName}</p>
                                     </Link>}

@@ -15,8 +15,11 @@ import { useCustomerSettings } from '@/shared/hooks/useCustomerSettings'
 import { CustomerFieldSettingsDialog } from '@/components/invoice/CustomerFieldSettingsDialog'
 import { formatCustomerNumberForDisplay } from '@/shared/lib/invoiceHelper'
 
-export default function EditCustomersPage({ params }: { params: Promise<{ id: string }> }) {
+export default function EditCustomersPage({ params,searchParams }: { params: Promise<{ id: string}>,  searchParams: Promise<{ overview?: string }>} ) {
     const resolvedParams = use(params)
+    const resolvedSearchParams = use(searchParams)
+    const overviewMode = resolvedSearchParams.overview === 'true'
+    console.log("Overview mode:", overviewMode);
     const router = useRouter()
     const { t } = useTranslation()
     const [loading, setLoading] = useState(false)
@@ -132,7 +135,7 @@ export default function EditCustomersPage({ params }: { params: Promise<{ id: st
     useEffect(() => {
         fetchCustomer()
         fetchDepartments()
-    }, [resolvedParams.id])
+    }, [resolvedParams.id,overviewMode])
 
     const fetchDepartments = async () => {
         try {
@@ -236,6 +239,13 @@ export default function EditCustomersPage({ params }: { params: Promise<{ id: st
             setLoading(false)
         }
     }
+    const handleBack = () => {
+        if (window.history.length > 1) {
+            router.back()
+        } else {
+            router.push("/dashboard/customers")
+        }
+    }
     if (fetchingLoading) {
         return (
             <div className="flex items-center justify-center h-64">
@@ -251,18 +261,20 @@ export default function EditCustomersPage({ params }: { params: Promise<{ id: st
                 <div className="flex items-center justify-between">
                     <div>
                         <div className="flex items-center gap-3 mb-2">
-                            <Link
+                            {/* <Link
                                 href="/dashboard/customers"
                                 className="p-2 hover:bg-white/50 rounded-lg transition-colors"
-                            >
+                            > */}
+                            <button onClick={handleBack}>
                                 <ArrowLeftIcon className="w-5 h-5 text-gray-600" />
-                            </Link>
+                            </button>
+                            {/* </Link> */}
                             <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                                Edit Customer
+                                {overviewMode ? "View Customer" : "Edit Customer"}
                             </h1>
                         </div>
                         <p className="mt-2 text-gray-600 ml-14">
-                            Update the customer
+                            {overviewMode ? "Viewing customer details" : "Update the customer information"}
                         </p>
                     </div>
                     <div className="hidden md:flex items-center space-x-2">

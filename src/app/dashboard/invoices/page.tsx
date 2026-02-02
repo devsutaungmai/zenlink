@@ -681,10 +681,10 @@ export default function InvoicesPage() {
                                                 </Link>
                                             </div>
                                         </td>}
-                                        {isColumnVisible('customer') && <td className="px-6 py-4">
+                                        {isColumnVisible('customer') && invoice.customer && <td className="px-6 py-4">
                                             <div className="text-sm text-gray-900">
                                                 <Link
-                                                    href={`/dashboard/customers/create?customerId=${invoice.customer?.id}&overview=true`}
+                                                    href={`/dashboard/customers/${invoice.customer?.id}/edit?overview=true`}
                                                 >
                                                     <span className="text-sm font-medium text-blue-600 hover:underline cursor-pointer">
 
@@ -903,7 +903,7 @@ export default function InvoicesPage() {
                                                 </div>
                                                 {isColumnVisible('customer') && <p className="text-sm text-gray-600">
                                                     <Link
-                                                        href={`/dashboard/customers/create?customerId=${invoice.customer?.id}&overview=true`}
+                                                         href={`/dashboard/customers/${invoice.customer?.id}/edit?overview=true`}
                                                     >{invoice.customer?.customerName}</Link>
                                                 </p>}
                                             </div>

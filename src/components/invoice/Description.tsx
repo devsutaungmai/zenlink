@@ -34,7 +34,7 @@ export function Description({
 
       {/* Customer */}
       <Link
-        href={`/dashboard/customers/create?customerId=${customerId}&overview=true`}
+        href={`/dashboard/customers/${customerId}/edit?overview=true`}
         className="text-blue-600 hover:underline"
       >
         ({customerName})
