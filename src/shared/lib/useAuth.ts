@@ -21,6 +21,9 @@ export function useAuth() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Login failed')
 
+      // Set session mode in sessionStorage (tab-specific) so this tab uses admin session
+      sessionStorage.setItem('zenlink_session_mode', 'admin')
+      
       router.push('/dashboard')
     } catch (err: any) {
       setError(err.message)

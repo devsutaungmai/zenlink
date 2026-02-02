@@ -34,7 +34,7 @@ interface EmployeeProfile {
 
 export default function EmployeeProfileEditPage() {
   const router = useRouter()
-  const { user } = useUser()
+  const { user } = useUser({ preferEmployee: true })
   const [profile, setProfile] = useState<EmployeeProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)

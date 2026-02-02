@@ -18,7 +18,7 @@ interface Availability {
 export default function EmployeeAvailabilityPage() {
   const router = useRouter()
   const { t, i18n } = useTranslation('employee-dashboard')
-  const { user, loading: userLoading } = useUser()
+  const { user, loading: userLoading } = useUser({ preferEmployee: true })
   const [currentDate, setCurrentDate] = useState(new Date())
   const [availabilities, setAvailabilities] = useState<Availability[]>([])
   const [selectedDates, setSelectedDates] = useState<Set<string>>(new Set())

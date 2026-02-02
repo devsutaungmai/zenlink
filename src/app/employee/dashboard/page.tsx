@@ -573,9 +573,10 @@ function EmployeeDashboardContent() {
   }
 
   const handleLogout = () => {
-    // Clear both employee and admin tokens to ensure clean logout
+    // Only clear employee token - preserve admin session in other tabs
     document.cookie = 'employee_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;'
-    document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;'
+    // Clear tab-specific session mode
+    sessionStorage.removeItem('zenlink_session_mode')
     router.push('/time-tracking')
   }
 

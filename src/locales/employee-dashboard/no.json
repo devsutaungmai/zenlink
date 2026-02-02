@@ -45,7 +45,8 @@
     "scheduled": "Planlagt",
     "working": "Arbeider",
     "completed": "Fullført",
-    "cancelled": "Avbrutt"
+    "cancelled": "Avbrutt",
+    "approved": "Godkjent"
   },
   "upcoming_shifts": {
     "title": "Kommende skift",
