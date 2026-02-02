@@ -64,6 +64,27 @@
         "unscheduled_label": "Uplanlagt arbeid",
         "active_admin": "Medarbeidere stemplet inn: {{count}}",
         "loading": "Laster oppmøte..."
+      },
+      "punch_clock": {
+        "headline": "Hold oversikt over dagen din",
+        "today": "I dag",
+        "active": "Aktiv",
+        "approved": "Godkjent",
+        "punched_in": "Stemplet inn kl. {{time}}",
+        "on_break": "På pause",
+        "ready": "Klar til å stemple inn",
+        "punching_in": "Stempler inn...",
+        "punch_in": "Stemple inn",
+        "punching_out": "Stempler ut...",
+        "punch_out": "Stemple ut",
+        "starting_break": "Starter...",
+        "start_break": "Start pause",
+        "ending_break": "Avslutter...",
+        "end_break": "Avslutt pause",
+        "no_shift": "Ingen godkjent vakt planlagt i dag",
+        "no_shift_hint": "Du kan fortsatt stemple inn for uplanlagt arbeid",
+        "unscheduled": "Uplanlagt arbeid",
+        "ready_unscheduled": "Klar til å stemple inn for uplanlagt arbeid"
       }
     },
     "attendance_feed": {
@@ -234,6 +255,7 @@
     },
     "create_page": {
       "title": "Opprett ny medarbeider",
+      "description": "Opprett en ny medarbeider og administrer informasjonen deres",
       "loading": "Laster skjemadata...",
       "back_to_dashboard": "Tilbake til dashbord",
       "try_again": "Prøv igjen"
@@ -281,7 +303,6 @@
       "mobile": "Mobil",
       "bank_account": "Bankkonto",
       "team_leader": "Teamleder",
-      "saving": "Lagrer...",
       "search_country": "Søk land...",
       "mobile_placeholder": "12345678",
       "email_placeholder": "medarbeider@firma.no",
@@ -306,7 +327,11 @@
       "photo_type_error": "Kun JPEG, PNG og WebP-bilder er tillatt",
       "photo_size_error": "Filstørrelsen må være mindre enn 5MB",
       "photo_upload_failed": "Kunne ikke laste opp bilde",
-      "photo_delete_failed": "Kunne ikke slette bilde"
+      "photo_delete_failed": "Kunne ikke slette bilde",
+      "access_roles_hint": "Velg avdelinger først for å se avdelingsspesifikke roller. Roller uten avdelingsbegrensninger vises alltid.",
+      "access_roles_hint_filtered": "Viser roller tilgjengelig for valgte avdelinger og roller uten avdelingsbegrensninger.",
+      "contract_type_hint": "Kontrakttype bestemmer overtidsberettigelse og ukentlige timegrenser.",
+      "saving": "Lagrer..."
     },
     "phone_filter_placeholder": "Filtrer etter telefonnummer",
     "tabs": {
@@ -399,6 +424,7 @@
   "availability": {
     "title": "Medarbeidernes tilgjengelighet",
     "description": "Administrer og vis medarbeidernes tilgjengelighet på tvers av alle avdelinger",
+    "employee_list_title": "Liste over medarbeidernes tilgjengelighet",
     "stats": {
       "total_employees": "Totalt antall medarbeidere",
       "available_today": "Tilgjengelige i dag",
@@ -547,6 +573,11 @@
       "paid_break_hint": "Kryss av hvis denne pausetiden skal inkluderes i lønnsberegninger",
       "break_duration": "Pausevarighet:",
       "break_guidelines": "Retningslinjer for pausetid",
+      "guideline_unpaid": "• Ubetalte pauser trekkes automatisk fra totale arbeidstimer",
+      "guideline_paid": "• Betalte pauser er inkludert i lønnsberegninger og trekkes ikke fra timer",
+      "guideline_start": "• Sørg for at pause starttid er etter skift starttid",
+      "guideline_end": "• Sørg for at pause sluttid er før skift sluttid",
+      "guideline_lunch": "• Standard lunsjpause er vanligvis 1 time (12:00 - 13:00)",
       "read_only_notice": "Du viser dette skiftet i skrivebeskyttet modus. Du har ikke tillatelse til å redigere skift.",
       "employee_notice": "Som medarbeider kan du se skift, men ikke opprette eller redigere dem.",
       "delete_confirm_title": "Slette dette skiftet?",
@@ -706,7 +737,7 @@
     "cannotDeleteSystem": "Systemroller kan ikke slettes",
     "cannotDeleteWithUsers": "Kan ikke slette rolle som er tildelt brukere. Vennligst tilordne brukerne på nytt først.",
     "system": "System",
-    "default": "Standard",
+    "default": "misligholde",
     "permissionsLabel": "Tillatelser",
     "usersLabel": "Brukere",
     "categories": "Kategorier",
@@ -770,7 +801,7 @@
     "yes": "Ja",
     "no": "Nei",
     "search": "Søk",
-    "filter": "Filter",
+    "filter": "filtern",
     "reset": "Tilbakestill",
     "clear": "Fjern",
     "all": "Alle",
@@ -882,6 +913,34 @@
       "success_created": "Kontrakt opprettet vellykket!",
       "error_title": "Oops...",
       "error_message": "Noe gikk galt!"
+    },
+    "preview_modal": {
+      "title": "Forhåndsvisning av kontrakt",
+      "employee": "Medarbeider:",
+      "employee_group": "Medarbeidergruppe:",
+      "start_date": "Startdato:",
+      "end_date": "Sluttdato:",
+      "indefinite": "Ubestemt",
+      "contract_person": "Kontraktperson:",
+      "template": "Mal:"
+    },
+    "signature_modal": {
+      "title": "Elektronisk signatur",
+      "contract_info": "Kontraktinformasjon",
+      "employee": "Medarbeider:",
+      "template": "Mal:",
+      "start_date": "Startdato:",
+      "end_date": "Sluttdato:",
+      "indefinite": "Ubestemt",
+      "signature_label": "Din digitale signatur *",
+      "signature_placeholder": "Skriv inn ditt fulle navn her",
+      "signature_help": "Dette vil være din juridiske signatur på kontrakten.",
+      "signature_preview": "Signaturforhåndsvisning",
+      "signed_on": "Signert elektronisk den {{date}} kl. {{time}}",
+      "legal_agreement": "Juridisk avtale",
+      "legal_text": "Ved å signere denne kontrakten elektronisk, godtar du at din elektroniske signatur er juridisk ekvivalent med din manuelle signatur og at du er juridisk bundet av vilkårene i denne kontrakten.",
+      "cancel": "Avbryt",
+      "sign_button": "Signer kontrakt"
     }
   },
   "common_extra": {

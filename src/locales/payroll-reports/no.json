@@ -33,5 +33,20 @@
   "employee": "Medarbeider",
   "period": "Periode",
   "hours": "Timer",
-  "status": "Status"
+  "status": "Status",
+  "regular": "Vanlig",
+  "overtime": "Overtid",
+  "status_draft": "Utkast",
+  "status_approved": "Godkjent",
+  "status_paid": "Betalt",
+  "missing_info_title": "Manglende Informasjon",
+  "missing_dates_text": "Vennligst velg både start- og sluttdato.",
+  "success_title": "Suksess!",
+  "report_generated": "Rapport generert med {{count}} oppføringer.",
+  "error_title": "Feil!",
+  "error_generate_report": "Kunne ikke generere rapport",
+  "no_data_title": "Ingen Data",
+  "no_data_text": "Vennligst generer en rapport først.",
+  "export_success_title": "Suksess!",
+  "export_success_text": "Lønnsrapport har blitt eksportert."
 }

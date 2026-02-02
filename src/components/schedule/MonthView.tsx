@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from 'react'
 import { format, addDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, isSameDay } from 'date-fns'
+import { useTranslation } from 'react-i18next'
+import { formatDate } from '@/shared/lib/dateLocale'
 import { Employee, EmployeeGroup } from '@prisma/client'
 import { ShiftWithRelations } from '@/types/schedule'
 import { PlusIcon } from '@heroicons/react/24/outline'
@@ -30,7 +32,7 @@ export default function MonthView({
   isEmployeeUnavailable,
   onUnavailableClick
 }: MonthViewProps) {
-  
+  const { t, i18n } = useTranslation('schedule')
   const [selectedDayShifts, setSelectedDayShifts] = useState<{ date: Date; shifts: ShiftWithRelations[] } | null>(null)
   
   // Generate calendar days for the month view
@@ -71,8 +73,9 @@ export default function MonthView({
     return shiftsByDate.get(dateKey) || []
   }
 
-  const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-  const weekDaysMobile = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+  const weekDayKeys = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']
+  const weekDays = weekDayKeys.map(key => t(`weekdays.${key}`))
+  const weekDaysMobile = weekDayKeys.map(key => t(`weekdays_short.${key}`))
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
@@ -258,7 +261,7 @@ export default function MonthView({
         <DialogContent className="max-w-2xl max-h-[85vh] sm:max-h-[80vh] flex flex-col p-0 gap-0">
           <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 border-b">
             <DialogTitle className="text-base sm:text-lg">
-              {selectedDayShifts && format(selectedDayShifts.date, 'EEEE, MMMM d, yyyy')}
+              {selectedDayShifts && formatDate(selectedDayShifts.date, 'EEEE, MMMM d, yyyy', i18n.language)}
             </DialogTitle>
             <p className="text-xs sm:text-sm text-gray-500 mt-1">
               {selectedDayShifts?.shifts.length} shift{selectedDayShifts?.shifts.length !== 1 ? 's' : ''}

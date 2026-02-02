@@ -1,6 +1,9 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { format } from 'date-fns'
+import { useTranslation } from 'react-i18next'
+import { formatDate } from '@/shared/lib/dateLocale'
 import { ChevronDownIcon, ChevronRightIcon, PlusIcon } from '@heroicons/react/24/outline'
+import { Clock, Pencil } from 'lucide-react'
 import { Employee } from '@prisma/client'
 import SpanningShiftCard from './SpanningShiftCard'
 import { ShiftWithRelations } from '@/types/schedule'
@@ -15,10 +18,12 @@ interface EmployeeGroupedViewProps {
   onToggleGroup: (groupId: string) => void
   onEditShift: (shift: ShiftWithRelations) => void
   onAddShift?: (data?: { date?: string; employeeId?: string }) => void
+  onCreateAttendance?: (shift: ShiftWithRelations) => void
   isEmployeeUnavailable?: (employeeId: string, date: string) => boolean
   onUnavailableClick?: (employeeId: string, date: string) => void
   canCreateShifts?: boolean
   canEditShifts?: boolean
+  canCreateAttendance?: boolean
 }
 
 export default function EmployeeGroupedView({
@@ -29,11 +34,14 @@ export default function EmployeeGroupedView({
   onToggleGroup,
   onEditShift,
   onAddShift = () => {},
+  onCreateAttendance,
   isEmployeeUnavailable,
   onUnavailableClick,
   canCreateShifts = true,
-  canEditShifts = true
+  canEditShifts = true,
+  canCreateAttendance = false
 }: EmployeeGroupedViewProps) {
+  const { t, i18n } = useTranslation('schedule')
   const { currencySymbol } = useCurrency()
   const [modalState, setModalState] = useState<{
     isOpen: boolean
@@ -46,6 +54,33 @@ export default function EmployeeGroupedView({
     date: null,
     title: ''
   })
+  const [contextMenu, setContextMenu] = useState<{
+    show: boolean
+    x: number
+    y: number
+    shift: ShiftWithRelations | null
+  }>({ show: false, x: 0, y: 0, shift: null })
+  const contextMenuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (contextMenuRef.current && !contextMenuRef.current.contains(event.target as Node)) {
+        setContextMenu(prev => ({ ...prev, show: false }))
+      }
+    }
+    if (contextMenu.show) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [contextMenu.show])
+
+  const handleShiftContextMenu = (e: React.MouseEvent, shift: ShiftWithRelations) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setContextMenu({ show: true, x: e.clientX, y: e.clientY, shift })
+  }
   
   const groupOverlappingShifts = (shifts: ShiftWithRelations[]) => {
     const sortedShifts = [...shifts].sort((a, b) => {
@@ -120,7 +155,7 @@ export default function EmployeeGroupedView({
       isOpen: true,
       shifts,
       date,
-      title: `${employeeName} - All Shifts`
+      title: `${employeeName} - ${t('week_view.shifts')}`
     })
   }
 
@@ -161,7 +196,7 @@ export default function EmployeeGroupedView({
               return (
                 <div key={i} className="text-center py-3 border-r last:border-r-0">
                   <div className={`text-xs font-medium mb-0.5 ${isToday ? 'text-[#31BCFF]' : 'text-gray-500'}`}>
-                    {format(date, 'EEE')}
+                    {formatDate(date, 'EEE', i18n.language)}
                   </div>
                   <div className={`text-xl font-bold ${isToday ? 'text-[#31BCFF]' : 'text-gray-900'}`}>
                     {format(date, 'd')}
@@ -176,7 +211,7 @@ export default function EmployeeGroupedView({
         <div className="p-3 space-y-3">
           {employees.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              <p className="text-sm">No employees found</p>
+              <p className="text-sm">{t('header.no_employees_found')}</p>
             </div>
           ) : (
             employees.map((employee) => {
@@ -196,7 +231,7 @@ export default function EmployeeGroupedView({
                           {employee.firstName} {employee.lastName}
                         </div>
                         <div className="text-xs text-gray-500">
-                          {getEmployeeTotalHours(employee.id)} / {currencySymbol}0.00 / {employeeShiftsCount} Shift{employeeShiftsCount !== 1 ? 's' : ''}
+                          {getEmployeeTotalHours(employee.id)} / {currencySymbol}0.00 / {employeeShiftsCount} {t('week_view.shifts')}
                         </div>
                       </div>
                     </div>
@@ -318,10 +353,10 @@ export default function EmployeeGroupedView({
             return (
               <div key={i} className={`p-2 text-center border-r ${isToday ? 'bg-blue-50' : ''}`}>
                 <div className={`text-xs font-semibold ${isToday ? 'text-blue-700' : 'text-gray-900'}`}>
-                  {isToday ? 'Today' : format(date, 'EEE, MMM d')}
+                  {isToday ? t('week_view.today') : formatDate(date, 'EEE, MMM d', i18n.language)}
                 </div>
                 <div className="text-[10px] text-gray-600 mt-0.5">
-                  + {dayShifts.length} Shifts
+                  + {dayShifts.length} {t('week_view.shifts')}
                 </div>
               </div>
             );
@@ -343,7 +378,7 @@ export default function EmployeeGroupedView({
                   {employee.firstName} {employee.lastName}
                 </div>
                 <div className="text-xs text-gray-500 mt-0.5">
-                  {getEmployeeTotalHours(employee.id)} / {currencySymbol} 0.00 / {employeeShiftsCount} Shift{employeeShiftsCount !== 1 ? 's' : ''}
+                  {getEmployeeTotalHours(employee.id)} / {currencySymbol} 0.00 / {employeeShiftsCount} {t('week_view.shifts')}
                 </div>
               </div>
               
@@ -389,6 +424,7 @@ export default function EmployeeGroupedView({
                             <div
                               key={shift.id}
                               onClick={() => onEditShift(shift)}
+                              onContextMenu={(e) => handleShiftContextMenu(e, shift)}
                               className="mb-1 cursor-pointer"
                             >
                               <div 
@@ -458,6 +494,40 @@ export default function EmployeeGroupedView({
         onEditShift={onEditShift}
         canEditShifts={canEditShifts}
       />
+
+      {/* Context Menu */}
+      {contextMenu.show && contextMenu.shift && (
+        <div
+          ref={contextMenuRef}
+          className="fixed bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-[100] min-w-[160px]"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+        >
+          {canEditShifts && (
+            <button
+              onClick={() => {
+                setContextMenu(prev => ({ ...prev, show: false }))
+                onEditShift(contextMenu.shift!)
+              }}
+              className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+            >
+              <Pencil className="w-4 h-4" />
+              {t('context_menu.edit_shift')}
+            </button>
+          )}
+          {canCreateAttendance && contextMenu.shift.employeeId && contextMenu.shift.approved && (
+            <button
+              onClick={() => {
+                setContextMenu(prev => ({ ...prev, show: false }))
+                onCreateAttendance?.(contextMenu.shift!)
+              }}
+              className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+            >
+              <Clock className="w-4 h-4" />
+              {t('context_menu.create_attendance')}
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

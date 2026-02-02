@@ -188,5 +188,64 @@
     "go_back": "Go back to schedule",
     "retry": "Retry",
     "applying": "Applying..."
+  },
+  "weekdays": {
+    "sun": "Sun",
+    "mon": "Mon",
+    "tue": "Tue",
+    "wed": "Wed",
+    "thu": "Thu",
+    "fri": "Fri",
+    "sat": "Sat"
+  },
+  "weekdays_short": {
+    "sun": "S",
+    "mon": "M",
+    "tue": "T",
+    "wed": "W",
+    "thu": "T",
+    "fri": "F",
+    "sat": "S"
+  },
+  "months": {
+    "january": "January",
+    "february": "February",
+    "march": "March",
+    "april": "April",
+    "may": "May",
+    "june": "June",
+    "july": "July",
+    "august": "August",
+    "september": "September",
+    "october": "October",
+    "november": "November",
+    "december": "December"
+  },
+  "month_view": {
+    "shifts_count": "{{count}} shift",
+    "shifts_count_plural": "{{count}} shifts",
+    "add_shift": "Add Shift"
+  },
+  "context_menu": {
+    "edit_shift": "Edit Shift",
+    "create_attendance": "Create Attendance",
+    "delete_shift": "Delete Shift"
+  },
+  "create_attendance": {
+    "title": "Create Attendance from Shift",
+    "description": "Create an attendance record for this scheduled shift",
+    "shift_info": "Shift Information",
+    "employee": "Employee",
+    "date": "Date",
+    "shift_time": "Shift Time",
+    "punch_in_time": "Punch In Time",
+    "punch_out_time": "Punch Out Time (Optional)",
+    "leave_empty_hint": "Leave empty if still working",
+    "cancel": "Cancel",
+    "create": "Create Attendance",
+    "creating": "Creating...",
+    "success": "Attendance created successfully",
+    "error": "Failed to create attendance",
+    "already_punched_in": "Employee is already punched in"
   }
 }

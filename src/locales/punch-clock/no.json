@@ -80,5 +80,36 @@
   "error": {
     "failed_to_load": "Kunne ikke laste data",
     "retry": "Prøv igjen"
+  },
+  "employee_view": {
+    "headline": "Hold oversikt over dagen din",
+    "no_shift": "Ingen godkjent vakt planlagt i dag",
+    "no_shift_hint": "Du kan fortsatt stemple inn for uplanlagt arbeid",
+    "punch_in": "Stemple inn",
+    "punch_out": "Stemple ut",
+    "punching_in": "Stempler inn...",
+    "punching_out": "Stempler ut...",
+    "start_break": "Start pause",
+    "end_break": "Avslutt pause",
+    "on_break": "På pause"
+  },
+  "location_modal": {
+    "title": "Stedsverifisering",
+    "subtitle": "Bekreft at du er på arbeidsplassen din",
+    "location_required": "Sted kreves",
+    "location_required_description": "For å stemple inn/ut må vi verifisere at du er på et autorisert arbeidssted. Dette sikrer nøyaktig tidsregistrering.",
+    "checking_location": "Sjekker sted...",
+    "check_my_location": "Sjekk mitt sted",
+    "location_prompt_hint": "Du kan bli bedt om å tillate stedstilgang",
+    "location_verified": "Sted verifisert",
+    "location_not_authorized": "Sted ikke autorisert",
+    "location_details": "Stedsdetaljer",
+    "nearest_workplace": "Nærmeste arbeidsplass",
+    "your_distance": "Din avstand",
+    "distance_away": "{{distance}}m unna",
+    "required_range": "Påkrevd rekkevidde",
+    "within_range": "Innen {{radius}}m",
+    "try_again": "Prøv igjen",
+    "close": "Lukk"
   }
 }

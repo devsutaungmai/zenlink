@@ -76,5 +76,21 @@
   "mobile": {
     "type": "Type",
     "salaryCode": "Lønnskode"
+  },
+  "stats": {
+    "totalRules": "Totale Regler",
+    "activeRules": "Aktive Regler"
+  },
+  "searchPlaceholder": "Søk lønnsregler...",
+  "showing": "Viser {{count}} av {{total}} regler",
+  "toast": {
+    "deleteConfirmTitle": "Er du sikker?",
+    "deleteConfirmText": "Du kan ikke angre dette!",
+    "deleteConfirmButton": "Ja, slett den!",
+    "cancelButton": "Avbryt",
+    "deleteSuccess": "Lønnsregel har blitt slettet.",
+    "deleteFailed": "Kunne ikke slette lønnsregel",
+    "saveFailed": "Kunne ikke lagre lønnsregel",
+    "cannotDelete": "Kan ikke slette lønnsregel med tilknyttede medarbeidersatser"
   }
 }

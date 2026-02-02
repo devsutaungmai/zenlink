@@ -145,7 +145,7 @@ export default function CreateEmployeePage() {
               {t('employees.create_page.title')}
             </h1>
             <p className="mt-2 text-gray-600">
-              Create a new employee and manage their information
+              {t('employees.create_page.description')}
             </p>
           </div>
         </div>

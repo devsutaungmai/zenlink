@@ -3,10 +3,12 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
+import { useTranslation } from 'react-i18next'
 import PayrollPeriodForm from '@/components/PayrollPeriodForm'
 import { PayrollPeriod, PayrollPeriodFormData } from '@/shared/types'
 
 export default function EditPayrollPeriodPage() {
+  const { t } = useTranslation('payroll-periods')
   const router = useRouter()
   const params = useParams()
   const [payrollPeriod, setPayrollPeriod] = useState<PayrollPeriod | null>(null)
@@ -55,11 +57,11 @@ export default function EditPayrollPeriodPage() {
       if (response.ok) {
         router.push('/dashboard/payroll-periods')
       } else {
-        alert(result.error || 'Failed to update payroll period')
+        alert(result.error || t('errors.update_failed'))
       }
     } catch (error) {
       console.error('Error updating payroll period:', error)
-      alert('Failed to update payroll period')
+      alert(t('errors.update_failed'))
     } finally {
       setIsSubmitting(false)
     }
@@ -77,13 +79,13 @@ export default function EditPayrollPeriodPage() {
     return (
       <div className="space-y-6">
         <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-12 border border-gray-200/50 shadow-lg text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Payroll Period Not Found</h1>
-          <p className="text-gray-600 mb-6">The payroll period you're looking for doesn't exist or has been deleted.</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">{t('edit_page.not_found_title')}</h1>
+          <p className="text-gray-600 mb-6">{t('edit_page.not_found_text')}</p>
           <Link
             href="/dashboard/payroll-periods"
             className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium rounded-xl hover:from-[#31BCFF]/90 hover:to-[#0EA5E9]/90 focus:outline-none focus:ring-2 focus:ring-[#31BCFF]/50 transform hover:scale-105 transition-all duration-200 shadow-lg"
           >
-            Back to Payroll Periods
+            {t('edit_page.back_button')}
           </Link>
         </div>
       </div>
@@ -105,10 +107,10 @@ export default function EditPayrollPeriodPage() {
           </Link>
           <div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-              Edit Payroll Period
+              {t('edit_page.title')}
             </h1>
             <p className="mt-2 text-gray-600">
-              Update payroll period: {payrollPeriod.name}
+              {t('edit_page.subtitle', { name: payrollPeriod.name })}
             </p>
           </div>
         </div>
@@ -127,7 +129,9 @@ export default function EditPayrollPeriodPage() {
               payrollPeriod.status === 'FINALIZED' ? 'bg-blue-100 text-blue-800 border-blue-200' :
               'bg-gray-100 text-gray-800 border-gray-200'
             }`}>
-              {payrollPeriod.status}
+              {payrollPeriod.status === 'DRAFT' ? t('form.status_draft') :
+               payrollPeriod.status === 'FINALIZED' ? t('form.status_finalized') :
+               t('form.status_closed')}
             </span>
           </div>
         </div>

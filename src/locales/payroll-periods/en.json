@@ -51,12 +51,30 @@
   
   "form": {
     "period_name": "Period Name",
+    "period_name_placeholder": "e.g., January 2025 Payroll",
     "start_date": "Start Date",
     "end_date": "End Date",
+    "status": "Status",
+    "status_draft": "Draft",
+    "status_finalized": "Finalized",
+    "status_closed": "Closed",
     "description": "Description",
     "create": "Create Period",
     "update": "Update Period",
+    "creating": "Creating...",
+    "updating": "Updating...",
     "cancel": "Cancel"
+  },
+  "create_page": {
+    "title": "Create Payroll Period",
+    "subtitle": "Set up a new payroll processing period"
+  },
+  "edit_page": {
+    "title": "Edit Payroll Period",
+    "subtitle": "Update payroll period: {{name}}",
+    "not_found_title": "Payroll Period Not Found",
+    "not_found_text": "The payroll period you're looking for doesn't exist or has been deleted.",
+    "back_button": "Back to Payroll Periods"
   },
   
   "confirm": {

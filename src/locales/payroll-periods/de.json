@@ -51,12 +51,30 @@
   
   "form": {
     "period_name": "Periodenname",
+    "period_name_placeholder": "z.B. Januar 2025 Lohn",
     "start_date": "Startdatum",
     "end_date": "Enddatum",
+    "status": "Status",
+    "status_draft": "Entwurf",
+    "status_finalized": "Abgeschlossen",
+    "status_closed": "Geschlossen",
     "description": "Beschreibung",
     "create": "Periode Erstellen",
     "update": "Periode Aktualisieren",
+    "creating": "Erstellt...",
+    "updating": "Aktualisiert...",
     "cancel": "Abbrechen"
+  },
+  "create_page": {
+    "title": "Lohnperiode Erstellen",
+    "subtitle": "Neue Lohnabrechnungsperiode einrichten"
+  },
+  "edit_page": {
+    "title": "Lohnperiode Bearbeiten",
+    "subtitle": "Lohnperiode aktualisieren: {{name}}",
+    "not_found_title": "Lohnperiode nicht gefunden",
+    "not_found_text": "Die gesuchte Lohnperiode existiert nicht oder wurde gelöscht.",
+    "back_button": "Zurück zu Lohnperioden"
   },
   
   "confirm": {

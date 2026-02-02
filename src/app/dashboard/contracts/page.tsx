@@ -191,8 +191,8 @@ export default function ContractsPage() {
   const handleDelete = async (contract: Contract) => {
     if (!canDeleteContract(contract)) {
       Swal.fire({
-        title: 'Contract Cannot Be Deleted',
-        text: 'Signed contracts must be voided or archived instead of deleted.',
+        title: t('contracts.cannot_delete_title'),
+        text: t('contracts.cannot_delete_text'),
         icon: 'info',
         confirmButtonColor: '#31BCFF'
       })
@@ -201,14 +201,14 @@ export default function ContractsPage() {
 
     try {
       const result = await Swal.fire({
-        title: 'Delete Contract?',
-        text: 'This action cannot be undone.',
+        title: t('contracts.delete_title'),
+        text: t('contracts.delete_text'),
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#31BCFF',
         cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, delete it!',
-        cancelButtonText: 'Cancel'
+        confirmButtonText: t('contracts.delete_confirm'),
+        cancelButtonText: t('common.cancel')
       })
 
       if (result.isConfirmed) {
@@ -220,8 +220,8 @@ export default function ContractsPage() {
           setContracts(prev => prev.filter(item => item.id !== contract.id))
           
           await Swal.fire({
-            title: 'Success!',
-            text: 'Contract deleted successfully.',
+            title: t('contracts.delete_success'),
+            text: t('contracts.delete_success_text'),
             icon: 'success',
             confirmButtonColor: '#31BCFF',
           })
@@ -232,8 +232,8 @@ export default function ContractsPage() {
     } catch (error) {
       console.error('Error deleting contract:', error)
       Swal.fire({
-        title: 'Error!',
-        text: 'Failed to delete contract.',
+        title: t('contracts.delete_error'),
+        text: t('contracts.delete_error_text'),
         icon: 'error',
         toast: true,
         position: 'top-end',
@@ -313,8 +313,8 @@ export default function ContractsPage() {
   const handleSign = async (contract: Contract) => {
     if (contract.signedStatus && contract.signedStatus !== 'UNSIGNED') {
       Swal.fire({
-        title: 'Contract Already Signed',
-        text: `This contract has already been signed ${contract.signedStatus === 'SIGNED_PAPER' ? 'on paper' : 'electronically'}.`,
+        title: t('contracts.already_signed_title'),
+        text: t('contracts.already_signed_text', { method: contract.signedStatus === 'SIGNED_PAPER' ? t('contracts.on_paper') : t('contracts.electronically') }),
         icon: 'info',
         confirmButtonColor: '#31BCFF',
       });
@@ -322,14 +322,14 @@ export default function ContractsPage() {
     }
 
     const result = await Swal.fire({
-      title: 'Choose Signing Method',
-      text: 'How would you like to sign this contract?',
+      title: t('contracts.choose_signing_method'),
+      text: t('contracts.how_to_sign'),
       icon: 'question',
       showDenyButton: true,
       showCancelButton: true,
-      confirmButtonText: 'Electronic Signature',
-      denyButtonText: 'Manual (Paper)',
-      cancelButtonText: 'Cancel',
+      confirmButtonText: t('contracts.electronic_signature'),
+      denyButtonText: t('contracts.manual_paper'),
+      cancelButtonText: t('common.cancel'),
       confirmButtonColor: '#3085d6',
       denyButtonColor: '#6c757d',
       cancelButtonColor: '#d33',
@@ -346,14 +346,14 @@ export default function ContractsPage() {
       // Manual signature
       console.log('Manual signature selected');
       const confirmResult = await Swal.fire({
-        title: 'Mark as Signed on Paper?',
-        text: 'This will mark the contract as signed manually on paper.',
+        title: t('contracts.mark_signed_paper'),
+        text: t('contracts.mark_signed_text'),
         icon: 'question',
         showCancelButton: true,
         confirmButtonColor: '#31BCFF',
         cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, mark as signed',
-        cancelButtonText: 'Cancel'
+        confirmButtonText: t('contracts.yes_mark_signed'),
+        cancelButtonText: t('common.cancel')
       });
 
       console.log('Manual confirmation result:', confirmResult);
@@ -436,8 +436,8 @@ export default function ContractsPage() {
   const handleElectronicSign = async () => {
     if (!signature.trim()) {
       Swal.fire({
-        title: 'Signature Required',
-        text: 'Please enter your signature before submitting.',
+        title: t('contracts.signature_required'),
+        text: t('contracts.enter_signature'),
         icon: 'warning',
         confirmButtonColor: '#31BCFF',
       });
@@ -1341,7 +1341,7 @@ export default function ContractsPage() {
       <Dialog open={previewContract !== null} onOpenChange={(open) => !open && setPreviewContract(null)}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Contract Preview</DialogTitle>
+            <DialogTitle>{t('contracts.preview_modal.title')}</DialogTitle>
           </DialogHeader>
           {previewContract && (
             <div className="space-y-6">
@@ -1379,10 +1379,10 @@ export default function ContractsPage() {
               
               {/* Contract Details */}
               <div className="bg-gray-50 rounded-lg p-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Contract Details</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('contracts.preview_modal.title')}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="font-medium text-gray-500">Employee:</span>
+                    <span className="font-medium text-gray-500">{t('contracts.preview_modal.employee')}</span>
                     <div className="text-gray-900">
                       {previewContract.employee.firstName} {previewContract.employee.lastName}
                     </div>
@@ -1391,27 +1391,27 @@ export default function ContractsPage() {
                     )}
                   </div>
                   <div>
-                    <span className="font-medium text-gray-500">Employee Group:</span>
+                    <span className="font-medium text-gray-500">{t('contracts.preview_modal.employee_group')}</span>
                     <div className="text-gray-900">{previewContract.employeeGroup.name}</div>
                   </div>
                   <div>
-                    <span className="font-medium text-gray-500">Start Date:</span>
+                    <span className="font-medium text-gray-500">{t('contracts.preview_modal.start_date')}</span>
                     <div className="text-gray-900">{formatDate(previewContract.startDate)}</div>
                   </div>
                   <div>
-                    <span className="font-medium text-gray-500">End Date:</span>
+                    <span className="font-medium text-gray-500">{t('contracts.preview_modal.end_date')}</span>
                     <div className="text-gray-900">
-                      {previewContract.endDate ? formatDate(previewContract.endDate) : 'Indefinite'}
+                      {previewContract.endDate ? formatDate(previewContract.endDate) : t('contracts.preview_modal.indefinite')}
                     </div>
                   </div>
                   <div>
-                    <span className="font-medium text-gray-500">Contract Person:</span>
+                    <span className="font-medium text-gray-500">{t('contracts.preview_modal.contract_person')}</span>
                     <div className="text-gray-900">
                       {previewContract.contractPerson.firstName} {previewContract.contractPerson.lastName}
                     </div>
                   </div>
                   <div>
-                    <span className="font-medium text-gray-500">Template:</span>
+                    <span className="font-medium text-gray-500">{t('contracts.preview_modal.template')}</span>
                     <div className="text-gray-900">{previewContract.contractTemplate.name}</div>
                   </div>
                 </div>
@@ -1431,32 +1431,32 @@ export default function ContractsPage() {
       }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Electronic Signature</DialogTitle>
+            <DialogTitle>{t('contracts.signature_modal.title')}</DialogTitle>
           </DialogHeader>
           {signingContract && (
             <div className="space-y-6">
               {/* Contract Info */}
               <div className="bg-gray-50 rounded-lg p-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Contract Information</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('contracts.signature_modal.contract_info')}</h3>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="font-medium text-gray-500">Employee:</span>
+                    <span className="font-medium text-gray-500">{t('contracts.signature_modal.employee')}</span>
                     <div className="text-gray-900">
                       {signingContract.employee.firstName} {signingContract.employee.lastName}
                     </div>
                   </div>
                   <div>
-                    <span className="font-medium text-gray-500">Template:</span>
+                    <span className="font-medium text-gray-500">{t('contracts.signature_modal.template')}</span>
                     <div className="text-gray-900">{signingContract.contractTemplate.name}</div>
                   </div>
                   <div>
-                    <span className="font-medium text-gray-500">Start Date:</span>
+                    <span className="font-medium text-gray-500">{t('contracts.signature_modal.start_date')}</span>
                     <div className="text-gray-900">{formatDate(signingContract.startDate)}</div>
                   </div>
                   <div>
-                    <span className="font-medium text-gray-500">End Date:</span>
+                    <span className="font-medium text-gray-500">{t('contracts.signature_modal.end_date')}</span>
                     <div className="text-gray-900">
-                      {signingContract.endDate ? formatDate(signingContract.endDate) : 'Indefinite'}
+                      {signingContract.endDate ? formatDate(signingContract.endDate) : t('contracts.signature_modal.indefinite')}
                     </div>
                   </div>
                 </div>
@@ -1465,17 +1465,17 @@ export default function ContractsPage() {
               {/* Signature Input */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Your Digital Signature *
+                  {t('contracts.signature_modal.signature_label')}
                 </label>
                 <input
                   type="text"
                   value={signature}
                   onChange={(e) => setSignature(e.target.value)}
-                  placeholder="Type your full name here"
+                  placeholder={t('contracts.signature_modal.signature_placeholder')}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
                 <p className="text-sm text-gray-500 mt-1">
-                  This will be your legal signature on the contract.
+                  {t('contracts.signature_modal.signature_help')}
                 </p>
               </div>
 
@@ -1483,7 +1483,7 @@ export default function ContractsPage() {
               {signature && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Signature Preview
+                    {t('contracts.signature_modal.signature_preview')}
                   </label>
                   <div className="border border-gray-200 rounded-lg p-6 bg-white">
                     <div 
@@ -1496,7 +1496,7 @@ export default function ContractsPage() {
                       {signature}
                     </div>
                     <div className="text-xs text-gray-500 mt-2">
-                      Signed electronically on {new Date().toLocaleDateString()} at {new Date().toLocaleTimeString()}
+                      {t('contracts.signature_modal.signed_on', { date: new Date().toLocaleDateString(), time: new Date().toLocaleTimeString() })}
                     </div>
                   </div>
                 </div>
@@ -1513,10 +1513,10 @@ export default function ContractsPage() {
                     </div>
                     <div className="ml-3">
                       <h3 className="text-sm font-medium text-yellow-800">
-                        Legal Agreement
+                        {t('contracts.signature_modal.legal_agreement')}
                       </h3>
                       <p className="text-sm text-yellow-700 mt-1">
-                        By signing this contract electronically, you agree that your electronic signature is the legal equivalent of your manual signature and that you are legally bound by the terms of this contract.
+                        {t('contracts.signature_modal.legal_text')}
                       </p>
                     </div>
                   </div>
@@ -1532,7 +1532,7 @@ export default function ContractsPage() {
                     }}
                     className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors duration-200"
                   >
-                    Cancel
+                    {t('contracts.signature_modal.cancel')}
                   </button>
                   <button
                     type="button"
@@ -1540,7 +1540,7 @@ export default function ContractsPage() {
                     disabled={!signature.trim()}
                     className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                   >
-                    Sign Contract
+                    {t('contracts.signature_modal.sign_button')}
                   </button>
                 </div>
               </div>

@@ -1,5 +1,7 @@
 import React from 'react'
 import { format } from 'date-fns'
+import { useTranslation } from 'react-i18next'
+import { formatDate } from '@/shared/lib/dateLocale'
 import { ShiftWithRelations } from '@/types/schedule'
 import { Employee } from '@prisma/client'
 import {
@@ -31,6 +33,7 @@ export default function ShiftsModal({
   onEditShift,
   canEditShifts = true
 }: ShiftsModalProps) {
+  const { i18n } = useTranslation()
   const handleShiftClick = (shift: ShiftWithRelations) => {
     onEditShift(shift)
     onClose()
@@ -60,7 +63,7 @@ export default function ShiftsModal({
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
-            {format(date, 'EEEE, MMMM d, yyyy')}
+            {formatDate(date, 'EEEE, MMMM d, yyyy', i18n.language)}
           </DialogDescription>
         </DialogHeader>
 

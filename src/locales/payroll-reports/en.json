@@ -33,5 +33,20 @@
   "employee": "Employee",
   "period": "Period",
   "hours": "Hours",
-  "status": "Status"
+  "status": "Status",
+  "regular": "Regular",
+  "overtime": "Overtime",
+  "status_draft": "Draft",
+  "status_approved": "Approved",
+  "status_paid": "Paid",
+  "missing_info_title": "Missing Information",
+  "missing_dates_text": "Please select both start and end dates.",
+  "success_title": "Success!",
+  "report_generated": "Report generated with {{count}} entries.",
+  "error_title": "Error!",
+  "error_generate_report": "Failed to generate report",
+  "no_data_title": "No Data",
+  "no_data_text": "Please generate a report first.",
+  "export_success_title": "Success!",
+  "export_success_text": "Payroll report has been exported successfully."
 }

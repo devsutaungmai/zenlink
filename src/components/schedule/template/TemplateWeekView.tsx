@@ -1,6 +1,7 @@
 import { format } from 'date-fns'
 import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { useTranslation } from 'react-i18next'
+import { formatDate } from '@/shared/lib/dateLocale'
 
 interface TemplateShift {
   id: string
@@ -44,7 +45,7 @@ export default function TemplateWeekView({
   onEditShift,
   onDeleteShift
 }: TemplateWeekViewProps) {
-  const { t } = useTranslation('schedule')
+  const { t, i18n } = useTranslation('schedule')
 
   const getShiftsForDay = (dayIndex: number) => {
     return shifts.filter(s => s.dayIndex === dayIndex).sort((a, b) => 

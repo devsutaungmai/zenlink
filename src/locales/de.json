@@ -263,6 +263,7 @@
     },
     "create_page": {
       "title": "Neuen Mitarbeiter erstellen",
+      "description": "Erstellen Sie einen neuen Mitarbeiter und verwalten Sie dessen Informationen",
       "loading": "Formulardaten laden...",
       "back_to_dashboard": "Zurück zum Dashboard",
       "try_again": "Erneut versuchen"
@@ -288,7 +289,6 @@
       "mobile": "Mobil",
       "bank_account": "Bankkonto",
       "team_leader": "Teamleiter",
-      "saving": "Speichern...",
       "search_country": "Land suchen...",
       "mobile_placeholder": "12345678",
       "email_placeholder": "mitarbeiter@firma.de",
@@ -313,7 +313,11 @@
       "photo_type_error": "Nur JPEG-, PNG- und WebP-Bilder sind erlaubt",
       "photo_size_error": "Dateigröße muss kleiner als 5MB sein",
       "photo_upload_failed": "Foto konnte nicht hochgeladen werden",
-      "photo_delete_failed": "Foto konnte nicht gelöscht werden"
+      "photo_delete_failed": "Foto konnte nicht gelöscht werden",
+      "access_roles_hint": "Wählen Sie zuerst Abteilungen aus, um abteilungsspezifische Rollen zu sehen. Rollen ohne Abteilungsbeschränkungen werden immer angezeigt.",
+      "access_roles_hint_filtered": "Zeigt verfügbare Rollen für ausgewählte Abteilungen und Rollen ohne Abteilungsbeschränkungen.",
+      "contract_type_hint": "Vertragstyp bestimmt Überstundenberechtigung und wöchentliche Stundengrenzen.",
+      "saving": "Speichern..."
     },
     "phone_filter_placeholder": "Nach Telefonnummer filtern",
     "tabs": {
@@ -420,6 +424,7 @@
   "availability": {
     "title": "Mitarbeiterverfügbarkeit",
     "description": "Verwalten und anzeigen der Mitarbeiterverfügbarkeit in allen Abteilungen",
+    "employee_list_title": "Mitarbeiterverfügbarkeitsliste",
     "stats": {
       "total_employees": "Gesamte Mitarbeiter",
       "available_today": "Heute verfügbar",
@@ -548,6 +553,11 @@
       "paid_break_hint": "Aktivieren, wenn diese Pausenzeit in die Lohnabrechnung einbezogen werden soll",
       "break_duration": "Pausendauer:",
       "break_guidelines": "Richtlinien für Pausenzeiten",
+      "guideline_unpaid": "• Unbezahlte Pausen werden automatisch von den gesamten Arbeitsstunden abgezogen",
+      "guideline_paid": "• Bezahlte Pausen sind in der Lohnabrechnung enthalten und werden nicht von den Stunden abgezogen",
+      "guideline_start": "• Stellen Sie sicher, dass die Pausenstartzeit nach der Schichtstartzeit liegt",
+      "guideline_end": "• Stellen Sie sicher, dass die Pausenendzeit vor der Schichtendzeit liegt",
+      "guideline_lunch": "• Die Standard-Mittagspause beträgt normalerweise 1 Stunde (12:00 - 13:00)",
       "read_only_notice": "Sie sehen diese Schicht im schreibgeschützten Modus. Sie haben keine Berechtigung, Schichten zu bearbeiten.",
       "employee_notice": "Als Mitarbeiter können Sie Schichten anzeigen, aber nicht erstellen oder bearbeiten.",
       "delete_confirm_title": "Diese Schicht löschen?",
@@ -771,7 +781,7 @@
     "yes": "Ja",
     "no": "Nein",
     "search": "Suchen",
-    "filter": "Filter",
+    "filter": "filtern",
     "reset": "Zurücksetzen",
     "clear": "Löschen",
     "all": "Alle",
@@ -903,6 +913,34 @@
       "success_created": "Vertrag erfolgreich erstellt!",
       "error_title": "Hoppla...",
       "error_message": "Etwas ist schief gelaufen!"
+    },
+    "preview_modal": {
+      "title": "Vertragsvorschau",
+      "employee": "Mitarbeiter:",
+      "employee_group": "Mitarbeitergruppe:",
+      "start_date": "Startdatum:",
+      "end_date": "Enddatum:",
+      "indefinite": "Unbefristet",
+      "contract_person": "Vertragsperson:",
+      "template": "Vorlage:"
+    },
+    "signature_modal": {
+      "title": "Elektronische Signatur",
+      "contract_info": "Vertragsinformationen",
+      "employee": "Mitarbeiter:",
+      "template": "Vorlage:",
+      "start_date": "Startdatum:",
+      "end_date": "Enddatum:",
+      "indefinite": "Unbefristet",
+      "signature_label": "Ihre digitale Signatur *",
+      "signature_placeholder": "Geben Sie hier Ihren vollständigen Namen ein",
+      "signature_help": "Dies wird Ihre rechtsgültige Unterschrift auf dem Vertrag sein.",
+      "signature_preview": "Signaturvorschau",
+      "signed_on": "Elektronisch unterzeichnet am {{date}} um {{time}}",
+      "legal_agreement": "Rechtsverbindliche Vereinbarung",
+      "legal_text": "Durch die elektronische Unterzeichnung dieses Vertrags stimmen Sie zu, dass Ihre elektronische Signatur rechtlich gleichwertig mit Ihrer handschriftlichen Unterschrift ist und dass Sie rechtlich an die Bedingungen dieses Vertrags gebunden sind.",
+      "cancel": "Abbrechen",
+      "sign_button": "Vertrag unterzeichnen"
     }
   },
   "common_extra": {

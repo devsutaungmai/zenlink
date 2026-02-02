@@ -7,10 +7,14 @@
     "select_employee": "Velg en medarbeider",
     "start_date": "Startdato",
     "end_date": "Sluttdato",
-    "reason": "Årsak",
-    "reason_placeholder": "Vennligst oppgi detaljer om din sykmelding...",
-    "doctor_note": "Legeerklæring påkrevd",
-    "submit": "Send forespørsel",
+    "reason": "Årsak til sykmelding",
+    "reason_placeholder": "Beskriv din sykdom eller årsak til permisjon...",
+    "doctor_note": "Støttedokument",
+    "upload_description": "Last opp legeerklæring, legenotat eller andre støttedokumenter (PDF, DOC, DOCX eller bilder, maks 5MB)",
+    "upload_button": "Klikk for å laste opp dokument",
+    "uploading": "Laster opp...",
+    "submit": "Legg til sykmelding",
+    "update": "Oppdater forespørsel",
     "submitting": "Sender...",
     "cancel": "Avbryt"
   },
@@ -38,7 +42,13 @@
     "submitted": "Innsendt",
     "actions": "Handlinger",
     "no_requests": "Ingen sykmeldingsforespørsler funnet",
-    "view": "Vis"
+    "view": "Vis",
+    "to": "til"
+  },
+  "access_denied": {
+    "title": "Tilgang nektet",
+    "message": "Du har ikke tillatelse til å se sykmeldinger.",
+    "contact_admin": "Vennligst kontakt administratoren din hvis du trenger tilgang."
   },
   "actions": {
     "approve": "Godkjenn",
@@ -91,11 +101,49 @@
     "approved": "Godkjent",
     "pending": "Ventende",
     "total": "Totalt antall forespørsler",
-    "documented": "Med dokumenter"
+    "total_requests": "Totalt antall forespørsler",
+    "documented": "Med dokumenter",
+    "documents": "Med dokumenter"
   },
   "loading": "Laster sykmeldingsdata...",
   "empty_state": {
     "title": "Ingen sykmeldingsforespørsler",
     "subtitle": "Ingen sykmeldingsforespørsler har blitt sendt inn ennå."
+  },
+  "no_data": "Ingen sykmeldingsforespørsler funnet",
+  "error": "Feil",
+  "retry": "Prøv igjen",
+  "employee": {
+    "title": "Mine sykmeldinger",
+    "subtitle": "Se og administrer dine sykmeldingsforespørsler",
+    "request_button": "Be om sykmelding"
+  },
+  "modal": {
+    "add_title": "Legg til sykmelding",
+    "edit_title": "Rediger sykmelding"
+  },
+  "success": {
+    "created": "Sykmelding opprettet!",
+    "updated": "Sykmelding oppdatert!",
+    "approved": "Sykmelding godkjent!",
+    "rejected": "Sykmelding avvist!",
+    "deleted": "Sykmelding slettet!",
+    "document_uploaded": "Dokument lastet opp!"
+  },
+  "errors": {
+    "fetch_failed": "Kunne ikke hente sykmeldinger",
+    "fetch_employees_failed": "Kunne ikke hente medarbeidere",
+    "save_failed": "Kunne ikke lagre sykmelding",
+    "update_failed": "Kunne ikke oppdatere sykmelding",
+    "delete_failed": "Kunne ikke slette sykmelding",
+    "upload_failed": "Opplasting mislyktes",
+    "employee_not_found": "Medarbeiderinformasjon ikke funnet. Vennligst logg inn på nytt.",
+    "unknown": "En ukjent feil oppstod"
+  },
+  "delete": {
+    "confirm_title": "Er du sikker?",
+    "confirm_text": "Du vil ikke kunne angre dette!",
+    "confirm_button": "Ja, slett den!",
+    "cancel_button": "Avbryt"
   }
 }

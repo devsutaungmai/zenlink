@@ -65,11 +65,9 @@
   "quick_actions": {
     "title": "Quick Actions",
     "requests": "Requests",
-    "team": "Team",
-    "schedule": "Schedule",
     "my_schedule": "My Schedule",
     "availability": "Availability",
-    "sick_leave": "Sick Leave"
+    "schedule": "Schedule"
   },
   "current_time": {
     "label": "Current Time"
@@ -87,6 +85,7 @@
   },
   "schedule": {
     "title": "My Schedule",
+    "back": "Back",
     "loading": "Loading schedule...",
     "no_shifts": "No shifts scheduled for this month",
     "previous_month": "Previous month",
@@ -120,6 +119,74 @@
       "november": "November",
       "december": "December"
     }
+  },
+  "shift_requests": {
+    "title": "Shift Requests",
+    "subtitle": "Review and respond to shift exchange requests",
+    "tabs": {
+      "active": "Active Requests",
+      "rejected": "Rejected"
+    },
+    "loading": "Loading requests...",
+    "empty_active_title": "No Active Requests",
+    "empty_active_description": "You don't have any shift requests requiring your attention or waiting for admin approval.",
+    "empty_rejected_title": "No Rejected Requests",
+    "empty_rejected_description": "You don't have any rejected shift requests.",
+    "request_title": "Shift {{type}} Request",
+    "types": {
+      "swap": "Swap",
+      "handover": "Handover"
+    },
+    "from_label": "From",
+    "status": {
+      "pending_response": "Pending Response",
+      "accepted_waiting_admin": "Accepted - Waiting for Admin Approval"
+    },
+    "shift_details": {
+      "title": "Shift Details",
+      "date": "Date",
+      "time": "Time",
+      "open_end": "Open End",
+      "type": "Type",
+      "requested": "Requested",
+      "reason": "Reason"
+    },
+    "accepting": "Accepting...",
+    "rejecting": "Rejecting...",
+    "accept_request": "Accept Request",
+    "reject_request": "Reject Request",
+    "accepted_title": "Request Accepted",
+    "accepted_description": "You have accepted this request. It's now waiting for admin approval.",
+    "rejected_by_you": "Rejected by You",
+    "rejected_by_admin": "Rejected by Admin",
+    "actions": {
+      "accept": "accept",
+      "reject": "reject"
+    },
+    "toast_success": "Request {{action}}ed successfully!",
+    "toast_failed_action": "Failed to {{action}} request"
+  },
+  "availability_page": {
+    "title": "My Availability",
+    "back": "Back",
+    "description": "Set your availability for each day. Click on multiple days and use the buttons below to mark them as available or unavailable.",
+    "loading_user": "Loading user data...",
+    "employee_only": "This page is only accessible to employees. Please log in with your employee PIN.",
+    "loading_calendar": "Loading availability calendar...",
+    "toast_failed_load": "Failed to load availability data",
+    "toast_select_date": "Please select at least one date",
+    "toast_failed_update": "Failed to update availability",
+    "available": "Available",
+    "unavailable": "Unavailable",
+    "toast_marked": "Marked {{count}} day(s) as {{status}}",
+    "selected_days": "{{count}} day(s) selected",
+    "select_hint": "Click on dates to select them",
+    "clear_selection": "Clear Selection",
+    "mark_unavailable": "Mark Unavailable",
+    "mark_available": "Mark Available",
+    "legend": "Legend",
+    "selected": "Selected",
+    "past_date": "Past Date"
   },
   "common": {
     "loading": "Loading...",

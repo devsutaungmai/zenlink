@@ -87,6 +87,7 @@
   },
   "schedule": {
     "title": "Min Timeplan",
+    "back": "Tilbake",
     "loading": "Laster timeplan...",
     "no_shifts": "Ingen skift planlagt for denne måneden",
     "previous_month": "Forrige måned",
@@ -120,6 +121,74 @@
       "november": "November",
       "december": "Desember"
     }
+  },
+  "shift_requests": {
+    "title": "Skiftforespørsler",
+    "subtitle": "Se gjennom og svar på forespørsler om skiftbytte",
+    "tabs": {
+      "active": "Aktive forespørsler",
+      "rejected": "Avvist"
+    },
+    "loading": "Laster forespørsler...",
+    "empty_active_title": "Ingen aktive forespørsler",
+    "empty_active_description": "Du har ingen skiftforespørsler som krever din oppmerksomhet eller venter på administrativ godkjenning.",
+    "empty_rejected_title": "Ingen avviste forespørsler",
+    "empty_rejected_description": "Du har ingen avviste skiftforespørsler.",
+    "request_title": "Forespørsel om skift{{type}}",
+    "types": {
+      "swap": "bytte",
+      "handover": "overlevering"
+    },
+    "from_label": "Fra",
+    "status": {
+      "pending_response": "Venter på svar",
+      "accepted_waiting_admin": "Akseptert – venter på admin-godkjenning"
+    },
+    "shift_details": {
+      "title": "Skiftdetaljer",
+      "date": "Dato",
+      "time": "Tid",
+      "open_end": "Åpen slutt",
+      "type": "Type",
+      "requested": "Forespurt",
+      "reason": "Begrunnelse"
+    },
+    "accepting": "Aksepterer...",
+    "rejecting": "Avviser...",
+    "accept_request": "Aksepter forespørsel",
+    "reject_request": "Avvis forespørsel",
+    "accepted_title": "Forespørsel akseptert",
+    "accepted_description": "Du har akseptert denne forespørselen. Den venter nå på administrativ godkjenning.",
+    "rejected_by_you": "Avvist av deg",
+    "rejected_by_admin": "Avvist av admin",
+    "actions": {
+      "accept": "akseptere",
+      "reject": "avvise"
+    },
+    "toast_success": "Forespørsel {{action}}t!",
+    "toast_failed_action": "Kunne ikke {{action}} forespørselen"
+  },
+  "availability_page": {
+    "title": "Min tilgjengelighet",
+    "back": "Tilbake",
+    "description": "Angi tilgjengeligheten din for hver dag. Velg flere dager og bruk knappene nedenfor for å markere dem som tilgjengelig eller utilgjengelig.",
+    "loading_user": "Laster brukerdata...",
+    "employee_only": "Denne siden er kun tilgjengelig for medarbeidere. Vennligst logg inn med medarbeider-PIN.",
+    "loading_calendar": "Laster tilgjengelighetskalender...",
+    "toast_failed_load": "Kunne ikke laste tilgjengelighetsdata",
+    "toast_select_date": "Velg minst én dato",
+    "toast_failed_update": "Kunne ikke oppdatere tilgjengelighet",
+    "available": "Tilgjengelig",
+    "unavailable": "Utilgjengelig",
+    "toast_marked": "Markerte {{count}} dag(er) som {{status}}",
+    "selected_days": "{{count}} dag(er) valgt",
+    "select_hint": "Klikk på datoer for å velge dem",
+    "clear_selection": "Tøm valg",
+    "mark_unavailable": "Marker utilgjengelig",
+    "mark_available": "Marker tilgjengelig",
+    "legend": "Forklaring",
+    "selected": "Valgt",
+    "past_date": "Tidligere dato"
   },
   "common": {
     "general": "Generell",

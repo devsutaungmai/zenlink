@@ -1400,11 +1400,11 @@ export default function ShiftForm({
           <div className="p-3 sm:p-4 bg-amber-50 border border-amber-200 rounded-lg">
             <h4 className="text-xs sm:text-sm font-medium text-amber-800 mb-2">{t('shifts.form.break_guidelines')}</h4>
             <ul className="text-xs sm:text-sm text-amber-700 space-y-1">
-              <li>• Unpaid breaks are automatically deducted from total worked hours</li>
-              <li>• Paid breaks are included in payroll calculations and not deducted from hours</li>
-              <li>• Ensure break start time is after shift start time</li>
-              <li>• Ensure break end time is before shift end time</li>
-              <li>• Standard lunch break is typically 1 hour (12:00 - 13:00)</li>
+              <li>{t('shifts.form.guideline_unpaid')}</li>
+              <li>{t('shifts.form.guideline_paid')}</li>
+              <li>{t('shifts.form.guideline_start')}</li>
+              <li>{t('shifts.form.guideline_end')}</li>
+              <li>{t('shifts.form.guideline_lunch')}</li>
             </ul>
           </div>
         </div>

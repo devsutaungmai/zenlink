@@ -9,7 +9,7 @@
     "all_categories": "Alle Kategorien",
     "all_functions": "Alle Funktionen",
     "select_category_first": "Kategorie zuerst auswählen",
-    "filters": "Filter",
+    "filters": "Filtern",
     "clear_all": "Alle zurücksetzen",
     "employees": "Mitarbeiter",
     "search_employees_placeholder": "Mitarbeiter suchen...",
@@ -188,5 +188,64 @@
     "go_back": "Zurück zum Zeitplan",
     "retry": "Erneut versuchen",
     "applying": "Wird angewendet..."
+  },
+  "weekdays": {
+    "sun": "So",
+    "mon": "Mo",
+    "tue": "Di",
+    "wed": "Mi",
+    "thu": "Do",
+    "fri": "Fr",
+    "sat": "Sa"
+  },
+  "weekdays_short": {
+    "sun": "S",
+    "mon": "M",
+    "tue": "D",
+    "wed": "M",
+    "thu": "D",
+    "fri": "F",
+    "sat": "S"
+  },
+  "months": {
+    "january": "Januar",
+    "february": "Februar",
+    "march": "März",
+    "april": "April",
+    "may": "Mai",
+    "june": "Juni",
+    "july": "Juli",
+    "august": "August",
+    "september": "September",
+    "october": "Oktober",
+    "november": "November",
+    "december": "Dezember"
+  },
+  "month_view": {
+    "shifts_count": "{{count}} Schicht",
+    "shifts_count_plural": "{{count}} Schichten",
+    "add_shift": "Schicht hinzufügen"
+  },
+  "context_menu": {
+    "edit_shift": "Schicht bearbeiten",
+    "create_attendance": "Anwesenheit erstellen",
+    "delete_shift": "Schicht löschen"
+  },
+  "create_attendance": {
+    "title": "Anwesenheit aus Schicht erstellen",
+    "description": "Erstellen Sie einen Anwesenheitseintrag für diese geplante Schicht",
+    "shift_info": "Schichtinformationen",
+    "employee": "Mitarbeiter",
+    "date": "Datum",
+    "shift_time": "Schichtzeit",
+    "punch_in_time": "Einstempelzeit",
+    "punch_out_time": "Ausstempelzeit (optional)",
+    "leave_empty_hint": "Leer lassen, wenn noch arbeitend",
+    "cancel": "Abbrechen",
+    "create": "Anwesenheit erstellen",
+    "creating": "Erstellen...",
+    "success": "Anwesenheit erfolgreich erstellt",
+    "error": "Anwesenheit konnte nicht erstellt werden",
+    "already_punched_in": "Mitarbeiter ist bereits eingestempelt"
   }
 }

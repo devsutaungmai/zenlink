@@ -170,8 +170,8 @@ export default function PayrollReportsPage() {
   const generateReport = async (preview = false) => {
     if (!startDate || !endDate) {
       Swal.fire({
-        title: 'Missing Information',
-        text: 'Please select both start and end dates.',
+        title: t('missing_info_title', 'Missing Information'),
+        text: t('missing_dates_text', 'Please select both start and end dates.'),
         icon: 'warning',
         confirmButtonColor: '#31BCFF'
       })
@@ -203,8 +203,8 @@ export default function PayrollReportsPage() {
         
         if (!preview) {
           Swal.fire({
-            title: 'Success!',
-            text: `Report generated with ${data.summary.totalEntries} entries.`,
+            title: t('success_title', 'Success!'),
+            text: t('report_generated', 'Report generated with {{count}} entries.', { count: data.summary.totalEntries }),
             icon: 'success',
             confirmButtonColor: '#31BCFF'
           })
@@ -215,8 +215,8 @@ export default function PayrollReportsPage() {
     } catch (error) {
       console.error('Error generating report:', error)
       Swal.fire({
-        title: 'Error!',
-        text: error instanceof Error ? error.message : 'Failed to generate report',
+        title: t('error_title', 'Error!'),
+        text: error instanceof Error ? error.message : t('error_generate_report', 'Failed to generate report'),
         icon: 'error',
         confirmButtonColor: '#31BCFF'
       })
@@ -228,8 +228,8 @@ export default function PayrollReportsPage() {
   const exportToCSV = () => {
     if (!reportData || reportData.entries.length === 0) {
       Swal.fire({
-        title: 'No Data',
-        text: 'Please generate a report first.',
+        title: t('no_data_title', 'No Data'),
+        text: t('no_data_text', 'Please generate a report first.'),
         icon: 'info',
         confirmButtonColor: '#31BCFF'
       })
@@ -289,8 +289,8 @@ export default function PayrollReportsPage() {
     downloadBlob(blob, filename)
 
     Swal.fire({
-      title: 'Success!',
-      text: 'Payroll report has been exported successfully.',
+      title: t('export_success_title', 'Success!'),
+      text: t('export_success_text', 'Payroll report has been exported successfully.'),
       icon: 'success',
       confirmButtonColor: '#31BCFF'
     })
@@ -325,10 +325,15 @@ export default function PayrollReportsPage() {
       APPROVED: 'bg-blue-100 text-blue-800 border-blue-200',
       PAID: 'bg-green-100 text-green-800 border-green-200'
     }
+    const statusLabels = {
+      DRAFT: t('status_draft', 'Draft'),
+      APPROVED: t('status_approved', 'Approved'),
+      PAID: t('status_paid', 'Paid')
+    }
     
     return (
       <span className={`px-2 py-1 rounded-full text-xs font-medium border ${styles[status as keyof typeof styles] || styles.DRAFT}`}>
-        {status}
+        {statusLabels[status as keyof typeof statusLabels] || status}
       </span>
     )
   }
@@ -764,11 +769,11 @@ export default function PayrollReportsPage() {
                         </td>
                         <td className="px-3 sm:px-6 py-3 sm:py-4">
                           <div className="text-xs sm:text-sm text-gray-900 whitespace-nowrap">
-                            Regular: {entry.regularHours}h
+                            {t('regular', 'Regular')}: {entry.regularHours}h
                           </div>
                           {entry.overtimeHours > 0 && (
                             <div className="text-xs sm:text-sm text-orange-600 whitespace-nowrap">
-                              Overtime: {entry.overtimeHours}h
+                              {t('overtime', 'Overtime')}: {entry.overtimeHours}h
                             </div>
                           )}
                         </td>

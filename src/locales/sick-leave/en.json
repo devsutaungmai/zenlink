@@ -46,7 +46,13 @@
     "submitted": "Submitted",
     "actions": "Actions",
     "no_requests": "No sick leave requests found",
-    "view": "View"
+    "view": "View",
+    "to": "to"
+  },
+  "access_denied": {
+    "title": "Access Denied",
+    "message": "You do not have permission to view sick leaves.",
+    "contact_admin": "Please contact your administrator if you need access."
   },
   "actions": {
     "approve": "Approve",
@@ -121,6 +127,8 @@
     "approved": "Approved",
     "pending": "Pending",
     "total": "Total Requests",
-    "documented": "With Documents"
+    "total_requests": "Total Requests",
+    "documented": "With Documents",
+    "documents": "With Documents"
   }
 }

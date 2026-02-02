@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { Loader } from '@googlemaps/js-api-loader'
 import { MapPinIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { useTranslation } from 'react-i18next'
 
 interface Location {
   lat: number
@@ -37,6 +38,7 @@ export default function GoogleMapsLocationPicker({
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(initialLocation || null)
   const [radius, setRadius] = useState(initialRadius)
   const [locationName, setLocationName] = useState(initialLocation?.name || '')
+  const { t } = useTranslation('settings')
 
   const initializeMap = useCallback(async () => {
     if (!mapRef.current) return
@@ -223,8 +225,8 @@ export default function GoogleMapsLocationPicker({
                 <MapPinIcon className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900 break-words">Select Location</h3>
-                <p className="text-xs sm:text-sm text-gray-600 break-words">Search for a location or click on the map</p>
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 break-words">{t('location_picker.title')}</h3>
+                <p className="text-xs sm:text-sm text-gray-600 break-words">{t('location_picker.subtitle')}</p>
               </div>
             </div>
             <button
@@ -245,7 +247,7 @@ export default function GoogleMapsLocationPicker({
               <div className="w-full h-full flex items-center justify-center bg-gray-100">
                 <div className="text-center px-4">
                   <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                  <p className="text-xs sm:text-sm text-gray-600">Loading map...</p>
+                  <p className="text-xs sm:text-sm text-gray-600">{t('location_picker.loading_map')}</p>
                 </div>
               </div>
             )}
@@ -257,12 +259,12 @@ export default function GoogleMapsLocationPicker({
               {/* Search */}
               <div>
                 <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
-                  Search Location
+                  {t('location_picker.search_label')}
                 </label>
                 <input
                   ref={searchInputRef}
                   type="text"
-                  placeholder="Search for a place..."
+                  placeholder={t('location_picker.search_placeholder')}
                   className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
                 />
               </div>
@@ -270,13 +272,13 @@ export default function GoogleMapsLocationPicker({
               {/* Location Name */}
               <div>
                 <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
-                  Location Name
+                  {t('location_picker.location_name_label')}
                 </label>
                 <input
                   type="text"
                   value={locationName}
                   onChange={(e) => setLocationName(e.target.value)}
-                  placeholder="e.g., Main Office, Warehouse"
+                  placeholder={t('location_picker.location_name_placeholder')}
                   className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
                 />
               </div>
@@ -284,7 +286,7 @@ export default function GoogleMapsLocationPicker({
               {/* Radius Control */}
               <div>
                 <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
-                  Radius: {radius}m
+                  {t('location_picker.radius_label')}: {radius}m
                 </label>
                 <input
                   type="range"
@@ -304,12 +306,12 @@ export default function GoogleMapsLocationPicker({
               {/* Selected Location Info */}
               {selectedLocation && (
                 <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
-                  <h4 className="text-xs sm:text-sm font-medium text-gray-900 mb-1.5 sm:mb-2">Selected Location</h4>
+                  <h4 className="text-xs sm:text-sm font-medium text-gray-900 mb-1.5 sm:mb-2">{t('location_picker.selected_location')}</h4>
                   <div className="space-y-1 text-xs sm:text-sm text-gray-600">
-                    <p className="break-words"><span className="font-medium">Name:</span> {locationName || selectedLocation.name}</p>
-                    <p className="break-all"><span className="font-medium">Address:</span> {selectedLocation.address}</p>
-                    <p className="break-all"><span className="font-medium">Coordinates:</span> {selectedLocation.lat.toFixed(6)}, {selectedLocation.lng.toFixed(6)}</p>
-                    <p><span className="font-medium">Radius:</span> {radius}m</p>
+                    <p className="break-words"><span className="font-medium">{t('location_picker.name')}:</span> {locationName || selectedLocation.name}</p>
+                    <p className="break-all"><span className="font-medium">{t('location_picker.address')}:</span> {selectedLocation.address}</p>
+                    <p className="break-all"><span className="font-medium">{t('location_picker.coordinates')}:</span> {selectedLocation.lat.toFixed(6)}, {selectedLocation.lng.toFixed(6)}</p>
+                    <p><span className="font-medium">{t('location_picker.radius_label')}:</span> {radius}m</p>
                   </div>
                 </div>
               )}
@@ -318,7 +320,7 @@ export default function GoogleMapsLocationPicker({
               {!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY && (
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 sm:p-4">
                   <p className="text-xs sm:text-sm text-yellow-800">
-                    Google Maps API key is not configured. Please add NEXT_PUBLIC_GOOGLE_MAPS_API_KEY to your environment variables.
+                    {t('location_picker.api_key_warning')}
                   </p>
                 </div>
               )}
@@ -330,14 +332,14 @@ export default function GoogleMapsLocationPicker({
                 onClick={onClose}
                 className="flex-1 py-2 sm:py-2.5 px-4 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-xs sm:text-sm order-2 sm:order-1"
               >
-                Cancel
+                {t('location_picker.cancel')}
               </button>
               <button
                 onClick={handleSaveLocation}
                 disabled={!selectedLocation || !locationName.trim()}
                 className="flex-1 py-2 sm:py-2.5 px-4 bg-[#31BCFF] hover:bg-[#2ba3e4] text-white rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm order-1 sm:order-2"
               >
-                Save Location
+                {t('location_picker.save_location')}
               </button>
             </div>
           </div>

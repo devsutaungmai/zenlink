@@ -1,6 +1,7 @@
 import { format } from 'date-fns'
 import { ArrowLeftIcon, ArrowRightIcon, FunnelIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { useTranslation } from 'react-i18next'
+import { formatDate } from '@/shared/lib/dateLocale'
 import { useState, useRef, useEffect } from 'react'
 import TemplatesDropdown, { TemplateAction } from './TemplatesDropdown'
 
@@ -116,7 +117,7 @@ export default function ScheduleHeader({
   onTemplateAction = () => {},
   canUseTemplates = true
 }: ScheduleHeaderProps) {
-  const { t } = useTranslation('schedule')
+  const { t, i18n } = useTranslation('schedule')
   const [showFilters, setShowFilters] = useState(false)
   const [employeeSearchQuery, setEmployeeSearchQuery] = useState('')
   const filterButtonRef = useRef<HTMLDivElement>(null)
@@ -518,7 +519,7 @@ export default function ScheduleHeader({
             </button>
             
             <div className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-50 rounded-md min-w-[140px] text-center">
-              {format(startDate, 'MMM d')} - {format(endDate, 'd')}
+              {formatDate(startDate, 'MMM d', i18n.language)} - {format(endDate, 'd')}
             </div>
             
             <button 
@@ -628,10 +629,10 @@ export default function ScheduleHeader({
 
                 <div className="px-3 py-2 text-sm text-gray-800 bg-white rounded-md min-w-[180px] text-center border border-gray-200">
                   {viewMode === 'month'
-                    ? format(startDate, 'MMMM yyyy')
+                    ? formatDate(startDate, 'MMMM yyyy', i18n.language)
                     : viewMode === 'day'
-                      ? format(startDate, 'EEEE, MMM d')
-                      : `${format(startDate, 'MMM d')} - ${format(endDate, 'MMM d')}`}
+                      ? formatDate(startDate, 'EEEE, MMM d', i18n.language)
+                      : `${formatDate(startDate, 'MMM d', i18n.language)} - ${formatDate(endDate, 'MMM d', i18n.language)}`}
                 </div>
 
                 <button

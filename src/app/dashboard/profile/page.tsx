@@ -53,7 +53,7 @@ export default function ProfilePage() {
         setProfile(data)
       } else {
         Swal.fire({
-          text: data.error || 'Failed to load profile',
+          text: data.error || t('profile.toast.load_error'),
           toast: true,
           position: 'top-end',
           showConfirmButton: false,
@@ -68,7 +68,7 @@ export default function ProfilePage() {
     } catch (error) {
       console.error('Error fetching profile:', error)
       Swal.fire({
-        text: 'Failed to load profile',
+        text: t('profile.toast.load_error'),
         toast: true,
         position: 'top-end',
         showConfirmButton: false,
@@ -95,11 +95,11 @@ export default function ProfilePage() {
   const getRoleDisplayName = (role: string) => {
     switch (role) {
       case 'ADMIN':
-        return 'Administrator'
+        return t('profile.profile_card.administrator')
       case 'EMPLOYEE':
-        return 'Employee'
+        return t('profile.profile_card.employee')
       case 'MANAGER':
-        return 'Manager'
+        return t('profile.profile_card.manager')
       default:
         return role
     }

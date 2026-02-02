@@ -5,6 +5,8 @@ import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 import { Calendar as CalendarIcon, Check, X, Clock } from 'lucide-react'
 import Swal from 'sweetalert2'
 import { useUser } from '@/shared/lib/useUser'
+import { useRouter } from 'next/navigation'
+import { useTranslation } from 'react-i18next'
 
 interface Availability {
   id: string
@@ -14,6 +16,8 @@ interface Availability {
 }
 
 export default function EmployeeAvailabilityPage() {
+  const router = useRouter()
+  const { t, i18n } = useTranslation('employee-dashboard')
   const { user, loading: userLoading } = useUser()
   const [currentDate, setCurrentDate] = useState(new Date())
   const [availabilities, setAvailabilities] = useState<Availability[]>([])
@@ -49,7 +53,7 @@ export default function EmployeeAvailabilityPage() {
         timer: 3000,
         timerProgressBar: true,
         icon: 'error',
-        title: 'Failed to load availability data'
+        title: t('availability_page.toast_failed_load')
       })
     } finally {
       setAvailabilityLoading(false)
@@ -120,7 +124,7 @@ export default function EmployeeAvailabilityPage() {
         timer: 3000,
         timerProgressBar: true,
         icon: 'warning',
-        title: 'Please select at least one date'
+        title: t('availability_page.toast_select_date')
       })
       return
     }
@@ -155,7 +159,10 @@ export default function EmployeeAvailabilityPage() {
         timer: 3000,
         timerProgressBar: true,
         icon: 'success',
-        title: `Marked ${selectedDates.size} day(s) as ${isAvailable ? 'available' : 'unavailable'}`
+        title: t('availability_page.toast_marked', {
+          count: selectedDates.size,
+          status: isAvailable ? t('availability_page.available') : t('availability_page.unavailable')
+        })
       })
     } catch (error) {
       console.error('Error updating availability:', error)
@@ -166,7 +173,7 @@ export default function EmployeeAvailabilityPage() {
         timer: 3000,
         timerProgressBar: true,
         icon: 'error',
-        title: 'Failed to update availability'
+        title: t('availability_page.toast_failed_update')
       })
     } finally {
       setSubmitting(false)
@@ -190,12 +197,11 @@ export default function EmployeeAvailabilityPage() {
     setSelectedDates(new Set())
   }
 
-  const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ]
-
-  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  const monthLabel = currentDate.toLocaleDateString(i18n.language, { month: 'long', year: 'numeric' })
+  const dayNames = Array.from({ length: 7 }).map((_, idx) => {
+    const base = new Date(Date.UTC(2021, 7, 1 + idx))
+    return base.toLocaleDateString(i18n.language, { weekday: 'short' })
+  })
 
   const days = getDaysInMonth(currentDate)
 
@@ -204,7 +210,7 @@ export default function EmployeeAvailabilityPage() {
     return (
       <div className="min-h-screen bg-[#E5F1FF]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center">Loading user data...</div>
+          <div className="text-center">{t('availability_page.loading_user')}</div>
         </div>
       </div>
     )
@@ -215,7 +221,7 @@ export default function EmployeeAvailabilityPage() {
       <div className="min-h-screen bg-[#E5F1FF]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center text-red-600">
-            This page is only accessible to employees. Please log in with your employee PIN.
+            {t('availability_page.employee_only')}
           </div>
         </div>
       </div>
@@ -226,7 +232,7 @@ export default function EmployeeAvailabilityPage() {
     return (
       <div className="min-h-screen bg-[#E5F1FF]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center">Loading availability calendar...</div>
+          <div className="text-center">{t('availability_page.loading_calendar')}</div>
         </div>
       </div>
     )
@@ -238,9 +244,19 @@ export default function EmployeeAvailabilityPage() {
         {/* Header */}
         <div className="sm:flex sm:items-center sm:justify-between">
           <div className="sm:flex-auto">
-            <h1 className="text-2xl font-bold text-gray-900">My Availability</h1>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => router.back()}
+                className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                <ChevronLeftIcon className="h-4 w-4" />
+                {t('availability_page.back')}
+              </button>
+              <h1 className="text-2xl font-bold text-gray-900">{t('availability_page.title')}</h1>
+            </div>
             <p className="mt-2 text-sm text-gray-700">
-              Set your availability for each day. Click on multiple days and use the buttons below to mark them as available or unavailable.
+              {t('availability_page.description')}
             </p>
           </div>
         </div>
@@ -257,9 +273,7 @@ export default function EmployeeAvailabilityPage() {
                 <ChevronLeftIcon className="h-5 w-5 text-gray-600" />
               </button>
               
-              <h2 className="text-lg font-semibold text-gray-900">
-                {monthNames[currentMonth]} {currentYear}
-              </h2>
+              <h2 className="text-lg font-semibold text-gray-900">{monthLabel}</h2>
               
               <button
                 onClick={() => navigateMonth('next')}
@@ -273,9 +287,9 @@ export default function EmployeeAvailabilityPage() {
           {/* Calendar Grid */}
           <div className="p-6">
             {/* Day Headers */}
-            <div className="grid grid-cols-7 gap-2 mb-4">
+            <div className="grid grid-cols-7 gap-px bg-gray-200">
               {dayNames.map(day => (
-                <div key={day} className="text-center text-sm font-medium text-gray-500 py-2">
+                <div key={day} className="bg-white py-2 text-center text-sm font-semibold text-gray-700">
                   {day}
                 </div>
               ))}
@@ -337,9 +351,9 @@ export default function EmployeeAvailabilityPage() {
           <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
             <div className="text-sm text-gray-600">
               {selectedDates.size > 0 ? (
-                <span>{selectedDates.size} day(s) selected</span>
+                <span>{t('availability_page.selected_days', { count: selectedDates.size })}</span>
               ) : (
-                <span>Click on dates to select them</span>
+                <span>{t('availability_page.select_hint')}</span>
               )}
             </div>
             
@@ -349,7 +363,7 @@ export default function EmployeeAvailabilityPage() {
                   onClick={clearSelection}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
                 >
-                  Clear Selection
+                  {t('availability_page.clear_selection')}
                 </button>
               )}
               
@@ -359,7 +373,7 @@ export default function EmployeeAvailabilityPage() {
                 className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <X className="h-4 w-4 mr-2" />
-                Mark Unavailable
+                {t('availability_page.mark_unavailable')}
               </button>
               
               <button
@@ -368,7 +382,7 @@ export default function EmployeeAvailabilityPage() {
                 className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Check className="h-4 w-4 mr-2" />
-                Mark Available
+                {t('availability_page.mark_available')}
               </button>
             </div>
           </div>
@@ -376,23 +390,23 @@ export default function EmployeeAvailabilityPage() {
 
         {/* Legend */}
         <div className="mt-6 bg-white shadow rounded-lg p-6">
-          <h3 className="text-sm font-medium text-gray-900 mb-4">Legend</h3>
+          <h3 className="text-sm font-medium text-gray-900 mb-4">{t('availability_page.legend')}</h3>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
             <div className="flex items-center">
               <div className="w-4 h-4 bg-green-100 rounded mr-2"></div>
-              <span>Available</span>
+              <span>{t('availability_page.available')}</span>
             </div>
             <div className="flex items-center">
               <div className="w-4 h-4 bg-red-100 rounded mr-2"></div>
-              <span>Unavailable</span>
+              <span>{t('availability_page.unavailable')}</span>
             </div>
             <div className="flex items-center">
               <div className="w-4 h-4 bg-[#31BCFF] rounded mr-2"></div>
-              <span>Selected</span>
+              <span>{t('availability_page.selected')}</span>
             </div>
             <div className="flex items-center">
               <div className="w-4 h-4 bg-gray-100 rounded mr-2"></div>
-              <span>Past Date</span>
+              <span>{t('availability_page.past_date')}</span>
             </div>
           </div>
         </div>

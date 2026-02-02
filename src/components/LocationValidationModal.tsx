@@ -6,6 +6,7 @@ import {
   ExclamationTriangleIcon,
   CheckCircleIcon
 } from '@heroicons/react/24/outline'
+import { useTranslation } from 'react-i18next'
 import { LocationValidationResult, validatePunchLocation } from '@/shared/lib/locationValidation'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
@@ -25,6 +26,7 @@ export default function LocationValidationModal({
   onValidationFailed,
   employeeId
 }: LocationValidationModalProps) {
+  const { t } = useTranslation('punch-clock')
   const [isValidating, setIsValidating] = useState(false)
   const [validationResult, setValidationResult] = useState<LocationValidationResult | null>(null)
 
@@ -70,8 +72,8 @@ export default function LocationValidationModal({
               <MapPinIcon className="w-5 h-5 text-blue-600" />
             </div>
             <div>
-              <div className="text-lg font-semibold text-gray-900">Location Verification</div>
-              <p className="text-sm text-gray-600 font-normal">Verify you're at your workplace</p>
+              <div className="text-lg font-semibold text-gray-900">{t('location_modal.title')}</div>
+              <p className="text-sm text-gray-600 font-normal">{t('location_modal.subtitle')}</p>
             </div>
           </DialogTitle>
         </DialogHeader>
@@ -86,11 +88,10 @@ export default function LocationValidationModal({
                 </div>
               </div>
               <h4 className="text-lg font-medium text-gray-900 mb-2">
-                Location Required
+                {t('location_modal.location_required')}
               </h4>
               <p className="text-gray-600 mb-6">
-                To punch in/out, we need to verify you're at an authorized workplace location. 
-                This helps ensure accurate time tracking.
+                {t('location_modal.location_required_description')}
               </p>
               <Button
                 onClick={handleValidateLocation}
@@ -100,17 +101,17 @@ export default function LocationValidationModal({
                 {isValidating ? (
                   <>
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                    Checking Location...
+                    {t('location_modal.checking_location')}
                   </>
                 ) : (
                   <>
                     <MapPinIcon className="w-5 h-5 mr-2" />
-                    Check My Location
+                    {t('location_modal.check_my_location')}
                   </>
                 )}
               </Button>
               <p className="text-xs text-gray-500 mt-3">
-                You may be prompted to allow location access
+                {t('location_modal.location_prompt_hint')}
               </p>
             </div>
           ) : (
@@ -132,7 +133,7 @@ export default function LocationValidationModal({
               <h4 className={`text-lg font-medium mb-2 ${
                 validationResult.isAllowed ? 'text-green-900' : 'text-red-900'
               }`}>
-                {validationResult.isAllowed ? 'Location Verified' : 'Location Not Authorized'}
+                {validationResult.isAllowed ? t('location_modal.location_verified') : t('location_modal.location_not_authorized')}
               </h4>
               
               <p className={`mb-6 ${
@@ -143,11 +144,11 @@ export default function LocationValidationModal({
 
               {validationResult.nearestLocation && validationResult.distance && (
                 <div className="bg-gray-50 rounded-lg p-4 mb-4 text-left">
-                  <h5 className="text-sm font-medium text-gray-900 mb-2">Location Details</h5>
+                  <h5 className="text-sm font-medium text-gray-900 mb-2">{t('location_modal.location_details')}</h5>
                   <div className="space-y-1 text-sm text-gray-600">
-                    <p><span className="font-medium">Nearest workplace:</span> {validationResult.nearestLocation.name}</p>
-                    <p><span className="font-medium">Your distance:</span> {validationResult.distance}m away</p>
-                    <p><span className="font-medium">Required range:</span> Within {validationResult.nearestLocation.radius}m</p>
+                    <p><span className="font-medium">{t('location_modal.nearest_workplace')}:</span> {validationResult.nearestLocation.name}</p>
+                    <p><span className="font-medium">{t('location_modal.your_distance')}:</span> {t('location_modal.distance_away', { distance: validationResult.distance })}</p>
+                    <p><span className="font-medium">{t('location_modal.required_range')}:</span> {t('location_modal.within_range', { radius: validationResult.nearestLocation.radius })}</p>
                   </div>
                 </div>
               )}
@@ -159,7 +160,7 @@ export default function LocationValidationModal({
                     disabled={isValidating}
                     className="flex-1"
                   >
-                    Try Again
+                    {t('location_modal.try_again')}
                   </Button>
                 )}
                 <Button
@@ -167,7 +168,7 @@ export default function LocationValidationModal({
                   onClick={() => handleOpenChange(false)}
                   className="flex-1"
                 >
-                  Close
+                  {t('location_modal.close')}
                 </Button>
               </div>
             </div>

@@ -27,6 +27,23 @@
   "inactive": "Inactive",
   "edit": "Edit",
   "delete": "Delete",
+  "form": {
+    "editTitle": "Edit Salary Code",
+    "addTitle": "Add New Salary Code",
+    "codePlaceholder": "e.g., 120, 1203",
+    "namePlaceholder": "e.g., Hourly Wages",
+    "descriptionPlaceholder": "Optional description"
+  },
+  "toast": {
+    "deleteConfirmTitle": "Are you sure?",
+    "deleteConfirmText": "You won't be able to revert this!",
+    "deleteConfirmButton": "Yes, delete it!",
+    "cancelButton": "Cancel",
+    "deleteSuccess": "Salary code has been deleted.",
+    "deleteFailed": "Failed to delete salary code",
+    "saveFailed": "Failed to save salary code",
+    "cannotDelete": "Cannot delete salary code with associated pay rules"
+  },
   "categories": {
     "hourly": "Hourly Wages",
     "overtime": "Overtime Pay",

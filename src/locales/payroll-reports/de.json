@@ -33,5 +33,20 @@
   "employee": "Mitarbeiter",
   "period": "Periode",
   "hours": "Stunden",
-  "status": "Status"
+  "status": "Status",
+  "regular": "Normal",
+  "overtime": "Überstunden",
+  "status_draft": "Entwurf",
+  "status_approved": "Genehmigt",
+  "status_paid": "Bezahlt",
+  "missing_info_title": "Fehlende Informationen",
+  "missing_dates_text": "Bitte wählen Sie sowohl Start- als auch Enddatum aus.",
+  "success_title": "Erfolg!",
+  "report_generated": "Bericht mit {{count}} Einträgen erstellt.",
+  "error_title": "Fehler!",
+  "error_generate_report": "Bericht konnte nicht erstellt werden",
+  "no_data_title": "Keine Daten",
+  "no_data_text": "Bitte erstellen Sie zuerst einen Bericht.",
+  "export_success_title": "Erfolg!",
+  "export_success_text": "Lohnbericht wurde erfolgreich exportiert."
 }

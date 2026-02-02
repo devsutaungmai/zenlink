@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { PayrollEntryFormData, Employee } from '@/shared/types'
 import { useCurrency } from '@/shared/hooks/useCurrency'
+import { useTranslation } from 'react-i18next'
 
 interface PayrollEntryFormProps {
   initialData?: Partial<PayrollEntryFormData>
@@ -20,6 +21,7 @@ export default function PayrollEntryForm({
   payrollPeriodId
 }: PayrollEntryFormProps) {
   const { currencySymbol } = useCurrency()
+  const { t } = useTranslation('payroll-entries')
 
   const [formData, setFormData] = useState<PayrollEntryFormData>({
     employeeId: initialData?.employeeId || '',
@@ -185,7 +187,7 @@ export default function PayrollEntryForm({
         {/* Employee Selection */}
         <div>
           <label htmlFor="employeeId" className="block text-sm font-medium text-gray-700 mb-2">
-            Employee <span className="text-red-500">*</span>
+            {t('form.employee')} <span className="text-red-500">*</span>
           </label>
           {loadingEmployees ? (
             <div className="animate-pulse h-12 bg-gray-200 rounded-xl"></div>
@@ -202,7 +204,7 @@ export default function PayrollEntryForm({
                   : 'border-gray-200 focus:border-[#31BCFF] hover:border-gray-300'
               } ${mode === 'edit' ? 'bg-gray-100 cursor-not-allowed' : ''}`}
             >
-              <option value="">Select an employee</option>
+              <option value="">{t('form.select_employee')}</option>
               {employees.map((employee) => (
                 <option key={employee.id} value={employee.id}>
                   {employee.firstName} {employee.lastName} 
@@ -219,8 +221,8 @@ export default function PayrollEntryForm({
           <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-sm font-semibold text-blue-900">Auto-Calculate from Attendance</h3>
-                <p className="text-sm text-blue-700">Calculate hours and wages from approved attendance records (punch in/out times)</p>
+                <h3 className="text-sm font-semibold text-blue-900">{t('form.auto_calculate_title')}</h3>
+                <p className="text-sm text-blue-700">{t('form.auto_calculate_desc')}</p>
               </div>
               <button
                 type="button"
@@ -231,10 +233,10 @@ export default function PayrollEntryForm({
                 {calculatingHours ? (
                   <div className="flex items-center">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Calculating...
+                    {t('form.calculating')}
                   </div>
                 ) : (
-                  'Calculate from Attendance'
+                  t('form.calculate_button')
                 )}
               </button>
             </div>
@@ -243,25 +245,25 @@ export default function PayrollEntryForm({
             {shiftData && (
               <div className="bg-white rounded-lg p-4 border border-blue-200">
                 <h4 className="text-sm font-semibold text-gray-900 mb-3">
-                  {shiftData.wageCalculationMethod?.includes('attendance') ? 'Attendance Summary' : 'Shift Summary'}
+                  {shiftData.wageCalculationMethod?.includes('attendance') ? t('form.attendance_summary') : t('form.shift_summary')}
                 </h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                   <div>
                     <p className="text-gray-500">
-                      {shiftData.wageCalculationMethod?.includes('attendance') ? 'Attendance Records' : 'Total Shifts'}
+                      {shiftData.wageCalculationMethod?.includes('attendance') ? t('form.attendance_records') : t('form.total_shifts')}
                     </p>
                     <p className="font-semibold text-gray-900">{shiftData.totalShifts}</p>
                   </div>
                   <div>
-                    <p className="text-gray-500">Total Hours</p>
+                    <p className="text-gray-500">{t('form.total_hours')}</p>
                     <p className="font-semibold text-gray-900">{shiftData.totalHours.toFixed(2)}</p>
                   </div>
                   <div>
-                    <p className="text-gray-500">Regular Hours</p>
+                    <p className="text-gray-500">{t('form.regular_hours')}</p>
                     <p className="font-semibold text-gray-900">{shiftData.regularHours.toFixed(2)}</p>
                   </div>
                   <div>
-                    <p className="text-gray-500">Overtime Hours</p>
+                    <p className="text-gray-500">{t('form.overtime_hours')}</p>
                     <p className="font-semibold text-gray-900">{shiftData.overtimeHours.toFixed(2)}</p>
                   </div>
                 </div>
@@ -269,7 +271,7 @@ export default function PayrollEntryForm({
                 {/* Attendance Details */}
                 {shiftData.attendanceDetails && shiftData.attendanceDetails.length > 0 && (
                   <div className="mt-4 pt-4 border-t border-gray-200">
-                    <h5 className="text-sm font-medium text-gray-700 mb-2">Attendance Records</h5>
+                    <h5 className="text-sm font-medium text-gray-700 mb-2">{t('form.attendance_records')}</h5>
                     <div className="max-h-40 overflow-y-auto">
                       <div className="space-y-2">
                         {shiftData.attendanceDetails.map((attendance: any, index: number) => (
@@ -285,12 +287,12 @@ export default function PayrollEntryForm({
                                   {new Date(attendance.punchInTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - 
                                   {attendance.punchOutTime 
                                     ? new Date(attendance.punchOutTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
-                                    : 'Still clocked in'
+                                    : t('form.still_clocked_in')
                                   }
                                 </div>
                                 {attendance.shift && (
                                   <div className="text-gray-500 mt-1">
-                                    Scheduled: {attendance.shift.startTime} - {attendance.shift.endTime || 'Open'}
+                                    {t('form.scheduled')}: {attendance.shift.startTime} - {attendance.shift.endTime || t('form.open')}
                                   </div>
                                 )}
                               </div>
@@ -303,7 +305,7 @@ export default function PayrollEntryForm({
                                     ? 'bg-green-100 text-green-700' 
                                     : 'bg-yellow-100 text-yellow-700'
                                 }`}>
-                                  {attendance.isApproved ? 'Approved' : 'Pending'}
+                                  {attendance.isApproved ? t('form.approved') : t('form.pending')}
                                 </span>
                               </div>
                             </div>
@@ -317,7 +319,7 @@ export default function PayrollEntryForm({
                 {/* Shift Details (legacy fallback) */}
                 {shiftData.shiftDetails && shiftData.shiftDetails.length > 0 && !shiftData.attendanceDetails && (
                   <div className="mt-4">
-                    <h5 className="text-sm font-medium text-gray-700 mb-2">Individual Shifts</h5>
+                    <h5 className="text-sm font-medium text-gray-700 mb-2">{t('form.individual_shifts')}</h5>
                     <div className="max-h-40 overflow-y-auto">
                       <div className="space-y-2">
                         {shiftData.shiftDetails.map((shift: any, index: number) => (
@@ -332,13 +334,13 @@ export default function PayrollEntryForm({
                                 </div>
                                 {shift.breakStart && shift.breakEnd && (
                                   <div className="text-gray-500 mt-1">
-                                    Break: {shift.breakStart} - {shift.breakEnd}
+                                    {t('form.break')}: {shift.breakStart} - {shift.breakEnd}
                                     <span className={`ml-1 px-1 py-0.5 rounded text-xs ${
                                       shift.breakPaid 
                                         ? 'bg-green-100 text-green-700' 
                                         : 'bg-yellow-100 text-yellow-700'
                                     }`}>
-                                      {shift.breakPaid ? 'Paid' : 'Unpaid'}
+                                      {shift.breakPaid ? t('form.paid') : t('form.unpaid')}
                                     </span>
                                   </div>
                                 )}
@@ -349,7 +351,7 @@ export default function PayrollEntryForm({
                                 </div>
                                 {shift.breakDuration > 0 && (
                                   <div className="text-gray-500">
-                                    Break: {shift.breakDuration}min
+                                    {t('form.break')}: {shift.breakDuration}min
                                   </div>
                                 )}
                               </div>
@@ -370,7 +372,7 @@ export default function PayrollEntryForm({
           {/* Regular Hours */}
           <div>
             <label htmlFor="regularHours" className="block text-sm font-medium text-gray-700 mb-2">
-              Regular Hours
+              {t('form.regular_hours')}
             </label>
             <input
               type="number"
@@ -393,7 +395,7 @@ export default function PayrollEntryForm({
           {/* Regular Rate */}
           <div>
             <label htmlFor="regularRate" className="block text-sm font-medium text-gray-700 mb-2">
-              Regular Rate ({currencySymbol}/hour) <span className="text-red-500">*</span>
+              {t('form.regular_rate')} ({currencySymbol}/hour) <span className="text-red-500">*</span>
             </label>
             <input
               type="number"
@@ -416,7 +418,7 @@ export default function PayrollEntryForm({
           {/* Overtime Hours */}
           <div>
             <label htmlFor="overtimeHours" className="block text-sm font-medium text-gray-700 mb-2">
-              Overtime Hours
+              {t('form.overtime_hours')}
             </label>
             <input
               type="number"
@@ -439,7 +441,7 @@ export default function PayrollEntryForm({
           {/* Overtime Rate */}
           <div>
             <label htmlFor="overtimeRate" className="block text-sm font-medium text-gray-700 mb-2">
-              Overtime Rate ({currencySymbol}/hour) <span className="text-red-500">*</span>
+              {t('form.overtime_rate')} ({currencySymbol}/hour) <span className="text-red-500">*</span>
             </label>
             <input
               type="number"
@@ -462,7 +464,7 @@ export default function PayrollEntryForm({
           {/* Bonuses */}
           <div>
             <label htmlFor="bonuses" className="block text-sm font-medium text-gray-700 mb-2">
-              Bonuses ({currencySymbol})
+              {t('form.bonuses')} ({currencySymbol})
             </label>
             <input
               type="number"
@@ -485,7 +487,7 @@ export default function PayrollEntryForm({
           {/* Deductions */}
           <div>
             <label htmlFor="deductions" className="block text-sm font-medium text-gray-700 mb-2">
-              Deductions ({currencySymbol})
+              {t('form.deductions')} ({currencySymbol})
             </label>
             <input
               type="number"
@@ -510,7 +512,7 @@ export default function PayrollEntryForm({
         {mode === 'edit' && (
           <div>
             <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-2">
-              Status
+              {t('form.status')}
             </label>
             <select
               id="status"
@@ -520,52 +522,52 @@ export default function PayrollEntryForm({
               className="block w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white/70 backdrop-blur-sm text-gray-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] hover:border-gray-300"
               disabled={isLoading}
             >
-              <option value="DRAFT">Draft</option>
-              <option value="APPROVED">Approved</option>
-              <option value="PAID">Paid</option>
+              <option value="DRAFT">{t('status.draft')}</option>
+              <option value="APPROVED">{t('status.approved')}</option>
+              <option value="PAID">{t('status.paid')}</option>
             </select>
             <p className="mt-1 text-xs text-gray-500">
-              Status determines whether the entry can be edited or processed for payment
+              {t('form.status_hint')}
             </p>
           </div>
         )}
 
         {/* Calculation Summary */}
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Pay Calculation</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('form.pay_calculation')}</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
             <div>
-              <p className="text-gray-600">Regular Pay</p>
+              <p className="text-gray-600">{t('form.regular_pay')}</p>
               <p className="text-lg font-bold text-gray-900">
                 {currencySymbol}{(formData.regularHours * formData.regularRate).toFixed(2)}
               </p>
             </div>
             <div>
-              <p className="text-gray-600">Overtime Pay</p>
+              <p className="text-gray-600">{t('form.overtime_pay')}</p>
               <p className="text-lg font-bold text-gray-900">
                 {currencySymbol}{(formData.overtimeHours * formData.overtimeRate).toFixed(2)}
               </p>
             </div>
             <div>
-              <p className="text-gray-600">Bonuses</p>
+              <p className="text-gray-600">{t('form.bonuses')}</p>
               <p className="text-lg font-bold text-gray-900">
                 {currencySymbol}{formData.bonuses.toFixed(2)}
               </p>
             </div>
             <div>
-              <p className="text-gray-600">Gross Pay</p>
+              <p className="text-gray-600">{t('form.gross_pay')}</p>
               <p className="text-xl font-bold text-[#31BCFF]">
                 {currencySymbol}{grossPay.toFixed(2)}
               </p>
             </div>
             <div>
-              <p className="text-gray-600">Deductions</p>
+              <p className="text-gray-600">{t('form.deductions')}</p>
               <p className="text-lg font-bold text-red-600">
                 -{currencySymbol}{formData.deductions.toFixed(2)}
               </p>
             </div>
             <div>
-              <p className="text-gray-600">Net Pay</p>
+              <p className="text-gray-600">{t('form.net_pay')}</p>
               <p className="text-xl font-bold text-green-600">
                 {currencySymbol}{netPay.toFixed(2)}
               </p>
@@ -576,7 +578,7 @@ export default function PayrollEntryForm({
         {/* Notes */}
         <div>
           <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
-            Notes
+            {t('form.notes')}
           </label>
           <textarea
             id="notes"
@@ -585,7 +587,7 @@ export default function PayrollEntryForm({
             onChange={handleChange}
             rows={3}
             className="block w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white/70 backdrop-blur-sm text-gray-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] hover:border-gray-300"
-            placeholder="Optional notes about this payroll entry..."
+            placeholder={t('form.notes_placeholder')}
             disabled={isLoading}
           />
         </div>
@@ -603,14 +605,14 @@ export default function PayrollEntryForm({
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                {mode === 'create' ? 'Creating...' : 'Updating...'}
+                {mode === 'create' ? t('form.creating') : t('form.updating')}
               </>
             ) : (
               <>
                 <svg className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                {mode === 'create' ? 'Create Entry' : 'Update Entry'}
+                {mode === 'create' ? t('form.create_entry') : t('form.update_entry')}
               </>
             )}
           </button>

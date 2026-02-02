@@ -39,6 +39,7 @@ export default function DashboardNavbar() {
   const { t } = useTranslation()
   const { hasAnyPermission, isAdmin, loading: permissionsLoading } = usePermissions()
   const [activeBottomMenu, setActiveBottomMenu] = useState<string | null>(null)
+  const isEmployeeUser = user?.role === 'EMPLOYEE' || Boolean(user?.employee)
   const profileInitials = (() => {
     const first = user?.firstName?.charAt(0) ?? ''
     const last = user?.lastName?.charAt(0) ?? ''
@@ -112,6 +113,10 @@ export default function DashboardNavbar() {
     if (isAdmin) {
       return adminNavigation
         .map(item => {
+          if (isEmployeeUser && (item.name === 'Invoice' || item.href === '/dashboard/settings')) {
+            return null
+          }
+
           if (item.children) {
             const filteredChildren = item.children.filter(child => child.permissionKey !== 'yourHours')
             if (filteredChildren.length === 0) return null
@@ -127,6 +132,10 @@ export default function DashboardNavbar() {
 
     return adminNavigation
       .map(item => {
+        if (isEmployeeUser && (item.name === 'Invoice' || item.href === '/dashboard/settings')) {
+          return null
+        }
+
         if (item.children) {
           const filteredChildren = item.children.filter(child => {
             if (!child.permissionKey) return true
