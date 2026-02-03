@@ -6,6 +6,7 @@ import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons
 import { useTranslation } from 'react-i18next'
 import Swal from 'sweetalert2'
 import { AccountType } from '@prisma/client'
+import { Switch } from '@/components/ui/switch'
 
 export interface LedgerAccount {
     id: string
@@ -106,6 +107,44 @@ export default function LedgerAccountsPage() {
             account.type.toLowerCase().includes(normalizedSearch)
         )
     })
+
+    const handleStatusChange = async (ledgerAccountId: string, newStatus: boolean) => {
+        try {
+            const res = await fetch(`/api/ledger/accounts/${ledgerAccountId}/toggle-active`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ id: ledgerAccountId, isActive: newStatus }),
+            })
+
+            if (res.ok) {
+                const updatedAccount = await res.json()
+                setledgerAccounts((prevAccounts) =>
+                    prevAccounts.map((account) =>
+                        account.id === ledgerAccountId ? { ...account, isActive: updatedAccount.isActive } : account,
+                    ),
+                )
+            } else {
+                // throw new Error("Failed to update project status")
+                console.error("Failed to update ledger account status", await res.text())
+                await Swal.fire({
+                    title: t("common.error"),
+                    text: "Failed to update ledger account status",
+                    icon: "error",
+                    confirmButtonColor: "#31BCFF",
+                })
+            }
+        } catch (error) {
+            console.error("Error updating ledger account status:", error)
+            await Swal.fire({
+                title: t("common.error"),
+                text: "Failed to update ledger account status",
+                icon: "error",
+                confirmButtonColor: "#31BCFF",
+            })
+        }
+    }
 
     if (loading) {
         return (
@@ -239,7 +278,7 @@ export default function LedgerAccountsPage() {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            {account.isActive ? (
+                                            {/* {account.isActive ? (
                                                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                                     Active
                                                 </span>
@@ -247,7 +286,14 @@ export default function LedgerAccountsPage() {
                                                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
                                                     Inactive
                                                 </span>
-                                            )}
+                                            )} */}
+                                            <div className="flex items-center">
+                                                <Switch
+                                                    id="status"
+                                                    checked={account.isActive}
+                                                    onCheckedChange={(checked) => handleStatusChange(account.id, checked)}
+                                                />
+                                            </div>
                                         </td>
                                         <td className="px-6 py-4">
                                             {account.businessId !== null ? (
@@ -322,7 +368,7 @@ export default function LedgerAccountsPage() {
                                         <div className="bg-gray-50 rounded-lg p-3">
                                             <div className="text-xs text-gray-500 mb-1">Status</div>
                                             <div className="text-sm font-medium text-gray-900">
-                                                {account.isActive ? (
+                                                {/* {account.isActive ? (
                                                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                                         Active
                                                     </span>
@@ -330,7 +376,14 @@ export default function LedgerAccountsPage() {
                                                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
                                                         Inactive
                                                     </span>
-                                                )}
+                                                )} */}
+                                                <div className="flex items-center">
+                                                    <Switch
+                                                        id="status"
+                                                        checked={account.isActive}
+                                                        onCheckedChange={(checked) => handleStatusChange(account.id, checked)}
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
                                     </div>

@@ -21,7 +21,8 @@ export async function GET(request: NextRequest) {
 
     const categories = await prisma.customer.findMany({
       where: {
-        businessId: businessId
+        businessId: businessId,
+        active: true
       },
       orderBy: {
         customerName: 'asc',
