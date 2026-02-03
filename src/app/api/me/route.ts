@@ -4,62 +4,64 @@ import jwt from 'jsonwebtoken'
 import { cookies } from 'next/headers'
 import { prisma } from '@/shared/lib/prisma'
 
-export async function GET() {
+async function getEmployeeFromToken(employeeToken: string) {
   try {
-    const cookieStore = await cookies()
-    const employeeToken = cookieStore.get('employee_token')?.value
-    
-    // If employee token exists, prioritize employee authentication
-    if (employeeToken) {
-      try {
-        // Verify employee token
-        const decoded = jwt.verify(employeeToken, process.env.JWT_SECRET!) as {
-          id: string
-          userId: string
-          employeeId: string
-          role: string
-          type: string
-        }
-        
-        if (decoded.type === 'employee') {
-          // Get employee data
-          const employee = await prisma.employee.findUnique({
-            where: { id: decoded.employeeId },
-            include: {
-              user: true,
-              department: true,
-              employeeGroup: true,
-            },
-          })
-          
-          if (employee) {
-            // Return employee data in a format similar to user data
-            return NextResponse.json({
-              id: employee.user.id,
-              email: employee.user.email,
-              firstName: employee.user.firstName,
-              lastName: employee.user.lastName,
-              role: employee.user.role,
-              businessId: employee.user.businessId,
-              // Additional employee-specific data
-              employee: {
-                id: employee.id,
-                employeeNo: employee.employeeNo,
-                department: employee.department.name,
-                departmentId: employee.departmentId,
-                employeeGroup: employee.employeeGroup?.name,
-                employeeGroupId: employee.employeeGroupId,
-              }
-            })
-          }
-        }
-      } catch (employeeError) {
-        console.error('Employee token verification failed:', employeeError)
-        // Continue to admin check if employee token is invalid
-      }
+    const decoded = jwt.verify(employeeToken, process.env.JWT_SECRET!) as {
+      id: string
+      userId: string
+      employeeId: string
+      role: string
+      type: string
     }
     
-    // Check for admin/manager authentication if no valid employee token
+    if (decoded.type !== 'employee') return null
+    
+    const employee = await prisma.employee.findUnique({
+      where: { id: decoded.employeeId },
+      include: {
+        user: true,
+        department: true,
+        employeeGroup: true,
+      },
+    })
+    
+    if (!employee) return null
+    
+    return {
+      id: employee.user.id,
+      email: employee.user.email,
+      firstName: employee.user.firstName,
+      lastName: employee.user.lastName,
+      role: employee.user.role,
+      businessId: employee.user.businessId,
+      employee: {
+        id: employee.id,
+        employeeNo: employee.employeeNo,
+        department: employee.department?.name,
+        departmentId: employee.departmentId,
+        employeeGroup: employee.employeeGroup?.name,
+        employeeGroupId: employee.employeeGroupId,
+      }
+    }
+  } catch (error) {
+    console.error('Employee token verification failed:', error)
+    return null
+  }
+}
+
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const preferEmployee = searchParams.get('preferEmployee') === 'true'
+    
+    const cookieStore = await cookies()
+    const employeeToken = cookieStore.get('employee_token')?.value
+
+    if (preferEmployee && employeeToken) {
+      const employeeResult = await getEmployeeFromToken(employeeToken)
+      if (employeeResult) return NextResponse.json(employeeResult)
+    }
+  
     const user = await getCurrentUser()
     
     if (user) {
@@ -83,6 +85,11 @@ export async function GET() {
           employeeGroupId: employeeRecord.employeeGroupId,
         } : undefined
       })
+    }
+
+    if (employeeToken) {
+      const employeeResult = await getEmployeeFromToken(employeeToken)
+      if (employeeResult) return NextResponse.json(employeeResult)
     }
     
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

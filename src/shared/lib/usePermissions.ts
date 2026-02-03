@@ -31,7 +31,13 @@ export function usePermissions(): UsePermissionsReturn {
 
   const fetchPermissions = useCallback(async () => {
     try {
-      const res = await fetch('/api/auth/permissions')
+      // Check sessionStorage for tab-specific session mode
+      const sessionMode = typeof window !== 'undefined' 
+        ? sessionStorage.getItem('zenlink_session_mode') 
+        : null
+      const useEmployeeSession = sessionMode === 'employee'
+      const url = useEmployeeSession ? '/api/auth/permissions?preferEmployee=true' : '/api/auth/permissions'
+      const res = await fetch(url)
       if (res.ok) {
         const result = await res.json()
         setData(result)

@@ -46,7 +46,8 @@
     "scheduled": "Scheduled",
     "working": "Working",
     "completed": "Completed",
-    "cancelled": "Cancelled"
+    "cancelled": "Cancelled",
+    "approved": "Approved"
   },
   "upcoming_shifts": {
     "title": "Upcoming Shifts",

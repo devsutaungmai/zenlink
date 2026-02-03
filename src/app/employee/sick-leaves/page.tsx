@@ -34,7 +34,7 @@ interface SickLeaveFormData {
 
 export default function EmployeeSickLeavesPage() {
   const { t } = useTranslation('sick-leave')
-  const { user } = useUser()
+  const { user } = useUser({ preferEmployee: true })
   const [sickLeaves, setSickLeaves] = useState<SickLeave[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

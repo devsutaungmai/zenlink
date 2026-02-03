@@ -16,7 +16,12 @@ interface User {
   }
 }
 
-export function useUser() {
+interface UseUserOptions {
+  preferEmployee?: boolean
+}
+
+export function useUser(options: UseUserOptions = {}) {
+  const { preferEmployee = false } = options
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
@@ -32,7 +37,14 @@ export function useUser() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await fetch('/api/me')
+        // Check sessionStorage for tab-specific session mode
+        // This allows admin and employee sessions to coexist in different tabs
+        const sessionMode = typeof window !== 'undefined' 
+          ? sessionStorage.getItem('zenlink_session_mode') 
+          : null
+        const useEmployeeSession = preferEmployee || sessionMode === 'employee'
+        const url = useEmployeeSession ? '/api/me?preferEmployee=true' : '/api/me'
+        const response = await fetch(url)
         
         if (!response.ok) {
           if (response.status === 401) {
@@ -56,7 +68,7 @@ export function useUser() {
     }
 
     fetchUser()
-  }, [refreshSession])
+  }, [refreshSession, preferEmployee])
 
   // Set up periodic session refresh in a separate effect
   useEffect(() => {

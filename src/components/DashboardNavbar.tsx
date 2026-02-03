@@ -167,6 +167,8 @@ export default function DashboardNavbar() {
       })
       
       if (res.ok) {
+        // Clear tab-specific session mode
+        sessionStorage.removeItem('zenlink_session_mode')
         router.push('/login')
       }
     } catch (error) {

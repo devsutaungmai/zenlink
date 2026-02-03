@@ -13,10 +13,19 @@ export default function DashboardLayout({
   const router = useRouter()
   const { user, loading } = useUser()
 
-  // Authentication check - redirect if not logged in
+  // Authentication check - redirect if not logged in or not admin/manager
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login')
+    if (!loading) {
+      if (!user) {
+        router.push('/login')
+        return
+      }
+      // Only allow admin/manager to access dashboard
+      // If user is employee-only (logged in via PIN in another tab), redirect to login
+      const sessionMode = sessionStorage.getItem('zenlink_session_mode')
+      if (sessionMode !== 'admin' && user.role === 'EMPLOYEE') {
+        router.push('/login')
+      }
     }
   }, [user, loading, router])
 

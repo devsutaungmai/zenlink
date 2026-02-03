@@ -45,7 +45,8 @@
     "scheduled": "Geplant",
     "working": "Arbeitet",
     "completed": "Abgeschlossen",
-    "cancelled": "Storniert"
+    "cancelled": "Storniert",
+    "approved": "Genehmigt"
   },
   "upcoming_shifts": {
     "title": "Kommende Schichten",

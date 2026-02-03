@@ -68,6 +68,9 @@ function EmployeeLoginContent() {
         throw new Error(data.error || 'Login failed')
       }
       
+      // Set session mode in sessionStorage (tab-specific) so this tab uses employee session
+      sessionStorage.setItem('zenlink_session_mode', 'employee')
+      
       console.log('Employee login successful, redirecting to dashboard')
       router.push('/employee/dashboard')
     } catch (err: any) {

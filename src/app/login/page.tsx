@@ -18,15 +18,26 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(true)
   const [checkingAuth, setCheckingAuth] = useState(true)
 
-  // Check if user is already logged in
+  // Check if user is already logged in as admin
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        // Only auto-redirect if this tab has an active admin session
+        // This prevents redirect when employee is logged in on another tab
+        const sessionMode = sessionStorage.getItem('zenlink_session_mode')
+        if (sessionMode !== 'admin') {
+          setCheckingAuth(false)
+          return
+        }
+        
         const response = await fetch('/api/me')
         if (response.ok) {
-          // User is already logged in, redirect to dashboard
-          router.replace('/dashboard')
-          return
+          const data = await response.json()
+          // Only redirect if this is an admin/manager user, not employee-only
+          if (data.role === 'ADMIN' || data.role === 'MANAGER') {
+            router.replace('/dashboard')
+            return
+          }
         }
       } catch (err) {
         // Not logged in, show login page

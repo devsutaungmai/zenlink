@@ -1,11 +1,39 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/shared/lib/prisma'
-import { getCurrentUserOrEmployee } from '@/shared/lib/auth'
+import { getCurrentUser, getCurrentEmployee } from '@/shared/lib/auth'
 
 // GET - Get current user's permissions based on their assigned roles
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const auth = await getCurrentUserOrEmployee()
+    const { searchParams } = new URL(request.url)
+    const preferEmployee = searchParams.get('preferEmployee') === 'true'
+    
+    // Determine which session to use based on preferEmployee flag
+    // This allows admin and employee sessions to coexist in different tabs
+    let auth: { type: 'user' | 'employee', data: any } | null = null
+    
+    if (preferEmployee) {
+      // For employee pages, check employee token first
+      const employee = await getCurrentEmployee()
+      if (employee) {
+        auth = { type: 'employee', data: employee }
+      } else {
+        // Fallback to admin
+        const user = await getCurrentUser()
+        if (user) auth = { type: 'user', data: user }
+      }
+    } else {
+      // For admin pages, check admin token first
+      const user = await getCurrentUser()
+      if (user) {
+        auth = { type: 'user', data: user }
+      } else {
+        // Fallback to employee
+        const employee = await getCurrentEmployee()
+        if (employee) auth = { type: 'employee', data: employee }
+      }
+    }
+    
     if (!auth) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

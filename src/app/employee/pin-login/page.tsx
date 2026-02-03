@@ -112,6 +112,8 @@ function EmployeePinLoginContent() {
       const data = await response.json()
 
       if (response.ok && data.success) {
+        // Set session mode in sessionStorage (tab-specific) so this tab uses employee session
+        sessionStorage.setItem('zenlink_session_mode', 'employee')
         // Redirect to employee dashboard page with employee ID
         router.push(`/employee/dashboard?employeeId=${employee.id}`)
       } else {
