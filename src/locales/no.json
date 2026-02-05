@@ -29,7 +29,8 @@
     "your_hours": "Dine timer",
     "salary_codes": "Lønnskoder",
     "pay_rules": "Lønnsregler",
-    "overtime_rules": "Overtidsregler"
+    "overtime_rules": "Overtidsregler",
+    "events": "Arrangementer"
   },
   "dashboard": {
     "title": "Dashbord",
@@ -983,5 +984,82 @@
     "norwegian": "Norsk",
     "german": "Tysk",
     "select_language": "Velg språk"
+  },
+  "events": {
+    "title": "Arrangementer og Kunngjøringer",
+    "description": "Administrer bedriftsarrangementer, møter og kunngjøringer",
+    "create_event": "Opprett Arrangement",
+    "create_title": "Opprett Arrangement",
+    "create_description": "Opprett et nytt arrangement eller kunngjøring",
+    "edit_title": "Rediger Arrangement",
+    "edit_description": "Oppdater arrangementdetaljer",
+    "edit": "Rediger",
+    "delete": "Slett",
+    "back_to_events": "Tilbake til Arrangementer",
+    "not_found": "Arrangement ikke funnet",
+    "no_events": "Ingen arrangementer funnet",
+    "no_results": "Ingen arrangementer samsvarer med søket",
+    "search_placeholder": "Søk arrangementer...",
+    "all_statuses": "Alle Statuser",
+    "all_departments": "Alle Avdelinger",
+    "types": {
+      "meeting": "Møte",
+      "training": "Opplæring",
+      "event": "Arrangement"
+    },
+    "status": {
+      "draft": "Utkast",
+      "published": "Publisert"
+    },
+    "table": {
+      "title": "Tittel",
+      "date_time": "Dato og Tid",
+      "location": "Sted",
+      "type": "Type",
+      "status": "Status",
+      "departments": "Avdelinger",
+      "actions": "Handlinger"
+    },
+    "form": {
+      "title": "Tittel",
+      "title_placeholder": "Skriv inn arrangementtittel",
+      "description": "Beskrivelse",
+      "description_placeholder": "Skriv inn arrangementbeskrivelse",
+      "date": "Dato",
+      "start_time": "Starttid",
+      "end_time": "Sluttid",
+      "location": "Sted",
+      "location_placeholder": "Skriv inn sted",
+      "type": "Type",
+      "status": "Status",
+      "departments": "Avdelinger",
+      "all_departments": "Alle Avdelinger",
+      "no_departments": "Ingen avdelinger tilgjengelig",
+      "select_all": "Velg Alle",
+      "deselect_all": "Fjern Alle"
+    },
+    "delete_confirm": {
+      "title": "Slett Arrangement?",
+      "text": "Er du sikker på at du vil slette \"{{name}}\"? Denne handlingen kan ikke angres.",
+      "confirm": "Slett",
+      "cancel": "Avbryt"
+    },
+    "create_success": {
+      "title": "Arrangement Opprettet"
+    },
+    "update_success": {
+      "title": "Arrangement Oppdatert"
+    },
+    "delete_success": {
+      "title": "Arrangement Slettet"
+    },
+    "errors": {
+      "fetch_failed": "Kunne Ikke Laste Arrangementer",
+      "fetch_failed_desc": "Kunne ikke laste arrangementer. Vennligst prøv igjen.",
+      "delete_failed": "Kunne Ikke Slette Arrangement"
+    },
+    "pagination": {
+      "showing": "Viser {{from}} til {{to}} av {{total}} arrangementer"
+    }
   }
 }

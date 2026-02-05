@@ -29,7 +29,8 @@
     "your_hours": "Ihre Stunden",
     "salary_codes": "Lohncodes",
     "pay_rules": "Lohnregeln",
-    "overtime_rules": "Überstundenregeln"
+    "overtime_rules": "Überstundenregeln",
+    "events": "Veranstaltungen"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -983,5 +984,82 @@
     "norwegian": "Norwegisch",
     "german": "Deutsch",
     "select_language": "Sprache auswählen"
+  },
+  "events": {
+    "title": "Veranstaltungen & Ankündigungen",
+    "description": "Verwalten Sie Firmenveranstaltungen, Meetings und Ankündigungen",
+    "create_event": "Veranstaltung Erstellen",
+    "create_title": "Veranstaltung Erstellen",
+    "create_description": "Erstellen Sie eine neue Veranstaltung oder Ankündigung",
+    "edit_title": "Veranstaltung Bearbeiten",
+    "edit_description": "Veranstaltungsdetails aktualisieren",
+    "edit": "Bearbeiten",
+    "delete": "Löschen",
+    "back_to_events": "Zurück zu Veranstaltungen",
+    "not_found": "Veranstaltung nicht gefunden",
+    "no_events": "Keine Veranstaltungen gefunden",
+    "no_results": "Keine Veranstaltungen entsprechen Ihrer Suche",
+    "search_placeholder": "Veranstaltungen suchen...",
+    "all_statuses": "Alle Status",
+    "all_departments": "Alle Abteilungen",
+    "types": {
+      "meeting": "Meeting",
+      "training": "Schulung",
+      "event": "Veranstaltung"
+    },
+    "status": {
+      "draft": "Entwurf",
+      "published": "Veröffentlicht"
+    },
+    "table": {
+      "title": "Titel",
+      "date_time": "Datum & Zeit",
+      "location": "Ort",
+      "type": "Typ",
+      "status": "Status",
+      "departments": "Abteilungen",
+      "actions": "Aktionen"
+    },
+    "form": {
+      "title": "Titel",
+      "title_placeholder": "Veranstaltungstitel eingeben",
+      "description": "Beschreibung",
+      "description_placeholder": "Veranstaltungsbeschreibung eingeben",
+      "date": "Datum",
+      "start_time": "Startzeit",
+      "end_time": "Endzeit",
+      "location": "Ort",
+      "location_placeholder": "Ort eingeben",
+      "type": "Typ",
+      "status": "Status",
+      "departments": "Abteilungen",
+      "all_departments": "Alle Abteilungen",
+      "no_departments": "Keine Abteilungen verfügbar",
+      "select_all": "Alle Auswählen",
+      "deselect_all": "Alle Abwählen"
+    },
+    "delete_confirm": {
+      "title": "Veranstaltung Löschen?",
+      "text": "Sind Sie sicher, dass Sie \"{{name}}\" löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.",
+      "confirm": "Löschen",
+      "cancel": "Abbrechen"
+    },
+    "create_success": {
+      "title": "Veranstaltung Erstellt"
+    },
+    "update_success": {
+      "title": "Veranstaltung Aktualisiert"
+    },
+    "delete_success": {
+      "title": "Veranstaltung Gelöscht"
+    },
+    "errors": {
+      "fetch_failed": "Veranstaltungen Konnten Nicht Geladen Werden",
+      "fetch_failed_desc": "Veranstaltungen konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
+      "delete_failed": "Veranstaltung Konnte Nicht Gelöscht Werden"
+    },
+    "pagination": {
+      "showing": "Zeige {{from}} bis {{to}} von {{total}} Veranstaltungen"
+    }
   }
 }

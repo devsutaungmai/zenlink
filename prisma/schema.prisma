@@ -145,6 +145,7 @@ model Business {
   laborLawProfiles         LaborLawProfile[]
   contractTypes            ContractType[]
   businessLedgerVatCodes   BusinessLedgerAccountVatCode[]
+  events                   Event[]
 }
 
 model Employee {
@@ -309,6 +310,7 @@ model Department {
   ledgerEntries               LedgerEntry[]
   employeesMulti              EmployeeDepartment[]
   roles                       RoleDepartment[]
+  events                      EventDepartment[]
 }
 
 model DepartmentCategory {
@@ -1674,4 +1676,54 @@ model ContractType {
   @@unique([name, businessId])
   @@index([businessId])
   @@index([laborLawProfileId])
+}
+
+// ============================================
+// EVENTS & ANNOUNCEMENTS MODULE
+// ============================================
+
+enum EventType {
+  MEETING
+  TRAINING
+  EVENT
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model Event {
+  id           String            @id @default(cuid())
+  title        String
+  description  String?
+  eventDate    DateTime
+  startTime    String
+  endTime      String?
+  location     String?
+  type         EventType         @default(EVENT)
+  status       EventStatus       @default(DRAFT)
+  allDepartments Boolean         @default(false)
+  businessId   String
+  business     Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  departments  EventDepartment[]
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  @@index([businessId])
+  @@index([eventDate])
+  @@index([status])
+}
+
+model EventDepartment {
+  id           String     @id @default(cuid())
+  eventId      String
+  departmentId String
+  event        Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+
+  @@unique([eventId, departmentId])
+  @@index([eventId])
+  @@index([departmentId])
 }

@@ -15,6 +15,7 @@ export const PERMISSION_CATEGORIES = {
   INVOICES: 'Invoices',
   CUSTOMERS: 'Customers',
   PRODUCTS: 'Products',
+  EVENTS: 'Events',
 } as const
 
 export type PermissionCategory = typeof PERMISSION_CATEGORIES[keyof typeof PERMISSION_CATEGORIES]
@@ -166,6 +167,12 @@ export const PERMISSIONS = {
   PRODUCTS_EDIT: 'products.edit',
   PRODUCTS_DELETE: 'products.delete',
   PRODUCTS_SETTINGS: 'products.settings',
+  
+  // Events
+  EVENTS_VIEW: 'events.view',
+  EVENTS_CREATE: 'events.create',
+  EVENTS_EDIT: 'events.edit',
+  EVENTS_DELETE: 'events.delete',
 } as const
 
 export type Permission = typeof PERMISSIONS[keyof typeof PERMISSIONS]
@@ -843,6 +850,32 @@ export const PERMISSION_INFO: Record<Permission, PermissionInfo> = {
     name: 'Product Settings',
     description: 'Configure product form settings',
     category: PERMISSION_CATEGORIES.PRODUCTS,
+  },
+  
+  // Events
+  [PERMISSIONS.EVENTS_VIEW]: {
+    code: PERMISSIONS.EVENTS_VIEW,
+    name: 'View Events',
+    description: 'View events and announcements list',
+    category: PERMISSION_CATEGORIES.EVENTS,
+  },
+  [PERMISSIONS.EVENTS_CREATE]: {
+    code: PERMISSIONS.EVENTS_CREATE,
+    name: 'Create Events',
+    description: 'Create new events and announcements',
+    category: PERMISSION_CATEGORIES.EVENTS,
+  },
+  [PERMISSIONS.EVENTS_EDIT]: {
+    code: PERMISSIONS.EVENTS_EDIT,
+    name: 'Edit Events',
+    description: 'Modify existing events and announcements',
+    category: PERMISSION_CATEGORIES.EVENTS,
+  },
+  [PERMISSIONS.EVENTS_DELETE]: {
+    code: PERMISSIONS.EVENTS_DELETE,
+    name: 'Delete Events',
+    description: 'Remove events and announcements',
+    category: PERMISSION_CATEGORIES.EVENTS,
   },
 }
 

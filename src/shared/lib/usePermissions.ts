@@ -117,4 +117,7 @@ export const NAV_PERMISSIONS = {
   
   // Settings
   settings: [PERMISSIONS.SETTINGS_VIEW],
+  
+  // Events
+  events: [PERMISSIONS.EVENTS_VIEW],
 }

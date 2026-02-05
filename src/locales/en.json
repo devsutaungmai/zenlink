@@ -29,7 +29,8 @@
     "your_hours": "Your Hours",
     "salary_codes": "Salary Codes",
     "pay_rules": "Pay Rules",
-    "overtime_rules": "Overtime Rules"
+    "overtime_rules": "Overtime Rules",
+    "events": "Events"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -979,5 +980,82 @@
     "norwegian": "Norwegian",
     "german": "German",
     "select_language": "Select Language"
+  },
+  "events": {
+    "title": "Events & Announcements",
+    "description": "Manage company events, meetings, and announcements",
+    "create_event": "Create Event",
+    "create_title": "Create Event",
+    "create_description": "Create a new event or announcement",
+    "edit_title": "Edit Event",
+    "edit_description": "Update event details",
+    "edit": "Edit",
+    "delete": "Delete",
+    "back_to_events": "Back to Events",
+    "not_found": "Event not found",
+    "no_events": "No events found",
+    "no_results": "No events match your search",
+    "search_placeholder": "Search events...",
+    "all_statuses": "All Statuses",
+    "all_departments": "All Departments",
+    "types": {
+      "meeting": "Meeting",
+      "training": "Training",
+      "event": "Event"
+    },
+    "status": {
+      "draft": "Draft",
+      "published": "Published"
+    },
+    "table": {
+      "title": "Title",
+      "date_time": "Date & Time",
+      "location": "Location",
+      "type": "Type",
+      "status": "Status",
+      "departments": "Departments",
+      "actions": "Actions"
+    },
+    "form": {
+      "title": "Title",
+      "title_placeholder": "Enter event title",
+      "description": "Description",
+      "description_placeholder": "Enter event description",
+      "date": "Date",
+      "start_time": "Start Time",
+      "end_time": "End Time",
+      "location": "Location",
+      "location_placeholder": "Enter location",
+      "type": "Type",
+      "status": "Status",
+      "departments": "Departments",
+      "all_departments": "All Departments",
+      "no_departments": "No departments available",
+      "select_all": "Select All",
+      "deselect_all": "Deselect All"
+    },
+    "delete_confirm": {
+      "title": "Delete Event?",
+      "text": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone.",
+      "confirm": "Delete",
+      "cancel": "Cancel"
+    },
+    "create_success": {
+      "title": "Event Created"
+    },
+    "update_success": {
+      "title": "Event Updated"
+    },
+    "delete_success": {
+      "title": "Event Deleted"
+    },
+    "errors": {
+      "fetch_failed": "Failed to Load Events",
+      "fetch_failed_desc": "Unable to load events. Please try again.",
+      "delete_failed": "Failed to Delete Event"
+    },
+    "pagination": {
+      "showing": "Showing {{from}} to {{to}} of {{total}} events"
+    }
   }
 }

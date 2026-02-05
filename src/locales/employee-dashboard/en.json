@@ -61,7 +61,11 @@
     "title": "Events & Announcements",
     "meeting": "Meeting",
     "training": "Training", 
-    "event": "Event"
+    "event": "Event",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "at": "at",
+    "no_events": "No upcoming events"
   },
   "quick_actions": {
     "title": "Quick Actions",
