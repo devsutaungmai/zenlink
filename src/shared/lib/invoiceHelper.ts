@@ -409,8 +409,6 @@ export function formatCustomerNumberForDisplay(number: string): string {
   return number;
 }
 
-// src/shared/lib/voucherHelper.ts
-
 export function formatVoucherNumberForDisplay(voucherNumber: string): string {
   // Split: "cmjba1dlg0000pgutvum2gxvn-2025-1" 
   // Returns: "2025-1"
@@ -499,7 +497,7 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
           product: {
             include: {
               ledgerAccount: {
-                include: { businessVatCodes: { include: { vatCode: true } } }
+                include: { vatCode: true, businessVatCodes: { include: { vatCode: true } } }
               },
             }
           }
@@ -571,17 +569,21 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
 
       const businessVat = line.product.ledgerAccount?.businessVatCodes
         ?.find(bvc => bvc.businessId === invoice.businessId);
+        
+        // console.log("BusinessVat>>>>>>>" + businessVat);
+
+      let settlementNumber;
 
       if (businessVat?.vatCode?.settlementAccountNumber) {
-        const settlementNumber = Number(
+        settlementNumber = Number(
           businessVat.vatCode.settlementAccountNumber
         );
-
-        ledgerVatCodeId =
-          vatAccounts.get(settlementNumber) ?? vatPayable.id;
       }
-
-
+      else{
+        settlementNumber = Number(line.product.ledgerAccount?.vatCode?.settlementAccountNumber);
+      }
+      ledgerVatCodeId =
+          vatAccounts.get(settlementNumber) || vatPayable.id;
       if (!ledgerAccountId) {
         throw new Error(`Product ${line.productName} has no linked ledger account`);
       }
@@ -1119,10 +1121,162 @@ export function getAccountType(accountNumber: number): AccountType {
   }
 }
 
-export const formatDateLocal = (date: Date) => {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
+export const formatDateLocal = (date?: string | Date | null) => {
+  if (!date) return ""
+
+  const d = typeof date === "string" ? new Date(date) : date
+
+  if (isNaN(d.getTime())) return ""
+
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, "0")
+  const day = String(d.getDate()).padStart(2, "0")
+
   return `${year}-${month}-${day}`
 }
+
+export async function getCustomerLedger({
+  businessId,
+  fromDate,
+  toDate,
+  customerId,
+}: {
+  businessId: string
+  fromDate?: Date
+  toDate?: Date
+  customerId?: string
+}) {
+  const ledger = await prisma.ledgerEntry.findMany({
+    where: {
+      businessId,
+
+      postingDate: {
+        ...(fromDate ? { gte: fromDate } : {}),
+        ...(toDate ? { lte: toDate } : {}),
+      },
+
+      OR: [
+        { debitAccount: { accountNumber: 1500 } },
+        { creditAccount: { accountNumber: 1500 } },
+      ],
+
+      ...(customerId && {
+        invoice: {
+          customerId: customerId,
+        },
+      }),
+    },
+
+    include: {
+      invoice: {
+        select: {
+          invoiceNumber: true,
+          dueDate: true,
+          customer: {
+            select: {
+              id: true,
+              customerName: true,
+              customerNumber: true,
+            },
+          },
+        },
+      },
+      voucher: { select: { voucherNumber: true } },
+      debitAccount: { select: { accountNumber: true } },
+      creditAccount: { select: { accountNumber: true } },
+    },
+
+    orderBy: [
+      { postingDate: "asc" },
+      { createdAt: "asc" },
+    ],
+  })
+
+  return buildCustomerLedgerRows(ledger)
+}
+
+function buildCustomerLedgerRows(ledger: any[]) {
+  const rows = ledger.map(e => {
+    const isDebit1500 = e.debitAccount?.accountNumber === 1500
+
+    const signedAmount = isDebit1500
+      ? Number(e.amount)
+      : -Number(e.amount)
+
+    return {
+      customerId: e.invoice?.customer?.id ?? "UNKNOWN",
+      customerName: e.invoice?.customer?.customerName ?? "Unknown customer",
+      customerNumber: e.invoice?.customer?.customerNumber ?? "",
+
+      postingDate: e.postingDate,
+      voucherNumber: e.voucher?.voucherNumber ?? "",
+      dueDate: e.invoice?.dueDate ?? null,
+
+      description: getText(e),
+
+      amount: signedAmount,
+    }
+  })
+
+  return groupAndBalance(rows)
+}
+
+function getText(e: any) {
+  switch (e.entryType) {
+    case "INVOICE_POST":
+      return `Invoice ${formatInvoiceNumberForDisplay(e.invoice?.invoiceNumber ?? "")}`
+
+    case "PAYMENT_RECEIVED":
+      return `Payment`
+
+    case "CREDIT_NOTE":
+      return `Credit note ${formatInvoiceNumberForDisplay(e.invoice?.invoiceNumber ?? "")}`
+
+    default:
+      return e.description ?? ""
+  }
+}
+
+function groupAndBalance(rows: any[]) {
+  const grouped: Record<string, any[]> = {}
+
+  for (const r of rows) {
+    if (!grouped[r.customerId]) grouped[r.customerId] = []
+    grouped[r.customerId].push(r)
+  }
+
+  const result: any[] = []
+
+  for (const customerId of Object.keys(grouped)) {
+    let balance = 0
+
+    const customerRows = grouped[customerId].map(r => {
+      balance += r.amount
+
+      return {
+        ...r,
+        balance,
+      }
+    })
+
+    // closing balance row
+    customerRows.push({
+      isClosingBalance: true,
+      description: "Closing balance",
+      amount: balance,
+      balance,
+    })
+
+    result.push({
+      customerId,
+      customerName: customerRows[0].customerName,
+      customerNumber: customerRows[0].customerNumber,
+      rows: customerRows,
+    })
+  }
+
+  return result
+}
+
+
 
