@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/shared/lib/auth'
 import { prisma } from '@/shared/lib/prisma'
 import { getBaseHourlyRate } from '@/shared/lib/salary-calculator'
+import ExcelJS from 'exceljs'
 
 interface PowerOfficeRow {
   employeeNo: string
@@ -118,7 +119,7 @@ export async function GET(request: NextRequest) {
         totalAttendanceHours += hours
 
         // Determine salary code
-        let salaryCode = 'SALARY' // Default salary code
+        let salaryCode = '120' // Default salary code
 
         // Check if attendance has a shift with shift type config
         if (attendance.shift?.shiftTypeConfig?.salaryCode) {
@@ -169,13 +170,42 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({
-      success: true,
-      data: powerOfficeRows,
-      period: {
-        name: payrollPeriod.name,
-        startDate: payrollPeriod.startDate,
-        endDate: payrollPeriod.endDate,
+    // Generate Excel file
+    const workbook = new ExcelJS.Workbook()
+    const worksheet = workbook.addWorksheet('SalaryBasis')
+
+    // Add [SalaryBasis] header in first row
+    worksheet.getCell('A1').value = '[SalaryBasis]'
+
+    // Add column headers in row 2
+    worksheet.getRow(2).values = ['EmployeeNo', 'PayItemCode', 'Rate', 'Amount', 'Quantity']
+
+    // Add data rows starting from row 3
+    powerOfficeRows.forEach((row, index) => {
+      const rowNumber = index + 3
+      worksheet.getRow(rowNumber).values = [
+        row.employeeNo,
+        row.payItemCode,
+        row.rate,
+        row.amount,
+        row.quantity
+      ]
+    })
+
+    // Auto-fit columns
+    worksheet.columns.forEach(column => {
+      column.width = 15
+    })
+
+    // Generate buffer
+    const buffer = await workbook.xlsx.writeBuffer()
+
+    // Return Excel file
+    return new NextResponse(buffer, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'Content-Disposition': `attachment; filename="poweroffice-export-${payrollPeriod.name.replace(/\s+/g, '-')}.xlsx"`,
       },
     })
 

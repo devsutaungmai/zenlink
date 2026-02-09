@@ -5,7 +5,9 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { 
   DocumentTextIcon,
-  ArrowLeftIcon
+  ArrowLeftIcon,
+  PlusIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
 import { useTranslation } from 'react-i18next'
@@ -50,6 +52,13 @@ export default function GeneratePayrollEntriesPage() {
   
   const [loading, setLoading] = useState(false)
   const [generating, setGenerating] = useState(false)
+  const [showCreatePeriodModal, setShowCreatePeriodModal] = useState(false)
+  const [creatingPeriod, setCreatingPeriod] = useState(false)
+  const [newPeriod, setNewPeriod] = useState({
+    name: '',
+    startDate: '',
+    endDate: ''
+  })
 
   useEffect(() => {
     fetchData()
@@ -93,6 +102,67 @@ export default function GeneratePayrollEntriesPage() {
       })
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleCreatePeriod = async () => {
+    if (!newPeriod.name || !newPeriod.startDate || !newPeriod.endDate) {
+      await Swal.fire({
+        title: t('generate.missing_fields'),
+        text: t('generate.fill_all_fields'),
+        icon: 'warning',
+        confirmButtonColor: '#31BCFF',
+      })
+      return
+    }
+
+    try {
+      setCreatingPeriod(true)
+      const response = await fetch('/api/payroll-periods', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newPeriod.name,
+          startDate: new Date(newPeriod.startDate).toISOString(),
+          endDate: new Date(newPeriod.endDate).toISOString(),
+        })
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        await Swal.fire({
+          toast: true,
+          position: 'top-end',
+          title: t('generate.period_created'),
+          icon: 'success',
+          showConfirmButton: false,
+          timer: 2000
+        })
+        
+        // Refresh periods and select the new one
+        const periodResponse = await fetch('/api/payroll-periods')
+        if (periodResponse.ok) {
+          const periodData = await periodResponse.json()
+          setPayrollPeriods(periodData.payrollPeriods || [])
+          setSelectedPayrollPeriod(data.id)
+        }
+        
+        setShowCreatePeriodModal(false)
+        setNewPeriod({ name: '', startDate: '', endDate: '' })
+      } else {
+        throw new Error(data.error || 'Failed to create payroll period')
+      }
+    } catch (error) {
+      console.error('Error creating payroll period:', error)
+      await Swal.fire({
+        title: t('generate.error_title'),
+        text: error instanceof Error ? error.message : t('generate.error_create_period'),
+        icon: 'error',
+        confirmButtonColor: '#31BCFF',
+      })
+    } finally {
+      setCreatingPeriod(false)
     }
   }
 
@@ -212,9 +282,19 @@ export default function GeneratePayrollEntriesPage() {
         <div className="space-y-6">
           {/* Payroll Period Selection */}
           <div>
-            <label htmlFor="payrollPeriod" className="block text-sm font-medium text-gray-700 mb-2">
-              {t('generate.payroll_period_required')}
-            </label>
+            <div className="flex justify-between items-center mb-2">
+              <label htmlFor="payrollPeriod" className="block text-sm font-medium text-gray-700">
+                {t('generate.payroll_period_required')}
+              </label>
+              <button
+                type="button"
+                onClick={() => setShowCreatePeriodModal(true)}
+                className="inline-flex items-center text-sm text-[#31BCFF] hover:text-[#31BCFF]/80 font-medium"
+              >
+                <PlusIcon className="w-4 h-4 mr-1" />
+                {t('generate.create_period')}
+              </button>
+            </div>
             <select
               id="payrollPeriod"
               value={selectedPayrollPeriod}
@@ -450,6 +530,94 @@ export default function GeneratePayrollEntriesPage() {
           </div>
         </div>
       </div>
+
+      {/* Create Payroll Period Modal */}
+      {showCreatePeriodModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-900">{t('generate.create_period_title')}</h3>
+              <button
+                onClick={() => {
+                  setShowCreatePeriodModal(false)
+                  setNewPeriod({ name: '', startDate: '', endDate: '' })
+                }}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <XMarkIcon className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {t('generate.period_name')} <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={newPeriod.name}
+                  onChange={(e) => setNewPeriod(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder={t('generate.period_name_placeholder')}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF]"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {t('generate.start_date')} <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="date"
+                  value={newPeriod.startDate}
+                  onChange={(e) => setNewPeriod(prev => ({ ...prev, startDate: e.target.value }))}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF]"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {t('generate.end_date')} <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="date"
+                  value={newPeriod.endDate}
+                  onChange={(e) => setNewPeriod(prev => ({ ...prev, endDate: e.target.value }))}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF]"
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
+              <button
+                onClick={() => {
+                  setShowCreatePeriodModal(false)
+                  setNewPeriod({ name: '', startDate: '', endDate: '' })
+                }}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+              >
+                {t('generate.cancel')}
+              </button>
+              <button
+                onClick={handleCreatePeriod}
+                disabled={creatingPeriod}
+                className="px-6 py-2 bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium rounded-lg shadow hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+              >
+                {creatingPeriod ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    {t('generate.creating')}
+                  </>
+                ) : (
+                  <>
+                    <PlusIcon className="w-4 h-4 mr-1" />
+                    {t('generate.create')}
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

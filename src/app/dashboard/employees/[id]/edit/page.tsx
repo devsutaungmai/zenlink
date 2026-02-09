@@ -257,12 +257,12 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
 
   const getShiftStatusBadge = (shift: Shift) => {
     if (!shift.endTime) {
-      return <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">Active</span>
+      return <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">{t('employees.tabs.active')}</span>
     }
     if (shift.approved) {
-      return <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Completed</span>
+      return <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">{t('employees.tabs.completed')}</span>
     }
-    return <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">Pending</span>
+    return <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">{t('employees.tabs.pending')}</span>
   }
 
   const getShiftTypeBadge = (shiftType: string) => {
@@ -285,7 +285,7 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
       month: 'short', 
       day: 'numeric' 
     })
-    const timeRange = endTime ? `${startTime} - ${endTime}` : `${startTime} - Ongoing`
+    const timeRange = endTime ? `${startTime} - ${endTime}` : `${startTime} - ${t('employees.tabs.ongoing')}`
     return { date: shiftDate, time: timeRange }
   }
 
@@ -310,18 +310,18 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
   }
 
   const months = [
-    { value: '1', label: 'January' },
-    { value: '2', label: 'February' },
-    { value: '3', label: 'March' },
-    { value: '4', label: 'April' },
-    { value: '5', label: 'May' },
-    { value: '6', label: 'June' },
-    { value: '7', label: 'July' },
-    { value: '8', label: 'August' },
-    { value: '9', label: 'September' },
-    { value: '10', label: 'October' },
-    { value: '11', label: 'November' },
-    { value: '12', label: 'December' }
+    { value: '1', label: t('employees.tabs.months.january') },
+    { value: '2', label: t('employees.tabs.months.february') },
+    { value: '3', label: t('employees.tabs.months.march') },
+    { value: '4', label: t('employees.tabs.months.april') },
+    { value: '5', label: t('employees.tabs.months.may') },
+    { value: '6', label: t('employees.tabs.months.june') },
+    { value: '7', label: t('employees.tabs.months.july') },
+    { value: '8', label: t('employees.tabs.months.august') },
+    { value: '9', label: t('employees.tabs.months.september') },
+    { value: '10', label: t('employees.tabs.months.october') },
+    { value: '11', label: t('employees.tabs.months.november') },
+    { value: '12', label: t('employees.tabs.months.december') }
   ]
 
   if (loading) {
@@ -419,9 +419,9 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
             <div className="space-y-4 sm:space-y-6">
               {/* Header */}
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                <h3 className="text-base sm:text-lg font-medium text-gray-900">Employee Shifts</h3>
+                <h3 className="text-base sm:text-lg font-medium text-gray-900">{t('employees.tabs.employee_shifts')}</h3>
                 <div className="text-xs sm:text-sm text-gray-500">
-                  Showing shifts for {employee?.firstName} {employee?.lastName}
+                  {t('employees.tabs.showing_shifts_for', { name: `${employee?.firstName} ${employee?.lastName}` })}
                 </div>
               </div>
 
@@ -429,7 +429,7 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
               <div className="bg-gray-50/50 rounded-xl p-3 sm:p-4 space-y-3 sm:space-y-4">
                 <div className="flex items-center gap-2 mb-2 sm:mb-3">
                   <FunnelIcon className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 flex-shrink-0" />
-                  <span className="text-xs sm:text-sm font-medium text-gray-700">Filter Shifts</span>
+                  <span className="text-xs sm:text-sm font-medium text-gray-700">{t('employees.tabs.filter_shifts')}</span>
                 </div>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
@@ -438,7 +438,7 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
                     <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <input
                       type="text"
-                      placeholder="Search shifts..."
+                      placeholder={t('employees.tabs.search_shifts')}
                       value={shiftsSearchTerm}
                       onChange={(e) => setShiftsSearchTerm(e.target.value)}
                       className="pl-10 pr-4 py-2 w-full rounded-lg border border-gray-300 bg-white text-sm focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
@@ -457,7 +457,7 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
                     }}
                     className="px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
                   >
-                    <option value="">All Months</option>
+                    <option value="">{t('employees.tabs.all_months')}</option>
                     {months.map((month) => (
                       <option key={month.value} value={month.value}>
                         {month.label} 2025
@@ -491,7 +491,7 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
                 </div>
 
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs sm:text-sm text-gray-500">
-                  <span>Showing {filteredShifts.length} of {shifts.length} shifts</span>
+                  <span>{t('employees.tabs.showing_shifts_count', { filtered: filteredShifts.length, total: shifts.length })}</span>
                   {(selectedMonth || startDate || endDate || shiftsSearchTerm) && (
                     <button
                       onClick={() => {
@@ -502,7 +502,7 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
                       }}
                       className="text-[#31BCFF] hover:text-[#31BCFF]/80 font-medium text-left sm:text-right"
                     >
-                      Clear Filters
+                      {t('employees.tabs.clear_filters')}
                     </button>
                   )}
                 </div>
@@ -516,11 +516,11 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
               ) : filteredShifts.length === 0 ? (
                 <div className="bg-gray-50 rounded-xl p-6 sm:p-8 text-center">
                   <ClockIcon className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
-                  <h4 className="text-base sm:text-lg font-medium text-gray-900 mb-2">No Shifts Found</h4>
+                  <h4 className="text-base sm:text-lg font-medium text-gray-900 mb-2">{t('employees.tabs.no_shifts_found')}</h4>
                   <p className="text-sm sm:text-base text-gray-500">
                     {shifts.length === 0 
-                      ? 'This employee has no shifts assigned yet.'
-                      : 'No shifts match your current filters. Try adjusting the search criteria.'
+                      ? t('employees.tabs.no_shifts_assigned')
+                      : t('employees.tabs.no_shifts_match_filters')
                     }
                   </p>
                 </div>
@@ -533,22 +533,22 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
                         <thead className="bg-gray-50">
                           <tr>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Date & Time
+                              {t('employees.tabs.date_time')}
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Type
+                              {t('employees.tabs.type')}
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Group
+                              {t('employees.tabs.group')}
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Wage
+                              {t('employees.tabs.wage')}
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Status
+                              {t('employees.tabs.status')}
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Notes
+                              {t('employees.tabs.notes')}
                             </th>
                           </tr>
                         </thead>
@@ -613,11 +613,11 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
                           {/* Details Grid */}
                           <div className="grid grid-cols-2 gap-3 text-sm">
                             <div>
-                              <div className="text-xs text-gray-500 mb-1">Type</div>
+                              <div className="text-xs text-gray-500 mb-1">{t('employees.tabs.type')}</div>
                               {getShiftTypeBadge(shift.shiftType)}
                             </div>
                             <div>
-                              <div className="text-xs text-gray-500 mb-1">Wage</div>
+                              <div className="text-xs text-gray-500 mb-1">{t('employees.tabs.wage')}</div>
                               <div className="font-medium text-gray-900">
                                 {currencySymbol}{shift.wage.toFixed(2)}
                                 <div className="text-xs text-gray-500">
@@ -630,7 +630,7 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
                           {/* Group */}
                           {shift.employeeGroup?.name && (
                             <div>
-                              <div className="text-xs text-gray-500 mb-1">Group</div>
+                              <div className="text-xs text-gray-500 mb-1">{t('employees.tabs.group')}</div>
                               <div className="text-sm text-gray-900">{shift.employeeGroup.name}</div>
                             </div>
                           )}
@@ -638,7 +638,7 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
                           {/* Notes */}
                           {shift.note && (
                             <div>
-                              <div className="text-xs text-gray-500 mb-1">Notes</div>
+                              <div className="text-xs text-gray-500 mb-1">{t('employees.tabs.notes')}</div>
                               <div className="text-sm text-gray-600 line-clamp-2">{shift.note}</div>
                             </div>
                           )}
@@ -654,28 +654,28 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
           {activeTab === 'payslips' && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium text-gray-900">Employee Payslips</h3>
+                <h3 className="text-lg font-medium text-gray-900">{t('employees.tabs.employee_payslips')}</h3>
                 <div className="text-sm text-gray-500">
-                  Download and view payslips
+                  {t('employees.tabs.download_view_payslips')}
                 </div>
               </div>
               
               {payslipsLoading ? (
                 <div className="bg-gray-50 rounded-xl p-8 text-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#31BCFF] mx-auto mb-4"></div>
-                  <p className="text-gray-500">Loading payslips...</p>
+                  <p className="text-gray-500">{t('employees.tabs.loading_payslips')}</p>
                 </div>
               ) : (Array.isArray(payslips) ? payslips : []).length === 0 ? (
                 <div className="bg-gray-50 rounded-xl p-8 text-center">
                   <DocumentTextIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <h4 className="text-lg font-medium text-gray-900 mb-2">No Payslips Found</h4>
+                  <h4 className="text-lg font-medium text-gray-900 mb-2">{t('employees.tabs.no_payslips_found')}</h4>
                   <p className="text-gray-500">
-                    This employee has no payslips generated yet.
+                    {t('employees.tabs.no_payslips_generated')}
                   </p>
                 </div>
               ) : (
                 <div className="bg-gray-50 rounded-xl p-8">
-                  <h4 className="text-lg font-medium text-gray-900 mb-6 text-center">Payslips Archive</h4>
+                  <h4 className="text-lg font-medium text-gray-900 mb-6 text-center">{t('employees.tabs.payslips_archive')}</h4>
                   <div className="space-y-3">
                     {(Array.isArray(payslips) ? payslips : []).map((payslip) => (
                       <div key={payslip.id} className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm flex items-center justify-between">
@@ -683,13 +683,13 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
                           <DocumentTextIcon className="w-8 h-8 text-[#31BCFF]" />
                           <div className="text-left">
                             <div className="font-medium text-gray-900">
-                              Payslip - {payslip.payrollPeriod?.name || 'Unknown Period'}
+                              {t('employees.tabs.payslip')} - {payslip.payrollPeriod?.name || t('employees.tabs.unknown_period')}
                             </div>
                             <div className="text-sm text-gray-500">
-                              Period: {payslip.payrollPeriod?.startDate ? new Date(payslip.payrollPeriod.startDate).toLocaleDateString() : 'N/A'} - {payslip.payrollPeriod?.endDate ? new Date(payslip.payrollPeriod.endDate).toLocaleDateString() : 'N/A'}
+                              {t('employees.tabs.period')}: {payslip.payrollPeriod?.startDate ? new Date(payslip.payrollPeriod.startDate).toLocaleDateString() : 'N/A'} - {payslip.payrollPeriod?.endDate ? new Date(payslip.payrollPeriod.endDate).toLocaleDateString() : 'N/A'}
                             </div>
                             <div className="text-xs text-gray-400">
-                              Status: {payslip.status || 'N/A'} | Total: {currencySymbol}{payslip.totalGrossPay || 0}
+                              {t('employees.tabs.status')}: {payslip.status || 'N/A'} | {t('employees.tabs.total')}: {currencySymbol}{payslip.totalGrossPay || 0}
                             </div>
                           </div>
                         </div>
@@ -725,28 +725,28 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
           {activeTab === 'sickleave' && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium text-gray-900">Sick Leave Records</h3>
+                <h3 className="text-lg font-medium text-gray-900">{t('employees.tabs.sick_leave_records')}</h3>
                 <div className="text-sm text-gray-500">
-                  Track sick leave history and requests
+                  {t('employees.tabs.track_sick_leave')}
                 </div>
               </div>
               
               {sickLeavesLoading ? (
                 <div className="bg-gray-50 rounded-xl p-8 text-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#31BCFF] mx-auto mb-4"></div>
-                  <p className="text-gray-500">Loading sick leave records...</p>
+                  <p className="text-gray-500">{t('employees.tabs.loading_sick_leave')}</p>
                 </div>
               ) : (Array.isArray(sickLeaves) ? sickLeaves : []).length === 0 ? (
                 <div className="bg-gray-50 rounded-xl p-8 text-center">
                   <HeartIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <h4 className="text-lg font-medium text-gray-900 mb-2">No Sick Leave Records</h4>
+                  <h4 className="text-lg font-medium text-gray-900 mb-2">{t('employees.tabs.no_sick_leave_records')}</h4>
                   <p className="text-gray-500">
-                    This employee has no sick leave records yet.
+                    {t('employees.tabs.no_sick_leave_yet_message')}
                   </p>
                 </div>
               ) : (
                 <div className="bg-gray-50 rounded-xl p-8">
-                  <h4 className="text-lg font-medium text-gray-900 mb-6 text-center">Sick Leave History</h4>
+                  <h4 className="text-lg font-medium text-gray-900 mb-6 text-center">{t('employees.tabs.sick_leave_history')}</h4>
                   <div className="space-y-3">
                     {(Array.isArray(sickLeaves) ? sickLeaves : []).map((sickLeave) => (
                       <div key={sickLeave.id} className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
@@ -755,7 +755,7 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
                             <HeartIcon className="w-6 h-6 text-red-400" />
                             <div className="text-left">
                               <div className="font-medium text-gray-900">
-                                Sick Leave Request
+                                {t('employees.tabs.sick_leave_request')}
                               </div>
                               <div className="text-sm text-gray-500">
                                 {new Date(sickLeave.startDate).toLocaleDateString()} - {new Date(sickLeave.endDate).toLocaleDateString()}
@@ -767,16 +767,16 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
                             sickLeave.approved === false ? 'bg-red-100 text-red-800' :
                             'bg-yellow-100 text-yellow-800'
                           }`}>
-                            {sickLeave.approved === true ? 'Approved' : sickLeave.approved === false ? 'Rejected' : 'Pending'}
+                            {sickLeave.approved === true ? t('employees.tabs.approved') : sickLeave.approved === false ? t('employees.tabs.rejected') : t('employees.tabs.pending')}
                           </span>
                         </div>
                         {sickLeave.reason && (
                           <div className="text-sm text-gray-500">
-                            Reason: {sickLeave.reason}
+                            {t('employees.tabs.reason')}: {sickLeave.reason}
                           </div>
                         )}
                         <div className="text-xs text-gray-400 mt-2">
-                          Submitted: {new Date(sickLeave.createdAt).toLocaleDateString()}
+                          {t('employees.tabs.submitted')}: {new Date(sickLeave.createdAt).toLocaleDateString()}
                         </div>
                       </div>
                     ))}

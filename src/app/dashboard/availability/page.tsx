@@ -849,7 +849,7 @@ export default function AdminAvailabilityPage() {
         /* List View for better performance with many employees */
         <Card>
           <CardHeader className="p-4 sm:p-6">
-            <CardTitle className="text-lg sm:text-xl">{t('availability.employee_list_title')}</CardTitle>
+            <CardTitle className="text-lg sm:text-xl">{t('list.title')}</CardTitle>
           </CardHeader>
           <CardContent className="p-3 sm:p-6">
             <div className="space-y-3 sm:space-y-4">
