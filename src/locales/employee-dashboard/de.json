@@ -60,7 +60,11 @@
     "title": "Veranstaltungen und Ankündigungen",
     "meeting": "Besprechung",
     "training": "Schulung",
-    "event": "Veranstaltung"
+    "event": "Veranstaltung",
+    "today": "Heute",
+    "tomorrow": "Morgen",
+    "at": "um",
+    "no_events": "Keine kommenden Veranstaltungen"
   },
   "quick_actions": {
     "title": "Schnellaktionen",

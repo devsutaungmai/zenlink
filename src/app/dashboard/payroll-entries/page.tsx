@@ -40,6 +40,7 @@ export default function PayrollEntriesPage() {
   const [showStatusModal, setShowStatusModal] = useState(false)
   const [bulkStatus, setBulkStatus] = useState<string>('APPROVED')
   const [showExportModal, setShowExportModal] = useState(false)
+  const [exportPeriodId, setExportPeriodId] = useState<string>('')
 
   const fetchEntries = async (page = 1, status = '', periodId = '') => {
     try {
@@ -351,128 +352,87 @@ export default function PayrollEntriesPage() {
       return
     }
 
+    // Pre-select period if already filtered
+    if (periodFilter !== 'all') {
+      setExportPeriodId(periodFilter)
+    } else {
+      setExportPeriodId('')
+    }
+
     // Show export format selection modal
     setShowExportModal(true)
   }
 
-  const exportNormalFormat = () => {
-    const approvedEntries = filteredEntries.filter(entry => entry.status === 'APPROVED' || entry.status === 'PAID' )
-    
-    const headers = [
-      'Employee Name',
-      'Employee No',
-      'Payroll Period',
-      'Period Start Date',
-      'Period End Date',
-      'Regular Hours',
-      'Overtime Hours',
-      'Gross Pay',
-      'Deductions',
-      'Net Pay',
-      'Status',
-      'Created Date'
-    ]
-    
-    const excelData = approvedEntries.map(entry => [
-      `${entry.employee.firstName} ${entry.employee.lastName}`,
-      entry.employee.employeeNo || '',
-      entry.payrollPeriod.name,
-      new Date(entry.payrollPeriod.startDate).toLocaleDateString(),
-      new Date(entry.payrollPeriod.endDate).toLocaleDateString(),
-      entry.regularHours.toString(),
-      entry.overtimeHours.toString(),
-      entry.grossPay.toFixed(2),
-      entry.deductions.toFixed(2),
-      entry.netPay.toFixed(2),
-      entry.status,
-      new Date(entry.createdAt).toLocaleDateString()
-    ])
+  const exportNormalFormat = async () => {
+    if (!exportPeriodId) {
+      await Swal.fire({
+        title: 'Period Required',
+        text: 'Please select a payroll period to export.',
+        icon: 'warning',
+        confirmButtonColor: '#31BCFF',
+      })
+      return
+    }
 
-    // Create CSV content
-    const csvContent = [headers, ...excelData]
-      .map(row => row.map(field => `"${field}"`).join(','))
-      .join('\n')
-
-    // Create and download the file
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const filename = `payroll-entries-normal-${new Date().toISOString().split('T')[0]}.csv`
-    downloadBlob(blob, filename)
-
-    setShowExportModal(false)
-
-    // Show success message
-    Swal.fire({
-      toast: true,
-      position: 'top-end',
-      title: 'Success!',
-      text: 'Normal format exported successfully!',
-      icon: 'success',
-      confirmButtonColor: '#31BCFF',
-    })
-  }
-
-  const exportPowerOfficeGoFormat = async () => {
     try {
-      let payrollPeriodId = periodFilter
-
-      if (periodFilter === 'all') {
-        const approvedEntries = filteredEntries.filter(entry => entry.status === 'APPROVED' || entry.status === 'PAID')
-        
-        if (approvedEntries.length === 0) {
-          await Swal.fire({
-            title: 'No Approved or Paid Entries',
-            text: 'There are no approved or paid payroll entries to export.',
-            icon: 'warning',
-            confirmButtonColor: '#31BCFF',
-          })
-          return
-        }
-
-        const uniquePeriods = new Set(approvedEntries.map(e => e.payrollPeriod.id))
-        
-        if (uniquePeriods.size > 1) {
-          await Swal.fire({
-            title: 'Multiple Periods Found',
-            text: 'Your selection contains entries from multiple payroll periods. Please filter by a specific period before exporting.',
-            icon: 'warning',
-            confirmButtonColor: '#31BCFF',
-          })
-          return
-        }
-
-        payrollPeriodId = Array.from(uniquePeriods)[0]
-      }
-
       const statusQuery = statusFilter !== 'all' ? statusFilter : 'APPROVED,PAID'
-      const response = await fetch(`/api/payroll-entries/export-poweroffice?payrollPeriodId=${payrollPeriodId}&status=${encodeURIComponent(statusQuery)}`)
-      const result = await response.json()
-
+      const response = await fetch(`/api/payroll-entries/export-normal?payrollPeriodId=${exportPeriodId}&status=${encodeURIComponent(statusQuery)}`)
+      
       if (!response.ok) {
+        const result = await response.json()
         throw new Error(result.error || 'Failed to generate export')
       }
 
-      const headers = [
-        'EmployeeNo',
-        'PayItemCode',
-        'Rate',
-        'Amount',
-        'Quantity'
-      ]
+      const blob = await response.blob()
+      const periodName = periods.find(p => p.id === exportPeriodId)?.name || 'export'
+      const filename = `payroll-entries-normal-${periodName.replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.xlsx`
+      downloadBlob(blob, filename)
+
+      setShowExportModal(false)
+
+      await Swal.fire({
+        toast: true,
+        position: 'top-end',
+        title: 'Success!',
+        text: 'Normal format exported successfully!',
+        icon: 'success',
+        confirmButtonColor: '#31BCFF',
+      })
+    } catch (error) {
+      console.error('Error exporting normal format:', error)
+      await Swal.fire({
+        title: 'Error!',
+        text: error instanceof Error ? error.message : 'Failed to export normal format',
+        icon: 'error',
+        confirmButtonColor: '#31BCFF',
+      })
+    }
+  }
+
+  const exportPowerOfficeGoFormat = async () => {
+    if (!exportPeriodId) {
+      await Swal.fire({
+        title: 'Period Required',
+        text: 'Please select a payroll period to export.',
+        icon: 'warning',
+        confirmButtonColor: '#31BCFF',
+      })
+      return
+    }
+
+    try {
+      const statusQuery = statusFilter !== 'all' ? statusFilter : 'APPROVED,PAID'
+      const response = await fetch(`/api/payroll-entries/export-poweroffice?payrollPeriodId=${exportPeriodId}&status=${encodeURIComponent(statusQuery)}&format=xlsx`)
       
-      const excelData = result.data.map((row: any) => [
-        row.employeeNo,
-        row.payItemCode,
-        row.rate.toFixed(2),
-        row.amount.toFixed(2),
-        row.quantity.toFixed(2)
-      ])
+      if (!response.ok) {
+        const result = await response.json()
+        throw new Error(result.error || 'Failed to generate export')
+      }
 
-      const csvContent = [headers, ...excelData]
-        .map(row => row.map((field: string | number) => `"${field}"`).join(','))
-        .join('\n')
-
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-      const filename = `payroll-entries-poweroffice-${new Date().toISOString().split('T')[0]}.csv`
+      // Download the Excel file directly from the response
+      const blob = await response.blob()
+      const periodName = periods.find(p => p.id === exportPeriodId)?.name || 'export'
+      const filename = `payroll-entries-poweroffice-${periodName.replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.xlsx`
       downloadBlob(blob, filename)
 
       setShowExportModal(false)
@@ -1024,6 +984,25 @@ export default function PayrollEntriesPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 sm:space-y-4 py-4 sm:py-6">
+            {/* Period Selector */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Payroll Period <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={exportPeriodId}
+                onChange={(e) => setExportPeriodId(e.target.value)}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] text-sm"
+              >
+                <option value="">-- Select Period --</option>
+                {periods.map((period) => (
+                  <option key={period.id} value={period.id}>
+                    {period.name} ({new Date(period.startDate).toLocaleDateString()} - {new Date(period.endDate).toLocaleDateString()})
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <button
               onClick={exportNormalFormat}
               className="w-full p-3 sm:p-4 border-2 border-gray-300 rounded-lg sm:rounded-xl hover:border-[#31BCFF] hover:bg-blue-50 transition-all duration-200 text-left group"
@@ -1035,7 +1014,7 @@ export default function PayrollEntriesPage() {
                 <div className="flex-1 min-w-0">
                   <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-1">Normal Format</h3>
                   <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">
-                    Standard CSV export with complete payroll information
+                    Standard Excel export with complete payroll information
                   </p>
                   <div className="text-[10px] sm:text-xs text-gray-500">
                     <strong>Includes:</strong> Employee Name, Employee No, Period, Hours, Gross Pay, Deductions, Net Pay, Status, and more

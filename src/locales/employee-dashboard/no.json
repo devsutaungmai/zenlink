@@ -58,9 +58,13 @@
   },
   "events": {
     "title": "Hendelser og kunngjøringer",
-    "meeting": "møte",
-    "training": "opplæring",
-    "event": "hendelse"
+    "meeting": "Møte",
+    "training": "Opplæring",
+    "event": "Hendelse",
+    "today": "I dag",
+    "tomorrow": "I morgen",
+    "at": "kl.",
+    "no_events": "Ingen kommende hendelser"
   },
   "quick_actions": {
     "title": "Hurtighandlinger",

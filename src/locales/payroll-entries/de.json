@@ -98,7 +98,19 @@
     "employees_label": "Mitarbeiter",
     "error_title": "Fehler!",
     "error_load_data": "Daten für die Lohngenerierung konnten nicht geladen werden.",
-    "error_generate": "Lohneinträge konnten nicht generiert werden"
+    "error_generate": "Lohneinträge konnten nicht generiert werden",
+    "create_period": "Periode erstellen",
+    "create_period_title": "Lohnperiode erstellen",
+    "period_name": "Periodenname",
+    "period_name_placeholder": "z.B. Januar 2026",
+    "start_date": "Startdatum",
+    "end_date": "Enddatum",
+    "missing_fields": "Fehlende Felder",
+    "fill_all_fields": "Bitte füllen Sie alle erforderlichen Felder aus.",
+    "period_created": "Lohnperiode erfolgreich erstellt!",
+    "error_create_period": "Lohnperiode konnte nicht erstellt werden.",
+    "creating": "Erstelle...",
+    "create": "Erstellen"
   },
   "view_page": {
     "title": "Lohneintrag Details",

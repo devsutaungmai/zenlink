@@ -98,7 +98,19 @@
     "employees_label": "medarbeidere",
     "error_title": "Feil!",
     "error_load_data": "Kunne ikke laste data for lønnsgenerering.",
-    "error_generate": "Kunne ikke generere lønnsoppføringer"
+    "error_generate": "Kunne ikke generere lønnsoppføringer",
+    "create_period": "Opprett periode",
+    "create_period_title": "Opprett lønnsperiode",
+    "period_name": "Periodenavn",
+    "period_name_placeholder": "f.eks. Januar 2026",
+    "start_date": "Startdato",
+    "end_date": "Sluttdato",
+    "missing_fields": "Manglende felt",
+    "fill_all_fields": "Vennligst fyll ut alle påkrevde felt.",
+    "period_created": "Lønnsperiode opprettet!",
+    "error_create_period": "Kunne ikke opprette lønnsperiode.",
+    "creating": "Oppretter...",
+    "create": "Opprett"
   },
   "view_page": {
     "title": "Lønnsoppføring Detaljer",

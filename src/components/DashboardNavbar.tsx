@@ -9,7 +9,8 @@ import {
   UserGroupIcon,
   Cog6ToothIcon,
   ClockIcon,
-  CurrencyDollarIcon
+  CurrencyDollarIcon,
+  CalendarDaysIcon
 } from '@heroicons/react/24/outline'
 import { usePathname, useRouter } from 'next/navigation'
 import { useUser } from '@/shared/lib/useUser'
@@ -66,6 +67,7 @@ export default function DashboardNavbar() {
         { name: t('navigation.employee_groups'), href: '/dashboard/employee-groups', permissionKey: 'employeeGroups' },
         { name: t('navigation.contracts'), href: '/dashboard/contracts', permissionKey: 'contracts' },
         { name: t('navigation.roles'), href: '/dashboard/roles', permissionKey: 'roles' },
+        { name: t('navigation.events'), href: '/dashboard/events', permissionKey: 'events' },
       ],
     },
     {

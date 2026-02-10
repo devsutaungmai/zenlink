@@ -29,7 +29,8 @@
     "your_hours": "Your Hours",
     "salary_codes": "Salary Codes",
     "pay_rules": "Pay Rules",
-    "overtime_rules": "Overtime Rules"
+    "overtime_rules": "Overtime Rules",
+    "events": "Events"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -319,6 +320,7 @@
       "access_roles_hint": "Select departments first to see department-specific roles. Roles without department restrictions are always shown.",
       "access_roles_hint_filtered": "Showing roles available for selected departments and roles without department restrictions.",
       "contract_type_hint": "Contract type determines overtime eligibility and weekly hour limits.",
+      "contract_type_option": "{{name}} ({{ftePercent}}% FTE)",
       "saving": "Saving..."
     },
     "tabs": {
@@ -333,10 +335,91 @@
       "showing_shifts_for": "Showing shifts for {{name}}",
       "shifts_management": "Shift Management",
       "shifts_management_description": "Shift history and management will be displayed here.",
+      "filter_shifts": "Filter Shifts",
+      "search_shifts": "Search shifts...",
+      "all_months": "All Months",
+      "showing_shifts_count": "Showing {{filtered}} of {{total}} shifts",
+      "clear_filters": "Clear Filters",
+      "no_shifts_found": "No Shifts Found",
+      "no_shifts_assigned": "This employee has no shifts assigned yet.",
+      "no_shifts_match_filters": "No shifts match your current filters. Try adjusting the search criteria.",
+      "date_time": "Date & Time",
+      "type": "Type",
+      "group": "Group",
+      "wage": "Wage",
+      "status": "Status",
+      "notes": "Notes",
+      "ongoing": "Ongoing",
+      "active": "Active",
+      "completed": "Completed",
+      "pending": "Pending",
+      "months": {
+        "january": "January",
+        "february": "February",
+        "march": "March",
+        "april": "April",
+        "may": "May",
+        "june": "June",
+        "july": "July",
+        "august": "August",
+        "september": "September",
+        "october": "October",
+        "november": "November",
+        "december": "December"
+      },
       "no_payslips_yet": "No Payslips Yet",
       "payslips_available_after_creation": "Payslips are available after the employee is created.",
+      "employee_payslips": "Employee Payslips",
+      "download_view_payslips": "Download and view payslips",
+      "payslips_archive": "Payslips Archive",
+      "payslips_archive_description": "Access and download payslips for this employee",
+      "loading_payslips": "Loading payslips...",
+      "no_payslips_found": "No Payslips Found",
+      "no_payslips_generated": "This employee has no payslips generated yet.",
+      "payslip": "Payslip",
+      "unknown_period": "Unknown Period",
+      "period": "Period",
+      "total": "Total",
       "no_sick_leave_yet": "No Sick Leave Yet",
-      "sick_leave_available_after_creation": "Sick leave records are available after the employee is created."
+      "sick_leave_available_after_creation": "Sick leave records are available after the employee is created.",
+      "sick_leave_records": "Sick Leave Records",
+      "track_sick_leave": "Track sick leave history and requests",
+      "sick_leave_management": "Sick Leave Management",
+      "sick_leave_management_description": "View and manage sick leave requests for this employee",
+      "loading_sick_leave": "Loading sick leave records...",
+      "no_sick_leave_records": "No Sick Leave Records",
+      "no_sick_leave_yet_message": "This employee has no sick leave records yet.",
+      "sick_leave_history": "Sick Leave History",
+      "sick_leave_request": "Sick Leave Request",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "reason": "Reason",
+      "submitted": "Submitted",
+      "employee_data_unavailable": "Employee data not available",
+      "employee_contracts": "Employee Contracts",
+      "contracts_for": "Contracts for {{name}}",
+      "create_contract": "Create Contract",
+      "no_contracts_yet": "No Contracts Yet",
+      "contracts_available_after_creation": "Contracts will be available after the employee is created.",
+      "no_contracts_found": "No Contracts Found",
+      "no_contracts_assigned": "This employee has no contracts assigned yet.",
+      "access_denied": "Access Denied",
+      "no_permission_contracts": "You don't have permission to view contracts.",
+      "active_contract": "Active Contract",
+      "start_date": "Start Date",
+      "end_date": "End Date",
+      "employee_group": "Employee Group",
+      "signed": "Signed",
+      "unsigned": "Unsigned",
+      "expired": "Expired",
+      "signed_on": "Signed on {{date}}",
+      "view_contract": "View Contract",
+      "download_contract": "Download Contract",
+      "downloading": "Downloading...",
+      "download": "Download",
+      "close": "Close",
+      "loading_preview": "Loading contract preview...",
+      "failed_load_preview": "Failed to load preview"
     }
   },
   "employee_groups": {
@@ -979,5 +1062,82 @@
     "norwegian": "Norwegian",
     "german": "German",
     "select_language": "Select Language"
+  },
+  "events": {
+    "title": "Events & Announcements",
+    "description": "Manage company events, meetings, and announcements",
+    "create_event": "Create Event",
+    "create_title": "Create Event",
+    "create_description": "Create a new event or announcement",
+    "edit_title": "Edit Event",
+    "edit_description": "Update event details",
+    "edit": "Edit",
+    "delete": "Delete",
+    "back_to_events": "Back to Events",
+    "not_found": "Event not found",
+    "no_events": "No events found",
+    "no_results": "No events match your search",
+    "search_placeholder": "Search events...",
+    "all_statuses": "All Statuses",
+    "all_departments": "All Departments",
+    "types": {
+      "meeting": "Meeting",
+      "training": "Training",
+      "event": "Event"
+    },
+    "status": {
+      "draft": "Draft",
+      "published": "Published"
+    },
+    "table": {
+      "title": "Title",
+      "date_time": "Date & Time",
+      "location": "Location",
+      "type": "Type",
+      "status": "Status",
+      "departments": "Departments",
+      "actions": "Actions"
+    },
+    "form": {
+      "title": "Title",
+      "title_placeholder": "Enter event title",
+      "description": "Description",
+      "description_placeholder": "Enter event description",
+      "date": "Date",
+      "start_time": "Start Time",
+      "end_time": "End Time",
+      "location": "Location",
+      "location_placeholder": "Enter location",
+      "type": "Type",
+      "status": "Status",
+      "departments": "Departments",
+      "all_departments": "All Departments",
+      "no_departments": "No departments available",
+      "select_all": "Select All",
+      "deselect_all": "Deselect All"
+    },
+    "delete_confirm": {
+      "title": "Delete Event?",
+      "text": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone.",
+      "confirm": "Delete",
+      "cancel": "Cancel"
+    },
+    "create_success": {
+      "title": "Event Created"
+    },
+    "update_success": {
+      "title": "Event Updated"
+    },
+    "delete_success": {
+      "title": "Event Deleted"
+    },
+    "errors": {
+      "fetch_failed": "Failed to Load Events",
+      "fetch_failed_desc": "Unable to load events. Please try again.",
+      "delete_failed": "Failed to Delete Event"
+    },
+    "pagination": {
+      "showing": "Showing {{from}} to {{to}} of {{total}} events"
+    }
   }
 }

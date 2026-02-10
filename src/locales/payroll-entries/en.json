@@ -98,7 +98,19 @@
     "employees_label": "employees",
     "error_title": "Error!",
     "error_load_data": "Failed to load data for payroll generation.",
-    "error_generate": "Failed to generate payroll entries"
+    "error_generate": "Failed to generate payroll entries",
+    "create_period": "Create Period",
+    "create_period_title": "Create Payroll Period",
+    "period_name": "Period Name",
+    "period_name_placeholder": "e.g., January 2026",
+    "start_date": "Start Date",
+    "end_date": "End Date",
+    "missing_fields": "Missing Fields",
+    "fill_all_fields": "Please fill in all required fields.",
+    "period_created": "Payroll period created successfully!",
+    "error_create_period": "Failed to create payroll period.",
+    "creating": "Creating...",
+    "create": "Create"
   },
   "view_page": {
     "title": "Payroll Entry Details",

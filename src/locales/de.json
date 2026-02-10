@@ -29,7 +29,8 @@
     "your_hours": "Ihre Stunden",
     "salary_codes": "Lohncodes",
     "pay_rules": "Lohnregeln",
-    "overtime_rules": "Überstundenregeln"
+    "overtime_rules": "Überstundenregeln",
+    "events": "Veranstaltungen"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -317,6 +318,7 @@
       "access_roles_hint": "Wählen Sie zuerst Abteilungen aus, um abteilungsspezifische Rollen zu sehen. Rollen ohne Abteilungsbeschränkungen werden immer angezeigt.",
       "access_roles_hint_filtered": "Zeigt verfügbare Rollen für ausgewählte Abteilungen und Rollen ohne Abteilungsbeschränkungen.",
       "contract_type_hint": "Vertragstyp bestimmt Überstundenberechtigung und wöchentliche Stundengrenzen.",
+      "contract_type_option": "{{name}} ({{ftePercent}}% FTE)",
       "saving": "Speichern..."
     },
     "phone_filter_placeholder": "Nach Telefonnummer filtern",
@@ -332,18 +334,91 @@
       "showing_shifts_for": "Zeige Schichten für {{name}}",
       "shifts_management": "Schichtverwaltung",
       "shifts_management_description": "Schichtverlauf und Verwaltung werden hier angezeigt.",
+      "filter_shifts": "Schichten filtern",
+      "search_shifts": "Schichten suchen...",
+      "all_months": "Alle Monate",
+      "showing_shifts_count": "Zeige {{filtered}} von {{total}} Schichten",
+      "clear_filters": "Filter löschen",
+      "no_shifts_found": "Keine Schichten gefunden",
+      "no_shifts_assigned": "Diesem Mitarbeiter sind noch keine Schichten zugewiesen.",
+      "no_shifts_match_filters": "Keine Schichten entsprechen Ihren aktuellen Filtern. Versuchen Sie, die Suchkriterien anzupassen.",
+      "date_time": "Datum & Zeit",
+      "type": "Typ",
+      "group": "Gruppe",
+      "wage": "Lohn",
+      "status": "Status",
+      "notes": "Notizen",
+      "ongoing": "Laufend",
+      "active": "Aktiv",
+      "completed": "Abgeschlossen",
+      "pending": "Ausstehend",
+      "months": {
+        "january": "Januar",
+        "february": "Februar",
+        "march": "März",
+        "april": "April",
+        "may": "Mai",
+        "june": "Juni",
+        "july": "Juli",
+        "august": "August",
+        "september": "September",
+        "october": "Oktober",
+        "november": "November",
+        "december": "Dezember"
+      },
       "no_payslips_yet": "Noch keine Gehaltsabrechnungen",
       "payslips_available_after_creation": "Gehaltsabrechnungen sind verfügbar, nachdem der Mitarbeiter erstellt wurde.",
       "employee_payslips": "Mitarbeiter-Gehaltsabrechnungen",
       "download_view_payslips": "Gehaltsabrechnungen herunterladen und anzeigen",
       "payslips_archive": "Gehaltsabrechnungsarchiv",
       "payslips_archive_description": "Zugriff auf und Herunterladen von Gehaltsabrechnungen für diesen Mitarbeiter",
+      "loading_payslips": "Gehaltsabrechnungen werden geladen...",
+      "no_payslips_found": "Keine Gehaltsabrechnungen gefunden",
+      "no_payslips_generated": "Für diesen Mitarbeiter wurden noch keine Gehaltsabrechnungen erstellt.",
+      "payslip": "Gehaltsabrechnung",
+      "unknown_period": "Unbekannte Periode",
+      "period": "Periode",
+      "total": "Gesamt",
       "no_sick_leave_yet": "Noch keine Krankmeldungsaufzeichnungen",
       "sick_leave_available_after_creation": "Krankmeldungsaufzeichnungen sind verfügbar, nachdem der Mitarbeiter erstellt wurde.",
       "sick_leave_records": "Krankmeldungsaufzeichnungen",
       "track_sick_leave": "Krankmeldungsverlauf und Anfragen verfolgen",
       "sick_leave_management": "Krankmeldungsverwaltung",
-      "sick_leave_management_description": "Krankmeldungsanfragen für diesen Mitarbeiter anzeigen und verwalten"
+      "sick_leave_management_description": "Krankmeldungsanfragen für diesen Mitarbeiter anzeigen und verwalten",
+      "loading_sick_leave": "Krankmeldungen werden geladen...",
+      "no_sick_leave_records": "Keine Krankmeldungen",
+      "no_sick_leave_yet_message": "Dieser Mitarbeiter hat noch keine Krankmeldungen.",
+      "sick_leave_history": "Krankmeldungsverlauf",
+      "sick_leave_request": "Krankmeldungsantrag",
+      "approved": "Genehmigt",
+      "rejected": "Abgelehnt",
+      "reason": "Grund",
+      "submitted": "Eingereicht",
+      "employee_data_unavailable": "Mitarbeiterdaten nicht verfügbar",
+      "employee_contracts": "Mitarbeiterverträge",
+      "contracts_for": "Verträge für {{name}}",
+      "create_contract": "Vertrag erstellen",
+      "no_contracts_yet": "Noch keine Verträge",
+      "contracts_available_after_creation": "Verträge sind verfügbar, nachdem der Mitarbeiter erstellt wurde.",
+      "no_contracts_found": "Keine Verträge gefunden",
+      "no_contracts_assigned": "Diesem Mitarbeiter sind noch keine Verträge zugewiesen.",
+      "access_denied": "Zugriff verweigert",
+      "no_permission_contracts": "Sie haben keine Berechtigung, Verträge anzuzeigen.",
+      "active_contract": "Aktiver Vertrag",
+      "start_date": "Startdatum",
+      "end_date": "Enddatum",
+      "employee_group": "Mitarbeitergruppe",
+      "signed": "Unterschrieben",
+      "unsigned": "Nicht unterschrieben",
+      "expired": "Abgelaufen",
+      "signed_on": "Unterschrieben am {{date}}",
+      "view_contract": "Vertrag anzeigen",
+      "download_contract": "Vertrag herunterladen",
+      "downloading": "Wird heruntergeladen...",
+      "download": "Herunterladen",
+      "close": "Schließen",
+      "loading_preview": "Vertragsvorschau wird geladen...",
+      "failed_load_preview": "Vorschau konnte nicht geladen werden"
     },
     "table": {
       "employee": "Mitarbeiter",
@@ -983,5 +1058,82 @@
     "norwegian": "Norwegisch",
     "german": "Deutsch",
     "select_language": "Sprache auswählen"
+  },
+  "events": {
+    "title": "Veranstaltungen & Ankündigungen",
+    "description": "Verwalten Sie Firmenveranstaltungen, Meetings und Ankündigungen",
+    "create_event": "Veranstaltung Erstellen",
+    "create_title": "Veranstaltung Erstellen",
+    "create_description": "Erstellen Sie eine neue Veranstaltung oder Ankündigung",
+    "edit_title": "Veranstaltung Bearbeiten",
+    "edit_description": "Veranstaltungsdetails aktualisieren",
+    "edit": "Bearbeiten",
+    "delete": "Löschen",
+    "back_to_events": "Zurück zu Veranstaltungen",
+    "not_found": "Veranstaltung nicht gefunden",
+    "no_events": "Keine Veranstaltungen gefunden",
+    "no_results": "Keine Veranstaltungen entsprechen Ihrer Suche",
+    "search_placeholder": "Veranstaltungen suchen...",
+    "all_statuses": "Alle Status",
+    "all_departments": "Alle Abteilungen",
+    "types": {
+      "meeting": "Meeting",
+      "training": "Schulung",
+      "event": "Veranstaltung"
+    },
+    "status": {
+      "draft": "Entwurf",
+      "published": "Veröffentlicht"
+    },
+    "table": {
+      "title": "Titel",
+      "date_time": "Datum & Zeit",
+      "location": "Ort",
+      "type": "Typ",
+      "status": "Status",
+      "departments": "Abteilungen",
+      "actions": "Aktionen"
+    },
+    "form": {
+      "title": "Titel",
+      "title_placeholder": "Veranstaltungstitel eingeben",
+      "description": "Beschreibung",
+      "description_placeholder": "Veranstaltungsbeschreibung eingeben",
+      "date": "Datum",
+      "start_time": "Startzeit",
+      "end_time": "Endzeit",
+      "location": "Ort",
+      "location_placeholder": "Ort eingeben",
+      "type": "Typ",
+      "status": "Status",
+      "departments": "Abteilungen",
+      "all_departments": "Alle Abteilungen",
+      "no_departments": "Keine Abteilungen verfügbar",
+      "select_all": "Alle Auswählen",
+      "deselect_all": "Alle Abwählen"
+    },
+    "delete_confirm": {
+      "title": "Veranstaltung Löschen?",
+      "text": "Sind Sie sicher, dass Sie \"{{name}}\" löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.",
+      "confirm": "Löschen",
+      "cancel": "Abbrechen"
+    },
+    "create_success": {
+      "title": "Veranstaltung Erstellt"
+    },
+    "update_success": {
+      "title": "Veranstaltung Aktualisiert"
+    },
+    "delete_success": {
+      "title": "Veranstaltung Gelöscht"
+    },
+    "errors": {
+      "fetch_failed": "Veranstaltungen Konnten Nicht Geladen Werden",
+      "fetch_failed_desc": "Veranstaltungen konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
+      "delete_failed": "Veranstaltung Konnte Nicht Gelöscht Werden"
+    },
+    "pagination": {
+      "showing": "Zeige {{from}} bis {{to}} von {{total}} Veranstaltungen"
+    }
   }
 }

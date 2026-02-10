@@ -102,32 +102,16 @@ interface Attendance {
   shift?: Shift | null
 }
 
-const events = [
-  {
-    id: 1,
-    title: "Team Meeting",
-    time: "02:00 PM",
-    date: "Today",
-    type: "meeting",
-    location: "Conference Room A",
-  },
-  {
-    id: 2,
-    title: "Safety Training",
-    time: "10:00 AM",
-    date: "June 2",
-    type: "training",
-    location: "Training Center",
-  },
-  {
-    id: 3,
-    title: "Company Lunch",
-    time: "12:00 PM",
-    date: "June 5",
-    type: "event",
-    location: "Cafeteria",
-  },
-]
+interface EventItem {
+  id: string
+  title: string
+  eventDate: string
+  startTime: string
+  endTime: string | null
+  location: string | null
+  type: 'MEETING' | 'TRAINING' | 'EVENT'
+  status: string
+}
 
 function EmployeeDashboardContent() {
   const router = useRouter()
@@ -162,6 +146,8 @@ function EmployeeDashboardContent() {
   const [showScheduleView, setShowScheduleView] = useState(false)
   const [scheduleDate, setScheduleDate] = useState(new Date())
   const [monthlyShifts, setMonthlyShifts] = useState<Shift[]>([])
+  const [events, setEvents] = useState<EventItem[]>([])
+  const [eventsLoading, setEventsLoading] = useState(true)
 
   // Schedule navigation functions
   const navigateScheduleMonth = (direction: 'prev' | 'next') => {
@@ -224,7 +210,23 @@ function EmployeeDashboardContent() {
 
   useEffect(() => {
     fetchEmployeeData()
+    fetchEvents()
   }, [])
+
+  const fetchEvents = async () => {
+    try {
+      setEventsLoading(true)
+      const res = await fetch('/api/events?forEmployee=true')
+      if (res.ok) {
+        const data = await res.json()
+        setEvents(data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch events:', error)
+    } finally {
+      setEventsLoading(false)
+    }
+  }
 
   // Location validation temporarily disabled
 
@@ -286,16 +288,30 @@ function EmployeeDashboardContent() {
   }
 
   const getEventTypeColor = (type: string) => {
-    switch (type) {
-      case "meeting":
+    switch (type.toUpperCase()) {
+      case "MEETING":
         return "bg-blue-100 text-blue-800"
-      case "training":
+      case "TRAINING":
         return "bg-green-100 text-green-800"
-      case "event":
+      case "EVENT":
         return "bg-purple-100 text-purple-800"
       default:
         return "bg-gray-100 text-gray-800"
     }
+  }
+
+  const formatEventDate = (dateString: string) => {
+    const date = new Date(dateString)
+    const today = new Date()
+    const tomorrow = new Date(today)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    
+    if (date.toDateString() === today.toDateString()) {
+      return t('events.today')
+    } else if (date.toDateString() === tomorrow.toDateString()) {
+      return t('events.tomorrow')
+    }
+    return date.toLocaleDateString(i18n.language, { month: 'short', day: 'numeric' })
   }
 
   const fetchEmployeeData = async () => {
@@ -1114,24 +1130,32 @@ function EmployeeDashboardContent() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {events.map((event) => (
-                    <div key={event.id} className="p-4 border border-sky-200 rounded-lg">
-                      <div className="flex items-start justify-between mb-2">
-                        <h4 className="font-medium text-sky-700">{event.title}</h4>
-                        <Badge className={getEventTypeColor(event.type)}>{t(`events.${event.type}`)}</Badge>
+                  {eventsLoading ? (
+                    <div className="text-center py-4 text-sky-600">{t('loading.dashboard')}</div>
+                  ) : events.length === 0 ? (
+                    <div className="text-center py-4 text-sky-600">{t('events.no_events')}</div>
+                  ) : (
+                    events.map((event) => (
+                      <div key={event.id} className="p-4 border border-sky-200 rounded-lg">
+                        <div className="flex items-start justify-between mb-2">
+                          <h4 className="font-medium text-sky-700">{event.title}</h4>
+                          <Badge className={getEventTypeColor(event.type)}>{t(`events.${event.type.toLowerCase()}`)}</Badge>
+                        </div>
+                        <div className="space-y-1 text-sm text-sky-600">
+                          <p className="flex items-center gap-1">
+                            <Clock className="w-4 h-4" />
+                            {formatEventDate(event.eventDate)} {t('events.at')} {event.startTime}
+                          </p>
+                          {event.location && (
+                            <p className="flex items-center gap-1">
+                              <MapPin className="w-4 h-4" />
+                              {event.location}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                      <div className="space-y-1 text-sm text-sky-600">
-                        <p className="flex items-center gap-1">
-                          <Clock className="w-4 h-4" />
-                          {event.date} at {event.time}
-                        </p>
-                        <p className="flex items-center gap-1">
-                          <MapPin className="w-4 h-4" />
-                          {event.location}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
               </CardContent>
             </Card>
