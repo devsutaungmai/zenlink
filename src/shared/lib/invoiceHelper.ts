@@ -1197,8 +1197,24 @@ export async function getCustomerLedger({
 
 function buildCustomerLedgerRows(ledger: any[]) {
   const movements = aggregateCustomerMovements(ledger)
-  return groupAndBalance(movements)
+  const displayRows = computeDisplayValues(movements)
+  return groupByCustomer(displayRows)
+}
 
+function groupByCustomer(rows: any[]) {
+  const grouped: Record<string, any[]> = {}
+
+  for (const r of rows) {
+    if (!grouped[r.customerId]) grouped[r.customerId] = []
+    grouped[r.customerId].push(r)
+  }
+
+  return Object.keys(grouped).map(customerId => ({
+    customerId,
+    customerName: grouped[customerId][0].customerName,
+    customerNumber: grouped[customerId][0].customerNumber,
+    rows: grouped[customerId],
+  }))
 }
 
 function aggregateCustomerMovements(entries: any[]) {
@@ -1206,11 +1222,13 @@ function aggregateCustomerMovements(entries: any[]) {
 
   for (const e of entries) {
     const isDebit1500 = e.debitAccount?.accountNumber === 1500
-    const signedAmount = isDebit1500 ? Number(e.amount) : -Number(e.amount)
+    const amount = Number(e.amount)
+
+    const debit = isDebit1500 ? amount : 0
+    const credit = !isDebit1500 ? amount : 0
 
     const customerId = e.invoice?.customer?.id ?? "UNKNOWN"
 
-    // THE MOST IMPORTANT PART
     const key = [
       customerId,
       e.entryType,
@@ -1227,12 +1245,14 @@ function aggregateCustomerMovements(entries: any[]) {
         voucherNumber: e.voucher?.voucherNumber ?? "",
         dueDate: e.invoice?.dueDate ?? null,
         description: getText(e),
-        amount: 0,
+        debit: 0,
+        credit: 0,
       })
     }
 
-    // 🧠 Merge VAT + revenue + rounding etc
-    map.get(key).amount += signedAmount
+    const row = map.get(key)
+    row.debit += debit
+    row.credit += credit
   }
 
   return Array.from(map.values()).sort(
@@ -1240,63 +1260,74 @@ function aggregateCustomerMovements(entries: any[]) {
   )
 }
 
-
 function getText(e: any) {
   switch (e.entryType) {
     case "INVOICE_POST":
-      return `Invoice ${formatInvoiceNumberForDisplay(e.invoice?.invoiceNumber ?? "")}`
+      return `Invoice ${formatInvoiceNumberForDisplay(e.invoice?.invoiceNumber ?? "")} for ${e.invoice?.customer?.customerName ?? ""}`
 
     case "PAYMENT_RECEIVED":
       return `Payment`
 
     case "CREDIT_NOTE":
-      return `Credit note ${formatInvoiceNumberForDisplay(e.invoice?.invoiceNumber ?? "")}`
+      return `Credit note ${formatInvoiceNumberForDisplay(e.invoice?.invoiceNumber ?? "")} for ${e.invoice?.customer?.customerName ?? ""}`
 
     default:
       return e.description ?? ""
   }
 }
 
-function groupAndBalance(rows: any[]) {
-  const grouped: Record<string, any[]> = {}
+function computeDisplayValues(rows: any[]) {
+  return rows.map(r => {
+    const amount = r.debit - r.credit
 
-  for (const r of rows) {
-    if (!grouped[r.customerId]) grouped[r.customerId] = []
-    grouped[r.customerId].push(r)
-  }
-
-  const result: any[] = []
-
-  for (const customerId of Object.keys(grouped)) {
-    let balance = 0
-
-    const customerRows = grouped[customerId].map(r => {
-      balance += r.amount
-
-      return {
-        ...r,
-        balance,
-      }
-    })
-
-    // closing balance row
-    customerRows.push({
-      isClosingBalance: true,
-      description: "Closing balance",
-      amount: balance,
-      balance,
-    })
-
-    result.push({
-      customerId,
-      customerName: customerRows[0].customerName,
-      customerNumber: customerRows[0].customerNumber,
-      rows: customerRows,
-    })
-  }
-
-  return result
+    return {
+      ...r,
+      amount,
+      balance: amount, // NOT running balance
+    }
+  })
 }
+
+// function groupAndBalance(rows: any[]) {
+//   const grouped: Record<string, any[]> = {}
+
+//   for (const r of rows) {
+//     if (!grouped[r.customerId]) grouped[r.customerId] = []
+//     grouped[r.customerId].push(r)
+//   }
+
+//   const result: any[] = []
+
+//   for (const customerId of Object.keys(grouped)) {
+//     let balance = 0
+
+//     const customerRows = grouped[customerId].map(r => {
+//       balance += r.amount
+
+//       return {
+//         ...r,
+//         balance,
+//       }
+//     })
+
+//     // closing balance row
+//     customerRows.push({
+//       isClosingBalance: true,
+//       description: "Closing balance",
+//       amount: balance,
+//       balance,
+//     })
+
+//     result.push({
+//       customerId,
+//       customerName: customerRows[0].customerName,
+//       customerNumber: customerRows[0].customerNumber,
+//       rows: customerRows,
+//     })
+//   }
+
+//   return result
+// }
 
 
 

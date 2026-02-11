@@ -400,7 +400,7 @@ export default function CustomerLedger() {
                             {filteredData.map((group) => (
                                 <CustomerGroupSection
                                     key={group.customerId}
-                                    customerId = {group.customerId}
+                                    customerId={group.customerId}
                                     group={group}
                                     isExpanded={expandedGroups.has(group.customerId)}
                                     onToggle={() => toggleGroup(group.customerId)}
@@ -415,7 +415,7 @@ export default function CustomerLedger() {
                     {filteredData.map((group) => (
                         <MobileCustomerGroup
                             key={group.customerId}
-                                    customerId = {group.customerId}
+                            customerId={group.customerId}
                             group={group}
                             isExpanded={expandedGroups.has(group.customerId)}
                             onToggle={() => toggleGroup(group.customerId)}
@@ -440,6 +440,8 @@ function CustomerGroupSection({
     isExpanded: boolean
     onToggle: () => void
 }) {
+    const sum = group.rows.reduce((acc, r) => acc + (r.amount ?? 0), 0)
+
     const customerLabel = group.customerNumber
         ? `${group.customerName}, ${formatCustomerNumberForDisplay(group.customerNumber)} (${formatCustomerNumberForDisplay(group.customerNumber)})`
         : group.customerName
@@ -467,8 +469,8 @@ function CustomerGroupSection({
 
             {/* Entry rows */}
             {isExpanded &&
-                group.rows.map((row, idx) => {
-                    const isSum = row.isClosingBalance
+                [...group.rows, { isSumRow: true } as any].map((row, idx) => {
+                    const isSum = (row as any).isSumRow === true
                     const isLink =
                         !isSum &&
                         row.description &&
@@ -521,14 +523,14 @@ function CustomerGroupSection({
                                 className={`p-2.5 text-right tabular-nums ${isSum ? "font-semibold text-[#2c3e50]" : "text-[#2c3e50]"
                                     }`}
                             >
-                                {formatNumber(row.amount)}
+                                {formatNumber(isSum ? sum : row.amount)}
                             </td>
                             {/* Balance */}
                             <td
                                 className={`p-2.5 text-right tabular-nums ${isSum ? "font-semibold text-[#2c3e50]" : "text-[#2c3e50]"
                                     }`}
                             >
-                                {formatNumber(row.balance)}
+                                {formatNumber(isSum ? sum : row.balance)}
                             </td>
                             {/* Payable */}
                             <td className="p-2.5 text-right tabular-nums text-[#2c3e50]" />
@@ -552,7 +554,8 @@ function MobileCustomerGroup({
     isExpanded: boolean
     onToggle: () => void
 }) {
-    const sumRow = group.rows.find((r) => r.isClosingBalance)
+    // const sumRow = group.rows.find((r) => r.isClosingBalance)
+    const sum = group.rows.reduce((acc, r) => acc + (r.amount ?? 0), 0)
 
     return (
         <div className="border border-[#e0e4e8] rounded-lg overflow-hidden bg-white">
@@ -570,11 +573,9 @@ function MobileCustomerGroup({
                     </span>
                 </div>
                 <div className="flex items-center gap-3">
-                    {sumRow && (
-                        <span className="text-sm font-medium text-[#2c3e50] tabular-nums">
-                            {formatNumber(sumRow.balance)}
-                        </span>
-                    )}
+                    <span className="text-sm font-medium text-[#2c3e50] tabular-nums">
+                        {formatNumber(sum)}
+                    </span>
                     {isExpanded ? (
                         <ChevronUp className="h-4 w-4 text-[#667085]" />
                     ) : (
@@ -586,8 +587,8 @@ function MobileCustomerGroup({
             {/* Rows */}
             {isExpanded && (
                 <div className="divide-y divide-[#e8eaed]">
-                    {group.rows.map((row, idx) => {
-                        const isSum = row.isClosingBalance
+                    {[...group.rows, { isSumRow: true } as any].map((row, idx) => {
+                        const isSum = (row as any).isSumRow === true
                         return (
                             <div
                                 key={idx}
@@ -624,7 +625,7 @@ function MobileCustomerGroup({
                                                 Voucher: {formatVoucherNumberForDisplay(row.voucher ?? "")}
                                             </span>
                                             <span className="text-sm font-medium tabular-nums text-[#2c3e50]">
-                                                {formatNumber(row.amount)}
+                                                {formatNumber(isSum ? sum : row.amount)}
                                             </span>
                                         </div>
                                     </div>
