@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
+import { ChevronLeftIcon, ChevronRightIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { Calendar as CalendarIcon, Check, X, Clock } from 'lucide-react'
 import Swal from 'sweetalert2'
 import { useUser } from '@/shared/lib/useUser'
@@ -24,6 +24,8 @@ export default function EmployeeAvailabilityPage() {
   const [selectedDates, setSelectedDates] = useState<Set<string>>(new Set())
   const [availabilityLoading, setAvailabilityLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [reason, setReason] = useState('')
+  const [viewingNote, setViewingNote] = useState<{ date: string; note: string; isAvailable: boolean } | null>(null)
 
   const currentMonth = currentDate.getMonth()
   const currentYear = currentDate.getFullYear()
@@ -141,7 +143,8 @@ export default function EmployeeAvailabilityPage() {
         body: JSON.stringify({
           employeeId: user?.employee?.id || (user?.role === 'EMPLOYEE' ? user.id : null),
           dates: Array.from(selectedDates),
-          isAvailable
+          isAvailable,
+          note: reason.trim() || null
         }),
       })
 
@@ -151,6 +154,7 @@ export default function EmployeeAvailabilityPage() {
 
       await fetchAvailabilities()
       setSelectedDates(new Set())
+      setReason('')
 
       Swal.fire({
         toast: true,
@@ -339,6 +343,35 @@ export default function EmployeeAvailabilityPage() {
                         )}
                       </div>
                     )}
+                    
+                    {/* Note Indicator - Clickable */}
+                    {availability?.note && (
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setViewingNote({
+                            date: formatDateKey(date),
+                            note: availability.note!,
+                            isAvailable: availability.isAvailable
+                          })
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.stopPropagation()
+                            setViewingNote({
+                              date: formatDateKey(date),
+                              note: availability.note!,
+                              isAvailable: availability.isAvailable
+                            })
+                          }
+                        }}
+                        className="absolute bottom-0.5 left-1/2 transform -translate-x-1/2 hover:scale-125 transition-transform cursor-pointer"
+                      >
+                        <span className="text-[10px]">📝</span>
+                      </span>
+                    )}
                   </button>
                 )
               })}
@@ -348,42 +381,64 @@ export default function EmployeeAvailabilityPage() {
 
         {/* Action Buttons */}
         <div className="mt-6 bg-white shadow rounded-lg p-6">
-          <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-            <div className="text-sm text-gray-600">
-              {selectedDates.size > 0 ? (
-                <span>{t('availability_page.selected_days', { count: selectedDates.size })}</span>
-              ) : (
-                <span>{t('availability_page.select_hint')}</span>
-              )}
-            </div>
-            
-            <div className="flex gap-3">
-              {selectedDates.size > 0 && (
+          <div className="space-y-4">
+            {/* Reason Input - shown when dates are selected */}
+            {selectedDates.size > 0 && (
+              <div className="space-y-2">
+                <label htmlFor="reason" className="block text-sm font-medium text-gray-700">
+                  {t('availability_page.reason_label')}
+                </label>
+                <textarea
+                  id="reason"
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  placeholder={t('availability_page.reason_placeholder')}
+                  rows={2}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] resize-none"
+                />
+                <p className="text-xs text-gray-500">
+                  {t('availability_page.reason_hint')}
+                </p>
+              </div>
+            )}
+
+            <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+              <div className="text-sm text-gray-600">
+                {selectedDates.size > 0 ? (
+                  <span>{t('availability_page.selected_days', { count: selectedDates.size })}</span>
+                ) : (
+                  <span>{t('availability_page.select_hint')}</span>
+                )}
+              </div>
+              
+              <div className="flex gap-3">
+                {selectedDates.size > 0 && (
+                  <button
+                    onClick={clearSelection}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                  >
+                    {t('availability_page.clear_selection')}
+                  </button>
+                )}
+                
                 <button
-                  onClick={clearSelection}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                  onClick={() => handleSetAvailability(false)}
+                  disabled={selectedDates.size === 0 || submitting}
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {t('availability_page.clear_selection')}
+                  <X className="h-4 w-4 mr-2" />
+                  {t('availability_page.mark_unavailable')}
                 </button>
-              )}
-              
-              <button
-                onClick={() => handleSetAvailability(false)}
-                disabled={selectedDates.size === 0 || submitting}
-                className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <X className="h-4 w-4 mr-2" />
-                {t('availability_page.mark_unavailable')}
-              </button>
-              
-              <button
-                onClick={() => handleSetAvailability(true)}
-                disabled={selectedDates.size === 0 || submitting}
-                className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Check className="h-4 w-4 mr-2" />
-                {t('availability_page.mark_available')}
-              </button>
+                
+                <button
+                  onClick={() => handleSetAvailability(true)}
+                  disabled={selectedDates.size === 0 || submitting}
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Check className="h-4 w-4 mr-2" />
+                  {t('availability_page.mark_available')}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -391,7 +446,7 @@ export default function EmployeeAvailabilityPage() {
         {/* Legend */}
         <div className="mt-6 bg-white shadow rounded-lg p-6">
           <h3 className="text-sm font-medium text-gray-900 mb-4">{t('availability_page.legend')}</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 text-sm">
             <div className="flex items-center">
               <div className="w-4 h-4 bg-green-100 rounded mr-2"></div>
               <span>{t('availability_page.available')}</span>
@@ -408,9 +463,57 @@ export default function EmployeeAvailabilityPage() {
               <div className="w-4 h-4 bg-gray-100 rounded mr-2"></div>
               <span>{t('availability_page.past_date')}</span>
             </div>
+            <div className="flex items-center">
+              <span className="text-base mr-2">📝</span>
+              <span>{t('availability_page.has_note')}</span>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Note Viewing Modal */}
+      {viewingNote && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+            <div className="flex items-center justify-between p-4 border-b">
+              <div className="flex items-center gap-2">
+                <span className={`px-2 py-1 text-xs rounded-full ${
+                  viewingNote.isAvailable 
+                    ? 'bg-green-100 text-green-800' 
+                    : 'bg-red-100 text-red-800'
+                }`}>
+                  {viewingNote.isAvailable 
+                    ? t('availability_page.available') 
+                    : t('availability_page.unavailable')
+                  }
+                </span>
+                <span className="text-sm text-gray-500">
+                  {new Date(viewingNote.date).toLocaleDateString(i18n.language, {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </span>
+              </div>
+              <button
+                onClick={() => setViewingNote(null)}
+                className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <XMarkIcon className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            <div className="p-4">
+              <h4 className="text-sm font-medium text-gray-700 mb-2">
+                {t('availability_page.reason_label').replace(' (Optional)', '')}
+              </h4>
+              <p className="text-gray-900 whitespace-pre-wrap">
+                {viewingNote.note}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

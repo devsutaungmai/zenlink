@@ -193,7 +193,11 @@
     "mark_available": "Als verfügbar markieren",
     "legend": "Legende",
     "selected": "Ausgewählt",
-    "past_date": "Vergangenes Datum"
+    "past_date": "Vergangenes Datum",
+    "reason_label": "Grund (Optional)",
+    "reason_placeholder": "Geben Sie einen Grund für Ihre Verfügbarkeit/Nichtverfügbarkeit ein...",
+    "reason_hint": "Dieser Grund wird für Ihren Vorgesetzten sichtbar sein, um bei der Planung zu helfen.",
+    "has_note": "Hat Notiz"
   },
   "common": {
     "general": "Allgemein",

@@ -62,7 +62,10 @@
     "mark_unavailable": "Mark Unavailable",
     "clear_selection": "Clear Selection",
     "select_all_days": "Select All Days",
-    "updating": "Updating..."
+    "updating": "Updating...",
+    "reason_label": "Reason (Optional)",
+    "reason_placeholder": "Enter a reason for your availability/unavailability...",
+    "reason_hint": "This reason will be visible to your manager to help with scheduling."
   },
   "stats": {
     "pending_requests": "Pending Requests"

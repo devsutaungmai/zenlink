@@ -62,7 +62,10 @@
     "mark_unavailable": "Als nicht verfügbar markieren",
     "clear_selection": "Auswahl löschen",
     "select_all_days": "Alle Tage auswählen",
-    "updating": "Aktualisiere..."
+    "updating": "Aktualisiere...",
+    "reason_label": "Grund (Optional)",
+    "reason_placeholder": "Geben Sie einen Grund für Ihre Verfügbarkeit/Nichtverfügbarkeit ein...",
+    "reason_hint": "Dieser Grund wird für Ihren Vorgesetzten sichtbar sein, um bei der Planung zu helfen."
   },
   "stats": {
     "pending_requests": "Ausstehende Anfragen"

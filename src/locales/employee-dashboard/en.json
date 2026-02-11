@@ -191,7 +191,11 @@
     "mark_available": "Mark Available",
     "legend": "Legend",
     "selected": "Selected",
-    "past_date": "Past Date"
+    "past_date": "Past Date",
+    "reason_label": "Reason (Optional)",
+    "reason_placeholder": "Enter a reason for your availability/unavailability...",
+    "reason_hint": "This reason will be visible to your manager to help with scheduling.",
+    "has_note": "Has Note"
   },
   "common": {
     "loading": "Loading...",
