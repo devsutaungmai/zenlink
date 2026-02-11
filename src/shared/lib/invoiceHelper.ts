@@ -569,8 +569,8 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
 
       const businessVat = line.product.ledgerAccount?.businessVatCodes
         ?.find(bvc => bvc.businessId === invoice.businessId);
-        
-        // console.log("BusinessVat>>>>>>>" + businessVat);
+
+      // console.log("BusinessVat>>>>>>>" + businessVat);
 
       let settlementNumber;
 
@@ -579,11 +579,11 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
           businessVat.vatCode.settlementAccountNumber
         );
       }
-      else{
+      else {
         settlementNumber = Number(line.product.ledgerAccount?.vatCode?.settlementAccountNumber);
       }
       ledgerVatCodeId =
-          vatAccounts.get(settlementNumber) || vatPayable.id;
+        vatAccounts.get(settlementNumber) || vatPayable.id;
       if (!ledgerAccountId) {
         throw new Error(`Product ${line.productName} has no linked ledger account`);
       }
@@ -1196,30 +1196,50 @@ export async function getCustomerLedger({
 }
 
 function buildCustomerLedgerRows(ledger: any[]) {
-  const rows = ledger.map(e => {
-    const isDebit1500 = e.debitAccount?.accountNumber === 1500
+  const movements = aggregateCustomerMovements(ledger)
+  return groupAndBalance(movements)
 
-    const signedAmount = isDebit1500
-      ? Number(e.amount)
-      : -Number(e.amount)
-
-    return {
-      customerId: e.invoice?.customer?.id ?? "UNKNOWN",
-      customerName: e.invoice?.customer?.customerName ?? "Unknown customer",
-      customerNumber: e.invoice?.customer?.customerNumber ?? "",
-
-      postingDate: e.postingDate,
-      voucherNumber: e.voucher?.voucherNumber ?? "",
-      dueDate: e.invoice?.dueDate ?? null,
-
-      description: getText(e),
-
-      amount: signedAmount,
-    }
-  })
-
-  return groupAndBalance(rows)
 }
+
+function aggregateCustomerMovements(entries: any[]) {
+  const map = new Map<string, any>()
+
+  for (const e of entries) {
+    const isDebit1500 = e.debitAccount?.accountNumber === 1500
+    const signedAmount = isDebit1500 ? Number(e.amount) : -Number(e.amount)
+
+    const customerId = e.invoice?.customer?.id ?? "UNKNOWN"
+
+    // THE MOST IMPORTANT PART
+    const key = [
+      customerId,
+      e.entryType,
+      e.voucher?.voucherNumber ?? "",
+      e.invoice?.invoiceNumber ?? "NO_INVOICE",
+    ].join("|")
+
+    if (!map.has(key)) {
+      map.set(key, {
+        customerId,
+        customerName: e.invoice?.customer?.customerName ?? "Unknown customer",
+        customerNumber: e.invoice?.customer?.customerNumber ?? "",
+        postingDate: e.postingDate,
+        voucherNumber: e.voucher?.voucherNumber ?? "",
+        dueDate: e.invoice?.dueDate ?? null,
+        description: getText(e),
+        amount: 0,
+      })
+    }
+
+    // 🧠 Merge VAT + revenue + rounding etc
+    map.get(key).amount += signedAmount
+  }
+
+  return Array.from(map.values()).sort(
+    (a, b) => new Date(a.postingDate).getTime() - new Date(b.postingDate).getTime()
+  )
+}
+
 
 function getText(e: any) {
   switch (e.entryType) {
