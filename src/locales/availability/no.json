@@ -62,7 +62,10 @@
     "mark_unavailable": "Merk utilgjengelig",
     "clear_selection": "Fjern valg",
     "select_all_days": "Velg alle dager",
-    "updating": "Oppdaterer..."
+    "updating": "Oppdaterer...",
+    "reason_label": "Grunn (Valgfritt)",
+    "reason_placeholder": "Skriv inn en grunn for din tilgjengelighet/utilgjengelighet...",
+    "reason_hint": "Denne grunnen vil være synlig for din leder for å hjelpe med planleggingen."
   },
   "stats": {
     "pending_requests": "Ventende forespørsler"

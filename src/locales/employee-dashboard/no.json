@@ -193,7 +193,11 @@
     "mark_available": "Marker tilgjengelig",
     "legend": "Forklaring",
     "selected": "Valgt",
-    "past_date": "Tidligere dato"
+    "past_date": "Tidligere dato",
+    "reason_label": "Grunn (Valgfritt)",
+    "reason_placeholder": "Skriv inn en grunn for din tilgjengelighet/utilgjengelighet...",
+    "reason_hint": "Denne grunnen vil være synlig for din leder for å hjelpe med planleggingen.",
+    "has_note": "Har notat"
   },
   "common": {
     "general": "Generell",
