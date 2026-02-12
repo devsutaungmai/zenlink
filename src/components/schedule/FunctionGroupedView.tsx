@@ -144,13 +144,17 @@ export default function FunctionGroupedView({
     const formattedDate = format(date, 'yyyy-MM-dd');
     
     return shifts.filter(shift => {
+      if (shift.status === 'OPEN' && !shift.employeeId) return false;
       const shiftDate = typeof shift.date === 'string' ? shift.date : format(shift.date, 'yyyy-MM-dd');
       return shift.functionId === functionId && shiftDate.substring(0, 10) === formattedDate;
     });
   };
 
   const getFunctionTotalHours = (functionId: string) => {
-    const functionShifts = shifts.filter(s => s.functionId === functionId);
+    const functionShifts = shifts.filter(s => {
+      if (s.status === 'OPEN' && !s.employeeId) return false;
+      return s.functionId === functionId;
+    });
     
     let totalMinutes = 0;
     
@@ -231,6 +235,85 @@ export default function FunctionGroupedView({
           </div>
         </div>
 
+        {/* Open Shifts Row - Mobile */}
+        {(() => {
+          const openShifts = shifts.filter(s => s.status === 'OPEN' && !s.employeeId);
+          
+          return (
+            <div className="p-3 pb-0">
+              <div className="bg-emerald-50 rounded-xl border border-emerald-200 overflow-hidden shadow-sm">
+                <div className="flex items-center justify-between px-3 py-2.5 border-b bg-emerald-100/50">
+                  <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                    <div className="w-9 h-9 rounded-full bg-emerald-500 flex items-center justify-center text-white">
+                      <div className="w-3 h-3 rounded-full bg-white animate-pulse"></div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-sm text-emerald-800">
+                        {t('week_view.open_shifts') || 'Open Shifts'}
+                      </div>
+                      <div className="text-xs text-emerald-600">
+                        {openShifts.length} {t('week_view.available') || 'available'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="overflow-x-auto">
+                  <div className="grid gap-0 p-3" style={mobileGridStyle}>
+                    {weekDates.map((date, dayIndex) => {
+                      const formattedDate = format(date, 'yyyy-MM-dd');
+                      const dayOpenShifts = openShifts.filter(shift => {
+                        const shiftDate = typeof shift.date === 'string' ? shift.date : format(shift.date, 'yyyy-MM-dd');
+                        return shiftDate.substring(0, 10) === formattedDate;
+                      });
+                      
+                      return (
+                        <div key={dayIndex} className="px-1">
+                          <div className="min-h-[60px]">
+                            {dayOpenShifts.length === 0 ? (
+                              <button
+                                onClick={() => onAddShift({ date: formattedDate })}
+                                className="w-full h-full min-h-[60px] border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 border-emerald-300 hover:border-emerald-500 hover:bg-emerald-100"
+                              >
+                                <PlusIcon className="w-6 h-6 text-emerald-500" />
+                              </button>
+                            ) : (
+                              <div className="w-full h-full flex flex-col gap-1">
+                                {dayOpenShifts.slice(0, 1).map(shift => (
+                                  <button
+                                    key={shift.id}
+                                    onClick={() => onEditShift(shift)}
+                                    className="w-full rounded-lg p-2 text-left border-2 border-dashed border-emerald-400 bg-emerald-100"
+                                  >
+                                    <div className="text-[11px] font-semibold text-emerald-800 flex items-center gap-1">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                      {t('week_view.open') || 'Open'}
+                                    </div>
+                                    <div className="text-[10px] text-emerald-700 mt-0.5">
+                                      {shift.startTime} - {shift.endTime || 'Open'}
+                                    </div>
+                                  </button>
+                                ))}
+                                {dayOpenShifts.length > 1 && (
+                                  <button
+                                    onClick={() => handleShowMoreShifts(dayOpenShifts, date, t('week_view.open_shifts') || 'Open Shifts')}
+                                    className="text-[10px] text-emerald-600 font-medium"
+                                  >
+                                    +{dayOpenShifts.length - 1} more
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Function Rows */}
         <div className="p-3 space-y-3">
           {functions.length === 0 ? (
@@ -239,7 +322,10 @@ export default function FunctionGroupedView({
             </div>
           ) : (
             functions.map((fn) => {
-              const functionShiftsAll = shifts.filter(s => s.functionId === fn.id)
+              const functionShiftsAll = shifts.filter(s => {
+                if (s.status === 'OPEN' && !s.employeeId) return false;
+                return s.functionId === fn.id;
+              })
               const functionShiftsCount = functionShiftsAll.length
               
               return (
@@ -415,9 +501,86 @@ export default function FunctionGroupedView({
           })}
         </div>
 
+        {/* Open Shifts Row */}
+        {(() => {
+          const openShifts = shifts.filter(s => s.status === 'OPEN' && !s.employeeId);
+          
+          return (
+            <div
+              className="grid border-b bg-emerald-50/50"
+              style={desktopGridStyle}
+            >
+              <div className="p-3 border-r">
+                <div className="font-medium text-sm text-emerald-700 flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                  {t('week_view.open_shifts') || 'Open Shifts'}
+                </div>
+                <div className="text-xs text-emerald-600 mt-0.5">
+                  {openShifts.length} {t('week_view.available') || 'available'}
+                </div>
+              </div>
+              
+              {weekDates.map((date, dateIndex) => {
+                const formattedDate = format(date, 'yyyy-MM-dd');
+                const dayOpenShifts = openShifts.filter(shift => {
+                  const shiftDate = typeof shift.date === 'string' ? shift.date : format(shift.date, 'yyyy-MM-dd');
+                  return shiftDate.substring(0, 10) === formattedDate;
+                });
+                
+                return (
+                  <div key={dateIndex} className="border-r p-2 relative min-h-[80px] group">
+                    {dayOpenShifts.length === 0 ? (
+                      <button
+                        onClick={() => onAddShift({ date: formattedDate })}
+                        className="w-full h-full min-h-[76px] border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-1 transition-all opacity-0 group-hover:opacity-100 border-emerald-300 hover:border-emerald-500 hover:bg-emerald-50"
+                      >
+                        <PlusIcon className="w-5 h-5 text-emerald-500" />
+                      </button>
+                    ) : (
+                      <>
+                        {dayOpenShifts.slice(0, 2).map((shift) => (
+                          <div
+                            key={shift.id}
+                            onClick={() => onEditShift(shift)}
+                            className="mb-1 cursor-pointer"
+                          >
+                            <div className="rounded p-2 text-xs border-2 border-dashed border-emerald-400 bg-emerald-100">
+                              <div className="font-medium text-emerald-800 flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                {t('week_view.open') || 'Open'}
+                              </div>
+                              <div className="mt-0.5 text-emerald-700">
+                                {shift.function?.name || 'No Function'}
+                              </div>
+                              <div className="mt-0.5 text-emerald-600">
+                                {shift.startTime} - {shift.endTime || 'Open'}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                        {dayOpenShifts.length > 2 && (
+                          <button
+                            onClick={() => handleShowMoreShifts(dayOpenShifts, date, t('week_view.open_shifts') || 'Open Shifts')}
+                            className="text-xs text-emerald-600 hover:text-emerald-800 font-medium transition-colors mb-1"
+                          >
+                            +{dayOpenShifts.length - 2} more
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
+
         {/* Function Rows */}
         {functions.map(fn => {
-          const functionShiftsCount = shifts.filter(s => s.functionId === fn.id).length;
+          const functionShiftsCount = shifts.filter(s => {
+            if (s.status === 'OPEN' && !s.employeeId) return false;
+            return s.functionId === fn.id;
+          }).length;
           
           return (
             <div

@@ -288,9 +288,164 @@ export default function ShiftForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.employeeId, employees, employeeGroups]);
 
-  const [activeTab, setActiveTab] = useState<'basic' | 'break' | 'exchange'>('basic')
+  const [activeTab, setActiveTab] = useState<'basic' | 'break' | 'exchange' | 'requests'>('basic')
   const [shiftExchanges, setShiftExchanges] = useState<ShiftExchange[]>([])
   const [exchangeLoading, setExchangeLoading] = useState(false)
+  const [shiftRequests, setShiftRequests] = useState<any[]>([])
+  const [requestsLoading, setRequestsLoading] = useState(false)
+  const [requestActionLoading, setRequestActionLoading] = useState<string | null>(null)
+  const [employeeRequestLoading, setEmployeeRequestLoading] = useState(false)
+  const [employeeHasRequested, setEmployeeHasRequested] = useState(false)
+  const [employeeRequestId, setEmployeeRequestId] = useState<string | null>(null)
+
+  const isOpenShift = initialData?.id && !formData.employeeId
+  const currentEmployeeId = user?.employee?.id
+
+  useEffect(() => {
+    if (initialData?.id && isOpenShift) {
+      fetchShiftRequests(initialData.id)
+    }
+  }, [initialData?.id, isOpenShift])
+
+  useEffect(() => {
+    if (isEmployee && currentEmployeeId && shiftRequests.length > 0) {
+      const myRequest = shiftRequests.find(
+        (r: any) => r.employeeId === currentEmployeeId && r.status === 'PENDING'
+      )
+      setEmployeeHasRequested(!!myRequest)
+      setEmployeeRequestId(myRequest?.id || null)
+    } else {
+      setEmployeeHasRequested(false)
+      setEmployeeRequestId(null)
+    }
+  }, [shiftRequests, currentEmployeeId, isEmployee])
+
+  const handleEmployeeRequestShift = async () => {
+    if (!initialData?.id || !currentEmployeeId) return
+    setEmployeeRequestLoading(true)
+    try {
+      const res = await fetch('/api/shift-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shiftId: initialData.id, employeeId: currentEmployeeId })
+      })
+      if (res.ok) {
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
+          icon: 'success',
+          title: 'Shift request submitted!',
+        })
+        fetchShiftRequests(initialData.id)
+      } else {
+        const data = await res.json()
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
+          icon: 'error',
+          title: data.error || 'Failed to request shift',
+        })
+      }
+    } catch (error) {
+      console.error('Error requesting shift:', error)
+    } finally {
+      setEmployeeRequestLoading(false)
+    }
+  }
+
+  const handleEmployeeCancelRequest = async () => {
+    if (!employeeRequestId || !initialData?.id) return
+    setEmployeeRequestLoading(true)
+    try {
+      const res = await fetch(`/api/shift-requests/${employeeRequestId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'CANCELLED' })
+      })
+      if (res.ok) {
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
+          icon: 'success',
+          title: 'Request cancelled',
+        })
+        fetchShiftRequests(initialData.id)
+      } else {
+        const data = await res.json()
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
+          icon: 'error',
+          title: data.error || 'Failed to cancel request',
+        })
+      }
+    } catch (error) {
+      console.error('Error cancelling request:', error)
+    } finally {
+      setEmployeeRequestLoading(false)
+    }
+  }
+
+  const fetchShiftRequests = async (shiftId: string) => {
+    setRequestsLoading(true)
+    try {
+      const res = await fetch(`/api/shift-requests?shiftId=${shiftId}`)
+      if (res.ok) {
+        const data = await res.json()
+        setShiftRequests(data)
+      }
+    } catch (error) {
+      console.error('Error fetching shift requests:', error)
+    } finally {
+      setRequestsLoading(false)
+    }
+  }
+
+  const handleRequestAction = async (requestId: string, action: 'APPROVED' | 'REJECTED') => {
+    setRequestActionLoading(requestId)
+    try {
+      const res = await fetch(`/api/shift-requests/${requestId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: action })
+      })
+      if (res.ok) {
+        if (action === 'APPROVED' && initialData?.id) {
+          // Refresh the whole form since the shift is now assigned
+          window.location.reload()
+        } else if (initialData?.id) {
+          fetchShiftRequests(initialData.id)
+        }
+      } else {
+        const data = await res.json()
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
+          icon: 'error',
+          title: data.error || 'Failed to update request',
+        })
+      }
+    } catch (error) {
+      console.error('Error updating shift request:', error)
+    } finally {
+      setRequestActionLoading(null)
+    }
+  }
 
   const [showBreakFields, setShowBreakFields] = useState<boolean>(() => {
     return initialData ? !!initialData.breakStart || !!initialData.breakEnd : false
@@ -507,11 +662,7 @@ export default function ShiftForm({
     return safeEmployees
   }, [safeEmployees, formData.functionId, formData.employeeGroupId, formData.employeeId, resolvedLinkedGroupId])
 
-  const employeeSelectDisabled = isEmployee || Boolean(
-    !formData.employeeId &&
-    formData.functionId && 
-    (!resolvedLinkedGroupId || filteredEmployees.length === 0)
-  )
+  const employeeSelectDisabled = isEmployee
   const employeeGroupSelectDisabled = isEmployee || (formData.functionId ? linkedFunctionGroups.length === 1 : false)
 
   const availableEmployeeGroupOptions = formData.functionId
@@ -961,6 +1112,22 @@ export default function ShiftForm({
           >
             {t('shifts.form.break_time')}
           </button>
+          {initialData?.id && isOpenShift && (
+            <button
+              type="button"
+              onClick={() => setActiveTab('requests')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${activeTab === 'requests'
+                  ? 'border-emerald-500 text-emerald-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+            >
+              Requests{shiftRequests.filter(r => r.status === 'PENDING').length > 0 && (
+                <span className="ml-1.5 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-emerald-500 rounded-full">
+                  {shiftRequests.filter(r => r.status === 'PENDING').length}
+                </span>
+              )}
+            </button>
+          )}
           {initialData?.id && shiftExchanges.length > 0 && (
             <button
               type="button"
@@ -1180,14 +1347,13 @@ export default function ShiftForm({
           {showEmployee && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t('shifts.form.employee')} {formData.functionId && <span className="text-red-500">*</span>}
+                {t('shifts.form.employee')}
               </label>
               <select
                 value={formData.employeeId || ''}
                 onChange={(e) => setFormData({ ...formData, employeeId: e.target.value || undefined })}
                 disabled={employeeSelectDisabled}
                 className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${employeeSelectDisabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-                required={!!formData.functionId}
               >
                 <option value="">
                   {formData.employeeId 
@@ -1195,12 +1361,12 @@ export default function ShiftForm({
                     : formData.functionId
                       ? activeLinkedGroup
                         ? filteredEmployees.length > 0
-                          ? `Select an employee from ${activeLinkedGroup.name}`
-                          : `No eligible employees in ${activeLinkedGroup.name}`
+                          ? `Select employee or leave empty for Open Shift`
+                          : `No eligible employees - will be Open Shift`
                         : linkedFunctionGroups.length > 1
-                          ? 'Select an employee group first'
-                          : 'Link this function to an employee group'
-                      : 'Select an employee (optional)'}
+                          ? 'Select employee group first or leave for Open Shift'
+                          : 'No linked group - will be Open Shift'
+                      : 'Select an employee (optional - Open Shift if empty)'}
                 </option>
                 {filteredEmployees.map((employee) => (
                   <option key={employee.id} value={employee.id}>
@@ -1208,22 +1374,20 @@ export default function ShiftForm({
                   </option>
                 ))}
               </select>
-              <p
-                className={`mt-1 text-xs ${formData.functionId && !formData.employeeId && (!activeLinkedGroup || filteredEmployees.length === 0) ? 'text-red-500' : 'text-gray-500'}`}
-              >
+              <p className="mt-1 text-xs text-gray-500">
                 {formData.employeeId
                   ? 'Currently assigned employee is shown.'
                   : formData.functionId
                     ? activeLinkedGroup
                       ? filteredEmployees.length > 0
-                        ? `Only employees in ${activeLinkedGroup.name} can be assigned.`
-                        : `No employees currently belong to ${activeLinkedGroup.name}.`
+                        ? `Employees in ${activeLinkedGroup.name} shown. Leave empty to create an Open Shift.`
+                        : `No employees in ${activeLinkedGroup.name}. Saving will create an Open Shift.`
                       : linkedFunctionGroups.length > 1
-                        ? 'Select an employee group to view eligible employees.'
-                        : 'Link this function to an employee group to assign employees.'
+                        ? 'Select an employee group or leave empty for Open Shift.'
+                        : 'No linked group. Saving will create an Open Shift.'
                     : formData.employeeGroupId
-                      ? 'Only employees in the selected employee group are shown.'
-                      : 'All employees in the business are shown.'}
+                      ? 'Only employees in the selected group shown. Leave empty for Open Shift.'
+                      : 'Leave empty to create an Open Shift.'}
               </p>
             </div>
           )}
@@ -1410,6 +1574,111 @@ export default function ShiftForm({
         </div>
       )}
 
+      {/* Shift Requests Tab */}
+      {activeTab === 'requests' && initialData?.id && isOpenShift && (
+        <div className="space-y-4">
+          <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+            <h3 className="text-sm font-medium text-emerald-900 mb-1">Open Shift Requests</h3>
+            <p className="text-xs text-emerald-700">
+              Employees who have requested this open shift. Approve one to assign the shift.
+            </p>
+          </div>
+
+          {requestsLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+            </div>
+          ) : shiftRequests.length === 0 ? (
+            <div className="text-center py-8 bg-gray-50 rounded-lg border border-gray-200">
+              <p className="text-sm text-gray-500">No requests for this shift yet</p>
+              <p className="text-xs text-gray-400 mt-1">Employees can request this shift from their dashboard</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {shiftRequests.map((request: any) => (
+                <div
+                  key={request.id}
+                  className={`p-4 bg-white border rounded-lg shadow-sm ${
+                    request.status === 'PENDING' ? 'border-amber-200' :
+                    request.status === 'APPROVED' ? 'border-green-200' :
+                    'border-gray-200'
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold ${
+                        request.status === 'PENDING' ? 'bg-amber-500' :
+                        request.status === 'APPROVED' ? 'bg-green-500' :
+                        'bg-gray-400'
+                      }`}>
+                        {request.employee?.firstName?.charAt(0)}{request.employee?.lastName?.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">
+                          {request.employee?.firstName} {request.employee?.lastName}
+                        </p>
+                        {request.employee?.employeeNo && (
+                          <p className="text-xs text-gray-500">#{request.employee.employeeNo}</p>
+                        )}
+                        <p className="text-xs text-gray-400">
+                          Requested {new Date(request.createdAt).toLocaleDateString('en-GB', {
+                            day: '2-digit', month: 'short', year: 'numeric',
+                            hour: '2-digit', minute: '2-digit'
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      request.status === 'PENDING' ? 'bg-amber-100 text-amber-800' :
+                      request.status === 'APPROVED' ? 'bg-green-100 text-green-800' :
+                      request.status === 'REJECTED' ? 'bg-red-100 text-red-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {request.status}
+                    </span>
+                  </div>
+
+                  {request.note && (
+                    <div className="mt-2 p-2 bg-gray-50 rounded text-xs text-gray-600">
+                      <strong>Note:</strong> {request.note}
+                    </div>
+                  )}
+
+                  {request.status === 'PENDING' && !isEmployee && (
+                    <div className="mt-3 flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleRequestAction(request.id, 'APPROVED')}
+                        disabled={requestActionLoading === request.id}
+                        className="flex-1 px-3 py-1.5 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700 disabled:opacity-50"
+                      >
+                        {requestActionLoading === request.id ? 'Processing...' : 'Approve & Assign'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleRequestAction(request.id, 'REJECTED')}
+                        disabled={requestActionLoading === request.id}
+                        className="flex-1 px-3 py-1.5 text-xs font-medium text-white bg-red-600 rounded hover:bg-red-700 disabled:opacity-50"
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  )}
+
+                  {request.status === 'APPROVED' && (
+                    <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded">
+                      <p className="text-xs text-green-700">
+                        Approved - shift assigned to {request.employee?.firstName} {request.employee?.lastName}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Shift Exchange Tab */}
       {activeTab === 'exchange' && initialData?.id && (
         <div className="space-y-4">
@@ -1514,6 +1783,41 @@ export default function ShiftForm({
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Employee Open Shift Request */}
+      {isEmployee && isOpenShift && currentEmployeeId && (
+        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-medium text-emerald-900">This is an Open Shift</h3>
+              <p className="text-xs text-emerald-700 mt-0.5">
+                {employeeHasRequested
+                  ? 'You have already requested this shift. Waiting for manager approval.'
+                  : 'You can request this shift and a manager will review your request.'}
+              </p>
+            </div>
+            {employeeHasRequested ? (
+              <button
+                type="button"
+                onClick={handleEmployeeCancelRequest}
+                disabled={employeeRequestLoading}
+                className="px-4 py-2 text-sm font-medium text-red-700 bg-red-100 border border-red-300 rounded-md hover:bg-red-200 disabled:opacity-50"
+              >
+                {employeeRequestLoading ? 'Cancelling...' : 'Cancel Request'}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleEmployeeRequestShift}
+                disabled={employeeRequestLoading}
+                className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 border border-transparent rounded-md hover:bg-emerald-700 disabled:opacity-50"
+              >
+                {employeeRequestLoading ? 'Requesting...' : 'Request this Shift'}
+              </button>
+            )}
+          </div>
         </div>
       )}
 

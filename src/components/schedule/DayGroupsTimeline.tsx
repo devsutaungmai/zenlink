@@ -80,7 +80,7 @@ export default function DayGroupsTimeline({
   onAddShift,
   onEditShift
 }: DayGroupsTimelineProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation('schedule')
   const formattedDate = format(date, 'yyyy-MM-dd')
   const { currencySymbol } = useCurrency()
   const daySegments = useMemo(() => getShiftSegmentsForDate(shifts, date), [shifts, date])
@@ -90,6 +90,7 @@ export default function DayGroupsTimeline({
   const segmentsByGroup = useMemo(() => {
     const map = new Map<string, ShiftSegment[]>()
     daySegments.forEach(segment => {
+      if (segment.shift.status === 'OPEN' && !segment.shift.employeeId) return
       const groupId = segment.shift.employeeGroupId
       if (!groupId) return
       if (!map.has(groupId)) {
@@ -186,6 +187,7 @@ export default function DayGroupsTimeline({
   // Get shifts for mobile view
   const getGroupShiftsForMobile = (groupId: string) => {
     return shifts.filter(shift => {
+      if (shift.status === 'OPEN' && !shift.employeeId) return false
       const shiftDate = typeof shift.date === 'string' ? shift.date : format(shift.date, 'yyyy-MM-dd')
       return shift.employeeGroupId === groupId && shiftDate.substring(0, 10) === formattedDate
     })
@@ -196,6 +198,72 @@ export default function DayGroupsTimeline({
     {/* Mobile View */}
     <div className="md:hidden mt-4 bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
       <div className="p-3 space-y-3">
+        {/* Open Shifts Row - Mobile */}
+        {(() => {
+          const openShifts = shifts.filter(s => {
+            const shiftDate = typeof s.date === 'string' ? s.date : format(s.date, 'yyyy-MM-dd')
+            return s.status === 'OPEN' && !s.employeeId && shiftDate.substring(0, 10) === formattedDate
+          })
+          
+          return (
+            <div className="bg-emerald-50 rounded-xl border border-emerald-200 overflow-hidden shadow-sm">
+              <div className="flex items-center justify-between px-3 py-2.5 border-b bg-emerald-100/50">
+                <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                  <div className="w-9 h-9 rounded-full bg-emerald-500 flex items-center justify-center text-white">
+                    <div className="w-3 h-3 rounded-full bg-white animate-pulse"></div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-sm text-emerald-800">
+                      {t('schedule.open_shifts') || 'Open Shifts'}
+                    </div>
+                    <div className="text-xs text-emerald-600">
+                      {openShifts.length} {t('schedule.available') || 'available'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="p-3">
+                <div className="min-h-[60px]">
+                  {openShifts.length === 0 ? (
+                    <button
+                      onClick={() => onAddShift({ date: formattedDate })}
+                      className="w-full h-full min-h-[60px] border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 border-emerald-300 hover:border-emerald-500 hover:bg-emerald-100"
+                    >
+                      <PlusIcon className="w-6 h-6 text-emerald-500" />
+                    </button>
+                  ) : (
+                    <div className="w-full h-full flex flex-col gap-1">
+                      {openShifts.slice(0, 1).map(shift => (
+                        <button
+                          key={shift.id}
+                          onClick={() => onEditShift(shift)}
+                          className="w-full rounded-lg p-2 text-left border-2 border-dashed border-emerald-400 bg-emerald-100"
+                        >
+                          <div className="text-[11px] font-semibold text-emerald-800 flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            {t('schedule.open') || 'Open'}
+                          </div>
+                          <div className="text-[10px] text-emerald-700 mt-0.5">
+                            {shift.startTime} - {shift.endTime || 'Open'}
+                          </div>
+                        </button>
+                      ))}
+                      {openShifts.length > 1 && (
+                        <button
+                          onClick={() => handleShowMoreShifts(openShifts, t('schedule.open_shifts') || 'Open Shifts')}
+                          className="text-[10px] text-emerald-600 font-medium"
+                        >
+                          +{openShifts.length - 1} more
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )
+        })()}
+
         {groupRows.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <p className="text-sm">{t('schedule.no_groups_found')}</p>
@@ -307,6 +375,105 @@ export default function DayGroupsTimeline({
               ))}
             </div>
           </div>
+
+          {/* Open Shifts Row - Desktop */}
+          {(() => {
+            const openShifts = shifts.filter(s => {
+              const shiftDate = typeof s.date === 'string' ? s.date : format(s.date, 'yyyy-MM-dd')
+              return s.status === 'OPEN' && !s.employeeId && shiftDate.substring(0, 10) === formattedDate
+            })
+            const openSegments = daySegments.filter(seg => seg.shift.status === 'OPEN' && !seg.shift.employeeId)
+            const laneData = assignLanes(openSegments)
+            const laneCount = laneData.length ? Math.max(...laneData.map(item => item.laneIndex)) + 1 : 1
+            const rowHeight = Math.max(72, laneCount * 32 + 24)
+
+            return (
+              <div className="grid grid-cols-[260px_1fr] border-b bg-emerald-50/50">
+                <div className="px-4 py-4 flex items-center justify-between gap-3 border-r">
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                    <div>
+                      <div className="text-sm font-semibold text-emerald-800">{t('schedule.open_shifts') || 'Open Shifts'}</div>
+                      <div className="text-[11px] text-emerald-600">{openShifts.length} {t('schedule.available') || 'available'}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  className="relative group"
+                  style={{ minHeight: `${rowHeight}px` }}
+                  onMouseMove={(event) => handleTimelineMouseMove('open-shifts', event)}
+                  onMouseLeave={() => handleTimelineMouseLeave('open-shifts')}
+                >
+                  <div className="absolute inset-0 grid grid-cols-24 pointer-events-none">
+                    {HOURS.map(hour => (
+                      <div
+                        key={`grid-open-${hour}`}
+                        className={`border-l border-b border-emerald-100 transition-colors ${
+                          hoveredCell?.rowId === 'open-shifts' && hoveredCell.hour === hour
+                            ? 'bg-emerald-100'
+                            : ''
+                        }`}
+                      />
+                    ))}
+                  </div>
+
+                  {hoveredCell?.rowId === 'open-shifts' && (
+                    <button
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        const hour = hoveredCell.hour
+                        const startTime = `${hour.toString().padStart(2, '0')}:00`
+                        onAddShift({
+                          date: formattedDate,
+                          startTime
+                        })
+                      }}
+                      className="absolute z-30 w-7 h-7 rounded-full bg-white border border-emerald-500 text-emerald-500 flex items-center justify-center shadow-sm hover:bg-emerald-500 hover:text-white focus-visible:outline-none"
+                      style={{
+                        top: '8px',
+                        left: `calc(${(hoveredCell.hour * hourWidthPercent) + (hourWidthPercent / 2)}% - 14px)`
+                      }}
+                      title={`Add open shift at ${hoveredCell.hour.toString().padStart(2, '0')}:00`}
+                    >
+                      <PlusIcon className="w-4 h-4" />
+                    </button>
+                  )}
+
+                  <div className="relative h-full py-3">
+                    {laneData.map(({ segment, laneIndex }) => {
+                      const { left, width } = getHorizontalPosition(segment.displayStartTime, segment.displayEndTime)
+                      const topOffset = laneIndex * 34
+
+                      return (
+                        <button
+                          key={`${segment.segmentId}-${laneIndex}`}
+                          onClick={() => onEditShift(segment.shift)}
+                          className="absolute rounded-md px-2 py-1 text-xs font-medium text-emerald-800 shadow-sm bg-emerald-200 border-2 border-dashed border-emerald-400 hover:bg-emerald-300 transition-colors truncate"
+                          style={{
+                            left: `${left}%`,
+                            width: `${width}%`,
+                            top: `${topOffset}px`,
+                            minWidth: '30px',
+                            zIndex: 30
+                          }}
+                          title={`${segment.shift.function?.name || 'Open Shift'} • ${segment.displayStartTime} - ${segment.displayEndTime || 'Active'}`}
+                        >
+                          <div className="truncate flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            {segment.shift.function?.name || 'Open'}
+                          </div>
+                          <div className="text-[10px] opacity-80 truncate">
+                            {segment.displayStartTime} - {segment.displayEndTime || 'Active'}
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+            )
+          })()}
 
           {/* Group Rows */}
           {groupRows.map(row => {

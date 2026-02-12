@@ -52,7 +52,9 @@ export async function GET(request: Request) {
       todayShifts,
       upcomingShifts,
       pendingExchanges,
-      currentAttendance
+      currentAttendance,
+      openShifts,
+      myShiftRequests
     ] = await Promise.all([
       prisma.employee.findUnique({
         where: { id: employeeId },
@@ -228,6 +230,52 @@ export async function GET(request: Request) {
         include: {
           shift: true
         }
+      }),
+
+      // Open shifts available for request
+      prisma.shift.findMany({
+        where: {
+          status: 'OPEN',
+          employeeId: null,
+          date: {
+            gte: new Date(todayStr)
+          }
+        },
+        include: {
+          function: {
+            select: { id: true, name: true, color: true }
+          },
+          department: {
+            select: { id: true, name: true }
+          },
+          employeeGroup: {
+            select: { id: true, name: true }
+          },
+          shiftRequests: {
+            where: { employeeId: employeeId! },
+            select: { id: true, status: true }
+          }
+        },
+        orderBy: { date: 'asc' },
+        take: 20
+      }),
+
+      // My shift requests
+      prisma.shiftRequest.findMany({
+        where: {
+          employeeId: employeeId!,
+          status: 'PENDING'
+        },
+        include: {
+          shift: {
+            include: {
+              function: { select: { id: true, name: true, color: true } },
+              department: { select: { id: true, name: true } },
+              employeeGroup: { select: { id: true, name: true } },
+            }
+          }
+        },
+        orderBy: { createdAt: 'desc' }
       })
     ])
 
@@ -247,7 +295,9 @@ export async function GET(request: Request) {
       upcomingShifts,
       pendingExchanges,
       pendingRequestsCount: pendingExchanges.length,
-      currentAttendance
+      currentAttendance,
+      openShifts,
+      myShiftRequests
     })
 
   } catch (error) {

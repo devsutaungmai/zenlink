@@ -13,6 +13,7 @@ import ShiftDetailsModal from "@/components/ShiftDetailsModal"
 import PendingRequestsModal from "@/components/PendingRequestsModal"
 import NotificationCenter from "@/components/NotificationCenter"
 import LanguageSwitcher from "@/components/LanguageSwitcher"
+import OpenShiftsCard from "@/components/employee/OpenShiftsCard"
 import {
   Building2,
   Clock,
@@ -148,6 +149,8 @@ function EmployeeDashboardContent() {
   const [monthlyShifts, setMonthlyShifts] = useState<Shift[]>([])
   const [events, setEvents] = useState<EventItem[]>([])
   const [eventsLoading, setEventsLoading] = useState(true)
+  const [openShifts, setOpenShifts] = useState<any[]>([])
+  const [myShiftRequests, setMyShiftRequests] = useState<any[]>([])
 
   // Schedule navigation functions
   const navigateScheduleMonth = (direction: 'prev' | 'next') => {
@@ -339,6 +342,8 @@ function EmployeeDashboardContent() {
       setPendingExchanges(data.pendingExchanges || [])
       setPendingRequestsCount(data.pendingRequestsCount || 0)
       setCurrentAttendance(data.currentAttendance)
+      setOpenShifts(data.openShifts || [])
+      setMyShiftRequests(data.myShiftRequests || [])
       
       if (data.activeShift?.breakStart && !data.activeShift?.breakEnd) {
         setIsOnBreak(true)
@@ -1121,6 +1126,13 @@ function EmployeeDashboardContent() {
 
           {/* Right Column - Events & Notifications */}
           <div className="space-y-6">
+            {/* Open Shifts Card */}
+            <OpenShiftsCard
+              openShifts={openShifts}
+              myShiftRequests={myShiftRequests}
+              onRefresh={fetchEmployeeData}
+            />
+
             <Card className="bg-white/95 backdrop-blur border-sky-200">
               <CardHeader>
                 <CardTitle className="text-sky-700 flex items-center gap-2">

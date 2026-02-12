@@ -199,6 +199,17 @@
     "reason_hint": "Dieser Grund wird für Ihren Vorgesetzten sichtbar sein, um bei der Planung zu helfen.",
     "has_note": "Hat Notiz"
   },
+  "open_shifts": {
+    "title": "Offene Schichten",
+    "available": "Verfügbare Schichten",
+    "my_requests": "Meine ausstehenden Anfragen",
+    "request": "Anfragen",
+    "requested": "Angefragt",
+    "pending": "Ausstehend",
+    "today": "Heute",
+    "tomorrow": "Morgen",
+    "no_open_shifts": "Keine offenen Schichten verfügbar"
+  },
   "common": {
     "general": "Allgemein",
     "active": "Aktiv",

@@ -199,6 +199,17 @@
     "reason_hint": "Denne grunnen vil være synlig for din leder for å hjelpe med planleggingen.",
     "has_note": "Har notat"
   },
+  "open_shifts": {
+    "title": "Åpne skift",
+    "available": "Tilgjengelige skift",
+    "my_requests": "Mine ventende forespørsler",
+    "request": "Forespør",
+    "requested": "Forespurt",
+    "pending": "Ventende",
+    "today": "I dag",
+    "tomorrow": "I morgen",
+    "no_open_shifts": "Ingen åpne skift tilgjengelig"
+  },
   "common": {
     "general": "Generell",
     "active": "Aktiv",

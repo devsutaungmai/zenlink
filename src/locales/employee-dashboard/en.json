@@ -197,6 +197,17 @@
     "reason_hint": "This reason will be visible to your manager to help with scheduling.",
     "has_note": "Has Note"
   },
+  "open_shifts": {
+    "title": "Open Shifts",
+    "available": "Available Shifts",
+    "my_requests": "My Pending Requests",
+    "request": "Request",
+    "requested": "Requested",
+    "pending": "Pending",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "no_open_shifts": "No open shifts available"
+  },
   "common": {
     "loading": "Loading...",
     "error": "Error",

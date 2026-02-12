@@ -460,6 +460,7 @@ export async function POST(req: Request) {
     const createData: any = {
       ...data,
       date: new Date(data.date),
+      status: employeeId ? (data.status || 'SCHEDULED') : 'OPEN',
     };
 
     if (employeeId) {

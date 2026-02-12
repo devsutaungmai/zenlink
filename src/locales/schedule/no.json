@@ -36,7 +36,10 @@
   },
   "week_view": {
     "today": "I dag",
-    "shifts": "Skift"
+    "shifts": "Skift",
+    "open_shifts": "Åpne skift",
+    "available": "tilgjengelig",
+    "open": "Åpen"
   },
   "day_view": {
     "today": "I dag",
@@ -247,5 +250,21 @@
     "success": "Oppmøte opprettet",
     "error": "Kunne ikke opprette oppmøte",
     "already_punched_in": "Medarbeider er allerede innstemplet"
+  },
+  "schedule": {
+    "open_shifts": "Åpne skift",
+    "available": "tilgjengelig",
+    "open": "Åpen",
+    "no_employees_found": "Ingen medarbeidere funnet",
+    "no_functions_found": "Ingen funksjoner funnet",
+    "no_groups_found": "Ingen grupper funnet",
+    "total_employees_count": "{{count}} medarbeidere",
+    "total_functions_count": "{{count}} funksjoner",
+    "total_groups_count": "{{count}} grupper",
+    "total_shifts_count": "{{count}} skift",
+    "manage_employees": "Administrer",
+    "manage_functions": "Administrer",
+    "manage_groups": "Administrer",
+    "shifts_count": "{{count}} skift"
   }
 }

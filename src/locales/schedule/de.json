@@ -36,7 +36,10 @@
   },
   "week_view": {
     "today": "Heute",
-    "shifts": "Schichten"
+    "shifts": "Schichten",
+    "open_shifts": "Offene Schichten",
+    "available": "verfügbar",
+    "open": "Offen"
   },
   "day_view": {
     "today": "Heute",
@@ -247,5 +250,21 @@
     "success": "Anwesenheit erfolgreich erstellt",
     "error": "Anwesenheit konnte nicht erstellt werden",
     "already_punched_in": "Mitarbeiter ist bereits eingestempelt"
+  },
+  "schedule": {
+    "open_shifts": "Offene Schichten",
+    "available": "verfügbar",
+    "open": "Offen",
+    "no_employees_found": "Keine Mitarbeiter gefunden",
+    "no_functions_found": "Keine Funktionen gefunden",
+    "no_groups_found": "Keine Gruppen gefunden",
+    "total_employees_count": "{{count}} Mitarbeiter",
+    "total_functions_count": "{{count}} Funktionen",
+    "total_groups_count": "{{count}} Gruppen",
+    "total_shifts_count": "{{count}} Schichten",
+    "manage_employees": "Verwalten",
+    "manage_functions": "Verwalten",
+    "manage_groups": "Verwalten",
+    "shifts_count": "{{count}} Schichten"
   }
 }
