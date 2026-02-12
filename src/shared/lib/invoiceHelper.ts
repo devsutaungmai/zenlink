@@ -749,7 +749,6 @@ export async function getAccountBalance(
   return balance;
 }
 
-
 /**
  * Generate ledger report matching Tripletex display format
  * Groups account 1500 ONLY for INVOICE_POST and CREDIT_NOTE types
@@ -873,8 +872,6 @@ export async function generateLedgerReport(
     entriesByAccount.get(creditId)!.push(entry);
   });
 
-  // ========== OPTIMIZATION END ==========
-
   const accountGroups = [];
 
   // Step 6: Process each account (YOUR ORIGINAL LOGIC - UNCHANGED!)
@@ -891,8 +888,6 @@ export async function generateLedgerReport(
     if (entries.length === 0 && Math.abs(openingBalance) < 0.01) {
       continue;
     }
-
-    // ========== YOUR ORIGINAL LOGIC BELOW - NO CHANGES ==========
 
     // For calculating running balance, use PROPER ACCOUNTING
     const isNormalDebit = account.type === 'ASSET' || account.type === 'EXPENSE';
@@ -1085,7 +1080,6 @@ export async function generateLedgerReport(
   };
 }
 
-
 export function getAccountType(accountNumber: number): AccountType {
   // Check specific ranges first (order matters!)
 
@@ -1170,6 +1164,7 @@ export async function getCustomerLedger({
     include: {
       invoice: {
         select: {
+          id: true,
           invoiceNumber: true,
           dueDate: true,
           customer: {
@@ -1213,6 +1208,7 @@ function groupByCustomer(rows: any[]) {
     customerId,
     customerName: grouped[customerId][0].customerName,
     customerNumber: grouped[customerId][0].customerNumber,
+    invoiceId: grouped[customerId][0].invoiceId,
     rows: grouped[customerId],
   }))
 }
@@ -1241,6 +1237,7 @@ function aggregateCustomerMovements(entries: any[]) {
         customerId,
         customerName: e.invoice?.customer?.customerName ?? "Unknown customer",
         customerNumber: e.invoice?.customer?.customerNumber ?? "",
+        invoiceId: e.invoice?.id ?? null,
         postingDate: e.postingDate,
         voucherNumber: e.voucher?.voucherNumber ?? "",
         dueDate: e.invoice?.dueDate ?? null,
@@ -1266,7 +1263,7 @@ function getText(e: any) {
       return `Invoice ${formatInvoiceNumberForDisplay(e.invoice?.invoiceNumber ?? "")} for ${e.invoice?.customer?.customerName ?? ""}`
 
     case "PAYMENT_RECEIVED":
-      return `Payment`
+      return `Payment received for Invoice ${formatInvoiceNumberForDisplay(e.invoice?.invoiceNumber ?? "")}`
 
     case "CREDIT_NOTE":
       return `Credit note ${formatInvoiceNumberForDisplay(e.invoice?.invoiceNumber ?? "")} for ${e.invoice?.customer?.customerName ?? ""}`

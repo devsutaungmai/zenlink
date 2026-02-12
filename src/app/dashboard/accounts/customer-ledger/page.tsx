@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
+import Link from 'next/link'
 import {
     Filter,
     Search,
@@ -36,6 +37,7 @@ interface CustomerGroup {
     customerId: string
     customerName: string
     customerNumber: string
+    invoiceId?: string
     rows: CustomerLedgerRow[]
 }
 
@@ -214,6 +216,7 @@ export default function CustomerLedger() {
                     customerId: c.customerId,
                     customerName: c.customerName,
                     customerNumber: c.customerNumber,
+                    invoiceId: c.invoiceId,
                     rows: (c.rows ?? []).map((r: any) => ({
                         postingDate: formatDateLocal(r.postingDate),
                         description: r.description,
@@ -401,6 +404,7 @@ export default function CustomerLedger() {
                                 <CustomerGroupSection
                                     key={group.customerId}
                                     customerId={group.customerId}
+                                    invoiceId={group.invoiceId}
                                     group={group}
                                     isExpanded={expandedGroups.has(group.customerId)}
                                     onToggle={() => toggleGroup(group.customerId)}
@@ -432,11 +436,13 @@ export default function CustomerLedger() {
 function CustomerGroupSection({
     group,
     customerId,
+    invoiceId,
     isExpanded,
     onToggle,
 }: {
     group: CustomerGroup
     customerId: string
+    invoiceId?: string
     isExpanded: boolean
     onToggle: () => void
 }) {
@@ -503,9 +509,13 @@ function CustomerGroupSection({
                                 {isSum ? (
                                     <span className="font-semibold text-[#2c3e50]">Sum</span>
                                 ) : isLink ? (
-                                    <span className="text-[#2a7de1] hover:underline cursor-pointer">
-                                        {row.description}
-                                    </span>
+                                    <Link
+                                        href={`/dashboard/invoices/create?invoiceId=${invoiceId}&copy=true&overview=true`}
+                                    >
+                                        <span className="text-[#2a7de1] hover:underline cursor-pointer">
+                                            {row.description}
+                                        </span>
+                                    </Link>
                                 ) : (
                                     <span className="text-[#2a7de1] hover:underline cursor-pointer">
                                         {row.description}

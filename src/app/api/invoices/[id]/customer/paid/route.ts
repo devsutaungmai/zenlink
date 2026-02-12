@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient, Prisma, LedgerEntryType, VoucherType } from '@prisma/client';
-import { generateVoucherNumber, getBusinessId } from '@/shared/lib/invoiceHelper';
+import { PrismaClient, Prisma, LedgerEntryType, VoucherType, InvoiceStatus } from '@prisma/client';
+import { formatInvoiceNumberForDisplay, generateVoucherNumber, getBusinessId } from '@/shared/lib/invoiceHelper';
 
 const prisma = new PrismaClient();
 
@@ -20,7 +20,7 @@ async function customerPaid(params: {
         });
 
         if (!invoice) throw new Error('Invoice not found');
-        if (invoice.status !== 'OUTSTANDING') throw new Error('Invoice must be OUTSTANDING to receive payment');
+        if (invoice.status === InvoiceStatus.PAID || invoice.status === InvoiceStatus.CANCELLED) throw new Error('Invoice must be OUTSTANDING to receive payment');
 
         const accountsReceivable = await tx.ledgerAccount.findFirst({
             where: { accountNumber: 1500 }
@@ -70,13 +70,25 @@ async function customerPaid(params: {
                 businessId,
                 projectId: invoice.projectId,
                 departmentId: invoice.departmentId,
-                description: `Payment: Faktura ${invoice.invoiceNumber}`
+                description: `Payment: Faktura ${formatInvoiceNumberForDisplay(invoice.invoiceNumber)}`
             }
         });
 
+        // Determine new invoice status
+        let invoiceStatus : InvoiceStatus = InvoiceStatus.OUTSTANDING;
+        const totalPaid = await tx.paymentAllocation.aggregate({
+            where: { invoiceId },
+            _sum: { amountAllocated: true }
+        });
+      
+        if (totalPaid._sum.amountAllocated && Number(totalPaid._sum.amountAllocated) >= Number(invoice.totalInclVAT)) {
+            invoiceStatus = InvoiceStatus.PAID;
+        }else{
+            invoiceStatus = InvoiceStatus.PARTIALLY_PAID;
+        }
         await tx.invoice.update({
             where: { id: invoiceId },
-            data: { status: 'PAID', paidAt: paymentDate }
+            data: { status: invoiceStatus, paidAt: paymentDate }
         });
 
         return customerPayment;

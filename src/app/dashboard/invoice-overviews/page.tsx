@@ -75,15 +75,20 @@ export interface Invoice {
     project?: Project
 
     // Summary calculations
-    totalExclVAT: Decimal
-    totalVatAmount: Decimal
-    vatPercentage: Decimal
-    totalInclVAT: Decimal
+    totalExclVAT: number
+    totalVatAmount: number
+    vatPercentage: number
+    totalInclVAT: number
 
     // Additional fields
     notes?: string | null
     sentAt?: Date | null
     paidAt?: Date | null
+
+    paymentAllocations: {
+        amountAllocated: number
+    }[],
+    outstandingAmount?:number
 }
 
 export default function InvoiceOverview() {
@@ -446,7 +451,9 @@ export default function InvoiceOverview() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200">
-                                {paginatedInvoices.map((invoice) => (
+                                {paginatedInvoices.map((invoice) => {
+                                    const outstandingAmount = invoice.totalInclVAT - invoice.paymentAllocations.reduce((sum, pa) => sum + Number(pa.amountAllocated), 0);
+                                    return(
                                     <React.Fragment key={invoice.id}>
                                         <tr className={`hover:bg-gray-50 ${expandedRows.has(invoice.id) ? "bg-blue-50/30" : ""}`}>
                                             <td className="px-4 py-3">
@@ -515,10 +522,10 @@ export default function InvoiceOverview() {
                                             {isColumnVisible('totalExclVAT') && <td className="px-4 py-3 text-sm text-gray-900 text-right">{invoice.totalExclVAT.toString()}</td>}
                                             {isColumnVisible('totalVatAmount') && <td className="px-4 py-3 text-sm text-gray-900 text-right">{invoice.totalVatAmount?.toString() || "0.00"}</td>}
                                             {isColumnVisible('paid') && <td className="px-4 py-3 text-sm text-gray-900 text-right">
-                                                {invoice.status === InvoiceStatus.PAID ? invoice.totalInclVAT.toString() : 0.0}
+                                                {invoice.paymentAllocations.reduce((sum, pa) => sum + Number(pa.amountAllocated), 0)}
                                             </td>}
                                             {isColumnVisible('outstanding') && <td className="px-4 py-3 text-sm text-gray-900 text-right">
-                                                {invoice.status === InvoiceStatus.PAID ? 0.0 : invoice.totalInclVAT.toString()}
+                                                {outstandingAmount}
                                             </td>}
                                             <td className="px-2 py-3">
                                                 <button className="p-1 hover:bg-gray-200 rounded" onClick={() => handlePDf(invoice.id)}>
@@ -560,10 +567,10 @@ export default function InvoiceOverview() {
                                                                     align="end"
                                                                     className="min-w-[220px] bg-white rounded-lg shadow-lg border border-gray-200 p-1 z-50"
                                                                 >
-                                                                    {invoice.status !== InvoiceStatus.PAID ? (
+                                                                    {outstandingAmount > 0 ? (
                                                                         <DropdownMenu.Item
                                                                             className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2"
-                                                                            onSelect={() => setSelectedInvoiceForPayment(invoice)}
+                                                                            onSelect={() => setSelectedInvoiceForPayment({...invoice, outstandingAmount})}
                                                                         >
                                                                             <CheckCircleIcon className="h-4 w-4" />
                                                                             Register payment
@@ -644,7 +651,7 @@ export default function InvoiceOverview() {
                                             </tr>
                                         )}
                                     </React.Fragment>
-                                ))}
+                                )})}
                             </tbody>
                         </table>
                     </div>
@@ -734,7 +741,9 @@ export default function InvoiceOverview() {
                 </div>
 
                 <div className="md:hidden space-y-3">
-                    {paginatedInvoices.map((invoice) => (
+                    {paginatedInvoices.map((invoice) => {
+                        const outstandingAmount = invoice.totalInclVAT - invoice.paymentAllocations.reduce((sum, pa) => sum + Number(pa.amountAllocated), 0);
+                        return (
                         <div key={invoice.id} className="bg-white rounded-lg border border-gray-200 p-3 space-y-3">
                             {/* Card Header - Invoice Number and Status */}
                             <div className="flex items-start justify-between gap-2">
@@ -777,10 +786,16 @@ export default function InvoiceOverview() {
                                     <p className="text-gray-600">VAT Amount</p>
                                     <p className="font-semibold text-gray-900">{invoice.totalVatAmount?.toString() || "0.00"}</p>
                                 </div>}
+                                {isColumnVisible('paid')&&<div>
+                                    <p className="text-gray-600">Paid</p>
+                                    <p className="font-semibold text-gray-900">
+                                        {outstandingAmount}
+                                    </p>
+                                </div>}
                                 {isColumnVisible('outstanding')&&<div>
                                     <p className="text-gray-600">Outstanding</p>
                                     <p className="font-semibold text-gray-900">
-                                        {invoice.status === InvoiceStatus.PAID ? "0.0" : invoice.totalInclVAT.toString()}
+                                        {(invoice.totalInclVAT - invoice.paymentAllocations.reduce((sum, pa) => sum + pa.amountAllocated, 0))}
                                     </p>
                                 </div>}
                                { isColumnVisible('sentAt')&&<div>
@@ -843,10 +858,10 @@ export default function InvoiceOverview() {
                                                 align="end"
                                                 className="min-w-[220px] bg-white rounded-lg shadow-lg border border-gray-200 p-1 z-50"
                                             >
-                                                {invoice.status !== InvoiceStatus.PAID ? (
+                                                {outstandingAmount > 0 ? (
                                                     <DropdownMenu.Item
                                                         className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2"
-                                                        onSelect={() => setSelectedInvoiceForPayment(invoice)}
+                                                        onSelect={() => setSelectedInvoiceForPayment({...invoice, outstandingAmount})}
                                                     >
                                                         <CheckCircleIcon className="h-4 w-4" />
                                                         Register payment
@@ -874,7 +889,7 @@ export default function InvoiceOverview() {
                                     </DropdownMenu.Root>}
                             </div>
                         </div>
-                    ))}
+                    )})}
                 </div>
 
                 {/* Mobile Pagination */}
@@ -936,7 +951,7 @@ export default function InvoiceOverview() {
                         <div>
                             <p className="text-gray-600">Total incl. VAT</p>
                             <p className="font-semibold text-gray-900">
-                                {invoices.reduce((sum, inv) => sum + Number(inv.totalInclVAT), 0).toFixed(2)}
+                                {invoices.reduce((sum, inv) => sum + Number(inv.totalInclVAT), 0)}
                             </p>
                         </div>
                         <div>
@@ -944,7 +959,7 @@ export default function InvoiceOverview() {
                             <p className="font-semibold text-gray-900">
                                 {invoices
                                     .reduce((sum, inv) => sum + (inv.status === "PAID" ? Number(inv.totalInclVAT) : 0), 0)
-                                    .toFixed(2)}
+                                    }
                             </p>
                         </div>
                         <div>
@@ -952,7 +967,7 @@ export default function InvoiceOverview() {
                             <p className="font-semibold text-gray-900">
                                 {invoices
                                     .reduce((sum, inv) => sum + (inv.status !== "PAID" ? Number(inv.totalInclVAT) : 0), 0)
-                                    .toFixed(2)}
+                                   }
                             </p>
                         </div>
                     </div>
@@ -969,7 +984,7 @@ export default function InvoiceOverview() {
                     paymentData={{
                         customer: selectedInvoiceForPayment.customer,
                         invoiceId: selectedInvoiceForPayment.id,
-                        amount: Number(selectedInvoiceForPayment.totalInclVAT),
+                        amount: selectedInvoiceForPayment.outstandingAmount ?? 0,
                     }}
                     fetchInvoices={fetchInvoices}
                     loadingPayment={loadingPayment}

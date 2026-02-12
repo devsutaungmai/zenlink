@@ -53,19 +53,20 @@ export default function RegisterPaymentDialog({
     });
 
     // Update payment when paymentData changes
-    useEffect(() => {
-        setPayment({
-            customer: paymentData.customer || { id: "", customerName: "" },
-            invoiceId: paymentData.invoiceId,
-            date: new Date().toISOString().split("T")[0],
-            paymentMethod: "BANK",
-            amount: paymentData.amount || 0,
-        });
-    }, [paymentData]);
+    // useEffect(() => {
+    //     setPayment({
+    //         customer: paymentData.customer || { id: "", customerName: "" },
+    //         invoiceId: paymentData.invoiceId,
+    //         date: new Date().toISOString().split("T")[0],
+    //         paymentMethod: "BANK",
+    //         amount: paymentData.amount || 0,
+    //     });
+    // }, [paymentData]);
 
     const handleSubmit = async () => {
         try {
             setLoadingPayment(true)
+            console.log('Submitting payment:', payment);
             const response = await fetch(`/api/invoices/${payment.invoiceId}/customer/paid`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -162,7 +163,7 @@ export default function RegisterPaymentDialog({
                                 <input
                                     type="number"
                                     value={payment.amount}
-                                    onChange={(e) => setPayment({ ...payment, amount: Number.parseFloat(e.target.value) })}
+                                    onChange={(e) => setPayment({ ...payment, amount: Number(e.target.value) })}
                                     className="border px-3 py-2 rounded-md text-xs sm:text-sm"
                                 />
                             </div>

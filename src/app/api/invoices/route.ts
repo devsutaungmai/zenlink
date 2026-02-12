@@ -33,6 +33,11 @@ export async function GET(request: NextRequest) {
             id: true,
             name: true
           }
+        },
+        paymentAllocations:{
+          select:{
+            amountAllocated: true
+          }
         }
       },
       orderBy: {

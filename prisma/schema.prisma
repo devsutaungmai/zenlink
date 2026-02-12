@@ -1276,6 +1276,7 @@ enum InvoiceStatus {
   DRAFT // Not sent yet
   SENT // Sent to customer
   PAID // Payment received
+  PARTIALLY_PAID // Partial payment received
   OVERDUE // Past due date
   CANCELLED // Cancelled
   OUTSTANDING //  sent and not paid yet
