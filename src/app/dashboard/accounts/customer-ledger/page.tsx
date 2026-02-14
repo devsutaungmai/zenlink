@@ -314,13 +314,13 @@ export default function CustomerLedger() {
                     </div>
 
                     {/* Hide reversals */}
-                    <label className="flex items-center gap-2 text-sm text-[#2c3e50] cursor-pointer">
+                    {/* <label className="flex items-center gap-2 text-sm text-[#2c3e50] cursor-pointer">
                         <Checkbox
                             checked={hideReversals}
                             onCheckedChange={(v) => setHideReversals(v === true)}
                         />
                         Hide reversals
-                    </label>
+                    </label> */}
 
                     {/* Right-side icons */}
                     <div className="ml-auto flex items-center gap-1">
@@ -351,7 +351,7 @@ export default function CustomerLedger() {
                         Show matches
                     </Button>
 
-                    <div className="ml-auto flex items-center gap-2">
+                    {/* <div className="ml-auto flex items-center gap-2">
                         <Button
                             variant="outline"
                             className="text-sm h-8 px-4 text-[#2c3e50] border-[#d0d5dd] bg-white hover:bg-[#f2f4f7]"
@@ -370,7 +370,7 @@ export default function CustomerLedger() {
                         >
                             Write off
                         </Button>
-                    </div>
+                    </div> */}
                 </div>
             </div>
 

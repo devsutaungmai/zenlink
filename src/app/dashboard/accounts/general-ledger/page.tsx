@@ -27,6 +27,7 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
 import { on } from "events"
 import { formatDateLocal, formatVoucherNumberForDisplay } from "@/shared/lib/invoiceHelper"
 import { Description } from "@/components/invoice/Description"
+import { DateRangePicker } from "@/components/ui/date-range-picker"
 
 interface LedgerEntry {
   id: string
@@ -67,8 +68,8 @@ export default function GeneralLedger({ businessId }: { businessId: string }) {
   const today = new Date()
 
   const [dateRange, setDateRange] = useState({
-    startDate: formatDateLocal(new Date(today.getFullYear(), today.getMonth(), 1)),
-    endDate: formatDateLocal(today),
+    startDate:formatDateLocal(today) ,
+    endDate: formatDateLocal(new Date(today.getFullYear(), today.getMonth()+1, 0)),
   })
 
   const [downloading, setDownloading] = useState(false)
@@ -141,24 +142,24 @@ export default function GeneralLedger({ businessId }: { businessId: string }) {
     setExpandedAccounts(newExpanded)
   }
 
-  const moveDateRange = (direction: 'prev' | 'next') => {
-    const start = new Date(dateRange.startDate)
-    const end = new Date(dateRange.endDate)
-    const diffDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
+  // const moveDateRange = (direction: 'prev' | 'next') => {
+  //   const start = new Date(dateRange.startDate)
+  //   const end = new Date(dateRange.endDate)
+  //   const diffDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
 
-    if (direction === 'prev') {
-      start.setDate(start.getDate() - diffDays)
-      end.setDate(end.getDate() - diffDays)
-    } else {
-      start.setDate(start.getDate() + diffDays)
-      end.setDate(end.getDate() + diffDays)
-    }
+  //   if (direction === 'prev') {
+  //     start.setDate(start.getDate() - diffDays)
+  //     end.setDate(end.getDate() - diffDays)
+  //   } else {
+  //     start.setDate(start.getDate() + diffDays)
+  //     end.setDate(end.getDate() + diffDays)
+  //   }
 
-    setDateRange({
-      startDate: formatDateLocal(start),
-      endDate: formatDateLocal(end),
-    })
-  }
+  //   setDateRange({
+  //     startDate: formatDateLocal(start),
+  //     endDate: formatDateLocal(end),
+  //   })
+  // }
 
   const totalEntries = accountData.reduce((sum, acc) => sum + acc.entries.length, 0)
 
@@ -292,7 +293,7 @@ export default function GeneralLedger({ businessId }: { businessId: string }) {
 
           {/* Third Row - Date Range and Actions */}
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-2 rounded-lg border border-border px-2 py-2 sm:px-4 flex-1 sm:flex-none">
+            {/* <div className="flex items-center gap-2 rounded-lg border border-border px-2 py-2 sm:px-4 flex-1 sm:flex-none">
               <span className="text-xs sm:text-sm text-foreground truncate">
                 {dateRange.startDate} - {dateRange.endDate}
               </span>
@@ -304,7 +305,11 @@ export default function GeneralLedger({ businessId }: { businessId: string }) {
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
-            </div>
+            </div> */}
+            <DateRangePicker
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
+          />
 
             {/* Download and Settings - Icon Buttons */}
             <div className="flex items-center gap-2 justify-end">
