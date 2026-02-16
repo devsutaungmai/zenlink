@@ -19,6 +19,8 @@ import {
 import { da } from "date-fns/locale"
 import { formatCustomerNumberForDisplay, formatDateLocal, formatVoucherNumberForDisplay } from "@/shared/lib/invoiceHelper"
 import { Description } from "@/components/invoice/Description"
+import { DateRangePicker } from "@/components/ui/date-range-picker"
+import { MatchedItemsDialog } from "@/components/invoice/MatchedItemsDialog"
 
 // --- Data types ---
 
@@ -29,8 +31,14 @@ interface CustomerLedgerRow {
     voucher?: string
     amount?: number
     balance?: number
-    payable?: number
-    isClosingBalance?: boolean
+    entryType?: string
+}
+
+interface OpenItem {
+    matchGroupId: string
+    balance: number
+    invoiceRow: CustomerLedgerRow
+    rows?: CustomerLedgerRow[]
 }
 
 interface CustomerGroup {
@@ -38,127 +46,9 @@ interface CustomerGroup {
     customerName: string
     customerNumber: string
     invoiceId?: string
-    rows: CustomerLedgerRow[]
+    rows?: CustomerLedgerRow[]       // statement mode
+    openItems?: OpenItem[]           // open items mode
 }
-
-// --- Sample data matching the screenshot ---
-
-// const SAMPLE_DATA: CustomerGroup[] = [
-//   {
-//     customerId: "cus_1",
-//     customerName: "A-B Transport AS",
-//     customerNumber: "10000",
-//     rows: [
-//       {
-//         postingDate: "15.01.2023",
-//         description: "Invoice 1 for A-B Transport AS",
-//         dueDate: "11.12.2024",
-//         voucher: "2",
-//         amount: 280000.0,
-//         balance: 280000.0,
-//       },
-//       {
-//         postingDate: "25.01.2023",
-//         description: "Bank journal",
-//         dueDate: "25.01.2023",
-//         voucher: "49",
-//         amount: -280000.0,
-//         balance: -280000.0,
-//       },
-//       {
-//         isClosingBalance: true,
-//         postingDate: "03.02.2026",
-//         description: "Sum",
-//         amount: 0.0,
-//         balance: 0.0,
-//       },
-//     ],
-//   },
-//   {
-//     customerId: "cus_2",
-//     customerName: "AIA (Life Insurance)",
-//     customerNumber: "10094",
-//     rows: [
-//       {
-//         postingDate: "21.10.2025",
-//         description: "Invoice 10139 for AIA (Life Insurance)",
-//         dueDate: "04.11.2025",
-//         voucher: "288",
-//         amount: 71.25,
-//         balance: 71.25,
-//       },
-//       {
-//         isClosingBalance: true,
-//         postingDate: "03.02.2026",
-//         description: "Sum",
-//         amount: 71.25,
-//         balance: 71.25,
-//       },
-//     ],
-//   },
-//   {
-//     customerId: "cus_3",
-//     customerName: "Akkurat AS",
-//     customerNumber: "10018",
-//     rows: [
-//       {
-//         postingDate: "15.07.2023",
-//         description: "Invoice 19 for Akkurat AS",
-//         dueDate: "07.08.2024",
-//         voucher: "17",
-//         amount: 180000.0,
-//         balance: 180000.0,
-//       },
-//       {
-//         postingDate: "15.09.2023",
-//         description: "Invoice 21 for Akkurat AS",
-//         dueDate: "21.10.2024",
-//         voucher: "21",
-//         amount: 240000.0,
-//         balance: 240000.0,
-//       },
-//       {
-//         postingDate: "10.09.2025",
-//         description: "Invoice 10127 for Akkurat AS",
-//         dueDate: "24.09.2025",
-//         voucher: "247",
-//         amount: 136.25,
-//         balance: 136.25,
-//       },
-//       {
-//         isClosingBalance: true,
-//         postingDate: "03.02.2026",
-//         description: "Sum",
-//         amount: 420136.25,
-//         balance: 420136.25,
-//       },
-//     ],
-//   },
-//   {
-//     customerId: "cus_4",
-//     customerName: "asda asd asd",
-//     customerNumber: "10085",
-//     rows: [
-//       {
-//         postingDate: "27.08.2025",
-//         description: "Invoice 10101 for asda asd asd",
-//         dueDate: "10.09.2025",
-//         voucher: "210",
-//         amount: 7.74,
-//         balance: 7.74,
-//       },
-//       {
-//         isClosingBalance: true,
-//         postingDate: "03.02.2026",
-//         description: "Sum",
-//         amount: 7.74,
-//         balance: 7.74,
-//       },
-//     ],
-//   },
-// ]
-
-// --- Number formatting ---
 
 function formatNumber(value: number | undefined): string {
     if (value === undefined) return ""
@@ -174,12 +64,26 @@ function formatNumber(value: number | undefined): string {
 export default function CustomerLedger() {
     const [data, setData] = useState<CustomerGroup[]>([])
     const [loading, setLoading] = useState(true)
-    const [activeTab, setActiveTab] = useState<"open" | "statement">("open")
+    const [activeTab, setActiveTab] = useState<"open" | "statement">("statement")
     const [searchQuery, setSearchQuery] = useState("")
     const [hideReversals, setHideReversals] = useState(false)
     const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
         new Set(data.map((g) => g.customerId))
     )
+    const today = new Date()
+
+    const [dateRange, setDateRange] = useState({
+        startDate: formatDateLocal(today),
+        endDate: formatDateLocal(new Date(today.getFullYear(), today.getMonth() + 1, 0)),
+    })
+
+    const [matchDialogOpen, setMatchDialogOpen] = useState(false)
+    const [selectedMatchGroup, setSelectedMatchGroup] = useState<OpenItem | null>(null)
+
+    const openMatchDialog = (item: OpenItem) => {
+        setSelectedMatchGroup(item)
+        setMatchDialogOpen(true)
+    }
 
     const toggleGroup = (id: string) => {
         setExpandedGroups((prev) => {
@@ -192,56 +96,116 @@ export default function CustomerLedger() {
     const filteredData = data.filter((group) => {
         if (!searchQuery) return true
         const q = searchQuery.toLowerCase()
+
+        const inStatement =
+            group.rows?.some((r) =>
+                r.description?.toLowerCase().includes(q)
+            )
+
+        const inOpenItems =
+            group.openItems?.some(item =>
+                item.rows?.some(r =>
+                    r.description?.toLowerCase().includes(q)
+                )
+            )
+
         return (
             group.customerName.toLowerCase().includes(q) ||
             group.customerNumber.includes(q) ||
-            group.rows.some((r) => r.description?.toLowerCase().includes(q))
+            inStatement ||
+            inOpenItems
         )
     })
 
+
     useEffect(() => {
-        async function load() {
-            try {
-                setLoading(true)
+        fetchCustomerLedger()
+    }, [dateRange, activeTab])
 
-                const res = await fetch(
-                    `/api/ledger/report/customer-ledger?startDate=2024-01-01&endDate=2026-12-31`,
-                    { cache: "no-store" }
-                )
+    const fetchCustomerLedger = async () => {
+        try {
+            setLoading(true)
+            const params = new URLSearchParams({
+                startDate: dateRange.startDate,
+                endDate: dateRange.endDate,
+            });
+            if (activeTab === "open") {
+                params.append("onlyOpenItems", "true")
+            }
 
-                const json = await res.json()
+            const res = await fetch(
+                `/api/ledger/report/customer-ledger?${params}`,
+                { cache: "no-store" }
+            )
 
-                // transform API → UI structure
-                const mapped: CustomerGroup[] = (json ?? []).map((c: any) => ({
+            const json = await res.json()
+
+            // transform API → UI structure
+            const mapped: CustomerGroup[] = (json ?? []).map((c: any) => {
+
+                // OPEN ITEMS MODE
+                if (activeTab === "open") {
+                    return {
+                        postingDate: c.postingDate,
+                        customerId: c.customerId,
+                        customerName: c.customerName,
+                        customerNumber: c.customerNumber,
+                        openItems: (c.openItems ?? []).map((item: any) => {
+                            const invoice = item.rows?.find((r: any) => r.entryType === "INVOICE_POST")
+
+                            return {
+                                matchGroupId: item.matchGroupId,
+                                balance: item.balance,
+
+                                // main row shown in table
+                                invoiceRow: {
+                                    postingDate: formatDateLocal(invoice?.postingDate),
+                                    description: invoice?.description,
+                                    dueDate: formatDateLocal(invoice?.dueDate),
+                                    voucher: invoice?.voucher,
+                                    amount: invoice?.amount,
+                                    entryType: invoice?.entryType,
+                                },
+
+                                // keep for dialog (optional)
+                                rows: (item.rows ?? []).map((r: any) => ({
+                                    postingDate: formatDateLocal(r.postingDate),
+                                    description: r.description,
+                                    amount: r.amount,
+                                    entryType: r.entryType,
+                                }))
+                            }
+                        })
+
+                    }
+                }
+
+                //  STATEMENT MODE
+                return {
                     customerId: c.customerId,
                     customerName: c.customerName,
                     customerNumber: c.customerNumber,
-                    invoiceId: c.invoiceId,
                     rows: (c.rows ?? []).map((r: any) => ({
                         postingDate: formatDateLocal(r.postingDate),
                         description: r.description,
                         dueDate: formatDateLocal(r.dueDate),
-                        voucher: r.voucherNumber,
+                        voucher: r.voucher,
                         amount: r.amount,
                         balance: r.balance,
-                        isClosingBalance: r.isClosingBalance ?? false,
-                    })),
-                }))
+                        entryType: r.entryType,
+                    }))
+                }
+            })
 
-
-                setData(mapped)
-
-                // auto expand all
-                setExpandedGroups(new Set(mapped.map((g) => g.customerId)))
-            } catch (e) {
-                console.error("Failed loading ledger", e)
-            } finally {
-                setLoading(false)
-            }
+            setData(mapped)
+            // auto expand all
+            setExpandedGroups(new Set(mapped.map((g) => g.customerId)))
+        } catch (e) {
+            console.error("Failed loading ledger", e)
+        } finally {
+            setLoading(false)
         }
-
-        load()
-    }, [])
+    }
 
 
     return (
@@ -288,19 +252,23 @@ export default function CustomerLedger() {
                     </div>
 
                     {/* Date picker */}
-                    <div className="flex items-center gap-1.5 rounded-md border border-[#d0d5dd] bg-white px-3 py-1.5 text-sm text-[#2c3e50]">
-                        <span>03.02.2026</span>
-                        <Calendar className="h-4 w-4 text-[#667085]" />
+                    <div className="flex items-center gap-1.5 rounded-md bg-white px-3 py-1.5 text-sm text-[#2c3e50]">
+                        {/* <span>03.02.2026</span>
+                        <Calendar className="h-4 w-4 text-[#667085]" /> */}
+                        <DateRangePicker
+                            dateRange={dateRange}
+                            onDateRangeChange={setDateRange}
+                        />
                     </div>
 
                     {/* Total overdue filter */}
-                    <div className="flex items-center gap-1.5 rounded-full border border-[#d0d5dd] bg-white px-3 py-1.5 text-sm text-[#2c3e50]">
+                    {/* <div className="flex items-center gap-1.5 rounded-full border border-[#d0d5dd] bg-white px-3 py-1.5 text-sm text-[#2c3e50]">
                         <span>Total overdue</span>
                         <button className="rounded-full bg-[#667085] p-0.5 text-white hover:bg-[#475467]">
                             <X className="h-3 w-3" />
                         </button>
                         <ChevronDown className="h-3 w-3 text-[#667085]" />
-                    </div>
+                    </div> */}
 
                     {/* Search */}
                     <div className="relative flex-shrink-0">
@@ -336,7 +304,7 @@ export default function CustomerLedger() {
                 {/* Bottom row: action buttons */}
                 <div className="flex flex-wrap items-center gap-2">
                     <Button className="bg-[#3182ce] hover:bg-[#3182ce] text-white text-sm h-8 px-4 rounded-md">
-                        Match all
+                        Match
                     </Button>
                     <Button
                         variant="outline"
@@ -400,16 +368,23 @@ export default function CustomerLedger() {
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredData.map((group) => (
-                                <CustomerGroupSection
-                                    key={group.customerId}
-                                    customerId={group.customerId}
-                                    invoiceId={group.invoiceId}
-                                    group={group}
-                                    isExpanded={expandedGroups.has(group.customerId)}
-                                    onToggle={() => toggleGroup(group.customerId)}
-                                />
-                            ))}
+                            {filteredData.map((group) =>
+                                activeTab === "open"
+                                    ? (
+                                        <OpenItemsCustomerSection
+                                            key={group.customerId}
+                                            group={group}
+                                            isExpanded={expandedGroups.has(group.customerId)}
+                                            onToggle={() => toggleGroup(group.customerId)}
+                                            onOpenMatch={openMatchDialog}
+                                        />
+
+                                    )
+                                    : (
+                                        <CustomerGroupSection key={group.customerId} customerId={group.customerId} invoiceId={group.invoiceId} group={group} isExpanded={expandedGroups.has(group.customerId)} onToggle={() => toggleGroup(group.customerId)} />
+                                    )
+                            )}
+
                         </tbody>
                     </table>
                 </div>
@@ -426,6 +401,12 @@ export default function CustomerLedger() {
                         />
                     ))}
                 </div>
+                <MatchedItemsDialog
+                    open={matchDialogOpen}
+                    onClose={() => setMatchDialogOpen(false)}
+                    matchGroup={selectedMatchGroup}
+                />
+
             </div>
         </div>
     )
@@ -446,11 +427,13 @@ function CustomerGroupSection({
     isExpanded: boolean
     onToggle: () => void
 }) {
-    const sum = group.rows.reduce((acc, r) => acc + (r.amount ?? 0), 0)
+    const rows = group.rows ?? [];
+    const sum = rows.reduce((acc, r) => acc + (r.amount ?? 0), 0)
 
     const customerLabel = group.customerNumber
         ? `${group.customerName}, ${formatCustomerNumberForDisplay(group.customerNumber)} (${formatCustomerNumberForDisplay(group.customerNumber)})`
         : group.customerName
+
 
     return (
         <>
@@ -475,7 +458,7 @@ function CustomerGroupSection({
 
             {/* Entry rows */}
             {isExpanded &&
-                [...group.rows, { isSumRow: true } as any].map((row, idx) => {
+                [...rows, { isSumRow: true } as any].map((row, idx) => {
                     const isSum = (row as any).isSumRow === true
                     const isLink =
                         !isSum &&
@@ -551,6 +534,83 @@ function CustomerGroupSection({
     )
 }
 
+function OpenItemsCustomerSection({
+    group,
+    isExpanded,
+    onToggle,
+    onOpenMatch,
+}: {
+    group: CustomerGroup
+    isExpanded: boolean
+    onToggle: () => void
+    onOpenMatch: (item: OpenItem) => void
+}) {
+
+    const customerTotal =
+        group.openItems?.reduce((a, i) => a + i.balance, 0) ?? 0
+
+    return (
+        <>
+            {/* Customer header */}
+            <tr className="bg-[#f7f8fa] cursor-pointer" onClick={onToggle}>
+                <td colSpan={9} className="p-2.5 font-semibold text-[#2a7de1]">
+                    {group.customerName} ({formatCustomerNumberForDisplay(group.customerNumber)}) — {formatNumber(customerTotal)}
+                </td>
+            </tr>
+
+            {isExpanded && group.openItems?.map((item) => (
+                <OpenItemBlock key={item.matchGroupId} item={item} onOpenMatch={onOpenMatch} />
+            ))}
+        </>
+    )
+}
+
+function OpenItemBlock({ item, onOpenMatch }: { item: OpenItem, onOpenMatch: (item: OpenItem) => void }) {
+
+    if (!item.invoiceRow) return null
+    const row = item.invoiceRow
+
+    return (
+        <tr className="border-b bg-white hover:bg-[#f7f8fa]">
+            {/* TEXT */}
+            <td className="p-2.5 text-[#2a7de1] flex items-center gap-2">
+                {/* LINK ICON */}
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation()
+                        onOpenMatch(item)
+                    }}
+                    className="text-gray-500 hover:text-blue-600"
+                >
+                    🔗
+                </button>
+            </td>
+            <td className="p-2.5">{row.postingDate}</td>
+            <td className="p-2.5">{row.description}</td>
+            <td className="p-2.5"></td>
+            <td className="p-2.5"></td>
+
+            {/* amount */}
+            <td className="p-2.5 text-right tabular-nums">
+                {formatNumber(row.amount)}
+            </td>
+
+            {/* balance */}
+            <td className="p-2.5 text-right tabular-nums font-semibold">
+                {formatNumber(item.balance)}
+            </td>
+
+            {/* payable */}
+            <td className="p-2.5 text-right tabular-nums font-semibold text-red-600">
+                {formatNumber(item.balance)}
+            </td>
+            <td className="p-2.5"></td>
+
+        </tr>
+    )
+}
+
+
 // --- Mobile group cards ---
 
 function MobileCustomerGroup({
@@ -565,8 +625,8 @@ function MobileCustomerGroup({
     onToggle: () => void
 }) {
     // const sumRow = group.rows.find((r) => r.isClosingBalance)
-    const sum = group.rows.reduce((acc, r) => acc + (r.amount ?? 0), 0)
-
+    const sum = group.rows?.reduce((acc, r) => acc + (r.amount ?? 0), 0) || 0
+    const rows = group.rows ?? []
     return (
         <div className="border border-[#e0e4e8] rounded-lg overflow-hidden bg-white">
             {/* Header */}
@@ -597,52 +657,53 @@ function MobileCustomerGroup({
             {/* Rows */}
             {isExpanded && (
                 <div className="divide-y divide-[#e8eaed]">
-                    {[...group.rows, { isSumRow: true } as any].map((row, idx) => {
-                        const isSum = (row as any).isSumRow === true
-                        return (
-                            <div
-                                key={idx}
-                                className={`p-3 ${isSum ? "bg-[#f7f8fa]" : ""}`}
-                            >
-                                {isSum ? (
-                                    <div className="flex items-center justify-between">
-                                        <span className="font-semibold text-sm text-[#2c3e50]">
-                                            Sum
-                                        </span>
-                                        <div className="text-right">
-                                            <div className="text-sm font-semibold tabular-nums text-[#2c3e50]">
-                                                {formatNumber(row.amount)}
+                    {
+                        [...rows, { isSumRow: true } as any].map((row, idx) => {
+                            const isSum = (row as any).isSumRow === true
+                            return (
+                                <div
+                                    key={idx}
+                                    className={`p-3 ${isSum ? "bg-[#f7f8fa]" : ""}`}
+                                >
+                                    {isSum ? (
+                                        <div className="flex items-center justify-between">
+                                            <span className="font-semibold text-sm text-[#2c3e50]">
+                                                Sum
+                                            </span>
+                                            <div className="text-right">
+                                                <div className="text-sm font-semibold tabular-nums text-[#2c3e50]">
+                                                    {formatNumber(row.amount)}
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-1.5">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-xs text-[#667085]">
-                                                {row.postingDate}
-                                            </span>
-                                            {row.dueDate && (
+                                    ) : (
+                                        <div className="space-y-1.5">
+                                            <div className="flex items-center justify-between">
                                                 <span className="text-xs text-[#667085]">
-                                                    Due: {row.dueDate}
+                                                    {row.postingDate}
                                                 </span>
-                                            )}
+                                                {row.dueDate && (
+                                                    <span className="text-xs text-[#667085]">
+                                                        Due: {row.dueDate}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="text-sm text-[#2a7de1]">
+                                                {row.description}
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-xs text-[#667085]">
+                                                    Voucher: {formatVoucherNumberForDisplay(row.voucher ?? "")}
+                                                </span>
+                                                <span className="text-sm font-medium tabular-nums text-[#2c3e50]">
+                                                    {formatNumber(isSum ? sum : row.amount)}
+                                                </span>
+                                            </div>
                                         </div>
-                                        <div className="text-sm text-[#2a7de1]">
-                                            {row.description}
-                                        </div>
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-xs text-[#667085]">
-                                                Voucher: {formatVoucherNumberForDisplay(row.voucher ?? "")}
-                                            </span>
-                                            <span className="text-sm font-medium tabular-nums text-[#2c3e50]">
-                                                {formatNumber(isSum ? sum : row.amount)}
-                                            </span>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        )
-                    })}
+                                    )}
+                                </div>
+                            )
+                        })}
                 </div>
             )}
         </div>

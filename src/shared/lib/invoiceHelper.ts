@@ -1134,11 +1134,13 @@ export async function getCustomerLedger({
   fromDate,
   toDate,
   customerId,
+  onlyOpenItems = false,
 }: {
   businessId: string
   fromDate?: Date
   toDate?: Date
   customerId?: string
+  onlyOpenItems?: boolean
 }) {
   const ledger = await prisma.ledgerEntry.findMany({
     where: {
@@ -1187,6 +1189,10 @@ export async function getCustomerLedger({
     ],
   })
 
+  if (onlyOpenItems) {
+    return buildOpenItemsStructure(ledger)
+  }
+
   return buildCustomerLedgerRows(ledger)
 }
 
@@ -1194,6 +1200,81 @@ function buildCustomerLedgerRows(ledger: any[]) {
   const movements = aggregateCustomerMovements(ledger)
   const displayRows = computeDisplayValues(movements)
   return groupByCustomer(displayRows)
+}
+
+function buildOpenItemsStructure(entries: any[]) {
+
+  const groups = new Map<string, any>() // receivable groups
+
+  for (const e of entries) {
+
+    const customer = e.invoice?.customer
+    if (!customer) continue
+
+    // 🔑 match group identity = receivable origin
+    const matchGroupId =`invoice_${e.invoice?.id ?? "unknown"}`
+
+    if (!groups.has(matchGroupId)) {
+      groups.set(matchGroupId, {
+        matchGroupId,
+        customerId: customer.id,
+        customerName: customer.customerName,
+        customerNumber: customer.customerNumber,
+        rows: [],
+        balance: 0,
+      })
+    }
+    const g = groups.get(matchGroupId)
+
+    const isDebit1500 = e.debitAccount?.accountNumber === 1500
+    const amount = Number(e.amount)
+
+    const signedAmount = isDebit1500 ? amount : -amount
+
+    g.rows.push({
+      postingDate: e.postingDate,
+      description: getText(e),
+      entryType: e.entryType,
+      amount: signedAmount,
+    })
+
+    g.balance += signedAmount
+  }
+
+  // remove fully settled receivables
+  const openGroups = Array.from(groups.values())
+    .filter(g => Math.abs(g.balance) > 0.0001)
+
+  return groupOpenItemsByCustomer(openGroups)
+}
+
+function groupOpenItemsByCustomer(groups: any[]) {
+
+  const customers: Record<string, any> = {}
+
+  for (const g of groups) {
+
+    if (!customers[g.customerId]) {
+      customers[g.customerId] = {
+        customerId: g.customerId,
+        customerName: g.customerName,
+        customerNumber: g.customerNumber,
+        openItems: []
+      }
+    }
+
+    customers[g.customerId].openItems.push({
+      matchGroupId: g.matchGroupId,
+      balance: round(g.balance),
+      postingDate: g.rows[0].postingDate, // use first movement date for sorting
+      rows: g.rows.sort((a: any, b: any) => new Date(a.postingDate).getTime() - new Date(b.postingDate).getTime())
+    })
+  }
+
+  return Object.values(customers)
+}
+function round(n: number) {
+  return Math.round(n * 100) / 100
 }
 
 function groupByCustomer(rows: any[]) {
@@ -1241,6 +1322,7 @@ function aggregateCustomerMovements(entries: any[]) {
         postingDate: e.postingDate,
         voucherNumber: e.voucher?.voucherNumber ?? "",
         dueDate: e.invoice?.dueDate ?? null,
+        entryType: e.entryType,
         description: getText(e),
         debit: 0,
         credit: 0,

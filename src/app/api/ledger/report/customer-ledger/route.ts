@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
         const startDate = searchParams.get('startDate');
         const endDate = searchParams.get('endDate');
         const customerIdParam = searchParams.get('customerId');
+        const onlyOpenItems = searchParams.get('onlyOpenItems') === 'true';
 
         if (!startDate || !endDate) {
             return NextResponse.json(
@@ -29,7 +30,8 @@ export async function GET(request: NextRequest) {
         const report = await getCustomerLedger({businessId,
             fromDate: new Date(startDate),
             toDate: new Date(endDate),
-            customerId: customerIdParam ?? undefined}
+            customerId: customerIdParam ?? undefined,
+            onlyOpenItems: onlyOpenItems}
         )
 
         return NextResponse.json(report);
