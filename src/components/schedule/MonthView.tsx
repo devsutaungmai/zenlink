@@ -5,7 +5,8 @@ import { formatDate } from '@/shared/lib/dateLocale'
 import { Employee, EmployeeGroup } from '@prisma/client'
 import { ShiftWithRelations } from '@/types/schedule'
 import { PlusIcon } from '@heroicons/react/24/outline'
-import { AlertTriangle, AlertCircle } from 'lucide-react'
+import { AlertTriangle, AlertCircle, Copy, ArrowRightLeft } from 'lucide-react'
+import { useShiftDragDrop } from '@/shared/hooks/useShiftDragDrop'
 import {
   Dialog,
   DialogContent,
@@ -21,6 +22,9 @@ interface MonthViewProps {
   onAddShift?: (data?: { date?: string }) => void
   isEmployeeUnavailable?: (employeeId: string, date: string) => boolean
   onUnavailableClick?: (employeeId: string, date: string) => void
+  canEditShifts?: boolean
+  onMoveShift?: (shiftId: string, target: { date?: string; employeeId?: string; employeeGroupId?: string; functionId?: string }) => Promise<void>
+  onDuplicateShift?: (shiftId: string, targets: Array<{ date?: string; employeeId?: string; employeeGroupId?: string; functionId?: string }>) => Promise<void>
 }
 
 export default function MonthView({
@@ -30,10 +34,25 @@ export default function MonthView({
   onEditShift,
   onAddShift = () => {},
   isEmployeeUnavailable,
-  onUnavailableClick
+  onUnavailableClick,
+  canEditShifts = true,
+  onMoveShift,
+  onDuplicateShift
 }: MonthViewProps) {
   const { t, i18n } = useTranslation('schedule')
   const [selectedDayShifts, setSelectedDayShifts] = useState<{ date: Date; shifts: ShiftWithRelations[] } | null>(null)
+
+  const noopMove = async () => {}
+  const noopDuplicate = async () => {}
+  const { dragOverCell, isDragging, copyMode, toggleCopyMode, handleDragStart, handleDragOver, handleDragLeave, handleDrop, handleDragEnd } = useShiftDragDrop({
+    onMoveShift: onMoveShift || noopMove,
+    onDuplicateShift: onDuplicateShift || noopDuplicate,
+    canEditShifts,
+    isDropDisabled: (_rowId, date, shift) => {
+      if (!shift?.employeeId || !isEmployeeUnavailable) return false
+      return isEmployeeUnavailable(shift.employeeId, date)
+    }
+  })
   
   // Generate calendar days for the month view
   const calendarDays = useMemo(() => {
@@ -163,11 +182,35 @@ export default function MonthView({
       <div className="hidden md:block">
         {/* Calendar Header - Desktop */}
         <div className="grid grid-cols-7 gap-0 border-b">
-          {weekDays.map(day => (
+          {weekDays.map((day, idx) => (
             <div 
               key={day}
-              className="py-3 text-center text-sm font-semibold text-gray-700 border-r last:border-r-0"
+              className="py-3 text-center text-sm font-semibold text-gray-700 border-r last:border-r-0 flex items-center justify-center gap-2"
             >
+              {idx === 0 && canEditShifts && (
+                <div className="inline-flex rounded-md border border-gray-200 bg-white shadow-sm" role="group">
+                  <button
+                    onClick={() => copyMode && toggleCopyMode()}
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium rounded-l-md transition-colors ${
+                      !copyMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'
+                    }`}
+                    title={t('context_menu.copy_mode_off') || 'Drag to move'}
+                  >
+                    <ArrowRightLeft className="w-3 h-3" />
+                    Move
+                  </button>
+                  <button
+                    onClick={() => !copyMode && toggleCopyMode()}
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium rounded-r-md transition-colors ${
+                      copyMode ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'
+                    }`}
+                    title={t('context_menu.copy_mode_on') || 'Drag to duplicate'}
+                  >
+                    <Copy className="w-3 h-3" />
+                    Copy
+                  </button>
+                </div>
+              )}
               {day}
             </div>
           ))}
@@ -186,7 +229,10 @@ export default function MonthView({
                 key={index}
                 className={`min-h-[120px] border-r border-b last:border-r-0 p-2 ${
                   !isCurrentMonth ? 'bg-gray-50' : 'bg-white'
-                } ${isToday ? 'bg-blue-50' : ''}`}
+                } ${isToday ? 'bg-blue-50' : ''} ${dragOverCell === dateKey ? 'ring-2 ring-inset ring-blue-400 bg-blue-50/50' : ''}`}
+                onDragOver={(e) => handleDragOver(e, dateKey, '', dateKey)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, '', dateKey, 'employee')}
               >
                 {/* Day Number */}
                 <div className="flex items-center justify-between mb-2">
@@ -218,12 +264,15 @@ export default function MonthView({
                     const functionColor = shift.function?.color
                     
                     return (
-                      <button
+                      <div
                         key={shift.id}
+                        draggable={canEditShifts}
+                        onDragStart={(e) => handleDragStart(e, shift, shift.employeeId || '', dateKey)}
+                        onDragEnd={handleDragEnd}
                         onClick={() => onEditShift(shift)}
                         className={`w-full text-left px-2 py-1 rounded text-xs truncate transition-all hover:shadow-sm font-medium ${
                           shift.approved ? 'text-lime-900' : 'text-white'
-                        }`}
+                        } ${canEditShifts ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'}`}
                         style={{
                           backgroundColor: shift.approved ? '#d9f99d' : (
                             shiftStatus === 'CANCELLED' ? '#ef4444' :
@@ -237,7 +286,7 @@ export default function MonthView({
                         <div className="font-medium truncate">
                           {shift.startTime} {employee ? `${employee.firstName}` : 'Unknown'}
                         </div>
-                      </button>
+                      </div>
                     )
                   })}
                   

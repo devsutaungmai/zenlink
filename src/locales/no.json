@@ -113,7 +113,8 @@
         "SCHEDULED": "Planlagt",
         "WORKING": "I arbeid",
         "COMPLETED": "Fullført",
-        "CANCELLED": "Avlyst"
+        "CANCELLED": "Avlyst",
+        "OPEN":"Open"
       }
     },
     "stats": {
@@ -662,7 +663,10 @@
       "save": "Lagre",
       "saving": "Lagrer...",
       "not_authorized": "Ikke autorisert",
-      "delete_shift": "Slett skift"
+      "delete_shift": "Slett skift",
+      "number_of_copies": "Antall kopier",
+      "single_shift": "Oppretter 1 skift",
+      "multiple_shifts": "Oppretter {{count}} identiske skift"
     },
     "shift_details": "Skiftdetaljer",
     "search_placeholder": "Søk skift etter medarbeider, avdeling eller type...",

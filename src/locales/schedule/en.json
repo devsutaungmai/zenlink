@@ -118,7 +118,11 @@
     "shift_create_failed": "Failed to create shift.",
     "shift_update_failed": "Failed to update shift.",
     "shift_deleted": "Shift deleted successfully!",
-    "shift_delete_failed": "Failed to delete shift."
+    "shift_delete_failed": "Failed to delete shift.",
+    "shift_moved": "Shift moved successfully!",
+    "shift_move_failed": "Failed to move shift.",
+    "shift_duplicated": "Shift duplicated successfully!",
+    "shift_duplicate_failed": "Failed to duplicate shift."
   },
   "templates": {
     "title": "Templates",
@@ -232,7 +236,14 @@
   "context_menu": {
     "edit_shift": "Edit Shift",
     "create_attendance": "Create Attendance",
-    "delete_shift": "Delete Shift"
+    "delete_shift": "Delete Shift",
+    "duplicate_shift": "Duplicate Shift",
+    "duplicate_multiple": "Duplicate Multiple...",
+    "number_of_copies": "Number of copies",
+    "cancel": "Cancel",
+    "duplicate": "Duplicate",
+    "copy_mode_on": "Copy mode ON – drag to duplicate",
+    "copy_mode_off": "Copy mode OFF – drag to move"
   },
   "create_attendance": {
     "title": "Create Attendance from Shift",

@@ -133,7 +133,8 @@
         "SCHEDULED": "Geplant",
         "WORKING": "Im Einsatz",
         "COMPLETED": "Abgeschlossen",
-        "CANCELLED": "Abgesagt"
+        "CANCELLED": "Abgesagt",
+        "OPEN":"Open"
       }
     },
     "recent_activity": "Neueste Aktivität",
@@ -642,7 +643,10 @@
       "save": "Speichern",
       "saving": "Speichert...",
       "not_authorized": "Nicht autorisiert",
-      "delete_shift": "Schicht löschen"
+      "delete_shift": "Schicht löschen",
+      "number_of_copies": "Anzahl der Kopien",
+      "single_shift": "Erstellt 1 Schicht",
+      "multiple_shifts": "Erstellt {{count}} identische Schichten"
     },
     "shift_details": "Schichtdetails",
     "search_placeholder": "Schichten nach Mitarbeiter, Abteilung oder Typ suchen...",

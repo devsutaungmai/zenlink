@@ -1,11 +1,13 @@
 import React, { useMemo, useState, useCallback } from 'react'
 import { format } from 'date-fns'
 import { PlusIcon } from '@heroicons/react/24/outline'
+import { Copy, ArrowRightLeft } from 'lucide-react'
 import { useCurrency } from '@/shared/hooks/useCurrency'
 import { ShiftWithRelations } from '@/types/schedule'
 import { getShiftSegmentsForDate, ShiftSegment } from './utils'
 import ShiftsModal from './ShiftsModal'
 import { useTranslation } from 'react-i18next'
+import { useShiftDragDrop } from '@/shared/hooks/useShiftDragDrop'
 
 interface FunctionItem {
   id: string
@@ -32,6 +34,9 @@ interface DayFunctionsTimelineProps {
   functions: FunctionItem[]
   onAddShift: (formData?: any) => void
   onEditShift: (shift: ShiftWithRelations) => void
+  canEditShifts?: boolean
+  onMoveShift?: (shiftId: string, target: { date?: string; employeeId?: string; employeeGroupId?: string; functionId?: string }) => Promise<void>
+  onDuplicateShift?: (shiftId: string, targets: Array<{ date?: string; employeeId?: string; employeeGroupId?: string; functionId?: string }>) => Promise<void>
 }
 
 interface FunctionRowMeta {
@@ -99,11 +104,22 @@ export default function DayFunctionsTimeline({
   shifts,
   functions,
   onAddShift,
-  onEditShift
+  onEditShift,
+  canEditShifts = true,
+  onMoveShift,
+  onDuplicateShift
 }: DayFunctionsTimelineProps) {
   const { t } = useTranslation('schedule')
   const formattedDate = format(date, 'yyyy-MM-dd')
   const { currencySymbol } = useCurrency()
+
+  const noopMove = async () => {}
+  const noopDuplicate = async () => {}
+  const { dragOverCell, isDragging, copyMode, toggleCopyMode, handleDragStart, handleDragOver, handleDragLeave, handleDrop, handleDragEnd } = useShiftDragDrop({
+    onMoveShift: onMoveShift || noopMove,
+    onDuplicateShift: onDuplicateShift || noopDuplicate,
+    canEditShifts
+  })
   const daySegments = useMemo(() => getShiftSegmentsForDate(shifts, date), [shifts, date])
   const [hoveredCell, setHoveredCell] = useState<{ rowId: string; hour: number } | null>(null)
   const hourWidthPercent = 100 / HOURS.length
@@ -396,7 +412,30 @@ export default function DayFunctionsTimeline({
             <div className="px-4 py-3 flex flex-col gap-1 border-r">
               <div className="text-xs text-gray-500">{t('schedule.total_functions_count', { count: functionRows.length })} • {t('schedule.total_shifts_count', { count: daySegments.length })}</div>
               <div className="flex items-center gap-3 text-xs font-medium pt-1">
-                <button className="text-[#31BCFF] hover:text-blue-500">{t('schedule.manage_functions')}</button>
+                {canEditShifts && (
+                  <div className="inline-flex rounded-md border border-gray-200 bg-white shadow-sm" role="group">
+                    <button
+                      onClick={() => copyMode && toggleCopyMode()}
+                      className={`inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium rounded-l-md transition-colors ${
+                        !copyMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'
+                      }`}
+                      title={t('context_menu.copy_mode_off') || 'Drag to move'}
+                    >
+                      <ArrowRightLeft className="w-3 h-3" />
+                      Move
+                    </button>
+                    <button
+                      onClick={() => !copyMode && toggleCopyMode()}
+                      className={`inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium rounded-r-md transition-colors ${
+                        copyMode ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'
+                      }`}
+                      title={t('context_menu.copy_mode_on') || 'Drag to duplicate'}
+                    >
+                      <Copy className="w-3 h-3" />
+                      Copy
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
             <div className="grid grid-cols-24 text-[11px] font-semibold text-gray-500">
@@ -535,10 +574,13 @@ export default function DayFunctionsTimeline({
 
                 {/* Timeline */}
                 <div
-                  className="relative group"
+                  className={`relative group ${dragOverCell === row.id ? 'ring-2 ring-inset ring-blue-400 bg-blue-50/50' : ''}`}
                   style={{ minHeight: `${rowHeight}px` }}
                   onMouseMove={(event) => handleTimelineMouseMove(row.id, event)}
                   onMouseLeave={() => handleTimelineMouseLeave(row.id)}
+                  onDragOver={(e) => handleDragOver(e, row.id)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, row.id, formattedDate, 'function')}
                 >
                   {/* Grid background */}
                   <div className="absolute inset-0 grid grid-cols-24 pointer-events-none">
@@ -589,10 +631,13 @@ export default function DayFunctionsTimeline({
                       const shiftColor = segment.shift.function?.color || '#31BCFF'
 
                       return (
-                        <button
+                        <div
                           key={`${segment.segmentId}-${laneIndex}`}
+                          draggable={canEditShifts}
+                          onDragStart={(e) => handleDragStart(e, segment.shift, row.id, formattedDate)}
+                          onDragEnd={handleDragEnd}
                           onClick={() => onEditShift(segment.shift)}
-                          className="absolute rounded-md px-2 py-1 text-xs font-medium text-white shadow-sm hover:opacity-90 transition-opacity truncate"
+                          className={`absolute rounded-md px-2 py-1 text-xs font-medium text-white shadow-sm hover:opacity-90 transition-opacity truncate ${canEditShifts ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'}`}
                           style={{
                             left: `${left}%`,
                             width: `${width}%`,
@@ -609,7 +654,7 @@ export default function DayFunctionsTimeline({
                           <div className="text-[10px] opacity-80 truncate">
                             {segment.displayStartTime} - {segment.displayEndTime || 'Active'}
                           </div>
-                        </button>
+                        </div>
                       )
                     })}
                   </div>

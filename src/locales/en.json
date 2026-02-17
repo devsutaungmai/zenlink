@@ -120,7 +120,8 @@
         "SCHEDULED": "Scheduled",
         "WORKING": "Working",
         "COMPLETED": "Completed",
-        "CANCELLED": "Cancelled"
+        "CANCELLED": "Cancelled",
+        "OPEN":"Open"
       }
     },
     "recent_activity": "Recent Activity",
@@ -668,7 +669,10 @@
       "all_employees_shown": "All employees in the business are shown.",
       "auto_set_group": "Automatically set to {{group}} because of the selected function.",
       "select_linked_groups": "Select one of the linked employee groups to control which employees are available.",
-      "delete_shift": "Delete Shift"
+      "delete_shift": "Delete Shift",
+      "number_of_copies": "Number of copies",
+      "single_shift": "Creates 1 shift",
+      "multiple_shifts": "Creates {{count}} identical shifts"
     },
     "page_info": "Page {{current}} of {{total}}",
     "no_shifts_found": "No shifts found",

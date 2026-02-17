@@ -967,7 +967,8 @@ export default function DashboardPage() {
       WORKING: 'bg-green-100 text-green-700',
       COMPLETED: 'bg-blue-100 text-blue-700',
       CANCELLED: 'bg-red-100 text-red-700',
-      SCHEDULED: 'bg-slate-200 text-slate-700'
+      SCHEDULED: 'bg-slate-200 text-slate-700',
+      OPEN:'bg-slate-200 text-slate-700'
     }
 
     if (!status) {
