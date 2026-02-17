@@ -833,17 +833,38 @@ export default function SchedulePage() {
         ? `/api/shifts/${formData.id}` 
         : '/api/shifts';
 
+      const { _bulkCopyCount, ...submitData } = formData
+      const bulkCount = _bulkCopyCount || 1
+
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(submitData),
       });
 
       if (res.ok) {
+        const createdShift = await res.json()
+
+        if (!submitData.id && bulkCount > 1 && createdShift?.id) {
+          try {
+            await fetch('/api/shifts/duplicate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ shiftId: createdShift.id, count: bulkCount - 1 }),
+            })
+          } catch (err) {
+            console.error('Bulk duplication failed:', err)
+          }
+        }
+
         await fetchShifts();
         
+        const toastText = bulkCount > 1 && !submitData.id
+          ? `${bulkCount} shifts created`
+          : t(successToastKey)
+
         Swal.fire({
-          text: t(successToastKey),
+          text: toastText,
           toast: true,
           position: 'top-end',
           showConfirmButton: false,
@@ -941,6 +962,122 @@ export default function SchedulePage() {
       setLoading(false)
     }
   }
+
+  const handleMoveShift = useCallback(async (shiftId: string, target: { date?: string; employeeId?: string; employeeGroupId?: string; functionId?: string }) => {
+    try {
+      const res = await fetch(`/api/shifts/${shiftId}/move`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(target),
+      })
+
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || 'Failed to move shift')
+      }
+
+      await fetchShifts()
+
+      Swal.fire({
+        text: t('toasts.shift_moved') || 'Shift moved successfully',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+        customClass: { popup: 'swal-toast-wide' }
+      })
+    } catch (error: any) {
+      console.error('Error moving shift:', error)
+      Swal.fire({
+        text: error.message || t('toasts.shift_move_failed') || 'Failed to move shift',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        customClass: { popup: 'swal-toast-wide' }
+      })
+    }
+  }, [fetchShifts, t])
+
+  const handleDuplicateShift = useCallback(async (shiftId: string, targets: Array<{ date?: string; employeeId?: string; employeeGroupId?: string; functionId?: string }>) => {
+    try {
+      const res = await fetch('/api/shifts/duplicate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shiftId, targets }),
+      })
+
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || 'Failed to duplicate shift')
+      }
+
+      const data = await res.json()
+      await fetchShifts()
+
+      Swal.fire({
+        text: (t('toasts.shift_duplicated') || 'Shift duplicated') + (data.count > 1 ? ` (${data.count} copies)` : ''),
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+        customClass: { popup: 'swal-toast-wide' }
+      })
+    } catch (error: any) {
+      console.error('Error duplicating shift:', error)
+      Swal.fire({
+        text: error.message || t('toasts.shift_duplicate_failed') || 'Failed to duplicate shift',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        customClass: { popup: 'swal-toast-wide' }
+      })
+    }
+  }, [fetchShifts, t])
+
+  const handleBulkDuplicate = useCallback(async (shiftId: string, count: number) => {
+    try {
+      const res = await fetch('/api/shifts/duplicate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shiftId, count }),
+      })
+
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || 'Failed to duplicate shifts')
+      }
+
+      const data = await res.json()
+      await fetchShifts()
+
+      Swal.fire({
+        text: `${data.count} shift${data.count !== 1 ? 's' : ''} created`,
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+        customClass: { popup: 'swal-toast-wide' }
+      })
+    } catch (error: any) {
+      console.error('Error bulk duplicating shifts:', error)
+      Swal.fire({
+        text: error.message || 'Failed to duplicate shifts',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        customClass: { popup: 'swal-toast-wide' }
+      })
+    }
+  }, [fetchShifts])
 
   const calculateShiftHours = (startTime: string, endTime: string): number => {
     const getMinutes = (timeStr: string): number => {
@@ -1164,6 +1301,8 @@ export default function SchedulePage() {
           canCreateShifts={canCreateShifts}
           canEditShifts={canEditShifts}
           canCreateAttendance={canEditShifts}
+          onMoveShift={handleMoveShift}
+          onDuplicateShift={handleDuplicateShift}
         />
       )
     }
@@ -1187,6 +1326,8 @@ export default function SchedulePage() {
           canCreateShifts={canCreateShifts}
           canEditShifts={canEditShifts}
           canCreateAttendance={canEditShifts}
+          onMoveShift={handleMoveShift}
+          onDuplicateShift={handleDuplicateShift}
         />
       )
     }
@@ -1210,6 +1351,8 @@ export default function SchedulePage() {
           canCreateShifts={canCreateShifts}
           canEditShifts={canEditShifts}
           canCreateAttendance={canEditShifts}
+          onMoveShift={handleMoveShift}
+          onDuplicateShift={handleDuplicateShift}
         />
       )
     }
@@ -1405,6 +1548,9 @@ export default function SchedulePage() {
                   const payload = attachSelectedEmployee(data ?? null)
                   openShiftModal('month', payload)
                 }}
+                canEditShifts={canEditShifts}
+                onMoveShift={handleMoveShift}
+                onDuplicateShift={handleDuplicateShift}
               />
             ) : (
               scheduleViewType === 'time' ? (
@@ -1440,6 +1586,10 @@ export default function SchedulePage() {
                     }
                     openShiftModal('day', payload)
                   }}
+                  canEditShifts={canEditShifts}
+                  onMoveShift={handleMoveShift}
+                  onDuplicateShift={handleDuplicateShift}
+                  isEmployeeUnavailable={isEmployeeUnavailableOnDate}
                 />
               ) : scheduleViewType === 'groups' ? (
                 <DayGroupsTimeline
@@ -1454,6 +1604,9 @@ export default function SchedulePage() {
                     }
                     openShiftModal('day', payload)
                   }}
+                  canEditShifts={canEditShifts}
+                  onMoveShift={handleMoveShift}
+                  onDuplicateShift={handleDuplicateShift}
                 />
               ) : scheduleViewType === 'functions' ? (
                 <DayFunctionsTimeline
@@ -1468,6 +1621,9 @@ export default function SchedulePage() {
                     }
                     openShiftModal('day', payload)
                   }}
+                  canEditShifts={canEditShifts}
+                  onMoveShift={handleMoveShift}
+                  onDuplicateShift={handleDuplicateShift}
                 />
               ) : (
                 <DayView

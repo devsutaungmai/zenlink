@@ -296,6 +296,7 @@ export default function ShiftForm({
   const [requestActionLoading, setRequestActionLoading] = useState<string | null>(null)
   const [employeeRequestLoading, setEmployeeRequestLoading] = useState(false)
   const [employeeHasRequested, setEmployeeHasRequested] = useState(false)
+  const [bulkCopyCount, setBulkCopyCount] = useState(1)
   const [employeeRequestId, setEmployeeRequestId] = useState<string | null>(null)
 
   const isOpenShift = initialData?.id && !formData.employeeId
@@ -1021,7 +1022,8 @@ export default function ShiftForm({
     }
 
     if (onSubmit) {
-      onSubmit(submissionData as ShiftFormData)
+      const dataWithBulk = { ...submissionData, _bulkCopyCount: bulkCopyCount } as any
+      onSubmit(dataWithBulk as ShiftFormData)
     }
   }
 
@@ -1817,6 +1819,30 @@ export default function ShiftForm({
                 {employeeRequestLoading ? 'Requesting...' : 'Request this Shift'}
               </button>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Duplication - only for new shifts */}
+      {!initialData?.id && !isEmployee && !readOnly && (
+        <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+          <div className="flex items-center gap-3">
+            <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
+              {t('shifts.form.number_of_copies') || 'Number of copies'}
+            </label>
+            <input
+              type="number"
+              min={1}
+              max={50}
+              value={bulkCopyCount}
+              onChange={(e) => setBulkCopyCount(Math.min(50, Math.max(1, parseInt(e.target.value) || 1)))}
+              className="w-20 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-[#31BCFF] focus:border-transparent"
+            />
+            <span className="text-xs text-gray-500">
+              {bulkCopyCount === 1
+                ? (t('shifts.form.single_shift') || 'Creates 1 shift')
+                : (t('shifts.form.multiple_shifts', { count: bulkCopyCount }) || `Creates ${bulkCopyCount} identical shifts`)}
+            </span>
           </div>
         </div>
       )}

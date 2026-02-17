@@ -4,10 +4,11 @@ import { useTranslation } from 'react-i18next'
 import { formatDate } from '@/shared/lib/dateLocale'
 import { Employee } from '@prisma/client'
 import { PlusIcon } from '@heroicons/react/24/outline'
-import { Clock, Pencil } from 'lucide-react'
+import { Clock, Pencil, Copy, CopyPlus, ArrowRightLeft } from 'lucide-react'
 import { ShiftWithRelations } from '@/types/schedule'
 import { useCurrency } from '@/shared/hooks/useCurrency'
 import ShiftsModal from './ShiftsModal'
+import { useShiftDragDrop } from '@/shared/hooks/useShiftDragDrop'
 
 interface FunctionItem {
   id: string
@@ -46,6 +47,8 @@ interface FunctionGroupedViewProps {
   canCreateShifts?: boolean
   canEditShifts?: boolean
   canCreateAttendance?: boolean
+  onMoveShift?: (shiftId: string, target: any) => Promise<void>
+  onDuplicateShift?: (shiftId: string, targets: any[]) => Promise<void>
 }
 
 export default function FunctionGroupedView({
@@ -61,9 +64,23 @@ export default function FunctionGroupedView({
   onUnavailableClick,
   canCreateShifts = true,
   canEditShifts = true,
-  canCreateAttendance = false
+  canCreateAttendance = false,
+  onMoveShift,
+  onDuplicateShift
 }: FunctionGroupedViewProps) {
   const { t, i18n } = useTranslation('schedule')
+
+  const noopMove = async () => {}
+  const noopDuplicate = async () => {}
+  const { dragOverCell, isDragging, copyMode, toggleCopyMode, handleDragStart, handleDragOver, handleDragLeave, handleDrop, handleDragEnd } = useShiftDragDrop({
+    onMoveShift: onMoveShift || noopMove,
+    onDuplicateShift: onDuplicateShift || noopDuplicate,
+    canEditShifts
+  })
+
+  const [duplicateCount, setDuplicateCount] = useState(1)
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false)
+  const [duplicateShiftId, setDuplicateShiftId] = useState<string | null>(null)
   const { currencySymbol } = useCurrency()
   const [modalState, setModalState] = useState<{
     isOpen: boolean
@@ -480,7 +497,36 @@ export default function FunctionGroupedView({
           className="grid border-b bg-gray-50 sticky top-0"
           style={desktopGridStyle}
         >
-          <div className="p-3 font-medium text-sm border-r"></div>
+          <div className="p-3 font-medium text-sm border-r flex items-center justify-center">
+            {canEditShifts && (
+              <div className="inline-flex rounded-md border border-gray-200 bg-white shadow-sm" role="group">
+                <button
+                  onClick={() => copyMode && toggleCopyMode()}
+                  className={`inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium rounded-l-md transition-colors ${
+                    !copyMode
+                      ? 'bg-blue-400text-white'
+                      : 'bg-white text-gray-500 hover:bg-gray-50'
+                  }`}
+                  title={t('context_menu.copy_mode_off') || 'Drag to move'}
+                >
+                  <ArrowRightLeft className="w-3 h-3" />
+                  Move
+                </button>
+                <button
+                  onClick={() => !copyMode && toggleCopyMode()}
+                  className={`inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium rounded-r-md transition-colors ${
+                    copyMode
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white text-gray-500 hover:bg-gray-50'
+                  }`}
+                  title={t('context_menu.copy_mode_on') || 'Drag to duplicate'}
+                >
+                  <Copy className="w-3 h-3" />
+                  Copy
+                </button>
+              </div>
+            )}
+          </div>
           {weekDates.map((date, i) => {
             const isToday = new Date().toDateString() === date.toDateString();
             const dayShifts = shifts.filter(shift => {
@@ -613,8 +659,19 @@ export default function FunctionGroupedView({
                   ? isEmployeeUnavailable?.(selectedEmployeeId, formattedDate) ?? false
                   : false;
                 
+                const cellId = `fn-${fn.id}-${formattedDate}`
+                const isDropTarget = dragOverCell === cellId
+
                 return (
-                  <div key={dateIndex} className="border-r p-2 relative min-h-[80px] group">
+                  <div
+                    key={dateIndex}
+                    className={`border-r p-2 relative min-h-[80px] group transition-colors ${
+                      isDropTarget ? 'bg-blue-50 ring-2 ring-inset ring-[#31BCFF]' : ''
+                    }`}
+                    onDragOver={(e) => handleDragOver(e, cellId)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, fn.id, formattedDate, 'function')}
+                  >
                     {shiftGroups.length === 0 ? (
                       <button
                         onClick={() => {
@@ -629,7 +686,9 @@ export default function FunctionGroupedView({
                             departmentId: fn.category?.department?.id || fn.category?.departments?.[0]?.department?.id
                           })
                         }}
-                        className={`w-full h-full min-h-[76px] border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-1 transition-all opacity-0 group-hover:opacity-100 ${
+                        className={`w-full h-full min-h-[76px] border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-1 transition-all ${
+                          isDropTarget ? 'opacity-100 border-[#31BCFF] bg-blue-50' : 'opacity-0 group-hover:opacity-100'
+                        } ${
                           unavailable
                             ? 'border-red-300 bg-red-50 text-red-500 cursor-not-allowed'
                             : 'border-gray-300 hover:border-[#31BCFF] hover:bg-blue-50'
@@ -651,9 +710,12 @@ export default function FunctionGroupedView({
                           return (
                             <div
                               key={shift.id}
+                              draggable={canEditShifts}
+                              onDragStart={(e) => handleDragStart(e, shift, fn.id, formattedDate)}
+                              onDragEnd={handleDragEnd}
                               onClick={() => onEditShift(shift)}
                               onContextMenu={(e) => handleShiftContextMenu(e, shift)}
-                              className="mb-1 cursor-pointer"
+                              className={`mb-1 cursor-pointer ${canEditShifts ? 'cursor-grab active:cursor-grabbing' : ''}`}
                             >
                               <div className="rounded p-2 text-xs border font-medium" style={{ 
                                 backgroundColor: backgroundColor, 
@@ -740,6 +802,34 @@ export default function FunctionGroupedView({
               {t('context_menu.edit_shift')}
             </button>
           )}
+          {canEditShifts && onDuplicateShift && (
+            <button
+              onClick={() => {
+                const shift = contextMenu.shift!
+                setContextMenu(prev => ({ ...prev, show: false }))
+                onDuplicateShift(shift.id, [{}])
+              }}
+              className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+            >
+              <Copy className="w-4 h-4" />
+              {t('context_menu.duplicate_shift') || 'Duplicate Shift'}
+            </button>
+          )}
+          {canEditShifts && onDuplicateShift && (
+            <button
+              onClick={() => {
+                const shift = contextMenu.shift!
+                setContextMenu(prev => ({ ...prev, show: false }))
+                setDuplicateShiftId(shift.id)
+                setDuplicateCount(1)
+                setShowDuplicateDialog(true)
+              }}
+              className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+            >
+              <CopyPlus className="w-4 h-4" />
+              {t('context_menu.duplicate_multiple') || 'Duplicate Multiple...'}
+            </button>
+          )}
           {canCreateAttendance && contextMenu.shift.employeeId && contextMenu.shift.approved && (
             <button
               onClick={() => {
@@ -752,6 +842,48 @@ export default function FunctionGroupedView({
               {t('context_menu.create_attendance')}
             </button>
           )}
+        </div>
+      )}
+
+      {showDuplicateDialog && duplicateShiftId && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/30">
+          <div className="bg-white rounded-xl shadow-xl p-6 w-80" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">
+              {t('context_menu.duplicate_multiple') || 'Duplicate Multiple'}
+            </h3>
+            <label className="text-xs text-gray-600 block mb-1">
+              {t('context_menu.number_of_copies') || 'Number of copies'}
+            </label>
+            <input
+              type="number"
+              min={1}
+              max={50}
+              value={duplicateCount}
+              onChange={(e) => setDuplicateCount(Math.min(50, Math.max(1, parseInt(e.target.value) || 1)))}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-4 focus:ring-2 focus:ring-[#31BCFF] focus:border-transparent"
+            />
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => { setShowDuplicateDialog(false); setDuplicateShiftId(null) }}
+                className="px-3 py-1.5 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200"
+              >
+                {t('context_menu.cancel') || 'Cancel'}
+              </button>
+              <button
+                onClick={async () => {
+                  if (onDuplicateShift && duplicateShiftId) {
+                    const targets = Array.from({ length: duplicateCount }, () => ({}))
+                    await onDuplicateShift(duplicateShiftId, targets)
+                  }
+                  setShowDuplicateDialog(false)
+                  setDuplicateShiftId(null)
+                }}
+                className="px-3 py-1.5 text-sm text-white bg-[#31BCFF] rounded-lg hover:bg-[#31BCFF]/90"
+              >
+                {t('context_menu.duplicate') || 'Duplicate'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

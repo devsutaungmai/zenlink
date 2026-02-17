@@ -118,7 +118,11 @@
     "shift_create_failed": "Schicht konnte nicht erstellt werden.",
     "shift_update_failed": "Schicht konnte nicht aktualisiert werden.",
     "shift_deleted": "Schicht erfolgreich gelöscht!",
-    "shift_delete_failed": "Schicht konnte nicht gelöscht werden."
+    "shift_delete_failed": "Schicht konnte nicht gelöscht werden.",
+    "shift_moved": "Schicht erfolgreich verschoben!",
+    "shift_move_failed": "Schicht konnte nicht verschoben werden.",
+    "shift_duplicated": "Schicht erfolgreich dupliziert!",
+    "shift_duplicate_failed": "Schicht konnte nicht dupliziert werden."
   },
   "templates": {
     "title": "Vorlagen",
@@ -232,7 +236,14 @@
   "context_menu": {
     "edit_shift": "Schicht bearbeiten",
     "create_attendance": "Anwesenheit erstellen",
-    "delete_shift": "Schicht löschen"
+    "delete_shift": "Schicht löschen",
+    "duplicate_shift": "Schicht duplizieren",
+    "duplicate_multiple": "Mehrfach duplizieren...",
+    "number_of_copies": "Anzahl der Kopien",
+    "cancel": "Abbrechen",
+    "duplicate": "Duplizieren",
+    "copy_mode_on": "Kopiermodus AN – Ziehen zum Duplizieren",
+    "copy_mode_off": "Kopiermodus AUS – Ziehen zum Verschieben"
   },
   "create_attendance": {
     "title": "Anwesenheit aus Schicht erstellen",
