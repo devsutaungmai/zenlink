@@ -49,7 +49,7 @@ function getAccountType(accountNumber: number): AccountType {
   switch (firstDigit) {
     case 1: return AccountType.ASSET;
     case 2: return AccountType.LIABILITY;  // 2081-2999
-    case 3: return AccountType.EQUITY;
+    case 3: return AccountType.INCOME;
     case 4:
     case 5:
     case 6:
