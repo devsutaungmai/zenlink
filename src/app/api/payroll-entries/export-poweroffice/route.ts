@@ -55,8 +55,6 @@ export async function GET(request: NextRequest) {
       if (statuses.length > 0) {
         whereClause.status = statuses.length === 1 ? statuses[0] : { in: statuses }
       }
-    } else {
-      whereClause.status = { in: ['APPROVED', 'PAID'] }
     }
 
     const payrollEntries = await prisma.payrollEntry.findMany({
