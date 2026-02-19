@@ -294,6 +294,7 @@ export default function ShiftForm({
   const [shiftRequests, setShiftRequests] = useState<any[]>([])
   const [requestsLoading, setRequestsLoading] = useState(false)
   const [requestActionLoading, setRequestActionLoading] = useState<string | null>(null)
+  const [requestValidationError, setRequestValidationError] = useState<{ requestId: string; type: 'blocked' | 'confirm' | 'error'; violations: string[]; warnings: string[]; message?: string } | null>(null)
   const [employeeRequestLoading, setEmployeeRequestLoading] = useState(false)
   const [employeeHasRequested, setEmployeeHasRequested] = useState(false)
   const [bulkCopyCount, setBulkCopyCount] = useState(1)
@@ -414,31 +415,50 @@ export default function ShiftForm({
     }
   }
 
-  const handleRequestAction = async (requestId: string, action: 'APPROVED' | 'REJECTED') => {
+  const handleRequestAction = async (requestId: string, action: 'APPROVED' | 'REJECTED', forceApprove?: boolean) => {
     setRequestActionLoading(requestId)
+    setRequestValidationError(null)
     try {
       const res = await fetch(`/api/shift-requests/${requestId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: action })
+        body: JSON.stringify({ status: action, ...(forceApprove ? { forceApprove: true } : {}) })
       })
       if (res.ok) {
         if (action === 'APPROVED' && initialData?.id) {
-          // Refresh the whole form since the shift is now assigned
           window.location.reload()
         } else if (initialData?.id) {
           fetchShiftRequests(initialData.id)
         }
       } else {
         const data = await res.json()
-        Swal.fire({
-          toast: true,
-          position: 'top-end',
-          showConfirmButton: false,
-          timer: 3000,
-          timerProgressBar: true,
-          icon: 'error',
-          title: data.error || 'Failed to update request',
+
+        if (res.status === 409 && data.requiresConfirmation) {
+          setRequestValidationError({
+            requestId,
+            type: 'confirm',
+            violations: data.violations || [],
+            warnings: data.warnings || [],
+          })
+          return
+        }
+
+        if (res.status === 422) {
+          setRequestValidationError({
+            requestId,
+            type: 'blocked',
+            violations: data.violations || [],
+            warnings: data.warnings || [],
+          })
+          return
+        }
+
+        setRequestValidationError({
+          requestId,
+          type: 'error',
+          violations: [],
+          warnings: [],
+          message: data.error || 'Failed to update request',
         })
       }
     } catch (error) {
@@ -1647,23 +1667,79 @@ export default function ShiftForm({
                   )}
 
                   {request.status === 'PENDING' && !isEmployee && (
-                    <div className="mt-3 flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handleRequestAction(request.id, 'APPROVED')}
-                        disabled={requestActionLoading === request.id}
-                        className="flex-1 px-3 py-1.5 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700 disabled:opacity-50"
-                      >
-                        {requestActionLoading === request.id ? 'Processing...' : 'Approve & Assign'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleRequestAction(request.id, 'REJECTED')}
-                        disabled={requestActionLoading === request.id}
-                        className="flex-1 px-3 py-1.5 text-xs font-medium text-white bg-red-600 rounded hover:bg-red-700 disabled:opacity-50"
-                      >
-                        Reject
-                      </button>
+                    <div className="mt-3 space-y-2">
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleRequestAction(request.id, 'APPROVED')}
+                          disabled={requestActionLoading === request.id}
+                          className="flex-1 px-3 py-1.5 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700 disabled:opacity-50"
+                        >
+                          {requestActionLoading === request.id ? 'Processing...' : 'Approve & Assign'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRequestAction(request.id, 'REJECTED')}
+                          disabled={requestActionLoading === request.id}
+                          className="flex-1 px-3 py-1.5 text-xs font-medium text-white bg-red-600 rounded hover:bg-red-700 disabled:opacity-50"
+                        >
+                          Reject
+                        </button>
+                      </div>
+
+                      {requestValidationError && requestValidationError.requestId === request.id && (
+                        <div className={`p-3 rounded-lg border text-xs ${
+                          requestValidationError.type === 'blocked' ? 'bg-red-50 border-red-300' :
+                          requestValidationError.type === 'confirm' ? 'bg-amber-50 border-amber-300' :
+                          'bg-red-50 border-red-300'
+                        }`}>
+                          <p className={`font-semibold mb-1 ${
+                            requestValidationError.type === 'blocked' ? 'text-red-800' :
+                            requestValidationError.type === 'confirm' ? 'text-amber-800' :
+                            'text-red-800'
+                          }`}>
+                            {requestValidationError.type === 'blocked' ? 'Cannot Approve' :
+                             requestValidationError.type === 'confirm' ? 'Rule Violations Detected' :
+                             'Error'}
+                          </p>
+                          {requestValidationError.message && (
+                            <p className="text-red-700">{requestValidationError.message}</p>
+                          )}
+                          {requestValidationError.violations.length > 0 && (
+                            <ul className="list-disc pl-4 mt-1 space-y-0.5">
+                              {requestValidationError.violations.map((v, i) => (
+                                <li key={i} className="text-red-600">{v}</li>
+                              ))}
+                            </ul>
+                          )}
+                          {requestValidationError.warnings.length > 0 && (
+                            <ul className="list-disc pl-4 mt-1 space-y-0.5">
+                              {requestValidationError.warnings.map((w, i) => (
+                                <li key={i} className="text-amber-600">{w}</li>
+                              ))}
+                            </ul>
+                          )}
+                          <div className="mt-2 flex gap-2">
+                            {requestValidationError.type === 'confirm' && (
+                              <button
+                                type="button"
+                                onClick={() => handleRequestAction(request.id, 'APPROVED', true)}
+                                disabled={requestActionLoading === request.id}
+                                className="px-3 py-1 text-xs font-medium text-white bg-amber-600 rounded hover:bg-amber-700 disabled:opacity-50"
+                              >
+                                {requestActionLoading === request.id ? 'Processing...' : 'Approve Anyway'}
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => setRequestValidationError(null)}
+                              className="px-3 py-1 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50"
+                            >
+                              Dismiss
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 

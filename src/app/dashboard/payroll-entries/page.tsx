@@ -41,6 +41,7 @@ export default function PayrollEntriesPage() {
   const [bulkStatus, setBulkStatus] = useState<string>('APPROVED')
   const [showExportModal, setShowExportModal] = useState(false)
   const [exportPeriodId, setExportPeriodId] = useState<string>('')
+  const [exportPeriodError, setExportPeriodError] = useState<string>('')
 
   const fetchEntries = async (page = 1, status = '', periodId = '') => {
     try {
@@ -340,24 +341,13 @@ export default function PayrollEntriesPage() {
   }
 
   const exportToExcel = () => {
-    const approvedEntries = filteredEntries.filter(entry => entry.status === 'APPROVED' || entry.status === 'PAID')
-    
-    if (approvedEntries.length === 0) {
-      Swal.fire({
-        title: 'No Approved or Paid Entries',
-        text: 'There are no approved or paid payroll entries to export.',
-        icon: 'info',
-        confirmButtonColor: '#31BCFF',
-      })
-      return
-    }
-
     // Pre-select period if already filtered
     if (periodFilter !== 'all') {
       setExportPeriodId(periodFilter)
     } else {
       setExportPeriodId('')
     }
+    setExportPeriodError('')
 
     // Show export format selection modal
     setShowExportModal(true)
@@ -365,17 +355,13 @@ export default function PayrollEntriesPage() {
 
   const exportNormalFormat = async () => {
     if (!exportPeriodId) {
-      await Swal.fire({
-        title: 'Period Required',
-        text: 'Please select a payroll period to export.',
-        icon: 'warning',
-        confirmButtonColor: '#31BCFF',
-      })
+      setExportPeriodError('Please select a payroll period to export.')
       return
     }
+    setExportPeriodError('')
 
     try {
-      const statusQuery = statusFilter !== 'all' ? statusFilter : 'APPROVED,PAID'
+      const statusQuery = statusFilter !== 'all' ? statusFilter : 'all'
       const response = await fetch(`/api/payroll-entries/export-normal?payrollPeriodId=${exportPeriodId}&status=${encodeURIComponent(statusQuery)}`)
       
       if (!response.ok) {
@@ -411,17 +397,13 @@ export default function PayrollEntriesPage() {
 
   const exportPowerOfficeGoFormat = async () => {
     if (!exportPeriodId) {
-      await Swal.fire({
-        title: 'Period Required',
-        text: 'Please select a payroll period to export.',
-        icon: 'warning',
-        confirmButtonColor: '#31BCFF',
-      })
+      setExportPeriodError('Please select a payroll period to export.')
       return
     }
+    setExportPeriodError('')
 
     try {
-      const statusQuery = statusFilter !== 'all' ? statusFilter : 'APPROVED,PAID'
+      const statusQuery = statusFilter !== 'all' ? statusFilter : 'all'
       const response = await fetch(`/api/payroll-entries/export-poweroffice?payrollPeriodId=${exportPeriodId}&status=${encodeURIComponent(statusQuery)}&format=xlsx`)
       
       if (!response.ok) {
@@ -506,7 +488,7 @@ export default function PayrollEntriesPage() {
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
             <button
               onClick={exportToExcel}
-              disabled={filteredEntries.filter(entry => entry.status === 'APPROVED' || entry.status === 'PAID').length === 0}
+              disabled={filteredEntries.length === 0}
               className="inline-flex items-center justify-center px-4 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-white border border-gray-200 text-gray-700 text-sm sm:text-base font-medium shadow-sm hover:shadow-md transition-all duration-200 sm:hover:scale-105 group disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               title={t('actions.export_excel')}
             >
@@ -991,8 +973,13 @@ export default function PayrollEntriesPage() {
               </label>
               <select
                 value={exportPeriodId}
-                onChange={(e) => setExportPeriodId(e.target.value)}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] text-sm"
+                onChange={(e) => {
+                  setExportPeriodId(e.target.value)
+                  if (e.target.value) setExportPeriodError('')
+                }}
+                className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] text-sm ${
+                  exportPeriodError ? 'border-red-400 bg-red-50' : 'border-gray-300'
+                }`}
               >
                 <option value="">-- Select Period --</option>
                 {periods.map((period) => (
@@ -1001,6 +988,11 @@ export default function PayrollEntriesPage() {
                   </option>
                 ))}
               </select>
+              {exportPeriodError && (
+                <p className="mt-1.5 text-xs text-red-600 flex items-center gap-1">
+                  <span>⚠</span> {exportPeriodError}
+                </p>
+              )}
             </div>
 
             <button

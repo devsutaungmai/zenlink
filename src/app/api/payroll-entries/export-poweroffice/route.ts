@@ -55,8 +55,6 @@ export async function GET(request: NextRequest) {
       if (statuses.length > 0) {
         whereClause.status = statuses.length === 1 ? statuses[0] : { in: statuses }
       }
-    } else {
-      whereClause.status = { in: ['APPROVED', 'PAID'] }
     }
 
     const payrollEntries = await prisma.payrollEntry.findMany({
@@ -137,36 +135,31 @@ export async function GET(request: NextRequest) {
           })
         }
       }
+      const entryTotalHours = entry.regularHours + entry.overtimeHours
 
       // Create one row per salary code
-      if (salaryCodeGroups.size > 0) {
-        // Calculate the proportion of gross pay for each salary code based on hours
+      if (salaryCodeGroups.size > 0 && entryTotalHours > 0) {
         for (const [salaryCode, data] of salaryCodeGroups) {
-          // Calculate amount as proportional share of gross pay
-          const proportionOfTotalHours = totalAttendanceHours > 0 ? data.hours / totalAttendanceHours : 1
-          const amount = entry.grossPay * proportionOfTotalHours
+          const proportion = totalAttendanceHours > 0 ? data.hours / totalAttendanceHours : 1 / salaryCodeGroups.size
+          const scaledHours = entryTotalHours * proportion
+          const amount = entry.grossPay * proportion
 
           powerOfficeRows.push({
             employeeNo: entry.employee.employeeNo || '',
             payItemCode: salaryCode,
             rate: parseFloat(baseRate.toFixed(2)),
             amount: parseFloat(amount.toFixed(2)),
-            quantity: parseFloat(data.hours.toFixed(2)),
+            quantity: parseFloat(scaledHours.toFixed(2)),
           })
         }
-      } else {
-        // If no attendances with shift types, create a single row with default values
-        if ((entry.regularHours + entry.overtimeHours) > 0) {
-          const totalHours = entry.regularHours + entry.overtimeHours
-          
-          powerOfficeRows.push({
-            employeeNo: entry.employee.employeeNo || '',
-            payItemCode: 'SALARY',
-            rate: parseFloat(baseRate.toFixed(2)),
-            amount: parseFloat(entry.grossPay.toFixed(2)),
-            quantity: parseFloat(totalHours.toFixed(2)),
-          })
-        }
+      } else if (entryTotalHours > 0) {
+        powerOfficeRows.push({
+          employeeNo: entry.employee.employeeNo || '',
+          payItemCode: '120',
+          rate: parseFloat(baseRate.toFixed(2)),
+          amount: parseFloat(entry.grossPay.toFixed(2)),
+          quantity: parseFloat(entryTotalHours.toFixed(2)),
+        })
       }
     }
 
