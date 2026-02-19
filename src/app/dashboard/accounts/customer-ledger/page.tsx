@@ -34,11 +34,13 @@ interface CustomerLedgerRow {
     entryType?: string
 }
 
-interface OpenItem {
+export interface OpenItem {
+    customerId: string
     matchGroupId: string
     balance: number
-    invoiceRow: CustomerLedgerRow
+    invoiceRow?: CustomerLedgerRow
     rows?: CustomerLedgerRow[]
+    isGrouped: boolean
 }
 
 interface CustomerGroup {
@@ -80,10 +82,11 @@ export default function CustomerLedger() {
     const [matchDialogOpen, setMatchDialogOpen] = useState(false)
     const [selectedMatchGroup, setSelectedMatchGroup] = useState<OpenItem | null>(null)
 
-    const openMatchDialog = (item: OpenItem) => {
-        setSelectedMatchGroup(item)
-        setMatchDialogOpen(true)
-    }
+  const openMatchDialog = (item: OpenItem) => {
+    setSelectedMatchGroup(item)
+    setMatchDialogOpen(true)
+}
+
 
     const toggleGroup = (id: string) => {
         setExpandedGroups((prev) => {
@@ -154,9 +157,10 @@ export default function CustomerLedger() {
                             const invoice = item.rows?.find((r: any) => r.entryType === "INVOICE_POST")
 
                             return {
+                                customerId: c.customerId,
                                 matchGroupId: item.matchGroupId,
                                 balance: item.balance,
-
+                                isGrouped: true,
                                 // main row shown in table
                                 invoiceRow: {
                                     postingDate: formatDateLocal(invoice?.postingDate),
@@ -169,6 +173,7 @@ export default function CustomerLedger() {
 
                                 // keep for dialog (optional)
                                 rows: (item.rows ?? []).map((r: any) => ({
+                                    customerId: c.customerId,
                                     postingDate: formatDateLocal(r.postingDate),
                                     description: r.description,
                                     amount: r.amount,
@@ -186,6 +191,7 @@ export default function CustomerLedger() {
                     customerName: c.customerName,
                     customerNumber: c.customerNumber,
                     rows: (c.rows ?? []).map((r: any) => ({
+                        customerId: c.customerId,
                         postingDate: formatDateLocal(r.postingDate),
                         description: r.description,
                         dueDate: formatDateLocal(r.dueDate),
@@ -206,6 +212,49 @@ export default function CustomerLedger() {
             setLoading(false)
         }
     }
+
+const handleUnmatch = (item: OpenItem) => {
+    setData(prev =>
+        prev.map(group => {
+            if (group.customerId !== item.customerId) return group
+
+            // IMPORTANT: rebuild array
+            const newOpenItems = (group.openItems ?? []).map(oi => {
+                if (oi.matchGroupId !== item.matchGroupId) return oi
+
+                return {
+                    ...oi,
+                    isGrouped: false,
+                    // invoiceRow: undefined,
+                    rows: [...(oi.rows ?? [])], // force new reference
+                }
+            })
+
+            return {
+                ...group,
+                openItems: newOpenItems,
+            }
+        })
+    )
+}
+
+const handleMatch = () => {
+    console.log("Handle match - not implemented")
+    setData(prev =>
+        prev.map(group => ({
+            ...group,
+            openItems: (group.openItems ?? []).map(oi => {
+                if (oi.isGrouped) return oi // already matched
+                if (!oi.invoiceRow) return oi // no invoice row to group by
+
+                return {
+                    ...oi,
+                    isGrouped: true,
+                }
+            })
+        }))
+    )
+}
 
 
     return (
@@ -303,7 +352,7 @@ export default function CustomerLedger() {
 
                 {/* Bottom row: action buttons */}
                 <div className="flex flex-wrap items-center gap-2">
-                    <Button className="bg-[#3182ce] hover:bg-[#3182ce] text-white text-sm h-8 px-4 rounded-md">
+                    <Button  onClick={handleMatch} className="bg-[#3182ce] hover:bg-[#3182ce] text-white text-sm h-8 px-4 rounded-md" >
                         Match
                     </Button>
                     <Button
@@ -405,7 +454,9 @@ export default function CustomerLedger() {
                     open={matchDialogOpen}
                     onClose={() => setMatchDialogOpen(false)}
                     matchGroup={selectedMatchGroup}
+                    onUnmatch={handleUnmatch}
                 />
+
 
             </div>
         </div>
@@ -559,7 +610,12 @@ function OpenItemsCustomerSection({
             </tr>
 
             {isExpanded && group.openItems?.map((item) => (
-                <OpenItemBlock key={item.matchGroupId} item={item} onOpenMatch={onOpenMatch} />
+                <OpenItemBlock
+                    key={item.matchGroupId + (item.isGrouped ? "_g" : "_u")}
+                    item={item}
+                    onOpenMatch={onOpenMatch}
+                />
+
             ))}
         </>
     )
@@ -567,48 +623,73 @@ function OpenItemsCustomerSection({
 
 function OpenItemBlock({ item, onOpenMatch }: { item: OpenItem, onOpenMatch: (item: OpenItem) => void }) {
 
-    if (!item.invoiceRow) return null
-    const row = item.invoiceRow
+    // =========================
+    // GROUPED MODE (normal)
+    // =========================
+    if (item.isGrouped && item.invoiceRow) {
+        const row = item.invoiceRow
 
+        return (
+            <tr className="border-b bg-white hover:bg-[#f7f8fa]">
+                <td className="p-2.5 text-[#2a7de1] flex items-center gap-2">
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            onOpenMatch(item)
+                        }}
+                        className="text-gray-500 hover:text-blue-600"
+                    >
+                        🔗
+                    </button>
+                </td>
+
+                <td className="p-2.5">{row.postingDate}</td>
+                <td className="p-2.5">{row.description}</td>
+                <td className="p-2.5"></td>
+                <td className="p-2.5"></td>
+
+                <td className="p-2.5 text-right">{formatNumber(row.amount)}</td>
+                <td className="p-2.5 text-right font-semibold">{formatNumber(item.balance)}</td>
+                <td className="p-2.5 text-right font-semibold text-red-600">{formatNumber(item.balance)}</td>
+                <td></td>
+            </tr>
+        )
+    }
+
+    // =========================
+    // EXPANDED MODE (after unmatch)
+    // =========================
     return (
-        <tr className="border-b bg-white hover:bg-[#f7f8fa]">
-            {/* TEXT */}
-            <td className="p-2.5 text-[#2a7de1] flex items-center gap-2">
-                {/* LINK ICON */}
-                <button
-                    onClick={(e) => {
-                        e.stopPropagation()
-                        onOpenMatch(item)
-                    }}
-                    className="text-gray-500 hover:text-blue-600"
-                >
-                    🔗
-                </button>
-            </td>
-            <td className="p-2.5">{row.postingDate}</td>
-            <td className="p-2.5">{row.description}</td>
-            <td className="p-2.5"></td>
-            <td className="p-2.5"></td>
+        <>
+            {item.rows?.map((row, i) => (
+                <tr key={i} className="border-b bg-white">
+                    <td></td>
+                    <td className="p-2.5">{row.postingDate}</td>
+                    <td className="p-2.5 text-[#2a7de1]">{row.description}</td>
+                    <td></td>
+                    <td></td>
+                    <td className="p-2.5 text-right">{formatNumber(row.amount)}</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+            ))}
 
-            {/* amount */}
-            <td className="p-2.5 text-right tabular-nums">
-                {formatNumber(row.amount)}
-            </td>
-
-            {/* balance */}
-            <td className="p-2.5 text-right tabular-nums font-semibold">
-                {formatNumber(item.balance)}
-            </td>
-
-            {/* payable */}
-            <td className="p-2.5 text-right tabular-nums font-semibold text-red-600">
-                {formatNumber(item.balance)}
-            </td>
-            <td className="p-2.5"></td>
-
-        </tr>
+            <tr className="border-b bg-muted/40 font-semibold">
+                <td></td>
+                <td></td>
+                <td>Remaining balance</td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td className="text-right">{formatNumber(item.balance)}</td>
+                <td className="text-right text-red-600">{formatNumber(item.balance)}</td>
+                <td></td>
+            </tr>
+        </>
     )
 }
+
 
 
 // --- Mobile group cards ---

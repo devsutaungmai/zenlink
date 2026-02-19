@@ -3,16 +3,23 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { formatVoucherNumberForDisplay, formatDateLocal } from "@/shared/lib/invoiceHelper"
+import { OpenItem } from "@/app/dashboard/accounts/customer-ledger/page"
 
 interface Props {
     open: boolean
     onClose: () => void
-    matchGroup: any | null
+    matchGroup: OpenItem | null
+    onUnmatch?: (item:OpenItem) => void
 }
 
-export function MatchedItemsDialog({ open, onClose, matchGroup }: Props) {
+export function MatchedItemsDialog({ open, onClose, matchGroup, onUnmatch }: Props) {
 
     if (!matchGroup) return null
+
+    const handleUnmatch = () => {
+        onUnmatch?.(matchGroup)
+        onClose()
+    }
 
     return (
         <Dialog open={open} onOpenChange={onClose}>
@@ -32,7 +39,7 @@ export function MatchedItemsDialog({ open, onClose, matchGroup }: Props) {
                             </tr>
                         </thead>
                         <tbody>
-                            {matchGroup.rows.map((r:any, i:any) => (
+                            {matchGroup.rows?.map((r, i) => (
                                 <tr key={i} className="border-t">
                                     <td className="p-2">{r.description}</td>
                                     <td className="p-2">{formatDateLocal(r.postingDate)}</td>
@@ -45,12 +52,19 @@ export function MatchedItemsDialog({ open, onClose, matchGroup }: Props) {
                 </div>
 
                 <div className="flex justify-end gap-3 pt-4">
-                    <Button variant="outline" onClick={onClose}>Cancel</Button>
-                    <Button className="bg-green-600 hover:bg-green-700 text-white">
-                        OK
+                    <Button variant="outline" onClick={onClose}>
+                        Cancel
+                    </Button>
+
+                    <Button
+                        variant="destructive"
+                        onClick={handleUnmatch}
+                    >
+                        Unmatch
                     </Button>
                 </div>
             </DialogContent>
         </Dialog>
     )
 }
+
