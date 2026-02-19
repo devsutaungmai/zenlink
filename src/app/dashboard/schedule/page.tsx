@@ -882,6 +882,58 @@ export default function SchedulePage() {
         } else {
           setShifts(prev => prev.filter(s => s.id !== optimisticShift.id))
         }
+
+        // Handle overridable violations — show confirm dialog, then retry with _forceAssign
+        if (res.status === 409 && errorData.requiresConfirmation) {
+          const violationsList = [
+            ...(errorData.violations || []).map((v: string) => `<li style="color:#dc2626">${v}</li>`),
+            ...(errorData.warnings || []).map((w: string) => `<li style="color:#d97706">${w}</li>`),
+          ].join('')
+
+          const confirmResult = await Swal.fire({
+            title: t('labor_law.rule_violations') || 'Rule Violations Detected',
+            html: `<p style="margin-bottom:8px">${t('labor_law.override_prompt') || 'Assigning this shift will override the following rules:'}</p><ul style="text-align:left;font-size:13px;list-style:disc;padding-left:20px">${violationsList}</ul>`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: t('labor_law.assign_anyway') || 'Assign Anyway',
+            cancelButtonText: t('common.cancel') || 'Cancel',
+            confirmButtonColor: '#059669',
+          })
+
+          if (confirmResult.isConfirmed) {
+            const retryRes = await fetch(url, {
+              method,
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ...submitData, _forceAssign: true }),
+            })
+            if (retryRes.ok) {
+              await fetchShifts()
+              Swal.fire({
+                text: t(successToastKey),
+                toast: true, position: 'top-end', showConfirmButton: false,
+                timer: 3000, timerProgressBar: true,
+                customClass: { popup: 'swal-toast-wide' }
+              })
+            }
+          }
+          return
+        }
+
+        // Handle non-overridable violations — block with clear error
+        if (res.status === 422 && (errorData.violations || errorData.warnings)) {
+          const violationsList = [
+            ...(errorData.violations || []).map((v: string) => `<li>${v}</li>`),
+            ...(errorData.warnings || []).map((w: string) => `<li>${w}</li>`),
+          ].join('')
+
+          Swal.fire({
+            title: t('labor_law.cannot_assign') || 'Cannot Assign Employee',
+            html: `<p style="margin-bottom:8px">${t('labor_law.blocking_violations') || 'This shift assignment violates non-overridable rules:'}</p><ul style="text-align:left;font-size:13px;list-style:disc;padding-left:20px;color:#dc2626">${violationsList}</ul>`,
+            icon: 'error',
+            confirmButtonText: 'OK',
+          })
+          return
+        }
         
         Swal.fire({
           text: errorData.error || t(failureToastKey),

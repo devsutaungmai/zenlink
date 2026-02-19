@@ -4,6 +4,11 @@ import { getCurrentUser } from '@/shared/lib/auth'
 import { hasAnyServerPermission } from '@/shared/lib/serverPermissions'
 import { PERMISSIONS } from '@/shared/lib/permissions'
 import { ShiftType, WageType } from '@prisma/client'
+import {
+  validateShiftCombined,
+  getEmployeeShiftsForValidation,
+  formatCombinedValidationSummary
+} from '@/shared/lib/shiftValidation'
 
 export async function GET(
   request: NextRequest,
@@ -121,6 +126,71 @@ export async function PUT(
       note: rawData.note !== undefined ? rawData.note : null,
       approved: rawData.approved !== undefined ? Boolean(rawData.approved) : undefined,
       breakPaid: rawData.breakPaid !== undefined ? Boolean(rawData.breakPaid) : undefined
+    }
+
+    // Validate against labour law / contract rules when assigning employee to an open shift
+    if (rawData.employeeId && rawData.endTime && rawData.date) {
+      const existingShift = await prisma.shift.findUnique({ where: { id }, select: { employeeId: true, status: true } })
+      const isAssigningToOpenShift = existingShift && !existingShift.employeeId && rawData.employeeId
+
+      if (isAssigningToOpenShift) {
+        const shiftDate = new Date(rawData.date)
+        const weekStart = new Date(shiftDate)
+        weekStart.setDate(weekStart.getDate() - weekStart.getDay() + (weekStart.getDay() === 0 ? -6 : 1))
+        const weekEnd = new Date(weekStart)
+        weekEnd.setDate(weekEnd.getDate() + 13)
+
+        const existingShifts = await getEmployeeShiftsForValidation(
+          rawData.employeeId,
+          weekStart,
+          weekEnd,
+          id
+        )
+
+        const shiftDateStr = shiftDate.toISOString().split('T')[0]
+        const validationResult = await validateShiftCombined(
+          {
+            id,
+            date: shiftDateStr,
+            startTime: rawData.startTime,
+            endTime: rawData.endTime,
+            breakStart: rawData.breakStart || null,
+            breakEnd: rawData.breakEnd || null,
+            employeeId: rawData.employeeId,
+          },
+          existingShifts
+        )
+
+        const { redWarnings, yellowWarnings } = formatCombinedValidationSummary(validationResult)
+
+        const hasBlockingViolations = validationResult.laborLaw.violations.some(v => !v.overridable)
+        const contractBlocksScheduling = validationResult.contract?.hasDeviations && !validationResult.canSchedule
+
+        if (hasBlockingViolations || contractBlocksScheduling) {
+          return NextResponse.json(
+            {
+              error: 'Cannot assign employee: shift violates rules',
+              violations: redWarnings,
+              warnings: yellowWarnings,
+              validationResult,
+            },
+            { status: 422 }
+          )
+        }
+
+        if (validationResult.requiresOverride && !rawData._forceAssign) {
+          return NextResponse.json(
+            {
+              error: 'Assignment requires confirmation due to rule violations',
+              requiresConfirmation: true,
+              violations: redWarnings,
+              warnings: yellowWarnings,
+              validationResult,
+            },
+            { status: 409 }
+          )
+        }
+      }
     }
     
     const shift = await prisma.shift.update({

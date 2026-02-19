@@ -270,41 +270,36 @@ export default function GroupGroupedView({
                       
                       return (
                         <div key={dayIndex} className="px-1">
-                          <div className="min-h-[60px]">
-                            {dayOpenShifts.length === 0 ? (
+                          <div className="min-h-[60px] flex flex-col relative">
+                            {dayOpenShifts.slice(0, 1).map(shift => (
                               <button
-                                onClick={() => onAddShift({ date: formattedDate })}
-                                className="w-full h-full min-h-[60px] border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 border-emerald-300 hover:border-emerald-500 hover:bg-emerald-100"
+                                key={shift.id}
+                                onClick={() => onEditShift(shift)}
+                                className="w-full rounded-lg p-2 text-left border-2 border-dashed border-emerald-400 bg-emerald-100"
                               >
-                                <PlusIcon className="w-6 h-6 text-emerald-500" />
+                                <div className="text-[11px] font-semibold text-emerald-800 flex items-center gap-1">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                  {t('week_view.open') || 'Open'}
+                                </div>
+                                <div className="text-[10px] text-emerald-700 mt-0.5">
+                                  {shift.startTime} - {shift.endTime || 'Open'}
+                                </div>
                               </button>
-                            ) : (
-                              <div className="w-full h-full flex flex-col gap-1">
-                                {dayOpenShifts.slice(0, 1).map(shift => (
-                                  <button
-                                    key={shift.id}
-                                    onClick={() => onEditShift(shift)}
-                                    className="w-full rounded-lg p-2 text-left border-2 border-dashed border-emerald-400 bg-emerald-100"
-                                  >
-                                    <div className="text-[11px] font-semibold text-emerald-800 flex items-center gap-1">
-                                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                      {t('week_view.open') || 'Open'}
-                                    </div>
-                                    <div className="text-[10px] text-emerald-700 mt-0.5">
-                                      {shift.startTime} - {shift.endTime || 'Open'}
-                                    </div>
-                                  </button>
-                                ))}
-                                {dayOpenShifts.length > 1 && (
-                                  <button
-                                    onClick={() => handleShowMoreShifts(dayOpenShifts, date, t('week_view.open_shifts') || 'Open Shifts')}
-                                    className="text-[10px] text-emerald-600 font-medium"
-                                  >
-                                    +{dayOpenShifts.length - 1} more
-                                  </button>
-                                )}
-                              </div>
+                            ))}
+                            {dayOpenShifts.length > 1 && (
+                              <button
+                                onClick={() => handleShowMoreShifts(dayOpenShifts, date, t('week_view.open_shifts') || 'Open Shifts')}
+                                className="text-[10px] text-emerald-600 font-medium"
+                              >
+                                +{dayOpenShifts.length - 1} more
+                              </button>
                             )}
+                            <button
+                              onClick={() => onAddShift({ date: formattedDate })}
+                              className="absolute bottom-1 right-1 w-6 h-6 border bg-white rounded-full flex items-center justify-center transition-all shadow-sm border-emerald-400 hover:bg-emerald-500 hover:text-white text-emerald-500"
+                            >
+                              <PlusIcon className="w-3 h-3" />
+                            </button>
                           </div>
                         </div>
                       );
@@ -539,47 +534,42 @@ export default function GroupGroupedView({
                 
                 return (
                   <div key={dateIndex} className="border-r p-2 relative min-h-[80px] group">
-                    {dayOpenShifts.length === 0 ? (
-                      <button
-                        onClick={() => onAddShift({ date: formattedDate })}
-                        className="w-full h-full min-h-[76px] border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-1 transition-all opacity-0 group-hover:opacity-100 border-emerald-300 hover:border-emerald-500 hover:bg-emerald-50"
+                    {dayOpenShifts.slice(0, 2).map((shift) => (
+                      <div
+                        key={shift.id}
+                        onClick={() => onEditShift(shift)}
+                        className="mb-1 cursor-pointer"
                       >
-                        <PlusIcon className="w-5 h-5 text-emerald-500" />
-                      </button>
-                    ) : (
-                      <>
-                        {dayOpenShifts.slice(0, 2).map((shift) => (
-                          <div
-                            key={shift.id}
-                            onClick={() => onEditShift(shift)}
-                            className="mb-1 cursor-pointer"
-                          >
-                            <div 
-                              className="rounded p-2 text-xs border-2 border-dashed border-emerald-400 bg-emerald-100"
-                            >
-                              <div className="font-medium text-emerald-800 flex items-center gap-1">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                {t('week_view.open') || 'Open'}
-                              </div>
-                              <div className="mt-0.5 text-emerald-700">
-                                {shift.function?.name || 'No Function'}
-                              </div>
-                              <div className="mt-0.5 text-emerald-600">
-                                {shift.startTime} - {shift.endTime || 'Open'}
-                              </div>
-                            </div>
+                        <div 
+                          className="rounded p-2 text-xs border-2 border-dashed border-emerald-400 bg-emerald-100"
+                        >
+                          <div className="font-medium text-emerald-800 flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            {t('week_view.open') || 'Open'}
                           </div>
-                        ))}
-                        {dayOpenShifts.length > 2 && (
-                          <button
-                            onClick={() => handleShowMoreShifts(dayOpenShifts, date, t('week_view.open_shifts') || 'Open Shifts')}
-                            className="text-xs text-emerald-600 hover:text-emerald-800 font-medium transition-colors mb-1"
-                          >
-                            +{dayOpenShifts.length - 2} more
-                          </button>
-                        )}
-                      </>
+                          <div className="mt-0.5 text-emerald-700">
+                            {shift.function?.name || 'No Function'}
+                          </div>
+                          <div className="mt-0.5 text-emerald-600">
+                            {shift.startTime} - {shift.endTime || 'Open'}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {dayOpenShifts.length > 2 && (
+                      <button
+                        onClick={() => handleShowMoreShifts(dayOpenShifts, date, t('week_view.open_shifts') || 'Open Shifts')}
+                        className="text-xs text-emerald-600 hover:text-emerald-800 font-medium transition-colors mb-1"
+                      >
+                        +{dayOpenShifts.length - 2} more
+                      </button>
                     )}
+                    <button
+                      onClick={() => onAddShift({ date: formattedDate })}
+                      className="absolute bottom-1 right-1 w-6 h-6 border bg-white rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 shadow-sm border-emerald-400 hover:bg-emerald-500 hover:text-white text-emerald-500"
+                    >
+                      <PlusIcon className="w-3 h-3" />
+                    </button>
                   </div>
                 );
               })}

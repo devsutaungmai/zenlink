@@ -3,6 +3,11 @@ import { prisma } from '@/shared/lib/prisma'
 import { getCurrentUser } from '@/shared/lib/auth'
 import jwt from 'jsonwebtoken'
 import { cookies } from 'next/headers'
+import {
+  validateShiftCombined,
+  getEmployeeShiftsForValidation,
+  formatCombinedValidationSummary
+} from '@/shared/lib/shiftValidation'
 
 export async function GET(
   request: Request,
@@ -135,6 +140,72 @@ export async function PATCH(
           { error: 'This shift is no longer available' },
           { status: 400 }
         )
+      }
+
+      // Validate against labour law and contract rules
+      if (shiftRequest.shift.endTime) {
+        const shiftDate = new Date(shiftRequest.shift.date)
+        const weekStart = new Date(shiftDate)
+        weekStart.setDate(weekStart.getDate() - weekStart.getDay() + (weekStart.getDay() === 0 ? -6 : 1))
+        const weekEnd = new Date(weekStart)
+        weekEnd.setDate(weekEnd.getDate() + 13)
+
+        const existingShifts = await getEmployeeShiftsForValidation(
+          shiftRequest.employeeId,
+          weekStart,
+          weekEnd
+        )
+
+        const shiftDateStr = shiftDate.toISOString().split('T')[0]
+        const validationResult = await validateShiftCombined(
+          {
+            id: shiftRequest.shiftId,
+            date: shiftDateStr,
+            startTime: shiftRequest.shift.startTime,
+            endTime: shiftRequest.shift.endTime,
+            breakStart: shiftRequest.shift.breakStart
+              ? new Date(shiftRequest.shift.breakStart).toISOString().split('T')[1]?.substring(0, 5)
+              : null,
+            breakEnd: shiftRequest.shift.breakEnd
+              ? new Date(shiftRequest.shift.breakEnd).toISOString().split('T')[1]?.substring(0, 5)
+              : null,
+            employeeId: shiftRequest.employeeId,
+          },
+          existingShifts
+        )
+
+        const { redWarnings, yellowWarnings } = formatCombinedValidationSummary(validationResult)
+
+        // Block if there are non-overridable labour law violations
+        // or if the contract's warningType is BLOCK_SCHEDULING and there are deviations
+        const hasBlockingViolations = validationResult.laborLaw.violations.some(v => !v.overridable)
+        const contractBlocksScheduling = validationResult.contract?.hasDeviations && !validationResult.canSchedule
+
+        if (hasBlockingViolations || contractBlocksScheduling) {
+          return NextResponse.json(
+            {
+              error: 'Cannot approve: shift assignment violates rules',
+              violations: redWarnings,
+              warnings: yellowWarnings,
+              validationResult,
+            },
+            { status: 422 }
+          )
+        }
+
+        // If there are overridable violations, check if admin explicitly confirmed
+        if (validationResult.requiresOverride && !body.forceApprove) {
+          return NextResponse.json(
+            {
+              error: 'Approval requires confirmation due to rule violations',
+              requiresConfirmation: true,
+              violations: redWarnings,
+              warnings: yellowWarnings,
+              validationResult,
+            },
+            { status: 409 }
+          )
+        }
       }
 
       // Use transaction: approve request, assign employee, reject other pending requests
