@@ -1152,7 +1152,7 @@ export async function generateLedgerReport(
   accountNumbers?: number[]
 ) {
   const whereClause: any = {};
-  
+
   if (accountNumbers && accountNumbers.length > 0) {
     whereClause.accountNumber = { in: accountNumbers };
   } else {
@@ -1562,44 +1562,40 @@ function buildCustomerLedgerRows(ledger: any[]) {
 
 function buildOpenItemsStructure(entries: any[]) {
 
-  const groups = new Map<string, any>() // receivable groups
+  const movements = aggregateCustomerMovements(entries)
 
-  for (const e of entries) {
+  const groups = new Map<string, any>()
 
-    const customer = e.invoice?.customer
-    if (!customer) continue
+  for (const m of movements) {
 
-    // 🔑 match group identity = receivable origin
-    const matchGroupId = `invoice_${e.invoice?.id ?? "unknown"}`
+    const matchGroupId = `invoice_${m.invoiceId ?? "unknown"}`
 
     if (!groups.has(matchGroupId)) {
       groups.set(matchGroupId, {
         matchGroupId,
-        customerId: customer.id,
-        customerName: customer.customerName,
-        customerNumber: customer.customerNumber,
+        customerId: m.customerId,
+        customerName: m.customerName,
+        customerNumber: m.customerNumber,
         rows: [],
         balance: 0,
       })
     }
+
     const g = groups.get(matchGroupId)
 
-    const isDebit1500 = e.debitAccount?.accountNumber === 1500
-    const amount = Number(e.amount)
-
-    const signedAmount = isDebit1500 ? amount : -amount
+    const signedAmount = m.debit - m.credit
 
     g.rows.push({
-      postingDate: e.postingDate,
-      description: getText(e),
-      entryType: e.entryType,
+      postingDate: m.postingDate,
+      description: m.description,
+      entryType: m.entryType,
       amount: signedAmount,
     })
 
     g.balance += signedAmount
   }
 
-  // remove fully settled receivables
+  // 🔹 Remove fully settled
   const openGroups = Array.from(groups.values())
     .filter(g => Math.abs(g.balance) > 0.0001)
 
@@ -1703,7 +1699,7 @@ function getText(e: any) {
       return `Invoice ${formatInvoiceNumberForDisplay(e.invoice?.invoiceNumber ?? "")} for ${e.invoice?.customer?.customerName ?? ""}`
 
     case "PAYMENT_RECEIVED":
-      return `Payment received for Invoice ${formatInvoiceNumberForDisplay(e.invoice?.invoiceNumber ?? "")}`
+      return `Payment received`
 
     case "CREDIT_NOTE":
       return `Credit note ${formatInvoiceNumberForDisplay(e.invoice?.invoiceNumber ?? "")} for ${e.invoice?.customer?.customerName ?? ""}`
@@ -1725,46 +1721,7 @@ function computeDisplayValues(rows: any[]) {
   })
 }
 
-// function groupAndBalance(rows: any[]) {
-//   const grouped: Record<string, any[]> = {}
 
-//   for (const r of rows) {
-//     if (!grouped[r.customerId]) grouped[r.customerId] = []
-//     grouped[r.customerId].push(r)
-//   }
-
-//   const result: any[] = []
-
-//   for (const customerId of Object.keys(grouped)) {
-//     let balance = 0
-
-//     const customerRows = grouped[customerId].map(r => {
-//       balance += r.amount
-
-//       return {
-//         ...r,
-//         balance,
-//       }
-//     })
-
-//     // closing balance row
-//     customerRows.push({
-//       isClosingBalance: true,
-//       description: "Closing balance",
-//       amount: balance,
-//       balance,
-//     })
-
-//     result.push({
-//       customerId,
-//       customerName: customerRows[0].customerName,
-//       customerNumber: customerRows[0].customerNumber,
-//       rows: customerRows,
-//     })
-//   }
-
-//   return result
-// }
 
 
 

@@ -16,6 +16,7 @@ interface CustomerComboboxProps {
   emptyMessage?: string
   disabled?: boolean
   overviewMode?: boolean
+  paddingYValue?: string
 }
 
 export function CustomerCombobox({
@@ -26,6 +27,7 @@ export function CustomerCombobox({
   emptyMessage = "No customer found.",
   disabled = false,
   overviewMode = false,
+  paddingYValue = "py-3"
 }: CustomerComboboxProps) {
   const [open, setOpen] = React.useState(false)
   const [inputValue, setInputValue] = React.useState("")
@@ -146,7 +148,7 @@ export function CustomerCombobox({
           onKeyDown={handleKeyDown}
           disabled={disabled || overviewMode}
           placeholder={placeholder}
-          className={`block w-full px-4 py-3 pr-10 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] focus:outline-none transition-all duration-200 ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
+          className={`block w-full px-4 ${paddingYValue} pr-10 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] focus:outline-none transition-all duration-200 ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
           role="combobox"
           aria-expanded={open}
           aria-haspopup="listbox"
@@ -177,21 +179,36 @@ export function CustomerCombobox({
           {filteredCustomers.length === 0 ? (
             <li className="px-4 py-3 text-sm text-gray-400">{emptyMessage}</li>
           ) : (
-            filteredCustomers.map((customer, index) => (
+
+            <>
+              {/* All Customers option */}
               <li
-                key={customer.id}
                 role="option"
-                aria-selected={value === customer.id}
-                onClick={() => handleSelect(customer)}
-                onMouseEnter={() => setHighlightedIndex(index)}
-                className={`flex items-center px-4 py-2.5 text-sm cursor-pointer transition-colors text-white ${highlightedIndex === index ? "bg-blue-500" : ""} ${value === customer.id ? "font-medium" : ""}`}
+                aria-selected={value === ""}
+                onClick={() => { onChange(""); setInputValue(""); setOpen(false) }}
+                onMouseEnter={() => setHighlightedIndex(-1)}
+                className={`flex items-center px-4 py-2.5 text-sm cursor-pointer transition-colors text-white ${highlightedIndex === -1 ? "bg-blue-500" : ""}`}
               >
-                <Check
-                  className={`mr-2 h-4 w-4 text-white ${value === customer.id ? "opacity-100" : "opacity-0"}`}
-                />
-                {customer.customerName}
+                <Check className={`mr-2 h-4 w-4 text-white ${value === "" ? "opacity-100" : "opacity-0"}`} />
+                All Customers
               </li>
-            ))
+              {filteredCustomers.map((customer, index) => (
+
+                <li
+                  key={customer.id}
+                  role="option"
+                  aria-selected={value === customer.id}
+                  onClick={() => handleSelect(customer)}
+                  onMouseEnter={() => setHighlightedIndex(index)}
+                  className={`flex items-center px-4 py-2.5 text-sm cursor-pointer transition-colors text-white ${highlightedIndex === index ? "bg-blue-500" : ""} ${value === customer.id ? "font-medium" : ""}`}
+                >
+                  <Check
+                    className={`mr-2 h-4 w-4 text-white ${value === customer.id ? "opacity-100" : "opacity-0"}`}
+                  />
+                  {customer.customerName}
+                </li>
+
+              ))}</>
           )}
         </ul>
       )}

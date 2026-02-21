@@ -21,6 +21,8 @@ import { formatCustomerNumberForDisplay, formatDateLocal, formatVoucherNumberFor
 import { Description } from "@/components/invoice/Description"
 import { DateRangePicker } from "@/components/ui/date-range-picker"
 import { MatchedItemsDialog } from "@/components/invoice/MatchedItemsDialog"
+import { CustomerCombobox } from "@/components/invoice/CustomerCombobox"
+import { Customer } from "../../invoices/create/page"
 
 // --- Data types ---
 
@@ -68,10 +70,12 @@ export default function CustomerLedger() {
     const [loading, setLoading] = useState(true)
     const [activeTab, setActiveTab] = useState<"open" | "statement">("statement")
     const [searchQuery, setSearchQuery] = useState("")
-    const [hideReversals, setHideReversals] = useState(false)
+    const [customerFilter, setCustomerFilter] = useState<string>("")
     const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
         new Set(data.map((g) => g.customerId))
     )
+    const [customers, setCustomers] = useState<Customer[]>([])
+
     const today = new Date()
 
     const [dateRange, setDateRange] = useState({
@@ -82,11 +86,10 @@ export default function CustomerLedger() {
     const [matchDialogOpen, setMatchDialogOpen] = useState(false)
     const [selectedMatchGroup, setSelectedMatchGroup] = useState<OpenItem | null>(null)
 
-  const openMatchDialog = (item: OpenItem) => {
-    setSelectedMatchGroup(item)
-    setMatchDialogOpen(true)
-}
-
+    const openMatchDialog = (item: OpenItem) => {
+        setSelectedMatchGroup(item)
+        setMatchDialogOpen(true)
+    }
 
     const toggleGroup = (id: string) => {
         setExpandedGroups((prev) => {
@@ -96,34 +99,34 @@ export default function CustomerLedger() {
             return next
         })
     }
+  
     const filteredData = data.filter((group) => {
-        if (!searchQuery) return true
-        const q = searchQuery.toLowerCase()
+    // Customer filter
+    if (customerFilter && group.customerId !== customerFilter) return false
 
-        const inStatement =
-            group.rows?.some((r) =>
-                r.description?.toLowerCase().includes(q)
-            )
+    // Search filter
+    if (!searchQuery) return true
+    const q = searchQuery.toLowerCase()
 
-        const inOpenItems =
-            group.openItems?.some(item =>
-                item.rows?.some(r =>
-                    r.description?.toLowerCase().includes(q)
-                )
-            )
+    const inStatement = group.rows?.some((r) =>
+        r.description?.toLowerCase().includes(q)
+    )
+    const inOpenItems = group.openItems?.some(item =>
+        item.rows?.some(r => r.description?.toLowerCase().includes(q))
+    )
 
-        return (
-            group.customerName.toLowerCase().includes(q) ||
-            group.customerNumber.includes(q) ||
-            inStatement ||
-            inOpenItems
-        )
-    })
+    return (
+        group.customerName.toLowerCase().includes(q) ||
+        group.customerNumber.includes(q) ||
+        inStatement ||
+        inOpenItems
+    )
+})
 
 
     useEffect(() => {
         fetchCustomerLedger()
-    }, [dateRange, activeTab])
+    }, [dateRange, activeTab,customerFilter])
 
     const fetchCustomerLedger = async () => {
         try {
@@ -135,6 +138,8 @@ export default function CustomerLedger() {
             if (activeTab === "open") {
                 params.append("onlyOpenItems", "true")
             }
+
+            if (customerFilter) params.append("customerId", customerFilter)
 
             const res = await fetch(
                 `/api/ledger/report/customer-ledger?${params}`,
@@ -213,49 +218,61 @@ export default function CustomerLedger() {
         }
     }
 
-const handleUnmatch = (item: OpenItem) => {
-    setData(prev =>
-        prev.map(group => {
-            if (group.customerId !== item.customerId) return group
-
-            // IMPORTANT: rebuild array
-            const newOpenItems = (group.openItems ?? []).map(oi => {
-                if (oi.matchGroupId !== item.matchGroupId) return oi
-
+    const handleUnmatch = (item: OpenItem) => {
+        setData(prev =>
+            prev.map(group => {
+                if (group.customerId !== item.customerId) return group
                 return {
-                    ...oi,
-                    isGrouped: false,
-                    // invoiceRow: undefined,
-                    rows: [...(oi.rows ?? [])], // force new reference
+                    ...group,
+                    openItems: (group.openItems ?? []).map(oi => {
+                        if (oi.matchGroupId !== item.matchGroupId) return oi
+                        return {
+                            ...oi,
+                            isGrouped: false,
+                            // ← no invoiceRow: undefined here
+                            rows: [...(oi.rows ?? [])],
+                        }
+                    })
                 }
             })
+        )
+        setSelectedMatchGroup(null)
+    }
 
-            return {
+    const handleMatch = (item: OpenItem) => {
+        setData(prev =>
+            prev.map(group => ({
                 ...group,
-                openItems: newOpenItems,
+                openItems: (group.openItems ?? []).map(oi => {
+                    if (oi.matchGroupId !== item.matchGroupId) return oi  // ← only match the selected one
+                    if (oi.isGrouped) return oi
+                    if (!oi.invoiceRow) return oi
+
+                    return {
+                        ...oi,
+                        isGrouped: true,
+                    }
+                })
+            }))
+        )
+        setSelectedMatchGroup(null)
+    }
+
+    const fetchCustomers = async () => {
+        try {
+            const res = await fetch('/api/customers')
+            if (res.ok) {
+                const data = await res.json()
+                setCustomers(data)
             }
-        })
-    )
-}
+        } catch (error) {
+            console.error('Error fetching customers:', error)
+        }
+    }
 
-const handleMatch = () => {
-    console.log("Handle match - not implemented")
-    setData(prev =>
-        prev.map(group => ({
-            ...group,
-            openItems: (group.openItems ?? []).map(oi => {
-                if (oi.isGrouped) return oi // already matched
-                if (!oi.invoiceRow) return oi // no invoice row to group by
-
-                return {
-                    ...oi,
-                    isGrouped: true,
-                }
-            })
-        }))
-    )
-}
-
+    useEffect(()=>{
+        fetchCustomers();
+    },[])
 
     return (
         <div className="min-h-screen bg-[#f7f8fa]">
@@ -275,7 +292,7 @@ const handleMatch = () => {
                         <button
                             onClick={() => setActiveTab("open")}
                             className={`px-3 py-1.5 text-sm font-medium transition-colors ${activeTab === "open"
-                                ? "bg-white text-[#2c3e50] shadow-sm"
+                                ? "bg-[#3182ce] text-white shadow-sm"
                                 : "bg-[#f2f4f7] text-[#667085] hover:bg-[#e8eaed]"
                                 }`}
                         >
@@ -284,7 +301,7 @@ const handleMatch = () => {
                         <button
                             onClick={() => setActiveTab("statement")}
                             className={`px-3 py-1.5 text-sm font-medium transition-colors border-l border-[#d0d5dd] ${activeTab === "statement"
-                                ? "bg-white text-[#2c3e50] shadow-sm"
+                                ? "bg-[#3182ce] text-white shadow-sm"
                                 : "bg-[#f2f4f7] text-[#667085] hover:bg-[#e8eaed]"
                                 }`}
                         >
@@ -294,10 +311,17 @@ const handleMatch = () => {
 
                     {/* Customer dropdown */}
                     <div className="relative">
-                        <select className="appearance-none rounded-md border border-[#d0d5dd] bg-white px-3 py-1.5 pr-8 text-sm text-[#2c3e50] focus:outline-none focus:ring-1 focus:ring-[#2a7de1]">
+                        {/* <select className="appearance-none rounded-md border border-[#d0d5dd] bg-white px-3 py-1.5 pr-8 text-sm text-[#2c3e50] focus:outline-none focus:ring-1 focus:ring-[#2a7de1]">
                             <option>Customer</option>
                         </select>
-                        <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-[#667085]" />
+                        <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-[#667085]" /> */}
+                        <CustomerCombobox
+                            customers={customers}
+                            value={customerFilter ?? ""}
+                            onChange={setCustomerFilter}
+                            placeholder="Select Customer"
+                            paddingYValue="py-1"
+                        />
                     </div>
 
                     {/* Date picker */}
@@ -323,11 +347,12 @@ const handleMatch = () => {
                     <div className="relative flex-shrink-0">
                         <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#667085]" />
                         <Input
-                            placeholder="Search"
+                            placeholder="Search customer..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="h-8 w-[160px] border-[#d0d5dd] pl-8 text-sm"
+                            className="h-8 w-[180px] border-[#d0d5dd] pl-8 text-sm"
                         />
+
                     </div>
 
                     {/* Hide reversals */}
@@ -340,30 +365,42 @@ const handleMatch = () => {
                     </label> */}
 
                     {/* Right-side icons */}
-                    <div className="ml-auto flex items-center gap-1">
+                    {/* <div className="ml-auto flex items-center gap-1">
                         <Button variant="ghost" size="icon" className="h-8 w-8">
                             <Filter className="h-4 w-4 text-[#667085]" />
                         </Button>
                         <Button variant="ghost" size="icon" className="h-8 w-8">
                             <Columns3 className="h-4 w-4 text-[#667085]" />
                         </Button>
-                    </div>
+                    </div> */}
                 </div>
 
                 {/* Bottom row: action buttons */}
                 <div className="flex flex-wrap items-center gap-2">
-                    <Button  onClick={handleMatch} className="bg-[#3182ce] hover:bg-[#3182ce] text-white text-sm h-8 px-4 rounded-md" >
+                    <Button
+                        onClick={() => selectedMatchGroup && handleMatch(selectedMatchGroup)}
+                        disabled={!selectedMatchGroup}
+                        className="bg-[#3182ce] hover:bg-[#3182ce] text-white text-sm h-8 px-4 rounded-md" >
                         Match
                     </Button>
                     <Button
                         variant="outline"
                         className="text-sm h-8 px-4 text-[#667085] border-[#d0d5dd] bg-white hover:bg-[#f2f4f7]"
+                        onClick={() => selectedMatchGroup && handleUnmatch(selectedMatchGroup)}
+                        disabled={!selectedMatchGroup}
                     >
                         Unmatch
                     </Button>
                     <Button
                         variant="outline"
                         className="text-sm h-8 px-4 text-[#667085] border-[#d0d5dd] bg-white hover:bg-[#f2f4f7]"
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            if (selectedMatchGroup) {
+                                openMatchDialog(selectedMatchGroup)
+                            }
+                        }}
+                        disabled={!selectedMatchGroup}
                     >
                         Show matches
                     </Button>
@@ -420,12 +457,15 @@ const handleMatch = () => {
                             {filteredData.map((group) =>
                                 activeTab === "open"
                                     ? (
+                                        // In CustomerLedger table body:
                                         <OpenItemsCustomerSection
                                             key={group.customerId}
                                             group={group}
                                             isExpanded={expandedGroups.has(group.customerId)}
                                             onToggle={() => toggleGroup(group.customerId)}
                                             onOpenMatch={openMatchDialog}
+                                            selectedMatchGroup={selectedMatchGroup}
+                                            onSelectMatchGroup={setSelectedMatchGroup}
                                         />
 
                                     )
@@ -541,7 +581,7 @@ function CustomerGroupSection({
                             {/* Text (description as link) */}
                             <td className="p-2.5">
                                 {isSum ? (
-                                    <span className="font-semibold text-[#2c3e50]">Sum</span>
+                                    <span className="font-semibold text-[#2c3e50]">Running Balance</span>
                                 ) : isLink ? (
                                     <Link
                                         href={`/dashboard/invoices/create?invoiceId=${invoiceId}&copy=true&overview=true`}
@@ -586,17 +626,15 @@ function CustomerGroupSection({
 }
 
 function OpenItemsCustomerSection({
-    group,
-    isExpanded,
-    onToggle,
-    onOpenMatch,
+    group, isExpanded, onToggle, onOpenMatch, selectedMatchGroup, onSelectMatchGroup,
 }: {
     group: CustomerGroup
     isExpanded: boolean
     onToggle: () => void
     onOpenMatch: (item: OpenItem) => void
+    selectedMatchGroup: OpenItem | null
+    onSelectMatchGroup: (item: OpenItem | null) => void
 }) {
-
     const customerTotal =
         group.openItems?.reduce((a, i) => a + i.balance, 0) ?? 0
 
@@ -614,24 +652,35 @@ function OpenItemsCustomerSection({
                     key={item.matchGroupId + (item.isGrouped ? "_g" : "_u")}
                     item={item}
                     onOpenMatch={onOpenMatch}
+                    isSelected={selectedMatchGroup?.matchGroupId === item.matchGroupId}
+                    onSelect={onSelectMatchGroup}
                 />
-
             ))}
         </>
     )
 }
 
-function OpenItemBlock({ item, onOpenMatch }: { item: OpenItem, onOpenMatch: (item: OpenItem) => void }) {
-
-    // =========================
-    // GROUPED MODE (normal)
-    // =========================
+function OpenItemBlock({ item, onOpenMatch, isSelected, onSelect }: {
+    item: OpenItem
+    onOpenMatch: (item: OpenItem) => void
+    isSelected: boolean
+    onSelect: (item: OpenItem | null) => void
+}) {
     if (item.isGrouped && item.invoiceRow) {
         const row = item.invoiceRow
-
         return (
-            <tr className="border-b bg-white hover:bg-[#f7f8fa]">
+            <tr
+                className={`border-b hover:bg-[#f7f8fa] cursor-pointer ${isSelected ? "bg-blue-50" : "bg-white"}`}
+                onClick={() => onSelect(isSelected ? null : item)}
+            >
                 <td className="p-2.5 text-[#2a7de1] flex items-center gap-2">
+                    <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => onSelect(isSelected ? null : item)}
+                        onClick={e => e.stopPropagation()}
+                        className="cursor-pointer"
+                    />
                     <button
                         onClick={(e) => {
                             e.stopPropagation()
@@ -641,13 +690,12 @@ function OpenItemBlock({ item, onOpenMatch }: { item: OpenItem, onOpenMatch: (it
                     >
                         🔗
                     </button>
-                </td>
 
+                </td>
                 <td className="p-2.5">{row.postingDate}</td>
                 <td className="p-2.5">{row.description}</td>
                 <td className="p-2.5"></td>
                 <td className="p-2.5"></td>
-
                 <td className="p-2.5 text-right">{formatNumber(row.amount)}</td>
                 <td className="p-2.5 text-right font-semibold">{formatNumber(item.balance)}</td>
                 <td className="p-2.5 text-right font-semibold text-red-600">{formatNumber(item.balance)}</td>
@@ -656,41 +704,49 @@ function OpenItemBlock({ item, onOpenMatch }: { item: OpenItem, onOpenMatch: (it
         )
     }
 
-    // =========================
-    // EXPANDED MODE (after unmatch)
-    // =========================
+    // Expanded/unmatched rows
     return (
         <>
-            {item.rows?.map((row, i) => (
-                <tr key={i} className="border-b bg-white">
-                    <td></td>
-                    <td className="p-2.5">{row.postingDate}</td>
-                    <td className="p-2.5 text-[#2a7de1]">{row.description}</td>
-                    <td></td>
-                    <td></td>
-                    <td className="p-2.5 text-right">{formatNumber(row.amount)}</td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                </tr>
-            ))}
+            {item.rows?.map((row, i) => {
+                const isInvoice = row.entryType === "INVOICE_POST"
+                const isThisSelected = isSelected && isInvoice
 
-            <tr className="border-b bg-muted/40 font-semibold">
-                <td></td>
-                <td></td>
+                return (
+                    <tr
+                        key={i}
+                        className={`border-b cursor-pointer ${isThisSelected ? "bg-blue-50" : "bg-white hover:bg-[#f7f8fa]"}`}
+                        onClick={() => isInvoice ? onSelect(isThisSelected ? null : item) : undefined}
+                    >
+                        <td className="p-2.5">
+                            {isInvoice && (
+                                <input
+                                    type="checkbox"
+                                    checked={isThisSelected}
+                                    onChange={() => onSelect(isThisSelected ? null : item)}
+                                    onClick={e => e.stopPropagation()}
+                                    className="cursor-pointer"
+                                />
+                            )}
+                        </td>
+                        <td className="p-2.5">{row.postingDate}</td>
+                        <td className="p-2.5 text-[#2a7de1]">{row.description}</td>
+                        <td></td><td></td>
+                        <td className="p-2.5 text-right">{formatNumber(row.amount)}</td>
+                        <td></td><td></td><td></td>
+                    </tr>
+                )
+            })}
+            <tr className="border-b bg-white font-semibold">
+                <td></td><td></td>
                 <td>Remaining balance</td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td className="text-right">{formatNumber(item.balance)}</td>
-                <td className="text-right text-red-600">{formatNumber(item.balance)}</td>
+                <td></td><td></td><td></td>
+                <td className="p-2.5 text-right">{formatNumber(item.balance)}</td>
+                <td className="p-2.5 text-right text-red-600">{formatNumber(item.balance)}</td>
                 <td></td>
             </tr>
         </>
     )
 }
-
-
 
 // --- Mobile group cards ---
 
