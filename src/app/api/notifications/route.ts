@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { NotificationService } from '@/shared/lib/notifications'
 import { getCurrentUserOrEmployee } from '@/shared/lib/auth'
 import { prisma } from '@/shared/lib/prisma'
+import { getNotificationAuthConditions } from '@/shared/lib/notificationAuth'
 
 // GET /api/notifications - Get notifications for current user/employee
 export async function GET(request: NextRequest) {
@@ -11,24 +12,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    let recipientId: string
-    
-    if (auth.type === 'user') {
-      // For admin users, we need to find their employee record if they have one
-      const user = auth.data
-      const employee = await prisma.employee.findFirst({
-        where: { userId: user.id }
-      })
-      
-      if (!employee) {
-        // Admin doesn't have employee record, return empty notifications for now
-        return NextResponse.json([])
-      }
-      
-      recipientId = employee.id
-    } else {
-      // For employee authentication
-      recipientId = auth.data.id
+    const authConditions = await getNotificationAuthConditions(auth)
+    if (!authConditions) {
+      return NextResponse.json([])
     }
 
     const { searchParams } = new URL(request.url)
@@ -37,14 +23,19 @@ export async function GET(request: NextRequest) {
     const offset = parseInt(searchParams.get('offset') || '0')
 
     if (unreadOnly) {
-      const notifications = await NotificationService.getUnreadNotifications(recipientId)
+      const notifications = await prisma.notification.findMany({
+        where: {
+          ...authConditions,
+          isRead: false,
+        },
+        orderBy: { createdAt: 'desc' },
+      })
       return NextResponse.json(notifications)
     }
 
-    // Get all notifications with pagination
     const notifications = await prisma.notification.findMany({
       where: {
-        recipientId: recipientId,
+        ...authConditions,
       },
       include: {
         shiftExchange: {

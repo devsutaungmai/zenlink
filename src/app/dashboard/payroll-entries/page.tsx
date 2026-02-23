@@ -42,6 +42,7 @@ export default function PayrollEntriesPage() {
   const [showExportModal, setShowExportModal] = useState(false)
   const [exportPeriodId, setExportPeriodId] = useState<string>('')
   const [exportPeriodError, setExportPeriodError] = useState<string>('')
+  const [exporting, setExporting] = useState<'normal' | 'poweroffice' | null>(null)
 
   const fetchEntries = async (page = 1, status = '', periodId = '') => {
     try {
@@ -359,6 +360,7 @@ export default function PayrollEntriesPage() {
       return
     }
     setExportPeriodError('')
+    setExporting('normal')
 
     try {
       const statusQuery = statusFilter !== 'all' ? statusFilter : 'all'
@@ -392,6 +394,8 @@ export default function PayrollEntriesPage() {
         icon: 'error',
         confirmButtonColor: '#31BCFF',
       })
+    } finally {
+      setExporting(null)
     }
   }
 
@@ -401,6 +405,7 @@ export default function PayrollEntriesPage() {
       return
     }
     setExportPeriodError('')
+    setExporting('poweroffice')
 
     try {
       const statusQuery = statusFilter !== 'all' ? statusFilter : 'all'
@@ -435,6 +440,8 @@ export default function PayrollEntriesPage() {
         icon: 'error',
         confirmButtonColor: '#31BCFF',
       })
+    } finally {
+      setExporting(null)
     }
   }
 
@@ -957,7 +964,7 @@ export default function PayrollEntriesPage() {
       </Dialog>
 
       {/* Export Format Selection Modal */}
-      <Dialog open={showExportModal} onOpenChange={setShowExportModal}>
+      <Dialog open={showExportModal} onOpenChange={(open) => { if (!exporting) setShowExportModal(open) }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="text-lg sm:text-xl font-bold">{t('export_modal.title')}</DialogTitle>
@@ -997,14 +1004,32 @@ export default function PayrollEntriesPage() {
 
             <button
               onClick={exportNormalFormat}
-              className="w-full p-3 sm:p-4 border-2 border-gray-300 rounded-lg sm:rounded-xl hover:border-[#31BCFF] hover:bg-blue-50 transition-all duration-200 text-left group"
+              disabled={exporting !== null}
+              className={`w-full p-3 sm:p-4 border-2 rounded-lg sm:rounded-xl transition-all duration-200 text-left group ${
+                exporting === 'normal'
+                  ? 'border-[#31BCFF] bg-blue-50 cursor-wait'
+                  : exporting !== null
+                    ? 'border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed'
+                    : 'border-gray-300 hover:border-[#31BCFF] hover:bg-blue-50'
+              }`}
             >
               <div className="flex items-start space-x-3 sm:space-x-4">
-                <div className="p-2 sm:p-3 bg-blue-100 rounded-lg group-hover:bg-[#31BCFF] transition-colors flex-shrink-0">
-                  <TableCellsIcon className="w-5 h-5 sm:w-6 sm:h-6 text-[#31BCFF] group-hover:text-white" />
+                <div className={`p-2 sm:p-3 rounded-lg transition-colors flex-shrink-0 ${
+                  exporting === 'normal' ? 'bg-[#31BCFF]' : 'bg-blue-100 group-hover:bg-[#31BCFF]'
+                }`}>
+                  {exporting === 'normal' ? (
+                    <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  ) : (
+                    <TableCellsIcon className="w-5 h-5 sm:w-6 sm:h-6 text-[#31BCFF] group-hover:text-white" />
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-1">Normal Format</h3>
+                  <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-1">
+                    {exporting === 'normal' ? 'Exporting...' : 'Normal Format'}
+                  </h3>
                   <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">
                     Standard Excel export with complete payroll information
                   </p>
@@ -1017,14 +1042,32 @@ export default function PayrollEntriesPage() {
 
             <button
               onClick={exportPowerOfficeGoFormat}
-              className="w-full p-3 sm:p-4 border-2 border-gray-300 rounded-lg sm:rounded-xl hover:border-green-500 hover:bg-green-50 transition-all duration-200 text-left group"
+              disabled={exporting !== null}
+              className={`w-full p-3 sm:p-4 border-2 rounded-lg sm:rounded-xl transition-all duration-200 text-left group ${
+                exporting === 'poweroffice'
+                  ? 'border-green-500 bg-green-50 cursor-wait'
+                  : exporting !== null
+                    ? 'border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed'
+                    : 'border-gray-300 hover:border-green-500 hover:bg-green-50'
+              }`}
             >
               <div className="flex items-start space-x-3 sm:space-x-4">
-                <div className="p-2 sm:p-3 bg-green-100 rounded-lg group-hover:bg-green-500 transition-colors flex-shrink-0">
-                  <DocumentTextIcon className="w-5 h-5 sm:w-6 sm:h-6 text-green-600 group-hover:text-white" />
+                <div className={`p-2 sm:p-3 rounded-lg transition-colors flex-shrink-0 ${
+                  exporting === 'poweroffice' ? 'bg-green-500' : 'bg-green-100 group-hover:bg-green-500'
+                }`}>
+                  {exporting === 'poweroffice' ? (
+                    <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  ) : (
+                    <DocumentTextIcon className="w-5 h-5 sm:w-6 sm:h-6 text-green-600 group-hover:text-white" />
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-1">Power Office Go Format</h3>
+                  <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-1">
+                    {exporting === 'poweroffice' ? 'Exporting...' : 'Power Office Go Format'}
+                  </h3>
                   <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">
                     Specialized format for Power Office Go import
                   </p>
@@ -1038,7 +1081,8 @@ export default function PayrollEntriesPage() {
           <DialogFooter>
             <button
               onClick={() => setShowExportModal(false)}
-              className="w-full px-4 py-2 text-sm sm:text-base border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
+              disabled={exporting !== null}
+              className="w-full px-4 py-2 text-sm sm:text-base border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {t('export_modal.cancel')}
             </button>

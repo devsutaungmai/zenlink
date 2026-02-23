@@ -145,164 +145,178 @@ export default function OpenShiftsCard({
     return null
   }
 
+  const totalCount = openShifts.length + myShiftRequests.length
+
   return (
-    <Card className="bg-white/95 backdrop-blur border-emerald-200">
-      <CardHeader>
-        <CardTitle className="text-emerald-700 flex items-center gap-2">
-          <Briefcase className="w-6 h-6" />
-          {t('open_shifts.title') || 'Open Shifts'}
-          {openShifts.length > 0 && (
-            <Badge className="bg-emerald-100 text-emerald-800 ml-2">
-              {openShifts.length}
-            </Badge>
+    <Card className="bg-white/95 backdrop-blur border-sky-100 shadow-sm">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-sky-800 flex items-center gap-2 text-base font-semibold">
+            <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
+              <Briefcase className="w-4 h-4 text-emerald-600" />
+            </div>
+            {t('open_shifts.title') || 'Open Shifts'}
+          </CardTitle>
+          {totalCount > 0 && (
+            <span className="text-xs font-semibold bg-emerald-500 text-white rounded-full px-2 py-0.5 min-w-[22px] text-center">
+              {totalCount}
+            </span>
           )}
-        </CardTitle>
+        </div>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          {/* My Pending Requests */}
-          {myShiftRequests.length > 0 && (
-            <div className="space-y-2 mb-4">
-              <p className="text-xs font-medium text-amber-700 uppercase tracking-wide">
-                {t('open_shifts.my_requests') || 'My Pending Requests'}
-              </p>
+      <CardContent className="pt-0 space-y-4">
+        {/* My Pending Requests */}
+        {myShiftRequests.length > 0 && (
+          <div>
+            <p className="text-[11px] font-semibold text-amber-600 uppercase tracking-widest mb-2">
+              {t('open_shifts.my_requests') || 'My Pending Requests'}
+            </p>
+            <div className="space-y-2">
               {myShiftRequests.map((request) => (
                 <div
                   key={request.id}
-                  className="p-3 bg-amber-50 border border-amber-200 rounded-lg"
+                  className="flex items-center justify-between p-3 rounded-xl bg-amber-50 border border-amber-100"
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-amber-500 rounded-lg flex items-center justify-center text-white">
-                        <Clock className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-amber-800 text-sm">
-                          {formatShiftDate(request.shift.date)}
-                        </p>
-                        <p className="text-xs text-amber-600">
-                          {request.shift.startTime?.substring(0, 5)} - {request.shift.endTime?.substring(0, 5) || (t('common.tbd') || 'TBD')}
-                          {request.shift.function && ` · ${request.shift.function.name}`}
-                        </p>
-                      </div>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 shrink-0 bg-amber-400 rounded-xl flex items-center justify-center">
+                      <Clock className="w-4 h-4 text-white" />
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Badge className="bg-amber-100 text-amber-800 text-xs">
-                        {t('open_shifts.pending') || 'Pending'}
-                      </Badge>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-7 px-2 border-amber-300 text-amber-700 hover:bg-amber-100"
-                        onClick={() => handleCancelRequest(request.id)}
-                        disabled={cancellingRequestId === request.id}
-                      >
-                        {cancellingRequestId === request.id ? (
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                        ) : (
-                          <XCircle className="w-3 h-3" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-gray-800 truncate">
+                        {formatShiftDate(request.shift.date)}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">
+                        {request.shift.startTime?.substring(0, 5)}–{request.shift.endTime?.substring(0, 5) || 'TBD'}
+                        {request.shift.function && (
+                          <span className="text-amber-600"> · {request.shift.function.name}</span>
                         )}
-                      </Button>
+                      </p>
                     </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0 ml-2">
+                    <span className="text-xs font-medium text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
+                      {t('open_shifts.pending') || 'Pending'}
+                    </span>
+                    <button
+                      className="w-7 h-7 flex items-center justify-center rounded-lg text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors disabled:opacity-40"
+                      onClick={() => handleCancelRequest(request.id)}
+                      disabled={cancellingRequestId === request.id}
+                      title="Cancel request"
+                    >
+                      {cancellingRequestId === request.id ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <XCircle className="w-3.5 h-3.5" />
+                      )}
+                    </button>
                   </div>
                 </div>
               ))}
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Available Open Shifts */}
-          {openShifts.length > 0 && (
-            <>
-              <p className="text-xs font-medium text-emerald-700 uppercase tracking-wide">
-                {t('open_shifts.available') || 'Available Shifts'}
-              </p>
+        {/* Available Open Shifts */}
+        {openShifts.length > 0 && (
+          <div>
+            <p className="text-[11px] font-semibold text-emerald-600 uppercase tracking-widest mb-2">
+              {t('open_shifts.available') || 'Available Shifts'}
+            </p>
+            <div className="space-y-2">
               {openShifts.map((shift) => {
                 const alreadyRequested = hasMyRequest(shift)
                 const myReqId = getMyRequestId(shift)
+                const dayLabel = new Date(shift.date)
+                  .toLocaleDateString(i18n.language, { weekday: 'short' })
+                  .substring(0, 3)
+                  .toUpperCase()
 
                 return (
                   <div
                     key={shift.id}
-                    className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors"
+                    className={`flex items-center justify-between p-3 rounded-xl border transition-colors ${
+                      alreadyRequested
+                        ? 'bg-emerald-50 border-emerald-200'
+                        : 'bg-gray-50 border-gray-100 hover:bg-emerald-50 hover:border-emerald-200'
+                    }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-emerald-500 rounded-lg flex items-center justify-center text-white font-bold text-xs">
-                          {new Date(shift.date).toLocaleDateString(i18n.language, { weekday: 'short' }).substring(0, 3).toUpperCase()}
-                        </div>
-                        <div>
-                          <p className="font-medium text-emerald-800 text-sm">
-                            {formatShiftDate(shift.date)}
-                          </p>
-                          <p className="text-xs text-emerald-600">
-                            {shift.startTime?.substring(0, 5)} - {shift.endTime?.substring(0, 5) || (t('common.tbd') || 'TBD')}
-                          </p>
-                          <div className="flex items-center gap-2 mt-0.5">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-9 h-9 shrink-0 bg-emerald-500 rounded-xl flex flex-col items-center justify-center text-white leading-none">
+                        <span className="text-[10px] font-bold">{dayLabel}</span>
+                        <span className="text-[11px] font-semibold">
+                          {new Date(shift.date).getDate()}
+                        </span>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-gray-800 truncate">
+                          {formatShiftDate(shift.date)}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {shift.startTime?.substring(0, 5)}–{shift.endTime?.substring(0, 5) || 'TBD'}
+                        </p>
+                        {(shift.function || shift.department || shift.employeeGroup) && (
+                          <div className="flex flex-wrap gap-1 mt-1">
                             {shift.function && (
-                              <span className="text-xs text-emerald-500 flex items-center gap-0.5">
-                                <Briefcase className="w-3 h-3" />
+                              <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-md font-medium">
                                 {shift.function.name}
                               </span>
                             )}
                             {shift.department && (
-                              <span className="text-xs text-emerald-500 flex items-center gap-0.5">
-                                <Calendar className="w-3 h-3" />
+                              <span className="text-[10px] bg-sky-100 text-sky-700 px-1.5 py-0.5 rounded-md font-medium">
                                 {shift.department.name}
                               </span>
                             )}
                             {shift.employeeGroup && (
-                              <span className="text-xs text-emerald-500 flex items-center gap-0.5">
-                                <Users className="w-3 h-3" />
+                              <span className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-md font-medium">
                                 {shift.employeeGroup.name}
                               </span>
                             )}
                           </div>
-                        </div>
-                      </div>
-                      <div>
-                        {alreadyRequested ? (
-                          <div className="flex items-center gap-2">
-                            <Badge className="bg-amber-100 text-amber-800 text-xs">
-                              <CheckCircle className="w-3 h-3 mr-1" />
-                              {t('open_shifts.requested') || 'Requested'}
-                            </Badge>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-7 px-2 border-red-300 text-red-600 hover:bg-red-50"
-                              onClick={() => myReqId && handleCancelRequest(myReqId)}
-                              disabled={cancellingRequestId === myReqId}
-                            >
-                              {cancellingRequestId === myReqId ? (
-                                <Loader2 className="w-3 h-3 animate-spin" />
-                              ) : (
-                                <XCircle className="w-3 h-3" />
-                              )}
-                            </Button>
-                          </div>
-                        ) : (
-                          <Button
-                            size="sm"
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white h-8 px-3"
-                            onClick={() => handleRequestShift(shift.id)}
-                            disabled={requestingShiftId === shift.id}
-                          >
-                            {requestingShiftId === shift.id ? (
-                              <Loader2 className="w-3 h-3 animate-spin mr-1" />
-                            ) : (
-                              <Send className="w-3 h-3 mr-1" />
-                            )}
-                            {t('open_shifts.request') || 'Request'}
-                          </Button>
                         )}
                       </div>
+                    </div>
+                    <div className="shrink-0 ml-2">
+                      {alreadyRequested ? (
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-medium text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                            <CheckCircle className="w-3 h-3" />
+                            {t('open_shifts.requested') || 'Requested'}
+                          </span>
+                          <button
+                            className="w-7 h-7 flex items-center justify-center rounded-lg text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors disabled:opacity-40"
+                            onClick={() => myReqId && handleCancelRequest(myReqId)}
+                            disabled={cancellingRequestId === myReqId}
+                            title="Cancel request"
+                          >
+                            {cancellingRequestId === myReqId ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <XCircle className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                        </div>
+                      ) : (
+                        <Button
+                          size="sm"
+                          className="bg-emerald-500 hover:bg-emerald-600 text-white h-8 px-3 text-xs font-semibold rounded-lg shadow-sm"
+                          onClick={() => handleRequestShift(shift.id)}
+                          disabled={requestingShiftId === shift.id}
+                        >
+                          {requestingShiftId === shift.id ? (
+                            <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                          ) : (
+                            <Send className="w-3 h-3 mr-1" />
+                          )}
+                          {t('open_shifts.request') || 'Request'}
+                        </Button>
+                      )}
                     </div>
                   </div>
                 )
               })}
-            </>
-          )}
-        </div>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   )

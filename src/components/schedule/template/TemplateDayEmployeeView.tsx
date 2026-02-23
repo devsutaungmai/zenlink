@@ -106,8 +106,7 @@ export default function TemplateDayEmployeeView({
     return fn?.color || '#31BCFF'
   }
 
-  const unassignedShifts = shifts.filter(s => !s.employeeId)
-  const hasUnassignedShifts = unassignedShifts.length > 0
+  const openShifts = shifts.filter(s => !s.employeeId)
 
   return (
     <div className="overflow-hidden bg-white rounded-xl border border-gray-200">
@@ -205,6 +204,67 @@ export default function TemplateDayEmployeeView({
             <div className="p-3 font-medium text-sm">{t('templates.shifts', 'Shifts')}</div>
           </div>
 
+          {/* Open Shifts Row */}
+          {(() => {
+            return (
+              <div className="grid grid-cols-[220px_1fr] border-b bg-emerald-50/50">
+                <div className="p-3 border-r">
+                  <div className="font-medium text-sm text-emerald-700 flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                    {t('week_view.open_shifts', 'Open Shifts')}
+                  </div>
+                  <div className="text-xs text-emerald-600 mt-0.5">
+                    {openShifts.length} {t('week_view.available', 'available')}
+                  </div>
+                </div>
+                <div className="p-2 relative min-h-[60px] group">
+                  {openShifts.length === 0 ? (
+                    <button
+                      onClick={() => onAddShift(0)}
+                      className="w-full h-full min-h-[56px] border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-1 transition-all opacity-0 group-hover:opacity-100 border-emerald-300 hover:border-emerald-500 hover:bg-emerald-50"
+                    >
+                      <PlusIcon className="w-5 h-5 text-emerald-500" />
+                    </button>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {openShifts.map(shift => (
+                        <div key={shift.id} className="cursor-pointer group/shift relative">
+                          <div
+                            onClick={() => onEditShift(shift)}
+                            className="rounded p-2 text-xs border-2 border-dashed border-emerald-400 bg-emerald-100 min-w-[120px]"
+                          >
+                            <div className="font-medium text-emerald-800 flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                              {t('week_view.open', 'Open')}
+                            </div>
+                            <div className="mt-0.5 text-emerald-700">
+                              {getFunctionName(shift.functionId) || t('templates.no_function', 'No Function')}
+                            </div>
+                            <div className="mt-0.5 text-emerald-600">
+                              {shift.startTime} - {shift.endTime || t('templates.open', 'Open')}
+                            </div>
+                          </div>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); onDeleteShift(shift.id) }}
+                            className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover/shift:opacity-100 transition-opacity shadow-sm"
+                          >
+                            <TrashIcon className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        onClick={() => onAddShift(0)}
+                        className="w-8 h-8 border bg-white rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 shadow-sm border-emerald-400 hover:bg-emerald-500 hover:text-white text-emerald-500 self-center"
+                      >
+                        <PlusIcon className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          })()}
+
           {employees.map(employee => {
             const employeeShifts = getEmployeeShifts(employee.id)
             const employeeShiftsCount = employeeShifts.length
@@ -280,56 +340,6 @@ export default function TemplateDayEmployeeView({
             )
           })}
 
-          {hasUnassignedShifts && (
-            <div className="grid grid-cols-[220px_1fr] border-b bg-yellow-50">
-              <div className="p-3 border-r">
-                <div className="font-medium text-sm text-yellow-800">
-                  {t('templates.unassigned_shifts', 'Unassigned Shifts')}
-                </div>
-                <div className="text-xs text-yellow-600 mt-0.5">
-                  {t('templates.shifts_without_employee', { count: unassignedShifts.length, defaultValue: `${unassignedShifts.length} shift${unassignedShifts.length !== 1 ? 's' : ''} without employee` })}
-                </div>
-              </div>
-              
-              <div className="p-2 relative min-h-[80px] group">
-                <div className="flex flex-wrap gap-2">
-                  {unassignedShifts.map(shift => {
-                    const functionName = getFunctionName(shift.functionId)
-                    const shiftColor = getFunctionColor(shift.functionId)
-                    
-                    return (
-                      <div
-                        key={shift.id}
-                        className="cursor-pointer group/shift relative"
-                      >
-                        <div 
-                          onClick={() => onEditShift(shift)}
-                          className="rounded p-2 text-xs text-white font-medium min-w-[120px]"
-                          style={{ backgroundColor: shiftColor }}
-                        >
-                          <div className="font-medium">
-                            {shift.startTime} - {shift.endTime || t('templates.open', 'Open')}
-                          </div>
-                          {functionName && (
-                            <div className="mt-0.5 opacity-90">{functionName}</div>
-                          )}
-                        </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onDeleteShift(shift.id)
-                          }}
-                          className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover/shift:opacity-100 transition-opacity shadow-sm"
-                        >
-                          <TrashIcon className="w-3 h-3" />
-                        </button>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>

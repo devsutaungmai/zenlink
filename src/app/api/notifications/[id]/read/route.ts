@@ -19,31 +19,22 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    let recipientId: string
-    
+    const orConditions: Array<{ recipientId?: string; recipientUserId?: string }> = []
+
     if (auth.type === 'user') {
-      // For admin users, find their employee record if they have one
       const user = auth.data
-      const employee = await prisma.employee.findFirst({
-        where: { userId: user.id }
-      })
-      
-      if (!employee) {
-        return NextResponse.json({ error: 'Employee record not found' }, { status: 404 })
+      orConditions.push({ recipientUserId: user.id })
+      const employee = await prisma.employee.findFirst({ where: { userId: user.id } })
+      if (employee) {
+        orConditions.push({ recipientId: employee.id })
       }
-      
-      recipientId = employee.id
     } else {
-      // For employee authentication
-      recipientId = auth.data.id
+      orConditions.push({ recipientId: auth.data.id })
     }
 
     // Verify the notification belongs to the current user/employee
     const notification = await prisma.notification.findFirst({
-      where: {
-        id: id,
-        recipientId: recipientId,
-      },
+      where: { id, OR: orConditions },
     })
 
     if (!notification) {

@@ -101,11 +101,12 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     if (existingShiftsOption === 'delete-all') {
       await prisma.shift.deleteMany({
         where: {
-          employee: {
-            user: {
-              businessId
-            }
-          },
+          OR: [
+            { employee: { user: { businessId } } },
+            { department: { businessId } },
+            { employeeGroup: { businessId } },
+            { function: { category: { businessId } } }
+          ],
           date: {
             gte: parseUTCDate(dateRangeStart),
             lt: parseUTCDate(dateRangeEnd)
@@ -155,9 +156,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         }
       }
 
-      if (!templateShift.employeeId && !templateShift.employeeGroupId) {
-        continue
-      }
+      const isOpenShift = !templateShift.employeeId
 
       try {
         const newShift = await prisma.shift.create({
@@ -172,6 +171,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
             note: templateShift.note,
             breakPaid: templateShift.breakPaid || false,
             shiftType: 'NORMAL',
+            status: isOpenShift ? 'OPEN' : 'SCHEDULED',
             wage: 0,
             wageType: 'HOURLY',
             approved: false

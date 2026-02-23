@@ -3,6 +3,7 @@ import { prisma } from '@/shared/lib/prisma'
 import { getCurrentUser } from '@/shared/lib/auth'
 import jwt from 'jsonwebtoken'
 import { cookies } from 'next/headers'
+import { ShiftRequestNotifications } from '@/shared/lib/notifications'
 
 export async function GET(request: Request) {
   try {
@@ -203,6 +204,11 @@ export async function POST(request: Request) {
         }
       })
 
+      // Notify admin about the shift request
+      ShiftRequestNotifications.notifyAdminNewShiftRequest(updatedRequest.id).catch(err =>
+        console.error('Failed to send shift request notification:', err)
+      )
+
       return NextResponse.json(updatedRequest, { status: 201 })
     }
 
@@ -232,6 +238,11 @@ export async function POST(request: Request) {
         }
       }
     })
+
+    // Notify admin about the new shift request
+    ShiftRequestNotifications.notifyAdminNewShiftRequest(shiftRequest.id).catch(err =>
+      console.error('Failed to send shift request notification:', err)
+    )
 
     return NextResponse.json(shiftRequest, { status: 201 })
   } catch (error) {
