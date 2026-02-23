@@ -57,6 +57,10 @@ interface Product {
   costPrice: number
   discountPercentage?: number | null
   ledgerAccount: {
+    id:string,
+    name: string
+    accountNumber: string,
+    businessId: string,
     vatCode: {
       code: string
       rate: number
@@ -89,6 +93,7 @@ export default function ProductsPage() {
   const COLUMNS = [
     { key: "productNumber", label: "Product Number" },
     { key: "productName", label: "Product Name" },
+    { key: "ledgerAccount", label: "Ledger Account" },
     { key: "salesPrice", label: "Sales Price" },
     { key: "costPrice", label: "Cost Price" },
     { key: "vatRate", label: "VAT %" },
@@ -102,6 +107,7 @@ export default function ProductsPage() {
     defaultVisibility: {
       productNumber: true,
       productName: true,
+      ledgerAccount: true,
       salesPrice: true,
       costPrice: true,
       vatRate: true,
@@ -372,6 +378,11 @@ export default function ProductsPage() {
                       Product Name
                     </th>
                   )}
+                  {isColumnVisible("ledgerAccount") && (
+                    <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Ledger Account
+                    </th>
+                  )}
                   {isColumnVisible("salesPrice") && (
                     <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Sales Price
@@ -410,7 +421,9 @@ export default function ProductsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200/50">
-                {paginatedProducts.map((product) => (
+                {paginatedProducts.map((product) => 
+                { const isDefaultLedgerAccount = product.ledgerAccount.businessId == null ? "true" : "false";
+                  return (
                   <tr key={product.id} className="hover:bg-blue-50/30 transition-colors duration-200">
                     {isColumnVisible("productNumber") && (
                       <td className="px-6 py-4">
@@ -421,6 +434,14 @@ export default function ProductsPage() {
                     {isColumnVisible("productName") && (
                       <td className="px-6 py-4">
                         <div className="text-sm text-gray-900">{product.productName}</div>
+                      </td>
+                    )}
+
+                    {isColumnVisible("ledgerAccount") && (
+                      <td className="px-6 py-4">
+                        <Link href={`/dashboard/ledger-accounts/${product.ledgerAccount.id}/edit?default=${isDefaultLedgerAccount}`} className="hover:underline">
+                          <div className="text-sm text-blue-600 hover:underline">{product.ledgerAccount.name} ({product.ledgerAccount.accountNumber})</div>
+                        </Link>
                       </td>
                     )}
 
@@ -491,7 +512,7 @@ export default function ProductsPage() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                )})}
               </tbody>
             </table>
           </div>

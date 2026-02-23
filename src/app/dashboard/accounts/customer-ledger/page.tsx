@@ -99,34 +99,41 @@ export default function CustomerLedger() {
             return next
         })
     }
-  
+
     const filteredData = data.filter((group) => {
-    // Customer filter
-    if (customerFilter && group.customerId !== customerFilter) return false
+        // Customer filter
+        if (customerFilter && group.customerId !== customerFilter) return false
 
-    // Search filter
-    if (!searchQuery) return true
-    const q = searchQuery.toLowerCase()
+        // Search filter
+        if (!searchQuery) return true
+        const q = searchQuery.toLowerCase()
 
-    const inStatement = group.rows?.some((r) =>
-        r.description?.toLowerCase().includes(q)
-    )
-    const inOpenItems = group.openItems?.some(item =>
-        item.rows?.some(r => r.description?.toLowerCase().includes(q))
-    )
+        const inStatement = group.rows?.some((r) =>
+            r.description?.toLowerCase().includes(q)
+        )
+        const inOpenItems = group.openItems?.some(item =>
+            item.rows?.some(r => r.description?.toLowerCase().includes(q))
+        )
 
-    return (
-        group.customerName.toLowerCase().includes(q) ||
-        group.customerNumber.includes(q) ||
-        inStatement ||
-        inOpenItems
-    )
-})
+        return (
+            group.customerName.toLowerCase().includes(q) ||
+            group.customerNumber.includes(q) ||
+            inStatement ||
+            inOpenItems
+        )
+    })
+
+    const subTotal = filteredData.reduce((acc, group) => {
+        if (activeTab === "open") {
+            return acc + (group.openItems?.reduce((a, i) => a + i.balance, 0) ?? 0)
+        }
+        return acc + (group.rows?.reduce((a, r) => a + (r.amount ?? 0), 0) ?? 0)
+    }, 0)
 
 
     useEffect(() => {
         fetchCustomerLedger()
-    }, [dateRange, activeTab,customerFilter])
+    }, [dateRange, activeTab, customerFilter])
 
     const fetchCustomerLedger = async () => {
         try {
@@ -270,9 +277,9 @@ export default function CustomerLedger() {
         }
     }
 
-    useEffect(()=>{
+    useEffect(() => {
         fetchCustomers();
-    },[])
+    }, [])
 
     return (
         <div className="min-h-screen bg-[#f7f8fa]">
@@ -454,9 +461,13 @@ export default function CustomerLedger() {
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredData.map((group) =>
-                                activeTab === "open"
+                            {filteredData.map((group) => {
+
+
+
+                                return (activeTab === "open"
                                     ? (
+
                                         // In CustomerLedger table body:
                                         <OpenItemsCustomerSection
                                             key={group.customerId}
@@ -471,10 +482,22 @@ export default function CustomerLedger() {
                                     )
                                     : (
                                         <CustomerGroupSection key={group.customerId} customerId={group.customerId} invoiceId={group.invoiceId} group={group} isExpanded={expandedGroups.has(group.customerId)} onToggle={() => toggleGroup(group.customerId)} />
-                                    )
+                                    ))
+                            }
                             )}
 
                         </tbody>
+                        <tfoot>
+                            <tr className="border-b bg-white font-semibold">
+                                <td></td>
+                                <td className="p-2.5 font-semibold text-right" colSpan={7}>
+                                     {activeTab === "open" ? "Total Outstanding" : "Total"}
+                                </td>
+                                <td className="p-2.5 font-semibold text-right">
+                                    {formatNumber(subTotal)}
+                                </td>
+                            </tr>
+                        </tfoot>
                     </table>
                 </div>
 
@@ -496,8 +519,6 @@ export default function CustomerLedger() {
                     matchGroup={selectedMatchGroup}
                     onUnmatch={handleUnmatch}
                 />
-
-
             </div>
         </div>
     )
@@ -581,7 +602,7 @@ function CustomerGroupSection({
                             {/* Text (description as link) */}
                             <td className="p-2.5">
                                 {isSum ? (
-                                    <span className="font-semibold text-[#2c3e50]">Running Balance</span>
+                                    <span className="font-semibold text-[#2c3e50]">Net Balance</span>
                                 ) : isLink ? (
                                     <Link
                                         href={`/dashboard/invoices/create?invoiceId=${invoiceId}&copy=true&overview=true`}
@@ -643,7 +664,7 @@ function OpenItemsCustomerSection({
             {/* Customer header */}
             <tr className="bg-[#f7f8fa] cursor-pointer" onClick={onToggle}>
                 <td colSpan={9} className="p-2.5 font-semibold text-[#2a7de1]">
-                    {group.customerName} ({formatCustomerNumberForDisplay(group.customerNumber)}) — {formatNumber(customerTotal)}
+                    {group.customerName} ({formatCustomerNumberForDisplay(group.customerNumber)})
                 </td>
             </tr>
 
@@ -656,6 +677,16 @@ function OpenItemsCustomerSection({
                     onSelect={onSelectMatchGroup}
                 />
             ))}
+
+            <tr className="border-b bg-white font-semibold">
+                <td></td><td></td>
+                <td>Remaining balance</td>
+                <td></td><td></td><td></td>
+                <td></td>
+                <td className="p-2.5 text-right text-red-600">{formatNumber(customerTotal)}</td>
+                <td></td>
+            </tr>
+
         </>
     )
 }

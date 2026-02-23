@@ -31,7 +31,7 @@ interface VatCode {
     rate: number
 }
 
-export default function EditLedgerAccountPage({ params,searchParams }: { params: Promise<{ id: string }>, searchParams: Promise<{ default?: string }> }) {
+export default function EditLedgerAccountPage({ params, searchParams }: { params: Promise<{ id: string }>, searchParams: Promise<{ default?: string }> }) {
     const resolvedParams = use(params)
     const resolvedSearchParams = use(searchParams)
     const defaultLedgerAccount = resolvedSearchParams?.default === 'true';
@@ -81,8 +81,8 @@ export default function EditLedgerAccountPage({ params,searchParams }: { params:
         }
     }
 
-     const checkledgerAccountInUse = async (id: string): Promise<void> => {
-         try {
+    const checkledgerAccountInUse = async (id: string): Promise<void> => {
+        try {
             setLoading(true)
             const res = await fetch(`/api/ledger/accounts/${id}/in-use`)
 
@@ -138,7 +138,7 @@ export default function EditLedgerAccountPage({ params,searchParams }: { params:
         }
     }
 
-     const fetchVatCodes = async () => {
+    const fetchVatCodes = async () => {
         try {
             setLoading(true);
             const res = await fetch('/api/ledger/vat-codes', {
@@ -168,6 +168,14 @@ export default function EditLedgerAccountPage({ params,searchParams }: { params:
         fetchVatCodes();
     }, []);
 
+    const handleBack = () => {
+        if (window.history.length > 1) {
+            router.back()
+        } else {
+            router.push("/dashboard/ledger-accounts")
+        }
+    }
+
     return (
         <div className="space-y-6">
             {/* Header Section */}
@@ -175,12 +183,15 @@ export default function EditLedgerAccountPage({ params,searchParams }: { params:
                 <div className="flex items-center justify-between">
                     <div>
                         <div className="flex items-center gap-3 mb-2">
-                            <Link
+                            {/* <Link
                                 href="/dashboard/ledger-accounts"
                                 className="p-2 hover:bg-white/50 rounded-lg transition-colors"
                             >
                                 <ArrowLeftIcon className="w-5 h-5 text-gray-600" />
-                            </Link>
+                            </Link> */}
+                            <button onClick={handleBack}>
+                                <ArrowLeftIcon className="w-5 h-5 text-gray-600" />
+                            </button>
                             <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
                                 Edit Ledger Account
                             </h1>
@@ -231,11 +242,10 @@ export default function EditLedgerAccountPage({ params,searchParams }: { params:
                                     const accountType = getAccountType(parseInt(e.target.value, 10));
                                     setFormData(prev => ({ ...prev, type: accountType }));
                                 }}
-                                className={`block w-full px-4 py-3 rounded-xl border backdrop-blur-sm placeholder-gray-500 transition-all duration-200 ${
-                                    isAccountInUse
+                                className={`block w-full px-4 py-3 rounded-xl border backdrop-blur-sm placeholder-gray-500 transition-all duration-200 ${isAccountInUse
                                         ? 'border-gray-200 bg-gray-100 text-gray-500 cursor-not-allowed opacity-70'
                                         : 'border-gray-300 bg-white/70 text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF]'
-                                }`}
+                                    }`}
                                 placeholder="Enter account number"
                                 title={isAccountInUse ? 'Account number cannot be edited because this account is in use' : 'Enter account number'}
                                 aria-disabled={isAccountInUse}
@@ -289,11 +299,10 @@ export default function EditLedgerAccountPage({ params,searchParams }: { params:
                                 value={formData.vatCodeId}
                                 disabled={isAccountInUse}
                                 onChange={(e) => setFormData({ ...formData, vatCodeId: e.target.value })}
-                                className={`block w-full px-4 py-3 rounded-xl border backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 ${
-                                    isAccountInUse
+                                className={`block w-full px-4 py-3 rounded-xl border backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 ${isAccountInUse
                                         ? 'border-gray-200 bg-gray-100 text-gray-500 cursor-not-allowed opacity-70'
                                         : 'border-gray-300 bg-white/70'
-                                }`}
+                                    }`}
                             >
                                 <option value="">Select VAT Code</option>
                                 {vatCodes.map((vatCode) => (

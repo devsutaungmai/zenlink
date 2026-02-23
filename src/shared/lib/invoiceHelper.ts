@@ -1446,6 +1446,10 @@ export function getAccountType(accountNumber: number): AccountType {
     return AccountType.EQUITY;
   }
 
+  if(accountNumber >= 3000 && accountNumber <= 3900) {
+    return AccountType.INCOME; // 9000-9999 -> LIABILITIES (overrides general 9xxx INCOME rule)
+  }
+
   // 8100-8170 -> EXPENSE (overrides general 8xxx INCOME rule)
   if (accountNumber >= 8100 && accountNumber <= 8170) {
     return AccountType.EXPENSE;

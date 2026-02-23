@@ -25,13 +25,16 @@ export async function GET(request: NextRequest) {
       include: {
         ledgerAccount: {
           select: {
+            id: true,
+            name: true,
+            accountNumber: true,
+            businessId: true,
             vatCode: { select: { code: true, rate: true } },
             businessVatCodes: {
               where: { businessId },
               include: { vatCode: { select: { name: true, rate: true } } }
             }
-          },
-
+          }
         }
       },
       orderBy: {
