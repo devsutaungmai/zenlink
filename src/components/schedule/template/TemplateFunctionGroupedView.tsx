@@ -4,6 +4,8 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { format } from 'date-fns'
 import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { Copy, ArrowRightLeft } from 'lucide-react'
+import { useTemplateDragDrop } from '@/shared/hooks/useTemplateDragDrop'
 
 interface TemplateShift {
   id: string
@@ -36,6 +38,8 @@ interface TemplateFunctionGroupedViewProps {
   onAddShift: (dayIndex: number, formData?: any) => void
   onEditShift: (shift: TemplateShift) => void
   onDeleteShift: (shiftId: string) => void
+  onMoveShift: (shiftId: string, target: { dayIndex: number; employeeId?: string | null; employeeGroupId?: string | null; functionId?: string | null }) => Promise<void>
+  onDuplicateShift: (shiftId: string, target: { dayIndex: number; employeeId?: string | null; employeeGroupId?: string | null; functionId?: string | null }) => Promise<void>
 }
 
 export default function TemplateFunctionGroupedView({
@@ -45,9 +49,23 @@ export default function TemplateFunctionGroupedView({
   functions,
   onAddShift,
   onEditShift,
-  onDeleteShift
+  onDeleteShift,
+  onMoveShift,
+  onDuplicateShift
 }: TemplateFunctionGroupedViewProps) {
   const { t } = useTranslation('schedule')
+
+  const {
+    dragOverCell,
+    isDragging,
+    copyMode,
+    toggleCopyMode,
+    handleDragStart,
+    handleDragOver,
+    handleDragLeave,
+    handleDrop,
+    handleDragEnd
+  } = useTemplateDragDrop({ onMoveShift, onDuplicateShift })
   
   const getFunctionShifts = (functionId: string, dayIndex: number) => {
     return shifts.filter(shift => shift.functionId === functionId && shift.dayIndex === dayIndex)
@@ -215,6 +233,77 @@ export default function TemplateFunctionGroupedView({
             ))}
           </div>
 
+          {/* Open Shifts Row */}
+          {(() => {
+            const openShifts = shifts.filter(s => !s.functionId)
+            return (
+              <div className="grid border-b bg-emerald-50/50" style={desktopGridStyle}>
+                <div className="p-3 border-r">
+                  <div className="font-medium text-sm text-emerald-700 flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                    {t('week_view.open_shifts', 'Open Shifts')}
+                  </div>
+                  <div className="text-xs text-emerald-600 mt-0.5">
+                    {openShifts.length} {t('week_view.available', 'available')}
+                  </div>
+                </div>
+                {weekDates.map((date, dayIndex) => {
+                  const dayOpenShifts = openShifts.filter(s => s.dayIndex === dayIndex)
+                  const openCellId = `open-${dayIndex}`
+                  const isOpenDropTarget = dragOverCell === openCellId
+
+                  return (
+                    <div
+                      key={dayIndex}
+                      className={`border-r p-2 relative min-h-[80px] group transition-colors ${
+                        isOpenDropTarget ? 'bg-emerald-100 ring-2 ring-inset ring-emerald-400' : ''
+                      }`}
+                      onDragOver={(e) => handleDragOver(e, openCellId)}
+                      onDragLeave={handleDragLeave}
+                      onDrop={(e) => handleDrop(e, 'open', dayIndex, 'open')}
+                    >
+                      {dayOpenShifts.map(shift => (
+                        <div
+                          key={shift.id}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, shift, 'open', shift.dayIndex)}
+                          onDragEnd={handleDragEnd}
+                          onClick={() => onEditShift(shift)}
+                          className="mb-1 cursor-grab active:cursor-grabbing group/shift relative"
+                        >
+                          <div className="rounded p-2 text-xs border-2 border-dashed border-emerald-400 bg-emerald-100">
+                            <div className="font-medium text-emerald-800 flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                              {t('week_view.open', 'Open')}
+                            </div>
+                            <div className="mt-0.5 text-emerald-700">
+                              {getGroupName(shift.employeeGroupId) || t('templates.no_group', 'No Group')}
+                            </div>
+                            <div className="mt-0.5 text-emerald-600">
+                              {shift.startTime} - {shift.endTime || t('templates.open', 'Open')}
+                            </div>
+                          </div>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); onDeleteShift(shift.id) }}
+                            className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover/shift:opacity-100 transition-opacity shadow-sm"
+                          >
+                            <TrashIcon className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        onClick={() => onAddShift(dayIndex)}
+                        className="absolute bottom-1 right-1 w-6 h-6 border bg-white rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 shadow-sm border-emerald-400 hover:bg-emerald-500 hover:text-white text-emerald-500"
+                      >
+                        <PlusIcon className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          })()}
+
           {/* Function Rows */}
           {functions.map(fn => {
             const functionShiftsCount = shifts.filter(s => s.functionId === fn.id).length
@@ -237,13 +326,25 @@ export default function TemplateFunctionGroupedView({
                 
                 {weekDates.map((date, dateIndex) => {
                   const dayShifts = getFunctionShifts(fn.id, dateIndex)
+                  const cellId = `fn-${fn.id}-${dateIndex}`
+                  const isDropTarget = dragOverCell === cellId
                   
                   return (
-                    <div key={dateIndex} className="border-r p-2 relative min-h-[80px] group">
+                    <div
+                      key={dateIndex}
+                      className={`border-r p-2 relative min-h-[80px] group transition-colors ${
+                        isDropTarget ? 'bg-blue-50 ring-2 ring-inset ring-[#31BCFF]' : ''
+                      }`}
+                      onDragOver={(e) => handleDragOver(e, cellId)}
+                      onDragLeave={handleDragLeave}
+                      onDrop={(e) => handleDrop(e, fn.id, dateIndex, 'function')}
+                    >
                       {dayShifts.length === 0 ? (
                         <button
                           onClick={() => onAddShift(dateIndex, { functionId: fn.id })}
-                          className="w-full h-full min-h-[76px] border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-1 transition-all opacity-0 group-hover:opacity-100 border-gray-300 hover:border-[#31BCFF] hover:bg-blue-50"
+                          className={`w-full h-full min-h-[76px] border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-1 transition-all ${
+                            isDropTarget ? 'opacity-100 border-[#31BCFF] bg-blue-50' : 'opacity-0 group-hover:opacity-100'
+                          } border-gray-300 hover:border-[#31BCFF] hover:bg-blue-50`}
                         >
                           <PlusIcon className="w-5 h-5 text-[#31BCFF]" />
                           <span className="text-xs text-gray-500">{t('templates.add_shift', 'Add Shift')}</span>
@@ -256,7 +357,10 @@ export default function TemplateFunctionGroupedView({
                             return (
                               <div
                                 key={shift.id}
-                                className="mb-1 cursor-pointer group/shift relative"
+                                draggable
+                                onDragStart={(e) => handleDragStart(e, shift, fn.id, shift.dayIndex)}
+                                onDragEnd={handleDragEnd}
+                                className="mb-1 cursor-grab active:cursor-grabbing group/shift relative"
                               >
                                 <div 
                                   onClick={() => onEditShift(shift)}
@@ -296,6 +400,30 @@ export default function TemplateFunctionGroupedView({
               </div>
             )
           })}
+        </div>
+
+        {/* Move/Copy Toggle */}
+        <div className="flex items-center justify-end gap-2 px-4 py-2 border-t bg-gray-50">
+          <div className="inline-flex rounded-lg border border-gray-300 bg-white p-0.5">
+            <button
+              onClick={() => copyMode && toggleCopyMode()}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                !copyMode ? 'bg-[#31BCFF] text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <ArrowRightLeft className="w-3.5 h-3.5" />
+              Move
+            </button>
+            <button
+              onClick={() => !copyMode && toggleCopyMode()}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                copyMode ? 'bg-[#31BCFF] text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <Copy className="w-3.5 h-3.5" />
+              Copy
+            </button>
+          </div>
         </div>
       </div>
     </div>

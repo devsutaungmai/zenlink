@@ -100,6 +100,10 @@ interface EmployeeForForm {
   salaryRate?: number | null;
   employeeGroupId?: string | null;
   departmentId: string;
+  departments?: Array<{
+    departmentId: string;
+    isPrimary: boolean;
+  }>;
   employeeGroups?: Array<{
     employeeGroupId: string;
     isPrimary: boolean;
@@ -651,37 +655,28 @@ export default function ShiftForm({
       ? safeEmployees.find(emp => emp.id === formData.employeeId)
       : null;
 
-    // Helper function to check if employee belongs to a group
     const employeeBelongsToGroup = (emp: EmployeeForForm, groupId: string): boolean => {
-      // Check employeeGroups array first (many-to-many)
-      if (emp.employeeGroups && emp.employeeGroups.length > 0) {
-        return emp.employeeGroups.some(eg => eg.employeeGroupId === groupId)
-      }
-      // Fallback to legacy employeeGroupId field
-      return emp.employeeGroupId === groupId
+      return !!(emp.employeeGroups?.some(eg => eg.employeeGroupId === groupId) || emp.employeeGroupId === groupId);
     }
 
-    if (formData.functionId) {
-      if (!resolvedLinkedGroupId) {
-        return currentEmployee ? [currentEmployee] : []
-      }
-      const filtered = safeEmployees.filter(emp => employeeBelongsToGroup(emp, resolvedLinkedGroupId))
-      if (currentEmployee && !filtered.some(emp => emp.id === currentEmployee.id)) {
-        return [currentEmployee, ...filtered]
-      }
-      return filtered
+    const employeeBelongsToDepartment = (emp: EmployeeForForm, deptId: string): boolean => {
+      return !!(emp.departments?.some(d => d.departmentId === deptId) || emp.departmentId === deptId);
     }
 
-    if (formData.employeeGroupId) {
-      const filtered = safeEmployees.filter(emp => employeeBelongsToGroup(emp, formData.employeeGroupId!))
-      if (currentEmployee && !filtered.some(emp => emp.id === currentEmployee.id)) {
-        return [currentEmployee, ...filtered]
-      }
-      return filtered
+    let filtered = safeEmployees;
+
+    if (formData.departmentId) {
+      filtered = filtered.filter(emp => employeeBelongsToDepartment(emp, formData.departmentId!));
+    } else if (formData.employeeGroupId) {
+      filtered = filtered.filter(emp => employeeBelongsToGroup(emp, formData.employeeGroupId!));
     }
 
-    return safeEmployees
-  }, [safeEmployees, formData.functionId, formData.employeeGroupId, formData.employeeId, resolvedLinkedGroupId])
+    if (currentEmployee && !filtered.some(emp => emp.id === currentEmployee.id)) {
+      return [currentEmployee, ...filtered];
+    }
+
+    return filtered;
+  }, [safeEmployees, formData.departmentId, formData.employeeGroupId, formData.employeeId])
 
   const employeeSelectDisabled = isEmployee
   const employeeGroupSelectDisabled = isEmployee || (formData.functionId ? linkedFunctionGroups.length === 1 : false)
@@ -718,6 +713,11 @@ export default function ShiftForm({
 
   useEffect(() => {
     if (!formData.functionId) {
+      return
+    }
+
+    // When a department is selected, employee filtering is department-based — skip group restrictions
+    if (formData.departmentId) {
       return
     }
 
@@ -1358,7 +1358,7 @@ export default function ShiftForm({
                   : ' Select one of these groups below to choose eligible employees.'}
               </p>
             )}
-            {formData.functionId && linkedFunctionGroups.length === 0 && (
+            {formData.functionId && linkedFunctionGroups.length === 0 && !formData.departmentId && (
               <p className="mt-1 text-xs text-red-500">
                 No employee group is linked to this function. Update your employee group settings before assigning employees.
               </p>
@@ -1380,14 +1380,10 @@ export default function ShiftForm({
                 <option value="">
                   {formData.employeeId 
                     ? 'Select an employee'
-                    : formData.functionId
-                      ? activeLinkedGroup
-                        ? filteredEmployees.length > 0
-                          ? `Select employee or leave empty for Open Shift`
-                          : `No eligible employees - will be Open Shift`
-                        : linkedFunctionGroups.length > 1
-                          ? 'Select employee group first or leave for Open Shift'
-                          : 'No linked group - will be Open Shift'
+                    : formData.departmentId
+                      ? filteredEmployees.length > 0
+                        ? 'Select employee or leave empty for Open Shift'
+                        : 'No employees in this department - will be Open Shift'
                       : 'Select an employee (optional - Open Shift if empty)'}
                 </option>
                 {filteredEmployees.map((employee) => (
@@ -1399,14 +1395,10 @@ export default function ShiftForm({
               <p className="mt-1 text-xs text-gray-500">
                 {formData.employeeId
                   ? 'Currently assigned employee is shown.'
-                  : formData.functionId
-                    ? activeLinkedGroup
-                      ? filteredEmployees.length > 0
-                        ? `Employees in ${activeLinkedGroup.name} shown. Leave empty to create an Open Shift.`
-                        : `No employees in ${activeLinkedGroup.name}. Saving will create an Open Shift.`
-                      : linkedFunctionGroups.length > 1
-                        ? 'Select an employee group or leave empty for Open Shift.'
-                        : 'No linked group. Saving will create an Open Shift.'
+                  : formData.departmentId
+                    ? filteredEmployees.length > 0
+                      ? 'Showing employees in the selected department. Leave empty to create an Open Shift.'
+                      : 'No employees in this department. Saving will create an Open Shift.'
                     : formData.employeeGroupId
                       ? 'Only employees in the selected group shown. Leave empty for Open Shift.'
                       : 'Leave empty to create an Open Shift.'}
@@ -1448,7 +1440,7 @@ export default function ShiftForm({
                 Select one of the linked employee groups to control which employees are available.
               </p>
             )}
-            {formData.functionId && linkedFunctionGroups.length === 0 && (
+            {formData.functionId && linkedFunctionGroups.length === 0 && !formData.departmentId && (
               <p className="mt-1 text-xs text-red-500">
                 Assign a function to an employee group before creating this shift.
               </p>

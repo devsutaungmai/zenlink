@@ -180,6 +180,68 @@ export default function TemplateDayFunctionView({
             <div className="p-3 font-medium text-sm">{t('templates.shifts', 'Shifts')}</div>
           </div>
 
+          {/* Open Shifts Row */}
+          {(() => {
+            const openShifts = shifts.filter(s => !s.functionId)
+            return (
+              <div className="grid grid-cols-[220px_1fr] border-b bg-emerald-50/50">
+                <div className="p-3 border-r">
+                  <div className="font-medium text-sm text-emerald-700 flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                    {t('week_view.open_shifts', 'Open Shifts')}
+                  </div>
+                  <div className="text-xs text-emerald-600 mt-0.5">
+                    {openShifts.length} {t('week_view.available', 'available')}
+                  </div>
+                </div>
+                <div className="p-2 relative min-h-[60px] group">
+                  {openShifts.length === 0 ? (
+                    <button
+                      onClick={() => onAddShift(0)}
+                      className="w-full h-full min-h-[56px] border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-1 transition-all opacity-0 group-hover:opacity-100 border-emerald-300 hover:border-emerald-500 hover:bg-emerald-50"
+                    >
+                      <PlusIcon className="w-5 h-5 text-emerald-500" />
+                    </button>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {openShifts.map(shift => (
+                        <div key={shift.id} className="cursor-pointer group/shift relative">
+                          <div
+                            onClick={() => onEditShift(shift)}
+                            className="rounded p-2 text-xs border-2 border-dashed border-emerald-400 bg-emerald-100 min-w-[120px]"
+                          >
+                            <div className="font-medium text-emerald-800 flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                              {t('week_view.open', 'Open')}
+                            </div>
+                            <div className="mt-0.5 text-emerald-700">
+                              {getGroupName(shift.employeeGroupId) || t('templates.no_group', 'No Group')}
+                            </div>
+                            <div className="mt-0.5 text-emerald-600">
+                              {shift.startTime} - {shift.endTime || t('templates.open', 'Open')}
+                            </div>
+                          </div>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); onDeleteShift(shift.id) }}
+                            className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover/shift:opacity-100 transition-opacity shadow-sm"
+                          >
+                            <TrashIcon className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        onClick={() => onAddShift(0)}
+                        className="w-8 h-8 border bg-white rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 shadow-sm border-emerald-400 hover:bg-emerald-500 hover:text-white text-emerald-500 self-center"
+                      >
+                        <PlusIcon className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          })()}
+
           {functions.map(fn => {
             const functionShifts = getFunctionShifts(fn.id)
             const functionShiftsCount = functionShifts.length

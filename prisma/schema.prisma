@@ -23,6 +23,7 @@ model User {
   business            Business             @relation(fields: [businessId], references: [id])
   assignedRole        Role?                @relation(fields: [roleId], references: [id])
   passwordResetTokens PasswordResetToken[]
+  notifications       Notification[]       @relation("NotificationRecipientUser")
 
   @@index([roleId])
 }
@@ -656,7 +657,8 @@ model Notification {
   title           String
   message         String
   data            Json?
-  recipientId     String
+  recipientId     String?
+  recipientUserId String?
   shiftExchangeId String?
   shiftId         String?
   isRead          Boolean          @default(false)
@@ -669,11 +671,13 @@ model Notification {
   smsError        String?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @default(now())
-  recipient       Employee         @relation("NotificationRecipient", fields: [recipientId], references: [id])
+  recipient       Employee?        @relation("NotificationRecipient", fields: [recipientId], references: [id])
+  recipientUser   User?            @relation("NotificationRecipientUser", fields: [recipientUserId], references: [id])
   shiftExchange   ShiftExchange?   @relation(fields: [shiftExchangeId], references: [id])
   shift           Shift?           @relation(fields: [shiftId], references: [id])
 
   @@index([recipientId, isRead])
+  @@index([recipientUserId, isRead])
   @@index([createdAt])
 }
 
@@ -1557,6 +1561,7 @@ enum NotificationType {
   SHIFT_EXCHANGE_REJECTED
   SHIFT_EXCHANGE_APPROVED
   SHIFT_EXCHANGE_CANCELLED
+  SHIFT_REQUEST
   SHIFT_REMINDER
   SCHEDULE_UPDATED
   SYSTEM_ANNOUNCEMENT

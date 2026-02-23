@@ -64,7 +64,8 @@ export interface CreateNotificationParams {
   type: NotificationType
   title: string
   message: string
-  recipientId: string
+  recipientId?: string
+  recipientUserId?: string
   data?: NotificationData
   shiftId?: string
   shiftExchangeId?: string
@@ -382,16 +383,19 @@ export class NotificationService {
   // Create a notification in the database
   static async createNotification(params: CreateNotificationParams) {
     try {
+      const createData: any = {
+        type: params.type,
+        title: params.title,
+        message: params.message,
+        data: params.data || {},
+        shiftId: params.shiftId || null,
+        shiftExchangeId: params.shiftExchangeId || null,
+        recipientId: params.recipientId || null,
+        recipientUserId: params.recipientUserId || null,
+      }
+
       const notification = await prisma.notification.create({
-        data: {
-          type: params.type,
-          title: params.title,
-          message: params.message,
-          recipientId: params.recipientId,
-          data: params.data || {},
-          shiftId: params.shiftId,
-          shiftExchangeId: params.shiftExchangeId,
-        },
+        data: createData,
         include: {
           recipient: {
             select: {
@@ -401,11 +405,20 @@ export class NotificationService {
               lastName: true,
             },
           },
+          recipientUser: {
+            select: {
+              email: true,
+              firstName: true,
+              lastName: true,
+            },
+          },
         },
       })
 
+      const recipientEmail = notification.recipient?.email || notification.recipientUser?.email
+
       // Send email if requested and email is available
-      if (params.sendEmail && notification.recipient.email) {
+      if (params.sendEmail && recipientEmail) {
         const emailResult = await this.sendNotificationEmail(notification)
         
         // Update notification with email status
@@ -420,7 +433,7 @@ export class NotificationService {
       }
 
       // Send SMS if requested and mobile is available
-      if (params.sendSms && notification.recipient.mobile) {
+      if (params.sendSms && notification.recipient?.mobile) {
         const smsResult = await this.sendNotificationSMS(notification)
         
         // Update notification with SMS status
@@ -876,4 +889,82 @@ export class ShiftExchangeNotifications {
     ])
   }
 
+}
+
+// Notification helper functions for shift requests (open shift requests)
+export class ShiftRequestNotifications {
+  static async notifyAdminNewShiftRequest(shiftRequestId: string) {
+    const shiftRequest = await prisma.shiftRequest.findUnique({
+      where: { id: shiftRequestId },
+      include: {
+        shift: {
+          include: {
+            function: { select: { name: true } },
+            department: { select: { name: true } },
+            employeeGroup: { select: { name: true } },
+          }
+        },
+        employee: {
+          include: {
+            user: { select: { businessId: true } },
+          },
+        },
+      },
+    })
+
+    if (!shiftRequest) {
+      console.error('[ShiftRequestNotifications] Shift request not found:', shiftRequestId)
+      return
+    }
+
+    const businessId = shiftRequest.employee.user?.businessId
+    if (!businessId) {
+      console.error('[ShiftRequestNotifications] No businessId found for employee:', shiftRequest.employee.id)
+      return
+    }
+
+    const adminUsers = await prisma.user.findMany({
+      where: {
+        businessId,
+        role: 'ADMIN',
+      },
+      select: { id: true },
+    })
+
+    if (adminUsers.length === 0) {
+      console.warn('[ShiftRequestNotifications] No admin users found for business:', businessId)
+      return
+    }
+
+    const employeeName = `${shiftRequest.employee.firstName} ${shiftRequest.employee.lastName}`
+    const shiftDate = shiftRequest.shift.date.toLocaleDateString()
+    const shiftTime = `${shiftRequest.shift.startTime} - ${shiftRequest.shift.endTime || 'Open'}`
+    const functionName = shiftRequest.shift.function?.name || ''
+
+    const data: NotificationData = {
+      shiftId: shiftRequest.shiftId,
+      shiftRequestId: shiftRequest.id,
+      fromEmployeeName: employeeName,
+      shiftDate,
+      shiftTime,
+      functionName,
+    }
+
+    const notificationPromises = adminUsers.map(adminUser => 
+      NotificationService.createNotification({
+        type: 'SHIFT_REQUEST',
+        title: 'New Open Shift Request',
+        message: `${employeeName} requested an open shift on ${shiftDate} (${shiftTime})${functionName ? ` - ${functionName}` : ''}`,
+        recipientUserId: adminUser.id,
+        data,
+        shiftId: shiftRequest.shiftId,
+        sendEmail: false,
+        sendSms: false,
+      })
+      .then(() => console.log('[ShiftRequestNotifications] Notification sent to admin:', adminUser.id))
+      .catch(err => console.error('[ShiftRequestNotifications] Failed to create notification for admin:', adminUser.id, err))
+    )
+
+    await Promise.all(notificationPromises)
+  }
 }

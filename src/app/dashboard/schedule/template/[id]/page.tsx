@@ -289,6 +289,50 @@ export default function TemplateEditorPage() {
     }
   }
 
+  const handleMoveTemplateShift = useCallback(async (shiftId: string, target: { dayIndex: number; employeeId?: string | null; employeeGroupId?: string | null; functionId?: string | null }) => {
+    try {
+      const response = await fetch(`/api/schedule-templates/${templateId}/shifts/${shiftId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(target)
+      })
+      if (!response.ok) throw new Error('Failed to move shift')
+      await fetchTemplate()
+    } catch (err) {
+      console.error('Failed to move template shift:', err)
+    }
+  }, [templateId, fetchTemplate])
+
+  const handleDuplicateTemplateShift = useCallback(async (shiftId: string, target: { dayIndex: number; employeeId?: string | null; employeeGroupId?: string | null; functionId?: string | null }) => {
+    if (!template) return
+    const sourceShift = template.shifts.find(s => s.id === shiftId)
+    if (!sourceShift) return
+
+    try {
+      const response = await fetch(`/api/schedule-templates/${templateId}/shifts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          dayIndex: target.dayIndex,
+          startTime: sourceShift.startTime,
+          endTime: sourceShift.endTime,
+          employeeId: target.employeeId !== undefined ? target.employeeId : sourceShift.employeeId,
+          employeeGroupId: target.employeeGroupId !== undefined ? target.employeeGroupId : sourceShift.employeeGroupId,
+          functionId: target.functionId !== undefined ? target.functionId : sourceShift.functionId,
+          departmentId: sourceShift.departmentId,
+          categoryId: sourceShift.categoryId,
+          note: sourceShift.note,
+          breakMinutes: sourceShift.breakMinutes,
+          breakPaid: sourceShift.breakPaid,
+        })
+      })
+      if (!response.ok) throw new Error('Failed to duplicate shift')
+      await fetchTemplate()
+    } catch (err) {
+      console.error('Failed to duplicate template shift:', err)
+    }
+  }, [templateId, template, fetchTemplate])
+
   const handleDeleteTemplate = async () => {
     if (!confirm(t('templates.confirm_delete', 'Are you sure you want to delete this template?'))) {
       return
@@ -333,6 +377,8 @@ export default function TemplateEditorPage() {
             onAddShift={handleAddShift}
             onEditShift={handleEditShift}
             onDeleteShift={handleDeleteShift}
+            onMoveShift={handleMoveTemplateShift}
+            onDuplicateShift={handleDuplicateTemplateShift}
           />
         )
       case 'groups':
@@ -345,6 +391,8 @@ export default function TemplateEditorPage() {
             onAddShift={handleAddShift}
             onEditShift={handleEditShift}
             onDeleteShift={handleDeleteShift}
+            onMoveShift={handleMoveTemplateShift}
+            onDuplicateShift={handleDuplicateTemplateShift}
           />
         )
       case 'functions':
@@ -357,6 +405,8 @@ export default function TemplateEditorPage() {
             onAddShift={handleAddShift}
             onEditShift={handleEditShift}
             onDeleteShift={handleDeleteShift}
+            onMoveShift={handleMoveTemplateShift}
+            onDuplicateShift={handleDuplicateTemplateShift}
           />
         )
       default:
