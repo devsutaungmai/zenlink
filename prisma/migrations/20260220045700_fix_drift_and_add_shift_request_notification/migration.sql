@@ -1,11 +1,11 @@
 -- AlterEnum
-ALTER TYPE "NotificationType" ADD VALUE 'SHIFT_REQUEST';
+ALTER TYPE "NotificationType" ADD VALUE IF NOT EXISTS 'SHIFT_REQUEST';
 
 -- AlterEnum
-ALTER TYPE "invoice_status" ADD VALUE 'PARTIALLY_PAID';
+ALTER TYPE "invoice_status" ADD VALUE IF NOT EXISTS 'PARTIALLY_PAID';
 
 -- DropForeignKey
-ALTER TABLE "ShiftRequest" DROP CONSTRAINT "ShiftRequest_shiftId_fkey";
+ALTER TABLE "ShiftRequest" DROP CONSTRAINT IF EXISTS "ShiftRequest_shiftId_fkey";
 
 -- AlterTable
 ALTER TABLE "ShiftRequest" DROP COLUMN IF EXISTS "requestedAt";
@@ -35,7 +35,15 @@ CREATE INDEX IF NOT EXISTS "ProjectFormSettings_businessId_idx" ON "ProjectFormS
 CREATE UNIQUE INDEX IF NOT EXISTS "ShiftRequest_shiftId_employeeId_key" ON "ShiftRequest"("shiftId", "employeeId");
 
 -- AddForeignKey
-ALTER TABLE "ProjectFormSettings" ADD CONSTRAINT "ProjectFormSettings_businessId_fkey" FOREIGN KEY ("businessId") REFERENCES "Business"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'ProjectFormSettings_businessId_fkey') THEN
+    ALTER TABLE "ProjectFormSettings" ADD CONSTRAINT "ProjectFormSettings_businessId_fkey" FOREIGN KEY ("businessId") REFERENCES "Business"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+END $$;
 
 -- AddForeignKey
-ALTER TABLE "ShiftRequest" ADD CONSTRAINT "ShiftRequest_shiftId_fkey" FOREIGN KEY ("shiftId") REFERENCES "Shift"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'ShiftRequest_shiftId_fkey') THEN
+    ALTER TABLE "ShiftRequest" ADD CONSTRAINT "ShiftRequest_shiftId_fkey" FOREIGN KEY ("shiftId") REFERENCES "Shift"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+END $$;
