@@ -417,15 +417,24 @@ export async function POST(request: Request) {
     // Generate employee number if not provided
     let employeeNo = data.employeeNo
     if (!employeeNo) {
-      const employeeCount = await prisma.employee.count({
+      const allEmployees = await prisma.employee.findMany({
         where: {
           user: {
             businessId: currentUser.businessId
           }
+        },
+        select: { employeeNo: true }
+      })
+
+      let highestNumber = 0
+      allEmployees.forEach(emp => {
+        const num = parseInt(emp.employeeNo || '', 10)
+        if (!isNaN(num) && num > highestNumber) {
+          highestNumber = num
         }
       })
 
-      let nextNumber = employeeCount + 1
+      let nextNumber = highestNumber + 1
       employeeNo = nextNumber.toString()
 
       let attempts = 0

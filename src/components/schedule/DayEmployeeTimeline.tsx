@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback } from 'react'
+import React, { useMemo, useState, useCallback, useRef } from 'react'
 import { format } from 'date-fns'
 import { Employee } from '@prisma/client'
 import { PlusIcon } from '@heroicons/react/24/outline'
@@ -10,6 +10,7 @@ import ShiftsModal from './ShiftsModal'
 import { useTranslation } from 'react-i18next'
 import { formatDate } from '@/shared/lib/dateLocale'
 import { useShiftDragDrop } from '@/shared/hooks/useShiftDragDrop'
+import Swal from 'sweetalert2'
 
 interface DayEmployeeTimelineProps {
   date: Date
@@ -21,6 +22,7 @@ interface DayEmployeeTimelineProps {
   onMoveShift?: (shiftId: string, target: { date?: string; employeeId?: string; employeeGroupId?: string; functionId?: string }) => Promise<void>
   onDuplicateShift?: (shiftId: string, targets: Array<{ date?: string; employeeId?: string; employeeGroupId?: string; functionId?: string }>) => Promise<void>
   isEmployeeUnavailable?: (employeeId: string, date: string) => boolean
+  pendingShiftIds?: Set<string>
 }
 
 interface EmployeeRowMeta {
@@ -99,11 +101,52 @@ export default function DayEmployeeTimeline({
   canEditShifts = true,
   onMoveShift,
   onDuplicateShift,
-  isEmployeeUnavailable
+  isEmployeeUnavailable,
+  pendingShiftIds = new Set()
 }: DayEmployeeTimelineProps) {
   const { t, i18n } = useTranslation('schedule')
   const formattedDate = format(date, 'yyyy-MM-dd')
   const { currencySymbol } = useCurrency()
+
+  const getEmployeeDeptIds = useCallback((empId: string): string[] => {
+    const emp = employees.find(e => e.id === empId)
+    if (!emp) return []
+    const depts = (emp as any).departments
+    if (Array.isArray(depts) && depts.length > 0) {
+      return depts.map((d: any) => d.departmentId)
+    }
+    if ((emp as any).departmentId) {
+      return [(emp as any).departmentId]
+    }
+    return []
+  }, [employees])
+
+  const isCrossDeptDrop = useCallback((targetRowId: string, shift?: ShiftWithRelations): boolean => {
+    if (!shift || targetRowId === 'open') return false
+    const targetEmpDeptIds = getEmployeeDeptIds(targetRowId)
+    if (targetEmpDeptIds.length === 0) return false
+    const sourceDeptIds: string[] = []
+    if (shift.employeeId) sourceDeptIds.push(...getEmployeeDeptIds(shift.employeeId))
+    if (shift.departmentId && !sourceDeptIds.includes(shift.departmentId)) sourceDeptIds.push(shift.departmentId)
+    if (sourceDeptIds.length === 0) return false
+    return !targetEmpDeptIds.some(id => sourceDeptIds.includes(id))
+  }, [getEmployeeDeptIds])
+
+  const isDropDisabled = useCallback((targetRowId: string, targetDate: string, shift?: ShiftWithRelations) => {
+    if (isEmployeeUnavailable?.(targetRowId, targetDate)) return true
+    return isCrossDeptDrop(targetRowId, shift)
+  }, [isCrossDeptDrop, isEmployeeUnavailable])
+
+  const onDropRejected = useCallback((targetRowId: string, _targetDate: string, shift?: ShiftWithRelations) => {
+    if (isCrossDeptDrop(targetRowId, shift)) {
+      Swal.fire({
+        icon: 'error',
+        title: t('drag_drop.cross_dept_title', 'Cannot Move Shift'),
+        text: t('drag_drop.cross_dept_message', 'Cannot move shift to an employee in a different department.'),
+        confirmButtonColor: '#31BCFF',
+      })
+    }
+  }, [isCrossDeptDrop, t])
 
   const noopMove = async () => {}
   const noopDuplicate = async () => {}
@@ -111,7 +154,8 @@ export default function DayEmployeeTimeline({
     onMoveShift: onMoveShift || noopMove,
     onDuplicateShift: onDuplicateShift || noopDuplicate,
     canEditShifts,
-    isDropDisabled: (rowId, date) => isEmployeeUnavailable?.(rowId, date) ?? false
+    isDropDisabled,
+    onDropRejected
   })
   const readableDate = formatDate(date, 'EEEE, MMMM d, yyyy', i18n.language)
   const daySegments = useMemo(() => getShiftSegmentsForDate(shifts, date), [shifts, date])
@@ -503,8 +547,8 @@ export default function DayEmployeeTimeline({
                       return (
                         <button
                           key={`${segment.segmentId}-${laneIndex}`}
-                          onClick={() => onEditShift(segment.shift)}
-                          className="absolute rounded-md px-2 py-1 text-xs font-medium text-emerald-800 shadow-sm bg-emerald-200 border-2 border-dashed border-emerald-400 hover:bg-emerald-300 transition-colors truncate"
+                          onClick={() => !pendingShiftIds.has(segment.shift.id) && onEditShift(segment.shift)}
+                          className={`absolute rounded-md px-2 py-1 text-xs font-medium text-emerald-800 shadow-sm bg-emerald-200 border-2 border-dashed border-emerald-400 hover:bg-emerald-300 transition-colors truncate ${pendingShiftIds.has(segment.shift.id) ? 'opacity-50 animate-pulse pointer-events-none' : ''}`}
                           style={{
                             left: `${left}%`,
                             width: `${width}%`,
@@ -608,11 +652,11 @@ export default function DayEmployeeTimeline({
                       return (
                         <div
                           key={`${segment.segmentId}-${laneIndex}`}
-                          draggable={canEditShifts}
+                          draggable={canEditShifts && !pendingShiftIds.has(segment.shift.id)}
                           onDragStart={(e) => handleDragStart(e, segment.shift, row.id, formattedDate)}
                           onDragEnd={handleDragEnd}
-                          onClick={() => onEditShift(segment.shift)}
-                          className={`absolute rounded-md px-2 py-1 text-xs font-medium text-white shadow-sm bg-[#31BCFF] hover:bg-blue-500 transition-colors truncate ${canEditShifts ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'}`}
+                          onClick={() => !pendingShiftIds.has(segment.shift.id) && onEditShift(segment.shift)}
+                          className={`absolute rounded-md px-2 py-1 text-xs font-medium text-white shadow-sm bg-[#31BCFF] hover:bg-blue-500 transition-colors truncate ${canEditShifts ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'} ${pendingShiftIds.has(segment.shift.id) ? 'opacity-50 animate-pulse pointer-events-none' : ''}`}
                           style={{
                             left: `${left}%`,
                             width: `${width}%`,

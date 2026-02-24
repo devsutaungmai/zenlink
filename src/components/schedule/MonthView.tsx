@@ -25,6 +25,7 @@ interface MonthViewProps {
   canEditShifts?: boolean
   onMoveShift?: (shiftId: string, target: { date?: string; employeeId?: string; employeeGroupId?: string; functionId?: string }) => Promise<void>
   onDuplicateShift?: (shiftId: string, targets: Array<{ date?: string; employeeId?: string; employeeGroupId?: string; functionId?: string }>) => Promise<void>
+  pendingShiftIds?: Set<string>
 }
 
 export default function MonthView({
@@ -37,7 +38,8 @@ export default function MonthView({
   onUnavailableClick,
   canEditShifts = true,
   onMoveShift,
-  onDuplicateShift
+  onDuplicateShift,
+  pendingShiftIds = new Set()
 }: MonthViewProps) {
   const { t, i18n } = useTranslation('schedule')
   const [selectedDayShifts, setSelectedDayShifts] = useState<{ date: Date; shifts: ShiftWithRelations[] } | null>(null)
@@ -266,13 +268,13 @@ export default function MonthView({
                     return (
                       <div
                         key={shift.id}
-                        draggable={canEditShifts}
+                        draggable={canEditShifts && !pendingShiftIds.has(shift.id)}
                         onDragStart={(e) => handleDragStart(e, shift, shift.employeeId || '', dateKey)}
                         onDragEnd={handleDragEnd}
-                        onClick={() => onEditShift(shift)}
+                        onClick={() => !pendingShiftIds.has(shift.id) && onEditShift(shift)}
                         className={`w-full text-left px-2 py-1 rounded text-xs truncate transition-all hover:shadow-sm font-medium ${
                           shift.approved ? 'text-lime-900' : 'text-white'
-                        } ${canEditShifts ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'}`}
+                        } ${canEditShifts ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'} ${pendingShiftIds.has(shift.id) ? 'opacity-50 animate-pulse pointer-events-none' : ''}`}
                         style={{
                           backgroundColor: shift.approved ? '#d9f99d' : (
                             shiftStatus === 'CANCELLED' ? '#ef4444' :

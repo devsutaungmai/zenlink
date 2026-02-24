@@ -8,6 +8,7 @@ import { getShiftSegmentsForDate, ShiftSegment } from './utils'
 import ShiftsModal from './ShiftsModal'
 import { useTranslation } from 'react-i18next'
 import { useShiftDragDrop } from '@/shared/hooks/useShiftDragDrop'
+import Swal from 'sweetalert2'
 
 interface FunctionItem {
   id: string
@@ -37,6 +38,7 @@ interface DayFunctionsTimelineProps {
   canEditShifts?: boolean
   onMoveShift?: (shiftId: string, target: { date?: string; employeeId?: string; employeeGroupId?: string; functionId?: string }) => Promise<void>
   onDuplicateShift?: (shiftId: string, targets: Array<{ date?: string; employeeId?: string; employeeGroupId?: string; functionId?: string }>) => Promise<void>
+  pendingShiftIds?: Set<string>
 }
 
 interface FunctionRowMeta {
@@ -107,18 +109,62 @@ export default function DayFunctionsTimeline({
   onEditShift,
   canEditShifts = true,
   onMoveShift,
-  onDuplicateShift
+  onDuplicateShift,
+  pendingShiftIds = new Set()
 }: DayFunctionsTimelineProps) {
   const { t } = useTranslation('schedule')
   const formattedDate = format(date, 'yyyy-MM-dd')
   const { currencySymbol } = useCurrency()
+
+  const getFunctionDeptIds = useCallback((fn: FunctionItem): string[] => {
+    const ids: string[] = []
+    if (fn.category?.departments && fn.category.departments.length > 0) {
+      fn.category.departments.forEach(cd => ids.push(cd.department.id))
+    } else if (fn.category?.department?.id) {
+      ids.push(fn.category.department.id)
+    }
+    return ids
+  }, [])
+
+  const functionDeptMap = useMemo(() => {
+    const map = new Map<string, string[]>()
+    functions.forEach(fn => map.set(fn.id, getFunctionDeptIds(fn)))
+    return map
+  }, [functions, getFunctionDeptIds])
+
+  const isCrossDeptFnDrop = useCallback((targetRowId: string, shift?: ShiftWithRelations): boolean => {
+    if (!shift || targetRowId === 'open') return false
+    const targetDeptIds = functionDeptMap.get(targetRowId) || []
+    if (targetDeptIds.length === 0) return false
+    const empDeptIds: string[] = []
+    if (shift.departmentId) empDeptIds.push(shift.departmentId)
+    if (empDeptIds.length === 0) return false
+    return !empDeptIds.some(id => targetDeptIds.includes(id))
+  }, [functionDeptMap])
+
+  const isDropDisabled = useCallback((targetRowId: string, _targetDate: string, shift?: ShiftWithRelations) => {
+    return isCrossDeptFnDrop(targetRowId, shift)
+  }, [isCrossDeptFnDrop])
+
+  const onDropRejected = useCallback((targetRowId: string, _targetDate: string, shift?: ShiftWithRelations) => {
+    if (isCrossDeptFnDrop(targetRowId, shift)) {
+      Swal.fire({
+        icon: 'error',
+        title: t('drag_drop.cross_dept_title', 'Cannot Move Shift'),
+        text: t('drag_drop.cross_dept_message', 'Cannot move shift to a function in a different department.'),
+        confirmButtonColor: '#31BCFF',
+      })
+    }
+  }, [isCrossDeptFnDrop, t])
 
   const noopMove = async () => {}
   const noopDuplicate = async () => {}
   const { dragOverCell, isDragging, copyMode, toggleCopyMode, handleDragStart, handleDragOver, handleDragLeave, handleDrop, handleDragEnd } = useShiftDragDrop({
     onMoveShift: onMoveShift || noopMove,
     onDuplicateShift: onDuplicateShift || noopDuplicate,
-    canEditShifts
+    canEditShifts,
+    isDropDisabled,
+    onDropRejected
   })
   const daySegments = useMemo(() => getShiftSegmentsForDate(shifts, date), [shifts, date])
   const [hoveredCell, setHoveredCell] = useState<{ rowId: string; hour: number } | null>(null)
@@ -519,8 +565,8 @@ export default function DayFunctionsTimeline({
                       return (
                         <button
                           key={`${segment.segmentId}-${laneIndex}`}
-                          onClick={() => onEditShift(segment.shift)}
-                          className="absolute rounded-md px-2 py-1 text-xs font-medium text-emerald-800 shadow-sm bg-emerald-200 border-2 border-dashed border-emerald-400 hover:bg-emerald-300 transition-colors truncate"
+                          onClick={() => !pendingShiftIds.has(segment.shift.id) && onEditShift(segment.shift)}
+                          className={`absolute rounded-md px-2 py-1 text-xs font-medium text-emerald-800 shadow-sm bg-emerald-200 border-2 border-dashed border-emerald-400 hover:bg-emerald-300 transition-colors truncate ${pendingShiftIds.has(segment.shift.id) ? 'opacity-50 animate-pulse pointer-events-none' : ''}`}
                           style={{
                             left: `${left}%`,
                             width: `${width}%`,
@@ -633,11 +679,11 @@ export default function DayFunctionsTimeline({
                       return (
                         <div
                           key={`${segment.segmentId}-${laneIndex}`}
-                          draggable={canEditShifts}
+                          draggable={canEditShifts && !pendingShiftIds.has(segment.shift.id)}
                           onDragStart={(e) => handleDragStart(e, segment.shift, row.id, formattedDate)}
                           onDragEnd={handleDragEnd}
-                          onClick={() => onEditShift(segment.shift)}
-                          className={`absolute rounded-md px-2 py-1 text-xs font-medium text-white shadow-sm hover:opacity-90 transition-opacity truncate ${canEditShifts ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'}`}
+                          onClick={() => !pendingShiftIds.has(segment.shift.id) && onEditShift(segment.shift)}
+                          className={`absolute rounded-md px-2 py-1 text-xs font-medium text-white shadow-sm hover:opacity-90 transition-opacity truncate ${canEditShifts ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'} ${pendingShiftIds.has(segment.shift.id) ? 'opacity-50 animate-pulse pointer-events-none' : ''}`}
                           style={{
                             left: `${left}%`,
                             width: `${width}%`,
