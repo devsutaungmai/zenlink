@@ -52,6 +52,27 @@ export async function PATCH(
         updateData.employeeId = null
         updateData.status = 'OPEN'
       } else {
+        const targetEmp = await prisma.employee.findUnique({
+          where: { id: employeeId },
+          include: { departments: { select: { departmentId: true } } }
+        })
+
+        if (targetEmp && shift.departmentId) {
+          const targetDeptIds: string[] = []
+          if (targetEmp.departments?.length) {
+            targetEmp.departments.forEach(d => targetDeptIds.push(d.departmentId))
+          } else if (targetEmp.departmentId) {
+            targetDeptIds.push(targetEmp.departmentId)
+          }
+
+          if (targetDeptIds.length > 0 && !targetDeptIds.includes(shift.departmentId)) {
+            return NextResponse.json(
+              { error: 'Cannot move shift to an employee in a different department' },
+              { status: 400 }
+            )
+          }
+        }
+
         updateData.employee = { connect: { id: employeeId } }
         if (shift.status === 'OPEN') {
           updateData.status = 'SCHEDULED'
@@ -72,6 +93,61 @@ export async function PATCH(
         updateData.functionId = null
       } else {
         updateData.function = { connect: { id: functionId } }
+
+        const targetFunction = await prisma.departmentFunction.findUnique({
+          where: { id: functionId },
+          include: {
+            category: {
+              include: {
+                departments: {
+                  select: { departmentId: true }
+                }
+              }
+            }
+          }
+        })
+
+        if (targetFunction?.category) {
+          const targetDeptIds: string[] = []
+          if (targetFunction.category.departments?.length) {
+            targetFunction.category.departments.forEach(cd => targetDeptIds.push(cd.departmentId))
+          } else if ((targetFunction.category as any).departmentId) {
+            targetDeptIds.push((targetFunction.category as any).departmentId)
+          }
+
+          if (targetDeptIds.length > 0) {
+            const empDeptIds: string[] = []
+            if (shift.employeeId) {
+              const emp = await prisma.employee.findUnique({
+                where: { id: shift.employeeId },
+                include: {
+                  departments: { select: { departmentId: true } }
+                }
+              })
+              if (emp) {
+                if (emp.departments?.length) {
+                  emp.departments.forEach(d => empDeptIds.push(d.departmentId))
+                } else if (emp.departmentId) {
+                  empDeptIds.push(emp.departmentId)
+                }
+              }
+            } else if (shift.departmentId) {
+              empDeptIds.push(shift.departmentId)
+            }
+
+            if (empDeptIds.length > 0 && !empDeptIds.some(id => targetDeptIds.includes(id))) {
+              return NextResponse.json(
+                { error: 'Cannot move shift to a function in a different department' },
+                { status: 400 }
+              )
+            }
+
+            const matchingDeptId = empDeptIds.find(id => targetDeptIds.includes(id))
+            updateData.department = { connect: { id: matchingDeptId || targetDeptIds[0] } }
+          } else {
+            updateData.departmentId = null
+          }
+        }
       }
     }
 

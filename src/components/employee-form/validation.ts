@@ -65,31 +65,31 @@ export function createEmployeeValidationSchema(settings: EmployeeSettingsForVali
         const eighteenYearsAgo = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate())
         return actualDate >= hundredYearsAgo && actualDate <= eighteenYearsAgo
       }, 'Employee must be between 18 and 100 years old')
-    : z.union([z.date(), z.string(), z.null()]).optional(),
+    : z.union([z.date(), z.string(), z.null()]).optional().nullable(),
   
   sex: settings.requireGender
     ? z.enum(['MALE', 'FEMALE', 'OTHER'])
-    : z.enum(['MALE', 'FEMALE', 'OTHER']).optional(),
+    : z.enum(['MALE', 'FEMALE', 'OTHER']).optional().nullable(),
   
   socialSecurityNo: settings.requireSocialSecurityNo
     ? z.string()
         .min(1, 'Social security number is required')
         .min(9, 'Social security number must be at least 9 characters')
         .max(20, 'Social security number must be less than 20 characters')
-    : z.string().max(20, 'Social security number must be less than 20 characters').optional().or(z.literal('')),
+    : z.string().max(20, 'Social security number must be less than 20 characters').optional().nullable().or(z.literal('')),
   
   address: settings.requireAddress
     ? z.string()
         .min(1, 'Address is required')
         .min(10, 'Address must be at least 10 characters')
         .max(200, 'Address must be less than 200 characters')
-    : z.string().max(200, 'Address must be less than 200 characters').optional().or(z.literal('')),
+    : z.string().max(200, 'Address must be less than 200 characters').optional().nullable().or(z.literal('')),
   
   countryCode: settings.requirePhone
     ? z.string()
         .min(1, 'Country code is required')
         .regex(/^\+\d{1,4}$/, 'Invalid country code format')
-    : z.string().regex(/^\+\d{1,4}$/, 'Invalid country code format').optional().or(z.literal('')),
+    : z.string().regex(/^\+\d{1,4}$/, 'Invalid country code format').optional().nullable().or(z.literal('')),
   
   mobile: settings.requirePhone
     ? z.string()
@@ -97,26 +97,26 @@ export function createEmployeeValidationSchema(settings: EmployeeSettingsForVali
         .min(8, 'Mobile number must be at least 8 digits')
         .max(15, 'Mobile number must be less than 15 digits')
         .regex(/^[0-9]+$/, 'Mobile number can only contain numbers')
-    : z.string().max(15, 'Mobile number must be less than 15 digits').regex(/^[0-9]*$/, 'Mobile number can only contain numbers').optional().or(z.literal('')),
+    : z.string().max(15, 'Mobile number must be less than 15 digits').regex(/^[0-9]*$/, 'Mobile number can only contain numbers').optional().nullable().or(z.literal('')),
   
   employeeNo: settings.requireEmployeeNo
     ? z.string()
         .min(1, 'Employee number is required')
         .max(20, 'Employee number must be less than 20 characters')
-    : z.string().max(20).optional().or(z.literal('')),
+    : z.string().max(20).optional().nullable().or(z.literal('')),
   
   bankAccount: settings.requireBankAccount
     ? z.string()
         .min(1, 'Bank account is required')
         .min(8, 'Bank account must be at least 8 characters')
         .max(30, 'Bank account must be less than 30 characters')
-    : z.string().max(30, 'Bank account must be less than 30 characters').optional().or(z.literal('')),
+    : z.string().max(30, 'Bank account must be less than 30 characters').optional().nullable().or(z.literal('')),
   
   hoursPerMonth: settings.requireHoursPerMonth
     ? z.coerce.number()
         .min(1, 'Hours per month must be at least 1')
         .max(744, 'Hours per month cannot exceed 744 (31 days × 24 hours)')
-    : z.coerce.number().max(744).optional(),
+    : z.coerce.number().max(744).optional().nullable(),
   
   dateOfHire: settings.requireDateOfHire
     ? z.union([z.date(), z.string().transform((str) => new Date(str))]).refine((date) => {
@@ -127,15 +127,15 @@ export function createEmployeeValidationSchema(settings: EmployeeSettingsForVali
         const oneYearFromNow = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate())
         return actualDate >= tenYearsAgo && actualDate <= oneYearFromNow
       }, 'Date of hire must be within the last 10 years or up to 1 year in the future')
-    : z.union([z.date(), z.string(), z.null()]).optional(),
+    : z.union([z.date(), z.string(), z.null()]).optional().nullable(),
   
   departmentId: settings.requireDepartment
     ? z.string().min(1, 'Department is required')
-    : z.string().optional().or(z.literal('')),
+    : z.string().optional().nullable().or(z.literal('')),
   
   employeeGroupId: settings.requireEmployeeGroup
     ? z.string().min(1, 'Employee group is required')
-    : z.string().optional().or(z.literal('')),
+    : z.string().optional().nullable().or(z.literal('')),
 
   roleIds: settings.requireRole
     ? z.array(z.string()).min(1, 'At least one role is required')
@@ -145,8 +145,9 @@ export function createEmployeeValidationSchema(settings: EmployeeSettingsForVali
     ? z.string().min(1, 'Email is required').email('Invalid email format')
     : z.union([
         z.literal(''),
+        z.literal(null),
         z.string().email('Invalid email format')
-      ]).optional(),
+      ]).optional().nullable(),
   
   isTeamLeader: z.boolean()
   })

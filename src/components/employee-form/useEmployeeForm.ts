@@ -137,16 +137,22 @@ export function useEmployeeForm({ initialData }: UseEmployeeFormProps) {
       ...initialData
     }
 
-    // Handle initial data for multi-select
+    if (baseData.socialSecurityNo == null) baseData.socialSecurityNo = ''
+    if (baseData.address == null) baseData.address = ''
+    if (baseData.mobile == null) baseData.mobile = ''
+    if (baseData.employeeNo == null) baseData.employeeNo = ''
+    if (baseData.bankAccount == null) baseData.bankAccount = ''
+    if ((baseData.email as any) == null) baseData.email = ''
+    if ((baseData.departmentId as any) == null) baseData.departmentId = ''
+    if ((baseData.employeeGroupId as any) == null) baseData.employeeGroupId = ''
+
     if (initialData) {
-      // Convert existing departmentId to departmentIds array
       if (initialData.departmentId && !initialData.departmentIds) {
         baseData.departmentIds = [initialData.departmentId]
       } else if (initialData.departmentIds) {
         baseData.departmentIds = initialData.departmentIds
       }
 
-      // Convert existing employeeGroupId to employeeGroupIds array
       if (initialData.employeeGroupId && !initialData.employeeGroupIds) {
         baseData.employeeGroupIds = [initialData.employeeGroupId]
       } else if (initialData.employeeGroupIds) {
@@ -155,6 +161,13 @@ export function useEmployeeForm({ initialData }: UseEmployeeFormProps) {
 
       if (initialData.roleIds) {
         baseData.roleIds = initialData.roleIds
+      }
+
+      if (baseData.departmentIds.length > 0 && !baseData.departmentId) {
+        baseData.departmentId = baseData.departmentIds[0]
+      }
+      if (baseData.employeeGroupIds.length > 0 && !baseData.employeeGroupId) {
+        baseData.employeeGroupId = baseData.employeeGroupIds[0]
       }
     }
 
@@ -166,6 +179,11 @@ export function useEmployeeForm({ initialData }: UseEmployeeFormProps) {
 
     return baseData
   })
+
+  const validationErrorsRef = useRef<Record<string, string>>({})
+  useEffect(() => {
+    validationErrorsRef.current = validationErrors
+  }, [validationErrors])
 
   const validateForm = async (): Promise<boolean> => {
     try {
@@ -182,18 +200,22 @@ export function useEmployeeForm({ initialData }: UseEmployeeFormProps) {
       }
 
       if (Object.keys(customFieldErrors).length > 0) {
-        setValidationErrors(prev => ({ ...prev, ...customFieldErrors }))
+        setValidationErrors(customFieldErrors)
         setIsFormValid(false)
         return false
       }
 
-      const hasUniqueErrors = Object.keys(validationErrors).some(key =>
-        validationErrors[key] &&
-        validationErrors[key] !== '' &&
-        (key === 'socialSecurityNo' || key === 'email' || key === 'employeeNo')
-      )
+      const latestErrors = validationErrorsRef.current
+      const uniqueErrors: Record<string, string> = {}
+      for (const key of ['socialSecurityNo', 'email', 'employeeNo']) {
+        if (latestErrors[key] && latestErrors[key] !== '') {
+          uniqueErrors[key] = latestErrors[key]
+        }
+      }
 
-      if (hasUniqueErrors) {
+      if (Object.keys(uniqueErrors).length > 0) {
+        setValidationErrors(uniqueErrors)
+        setIsFormValid(false)
         return false
       }
 
@@ -206,6 +228,7 @@ export function useEmployeeForm({ initialData }: UseEmployeeFormProps) {
       return true
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.error('[DEBUG validateForm] Zod errors:', error.issues.map(i => `${i.path.join('.')}: ${i.message}`))
         const fieldErrors: Record<string, string> = {}
         error.issues.forEach((issue) => {
           if (issue.path.length > 0) {
@@ -213,10 +236,7 @@ export function useEmployeeForm({ initialData }: UseEmployeeFormProps) {
             fieldErrors[fieldName] = issue.message
           }
         })
-        setValidationErrors(prevErrors => ({
-          ...prevErrors,
-          ...fieldErrors
-        }))
+        setValidationErrors(fieldErrors)
         setIsFormValid(false)
       }
       return false

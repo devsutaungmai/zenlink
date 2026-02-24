@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { format } from 'date-fns'
 import { useTranslation } from 'react-i18next'
 import { formatDate } from '@/shared/lib/dateLocale'
@@ -10,6 +10,7 @@ import { ShiftWithRelations } from '@/types/schedule'
 import { useCurrency } from '@/shared/hooks/useCurrency'
 import ShiftsModal from './ShiftsModal'
 import { useShiftDragDrop } from '@/shared/hooks/useShiftDragDrop'
+import Swal from 'sweetalert2'
 
 interface EmployeeGroupedViewProps {
   weekDates: Date[]
@@ -49,13 +50,60 @@ export default function EmployeeGroupedView({
   const { t, i18n } = useTranslation('schedule')
   const { currencySymbol } = useCurrency()
 
+  const getEmployeeDeptIds = useCallback((empId: string): string[] => {
+    const emp = employees.find(e => e.id === empId)
+    if (!emp) return []
+    const depts = (emp as any).departments
+    if (Array.isArray(depts) && depts.length > 0) {
+      return depts.map((d: any) => d.departmentId)
+    }
+    if ((emp as any).departmentId) {
+      return [(emp as any).departmentId]
+    }
+    return []
+  }, [employees])
+
+  const isCrossDeptDrop = useCallback((targetRowId: string, shift?: ShiftWithRelations): boolean => {
+    if (!shift || targetRowId === 'open') return false
+    const targetEmpDeptIds = getEmployeeDeptIds(targetRowId)
+    if (targetEmpDeptIds.length === 0) return false
+
+    const sourceDeptIds: string[] = []
+    if (shift.employeeId) {
+      sourceDeptIds.push(...getEmployeeDeptIds(shift.employeeId))
+    }
+    if (shift.departmentId && !sourceDeptIds.includes(shift.departmentId)) {
+      sourceDeptIds.push(shift.departmentId)
+    }
+    if (sourceDeptIds.length === 0) return false
+
+    return !targetEmpDeptIds.some(id => sourceDeptIds.includes(id))
+  }, [getEmployeeDeptIds])
+
+  const isDropDisabled = useCallback((targetRowId: string, targetDate: string, shift?: ShiftWithRelations) => {
+    if (isEmployeeUnavailable?.(targetRowId, targetDate)) return true
+    return isCrossDeptDrop(targetRowId, shift)
+  }, [isCrossDeptDrop, isEmployeeUnavailable])
+
+  const onDropRejected = useCallback((targetRowId: string, _targetDate: string, shift?: ShiftWithRelations) => {
+    if (isCrossDeptDrop(targetRowId, shift)) {
+      Swal.fire({
+        icon: 'error',
+        title: t('drag_drop.cross_dept_title', 'Cannot Move Shift'),
+        text: t('drag_drop.cross_dept_message', 'Cannot move shift to an employee in a different department.'),
+        confirmButtonColor: '#31BCFF',
+      })
+    }
+  }, [isCrossDeptDrop, t])
+
   const noopMove = async () => {}
   const noopDuplicate = async () => {}
   const { dragOverCell, isDragging, copyMode, toggleCopyMode, handleDragStart, handleDragOver, handleDragLeave, handleDrop, handleDragEnd } = useShiftDragDrop({
     onMoveShift: onMoveShift || noopMove,
     onDuplicateShift: onDuplicateShift || noopDuplicate,
     canEditShifts,
-    isDropDisabled: (rowId, date) => isEmployeeUnavailable?.(rowId, date) ?? false
+    isDropDisabled,
+    onDropRejected
   })
 
   const [duplicateCount, setDuplicateCount] = useState(1)

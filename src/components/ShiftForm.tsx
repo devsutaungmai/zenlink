@@ -681,6 +681,21 @@ export default function ShiftForm({
   const employeeSelectDisabled = isEmployee
   const employeeGroupSelectDisabled = isEmployee || (formData.functionId ? linkedFunctionGroups.length === 1 : false)
 
+  const filteredDepartments = React.useMemo(() => {
+    if (!formData.employeeId) return departments
+    const selectedEmployee = safeEmployees.find(emp => emp.id === formData.employeeId)
+    if (!selectedEmployee) return departments
+    const employeeDepts = selectedEmployee.departments || []
+    if (employeeDepts.length > 0) {
+      const deptIds = employeeDepts.map(d => d.departmentId)
+      return departments.filter(d => deptIds.includes(d.id))
+    }
+    if (selectedEmployee.departmentId) {
+      return departments.filter(d => d.id === selectedEmployee.departmentId)
+    }
+    return departments
+  }, [departments, formData.employeeId, safeEmployees])
+
   const availableEmployeeGroupOptions = formData.functionId
     ? linkedFunctionGroups.length > 0
       ? linkedFunctionGroups
@@ -1298,7 +1313,7 @@ export default function ShiftForm({
               required
             >
               <option value="">{t('shifts.form.select_department')}</option>
-              {departments.map((dept) => (
+              {filteredDepartments.map((dept) => (
                 <option key={dept.id} value={dept.id}>
                   {dept.name}
                 </option>

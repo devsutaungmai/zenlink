@@ -286,9 +286,12 @@ export default function EmployeesPage() {
     const matchesSearch =
       `${employee.firstName} ${employee.lastName}`.toLowerCase().includes(normalizedSearch) ||
       employee.employeeNo?.toLowerCase().includes(normalizedSearch) ||
-      employee.department.name.toLowerCase().includes(normalizedSearch) ||
+      employee.department?.name?.toLowerCase().includes(normalizedSearch) ||
+      (employee.departments || []).some(dept => dept.department.name.toLowerCase().includes(normalizedSearch)) ||
       (employee.employeeGroup?.name || '').toLowerCase().includes(normalizedSearch) ||
-      employee.mobile.toLowerCase().includes(normalizedSearch)
+      (employee.employeeGroups || []).some(grp => grp.employeeGroup.name.toLowerCase().includes(normalizedSearch)) ||
+      (employee.employeeRoles || []).some(er => er.role.name.toLowerCase().includes(normalizedSearch)) ||
+      employee.mobile?.toLowerCase().includes(normalizedSearch)
 
     const matchesPhone =
       normalizedPhoneFilter === '' || normalizePhone(employee.mobile).includes(normalizedPhoneFilter)

@@ -19,9 +19,10 @@ interface UseShiftDragDropOptions {
   onDuplicateShift: (shiftId: string, targets: Array<{ date?: string; employeeId?: string; employeeGroupId?: string; functionId?: string }>) => Promise<void>
   canEditShifts: boolean
   isDropDisabled?: (targetRowId: string, targetDate: string, shift?: ShiftWithRelations) => boolean
+  onDropRejected?: (targetRowId: string, targetDate: string, shift?: ShiftWithRelations) => void
 }
 
-export function useShiftDragDrop({ onMoveShift, onDuplicateShift, canEditShifts, isDropDisabled }: UseShiftDragDropOptions) {
+export function useShiftDragDrop({ onMoveShift, onDuplicateShift, canEditShifts, isDropDisabled, onDropRejected }: UseShiftDragDropOptions) {
   const [dragOverCell, setDragOverCell] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [copyMode, setCopyMode] = useState(false)
@@ -71,7 +72,6 @@ export function useShiftDragDrop({ onMoveShift, onDuplicateShift, canEditShifts,
     e.preventDefault()
     e.stopPropagation()
     if (rowId !== undefined && date && isDropDisabled?.(rowId, date, dragDataRef.current?.shift)) {
-      e.dataTransfer.dropEffect = 'none'
       setDragOverCell(null)
       return
     }
@@ -102,6 +102,7 @@ export function useShiftDragDrop({ onMoveShift, onDuplicateShift, canEditShifts,
     if (!dragData) return
 
     if (isDropDisabled?.(targetRowId, targetDate, dragData.shift)) {
+      onDropRejected?.(targetRowId, targetDate, dragData.shift)
       dragDataRef.current = null
       return
     }
@@ -135,7 +136,7 @@ export function useShiftDragDrop({ onMoveShift, onDuplicateShift, canEditShifts,
     }
 
     dragDataRef.current = null
-  }, [onMoveShift, onDuplicateShift, copyMode])
+  }, [onMoveShift, onDuplicateShift, copyMode, isDropDisabled, onDropRejected])
 
   const handleDragEnd = useCallback(() => {
     setDragOverCell(null)

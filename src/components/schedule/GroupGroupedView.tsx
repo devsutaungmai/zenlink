@@ -145,8 +145,9 @@ export default function GroupGroupedView({
     return shifts.filter(shift => {
       if (shift.status === 'OPEN' && !shift.employeeId) return false;
       const shiftDate = typeof shift.date === 'string' ? shift.date : format(shift.date, 'yyyy-MM-dd');
-      const belongsToGroup = shift.employeeGroupId === groupId || 
-                            (shift.employeeId && employees.find(e => e.id === shift.employeeId)?.employeeGroupId === groupId);
+      const belongsToGroup = shift.employeeGroupId
+        ? shift.employeeGroupId === groupId
+        : (shift.employeeId && employees.find(e => e.id === shift.employeeId)?.employeeGroupId === groupId);
       return belongsToGroup && shiftDate.substring(0, 10) === formattedDate;
     });
   };
@@ -154,8 +155,9 @@ export default function GroupGroupedView({
   const getGroupTotalHours = (groupId: string) => {
     const groupShifts = shifts.filter(s => {
       if (s.status === 'OPEN' && !s.employeeId) return false;
-      return s.employeeGroupId === groupId || 
-        (s.employeeId && employees.find(e => e.id === s.employeeId)?.employeeGroupId === groupId);
+      return s.employeeGroupId
+        ? s.employeeGroupId === groupId
+        : (s.employeeId && employees.find(e => e.id === s.employeeId)?.employeeGroupId === groupId);
     });
     
     let totalMinutes = 0;
@@ -331,8 +333,9 @@ export default function GroupGroupedView({
             employeeGroups.map((group) => {
               const groupShiftsAll = shifts.filter(s => {
                 if (s.status === 'OPEN' && !s.employeeId) return false;
-                return s.employeeGroupId === group.id || 
-                  (s.employeeId && employees.find(e => e.id === s.employeeId)?.employeeGroupId === group.id);
+                return s.employeeGroupId
+                  ? s.employeeGroupId === group.id
+                  : (s.employeeId && employees.find(e => e.id === s.employeeId)?.employeeGroupId === group.id);
               })
               const groupShiftsCount = groupShiftsAll.length
               
@@ -616,8 +619,9 @@ export default function GroupGroupedView({
         {employeeGroups.map(group => {
           const groupShiftsCount = shifts.filter(s => {
             if (s.status === 'OPEN' && !s.employeeId) return false;
-            return s.employeeGroupId === group.id || 
-              (s.employeeId && employees.find(e => e.id === s.employeeId)?.employeeGroupId === group.id);
+            return s.employeeGroupId
+              ? s.employeeGroupId === group.id
+              : (s.employeeId && employees.find(e => e.id === s.employeeId)?.employeeGroupId === group.id);
           }).length;
           
           return (

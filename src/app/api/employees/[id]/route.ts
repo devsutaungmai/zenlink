@@ -18,7 +18,21 @@ export async function PUT(
     }
 
     const data = await request.json()
-    const requiredFields = ['firstName', 'lastName', 'employeeNo', 'departmentId']
+
+    const employeeSettings = await prisma.employeeSettings.findUnique({
+      where: { businessId: currentUser.businessId }
+    })
+
+    const requiredFields: string[] = []
+    if (employeeSettings?.requireFirstName !== false) requiredFields.push('firstName')
+    if (employeeSettings?.requireLastName !== false) requiredFields.push('lastName')
+    if (employeeSettings?.requireEmployeeNo !== false) requiredFields.push('employeeNo')
+    if (employeeSettings?.requireDepartment !== false) {
+      if (!data.departmentId && !(Array.isArray(data.departmentIds) && data.departmentIds.length > 0)) {
+        requiredFields.push('departmentId')
+      }
+    }
+
     const missingFields = requiredFields.filter(field => !data[field])
     
     if (missingFields.length > 0) {

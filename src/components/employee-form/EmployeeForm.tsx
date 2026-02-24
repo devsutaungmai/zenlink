@@ -234,14 +234,27 @@ export default function EmployeeForm({
               setFormData(prev => ({
                 ...prev,
                 employeeGroupIds,
-                employeeGroupId: employeeGroupIds[0] || undefined
+                employeeGroupId: employeeGroupIds[0] || ''
               }))
+              if (validationErrors.employeeGroupId || validationErrors.employeeGroupIds) {
+                setValidationErrors(prev => ({
+                  ...prev,
+                  employeeGroupId: '',
+                  employeeGroupIds: ''
+                }))
+              }
             }}
             onRolesChange={(roleIds) => {
               setFormData(prev => ({
                 ...prev,
                 roleIds
               }))
+              if (validationErrors.roleIds) {
+                setValidationErrors(prev => ({
+                  ...prev,
+                  roleIds: ''
+                }))
+              }
             }}
             departments={departments}
             employeeGroups={employeeGroups}
