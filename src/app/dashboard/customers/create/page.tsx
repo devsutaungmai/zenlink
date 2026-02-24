@@ -20,6 +20,7 @@ import { set } from 'date-fns'
 import { get } from 'http'
 import { del } from '@vercel/blob'
 import { ro } from 'date-fns/locale'
+import { useInvoiceGeneralSettings } from '@/shared/hooks/useInvoiceGeneralSettings'
 
 export interface Department {
     id: string
@@ -99,6 +100,21 @@ export default function CreateCustomersPage() {
     })
     const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
     const validationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+    const { generalSettings } = useInvoiceGeneralSettings();
+
+    useEffect(() => {
+  if (generalSettings?.defaultDueDays) {
+    setFormData(prev => ({
+      ...prev,
+      customerPaymentTerm: {
+        dueDateType: "DAYS_AFTER",
+        dueDateValue: generalSettings.defaultDueDays,
+        dueDateUnit: "DAYS"
+      }
+    }))
+  }
+}, [generalSettings])
 
     const validateField = (fieldName: string, value: any) => {
         try {
@@ -266,7 +282,7 @@ export default function CreateCustomersPage() {
         }
     }, [settings])
 
-     const handleBack = () => {
+    const handleBack = () => {
         if (window.history.length > 1) {
             router.back()
         } else {
@@ -650,18 +666,37 @@ export default function CreateCustomersPage() {
 
                     {visibleFields.showInvoicePaymentTerms && (
                         <CustomerPaymentTermComponent
-                            onSettingsChange={(settings) => {
-                                const updatedPaymentTerm: InvoicePaymentTerms = {
-                                    dueDateType: settings.dueDateType,
-                                    dueDateValue:
-                                        settings.dueDateType === "DAYS_AFTER" ? (settings.daysAfter ?? 14) : (settings.fixedDateDay ?? 1),
-                                    dueDateUnit:
-                                        settings.dueDateType === "DAYS_AFTER" ? (settings.unit === "DAYS" ? "DAYS" : "MONTHS") : "MONTHS",
-                                }
+  value={{
+    dueDateType: formData.customerPaymentTerm.dueDateType,
+    daysAfter:
+      formData.customerPaymentTerm.dueDateType === "DAYS_AFTER"
+        ? formData.customerPaymentTerm.dueDateValue
+        : undefined,
+    fixedDateDay:
+      formData.customerPaymentTerm.dueDateType === "FIXED_DATE"
+        ? formData.customerPaymentTerm.dueDateValue
+        : undefined,
+    unit: formData.customerPaymentTerm.dueDateUnit,
+  }}
+  onSettingsChange={(settings) => {
+    const updatedPaymentTerm: InvoicePaymentTerms = {
+      dueDateType: settings.dueDateType,
+      dueDateValue:
+        settings.dueDateType === "DAYS_AFTER"
+          ? settings.daysAfter ?? generalSettings?.defaultDueDays ?? 30
+          : settings.fixedDateDay ?? 1,
+      dueDateUnit:
+        settings.dueDateType === "DAYS_AFTER"
+          ? settings.unit ?? "DAYS"
+          : "MONTHS",
+    }
 
-                                setFormData({ ...formData, customerPaymentTerm: updatedPaymentTerm })
-                            }}
-                        />
+    setFormData(prev => ({
+      ...prev,
+      customerPaymentTerm: updatedPaymentTerm
+    }))
+  }}
+/>
                     )}
 
                     {visibleFields.showContactPerson && (

@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { AlertTriangle, Save, Loader2, FileText, Users, CreditCard } from 'lucide-react'
 import Swal from 'sweetalert2'
 
-interface GeneralSetting {
+export interface GeneralSetting {
   firstInvoiceNumber: number
   firstCreditNoteNumber: number
   customerNumberSeriesStart: number | null

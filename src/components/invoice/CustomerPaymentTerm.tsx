@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react'
 import { ChevronUpIcon, ChevronDownIcon, InformationCircleIcon } from '@heroicons/react/24/outline'
 
 interface CustomerPaymentTermProps {
+  value: CustomerPaymentTermForComponent
   onSettingsChange?: (settings: CustomerPaymentTermForComponent) => void
-  defaultValues?: CustomerPaymentTermForComponent
 }
 
 export interface CustomerPaymentTermForComponent {
@@ -16,30 +16,13 @@ export interface CustomerPaymentTermForComponent {
 }
 
 export default function CustomerPaymentTermComponent({
+  value,
   onSettingsChange,
-  defaultValues,
 }: CustomerPaymentTermProps) {
   const [isExpanded, setIsExpanded] = useState(true)
-  const [settings, setSettings] = useState<CustomerPaymentTermForComponent>(
-    defaultValues || {
-      dueDateType: 'DAYS_AFTER',
-      daysAfter: 14,
-      unit: 'DAYS',
-      fixedDateDay: 1,
-    }
-  )
-  
-   useEffect(() => {
-    console.log("Payment Term==>",JSON.stringify(defaultValues))
-    if (defaultValues) {
-      setSettings(defaultValues)
-    }
-  }, [defaultValues])
-
 
   const handleSettingChange = (newSetting: Partial<CustomerPaymentTermForComponent>) => {
-    const updatedSettings = { ...settings, ...newSetting }
-    setSettings(updatedSettings)
+    const updatedSettings = { ...value, ...newSetting }
     onSettingsChange?.(updatedSettings)
   }
 
@@ -73,7 +56,7 @@ export default function CustomerPaymentTermComponent({
                   type="radio"
                   name="dueDateType"
                   value="DAYS_AFTER"
-                  checked={settings.dueDateType === 'DAYS_AFTER'}
+                  checked={value.dueDateType === 'DAYS_AFTER'}
                   onChange={() => handleSettingChange({ dueDateType: 'DAYS_AFTER' })}
                   className="w-5 h-5"
                 />
@@ -88,7 +71,7 @@ export default function CustomerPaymentTermComponent({
                   type="radio"
                   name="dueDateType"
                   value="FIXED_DATE"
-                  checked={settings.dueDateType === 'FIXED_DATE'}
+                  checked={value.dueDateType === 'FIXED_DATE'}
                   onChange={() => handleSettingChange({ dueDateType: 'FIXED_DATE'})}
                   className="w-5 h-5"
                 />
@@ -100,19 +83,19 @@ export default function CustomerPaymentTermComponent({
             </div>
 
             {/* Conditional Input Section */}
-            {settings.dueDateType === 'DAYS_AFTER' && (
+            {value.dueDateType === 'DAYS_AFTER' && (
               <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg border border-blue-100">
                 <span className="text-sm text-gray-700">Due date is</span>
                 <input
                   type="number"
-                  value={settings.daysAfter || 14}
+                  value={value.daysAfter || 14}
                   onChange={(e) =>
                     handleSettingChange({ daysAfter: parseInt(e.target.value) || 0 })
                   }
                   className="w-16 px-3 py-2 rounded-lg border border-gray-300 bg-white text-center text-sm focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF]"
                 />
                 <select
-                  value={settings.unit || 'DAYS'}
+                  value={value.unit || 'DAYS'}
                   onChange={(e) =>
                     handleSettingChange({ unit: e.target.value as 'DAYS' | 'MONTHS' })
                   }
@@ -125,12 +108,12 @@ export default function CustomerPaymentTermComponent({
               </div>
             )}
 
-            {settings.dueDateType === 'FIXED_DATE' && (
+            {value.dueDateType === 'FIXED_DATE' && (
               <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg border border-blue-100">
                 <span className="text-sm text-gray-700">The fixed due date is always day</span>
                 <input
                   type="number"
-                  value={settings.fixedDateDay || 1}
+                  value={value.fixedDateDay || 1}
                   onChange={(e) =>
                     handleSettingChange({ fixedDateDay: parseInt(e.target.value) || 1})
                   }
