@@ -843,21 +843,34 @@ export default function SchedulePage() {
       });
 
       if (res.ok) {
-        const createdShift = await res.json()
+        const savedShift = await res.json()
 
-        if (!submitData.id && bulkCount > 1 && createdShift?.id) {
+        if (!submitData.id && bulkCount > 1 && savedShift?.id) {
           try {
-            await fetch('/api/shifts/duplicate', {
+            const dupRes = await fetch('/api/shifts/duplicate', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ shiftId: createdShift.id, count: bulkCount - 1 }),
+              body: JSON.stringify({ shiftId: savedShift.id, count: bulkCount - 1 }),
             })
+            if (dupRes.ok) {
+              const dupData = await dupRes.json()
+              const dupShifts = Array.isArray(dupData.shifts) ? dupData.shifts : []
+              setShifts(prev => {
+                const withoutTemp = prev.filter(s => s.id !== optimisticShift.id)
+                return [...withoutTemp, savedShift, ...dupShifts]
+              })
+            } else {
+              setShifts(prev => prev.map(s => s.id === optimisticShift.id ? savedShift : s))
+            }
           } catch (err) {
             console.error('Bulk duplication failed:', err)
+            setShifts(prev => prev.map(s => s.id === optimisticShift.id ? savedShift : s))
           }
+        } else if (submitData.id) {
+          setShifts(prev => prev.map(s => s.id === submitData.id ? savedShift : s))
+        } else {
+          setShifts(prev => prev.map(s => s.id === optimisticShift.id ? savedShift : s))
         }
-
-        await fetchShifts();
         
         const toastText = bulkCount > 1 && !submitData.id
           ? `${bulkCount} shifts created`
@@ -878,12 +891,11 @@ export default function SchedulePage() {
         const errorData = await res.json();
         
         if (formData.id) {
-          await fetchShifts()
+          setShifts(prev => prev.map(s => s.id === formData.id ? shifts.find(os => os.id === formData.id) || s : s))
         } else {
           setShifts(prev => prev.filter(s => s.id !== optimisticShift.id))
         }
 
-        // Handle overridable violations — show confirm dialog, then retry with _forceAssign
         if (res.status === 409 && errorData.requiresConfirmation) {
           const violationsList = [
             ...(errorData.violations || []).map((v: string) => `<li style="color:#dc2626">${v}</li>`),
@@ -907,7 +919,12 @@ export default function SchedulePage() {
               body: JSON.stringify({ ...submitData, _forceAssign: true }),
             })
             if (retryRes.ok) {
-              await fetchShifts()
+              const retryShift = await retryRes.json()
+              if (formData.id) {
+                setShifts(prev => prev.map(s => s.id === formData.id ? retryShift : s))
+              } else {
+                setShifts(prev => [...prev, retryShift])
+              }
               Swal.fire({
                 text: t(successToastKey),
                 toast: true, position: 'top-end', showConfirmButton: false,
@@ -919,7 +936,6 @@ export default function SchedulePage() {
           return
         }
 
-        // Handle non-overridable violations — block with clear error
         if (res.status === 422 && (errorData.violations || errorData.warnings)) {
           const violationsList = [
             ...(errorData.violations || []).map((v: string) => `<li>${v}</li>`),
@@ -951,7 +967,7 @@ export default function SchedulePage() {
       console.error('Error submitting shift form:', error)
       
       if (formData.id) {
-        await fetchShifts()
+        setShifts(prev => prev.map(s => s.id === formData.id ? shifts.find(os => os.id === formData.id) || s : s))
       } else {
         setShifts(prev => prev.filter(s => s.id !== optimisticShift.id))
       }
@@ -973,7 +989,9 @@ export default function SchedulePage() {
   const handleShiftDelete = async (shiftId: string) => {
     if (!shiftId) return
 
-    setLoading(true)
+    setShifts(prev => prev.filter(s => s.id !== shiftId))
+    setShowShiftModal(false)
+
     try {
       const res = await fetch(`/api/shifts/${shiftId}`, {
         method: 'DELETE'
@@ -982,9 +1000,6 @@ export default function SchedulePage() {
       if (!res.ok) {
         throw new Error(t('toasts.shift_delete_failed'))
       }
-
-      await fetchShifts()
-      setShowShiftModal(false)
 
       Swal.fire({
         text: t('toasts.shift_deleted'),
@@ -999,6 +1014,7 @@ export default function SchedulePage() {
       })
     } catch (error) {
       console.error('Error deleting shift:', error)
+      await fetchShifts()
       Swal.fire({
         text: t('toasts.shift_delete_failed'),
         toast: true,
@@ -1010,8 +1026,6 @@ export default function SchedulePage() {
           popup: 'swal-toast-wide'
         }
       })
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -1028,7 +1042,8 @@ export default function SchedulePage() {
         throw new Error(err.error || 'Failed to move shift')
       }
 
-      await fetchShifts()
+      const movedShift = await res.json()
+      setShifts(prev => prev.map(s => s.id === shiftId ? movedShift : s))
 
       Swal.fire({
         text: t('toasts.shift_moved') || 'Shift moved successfully',
@@ -1051,7 +1066,7 @@ export default function SchedulePage() {
         customClass: { popup: 'swal-toast-wide' }
       })
     }
-  }, [fetchShifts, t])
+  }, [t])
 
   const handleDuplicateShift = useCallback(async (shiftId: string, targets: Array<{ date?: string; employeeId?: string; employeeGroupId?: string; functionId?: string }>) => {
     try {
@@ -1067,7 +1082,10 @@ export default function SchedulePage() {
       }
 
       const data = await res.json()
-      await fetchShifts()
+      const newShifts = Array.isArray(data.shifts) ? data.shifts : []
+      if (newShifts.length > 0) {
+        setShifts(prev => [...prev, ...newShifts])
+      }
 
       Swal.fire({
         text: (t('toasts.shift_duplicated') || 'Shift duplicated') + (data.count > 1 ? ` (${data.count} copies)` : ''),
@@ -1090,7 +1108,7 @@ export default function SchedulePage() {
         customClass: { popup: 'swal-toast-wide' }
       })
     }
-  }, [fetchShifts, t])
+  }, [t])
 
   const handleBulkDuplicate = useCallback(async (shiftId: string, count: number) => {
     try {
@@ -1106,7 +1124,10 @@ export default function SchedulePage() {
       }
 
       const data = await res.json()
-      await fetchShifts()
+      const newShifts = Array.isArray(data.shifts) ? data.shifts : []
+      if (newShifts.length > 0) {
+        setShifts(prev => [...prev, ...newShifts])
+      }
 
       Swal.fire({
         text: `${data.count} shift${data.count !== 1 ? 's' : ''} created`,
@@ -1129,7 +1150,7 @@ export default function SchedulePage() {
         customClass: { popup: 'swal-toast-wide' }
       })
     }
-  }, [fetchShifts])
+  }, [])
 
   const calculateShiftHours = (startTime: string, endTime: string): number => {
     const getMinutes = (timeStr: string): number => {

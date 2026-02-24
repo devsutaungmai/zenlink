@@ -6,6 +6,7 @@ import { hasAnyServerPermission } from '@/shared/lib/serverPermissions'
 import { PERMISSIONS } from '@/shared/lib/permissions'
 import { canEmployeeBeScheduled } from '@/shared/lib/employeeProfileHelper'
 import { validateShiftCombined, getEmployeeShiftsForValidation, getBatchEmployeeShiftsForValidation } from '@/shared/lib/shiftValidation'
+import { shiftWithRelationsInclude } from '@/shared/lib/shiftIncludes'
 import jwt from 'jsonwebtoken'
 import { cookies } from 'next/headers'
 import { startOfWeek, endOfWeek } from 'date-fns'
@@ -196,80 +197,7 @@ export async function GET(request: Request) {
 
     const shifts = await prisma.shift.findMany({
       where: whereCondition,
-      include: {
-        employee: {
-          select: {
-            firstName: true,
-            lastName: true,
-            department: {
-              select: {
-                name: true
-              }
-            }
-          }
-        },
-        employeeGroup: {
-          select: {
-            name: true
-          }
-        },
-        department: {
-          select: {
-            id: true,
-            name: true
-          }
-        },
-        shiftTypeConfig: {
-          select: {
-            id: true,
-            name: true
-          }
-        },
-        function: {
-          select: {
-            id: true,
-            name: true,
-            color: true,
-            categoryId: true,
-            category: {
-              select: {
-                id: true,
-                name: true,
-                departmentId: true
-              }
-            }
-          }
-        },
-        shiftExchanges: {
-          where: {
-            status: 'APPROVED'
-          },
-          include: {
-            fromEmployee: {
-              select: {
-                firstName: true,
-                lastName: true,
-                department: {
-                  select: {
-                    name: true
-                  }
-                }
-              }
-            },
-            toEmployee: {
-              select: {
-                firstName: true,
-                lastName: true,
-                department: {
-                  select: {
-                    name: true
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
+      include: shiftWithRelationsInclude,
       orderBy: {
         date: 'asc'
       }
@@ -493,32 +421,9 @@ export async function POST(req: Request) {
       };
     }
 
-    if (!data.endTime) {
-      console.log('Creating active shift without endTime');
-      const shift = await prisma.shift.create({
-        data: createData,
-        include: {
-          employee: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              mobile: true,
-              user: {
-                select: {
-                  businessId: true
-                }
-              }
-            }
-          }
-        }
-      });
-
-      return NextResponse.json(shift);
-    }
-
     const shift = await prisma.shift.create({
       data: createData,
+      include: shiftWithRelationsInclude
     });
 
     return NextResponse.json(shift);

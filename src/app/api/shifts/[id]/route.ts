@@ -9,6 +9,7 @@ import {
   getEmployeeShiftsForValidation,
   formatCombinedValidationSummary
 } from '@/shared/lib/shiftValidation'
+import { shiftWithRelationsInclude } from '@/shared/lib/shiftIncludes'
 
 export async function GET(
   request: NextRequest,
@@ -196,10 +197,7 @@ export async function PUT(
     const shift = await prisma.shift.update({
       where: { id },
       data,
-      include: {
-        employee: true,
-        employeeGroup: true
-      }
+      include: shiftWithRelationsInclude
     })
     
     return NextResponse.json(shift)

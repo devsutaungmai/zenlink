@@ -8,6 +8,7 @@ import { getShiftSegmentsForDate, ShiftSegment } from './utils'
 import ShiftsModal from './ShiftsModal'
 import { useTranslation } from 'react-i18next'
 import { useShiftDragDrop } from '@/shared/hooks/useShiftDragDrop'
+import Swal from 'sweetalert2'
 
 interface FunctionItem {
   id: string
@@ -113,12 +114,55 @@ export default function DayFunctionsTimeline({
   const formattedDate = format(date, 'yyyy-MM-dd')
   const { currencySymbol } = useCurrency()
 
+  const getFunctionDeptIds = useCallback((fn: FunctionItem): string[] => {
+    const ids: string[] = []
+    if (fn.category?.departments && fn.category.departments.length > 0) {
+      fn.category.departments.forEach(cd => ids.push(cd.department.id))
+    } else if (fn.category?.department?.id) {
+      ids.push(fn.category.department.id)
+    }
+    return ids
+  }, [])
+
+  const functionDeptMap = useMemo(() => {
+    const map = new Map<string, string[]>()
+    functions.forEach(fn => map.set(fn.id, getFunctionDeptIds(fn)))
+    return map
+  }, [functions, getFunctionDeptIds])
+
+  const isCrossDeptFnDrop = useCallback((targetRowId: string, shift?: ShiftWithRelations): boolean => {
+    if (!shift || targetRowId === 'open') return false
+    const targetDeptIds = functionDeptMap.get(targetRowId) || []
+    if (targetDeptIds.length === 0) return false
+    const empDeptIds: string[] = []
+    if (shift.departmentId) empDeptIds.push(shift.departmentId)
+    if (empDeptIds.length === 0) return false
+    return !empDeptIds.some(id => targetDeptIds.includes(id))
+  }, [functionDeptMap])
+
+  const isDropDisabled = useCallback((targetRowId: string, _targetDate: string, shift?: ShiftWithRelations) => {
+    return isCrossDeptFnDrop(targetRowId, shift)
+  }, [isCrossDeptFnDrop])
+
+  const onDropRejected = useCallback((targetRowId: string, _targetDate: string, shift?: ShiftWithRelations) => {
+    if (isCrossDeptFnDrop(targetRowId, shift)) {
+      Swal.fire({
+        icon: 'error',
+        title: t('drag_drop.cross_dept_title', 'Cannot Move Shift'),
+        text: t('drag_drop.cross_dept_message', 'Cannot move shift to a function in a different department.'),
+        confirmButtonColor: '#31BCFF',
+      })
+    }
+  }, [isCrossDeptFnDrop, t])
+
   const noopMove = async () => {}
   const noopDuplicate = async () => {}
   const { dragOverCell, isDragging, copyMode, toggleCopyMode, handleDragStart, handleDragOver, handleDragLeave, handleDrop, handleDragEnd } = useShiftDragDrop({
     onMoveShift: onMoveShift || noopMove,
     onDuplicateShift: onDuplicateShift || noopDuplicate,
-    canEditShifts
+    canEditShifts,
+    isDropDisabled,
+    onDropRejected
   })
   const daySegments = useMemo(() => getShiftSegmentsForDate(shifts, date), [shifts, date])
   const [hoveredCell, setHoveredCell] = useState<{ rowId: string; hour: number } | null>(null)

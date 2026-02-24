@@ -3,6 +3,7 @@ import { prisma } from '@/shared/lib/prisma'
 import { getCurrentUser } from '@/shared/lib/auth'
 import { hasAnyServerPermission } from '@/shared/lib/serverPermissions'
 import { PERMISSIONS } from '@/shared/lib/permissions'
+import { shiftWithRelationsInclude } from '@/shared/lib/shiftIncludes'
 
 export async function POST(request: Request) {
   try {
@@ -97,7 +98,7 @@ export async function POST(request: Request) {
     }
 
     const created = await prisma.$transaction(
-      shiftsToCreate.map(data => prisma.shift.create({ data }))
+      shiftsToCreate.map(data => prisma.shift.create({ data, include: shiftWithRelationsInclude }))
     )
 
     return NextResponse.json({ 

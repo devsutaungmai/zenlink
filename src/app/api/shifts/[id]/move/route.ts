@@ -3,6 +3,7 @@ import { prisma } from '@/shared/lib/prisma'
 import { getCurrentUser } from '@/shared/lib/auth'
 import { hasAnyServerPermission } from '@/shared/lib/serverPermissions'
 import { PERMISSIONS } from '@/shared/lib/permissions'
+import { shiftWithRelationsInclude } from '@/shared/lib/shiftIncludes'
 
 export async function PATCH(
   request: NextRequest,
@@ -162,14 +163,7 @@ export async function PATCH(
     const updated = await prisma.shift.update({
       where: { id },
       data: updateData,
-      include: {
-        employee: {
-          select: { firstName: true, lastName: true }
-        },
-        function: {
-          select: { id: true, name: true, color: true }
-        }
-      }
+      include: shiftWithRelationsInclude
     })
 
     return NextResponse.json(updated)
