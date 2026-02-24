@@ -14,8 +14,9 @@ import z from 'zod'
 import { useCustomerSettings } from '@/shared/hooks/useCustomerSettings'
 import { CustomerFieldSettingsDialog } from '@/components/invoice/CustomerFieldSettingsDialog'
 import { formatCustomerNumberForDisplay } from '@/shared/lib/invoiceHelper'
+import { useInvoiceGeneralSettings } from '@/shared/hooks/useInvoiceGeneralSettings'
 
-export default function EditCustomersPage({ params,searchParams }: { params: Promise<{ id: string}>,  searchParams: Promise<{ overview?: string }>} ) {
+export default function EditCustomersPage({ params, searchParams }: { params: Promise<{ id: string }>, searchParams: Promise<{ overview?: string }> }) {
     const resolvedParams = use(params)
     const resolvedSearchParams = use(searchParams)
     const overviewMode = resolvedSearchParams.overview === 'true'
@@ -135,7 +136,7 @@ export default function EditCustomersPage({ params,searchParams }: { params: Pro
     useEffect(() => {
         fetchCustomer()
         fetchDepartments()
-    }, [resolvedParams.id,overviewMode])
+    }, [resolvedParams.id, overviewMode])
 
     const fetchDepartments = async () => {
         try {
@@ -253,6 +254,28 @@ export default function EditCustomersPage({ params,searchParams }: { params: Pro
             </div>
         )
     }
+
+    const { generalSettings } = useInvoiceGeneralSettings();
+
+    useEffect(() => {
+        if (generalSettings?.defaultDueDays) {
+            setFormData(prev => ({
+                ...prev,
+                customerPaymentTerm: {
+                    dueDateType: "DAYS_AFTER",
+                    dueDateValue: generalSettings.defaultDueDays,
+                    dueDateUnit: "DAYS"
+                }
+            }))
+        }
+    }, [generalSettings])
+
+    const safePaymentTerm: InvoicePaymentTerms =
+        formData.customerPaymentTerm ?? {
+            dueDateType: "DAYS_AFTER",
+            dueDateValue: generalSettings?.defaultDueDays ?? 14,
+            dueDateUnit: "DAYS",
+        }
 
     return (
         <div className="space-y-6">
@@ -623,24 +646,46 @@ export default function EditCustomersPage({ params,searchParams }: { params: Pro
                         )}
                     </div>
 
-                    {settings.showInvoicePaymentTerms && <CustomerPaymentTermComponent
-                        defaultValues={paymentTermDefaults}
-                        onSettingsChange={(settings) => {
-                            const updatedPaymentTerm: InvoicePaymentTerms = {
-                                dueDateType: settings.dueDateType,
-                                dueDateValue: (settings.dueDateType === 'DAYS_AFTER'
-                                    ? settings.daysAfter ?? 14
-                                    : settings.fixedDateDay ?? 1),
-                                dueDateUnit: (settings.dueDateType === 'DAYS_AFTER' ?
-                                    settings.unit === 'DAYS' ? 'DAYS' : 'MONTHS' :
-                                    'MONTHS'
-                                )
-                            }
-                            console.log('Settings updated:', updatedPaymentTerm)
+                    {settings.showInvoicePaymentTerms &&
+                        <CustomerPaymentTermComponent
+                            value={{
+                                dueDateType: safePaymentTerm.dueDateType,
+                                daysAfter:
+                                    safePaymentTerm.dueDateType === "DAYS_AFTER"
+                                        ? safePaymentTerm.dueDateValue
+                                        : undefined,
+                                fixedDateDay:
+                                    safePaymentTerm.dueDateType === "FIXED_DATE"
+                                        ? safePaymentTerm.dueDateValue
+                                        : undefined,
+                                unit: safePaymentTerm.dueDateUnit,
+                            }}
+                            onSettingsChange={(settings) => {
+                                setFormData(prev => {
+                                    const previous = prev.customerPaymentTerm ?? safePaymentTerm
 
-                            setFormData({ ...formData, customerPaymentTerm: updatedPaymentTerm })
-                        }}
-                    />}
+                                    const updatedPaymentTerm: InvoicePaymentTerms = {
+                                        dueDateType: settings.dueDateType,
+
+                                        dueDateValue:
+                                            settings.dueDateType === "DAYS_AFTER"
+                                                ? settings.daysAfter ?? previous.dueDateValue
+                                                : settings.fixedDateDay ?? previous.dueDateValue,
+
+                                        dueDateUnit:
+                                            settings.dueDateType === "DAYS_AFTER"
+                                                ? settings.unit ?? previous.dueDateUnit
+                                                : "MONTHS",
+                                    }
+
+                                    return {
+                                        ...prev,
+                                        customerPaymentTerm: updatedPaymentTerm,
+                                    }
+                                })
+                            }}
+                        />
+                    }
 
                     {settings.showContactPerson && <CustomerContactComponent
                         defaultValues={formData.customerContacts}

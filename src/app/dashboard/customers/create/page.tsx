@@ -104,17 +104,17 @@ export default function CreateCustomersPage() {
     const { generalSettings } = useInvoiceGeneralSettings();
 
     useEffect(() => {
-  if (generalSettings?.defaultDueDays) {
-    setFormData(prev => ({
-      ...prev,
-      customerPaymentTerm: {
-        dueDateType: "DAYS_AFTER",
-        dueDateValue: generalSettings.defaultDueDays,
-        dueDateUnit: "DAYS"
-      }
-    }))
-  }
-}, [generalSettings])
+        if (generalSettings?.defaultDueDays) {
+            setFormData(prev => ({
+                ...prev,
+                customerPaymentTerm: {
+                    dueDateType: "DAYS_AFTER",
+                    dueDateValue: generalSettings.defaultDueDays,
+                    dueDateUnit: "DAYS"
+                }
+            }))
+        }
+    }, [generalSettings])
 
     const validateField = (fieldName: string, value: any) => {
         try {
@@ -289,6 +289,13 @@ export default function CreateCustomersPage() {
             router.push("/dashboard/customers")
         }
     }
+
+    const safePaymentTerm: InvoicePaymentTerms =
+        formData.customerPaymentTerm ?? {
+            dueDateType: "DAYS_AFTER",
+            dueDateValue: generalSettings?.defaultDueDays ?? 14,
+            dueDateUnit: "DAYS",
+        }
 
     return (
         <div className="space-y-6">
@@ -666,37 +673,43 @@ export default function CreateCustomersPage() {
 
                     {visibleFields.showInvoicePaymentTerms && (
                         <CustomerPaymentTermComponent
-  value={{
-    dueDateType: formData.customerPaymentTerm.dueDateType,
-    daysAfter:
-      formData.customerPaymentTerm.dueDateType === "DAYS_AFTER"
-        ? formData.customerPaymentTerm.dueDateValue
-        : undefined,
-    fixedDateDay:
-      formData.customerPaymentTerm.dueDateType === "FIXED_DATE"
-        ? formData.customerPaymentTerm.dueDateValue
-        : undefined,
-    unit: formData.customerPaymentTerm.dueDateUnit,
-  }}
-  onSettingsChange={(settings) => {
-    const updatedPaymentTerm: InvoicePaymentTerms = {
-      dueDateType: settings.dueDateType,
-      dueDateValue:
-        settings.dueDateType === "DAYS_AFTER"
-          ? settings.daysAfter ?? generalSettings?.defaultDueDays ?? 30
-          : settings.fixedDateDay ?? 1,
-      dueDateUnit:
-        settings.dueDateType === "DAYS_AFTER"
-          ? settings.unit ?? "DAYS"
-          : "MONTHS",
-    }
+                            value={{
+                                dueDateType: safePaymentTerm.dueDateType,
+                                daysAfter:
+                                    safePaymentTerm.dueDateType === "DAYS_AFTER"
+                                        ? safePaymentTerm.dueDateValue
+                                        : undefined,
+                                fixedDateDay:
+                                    safePaymentTerm.dueDateType === "FIXED_DATE"
+                                        ? safePaymentTerm.dueDateValue
+                                        : undefined,
+                                unit: safePaymentTerm.dueDateUnit,
+                            }}
+                            onSettingsChange={(settings) => {
+                                setFormData(prev => {
+                                    const previous = prev.customerPaymentTerm ?? safePaymentTerm
 
-    setFormData(prev => ({
-      ...prev,
-      customerPaymentTerm: updatedPaymentTerm
-    }))
-  }}
-/>
+                                    const updatedPaymentTerm: InvoicePaymentTerms = {
+                                        dueDateType: settings.dueDateType,
+
+                                        dueDateValue:
+                                            settings.dueDateType === "DAYS_AFTER"
+                                                ? settings.daysAfter ?? previous.dueDateValue
+                                                : settings.fixedDateDay ?? previous.dueDateValue,
+
+                                        dueDateUnit:
+                                            settings.dueDateType === "DAYS_AFTER"
+                                                ? settings.unit ?? previous.dueDateUnit
+                                                : "MONTHS",
+                                    }
+
+                                    return {
+                                        ...prev,
+                                        customerPaymentTerm: updatedPaymentTerm,
+                                    }
+                                })
+                            }}
+                        />
                     )}
 
                     {visibleFields.showContactPerson && (
