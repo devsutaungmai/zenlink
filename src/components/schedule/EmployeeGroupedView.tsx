@@ -28,6 +28,7 @@ interface EmployeeGroupedViewProps {
   canCreateAttendance?: boolean
   onMoveShift?: (shiftId: string, target: any) => Promise<void>
   onDuplicateShift?: (shiftId: string, targets: any[]) => Promise<void>
+  pendingShiftIds?: Set<string>
 }
 
 export default function EmployeeGroupedView({
@@ -45,7 +46,8 @@ export default function EmployeeGroupedView({
   canEditShifts = true,
   canCreateAttendance = false,
   onMoveShift,
-  onDuplicateShift
+  onDuplicateShift,
+  pendingShiftIds = new Set()
 }: EmployeeGroupedViewProps) {
   const { t, i18n } = useTranslation('schedule')
   const { currencySymbol } = useCurrency()
@@ -323,8 +325,8 @@ export default function EmployeeGroupedView({
                                 {dayOpenShifts.slice(0, 1).map(shift => (
                                   <button
                                     key={shift.id}
-                                    onClick={() => onEditShift(shift)}
-                                    className="w-full rounded-xl font-medium flex flex-col items-center justify-center gap-0.5 py-2 transition-all active:scale-95 cursor-pointer bg-emerald-200 text-emerald-900 border-2 border-emerald-400"
+                                    onClick={() => !pendingShiftIds.has(shift.id) && onEditShift(shift)}
+                                    className={`w-full rounded-xl font-medium flex flex-col items-center justify-center gap-0.5 py-2 transition-all active:scale-95 cursor-pointer bg-emerald-200 text-emerald-900 border-2 border-emerald-400 ${pendingShiftIds.has(shift.id) ? 'opacity-50 animate-pulse pointer-events-none' : ''}`}
                                   >
                                     <span className="text-xs leading-tight">
                                       {shift.startTime.substring(0, 5)}
@@ -436,8 +438,8 @@ export default function EmployeeGroupedView({
                                 {dayShifts.map(shift => (
                                   <button
                                     key={shift.id}
-                                    onClick={() => onEditShift(shift)}
-                                    className={`w-full rounded-xl font-medium flex flex-col items-center justify-center gap-0.5 py-2 transition-all active:scale-95 cursor-pointer ${
+                                    onClick={() => !pendingShiftIds.has(shift.id) && onEditShift(shift)}
+                                    className={`w-full rounded-xl font-medium flex flex-col items-center justify-center gap-0.5 py-2 transition-all active:scale-95 cursor-pointer ${pendingShiftIds.has(shift.id) ? 'opacity-50 animate-pulse pointer-events-none' : ''} ${
                                       shift.status === 'CANCELLED' ? 'bg-red-500 text-white' :
                                       shift.status === 'WORKING' ? 'bg-blue-500 text-white' :
                                       shift.approved ? 'bg-lime-200 text-lime-900 border-2 border-lime-500' :
@@ -595,11 +597,11 @@ export default function EmployeeGroupedView({
                         {dayOpenShifts.slice(0, 2).map((shift) => (
                           <div
                             key={shift.id}
-                            draggable={canEditShifts}
+                            draggable={canEditShifts && !pendingShiftIds.has(shift.id)}
                             onDragStart={(e) => handleDragStart(e, shift, 'open', formattedDate)}
                             onDragEnd={handleDragEnd}
-                            onClick={() => onEditShift(shift)}
-                            className={`mb-1 cursor-pointer ${canEditShifts ? 'cursor-grab active:cursor-grabbing' : ''}`}
+                            onClick={() => !pendingShiftIds.has(shift.id) && onEditShift(shift)}
+                            className={`mb-1 cursor-pointer ${canEditShifts ? 'cursor-grab active:cursor-grabbing' : ''} ${pendingShiftIds.has(shift.id) ? 'opacity-50 animate-pulse pointer-events-none' : ''}`}
                           >
                             <div className="rounded p-2 text-xs border-2 border-dashed border-emerald-400 bg-emerald-100">
                               <div className="font-medium text-emerald-800 flex items-center gap-1">
@@ -711,12 +713,12 @@ export default function EmployeeGroupedView({
                           return (
                             <div
                               key={shift.id}
-                              draggable={canEditShifts}
+                              draggable={canEditShifts && !pendingShiftIds.has(shift.id)}
                               onDragStart={(e) => handleDragStart(e, shift, employee.id, formattedDate)}
                               onDragEnd={handleDragEnd}
-                              onClick={() => onEditShift(shift)}
+                              onClick={() => !pendingShiftIds.has(shift.id) && onEditShift(shift)}
                               onContextMenu={(e) => handleShiftContextMenu(e, shift)}
-                              className={`mb-1 cursor-pointer ${canEditShifts ? 'cursor-grab active:cursor-grabbing' : ''}`}
+                              className={`mb-1 cursor-pointer ${canEditShifts ? 'cursor-grab active:cursor-grabbing' : ''} ${pendingShiftIds.has(shift.id) ? 'opacity-50 animate-pulse pointer-events-none' : ''}`}
                             >
                               <div 
                                 className="rounded p-2 text-xs border"

@@ -74,6 +74,7 @@ export default function SchedulePage() {
   const [employees, setEmployees] = useState<Employee[]>([])
   const [employeeGroups, setEmployeeGroups] = useState<EmployeeGroup[]>([])
   const [shifts, setShifts] = useState<ShiftWithRelations[]>([])
+  const [pendingShiftIds, setPendingShiftIds] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<'week' | 'two-week' | 'day' | 'month'>('week')
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
@@ -1030,6 +1031,20 @@ export default function SchedulePage() {
   }
 
   const handleMoveShift = useCallback(async (shiftId: string, target: { date?: string; employeeId?: string; employeeGroupId?: string; functionId?: string }) => {
+    const originalShift = shifts.find(s => s.id === shiftId)
+
+    setShifts(prev => prev.map(s => {
+      if (s.id !== shiftId) return s
+      return {
+        ...s,
+        ...(target.date && { date: new Date(target.date) }),
+        ...(target.employeeId !== undefined && { employeeId: target.employeeId }),
+        ...(target.employeeGroupId !== undefined && { employeeGroupId: target.employeeGroupId }),
+        ...(target.functionId !== undefined && { functionId: target.functionId }),
+      }
+    }))
+    setPendingShiftIds(prev => new Set(prev).add(shiftId))
+
     try {
       const res = await fetch(`/api/shifts/${shiftId}/move`, {
         method: 'PATCH',
@@ -1056,6 +1071,9 @@ export default function SchedulePage() {
       })
     } catch (error: any) {
       console.error('Error moving shift:', error)
+      if (originalShift) {
+        setShifts(prev => prev.map(s => s.id === shiftId ? originalShift : s))
+      }
       Swal.fire({
         text: error.message || t('toasts.shift_move_failed') || 'Failed to move shift',
         toast: true,
@@ -1065,10 +1083,17 @@ export default function SchedulePage() {
         timerProgressBar: true,
         customClass: { popup: 'swal-toast-wide' }
       })
+    } finally {
+      setPendingShiftIds(prev => {
+        const next = new Set(prev)
+        next.delete(shiftId)
+        return next
+      })
     }
-  }, [t])
+  }, [shifts, t])
 
   const handleDuplicateShift = useCallback(async (shiftId: string, targets: Array<{ date?: string; employeeId?: string; employeeGroupId?: string; functionId?: string }>) => {
+    setPendingShiftIds(prev => new Set(prev).add(shiftId))
     try {
       const res = await fetch('/api/shifts/duplicate', {
         method: 'POST',
@@ -1106,6 +1131,12 @@ export default function SchedulePage() {
         timer: 3000,
         timerProgressBar: true,
         customClass: { popup: 'swal-toast-wide' }
+      })
+    } finally {
+      setPendingShiftIds(prev => {
+        const next = new Set(prev)
+        next.delete(shiftId)
+        return next
       })
     }
   }, [t])
@@ -1376,6 +1407,7 @@ export default function SchedulePage() {
           canCreateAttendance={canEditShifts}
           onMoveShift={handleMoveShift}
           onDuplicateShift={handleDuplicateShift}
+          pendingShiftIds={pendingShiftIds}
         />
       )
     }
@@ -1401,6 +1433,7 @@ export default function SchedulePage() {
           canCreateAttendance={canEditShifts}
           onMoveShift={handleMoveShift}
           onDuplicateShift={handleDuplicateShift}
+          pendingShiftIds={pendingShiftIds}
         />
       )
     }
@@ -1426,6 +1459,7 @@ export default function SchedulePage() {
           canCreateAttendance={canEditShifts}
           onMoveShift={handleMoveShift}
           onDuplicateShift={handleDuplicateShift}
+          pendingShiftIds={pendingShiftIds}
         />
       )
     }
@@ -1624,6 +1658,7 @@ export default function SchedulePage() {
                 canEditShifts={canEditShifts}
                 onMoveShift={handleMoveShift}
                 onDuplicateShift={handleDuplicateShift}
+                pendingShiftIds={pendingShiftIds}
               />
             ) : (
               scheduleViewType === 'time' ? (
@@ -1663,6 +1698,7 @@ export default function SchedulePage() {
                   onMoveShift={handleMoveShift}
                   onDuplicateShift={handleDuplicateShift}
                   isEmployeeUnavailable={isEmployeeUnavailableOnDate}
+                  pendingShiftIds={pendingShiftIds}
                 />
               ) : scheduleViewType === 'groups' ? (
                 <DayGroupsTimeline
@@ -1680,6 +1716,7 @@ export default function SchedulePage() {
                   canEditShifts={canEditShifts}
                   onMoveShift={handleMoveShift}
                   onDuplicateShift={handleDuplicateShift}
+                  pendingShiftIds={pendingShiftIds}
                 />
               ) : scheduleViewType === 'functions' ? (
                 <DayFunctionsTimeline
@@ -1697,6 +1734,7 @@ export default function SchedulePage() {
                   canEditShifts={canEditShifts}
                   onMoveShift={handleMoveShift}
                   onDuplicateShift={handleDuplicateShift}
+                  pendingShiftIds={pendingShiftIds}
                 />
               ) : (
                 <DayView

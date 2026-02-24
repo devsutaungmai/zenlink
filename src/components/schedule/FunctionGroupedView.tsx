@@ -50,6 +50,7 @@ interface FunctionGroupedViewProps {
   canCreateAttendance?: boolean
   onMoveShift?: (shiftId: string, target: any) => Promise<void>
   onDuplicateShift?: (shiftId: string, targets: any[]) => Promise<void>
+  pendingShiftIds?: Set<string>
 }
 
 export default function FunctionGroupedView({
@@ -67,7 +68,8 @@ export default function FunctionGroupedView({
   canEditShifts = true,
   canCreateAttendance = false,
   onMoveShift,
-  onDuplicateShift
+  onDuplicateShift,
+  pendingShiftIds = new Set()
 }: FunctionGroupedViewProps) {
   const { t, i18n } = useTranslation('schedule')
 
@@ -661,11 +663,11 @@ export default function FunctionGroupedView({
                         {dayOpenShifts.slice(0, 2).map((shift) => (
                           <div
                             key={shift.id}
-                            draggable={canEditShifts}
+                            draggable={canEditShifts && !pendingShiftIds.has(shift.id)}
                             onDragStart={(e) => handleDragStart(e, shift, 'open', formattedDate)}
                             onDragEnd={handleDragEnd}
-                            onClick={() => onEditShift(shift)}
-                            className={`mb-1 cursor-pointer ${canEditShifts ? 'cursor-grab active:cursor-grabbing' : ''}`}
+                            onClick={() => !pendingShiftIds.has(shift.id) && onEditShift(shift)}
+                            className={`mb-1 cursor-pointer ${canEditShifts ? 'cursor-grab active:cursor-grabbing' : ''} ${pendingShiftIds.has(shift.id) ? 'opacity-50 animate-pulse pointer-events-none' : ''}`}
                           >
                             <div className="rounded p-2 text-xs border-2 border-dashed border-emerald-400 bg-emerald-100">
                               <div className="font-medium text-emerald-800 flex items-center gap-1">
@@ -793,12 +795,12 @@ export default function FunctionGroupedView({
                           return (
                             <div
                               key={shift.id}
-                              draggable={canEditShifts}
+                              draggable={canEditShifts && !pendingShiftIds.has(shift.id)}
                               onDragStart={(e) => handleDragStart(e, shift, fn.id, formattedDate)}
                               onDragEnd={handleDragEnd}
-                              onClick={() => onEditShift(shift)}
+                              onClick={() => !pendingShiftIds.has(shift.id) && onEditShift(shift)}
                               onContextMenu={(e) => handleShiftContextMenu(e, shift)}
-                              className={`mb-1 cursor-pointer ${canEditShifts ? 'cursor-grab active:cursor-grabbing' : ''}`}
+                              className={`mb-1 cursor-pointer ${canEditShifts ? 'cursor-grab active:cursor-grabbing' : ''} ${pendingShiftIds.has(shift.id) ? 'opacity-50 animate-pulse pointer-events-none' : ''}`}
                             >
                               <div className="rounded p-2 text-xs border font-medium" style={{ 
                                 backgroundColor: backgroundColor, 

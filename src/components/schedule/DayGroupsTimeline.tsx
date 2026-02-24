@@ -19,6 +19,7 @@ interface DayGroupsTimelineProps {
   canEditShifts?: boolean
   onMoveShift?: (shiftId: string, target: { date?: string; employeeId?: string; employeeGroupId?: string; functionId?: string }) => Promise<void>
   onDuplicateShift?: (shiftId: string, targets: Array<{ date?: string; employeeId?: string; employeeGroupId?: string; functionId?: string }>) => Promise<void>
+  pendingShiftIds?: Set<string>
 }
 
 interface GroupRowMeta {
@@ -86,7 +87,8 @@ export default function DayGroupsTimeline({
   onEditShift,
   canEditShifts = true,
   onMoveShift,
-  onDuplicateShift
+  onDuplicateShift,
+  pendingShiftIds = new Set()
 }: DayGroupsTimelineProps) {
   const { t } = useTranslation('schedule')
   const formattedDate = format(date, 'yyyy-MM-dd')
@@ -487,8 +489,8 @@ export default function DayGroupsTimeline({
                       return (
                         <button
                           key={`${segment.segmentId}-${laneIndex}`}
-                          onClick={() => onEditShift(segment.shift)}
-                          className="absolute rounded-md px-2 py-1 text-xs font-medium text-emerald-800 shadow-sm bg-emerald-200 border-2 border-dashed border-emerald-400 hover:bg-emerald-300 transition-colors truncate"
+                          onClick={() => !pendingShiftIds.has(segment.shift.id) && onEditShift(segment.shift)}
+                          className={`absolute rounded-md px-2 py-1 text-xs font-medium text-emerald-800 shadow-sm bg-emerald-200 border-2 border-dashed border-emerald-400 hover:bg-emerald-300 transition-colors truncate ${pendingShiftIds.has(segment.shift.id) ? 'opacity-50 animate-pulse pointer-events-none' : ''}`}
                           style={{
                             left: `${left}%`,
                             width: `${width}%`,
@@ -592,11 +594,11 @@ export default function DayGroupsTimeline({
                       return (
                         <div
                           key={`${segment.segmentId}-${laneIndex}`}
-                          draggable={canEditShifts}
+                          draggable={canEditShifts && !pendingShiftIds.has(segment.shift.id)}
                           onDragStart={(e) => handleDragStart(e, segment.shift, row.id, formattedDate)}
                           onDragEnd={handleDragEnd}
-                          onClick={() => onEditShift(segment.shift)}
-                          className={`absolute rounded-md px-2 py-1 text-xs font-medium text-white shadow-sm bg-[#31BCFF] hover:bg-blue-500 transition-colors truncate ${canEditShifts ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'}`}
+                          onClick={() => !pendingShiftIds.has(segment.shift.id) && onEditShift(segment.shift)}
+                          className={`absolute rounded-md px-2 py-1 text-xs font-medium text-white shadow-sm bg-[#31BCFF] hover:bg-blue-500 transition-colors truncate ${canEditShifts ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'} ${pendingShiftIds.has(segment.shift.id) ? 'opacity-50 animate-pulse pointer-events-none' : ''}`}
                           style={{
                             left: `${left}%`,
                             width: `${width}%`,
