@@ -17,6 +17,8 @@ import { formatCustomerNumberForDisplay } from "@/shared/lib/invoiceHelper"
 import { useColumnVisibility } from "@/hooks/use-column-visibility"
 import { ColumnVisibilityToggle } from "@/components/invoice/column-visibility-toggle"
 import { Switch } from "@/components/ui/switch"
+import { useResizableColumns } from "@/hooks/use-resizable-columns"
+import { ResizeHandle } from "@/components/invoice/resize-handle"
 
 interface Customer {
   id: string
@@ -33,6 +35,7 @@ interface Customer {
   deliveryAddress?: string | null
   deliveryAddressPostalCode?: string | null
   deliveryAddressPostalAddress?: string | null
+  department?: string | null
 }
 
 export default function CustomersPage() {
@@ -50,9 +53,13 @@ export default function CustomersPage() {
     { key: "email", label: "Email" },
     { key: "phoneNumber", label: "Phone" },
     { key: "address", label: "Address" },
+    { key: "discountPercentage", label: "Discount %" },
+    { key: "organizationNumber", label: "Organization Number" },
+    { key: "department", label: "Department" },
+    { key: "deliveryAddress", label: "Delivery Address" },
     { key: "active", label: "Status" },
   ]
-  const [selectedFilter, setSelectedFilter] = useState('all')
+  const [selectedFilter, setSelectedFilter] = useState('active')
 
   const { columns, toggleColumn, resetColumns, isColumnVisible } = useColumnVisibility({
     storageKey: "customers-columns",
@@ -63,6 +70,10 @@ export default function CustomersPage() {
       email: true,
       phoneNumber: true,
       address: true,
+      discountPercentage: true,
+      organizationNumber: false,
+      department: false,
+      deliveryAddress: false,
       active: true,
     },
   })
@@ -140,10 +151,10 @@ export default function CustomersPage() {
       })
     }
   }
-   const handleFilterClick = (filter: string) => () => {
-        setSelectedFilter(filter)
-        setCurrentPage(1)
-    }
+  const handleFilterClick = (filter: string) => () => {
+    setSelectedFilter(filter)
+    setCurrentPage(1)
+  }
 
   const filteredCustomers = customers.filter(
     (customer) => {
@@ -166,34 +177,25 @@ export default function CustomersPage() {
     window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
-    const handleStatusChange = async (customerId: string, newStatus: boolean) => {
-      try {
-        const res = await fetch(`/api/customers/${customerId}/toggle-active`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ id: customerId, active: newStatus }),
-        })
-  
-        if (res.ok) {
-          const updatedCustomer = await res.json()
-          setCustomers((prevCustomers) =>
-            prevCustomers.map((customer) =>
-              customer.id === customerId ? { ...customer, active: updatedCustomer.active } : customer,
-            ),
-          )
-        } else {
-          // throw new Error("Failed to update customer status")
-          await Swal.fire({
-            title: t("common.error"),
-            text: "Failed to update customer status",
-            icon: "error",
-            confirmButtonColor: "#31BCFF",
-          })
-        }
-      } catch (error) {
-        console.error("Error updating customer status:", error)
+  const handleStatusChange = async (customerId: string, newStatus: boolean) => {
+    try {
+      const res = await fetch(`/api/customers/${customerId}/toggle-active`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id: customerId, active: newStatus }),
+      })
+
+      if (res.ok) {
+        const updatedCustomer = await res.json()
+        setCustomers((prevCustomers) =>
+          prevCustomers.map((customer) =>
+            customer.id === customerId ? { ...customer, active: updatedCustomer.active } : customer,
+          ),
+        )
+      } else {
+        // throw new Error("Failed to update customer status")
         await Swal.fire({
           title: t("common.error"),
           text: "Failed to update customer status",
@@ -201,7 +203,34 @@ export default function CustomersPage() {
           confirmButtonColor: "#31BCFF",
         })
       }
+    } catch (error) {
+      console.error("Error updating customer status:", error)
+      await Swal.fire({
+        title: t("common.error"),
+        text: "Failed to update customer status",
+        icon: "error",
+        confirmButtonColor: "#31BCFF",
+      })
     }
+  }
+
+  const RESIZABLE_COLUMNS = [
+    { key: "customerNumber", initialWidth: 120, minWidth: 80 },
+    { key: "customerName", initialWidth: 220, minWidth: 120 },
+    { key: "email", initialWidth: 180, minWidth: 120 },
+    { key: "phoneNumber", initialWidth: 140, minWidth: 100 },
+    { key: "address", initialWidth: 200, minWidth: 120 },
+    { key: "discountPercentage", initialWidth: 120, minWidth: 80 },
+    { key: "organizationNumber", initialWidth: 150, minWidth: 100 },
+    { key: "department", initialWidth: 130, minWidth: 90 },
+    { key: "deliveryAddress", initialWidth: 200, minWidth: 120 },
+    { key: "active", initialWidth: 100, minWidth: 70 },
+    { key: "actions", initialWidth: 120, minWidth: 80 },
+  ]
+  const { getColumnWidth, onMouseDown, resetWidths } = useResizableColumns({
+    storageKey: "products-col-widths",
+    columns: RESIZABLE_COLUMNS,
+  })
 
   if (loading) {
     return (
@@ -257,31 +286,31 @@ export default function CustomersPage() {
             Showing {paginatedCustomers.length} of {filteredCustomers.length}
           </div>
         </div>
-         {/* Filter Buttons */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4">
-                    <div className="flex flex-wrap items-center gap-2">
-                        <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
+        {/* Filter Buttons */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4">
+          <div className="flex flex-wrap items-center gap-2">
+            {/* <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
                             <FunnelIcon className="w-4 h-4 flex-shrink-0" />
                             <span>Filter</span>
-                        </div>
-                        {[
-                            { value: 'all', label: "ALL" },
-                            { value: 'active', label: "ACTIVE" },
-                            { value: 'inactive', label: "INACTIVE" },
-                        ].map((filter) => (
-                            <button
-                                key={filter.value}
-                                onClick={handleFilterClick(filter.value)}
-                                className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${selectedFilter === filter.value
-                                    ? 'bg-[#31BCFF] text-white shadow-md'
-                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                    }`}
-                            >
-                                {filter.label}
-                            </button>
-                        ))}
-                    </div>
-                </div>
+                        </div> */}
+            {[
+              { value: 'all', label: "ALL" },
+              { value: 'active', label: "ACTIVE" },
+              { value: 'inactive', label: "INACTIVE" },
+            ].map((filter) => (
+              <button
+                key={filter.value}
+                onClick={handleFilterClick(filter.value)}
+                className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${selectedFilter === filter.value
+                  ? 'bg-[#31BCFF] text-white shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Empty State */}
@@ -309,52 +338,120 @@ export default function CustomersPage() {
           {/* Desktop Table View */}
           <div className="hidden md:block bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+
+              <table className="w-full" style={{ tableLayout: "fixed" }}>
+                <colgroup>
+                  {isColumnVisible("customerNumber") && (
+                    <col style={{ width: getColumnWidth("customerNumber") }} />
+                  )}
+                  {isColumnVisible("customerName") && (
+                    <col style={{ width: getColumnWidth("customerName") }} />
+                  )}
+                  {isColumnVisible("email") && (
+                    <col style={{ width: getColumnWidth("email") }} />
+                  )}
+                  {isColumnVisible("phoneNumber") && (
+                    <col style={{ width: getColumnWidth("phoneNumber") }} />
+                  )}
+                  {isColumnVisible("address") && (
+                    <col style={{ width: getColumnWidth("address") }} />
+                  )}
+                  {isColumnVisible("discountPercentage") && (
+                    <col style={{ width: getColumnWidth("discountPercentage") }} />
+                  )}
+                  {isColumnVisible("organizationNumber") && (
+                    <col style={{ width: getColumnWidth("organizationNumber") }} />
+                  )}
+                  {isColumnVisible("department") && (
+                    <col style={{ width: getColumnWidth("department") }} />
+                  )}
+                  {isColumnVisible("deliveryAddress") && (
+                    <col style={{ width: getColumnWidth("deliveryAddress") }} />
+                  )}
+                  {isColumnVisible("active") && (
+                    <col style={{ width: getColumnWidth("active") }} />
+                  )}
+                  <col style={{ width: getColumnWidth("actions") }} />
+                </colgroup>
+                <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+                  <tr>
                     {isColumnVisible("customerNumber") && (
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">
+                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none">
                         Customer No.
+                        <ResizeHandle onMouseDown={onMouseDown("customerNumber")} />
                       </th>
                     )}
 
                     {isColumnVisible("customerName") && (
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">
+                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none">
                         Customer Name
+                        <ResizeHandle onMouseDown={onMouseDown("customerName")} />
                       </th>
                     )}
 
                     {isColumnVisible("email") && (
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">
+                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none">
                         Email
+                        <ResizeHandle onMouseDown={onMouseDown("email")} />
                       </th>
                     )}
 
                     {isColumnVisible("phoneNumber") && (
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">
+                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none">
                         Phone
+                        <ResizeHandle onMouseDown={onMouseDown("phoneNumber")} />
                       </th>
                     )}
 
                     {isColumnVisible("address") && (
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">
+                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none">
                         Address
+                        <ResizeHandle onMouseDown={onMouseDown("address")} />
+                      </th>
+                    )}
+                    {isColumnVisible("discountPercentage") && (
+                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none">
+                        Discount %
+                        <ResizeHandle onMouseDown={onMouseDown("discountPercentage")} />
+                      </th>
+                    )}
+                    {isColumnVisible("organizationNumber") && (
+                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none">
+                        Organization No.
+                        <ResizeHandle onMouseDown={onMouseDown("organizationNumber")} />
+                      </th>
+                    )}
+                    {isColumnVisible("department") && (
+                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none">
+                        Department
+                        <ResizeHandle onMouseDown={onMouseDown("department")} />
+                      </th>
+                    )}
+
+                    {isColumnVisible("deliveryAddress") && (
+                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none">
+                        Delivery Address
+                        <ResizeHandle onMouseDown={onMouseDown("deliveryAddress")} />
                       </th>
                     )}
 
                     {isColumnVisible("active") && (
-                      <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase">
+                      <th className="relative px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase select-none">
                         Status
+                        <ResizeHandle onMouseDown={onMouseDown("active")} />
                       </th>
                     )}
 
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase">
+                    <th className="relative px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase">
                       <div className="flex items-center justify-end gap-2">
                         <span>Actions</span>
                         <ColumnVisibilityToggle
                           columns={columns}
                           onColumnToggle={toggleColumn}
-                          onResetColumns={resetColumns}
+                          onResetColumns={() => {
+                            resetColumns()
+                            resetWidths()
+                          }}
                         />
                       </div>
                     </th>
@@ -365,14 +462,25 @@ export default function CustomersPage() {
                     <tr key={customer.id} className="hover:bg-blue-50/50 transition-colors duration-150">
                       {isColumnVisible("customerNumber") && (
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#31BCFF]/10 text-[#31BCFF]">
-                            {formatCustomerNumberForDisplay(customer.customerNumber)}
-                          </span>
+                          <Link
+                            href={`/dashboard/customers/${customer.id}/edit`}
+
+                            title="Edit Customer"
+                          >
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#31BCFF]/10 text-blue-600 hover:underline">
+                              {formatCustomerNumberForDisplay(customer.customerNumber)}
+                            </span>
+                          </Link>
                         </td>
                       )}
                       {isColumnVisible("customerName") && (
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-sm font-medium text-gray-900">{customer.customerName}</span>
+                          <Link
+                            href={`/dashboard/customers/${customer.id}/edit`}
+                            title="Edit Customer"
+                          >
+                            <span className="text-sm font-medium text-blue-600 hover:underline">{customer.customerName}</span>
+                          </Link>
                         </td>
                       )}
 
@@ -393,6 +501,30 @@ export default function CustomersPage() {
                           </span>
                         </td>
                       )}
+
+                      {isColumnVisible("discountPercentage") && (
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="text-sm text-gray-600">{customer.discountPercentage != null ? `${customer.discountPercentage}%` : "-"}</span>
+                        </td>
+                      )}
+                      {isColumnVisible("organizationNumber") && (
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="text-sm text-gray-600">{customer.organizationNumber || "-"}</span>
+                        </td>
+                      )}
+                      {isColumnVisible("department") && (
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="text-sm text-gray-600">{customer.department || "-"}</span>
+                        </td>
+                      )}
+                      {isColumnVisible("deliveryAddress") && (
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="text-sm text-gray-600 truncate max-w-[200px] block">
+                            {customer.deliveryAddress || "-"}
+                          </span>
+                        </td>
+                      )}
+
                       {isColumnVisible("active") && <td className="px-6 py-4 whitespace-nowrap text-center">
                         {/* <span
                           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${customer.active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
@@ -400,7 +532,7 @@ export default function CustomersPage() {
                         >
                           {customer.active ? "Active" : "Inactive"}
                         </span> */}
-                         <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-2">
                           <Switch
                             id="status"
                             checked={customer.active}

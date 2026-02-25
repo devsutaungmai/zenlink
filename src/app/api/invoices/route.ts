@@ -25,10 +25,24 @@ export async function GET(request: NextRequest) {
           select: {
             id: true,
             customerName: true,
-            email: true
+            email: true,
+            deliveryAddress: true,
+            discountPercentage: true,
+            business:{
+              select:{
+                id: true,
+                name: true
+            },
+          },
+        },},
+      
+        project: {
+          select: {
+            id: true,
+            name: true
           }
         },
-        project: {
+        department:{
           select: {
             id: true,
             name: true

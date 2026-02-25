@@ -18,6 +18,8 @@ import { ColumnVisibilityToggle } from "@/components/invoice/column-visibility-t
 import { useColumnVisibility } from "@/hooks/use-column-visibility"
 import { Switch } from "@/components/ui/switch"
 import { FunnelIcon } from "lucide-react"
+import { ResizeHandle } from "@/components/invoice/resize-handle"
+import { useResizableColumns } from "@/hooks/use-resizable-columns"
 
 interface Unit {
   id: string
@@ -57,7 +59,7 @@ interface Product {
   costPrice: number
   discountPercentage?: number | null
   ledgerAccount: {
-    id:string,
+    id: string,
     name: string
     accountNumber: string,
     businessId: string,
@@ -87,7 +89,7 @@ export default function ProductsPage() {
 
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage] = useState(10)
-  const [selectedFilter, setSelectedFilter] = useState('all')
+  const [selectedFilter, setSelectedFilter] = useState('active')
 
   // Define columns configuration
   const COLUMNS = [
@@ -98,6 +100,8 @@ export default function ProductsPage() {
     { key: "costPrice", label: "Cost Price" },
     { key: "vatRate", label: "VAT %" },
     { key: "discount", label: "Discount %" },
+    { key: "unit", label: "Unit" },
+    { key: "productGroup", label: "Product Group" },
     { key: "status", label: "Status" },
   ]
 
@@ -112,8 +116,28 @@ export default function ProductsPage() {
       costPrice: true,
       vatRate: true,
       discount: true,
+      unit: false,
+      productGroup: false,
       status: true,
     },
+  })
+
+  const RESIZABLE_COLUMNS = [
+    { key: "productNumber", initialWidth: 120, minWidth: 80 },
+    { key: "productName", initialWidth: 220, minWidth: 120 },
+    { key: "ledgerAccount", initialWidth: 220, minWidth: 120 },
+    { key: "salesPrice", initialWidth: 120, minWidth: 80 },
+    { key: "costPrice", initialWidth: 120, minWidth: 80 },
+    { key: "vatRate", initialWidth: 90, minWidth: 60 },
+    { key: "discount", initialWidth: 120, minWidth: 60 },
+    { key: "unit", initialWidth: 120, minWidth: 80 },
+    { key: "productGroup", initialWidth: 150, minWidth: 80 },
+    { key: "status", initialWidth: 100, minWidth: 70 },
+    { key: "actions", initialWidth: 120, minWidth: 80 },
+  ]
+  const { getColumnWidth, onMouseDown, resetWidths } = useResizableColumns({
+    storageKey: "products-col-widths",
+    columns: RESIZABLE_COLUMNS,
   })
 
   useEffect(() => {
@@ -192,9 +216,9 @@ export default function ProductsPage() {
   }
 
   const filteredCustomers = products.filter((product) => {
-   const matchesSearch = product.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.productNumber.toLowerCase().includes(searchTerm.toLowerCase())
-   const matchesFilter =
+    const matchesSearch = product.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.productNumber.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesFilter =
       selectedFilter === 'all' ||
       (selectedFilter === 'active' && product.active) ||
       (selectedFilter === 'inactive' && !product.active)
@@ -318,10 +342,10 @@ export default function ProductsPage() {
         {/* Filter Buttons */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4">
           <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
+            {/* <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
               <FunnelIcon className="w-4 h-4 flex-shrink-0" />
               <span>Filter</span>
-            </div>
+            </div> */}
             {[
               { value: 'all', label: "ALL" },
               { value: 'active', label: "ACTIVE" },
@@ -365,154 +389,237 @@ export default function ProductsPage() {
       ) : (
         <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg overflow-hidden">
           <div className="hidden md:block overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full" style={{ tableLayout: "fixed" }}>
+              <colgroup>
+                {isColumnVisible("productNumber") && (
+                  <col style={{ width: getColumnWidth("productNumber") }} />
+                )}
+                {isColumnVisible("productName") && (
+                  <col style={{ width: getColumnWidth("productName") }} />
+                )}
+                {isColumnVisible("ledgerAccount") && (
+                  <col style={{ width: getColumnWidth("ledgerAccount") }} />
+                )}
+                {isColumnVisible("salesPrice") && (
+                  <col style={{ width: getColumnWidth("salesPrice") }} />
+                )}
+                {isColumnVisible("costPrice") && (
+                  <col style={{ width: getColumnWidth("costPrice") }} />
+                )}
+                {isColumnVisible("vatRate") && (
+                  <col style={{ width: getColumnWidth("vatRate") }} />
+                )}
+                {isColumnVisible("discount") && (
+                  <col style={{ width: getColumnWidth("discount") }} />
+                )}
+                {isColumnVisible("status") && (
+                  <col style={{ width: getColumnWidth("status") }} />
+                )}
+                <col style={{ width: getColumnWidth("actions") }} />
+              </colgroup>
               <thead className="bg-muted/50">
                 <tr>
                   {isColumnVisible("productNumber") && (
-                    <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    <th className="relative px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider select-none">
                       Product Number
+                      <ResizeHandle onMouseDown={onMouseDown("productNumber")} />
                     </th>
                   )}
                   {isColumnVisible("productName") && (
-                    <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    <th className="relative px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider select-none">
                       Product Name
+                      <ResizeHandle onMouseDown={onMouseDown("productName")} />
                     </th>
                   )}
                   {isColumnVisible("ledgerAccount") && (
-                    <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    <th className="relative px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider select-none">
                       Ledger Account
+                      <ResizeHandle onMouseDown={onMouseDown("ledgerAccount")} />
                     </th>
                   )}
                   {isColumnVisible("salesPrice") && (
-                    <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    <th className="relative px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider select-none">
                       Sales Price
+                      <ResizeHandle onMouseDown={onMouseDown("salesPrice")} />
                     </th>
                   )}
                   {isColumnVisible("costPrice") && (
-                    <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    <th className="relative px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider select-none">
                       Cost Price
+                      <ResizeHandle onMouseDown={onMouseDown("costPrice")} />
                     </th>
                   )}
                   {isColumnVisible("vatRate") && (
-                    <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      VAT %
+                    <th className="relative px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider select-none">
+                      {"VAT %"}
+                      <ResizeHandle onMouseDown={onMouseDown("vatRate")} />
                     </th>
                   )}
                   {isColumnVisible("discount") && (
-                    <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Discount %
+                    <th className="relative px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider select-none">
+                      {"Discount %"}
+                      <ResizeHandle onMouseDown={onMouseDown("discount")} />
+                    </th>
+                  )}
+                  {isColumnVisible("unit") && (
+                    <th className="relative px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider select-none">
+                      Unit
+                      <ResizeHandle onMouseDown={onMouseDown("unit")} />
+                    </th>
+                  )}
+                  {isColumnVisible("productGroup") && (
+                    <th className="relative px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider select-none">
+                      Product Group
+                      <ResizeHandle onMouseDown={onMouseDown("productGroup")} />
                     </th>
                   )}
                   {isColumnVisible("status") && (
-                    <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    <th className="relative px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider select-none">
                       Status
+                      <ResizeHandle onMouseDown={onMouseDown("status")} />
                     </th>
                   )}
-                  <th className="px-6 py-4 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <th className="relative px-6 py-4 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     <div className="flex items-center justify-end gap-2">
                       <span>Actions</span>
                       <ColumnVisibilityToggle
                         columns={columns}
                         onColumnToggle={toggleColumn}
-                        onResetColumns={resetColumns}
+                        onResetColumns={() => {
+                          resetColumns()
+                          resetWidths()
+                        }}
                       />
                     </div>
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200/50">
-                {paginatedProducts.map((product) => 
-                { const isDefaultLedgerAccount = product.ledgerAccount.businessId == null ? "true" : "false";
+                {paginatedProducts.map((product) => {
+                  const isDefaultLedgerAccount = product.ledgerAccount.businessId == null ? "true" : "false";
                   return (
-                  <tr key={product.id} className="hover:bg-blue-50/30 transition-colors duration-200">
-                    {isColumnVisible("productNumber") && (
-                      <td className="px-6 py-4">
-                        <div className="text-sm font-medium text-gray-900">{product.productNumber}</div>
-                      </td>
-                    )}
+                    <tr key={product.id} className="hover:bg-blue-50/30 transition-colors duration-200">
+                      {isColumnVisible("productNumber") && (
+                        <td className="px-6 py-4">
 
-                    {isColumnVisible("productName") && (
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900">{product.productName}</div>
-                      </td>
-                    )}
+                          <Link
+                            href={`/dashboard/products/${product.id}/edit`}
 
-                    {isColumnVisible("ledgerAccount") && (
-                      <td className="px-6 py-4">
-                        <Link href={`/dashboard/ledger-accounts/${product.ledgerAccount.id}/edit?default=${isDefaultLedgerAccount}`} className="hover:underline">
-                          <div className="text-sm text-blue-600 hover:underline">{product.ledgerAccount.name} ({product.ledgerAccount.accountNumber})</div>
-                        </Link>
-                      </td>
-                    )}
+                            title="Edit Product"
+                          >
+                            <div className="text-sm font-medium text-blue-600 hover:underline cursor-pointer">
 
-                    {isColumnVisible("salesPrice") && (
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900">{Number(product.salesPrice).toFixed(2)}</div>
-                      </td>
-                    )}
+                              {product.productNumber}
+                            </div>
+                          </Link>
 
-                    {isColumnVisible("costPrice") && (
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900">{Number(product.costPrice).toFixed(2)}</div>
-                      </td>
-                    )}
+                        </td>
+                      )}
 
-                    {isColumnVisible("vatRate") && (
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900">
-                          {product.ledgerAccount.businessVatCodes.length > 0
-                            ? `${product.ledgerAccount.businessVatCodes[0].vatCode.rate}%`
-                            : product.ledgerAccount.vatCode
-                              ? `${product.ledgerAccount.vatCode.rate}%`
-                              : "0%"}
-                        </div>
-                      </td>
-                    )}
+                      {isColumnVisible("productName") && (
+                        <td className="px-6 py-4">
+
+                          <Link
+                            href={`/dashboard/products/${product.id}/edit`}
+
+                            title="Edit Product"
+                          >
+                            <div className="text-sm font-medium text-blue-600 hover:underline cursor-pointer">
+
+                              {product.productName}
+                            </div>
+
+                          </Link>
+                        </td>
+                      )}
+
+                      {isColumnVisible("ledgerAccount") && (
+                        <td className="px-6 py-4">
+                          <Link href={`/dashboard/ledger-accounts/${product.ledgerAccount.id}/edit?default=${isDefaultLedgerAccount}`} className="hover:underline">
+                            <div className="text-sm text-blue-600 hover:underline">{product.ledgerAccount.name} ({product.ledgerAccount.accountNumber})</div>
+                          </Link>
+                        </td>
+                      )}
+
+                      {isColumnVisible("salesPrice") && (
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-900">{Number(product.salesPrice).toFixed(2)}</div>
+                        </td>
+                      )}
+
+                      {isColumnVisible("costPrice") && (
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-900">{Number(product.costPrice).toFixed(2)}</div>
+                        </td>
+                      )}
+
+                      {isColumnVisible("vatRate") && (
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-900">
+                            {product.ledgerAccount.businessVatCodes.length > 0
+                              ? `${product.ledgerAccount.businessVatCodes[0].vatCode.rate}%`
+                              : product.ledgerAccount.vatCode
+                                ? `${product.ledgerAccount.vatCode.rate}%`
+                                : "0%"}
+                          </div>
+                        </td>
+                      )}
 
 
-                    {isColumnVisible("discount") && (
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900">{product.discountPercentage ? `${product.discountPercentage}%` : "-"}</div>
-                      </td>
-                    )}
+                      {isColumnVisible("discount") && (
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-900">{product.discountPercentage ? `${product.discountPercentage}%` : "-"}</div>
+                        </td>
+                      )}
+                      {isColumnVisible("unit") && (
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-900">{product.unit ? product.unit.name : "-"}</div>
+                        </td>
+                      )}
+                      {isColumnVisible("productGroup") && (
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-900">{product.productGroup ? product.productGroup.name : "-"}</div>
+                        </td>
+                      )}
 
-                    {isColumnVisible("status") && (
-                      <td className="px-6 py-4">
-                        {/* <span
+                      {isColumnVisible("status") && (
+                        <td className="px-6 py-4">
+                          {/* <span
                           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${product.active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
                             }`}
                         >
                           {product.active ? "Active" : "Inactive"}
                         </span> */}
-                        <div className="flex items-center space-x-2">
-                          <Switch
-                            id="status"
-                            checked={product.active}
-                            onCheckedChange={(checked) => handleStatusChange(product.id, checked)}
-                          />
+                          <div className="flex items-center space-x-2">
+                            <Switch
+                              id="status"
+                              checked={product.active}
+                              onCheckedChange={(checked) => handleStatusChange(product.id, checked)}
+                            />
+                          </div>
+                        </td>
+                      )}
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-end gap-2">
+                          <Link
+                            href={`/dashboard/products/${product.id}/edit`}
+                            className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
+                            title="Edit Product"
+                          >
+                            <PencilIcon className="h-4 w-4" />
+                          </Link>
+                          <button
+                            onClick={() => handleDelete(product.id, product.productName)}
+                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                            title="Delete Product"
+                          >
+                            <TrashIcon className="h-4 w-4" />
+                          </button>
                         </div>
                       </td>
-                    )}
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-end gap-2">
-                        <Link
-                          href={`/dashboard/products/${product.id}/edit`}
-                          className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
-                          title="Edit Product"
-                        >
-                          <PencilIcon className="h-4 w-4" />
-                        </Link>
-                        <button
-                          onClick={() => handleDelete(product.id, product.productName)}
-                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                          title="Delete Product"
-                        >
-                          <TrashIcon className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                )})}
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>

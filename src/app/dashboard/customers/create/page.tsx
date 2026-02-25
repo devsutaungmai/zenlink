@@ -76,7 +76,7 @@ export default function CreateCustomersPage() {
         customerContacts?: CustomerContact[]
     }>({
         customerName: "",
-        active: false,
+        active: true,
         sequence: 0,
         year: new Date().getFullYear(),
         customerNumber: "",
@@ -249,14 +249,10 @@ export default function CreateCustomersPage() {
     const [visibleFields, setVisibleFields] = useState({
         showOrganizationNumber: true,
         showAddress: true,
-        showPostalCode: true,
-        showPostalAddress: true,
         showPhoneNumber: true,
         showEmail: true,
         showDiscountPercentage: true,
         showDeliveryAddress: true,
-        showDeliveryAddressPostalCode: true,
-        showDeliveryAddressPostalAddress: true,
         showDepartment: true,
         showInvoicePaymentTerms: true,
         showContactPerson: true,
@@ -267,14 +263,10 @@ export default function CreateCustomersPage() {
             setVisibleFields({
                 showOrganizationNumber: settings.showOrganizationNumber ?? true,
                 showAddress: settings.showAddress ?? true,
-                showPostalCode: settings.showPostalCode ?? true,
-                showPostalAddress: settings.showPostalAddress ?? true,
                 showPhoneNumber: settings.showPhoneNumber ?? true,
                 showEmail: settings.showEmail ?? true,
                 showDiscountPercentage: settings.showDiscountPercentage ?? true,
                 showDeliveryAddress: settings.showDeliveryAddress ?? true,
-                showDeliveryAddressPostalCode: settings.showDeliveryAddressPostalCode ?? true,
-                showDeliveryAddressPostalAddress: settings.showDeliveryAddressPostalAddress ?? true,
                 showDepartment: settings.showDepartment ?? true,
                 showInvoicePaymentTerms: settings.showInvoicePaymentTerms ?? true,
                 showContactPerson: settings.showContactPerson ?? true,
@@ -442,7 +434,7 @@ export default function CreateCustomersPage() {
                         )}
 
                         {/* Postal Code - Conditional */}
-                        {visibleFields.showPostalCode && (
+                        {visibleFields.showAddress && (
                             <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
                                 <label htmlFor="postalCode" className="block text-sm font-medium text-gray-700 mb-2">
                                     Postal Code
@@ -467,7 +459,7 @@ export default function CreateCustomersPage() {
                         )}
 
                         {/* Postal Address - Conditional */}
-                        {visibleFields.showPostalAddress && (
+                        {visibleFields.showAddress && (
                             <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
                                 <label htmlFor="postalAddress" className="block text-sm font-medium text-gray-700 mb-2">
                                     Postal Address
@@ -591,7 +583,7 @@ export default function CreateCustomersPage() {
                         )}
 
                         {/* Delivery Address Postal Code - Conditional */}
-                        {visibleFields.showDeliveryAddressPostalCode && (
+                        {visibleFields.showDeliveryAddress && (
                             <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
                                 <label htmlFor="deliveryAddressPostalCode" className="block text-sm font-medium text-gray-700 mb-2">
                                     Delivery Address Postal Code
@@ -616,7 +608,7 @@ export default function CreateCustomersPage() {
                         )}
 
                         {/* Delivery Address Postal Address - Conditional */}
-                        {visibleFields.showDeliveryAddressPostalAddress && (
+                        {visibleFields.showDeliveryAddress && (
                             <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
                                 <label htmlFor="deliveryAddressPostalAddress" className="block text-sm font-medium text-gray-700 mb-2">
                                     Delivery Address Postal Address

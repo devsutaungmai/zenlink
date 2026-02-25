@@ -22,6 +22,7 @@ import { exportToPDF, formatInvoiceNumberForDisplay, sendEmail } from '@/shared/
 import { useRouter } from 'next/navigation'
 import { useColumnVisibility } from '@/hooks/use-column-visibility'
 import { ColumnVisibilityToggle } from '@/components/invoice/column-visibility-toggle'
+import { useResizableColumns } from '@/hooks/use-resizable-columns'
 
 
 export enum InvoiceStatus {
@@ -35,6 +36,13 @@ export enum InvoiceStatus {
 interface Customer {
     id: string
     customerName: string
+    email: string
+    deliveryAddress: string
+    discountPercentage: number
+    business: {
+        id: string
+        name: string
+    }
 }
 
 interface Product {
@@ -52,6 +60,17 @@ export interface Invoice {
     customerId: string
     customer?: Customer,
     product?: Product,
+    department?: {
+        id: string
+        name: string
+    }
+    project?: {
+        id: string
+        name: string
+    }
+    paymentAllocations?: {
+        amountAllocated: Decimal
+    }[]
 
     // Summary calculations
     totalExclVAT: Decimal
@@ -94,6 +113,11 @@ export default function InvoicesPage() {
         { key: "totalExclVAT", label: "Total (excl. VAT)" },
         { key: "vatAmount", label: "VAT" },
         { key: "totalInclVAT", label: "Total (incl. VAT)" },
+        { key: "discount", label: "Discount" },
+        { key: "department", label: "Department" },
+        { key: "seller", label: "Seller" },
+        { key: "project", label: "Project" },
+        { key: "deliveryAddress", label: "Delivery Address" },
     ];
 
     const { columns, toggleColumn, resetColumns, isColumnVisible } = useColumnVisibility({
@@ -107,8 +131,35 @@ export default function InvoicesPage() {
             totalExclVAT: true,
             vatAmount: true,
             totalInclVAT: true,
+            discount: false,
+            department: false,
+            seller: false,
+            project: false,
+            deliveryAddress: false,
         },
     });
+
+    const RESIZABLE_COLUMNS = [
+        { key: "invoiceNumber", initialWidth: 150, minWidth: 100 },
+        { key: "customer", initialWidth: 200, minWidth: 120 },
+        { key: "sentAt", initialWidth: 130, minWidth: 100 },
+        { key: "status", initialWidth: 120, minWidth: 80 },
+        { key: "totalExclVAT", initialWidth: 150, minWidth: 100 },
+        { key: "vatAmount", initialWidth: 120, minWidth: 80 },
+        { key: "totalInclVAT", initialWidth: 150, minWidth: 100 },
+        { key: "discount", initialWidth: 120, minWidth: 80 },
+        { key: "department", initialWidth: 150, minWidth: 100 },
+        { key: "seller", initialWidth: 150, minWidth: 100 },
+        { key: "project", initialWidth: 150, minWidth: 100 },
+        { key: "deliveryAddress", initialWidth: 200, minWidth: 120 },
+        { key: "actions", initialWidth: 120, minWidth: 80 },
+    ]
+
+    const { getColumnWidth, onMouseDown, resetWidths } = useResizableColumns({
+        storageKey: "invoice-col-widths",
+        columns: RESIZABLE_COLUMNS,
+    })
+
 
     useEffect(() => {
         fetchInvoices()
@@ -191,7 +242,7 @@ export default function InvoicesPage() {
             invoice.customer?.customerName.toLowerCase().includes(searchTerm.toLowerCase());
 
         const matchesFilter = selectedFilter === "all" ||
-            invoice.status.toLowerCase() === selectedFilter.toLowerCase();
+            (selectedFilter === "outstanding" ? invoice.status.toLocaleLowerCase() === "partially_paid" : "") || invoice.status.toLowerCase() === selectedFilter.toLowerCase();
 
         return matchesSearch && matchesFilter;
     }
@@ -536,10 +587,10 @@ export default function InvoicesPage() {
                 {/* Filter Buttons */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4">
                     <div className="flex flex-wrap items-center gap-2">
-                        <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
+                        {/* <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
                             <FunnelIcon className="w-4 h-4 flex-shrink-0" />
                             <span>Filter</span>
-                        </div>
+                        </div> */}
                         {[
                             { value: 'all', label: "ALL" },
                             { value: 'draft', label: "DRAFT" },
@@ -582,7 +633,47 @@ export default function InvoicesPage() {
             ) : (
                 <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg overflow-hidden">
                     <div className="hidden md:block overflow-x-auto">
-                        <table className="w-full">
+                        <table className="w-full" style={{ tableLayout: "fixed" }}>
+                            <colgroup>
+                                <col style={{ width: "40px" }} />
+                                {isColumnVisible("invoiceNumber") && (
+                                    <col style={{ width: getColumnWidth("invoiceNumber") }} />
+                                )}
+                                {isColumnVisible("customer") && (
+                                    <col style={{ width: getColumnWidth("customer") }} />
+                                )}
+                                {isColumnVisible("sentAt") && (
+                                    <col style={{ width: getColumnWidth("sentAt") }} />
+                                )}
+                                {isColumnVisible("status") && (
+                                    <col style={{ width: getColumnWidth("status") }} />
+                                )}
+                                {isColumnVisible("totalExclVAT") && (
+                                    <col style={{ width: getColumnWidth("totalExclVAT") }} />
+                                )}
+                                {isColumnVisible("vatAmount") && (
+                                    <col style={{ width: getColumnWidth("vatAmount") }} />
+                                )}
+                                {isColumnVisible("totalInclVAT") && (
+                                    <col style={{ width: getColumnWidth("totalInclVAT") }} />
+                                )}
+                                {isColumnVisible("discount") && (
+                                    <col style={{ width: getColumnWidth("discount") }} />
+                                )}
+                                {isColumnVisible("department") && (
+                                    <col style={{ width: getColumnWidth("department") }} />
+                                )}
+                                {isColumnVisible("seller") && (
+                                    <col style={{ width: getColumnWidth("seller") }} />
+                                )}
+                                {isColumnVisible("project") && (
+                                    <col style={{ width: getColumnWidth("project") }} />
+                                )}
+                                {isColumnVisible("deliveryAddress") && (
+                                    <col style={{ width: getColumnWidth("deliveryAddress") }} />
+                                )}
+                                <col style={{ width: getColumnWidth("actions") }} />
+                            </colgroup>
                             <thead className="bg-gray-50/80">
                                 <tr>
                                     <th className="px-4 py-4 text-left">
@@ -616,6 +707,21 @@ export default function InvoicesPage() {
                                     </th>}
                                     {isColumnVisible('totalInclVAT') && <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Total Incl VAT
+                                    </th>}
+                                    {isColumnVisible('discount') && <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Discount
+                                    </th>}
+                                    {isColumnVisible('department') && <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Department
+                                    </th>}
+                                    {isColumnVisible('seller') && <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Seller
+                                    </th>}
+                                    {isColumnVisible('project') && <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Project
+                                    </th>}
+                                    {isColumnVisible('deliveryAddress') && <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Delivery Address
                                     </th>}
                                     <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         <div className="flex items-center justify-end gap-2">
@@ -676,7 +782,7 @@ export default function InvoicesPage() {
                                                 >
                                                     <span className="text-sm font-medium text-blue-600 hover:underline cursor-pointer">
 
-                                                    {invoice.status !== InvoiceStatus.DRAFT ? formatInvoiceNumberForDisplay(invoice.invoiceNumber) : "-"}
+                                                        {invoice.status !== InvoiceStatus.DRAFT ? formatInvoiceNumberForDisplay(invoice.invoiceNumber) : "-"}
                                                     </span>
                                                 </Link>
                                             </div>
@@ -688,7 +794,7 @@ export default function InvoicesPage() {
                                                 >
                                                     <span className="text-sm font-medium text-blue-600 hover:underline cursor-pointer">
 
-                                                    {invoice.customer?.customerName}
+                                                        {invoice.customer?.customerName}
                                                     </span>
                                                 </Link>
                                             </div>
@@ -720,6 +826,32 @@ export default function InvoicesPage() {
                                             <div className="text-sm font-medium text-gray-900">
                                                 {Number(invoice?.totalInclVAT ?? 0).toFixed(2)}
 
+                                            </div>
+                                        </td>}
+                                        {isColumnVisible('discount') && <td className="px-6 py-4">
+                                            <div className="text-sm text-gray-900">
+                                                {invoice.customer?.discountPercentage ? `${invoice.customer?.discountPercentage}%` : '-'}
+                                            </div>
+                                        </td>}
+                                        {isColumnVisible('department') && <td className="px-6 py-4">
+                                            <div className="text-sm text-gray-900">
+                                                {invoice.department ? invoice.department.name : '-'}
+                                            </div>
+                                        </td>}
+                                        {isColumnVisible('seller') && <td className="px-6 py-4">
+                                            <div className="text-sm text-gray-900">
+                                                {invoice.customer ? invoice.customer.business.name : '-'}
+                                            </div>
+                                        </td>}
+                                        {isColumnVisible('project') && <td className="px-6 py-4">
+                                            <div className="text-sm text-gray-900">
+                                                {invoice.project ? invoice.project.name : '-'}
+                                            </div>
+                                        </td>}
+                                        {isColumnVisible('deliveryAddress') && <td className="px-6 py-4">
+                                            <div className="text-sm text-gray-900">
+                                                {invoice.customer ? invoice.customer.deliveryAddress : '-'
+                                                }
                                             </div>
                                         </td>}
                                         <td className="px-6 py-4">
@@ -903,7 +1035,7 @@ export default function InvoicesPage() {
                                                 </div>
                                                 {isColumnVisible('customer') && <p className="text-sm text-gray-600">
                                                     <Link
-                                                         href={`/dashboard/customers/${invoice.customer?.id}/edit?overview=true`}
+                                                        href={`/dashboard/customers/${invoice.customer?.id}/edit?overview=true`}
                                                     >{invoice.customer?.customerName}</Link>
                                                 </p>}
                                             </div>

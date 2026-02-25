@@ -4,14 +4,10 @@ import { useState, useEffect } from 'react'
 interface CustomerSettings {
     showOrganizationNumber: boolean
     showAddress: boolean
-    showPostalCode: boolean
-    showPostalAddress: boolean
     showPhoneNumber: boolean
     showEmail: boolean
     showDiscountPercentage: boolean
     showDeliveryAddress: boolean
-    showDeliveryAddressPostalCode: boolean
-    showDeliveryAddressPostalAddress: boolean
     showDepartment: boolean
     showInvoicePaymentTerms: boolean
     showContactPerson: boolean
@@ -21,14 +17,10 @@ export function useCustomerSettings() {
     const [settings, setSettings] = useState<CustomerSettings>({
         showOrganizationNumber: true,
         showAddress: true,
-        showPostalCode: true,
-        showPostalAddress: true,
         showPhoneNumber: true,
         showEmail: true,
         showDiscountPercentage: true,
         showDeliveryAddress: true,
-        showDeliveryAddressPostalCode: true,
-        showDeliveryAddressPostalAddress: true,
         showDepartment: true,
         showInvoicePaymentTerms: true,
         showContactPerson: true
@@ -56,14 +48,10 @@ export function useCustomerSettings() {
             setSettings({
                 showOrganizationNumber: data.showOrganizationNumber ?? true,
                 showAddress: data.showAddress ?? true,
-                showPostalCode: data.showPostalCode ?? true,
-                showPostalAddress: data.showPostalAddress ?? true,
                 showPhoneNumber: data.showPhoneNumber ?? true,
                 showEmail: data.showEmail ?? true,
                 showDiscountPercentage: data.showDiscountPercentage ?? true,
                 showDeliveryAddress: data.showDeliveryAddress ?? true,
-                showDeliveryAddressPostalCode: data.showDeliveryAddressPostalCode ?? true,
-                showDeliveryAddressPostalAddress: data.showDeliveryAddressPostalAddress ?? true,
                 showDepartment: data.showDepartment ?? true,
                 showInvoicePaymentTerms: data.showInvoicePaymentTerms ?? true,
                 showContactPerson: data.showContactPerson ?? true
