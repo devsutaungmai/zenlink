@@ -93,7 +93,7 @@ export default function ProjectPage() {
     { key: "actions", initialWidth: 120, minWidth: 80 },
   ]
   const { getColumnWidth, onMouseDown, resetWidths } = useResizableColumns({
-    storageKey: "products-col-widths",
+    storageKey: "project-col-widths",
     columns: RESIZABLE_COLUMNS,
   })
 
@@ -358,7 +358,7 @@ export default function ProjectPage() {
                 <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
                   <tr>
                     {isColumnVisible("projectNumber") && (
-                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider select-none">
+                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider select-none border-r border-border">
                         Project No.
                         <div
                           onMouseDown={onMouseDown("projectNumber")}
@@ -367,7 +367,7 @@ export default function ProjectPage() {
                       </th>
                     )}
                     {isColumnVisible("name") && (
-                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider select-none">
+                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider select-none border-r border-border">
                         Project Name
                         <div
                           onMouseDown={onMouseDown("name")}
@@ -376,7 +376,7 @@ export default function ProjectPage() {
                       </th>
                     )}
                     {isColumnVisible("customer") && (
-                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider select-none">
+                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider select-none border-r border-border">
                         Customer
                         <div
                           onMouseDown={onMouseDown("customer")}
@@ -385,7 +385,7 @@ export default function ProjectPage() {
                       </th>
                     )}
                     {isColumnVisible("category") && (
-                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider select-none">
+                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider select-none border-r border-border">
                         Category
                         <div
                           onMouseDown={onMouseDown("category")}
@@ -394,7 +394,7 @@ export default function ProjectPage() {
                       </th>
                     )}
                     {isColumnVisible("startDate") && (
-                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider select-none">
+                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider select-none border-r border-border">
                         Start Date
                         <div
                           onMouseDown={onMouseDown("startDate")}
@@ -403,7 +403,7 @@ export default function ProjectPage() {
                       </th>
                     )}
                     {isColumnVisible("endDate") && (
-                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider select-none">
+                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider select-none border-r border-border">
                         End Date
                         <div
                           onMouseDown={onMouseDown("endDate")}
@@ -412,7 +412,7 @@ export default function ProjectPage() {
                       </th>
                     )}
                     {isColumnVisible("active") && (
-                      <th className="relative px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider select-none">
+                      <th className="relative px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider select-none border-r border-border">
                         Status
                         <div
                           onMouseDown={onMouseDown("active")}
@@ -420,9 +420,9 @@ export default function ProjectPage() {
                         />
                       </th>
                     )}
-                    <th className="relative px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    <th className="relative px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider border-r border-border">
                       <div className="flex items-center justify-end gap-2">
-                        <span>Actions</span>
+                        <span>Actions</span> 
                         <ColumnVisibilityToggle
                           columns={columns}
                           onColumnToggle={toggleColumn}

@@ -23,6 +23,7 @@ import { useRouter } from 'next/navigation'
 import { useColumnVisibility } from '@/hooks/use-column-visibility'
 import { ColumnVisibilityToggle } from '@/components/invoice/column-visibility-toggle'
 import { useResizableColumns } from '@/hooks/use-resizable-columns'
+import { ResizeHandle } from '@/components/invoice/resize-handle'
 
 
 export enum InvoiceStatus {
@@ -140,7 +141,7 @@ export default function InvoicesPage() {
     });
 
     const RESIZABLE_COLUMNS = [
-        { key: "invoiceNumber", initialWidth: 150, minWidth: 100 },
+        { key: "invoiceNumber", initialWidth: 120, minWidth: 100 },
         { key: "customer", initialWidth: 200, minWidth: 120 },
         { key: "sentAt", initialWidth: 130, minWidth: 100 },
         { key: "status", initialWidth: 120, minWidth: 80 },
@@ -674,9 +675,9 @@ export default function InvoicesPage() {
                                 )}
                                 <col style={{ width: getColumnWidth("actions") }} />
                             </colgroup>
-                            <thead className="bg-gray-50/80">
+                            <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
                                 <tr>
-                                    <th className="px-4 py-4 text-left">
+                                    <th className="px-4 py-4 text-left border-r border-border">
                                         <input
                                             type="checkbox"
                                             checked={isAllSelected}
@@ -687,45 +688,56 @@ export default function InvoicesPage() {
                                             className="w-4 h-4 text-[#31BCFF] border-gray-300 rounded focus:ring-[#31BCFF] cursor-pointer"
                                         />
                                     </th>
-                                    {isColumnVisible('invoiceNumber') && <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    {isColumnVisible('invoiceNumber') && <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
                                         Invoice Number
+                                        <ResizeHandle onMouseDown={onMouseDown("invoiceNumber")} />
                                     </th>}
-                                    {isColumnVisible('customer') && <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    {isColumnVisible('customer') && <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
                                         Customer
+                                        <ResizeHandle onMouseDown={onMouseDown("customer")} />
                                     </th>}
-                                    {isColumnVisible('sentAt') && <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    {isColumnVisible('sentAt') && <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
                                         Invoice Date
+                                        <ResizeHandle onMouseDown={onMouseDown("sentAt")} />
                                     </th>}
-                                    {isColumnVisible('status') && <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    {isColumnVisible('status') && <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
                                         Status
+                                        <ResizeHandle onMouseDown={onMouseDown("status")} />
                                     </th>}
-                                    {isColumnVisible('totalExclVAT') && <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    {isColumnVisible('totalExclVAT') && <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
                                         Total Excl VAT
+                                        <ResizeHandle onMouseDown={onMouseDown("totalExclVAT")} />
                                     </th>}
-                                    {isColumnVisible('vatAmount') && <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    {isColumnVisible('vatAmount') && <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
                                         VAT Amount
+                                        <ResizeHandle onMouseDown={onMouseDown("vatAmount")} />
                                     </th>}
-                                    {isColumnVisible('totalInclVAT') && <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    {isColumnVisible('totalInclVAT') && <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
                                         Total Incl VAT
+                                        <ResizeHandle onMouseDown={onMouseDown("totalInclVAT")} />
                                     </th>}
-                                    {isColumnVisible('discount') && <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    {isColumnVisible('discount') && <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
                                         Discount
+                                        <ResizeHandle onMouseDown={onMouseDown("discount")} />
                                     </th>}
-                                    {isColumnVisible('department') && <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    {isColumnVisible('department') && <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
                                         Department
+                                        <ResizeHandle onMouseDown={onMouseDown("department")} />
                                     </th>}
-                                    {isColumnVisible('seller') && <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    {isColumnVisible('seller') && <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
                                         Seller
+                                        <ResizeHandle onMouseDown={onMouseDown("seller")} />
                                     </th>}
-                                    {isColumnVisible('project') && <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    {isColumnVisible('project') && <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
                                         Project
+                                        <ResizeHandle onMouseDown={onMouseDown("project")} />
                                     </th>}
-                                    {isColumnVisible('deliveryAddress') && <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    {isColumnVisible('deliveryAddress') && <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
                                         Delivery Address
+                                        <ResizeHandle onMouseDown={onMouseDown("deliveryAddress")} />
                                     </th>}
-                                    <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="relative px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase border-r border-border">
                                         <div className="flex items-center justify-end gap-2">
-
                                             {hasSelectedInvoices ? (
                                                 <>
                                                     <span className="text-[#31BCFF] mr-2">{selectedInvoices.length} selected</span>
@@ -746,21 +758,23 @@ export default function InvoicesPage() {
                                                     <button
                                                         onClick={() => handleDeleteInvoices()}
                                                         className="p-2 text-green-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200"
-                                                        title="Send Selected Invoices"
+                                                        title="Delete Selected Invoices"
                                                     >
                                                         <TrashIcon className="h-4 w-4" />
                                                     </button>
                                                 </>
                                             ) : (
-                                                t("actions")
+                                                <span>{t("actions")}</span>
                                             )}
                                             <ColumnVisibilityToggle
                                                 columns={columns}
                                                 onColumnToggle={toggleColumn}
-                                                onResetColumns={resetColumns}
+                                                onResetColumns={() => {
+                                                    resetColumns()
+                                                    resetWidths()
+                                                }}
                                             />
                                         </div>
-
                                     </th>
                                 </tr>
                             </thead>

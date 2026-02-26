@@ -22,6 +22,15 @@ export async function GET(request: NextRequest) {
           { businessId: businessId }
         ]
       },
+      include:{
+        vatCode:{
+          select:{
+            id: true,
+            name:true,
+            rate: true
+          }
+        }
+      },
       orderBy: {
         accountNumber: 'asc',
       },

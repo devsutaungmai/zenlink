@@ -420,66 +420,66 @@ export default function ProductsPage() {
               <thead className="bg-muted/50">
                 <tr>
                   {isColumnVisible("productNumber") && (
-                    <th className="relative px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider select-none">
+                    <th className="relative px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider select-none border-r border-border">
                       Product Number
                       <ResizeHandle onMouseDown={onMouseDown("productNumber")} />
                     </th>
                   )}
                   {isColumnVisible("productName") && (
-                    <th className="relative px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider select-none">
+                    <th className="relative px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider select-none border-r border-border">
                       Product Name
                       <ResizeHandle onMouseDown={onMouseDown("productName")} />
                     </th>
                   )}
                   {isColumnVisible("ledgerAccount") && (
-                    <th className="relative px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider select-none">
+                    <th className="relative px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider select-none border-r border-border">
                       Ledger Account
                       <ResizeHandle onMouseDown={onMouseDown("ledgerAccount")} />
                     </th>
                   )}
                   {isColumnVisible("salesPrice") && (
-                    <th className="relative px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider select-none">
+                    <th className="relative px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider select-none border-r border-border">
                       Sales Price
                       <ResizeHandle onMouseDown={onMouseDown("salesPrice")} />
                     </th>
                   )}
                   {isColumnVisible("costPrice") && (
-                    <th className="relative px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider select-none">
+                    <th className="relative px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider select-none border-r border-border">
                       Cost Price
                       <ResizeHandle onMouseDown={onMouseDown("costPrice")} />
                     </th>
                   )}
                   {isColumnVisible("vatRate") && (
-                    <th className="relative px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider select-none">
+                    <th className="relative px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider select-none border-r border-border">
                       {"VAT %"}
                       <ResizeHandle onMouseDown={onMouseDown("vatRate")} />
                     </th>
                   )}
                   {isColumnVisible("discount") && (
-                    <th className="relative px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider select-none">
+                    <th className="relative px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider select-none border-r border-border">
                       {"Discount %"}
                       <ResizeHandle onMouseDown={onMouseDown("discount")} />
                     </th>
                   )}
                   {isColumnVisible("unit") && (
-                    <th className="relative px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider select-none">
+                    <th className="relative px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider select-none border-r border-border">
                       Unit
                       <ResizeHandle onMouseDown={onMouseDown("unit")} />
                     </th>
                   )}
                   {isColumnVisible("productGroup") && (
-                    <th className="relative px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider select-none">
+                    <th className="relative px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider select-none border-r border-border">
                       Product Group
                       <ResizeHandle onMouseDown={onMouseDown("productGroup")} />
                     </th>
                   )}
                   {isColumnVisible("status") && (
-                    <th className="relative px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider select-none">
+                    <th className="relative px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider select-none border-r border-border">
                       Status
                       <ResizeHandle onMouseDown={onMouseDown("status")} />
                     </th>
                   )}
-                  <th className="relative px-6 py-4 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <th className="relative px-6 py-4 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider border-r border-border">
                     <div className="flex items-center justify-end gap-2">
                       <span>Actions</span>
                       <ColumnVisibilityToggle

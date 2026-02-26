@@ -228,7 +228,7 @@ export default function CustomersPage() {
     { key: "actions", initialWidth: 120, minWidth: 80 },
   ]
   const { getColumnWidth, onMouseDown, resetWidths } = useResizableColumns({
-    storageKey: "products-col-widths",
+    storageKey: "customer-col-widths",
     columns: RESIZABLE_COLUMNS,
   })
 
@@ -376,73 +376,73 @@ export default function CustomersPage() {
                 <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
                   <tr>
                     {isColumnVisible("customerNumber") && (
-                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none">
+                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
                         Customer No.
                         <ResizeHandle onMouseDown={onMouseDown("customerNumber")} />
                       </th>
                     )}
 
                     {isColumnVisible("customerName") && (
-                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none">
+                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
                         Customer Name
                         <ResizeHandle onMouseDown={onMouseDown("customerName")} />
                       </th>
                     )}
 
                     {isColumnVisible("email") && (
-                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none">
+                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
                         Email
                         <ResizeHandle onMouseDown={onMouseDown("email")} />
                       </th>
                     )}
 
                     {isColumnVisible("phoneNumber") && (
-                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none">
+                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
                         Phone
                         <ResizeHandle onMouseDown={onMouseDown("phoneNumber")} />
                       </th>
                     )}
 
                     {isColumnVisible("address") && (
-                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none">
+                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
                         Address
                         <ResizeHandle onMouseDown={onMouseDown("address")} />
                       </th>
                     )}
                     {isColumnVisible("discountPercentage") && (
-                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none">
+                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
                         Discount %
                         <ResizeHandle onMouseDown={onMouseDown("discountPercentage")} />
                       </th>
                     )}
                     {isColumnVisible("organizationNumber") && (
-                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none">
+                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
                         Organization No.
                         <ResizeHandle onMouseDown={onMouseDown("organizationNumber")} />
                       </th>
                     )}
                     {isColumnVisible("department") && (
-                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none">
+                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
                         Department
                         <ResizeHandle onMouseDown={onMouseDown("department")} />
                       </th>
                     )}
 
                     {isColumnVisible("deliveryAddress") && (
-                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none">
+                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
                         Delivery Address
                         <ResizeHandle onMouseDown={onMouseDown("deliveryAddress")} />
                       </th>
                     )}
 
                     {isColumnVisible("active") && (
-                      <th className="relative px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase select-none">
+                      <th className="relative px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
                         Status
                         <ResizeHandle onMouseDown={onMouseDown("active")} />
                       </th>
                     )}
 
-                    <th className="relative px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase">
+                    <th className="relative px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase border-r border-border">
                       <div className="flex items-center justify-end gap-2">
                         <span>Actions</span>
                         <ColumnVisibilityToggle
