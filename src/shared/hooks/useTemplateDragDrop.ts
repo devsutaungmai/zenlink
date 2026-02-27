@@ -10,7 +10,7 @@ export interface TemplateDragData {
 export interface TemplateDropTarget {
   rowId: string
   dayIndex: number
-  rowType: 'employee' | 'group' | 'function' | 'open'
+  rowType: 'employee' | 'group' | 'function' | 'openEmployee' | 'openGroup' | 'openFunction'
 }
 
 interface UseTemplateDragDropOptions {
@@ -77,7 +77,7 @@ export function useTemplateDragDrop({ onMoveShift, onDuplicateShift }: UseTempla
     e: React.DragEvent,
     targetRowId: string,
     targetDayIndex: number,
-    rowType: 'employee' | 'group' | 'function' | 'open'
+    rowType: 'employee' | 'group' | 'function' | 'openEmployee' | 'openGroup' | 'openFunction'
   ) => {
     e.preventDefault()
     e.stopPropagation()
@@ -97,17 +97,16 @@ export function useTemplateDragDrop({ onMoveShift, onDuplicateShift }: UseTempla
     const target: any = { dayIndex: targetDayIndex }
     if (rowType === 'employee') {
       target.employeeId = targetRowId
-      target.employeeGroupId = null
     } else if (rowType === 'group') {
       target.employeeGroupId = targetRowId
-      target.employeeId = null
     } else if (rowType === 'function') {
       target.functionId = targetRowId
+    } else if (rowType === 'openEmployee') {
       target.employeeId = null
+    } else if (rowType === 'openGroup') {
       target.employeeGroupId = null
-    } else if (rowType === 'open') {
-      target.employeeId = null
-      target.employeeGroupId = null
+    } else if (rowType === 'openFunction') {
+      target.functionId = null
     }
 
     try {

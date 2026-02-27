@@ -98,6 +98,7 @@ export default function TemplateEditorPage() {
   const templateId = params.id as string
 
   const [template, setTemplate] = useState<ScheduleTemplate | null>(null)
+  const [pendingShiftIds, setPendingShiftIds] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [employees, setEmployees] = useState<Employee[]>([])
@@ -290,6 +291,7 @@ export default function TemplateEditorPage() {
   }
 
   const handleMoveTemplateShift = useCallback(async (shiftId: string, target: { dayIndex: number; employeeId?: string | null; employeeGroupId?: string | null; functionId?: string | null }) => {
+    setPendingShiftIds(prev => new Set(prev).add(shiftId))
     try {
       const response = await fetch(`/api/schedule-templates/${templateId}/shifts/${shiftId}`, {
         method: 'PATCH',
@@ -300,6 +302,12 @@ export default function TemplateEditorPage() {
       await fetchTemplate()
     } catch (err) {
       console.error('Failed to move template shift:', err)
+    } finally {
+      setPendingShiftIds(prev => {
+        const next = new Set(prev)
+        next.delete(shiftId)
+        return next
+      })
     }
   }, [templateId, fetchTemplate])
 
@@ -308,6 +316,7 @@ export default function TemplateEditorPage() {
     const sourceShift = template.shifts.find(s => s.id === shiftId)
     if (!sourceShift) return
 
+    setPendingShiftIds(prev => new Set(prev).add(shiftId))
     try {
       const response = await fetch(`/api/schedule-templates/${templateId}/shifts`, {
         method: 'POST',
@@ -330,6 +339,12 @@ export default function TemplateEditorPage() {
       await fetchTemplate()
     } catch (err) {
       console.error('Failed to duplicate template shift:', err)
+    } finally {
+      setPendingShiftIds(prev => {
+        const next = new Set(prev)
+        next.delete(shiftId)
+        return next
+      })
     }
   }, [templateId, template, fetchTemplate])
 
@@ -379,6 +394,7 @@ export default function TemplateEditorPage() {
             onDeleteShift={handleDeleteShift}
             onMoveShift={handleMoveTemplateShift}
             onDuplicateShift={handleDuplicateTemplateShift}
+            pendingShiftIds={pendingShiftIds}
           />
         )
       case 'groups':
@@ -393,6 +409,7 @@ export default function TemplateEditorPage() {
             onDeleteShift={handleDeleteShift}
             onMoveShift={handleMoveTemplateShift}
             onDuplicateShift={handleDuplicateTemplateShift}
+            pendingShiftIds={pendingShiftIds}
           />
         )
       case 'functions':
@@ -407,6 +424,7 @@ export default function TemplateEditorPage() {
             onDeleteShift={handleDeleteShift}
             onMoveShift={handleMoveTemplateShift}
             onDuplicateShift={handleDuplicateTemplateShift}
+            pendingShiftIds={pendingShiftIds}
           />
         )
       default:

@@ -679,7 +679,7 @@ export default function ShiftForm({
   }, [safeEmployees, formData.departmentId, formData.employeeGroupId, formData.employeeId])
 
   const employeeSelectDisabled = isEmployee
-  const employeeGroupSelectDisabled = isEmployee || (formData.functionId ? linkedFunctionGroups.length === 1 : false)
+  const employeeGroupSelectDisabled = isEmployee || (formData.functionId ? linkedFunctionGroups.length === 1 && !!formData.employeeGroupId : false)
 
   const filteredDepartments = React.useMemo(() => {
     if (!formData.employeeId) return departments
@@ -745,15 +745,6 @@ export default function ShiftForm({
     }
 
     if (linkedFunctionGroups.length === 0) {
-      if (formData.employeeGroupId || formData.employeeId) {
-        if (!initialData?.employeeId || formData.employeeId !== initialData.employeeId) {
-          setFormData(prev => ({
-            ...prev,
-            employeeGroupId: undefined,
-            employeeId: undefined,
-          }))
-        }
-      }
       return
     }
 
@@ -1036,6 +1027,19 @@ export default function ShiftForm({
     e.preventDefault()
 
     if (isEmployee) {
+      return
+    }
+
+    if (!formData.employeeGroupId) {
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        icon: 'warning',
+        title: t('shifts.form.employee_group_required', 'Employee group is required')
+      })
       return
     }
 
@@ -1373,11 +1377,6 @@ export default function ShiftForm({
                   : ' Select one of these groups below to choose eligible employees.'}
               </p>
             )}
-            {formData.functionId && linkedFunctionGroups.length === 0 && !formData.departmentId && (
-              <p className="mt-1 text-xs text-red-500">
-                No employee group is linked to this function. Update your employee group settings before assigning employees.
-              </p>
-            )}
           </div>
 
           {/* Employee */}
@@ -1423,11 +1422,14 @@ export default function ShiftForm({
 
           {/* Employee Group */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('shifts.form.employee_group')}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('shifts.form.employee_group')} <span className="text-red-500">*</span>
+            </label>
             <select
               value={formData.employeeGroupId || ''}
               onChange={(e) => setFormData({ ...formData, employeeGroupId: e.target.value || undefined })}
               disabled={employeeGroupSelectDisabled}
+              required
               className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${employeeGroupSelectDisabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
             >
               <option value="">
@@ -1453,11 +1455,6 @@ export default function ShiftForm({
             {formData.functionId && linkedFunctionGroups.length > 1 && (
               <p className="mt-1 text-xs text-gray-500">
                 Select one of the linked employee groups to control which employees are available.
-              </p>
-            )}
-            {formData.functionId && linkedFunctionGroups.length === 0 && !formData.departmentId && (
-              <p className="mt-1 text-xs text-red-500">
-                Assign a function to an employee group before creating this shift.
               </p>
             )}
           </div>
