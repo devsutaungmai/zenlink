@@ -440,14 +440,24 @@ export default function ProjectPage() {
                     <tr key={project.id} className="hover:bg-blue-50/50 transition-colors duration-150">
                       {isColumnVisible("projectNumber") && (
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#31BCFF]/10 text-[#31BCFF]">
+                            <Link
+                            href={`/dashboard/projects/${project.id}/edit`}
+                            title="Edit Project"
+                          >
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#31BCFF]/10 text-blue-600 hover:underline">
                             {project.projectNumber || "-"}
                           </span>
+                          </Link>
                         </td>
                       )}
                       {isColumnVisible("name") && (
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-sm font-medium text-gray-900">{project.name}</span>
+                             <Link
+                            href={`/dashboard/projects/${project.id}/edit`}
+                            title="Edit Project"
+                          >
+                          <span className="text-sm font-medium text-blue-600 hover:underline">{project.name}</span>
+                          </Link>
                         </td>
                       )}
                       {isColumnVisible("customer") && (

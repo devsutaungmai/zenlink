@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon, Cog6ToothIcon, FunnelIcon, PaperAirplaneIcon, PaperClipIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon, Cog6ToothIcon, FunnelIcon, PaperAirplaneIcon, PaperClipIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
 import { useTranslation } from 'react-i18next'
 import Swal from 'sweetalert2'
 import { useCurrency } from '@/shared/hooks/useCurrency'
@@ -24,6 +24,8 @@ import { useColumnVisibility } from '@/hooks/use-column-visibility'
 import { ColumnVisibilityToggle } from '@/components/invoice/column-visibility-toggle'
 import { useResizableColumns } from '@/hooks/use-resizable-columns'
 import { ResizeHandle } from '@/components/invoice/resize-handle'
+import CreditNoteDialog from '@/components/invoice/CreditNoteDialog'
+import RegisterPaymentDialog from '@/components/invoice/RegisterPaymentDialog'
 
 
 export enum InvoiceStatus {
@@ -85,6 +87,8 @@ export interface Invoice {
     notes?: string | null
     sentAt?: Date | null
     paidAt?: Date | null
+    outstandingAmount?: number
+
 }
 
 export default function InvoicesPage() {
@@ -96,6 +100,11 @@ export default function InvoicesPage() {
     const [error, setError] = useState<string | null>(null)
     const [searchTerm, setSearchTerm] = useState('')
     const [selectedFilter, setSelectedFilter] = useState('all')
+    const [selectedInvoiceForCredit, setSelectedInvoiceForCredit] = useState<Invoice | null>(null)
+    const [loadingCredit, setLoadingCredit] = useState<boolean>(false);
+    const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] = useState<Invoice | null>(null)
+    const [loadingPayment, setLoadingPayment] = useState<boolean>(false);
+
 
     // Pagination states
     const [currentPage, setCurrentPage] = useState(1)
@@ -116,11 +125,14 @@ export default function InvoicesPage() {
         { key: "totalExclVAT", label: "Total (excl. VAT)" },
         { key: "vatAmount", label: "VAT" },
         { key: "totalInclVAT", label: "Total (incl. VAT)" },
+        { key: "paid", label: "Paid" },
+        { key: "outstanding", label: "Outstanding Amount" },
         { key: "discount", label: "Discount" },
         { key: "department", label: "Department" },
         { key: "seller", label: "Seller" },
         { key: "project", label: "Project" },
         { key: "deliveryAddress", label: "Delivery Address" },
+
     ];
 
     const { columns, toggleColumn, resetColumns, isColumnVisible } = useColumnVisibility({
@@ -134,28 +146,34 @@ export default function InvoicesPage() {
             totalExclVAT: true,
             vatAmount: true,
             totalInclVAT: true,
+            paid: true,
+            outstanding: true,
             discount: false,
             department: false,
             seller: false,
             project: false,
             deliveryAddress: false,
+
         },
     });
 
     const RESIZABLE_COLUMNS = [
         { key: "invoiceNumber", initialWidth: 120, minWidth: 100 },
-        { key: "customer", initialWidth: 200, minWidth: 120 },
+        { key: "customer", initialWidth: 180, minWidth: 120 },
         { key: "sentAt", initialWidth: 130, minWidth: 100 },
-        { key: "status", initialWidth: 120, minWidth: 80 },
-        { key: "totalExclVAT", initialWidth: 150, minWidth: 100 },
+        { key: "status", initialWidth: 150, minWidth: 80 },
+        { key: "totalExclVAT", initialWidth: 120, minWidth: 100 },
         { key: "vatAmount", initialWidth: 120, minWidth: 80 },
         { key: "totalInclVAT", initialWidth: 150, minWidth: 100 },
+        { key: "paid", initialWidth: 120, minWidth: 80 },
+        { key: "outstanding", initialWidth: 120, minWidth: 100 },
         { key: "discount", initialWidth: 120, minWidth: 80 },
-        { key: "department", initialWidth: 150, minWidth: 100 },
-        { key: "seller", initialWidth: 150, minWidth: 100 },
-        { key: "project", initialWidth: 150, minWidth: 100 },
-        { key: "deliveryAddress", initialWidth: 200, minWidth: 120 },
-        { key: "actions", initialWidth: 120, minWidth: 80 },
+        { key: "department", initialWidth: 120, minWidth: 100 },
+        { key: "seller", initialWidth: 120, minWidth: 100 },
+        { key: "project", initialWidth: 120, minWidth: 100 },
+        { key: "deliveryAddress", initialWidth: 150, minWidth: 120 },
+        { key: "actions", initialWidth: 200, minWidth: 80 },
+
     ]
 
     const { getColumnWidth, onMouseDown, resetWidths } = useResizableColumns({
@@ -529,8 +547,6 @@ export default function InvoicesPage() {
         )
     }
 
-
-
     return (
         <div className="space-y-6">
             {/* Header Section */}
@@ -675,6 +691,13 @@ export default function InvoicesPage() {
                                 {isColumnVisible("deliveryAddress") && (
                                     <col style={{ width: getColumnWidth("deliveryAddress") }} />
                                 )}
+                                {isColumnVisible("paid") && (
+                                    <col style={{ width: getColumnWidth("paid") }} />
+                                )}
+
+                                {isColumnVisible("outstanding") && (
+                                    <col style={{ width: getColumnWidth("outstanding") }} />
+                                )}
                                 <col style={{ width: getColumnWidth("actions") }} />
                             </colgroup>
                             <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
@@ -738,6 +761,14 @@ export default function InvoicesPage() {
                                         Delivery Address
                                         <ResizeHandle onMouseDown={onMouseDown("deliveryAddress")} />
                                     </th>}
+                                    {isColumnVisible('paid') && <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
+                                        Paid
+                                        <ResizeHandle onMouseDown={onMouseDown("paid")} />
+                                    </th>}
+                                    {isColumnVisible('outstanding') && <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
+                                        Outstanding
+                                        <ResizeHandle onMouseDown={onMouseDown("outstanding")} />
+                                    </th>}
                                     <th className="relative px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase border-r border-border">
                                         <div className="flex items-center justify-end gap-2">
                                             {hasSelectedInvoices ? (
@@ -781,147 +812,179 @@ export default function InvoicesPage() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200/50">
-                                {paginatedInvoices.map((invoice) => (
-                                    <tr key={invoice.id} className="hover:bg-blue-50/30 transition-colors duration-200">
-                                        <td className="px-4 py-4">
-                                            {invoice.status === InvoiceStatus.DRAFT && (<input
-                                                type="checkbox"
-                                                checked={selectedInvoices.includes(invoice.id)}
-                                                onChange={() => handleSelectInvoice(invoice.id)}
-                                                className="w-4 h-4 text-[#31BCFF] border-gray-300 rounded focus:ring-[#31BCFF] cursor-pointer"
-                                            />)}
-                                        </td>
-                                        {isColumnVisible('invoiceNumber') && <td className="px-6 py-4">
-                                            <div className="text-sm font-medium text-gray-900">
-                                                <Link
-                                                    href={`/dashboard/invoices/create?invoiceId=${invoice.id}&copy=true&overview=true`}
-                                                >
-                                                    <span className="text-sm font-medium text-blue-600 hover:underline cursor-pointer">
+                                {paginatedInvoices.map((invoice) => {
+                                    const outstandingAmount = Number(invoice.totalInclVAT ?? 0) - (invoice.paymentAllocations?.reduce((sum, pa) => sum + Number(pa.amountAllocated), 0) || 0);
 
-                                                        {invoice.status !== InvoiceStatus.DRAFT ? formatInvoiceNumberForDisplay(invoice.invoiceNumber) : "-"}
-                                                    </span>
-                                                </Link>
-                                            </div>
-                                        </td>}
-                                        {isColumnVisible('customer') && invoice.customer && <td className="px-6 py-4">
-                                            <div className="text-sm text-gray-900">
-                                                <Link
-                                                    href={`/dashboard/customers/${invoice.customer?.id}/edit?overview=true`}
-                                                >
-                                                    <span className="text-sm font-medium text-blue-600 hover:underline cursor-pointer">
-
-                                                        {invoice.customer?.customerName}
-                                                    </span>
-                                                </Link>
-                                            </div>
-                                        </td>}
-                                        {isColumnVisible('sentAt') && <td className="px-6 py-4">
-                                            <div className="text-sm text-gray-900">
-                                                {/* {new Date(invoice.invoiceDate).toLocaleDateString()}
-                                                 */}
-                                                {invoice.sentAt ? new Date(invoice.sentAt).toLocaleDateString() : '-'}
-                                            </div>
-                                        </td>}
-                                        {isColumnVisible('status') && <td className="px-6 py-4">
-                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                {invoice.status}
-                                            </span>
-                                        </td>}
-                                        {isColumnVisible('totalExclVAT') && <td className="px-6 py-4">
-                                            <div className="text-sm text-gray-900">
-                                                {Number(invoice?.totalExclVAT ?? 0).toFixed(2)}
-                                            </div>
-                                        </td>}
-                                        {isColumnVisible('vatAmount') && <td className="px-6 py-4">
-                                            <div className="text-sm text-gray-900">
-                                                {Number(invoice?.totalVatAmount ?? 0).toFixed(2)}
-
-                                            </div>
-                                        </td>}
-                                        {isColumnVisible('totalInclVAT') && <td className="px-6 py-4">
-                                            <div className="text-sm font-medium text-gray-900">
-                                                {Number(invoice?.totalInclVAT ?? 0).toFixed(2)}
-
-                                            </div>
-                                        </td>}
-                                        {isColumnVisible('discount') && <td className="px-6 py-4">
-                                            <div className="text-sm text-gray-900">
-                                                {invoice.customer?.discountPercentage ? `${invoice.customer?.discountPercentage}%` : '-'}
-                                            </div>
-                                        </td>}
-                                        {isColumnVisible('department') && <td className="px-6 py-4">
-                                            <div className="text-sm text-gray-900">
-                                                {invoice.department ? invoice.department.name : '-'}
-                                            </div>
-                                        </td>}
-                                        {isColumnVisible('seller') && <td className="px-6 py-4">
-                                            <div className="text-sm text-gray-900">
-                                                {invoice.customer ? invoice.customer.business.name : '-'}
-                                            </div>
-                                        </td>}
-                                        {isColumnVisible('project') && <td className="px-6 py-4">
-                                            <div className="text-sm text-gray-900">
-                                                {invoice.project ? invoice.project.name : '-'}
-                                            </div>
-                                        </td>}
-                                        {isColumnVisible('deliveryAddress') && <td className="px-6 py-4">
-                                            <div className="text-sm text-gray-900">
-                                                {invoice.customer ? invoice.customer.deliveryAddress : '-'
-                                                }
-                                            </div>
-                                        </td>}
-                                        <td className="px-6 py-4">
-                                            {(!hasSelectedInvoices && invoice.status === InvoiceStatus.DRAFT) ? (
-                                                <div className="flex items-center justify-end gap-2">
+                                    return (
+                                        <tr key={invoice.id} className="hover:bg-blue-50/30 transition-colors duration-200">
+                                            <td className="px-4 py-4">
+                                                {invoice.status === InvoiceStatus.DRAFT && (<input
+                                                    type="checkbox"
+                                                    checked={selectedInvoices.includes(invoice.id)}
+                                                    onChange={() => handleSelectInvoice(invoice.id)}
+                                                    className="w-4 h-4 text-[#31BCFF] border-gray-300 rounded focus:ring-[#31BCFF] cursor-pointer"
+                                                />)}
+                                            </td>
+                                            {isColumnVisible('invoiceNumber') && <td className="px-6 py-4">
+                                                <div className="text-sm font-medium text-gray-900">
                                                     <Link
-                                                        href={`/dashboard/invoices/${invoice.id}/edit`}
-                                                        className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
-                                                        title="Edit Invoice"
+                                                        href={`/dashboard/invoices/create?invoiceId=${invoice.id}&copy=true&overview=true`}
                                                     >
-                                                        <PencilIcon className="h-4 w-4" />
-                                                    </Link>
-                                                    <button
-                                                        onClick={() => handleDelete(invoice.id, invoice.invoiceNumber)}
-                                                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                                                        title={t("employee_groups.delete_group")}
-                                                    >
-                                                        <TrashIcon className="h-4 w-4" />
-                                                    </button>
-                                                </div>
-                                            ) : (<div className="flex items-center justify-end gap-2">
-                                                <Link
-                                                    href={`/dashboard/invoices/create?invoiceId=${invoice.id}&copy=true`}
-                                                    className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2"
-                                                >
-                                                    <span className="text-base">📋</span>
-                                                </Link>
+                                                        <span className="text-sm font-medium text-blue-600 hover:underline cursor-pointer">
 
-                                                <button className="p-1 hover:bg-gray-200 rounded" onClick={() => handlePDf(invoice.id)}>
-                                                    <PaperClipIcon className="h-4 w-4 text-gray-400" />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleSendEmail(invoice.id)}
-                                                    disabled={loadingEmail[invoice.id]}
-                                                    className={`p-2 rounded-lg transition-all duration-200 ${loadingEmail[invoice.id]
-                                                        ? 'text-gray-300 bg-gray-50 cursor-not-allowed'
-                                                        : 'text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50'
-                                                        }`}
-                                                >
-                                                    {loadingEmail[invoice.id] ? (
-                                                        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                        </svg>
-                                                    ) : (
-                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25H4.5a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-                                                        </svg>
-                                                    )}
-                                                </button>
-                                            </div>)}
-                                        </td>
-                                    </tr>
-                                ))}
+                                                            {invoice.status !== InvoiceStatus.DRAFT ? formatInvoiceNumberForDisplay(invoice.invoiceNumber) : "-"}
+                                                        </span>
+                                                    </Link>
+                                                </div>
+                                            </td>}
+                                            {isColumnVisible('customer') && invoice.customer && <td className="px-6 py-4">
+                                                <div className="text-sm text-gray-900">
+                                                    <Link
+                                                        href={`/dashboard/customers/${invoice.customer?.id}/edit?overview=true`}
+                                                    >
+                                                        <span className="text-sm font-medium text-blue-600 hover:underline cursor-pointer">
+
+                                                            {invoice.customer?.customerName}
+                                                        </span>
+                                                    </Link>
+                                                </div>
+                                            </td>}
+                                            {isColumnVisible('sentAt') && <td className="px-6 py-4">
+                                                <div className="text-sm text-gray-900">
+                                                    {/* {new Date(invoice.invoiceDate).toLocaleDateString()}
+                                                 */}
+                                                    {invoice.sentAt ? new Date(invoice.sentAt).toLocaleDateString() : '-'}
+                                                </div>
+                                            </td>}
+                                            {isColumnVisible('status') && <td className="px-6 py-4">
+                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                    {invoice.status}
+                                                </span>
+                                            </td>}
+                                            {isColumnVisible('totalExclVAT') && <td className="px-6 py-4">
+                                                <div className="text-sm text-gray-900">
+                                                    {Number(invoice?.totalExclVAT ?? 0).toFixed(2)}
+                                                </div>
+                                            </td>}
+                                            {isColumnVisible('vatAmount') && <td className="px-6 py-4">
+                                                <div className="text-sm text-gray-900">
+                                                    {Number(invoice?.totalVatAmount ?? 0).toFixed(2)}
+
+                                                </div>
+                                            </td>}
+                                            {isColumnVisible('totalInclVAT') && <td className="px-6 py-4">
+                                                <div className="text-sm font-medium text-gray-900">
+                                                    {Number(invoice?.totalInclVAT ?? 0).toFixed(2)}
+
+                                                </div>
+                                            </td>}
+                                            {isColumnVisible('discount') && <td className="px-6 py-4">
+                                                <div className="text-sm text-gray-900">
+                                                    {invoice.customer?.discountPercentage ? `${invoice.customer?.discountPercentage}%` : '-'}
+                                                </div>
+                                            </td>}
+                                            {isColumnVisible('department') && <td className="px-6 py-4">
+                                                <div className="text-sm text-gray-900">
+                                                    {invoice.department ? invoice.department.name : '-'}
+                                                </div>
+                                            </td>}
+                                            {isColumnVisible('seller') && <td className="px-6 py-4">
+                                                <div className="text-sm text-gray-900">
+                                                    {invoice.customer ? invoice.customer.business.name : '-'}
+                                                </div>
+                                            </td>}
+                                            {isColumnVisible('project') && <td className="px-6 py-4">
+                                                <div className="text-sm text-gray-900">
+                                                    {invoice.project ? invoice.project.name : '-'}
+                                                </div>
+                                            </td>}
+                                            {isColumnVisible('deliveryAddress') && <td className="px-6 py-4">
+                                                <div className="text-sm text-gray-900">
+                                                    {invoice.customer ? invoice.customer.deliveryAddress : '-'
+                                                    }
+                                                </div>
+                                            </td>}
+                                            {isColumnVisible('paid') && <td className="px-6 py-4">
+                                                <div className="text-sm text-gray-900">
+                                                    {invoice.paymentAllocations?.reduce((sum, pa) => sum + Number(pa.amountAllocated), 0)}
+                                                </div>
+                                            </td>}
+                                            {isColumnVisible('outstanding') && <td className="px-6 py-4">
+                                                <div className="text-sm text-gray-900">
+                                                    {outstandingAmount}
+                                                </div>
+                                            </td>}
+
+                                            <td className="px-6 py-4">
+                                                {(!hasSelectedInvoices && invoice.status === InvoiceStatus.DRAFT) ? (
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        <Link
+                                                            href={`/dashboard/invoices/${invoice.id}/edit`}
+                                                            className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
+                                                            title="Edit Invoice"
+                                                        >
+                                                            <PencilIcon className="h-4 w-4" />
+                                                        </Link>
+                                                        <button
+                                                            onClick={() => handleDelete(invoice.id, invoice.invoiceNumber)}
+                                                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                                                            title={t("employee_groups.delete_group")}
+                                                        >
+                                                            <TrashIcon className="h-4 w-4" />
+                                                        </button>
+                                                    </div>
+                                                ) : (<div className="flex items-center justify-end">
+                                                    <Link
+                                                        href={`/dashboard/invoices/create?invoiceId=${invoice.id}&copy=true`}
+                                                        className="px-1 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2"
+                                                    >
+                                                        <span className="text-base">📋</span>
+                                                    </Link>
+
+                                                    {outstandingAmount > 0 ? (
+                                                        <button
+                                                            className="px-1 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2"
+                                                            onClick={() => setSelectedInvoiceForPayment({ ...invoice, outstandingAmount })}
+                                                        >
+                                                            <CheckCircleIcon className="h-4 w-4" />
+                                                        </button>
+                                                    ) : null}
+                                                    {(invoice.status !== InvoiceStatus.CREDIT_NOTE && invoice.status !== InvoiceStatus.CREDITED) ?
+                                                        <button
+                                                            className="px-1 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2"
+                                                            onClick={() => setSelectedInvoiceForCredit(invoice)}
+                                                        >
+                                                            <span className="text-base">✓</span>
+                                                        </button> : null}
+
+
+                                                    <button className="p-1 hover:bg-gray-200 rounded" onClick={() => handlePDf(invoice.id)}>
+                                                        <PaperClipIcon className="h-4 w-4 text-gray-400" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleSendEmail(invoice.id)}
+                                                        disabled={loadingEmail[invoice.id]}
+                                                        className={`p-1 rounded-lg transition-all duration-200 ${loadingEmail[invoice.id]
+                                                            ? 'text-gray-300 bg-gray-50 cursor-not-allowed'
+                                                            : 'text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50'
+                                                            }`}
+                                                    >
+                                                        {loadingEmail[invoice.id] ? (
+                                                            <svg className="animate-spin h-2 w-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                            </svg>
+                                                        ) : (
+                                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25H4.5a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                                                            </svg>
+                                                        )}
+                                                    </button>
+                                                </div>)}
+                                            </td>
+                                        </tr>
+                                    )
+                                })}
                             </tbody>
                         </table>
                     </div>
@@ -1028,127 +1091,179 @@ export default function InvoicesPage() {
                                 </div>
                             </div>
                         )}
-                        {paginatedInvoices.map((invoice) => (
-                            <div
-                                key={invoice.id}
-                                className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg overflow-hidden hover:shadow-xl transition-all duration-200"
-                            >
-                                {/* Card Header */}
-                                <div className="p-4 bg-gradient-to-r from-gray-50 to-blue-50/30">
-                                    <div className="flex items-start justify-between mb-3">
-                                        <div className="flex items-start gap-3 flex-1">
-                                            {invoice.status === InvoiceStatus.DRAFT && (<input
-                                                type="checkbox"
-                                                checked={selectedInvoices.includes(invoice.id)}
-                                                onChange={() => handleSelectInvoice(invoice.id)}
-                                                className="w-5 h-5 mt-0.5 text-[#31BCFF] border-gray-300 rounded focus:ring-[#31BCFF] cursor-pointer"
-                                            />)}
-                                            <div className="flex-1">
-                                                <div className="flex items-center gap-2 flex-wrap mb-2">
-                                                    {isColumnVisible('invoiceNumber') && <span className="text-base font-bold text-gray-900">
+                        {paginatedInvoices.map((invoice) => {
+                            const outstandingAmount = Number(invoice.totalInclVAT ?? 0) - (invoice.paymentAllocations?.reduce((sum, pa) => sum + Number(pa.amountAllocated), 0) ?? 0);
+
+                            return (
+                                <div
+                                    key={invoice.id}
+                                    className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg overflow-hidden hover:shadow-xl transition-all duration-200"
+                                >
+                                    {/* Card Header */}
+                                    <div className="p-4 bg-gradient-to-r from-gray-50 to-blue-50/30">
+                                        <div className="flex items-start justify-between mb-3">
+                                            <div className="flex items-start gap-3 flex-1">
+                                                {invoice.status === InvoiceStatus.DRAFT && (<input
+                                                    type="checkbox"
+                                                    checked={selectedInvoices.includes(invoice.id)}
+                                                    onChange={() => handleSelectInvoice(invoice.id)}
+                                                    className="w-5 h-5 mt-0.5 text-[#31BCFF] border-gray-300 rounded focus:ring-[#31BCFF] cursor-pointer"
+                                                />)}
+                                                <div className="flex-1">
+                                                    <div className="flex items-center gap-2 flex-wrap mb-2">
+                                                        {isColumnVisible('invoiceNumber') && <span className="text-base font-bold text-gray-900">
+                                                            <Link
+                                                                href={`/dashboard/invoices/create?invoiceId=${invoice.id}&copy=true&overview=true`}
+                                                            >{invoice.status !== InvoiceStatus.DRAFT ? formatInvoiceNumberForDisplay(invoice.invoiceNumber) : "-"}</Link>
+                                                        </span>}
+                                                        {isColumnVisible('status') && <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                            {invoice.status}
+                                                        </span>}
+                                                    </div>
+                                                    {isColumnVisible('customer') && <p className="text-sm text-gray-600">
                                                         <Link
-                                                            href={`/dashboard/invoices/create?invoiceId=${invoice.id}&copy=true&overview=true`}
-                                                        >{invoice.status !== InvoiceStatus.DRAFT ? formatInvoiceNumberForDisplay(invoice.invoiceNumber) : "-"}</Link>
-                                                    </span>}
-                                                    {isColumnVisible('status') && <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                        {invoice.status}
-                                                    </span>}
+                                                            href={`/dashboard/customers/${invoice.customer?.id}/edit?overview=true`}
+                                                        >{invoice.customer?.customerName}</Link>
+                                                    </p>}
                                                 </div>
-                                                {isColumnVisible('customer') && <p className="text-sm text-gray-600">
-                                                    <Link
-                                                        href={`/dashboard/customers/${invoice.customer?.id}/edit?overview=true`}
-                                                    >{invoice.customer?.customerName}</Link>
-                                                </p>}
                                             </div>
                                         </div>
+
                                     </div>
 
-                                </div>
-
-                                {/* Card Body */}
-                                <div className="p-4 space-y-3">
-                                    {/* Date Information */}
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <div className="bg-gray-50 rounded-lg p-3">
-                                            <div className="text-xs text-gray-500 mb-1">Invoice Date</div>
-                                            <div className="text-sm font-medium text-gray-900">
-                                                {invoice.sentAt ? new Date(invoice.sentAt).toLocaleDateString() : '-'}
+                                    {/* Card Body */}
+                                    <div className="p-4 space-y-3">
+                                        {/* Date Information */}
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="bg-gray-50 rounded-lg p-3">
+                                                <div className="text-xs text-gray-500 mb-1">Invoice Date</div>
+                                                <div className="text-sm font-medium text-gray-900">
+                                                    {invoice.sentAt ? new Date(invoice.sentAt).toLocaleDateString() : '-'}
+                                                </div>
                                             </div>
-                                        </div>
-                                        {/* <div className="bg-gray-50 rounded-lg p-3">
+                                            {/* <div className="bg-gray-50 rounded-lg p-3">
                                             <div className="text-xs text-gray-500 mb-1">Due Date</div>
                                             <div className="text-sm font-medium text-gray-900">
                                                 {invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : '-'}
                                             </div>
                                         </div> */}
-                                    </div>
-
-                                    {/* Financial Breakdown */}
-                                    <div className="bg-blue-50/50 rounded-lg p-3 space-y-2">
-                                        {isColumnVisible('totalExclVAT') && <div className="flex items-center justify-between text-sm">
-                                            <span className="text-gray-600">Total Excl VAT</span>
-                                            <span className="font-medium text-gray-900">
-                                                {Number(invoice.totalExclVAT).toFixed(2)}
-                                            </span>
-                                        </div>}
-                                        {isColumnVisible('vatAmount') && <div className="flex items-center justify-between text-sm">
-                                            <span className="text-gray-600">VAT Amount</span>
-                                            <span className="font-medium text-gray-900">
-                                                {Number(invoice.totalVatAmount).toFixed(2)}
-                                            </span>
-                                        </div>}
-                                        {isColumnVisible('totalInclVAT') && <div className="flex items-center justify-between text-sm pt-2 border-t border-blue-200">
-                                            <span className="font-semibold text-gray-900">Total Incl VAT</span>
-                                            <span className="font-bold text-gray-900">
-                                                {Number(invoice.totalInclVAT).toFixed(2)}
-                                            </span>
-                                        </div>}
-                                    </div>
-
-                                    {/* Notes */}
-                                    {invoice.notes && (
-                                        <div className="bg-gray-50 rounded-lg p-3">
-                                            <div className="text-xs text-gray-500 mb-1">Notes</div>
-                                            <div className="text-sm text-gray-900">{invoice.notes}</div>
                                         </div>
-                                    )}
 
-                                    {/* Payment Info */}
-                                    {invoice.paidAt && (
-                                        <div className="bg-green-50 rounded-lg p-3">
-                                            <div className="text-xs text-gray-500 mb-1">Paid On</div>
-                                            <div className="text-sm font-medium text-green-700">
-                                                {new Date(invoice.paidAt).toLocaleDateString()}
+                                        {/* Financial Breakdown */}
+                                        <div className="bg-blue-50/50 rounded-lg p-3 space-y-2">
+                                            {isColumnVisible('totalExclVAT') && <div className="flex items-center justify-between text-sm">
+                                                <span className="text-gray-600">Total Excl VAT</span>
+                                                <span className="font-medium text-gray-900">
+                                                    {Number(invoice.totalExclVAT).toFixed(2)}
+                                                </span>
+                                            </div>}
+                                            {isColumnVisible('vatAmount') && <div className="flex items-center justify-between text-sm">
+                                                <span className="text-gray-600">VAT Amount</span>
+                                                <span className="font-medium text-gray-900">
+                                                    {Number(invoice.totalVatAmount).toFixed(2)}
+                                                </span>
+                                            </div>}
+                                            {isColumnVisible('totalInclVAT') && <div className="flex items-center justify-between text-sm pt-2 border-t border-blue-200">
+                                                <span className="font-semibold text-gray-900">Total Incl VAT</span>
+                                                <span className="font-bold text-gray-900">
+                                                    {Number(invoice.totalInclVAT).toFixed(2)}
+                                                </span>
+                                            </div>}
+                                            {isColumnVisible('outstanding') && <div className="flex items-center justify-between text-sm pt-2 border-t border-blue-200">
+                                                <span className="font-semibold text-gray-900">Outstanding</span>
+                                                <span className="font-bold text-gray-900">
+                                                    {Number(outstandingAmount).toFixed(2)}
+                                                </span>
+                                            </div>}
+                                            {isColumnVisible('paid') && <div className="flex items-center justify-between text-sm pt-2 border-t border-blue-200">
+                                                <span className="font-semibold text-gray-900">Paid</span>
+                                                <span className="font-bold text-gray-900">
+                                                    {Number(invoice.paymentAllocations?.reduce((sum, pa) => sum + Number(pa.amountAllocated), 0) ?? 0).toFixed(2)}
+                                                </span>
+                                            </div>}
+
+                                        </div>
+
+                                        {/* Notes */}
+                                        {invoice.notes && (
+                                            <div className="bg-gray-50 rounded-lg p-3">
+                                                <div className="text-xs text-gray-500 mb-1">Notes</div>
+                                                <div className="text-sm text-gray-900">{invoice.notes}</div>
                                             </div>
-                                        </div>
-                                    )}
+                                        )}
 
-                                    {/* Action Buttons */}
-                                    <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-200">
-                                        {(!hasSelectedInvoices && invoice.status === InvoiceStatus.DRAFT) ? (
-                                            <>
-                                                <Link
-                                                    href={`/dashboard/invoices/${invoice.id}/edit`}
-                                                    className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
-                                                    title="Edit Invoice"
-                                                >
-                                                    <PencilIcon className="h-5 w-5" />
-                                                </Link>
-                                                <button
-                                                    onClick={() => handleDelete(invoice.id, invoice.invoiceNumber)}
-                                                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                                                    title={t("employee_groups.delete_group")}
-                                                >
-                                                    <TrashIcon className="h-5 w-5" />
-                                                </button>
-                                            </>
-                                        ) : null}
+                                        {/* Payment Info */}
+                                        {invoice.paidAt && (
+                                            <div className="bg-green-50 rounded-lg p-3">
+                                                <div className="text-xs text-gray-500 mb-1">Paid On</div>
+                                                <div className="text-sm font-medium text-green-700">
+                                                    {new Date(invoice.paidAt).toLocaleDateString()}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Action Buttons */}
+                                        <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-200">
+                                            {(!hasSelectedInvoices && invoice.status === InvoiceStatus.DRAFT) ? (
+                                                <>
+                                                    <Link
+                                                        href={`/dashboard/invoices/${invoice.id}/edit`}
+                                                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                                                        title="Edit Invoice"
+                                                    >
+                                                        <PencilIcon className="h-5 w-5" />
+                                                    </Link>
+                                                    <button
+                                                        onClick={() => handleDelete(invoice.id, invoice.invoiceNumber)}
+                                                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                                                        title={t("employee_groups.delete_group")}
+                                                    >
+                                                        <TrashIcon className="h-5 w-5" />
+                                                    </button>
+                                                </>
+                                            ) : null}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            )
+                        }
+                        )}
                     </div>
                 </div>
+            )}
+            {selectedInvoiceForPayment && <RegisterPaymentDialog
+                open={true}
+                onOpenChange={(open) => {
+                    if (!open && !loadingPayment) {
+                        setSelectedInvoiceForPayment(null);
+                    }
+                }}
+                paymentData={{
+                    customer: selectedInvoiceForPayment?.customer,
+                    invoiceId: selectedInvoiceForPayment?.id ?? '',
+                    amount: selectedInvoiceForPayment?.outstandingAmount ?? 0,
+                }}
+                fetchInvoices={fetchInvoices}
+                loadingPayment={loadingPayment}
+                setLoadingPayment={setLoadingPayment}
+            />}
+            {selectedInvoiceForCredit && (
+                <CreditNoteDialog
+                    open={true}
+                    onOpenChange={(open) => {
+                        if (!open && !loadingCredit) {
+                            setSelectedInvoiceForCredit(null)
+                        }
+                    }}
+                    creditNoteData={{
+                        customer: selectedInvoiceForCredit.customer,
+                        invoiceId: selectedInvoiceForCredit.id,
+                        amount: Number(selectedInvoiceForCredit.totalInclVAT),
+                    }}
+                    fetchInvoices={fetchInvoices}
+                    loadingCredit={loadingCredit}
+                    setLoadingCredit={setLoadingCredit}
+                />
             )}
         </div>
     )
