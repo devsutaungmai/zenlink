@@ -323,7 +323,7 @@ export default function EditCustomersPage({ params, searchParams }: { params: Pr
                     </div>
                     {/* Row 1: Customer Name + Customer Number (always visible) */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
+                        <div className="grow basis-[calc(25%-12px)] min-w-[250px]">
                             <label htmlFor="customerName" className="block text-sm font-medium text-gray-700 mb-2">
                                 Customer Name *
                             </label>
@@ -346,7 +346,7 @@ export default function EditCustomersPage({ params, searchParams }: { params: Pr
                             )}
                         </div>
 
-                        <div>
+                        <div className="grow basis-[calc(25%-12px)] min-w-[250px]">
                             <label htmlFor="customerNumber" className="block text-sm font-medium text-gray-700 mb-2">
                                 Customer Number *
                             </label>
@@ -372,7 +372,7 @@ export default function EditCustomersPage({ params, searchParams }: { params: Pr
 
                     <div className="flex flex-wrap gap-6">
                         {settings.showOrganizationNumber && (
-                            <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                            <div className="grow basis-[calc(25%-12px)] min-w-[250px]">
                                 <label htmlFor="organizationNumber" className="block text-sm font-medium text-gray-700 mb-2">
                                     Organization Number
                                 </label>
@@ -396,7 +396,7 @@ export default function EditCustomersPage({ params, searchParams }: { params: Pr
                         )}
 
                         {settings.showAddress && (
-                            <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                            <div className="grow basis-[calc(25%-12px)] min-w-[250px]">
                                 <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">
                                     Address
                                 </label>
@@ -418,7 +418,7 @@ export default function EditCustomersPage({ params, searchParams }: { params: Pr
                         )}
 
                         {settings.showAddress && (
-                            <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                            <div className="grow basis-[calc(25%-12px)] min-w-[250px]">
                                 <label htmlFor="postalCode" className="block text-sm font-medium text-gray-700 mb-2">
                                     Postal Code
                                 </label>
@@ -442,7 +442,7 @@ export default function EditCustomersPage({ params, searchParams }: { params: Pr
                         )}
 
                         {settings.showAddress && (
-                            <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                            <div className="grow basis-[calc(25%-12px)] min-w-[250px]">
                                 <label htmlFor="postalAddress" className="block text-sm font-medium text-gray-700 mb-2">
                                     Postal Address
                                 </label>
@@ -466,7 +466,7 @@ export default function EditCustomersPage({ params, searchParams }: { params: Pr
                         )}
 
                         {settings.showPhoneNumber && (
-                            <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                            <div className="grow basis-[calc(25%-12px)] min-w-[250px]">
                                 <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-2">
                                     Phone Number
                                 </label>
@@ -490,7 +490,7 @@ export default function EditCustomersPage({ params, searchParams }: { params: Pr
                         )}
 
                         {settings.showEmail && (
-                            <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                            <div className="grow basis-[calc(25%-12px)] min-w-[250px]">
                                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                                     Email
                                 </label>
@@ -512,7 +512,7 @@ export default function EditCustomersPage({ params, searchParams }: { params: Pr
                         )}
 
                         {settings.showDiscountPercentage && (
-                            <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                            <div className="grow basis-[calc(25%-12px)] min-w-[250px]">
                                 <label htmlFor="discountPercentage" className="block text-sm font-medium text-gray-700 mb-2">
                                     Discount Percentage
                                 </label>
@@ -537,7 +537,7 @@ export default function EditCustomersPage({ params, searchParams }: { params: Pr
                         )}
 
                         {settings.showDeliveryAddress && (
-                            <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                            <div className="grow basis-[calc(25%-12px)] min-w-[250px]">
                                 <label htmlFor="deliveryAddress" className="block text-sm font-medium text-gray-700 mb-2">
                                     Delivery Address
                                 </label>
@@ -561,7 +561,7 @@ export default function EditCustomersPage({ params, searchParams }: { params: Pr
                         )}
 
                         {settings.showDeliveryAddress && (
-                            <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                            <div className="grow basis-[calc(25%-12px)] min-w-[250px]">
                                 <label htmlFor="deliveryAddressPostalCode" className="block text-sm font-medium text-gray-700 mb-2">
                                     Delivery Address Postal Code
                                 </label>
@@ -585,7 +585,7 @@ export default function EditCustomersPage({ params, searchParams }: { params: Pr
                         )}
 
                         {settings.showDepartment && (
-                            <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                            <div className="grow basis-[calc(25%-12px)] min-w-[250px]">
                                 <label htmlFor="departmentId" className="block text-sm font-medium text-gray-700 mb-2">
                                     Department *
                                 </label>
@@ -614,7 +614,7 @@ export default function EditCustomersPage({ params, searchParams }: { params: Pr
                         )}
 
                         {settings.showDeliveryAddress && (
-                            <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                            <div className="grow basis-[calc(25%-12px)] min-w-[250px]">
                                 <label htmlFor="deliveryAddressPostalAddress" className="block text-sm font-medium text-gray-700 mb-2">
                                     Delivery Address Postal Address
                                 </label>

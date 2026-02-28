@@ -58,7 +58,7 @@ export default function CreateProjectPage() {
             })
         }
     }, [settings])
-   
+
     useEffect(() => {
         fetchProjectCategories()
         fetchCustomers()
@@ -147,10 +147,10 @@ export default function CreateProjectPage() {
                         </p>
                     </div>
                     <div className="hidden md:flex items-center space-x-2">
-                       <ProjectFieldSettingsDialog initialSettings={visibleFields} onSettingsSaved={(newSettings)=>{
+                        <ProjectFieldSettingsDialog initialSettings={visibleFields} onSettingsSaved={(newSettings) => {
                             setVisibleFields(newSettings)
 
-                       }} onRefresh={refetch} />
+                        }} onRefresh={refetch} />
                         <div className="w-12 h-12 bg-[#31BCFF]/10 rounded-xl flex items-center justify-center">
                             <svg className="w-6 h-6 text-[#31BCFF]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
@@ -177,8 +177,8 @@ export default function CreateProjectPage() {
                         </label>
                     </div>
                     {/* Project Name & Project Number */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
+                    <div className="flex flex-wrap gap-6 mt-6">
+                        <div className="grow basis-[calc(20%-12px)] min-w-[150px]">
                             <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
                                 Project Name *
                             </label>
@@ -194,7 +194,7 @@ export default function CreateProjectPage() {
                             />
                         </div>
 
-                        <div>
+                        <div className="grow basis-[calc(20%-12px)] min-w-[150px]">
                             <label htmlFor="projectNumber" className="block text-sm font-medium text-gray-700 mb-2">
                                 Project Number *
                             </label>
@@ -207,12 +207,11 @@ export default function CreateProjectPage() {
                                 placeholder="Enter project number"
                             />
                         </div>
-                    </div>
 
-                    {/* Category & Customer */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                        {/* Category & Customer */}
                         {visibleFields.showCategory
-                            && <div>
+                            && <div className="grow basis-[calc(20%-12px)] min-w-[150px]">
                                 <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700 mb-2">
                                     Category
                                 </label>
@@ -232,7 +231,7 @@ export default function CreateProjectPage() {
                             </div>}
 
                         {visibleFields.showCustomer &&
-                            <div>
+                            <div className="grow basis-[calc(20%-12px)] min-w-[150px]">
                                 <label htmlFor="customerId" className="block text-sm font-medium text-gray-700 mb-2">
                                     Customer
                                 </label>
@@ -250,12 +249,10 @@ export default function CreateProjectPage() {
                                     ))}
                                 </select>
                             </div>}
-                    </div>
 
-                    {/* Start Date & End Date */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Start Date & End Date */}
                         {visibleFields.showStartDate &&
-                            <div>
+                            <div className="grow basis-[calc(20%-12px)] min-w-[150px]">
                                 <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-2">
                                     Start Date
                                 </label>
@@ -269,7 +266,7 @@ export default function CreateProjectPage() {
                             </div>}
 
                         {visibleFields.showEndDate
-                            && <div>
+                            && <div className="grow basis-[calc(20%-12px)] min-w-[150px]">
                                 <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-2">
                                     End Date
                                 </label>

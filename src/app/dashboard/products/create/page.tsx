@@ -266,7 +266,7 @@ export default function CreateProductPage() {
 
             <div className="flex flex-wrap gap-6 mt-6">
               {visibleFields.showSalesPrice && (
-                <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                <div className="grow basis-[calc(20%-12px)] min-w-[150px]">
                   <label htmlFor="salesPrice" className="block text-sm font-medium text-gray-700 mb-2">
                     Sales Price *
                   </label>
@@ -282,7 +282,7 @@ export default function CreateProductPage() {
               )}
 
               {visibleFields.showCostPrice && (
-                <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                <div className="grow basis-[calc(20%-12px)] min-w-[150px]">
                   <label htmlFor="costPrice" className="block text-sm font-medium text-gray-700 mb-2">
                     Cost Price *
                   </label>
@@ -298,7 +298,7 @@ export default function CreateProductPage() {
               )}
 
               {visibleFields.showDiscountPercentage && (
-                <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                <div className="grow basis-[calc(20%-12px)] min-w-[150px]">
                   <label htmlFor="discountPercentage" className="block text-sm font-medium text-gray-700 mb-2">
                     Discount Percentage
                   </label>
@@ -316,7 +316,7 @@ export default function CreateProductPage() {
               )}
 
               {visibleFields.showUnit && (
-                <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                <div className="grow basis-[calc(20%-12px)] min-w-[150px]">
                   <label htmlFor="unitId" className="block text-sm font-medium text-gray-700 mb-2">
                     Unit *
                   </label>
@@ -337,7 +337,7 @@ export default function CreateProductPage() {
               )}
 
               {visibleFields.showProductGroup && (
-                <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                <div className="grow basis-[calc(20%-12px)] min-w-[150px]">
                   <label htmlFor="productGroupId" className="block text-sm font-medium text-gray-700 mb-2">
                     Product Group *
                   </label>
