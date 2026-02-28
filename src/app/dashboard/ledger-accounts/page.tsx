@@ -35,6 +35,7 @@ export default function LedgerAccountsPage() {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [searchTerm, setSearchTerm] = useState('')
+    const [selectedFilter, setSelectedFilter] = useState('active')
 
     // Customer columns + usage
     const COLUMNS = [
@@ -155,12 +156,17 @@ export default function LedgerAccountsPage() {
 
     const normalizedSearch = searchTerm.trim().toLowerCase()
     const filteredledgerAccounts = ledgerAccounts.filter(account => {
-        if (!normalizedSearch) return true
-        return (
+        const matchesSearch = (
+            !normalizedSearch ||
             account.name.toLowerCase().includes(normalizedSearch) ||
             account.accountNumber.toString().includes(normalizedSearch) ||
             account.type.toLowerCase().includes(normalizedSearch)
-        )
+        );
+        const matchesFilter =
+            selectedFilter === 'all' ||
+            (selectedFilter === 'active' && account.isActive === true) ||
+            (selectedFilter === 'inactive' && account.isActive === false);
+        return matchesSearch && matchesFilter;
     })
 
     const handleStatusChange = async (ledgerAccountId: string, newStatus: boolean) => {
@@ -199,6 +205,10 @@ export default function LedgerAccountsPage() {
                 confirmButtonColor: "#31BCFF",
             })
         }
+    }
+
+    const handleFilterClick = (filter: string) => () => {
+        setSelectedFilter(filter)
     }
 
     if (loading) {
@@ -268,6 +278,32 @@ export default function LedgerAccountsPage() {
                     <span>
                         Showing {filteredledgerAccounts.length} of {ledgerAccounts.length} accounts
                     </span>
+                </div>
+
+                {/* Filter Buttons */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4">
+                    <div className="flex flex-wrap items-center gap-2">
+                        {/* <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
+                            <FunnelIcon className="w-4 h-4 flex-shrink-0" />
+                            <span>Filter</span>
+                        </div> */}
+                        {[
+                            { value: 'all', label: "ALL" },
+                            { value: 'active', label: "ACTIVE" },
+                            { value: 'inactive', label: "INACTIVE" },
+                        ].map((filter) => (
+                            <button
+                                key={filter.value}
+                                onClick={handleFilterClick(filter.value)}
+                                className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${selectedFilter === filter.value
+                                    ? 'bg-[#31BCFF] text-white shadow-md'
+                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                    }`}
+                            >
+                                {filter.label}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </div>
 
@@ -437,8 +473,8 @@ export default function LedgerAccountsPage() {
                                         )}
                                         {isColumnVisible("saftStandardAccount") && (
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm text-gray-900">
-                                                    {account.saftStandardAccount || "-"}
+                                                <div className="text-sm text-gray-900" title={account.saftStandardAccount || ""}>
+                                                    {account.saftStandardAccount ? `${account.saftStandardAccount.substring(0, 10)}...` : "-"}
                                                 </div>
                                             </td>
                                         )}

@@ -21,6 +21,7 @@ import { get } from 'http'
 import { del } from '@vercel/blob'
 import { ro } from 'date-fns/locale'
 import { useInvoiceGeneralSettings } from '@/shared/hooks/useInvoiceGeneralSettings'
+import { useAutoFocus } from '@/shared/hooks/useAutoFocus'
 
 export interface Department {
     id: string
@@ -53,6 +54,7 @@ export default function CreateCustomersPage() {
         fixedDateDay: 1,
     })
     const [fetchingLoading, setFetchingLoading] = useState(false);
+    const firstInputRef = useAutoFocus<HTMLInputElement>()
     // Update formData state
     const [formData, setFormData] = useState<{
         customerName: string
@@ -343,6 +345,7 @@ export default function CreateCustomersPage() {
                                 Customer Name *
                             </label>
                             <input
+                                ref={firstInputRef}
                                 type="text"
                                 id="customerName"
                                 required

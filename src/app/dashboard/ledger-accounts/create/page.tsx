@@ -8,6 +8,7 @@ import Swal from 'sweetalert2'
 import { AccountType } from '@prisma/client'
 import { set } from 'date-fns'
 import { getAccountType } from '@/shared/lib/invoiceHelper'
+import { useAutoFocus } from '@/shared/hooks/useAutoFocus'
 
 
 interface AccountLedgerForm {
@@ -43,6 +44,7 @@ export default function CreateLedgerAccountPage() {
         vatCodeId: ''
     })
     const [vatCodes, setVatCodes] = useState<VatCode[]>([]);
+    const firstInputRef = useAutoFocus<HTMLInputElement>()
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -164,6 +166,7 @@ export default function CreateLedgerAccountPage() {
                             </label>
                             <input
                                 type="number"
+                                ref={firstInputRef}
                                 id="accountNumber"
                                 required
                                 value={formData.accountNumber || ''}

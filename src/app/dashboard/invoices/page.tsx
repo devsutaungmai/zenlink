@@ -31,7 +31,9 @@ export enum InvoiceStatus {
     SENT = 'SENT',         // Sent to customer
     PAID = 'PAID',         // Payment received
     OVERDUE = 'OVERDUE',   // Past due date
-    CANCELLED = 'CANCELLED' // Cancelled
+    CANCELLED = 'CANCELLED', // Cancelled
+    CREDIT_NOTE = 'CREDIT_NOTE',
+    CREDITED = 'CREDITED'
 }
 
 interface Customer {
@@ -887,11 +889,16 @@ export default function InvoicesPage() {
                                                     </button>
                                                 </div>
                                             ) : (<div className="flex items-center justify-end gap-2">
+                                                <Link
+                                                    href={`/dashboard/invoices/create?invoiceId=${invoice.id}&copy=true`}
+                                                    className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2"
+                                                >
+                                                    <span className="text-base">📋</span>
+                                                </Link>
+
                                                 <button className="p-1 hover:bg-gray-200 rounded" onClick={() => handlePDf(invoice.id)}>
                                                     <PaperClipIcon className="h-4 w-4 text-gray-400" />
                                                 </button>
-
-
                                                 <button
                                                     onClick={() => handleSendEmail(invoice.id)}
                                                     disabled={loadingEmail[invoice.id]}

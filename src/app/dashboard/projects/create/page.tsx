@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import Cog6ToothIcon from '@heroicons/react/24/solid/Cog6ToothIcon'
 import { useProjectSettings } from '@/shared/hooks/useProjectSettings'
 import { ProjectFieldSettingsDialog } from '@/components/invoice/ProjectFieldSettingsDialog'
+import { useAutoFocus } from '@/shared/hooks/useAutoFocus'
 
 interface Customer {
     id: string
@@ -37,6 +38,7 @@ export default function CreateProjectPage() {
         endDate: '',
         customerId: ''
     })
+    const firstInputRef = useAutoFocus<HTMLInputElement>()
 
     const { settings, refetch } = useProjectSettings();
     const [visibleFields, setVisibleFields] = useState({
@@ -181,6 +183,7 @@ export default function CreateProjectPage() {
                                 Project Name *
                             </label>
                             <input
+                                ref={firstInputRef}
                                 type="text"
                                 id="name"
                                 required

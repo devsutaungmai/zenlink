@@ -8,6 +8,7 @@ import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
 import { useProductSettings } from '@/shared/hooks/useProductSettings'
 import { ProductFieldSettingsDialog } from '@/components/invoice/ProductFieldSettingsDialog'
+import { useAutoFocus } from '@/shared/hooks/useAutoFocus'
 
 interface Unit {
   id: string
@@ -47,6 +48,7 @@ export default function CreateProductPage() {
   const [units, setUnits] = useState<Unit[]>([])
   const [productGroups, setProductGroups] = useState<ProductGroup[]>([])
   const [salesLedgerAccounts, setSalesLedgerAccounts] = useState<LedgerAccount[]>([])
+  const firstInputRef = useAutoFocus<HTMLInputElement>()
 
   const [formData, setFormData] = useState({
     active: true,
@@ -235,6 +237,7 @@ export default function CreateProductPage() {
                   Product Name *
                 </label>
                 <input
+                  ref={firstInputRef}
                   type="text"
                   id="productName"
                   required
