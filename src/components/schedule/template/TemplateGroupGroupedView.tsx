@@ -40,6 +40,7 @@ interface TemplateGroupGroupedViewProps {
   onDeleteShift: (shiftId: string) => void
   onMoveShift: (shiftId: string, target: { dayIndex: number; employeeId?: string | null; employeeGroupId?: string | null; functionId?: string | null }) => Promise<void>
   onDuplicateShift: (shiftId: string, target: { dayIndex: number; employeeId?: string | null; employeeGroupId?: string | null; functionId?: string | null }) => Promise<void>
+  pendingShiftIds?: Set<string>
 }
 
 export default function TemplateGroupGroupedView({
@@ -51,7 +52,8 @@ export default function TemplateGroupGroupedView({
   onEditShift,
   onDeleteShift,
   onMoveShift,
-  onDuplicateShift
+  onDuplicateShift,
+  pendingShiftIds = new Set()
 }: TemplateGroupGroupedViewProps) {
   const { t } = useTranslation('schedule')
 
@@ -260,16 +262,16 @@ export default function TemplateGroupGroupedView({
                       }`}
                       onDragOver={(e) => handleDragOver(e, openCellId)}
                       onDragLeave={handleDragLeave}
-                      onDrop={(e) => handleDrop(e, 'open', dayIndex, 'open')}
+                      onDrop={(e) => handleDrop(e, 'open', dayIndex, 'openGroup')}
                     >
                       {dayOpenShifts.map(shift => (
                         <div
                           key={shift.id}
-                          draggable
+                          draggable={!pendingShiftIds.has(shift.id)}
                           onDragStart={(e) => handleDragStart(e, shift, 'open', shift.dayIndex)}
                           onDragEnd={handleDragEnd}
-                          onClick={() => onEditShift(shift)}
-                          className="mb-1 cursor-grab active:cursor-grabbing group/shift relative"
+                          onClick={() => !pendingShiftIds.has(shift.id) && onEditShift(shift)}
+                          className={`mb-1 cursor-grab active:cursor-grabbing group/shift relative ${pendingShiftIds.has(shift.id) ? 'opacity-50 animate-pulse pointer-events-none' : ''}`}
                         >
                           <div className="rounded p-2 text-xs border-2 border-dashed border-emerald-400 bg-emerald-100">
                             <div className="font-medium text-emerald-800 flex items-center gap-1">
@@ -353,13 +355,13 @@ export default function TemplateGroupGroupedView({
                             return (
                               <div
                                 key={shift.id}
-                                draggable
+                                draggable={!pendingShiftIds.has(shift.id)}
                                 onDragStart={(e) => handleDragStart(e, shift, group.id, shift.dayIndex)}
                                 onDragEnd={handleDragEnd}
-                                className="mb-1 cursor-grab active:cursor-grabbing group/shift relative"
+                                className={`mb-1 cursor-grab active:cursor-grabbing group/shift relative ${pendingShiftIds.has(shift.id) ? 'opacity-50 animate-pulse pointer-events-none' : ''}`}
                               >
                                 <div 
-                                  onClick={() => onEditShift(shift)}
+                                  onClick={() => !pendingShiftIds.has(shift.id) && onEditShift(shift)}
                                   className="rounded p-2 text-xs text-white font-medium"
                                   style={{ backgroundColor: shiftColor }}
                                 >

@@ -62,6 +62,7 @@ interface TemplateEmployeeGroupedViewProps {
   onDeleteShift: (shiftId: string) => void
   onMoveShift: (shiftId: string, target: { dayIndex: number; employeeId?: string | null; employeeGroupId?: string | null; functionId?: string | null }) => Promise<void>
   onDuplicateShift: (shiftId: string, target: { dayIndex: number; employeeId?: string | null; employeeGroupId?: string | null; functionId?: string | null }) => Promise<void>
+  pendingShiftIds?: Set<string>
 }
 
 export default function TemplateEmployeeGroupedView({
@@ -73,7 +74,8 @@ export default function TemplateEmployeeGroupedView({
   onEditShift,
   onDeleteShift,
   onMoveShift,
-  onDuplicateShift
+  onDuplicateShift,
+  pendingShiftIds = new Set()
 }: TemplateEmployeeGroupedViewProps) {
   const { t, i18n } = useTranslation('schedule')
 
@@ -289,16 +291,16 @@ export default function TemplateEmployeeGroupedView({
                       }`}
                       onDragOver={(e) => handleDragOver(e, openCellId)}
                       onDragLeave={handleDragLeave}
-                      onDrop={(e) => handleDrop(e, 'open', dayIndex, 'open')}
+                      onDrop={(e) => handleDrop(e, 'open', dayIndex, 'openEmployee')}
                     >
                       {dayOpenShifts.map(shift => (
                         <div
                           key={shift.id}
-                          draggable
+                          draggable={!pendingShiftIds.has(shift.id)}
                           onDragStart={(e) => handleDragStart(e, shift, 'open', shift.dayIndex)}
                           onDragEnd={handleDragEnd}
-                          onClick={() => onEditShift(shift)}
-                          className="mb-1 cursor-grab active:cursor-grabbing group/shift relative"
+                          onClick={() => !pendingShiftIds.has(shift.id) && onEditShift(shift)}
+                          className={`mb-1 cursor-grab active:cursor-grabbing group/shift relative ${pendingShiftIds.has(shift.id) ? 'opacity-50 animate-pulse pointer-events-none' : ''}`}
                         >
                           <div className="rounded p-2 text-xs border-2 border-dashed border-emerald-400 bg-emerald-100">
                             <div className="font-medium text-emerald-800 flex items-center gap-1">
@@ -386,13 +388,13 @@ export default function TemplateEmployeeGroupedView({
                             return (
                               <div
                                 key={shift.id}
-                                draggable
+                                draggable={!pendingShiftIds.has(shift.id)}
                                 onDragStart={(e) => handleDragStart(e, shift, employee.id, shift.dayIndex)}
                                 onDragEnd={handleDragEnd}
-                                className="mb-1 cursor-grab active:cursor-grabbing group/shift relative"
+                                className={`mb-1 cursor-grab active:cursor-grabbing group/shift relative ${pendingShiftIds.has(shift.id) ? 'opacity-50 animate-pulse pointer-events-none' : ''}`}
                               >
                                 <div 
-                                  onClick={() => onEditShift(shift)}
+                                  onClick={() => !pendingShiftIds.has(shift.id) && onEditShift(shift)}
                                   className="rounded p-2 text-xs text-white font-medium"
                                   style={{ backgroundColor: shiftColor }}
                                 >

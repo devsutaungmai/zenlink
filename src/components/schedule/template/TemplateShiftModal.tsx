@@ -492,6 +492,11 @@ export default function TemplateShiftModal({
     e.preventDefault()
     setIsSubmitting(true)
 
+    if (!employeeGroupId) {
+      setIsSubmitting(false)
+      return
+    }
+
     // Use the ref value if employee was pre-selected (ensures we send correct ID)
     const finalEmployeeId = preSelectedEmployeeIdRef.current || employeeId || null
 
@@ -674,17 +679,12 @@ export default function TemplateShiftModal({
                 Linked employee group{linkedFunctionGroups.length > 1 ? 's' : ''}: {linkedFunctionGroups.map(group => group.name).join(', ')}
               </p>
             )}
-            {!isFunctionPreSelected && functionId && linkedFunctionGroups.length === 0 && (
-              <p className="mt-1 text-xs text-red-500">
-                No employee group is linked to this function.
-              </p>
-            )}
           </div>
 
           {/* Employee Group */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('templates.employee_group', 'Employee Group')}
+              {t('templates.employee_group', 'Employee Group')} <span className="text-red-500">*</span>
             </label>
             <select
               value={employeeGroupId}
@@ -692,7 +692,8 @@ export default function TemplateShiftModal({
                 setEmployeeGroupId(e.target.value)
                 setEmployeeId('')
               }}
-              disabled={isEmployeeGroupPreSelected || (isEmployeePreSelected && availableEmployeeGroupOptions.length <= 1) || (functionId ? linkedFunctionGroups.length === 1 : false)}
+              required
+              disabled={isEmployeeGroupPreSelected || (isEmployeePreSelected && availableEmployeeGroupOptions.length === 1 && !!employeeGroupId) || (functionId ? linkedFunctionGroups.length === 1 && !!employeeGroupId : false)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] outline-none disabled:bg-gray-100"
             >
               <option value="">
