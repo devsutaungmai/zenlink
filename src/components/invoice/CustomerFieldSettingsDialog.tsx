@@ -17,6 +17,7 @@ interface CustomerFieldSettings {
     showDeliveryAddressPostalCode?: boolean;
     showDeliveryAddressPostalAddress?: boolean;
     showDepartment: boolean;
+    showProject: boolean;
     showInvoicePaymentTerms: boolean;
     showContactPerson: boolean;
 }
@@ -264,6 +265,22 @@ export function CustomerFieldSettingsDialog({
                     />
                     <label htmlFor="showDepartment" className="text-base font-medium cursor-pointer flex-1">
                         Department
+                    </label>
+                </div>
+
+
+                <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                    <input
+                        type="checkbox"
+                        id="showProject"
+                        checked={localSettings.showProject}
+                        onChange={(e) =>
+                            setLocalSettings({ ...localSettings, showProject: e.target.checked })
+                        }
+                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                    />
+                    <label htmlFor="showProject" className="text-base font-medium cursor-pointer flex-1">
+                        Project
                     </label>
                 </div>
 

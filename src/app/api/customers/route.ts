@@ -34,19 +34,20 @@ export async function GET(request: NextRequest) {
         phoneNumber: true,
         email: true,
         active: true,
-        discountPercentage: true, 
-          deliveryAddress: true,
-          deliveryAddressPostalCode: true,
-          deliveryAddressPostalAddress: true,
-          department: true,
-          contactPersons: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              phoneNumber: true
-            }
+        discountPercentage: true,
+        deliveryAddress: true,
+        deliveryAddressPostalCode: true,
+        deliveryAddressPostalAddress: true,
+        department: true,
+        contactPersons: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phoneNumber: true
           }
+        },
+        projects:true,
       },
       orderBy: {
         customerName: 'asc',
@@ -87,7 +88,7 @@ export async function POST(request: NextRequest) {
     }
 
     const formData = await request.json()
-    const { customerName, customerNumber,defaultCustomerNumber, customerPaymentTerm, customerContacts, ...restData } = formData
+    const { customerName, customerNumber, defaultCustomerNumber, customerPaymentTerm, customerContacts,projectIds, ...restData } = formData
 
     console.log('Creating customer with data:', JSON.stringify(formData))
 
@@ -143,9 +144,13 @@ export async function POST(request: NextRequest) {
         customerNumber: defaultCustomerNumber,
         businessId,
         invoicepaymentTermsId: paymentTermsId,
-        ...(restData.departmentId && restData.departmentId !== "" ? { departmentId: restData.departmentId } : {departmentId: null}),
+        ...(restData.departmentId && restData.departmentId !== "" ? { departmentId: restData.departmentId } : { departmentId: null }),
         contactPersons: {
           create: customerContacts || []
+        },
+        projects: {
+          connect: 
+          projectIds?.map((id: any) => ({ id })) || []
         }
       }
     })

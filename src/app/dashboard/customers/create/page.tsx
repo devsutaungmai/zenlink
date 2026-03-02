@@ -22,6 +22,8 @@ import { del } from '@vercel/blob'
 import { ro } from 'date-fns/locale'
 import { useInvoiceGeneralSettings } from '@/shared/hooks/useInvoiceGeneralSettings'
 import { useAutoFocus } from '@/shared/hooks/useAutoFocus'
+import { ProjectMultiSelectCombobox } from '@/components/invoice/ProjectMultiSelectCombobox'
+import { ProjectFormType } from '@/components/invoice/ProjectDialog'
 
 export interface Department {
     id: string
@@ -41,6 +43,23 @@ export interface CustomerContact {
     isPrimary: boolean
 }
 
+interface Customer {
+    id: string
+    customerName: string
+}
+interface ProjectCategory {
+    id: string
+    name: string
+}
+
+interface Project {
+    id: string
+    name: string
+    projectNumber?: string | null
+    startDate?: string | null
+    endDate?: string | null
+}
+
 export default function CreateCustomersPage() {
     const router = useRouter()
     const searchParams = useSearchParams()
@@ -54,6 +73,8 @@ export default function CreateCustomersPage() {
         fixedDateDay: 1,
     })
     const [fetchingLoading, setFetchingLoading] = useState(false);
+    const [loadingProject, setLoadingProject] = useState<boolean>(false)
+    const [projects, setProjects] = useState<Project[]>([])
     const firstInputRef = useAutoFocus<HTMLInputElement>()
     // Update formData state
     const [formData, setFormData] = useState<{
@@ -75,7 +96,8 @@ export default function CreateCustomersPage() {
         deliveryAddressPostalAddress: string
         departmentId: string
         customerPaymentTerm: InvoicePaymentTerms,
-        customerContacts?: CustomerContact[]
+        customerContacts?: CustomerContact[],
+        projectIds?: string[]
     }>({
         customerName: "",
         active: true,
@@ -98,7 +120,8 @@ export default function CreateCustomersPage() {
             dueDateValue: 14,
             dueDateUnit: "DAYS"
         },
-        customerContacts: []
+        customerContacts: [],
+        projectIds: []
     })
     const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
     const validationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -145,6 +168,7 @@ export default function CreateCustomersPage() {
     useEffect(() => {
         fetchDepartments();
         getDefaultCustomerNumber();
+        fetchProjects();
     }, [])
 
     const getDefaultCustomerNumber = async () => {
@@ -178,6 +202,85 @@ export default function CreateCustomersPage() {
             console.error('Error fetching departments:', error)
         }
     }
+
+    const fetchProjects = async () => {
+        try {
+            const res = await fetch("/api/projects")
+
+            if (!res.ok) {
+                throw new Error(`HTTP error! status: ${res.status}`)
+            }
+
+            const data = await res.json()
+
+            if (Array.isArray(data)) {
+                setProjects(data)
+            } else {
+                console.error("API did not return an array:", data)
+                setProjects([])
+            }
+        } catch (error) {
+            console.error("Error fetching projects:", error)
+            setProjects([])
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleProjectChange = (selectedProjectIds: string[]) => {
+        setFormData(prev => ({
+            ...prev,
+            projectIds: selectedProjectIds
+        }))
+    }
+
+    const handleProjectCreated = (newProject: Project) => {
+        setProjects(prev => [...prev, newProject])
+        setFormData(prev => ({
+            ...prev,
+            projectIds: [...(prev.projectIds || []), newProject.id]
+        }))
+    }
+
+    const onSaveProject = async (project: ProjectFormType): Promise<Project> => {
+        try {
+            const res = await fetch('/api/projects', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(project),
+            })
+            if (!res.ok) {
+                const error = await res.json()
+                throw new Error(error.error || 'Failed to create project')
+            }
+            const createdProject = await res.json()
+            setProjects(prev => [...prev, createdProject])
+            setFormData(prev => ({
+                ...prev,
+                projectIds: [...(prev.projectIds || []), createdProject.id]
+            }))
+            await Swal.fire({
+                title: 'Success!',
+                text: 'Project created successfully',
+                icon: 'success',
+                confirmButtonColor: '#31BCFF',
+                focusConfirm: false,
+            })
+            return createdProject
+        } catch (error) {
+            await Swal.fire({
+                title: 'Error',
+                text: error instanceof Error ? error.message : 'An error occurred',
+                icon: 'error',
+                confirmButtonColor: '#31BCFF',
+                focusConfirm: false,
+            })
+            throw error
+        } finally {
+            setLoadingProject(false)
+        }
+    }
+
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -256,6 +359,7 @@ export default function CreateCustomersPage() {
         showDiscountPercentage: true,
         showDeliveryAddress: true,
         showDepartment: true,
+        showProject: true,
         showInvoicePaymentTerms: true,
         showContactPerson: true,
     })
@@ -270,6 +374,7 @@ export default function CreateCustomersPage() {
                 showDiscountPercentage: settings.showDiscountPercentage ?? true,
                 showDeliveryAddress: settings.showDeliveryAddress ?? true,
                 showDepartment: settings.showDepartment ?? true,
+                showProject: settings.showProject ?? true,
                 showInvoicePaymentTerms: settings.showInvoicePaymentTerms ?? true,
                 showContactPerson: settings.showContactPerson ?? true,
             })
@@ -664,6 +769,22 @@ export default function CreateCustomersPage() {
                                 )}
                             </div>
                         )}
+                        {visibleFields.showProject && <div className="grow basis-[calc(100%-12px)] min-w-[250px]">
+                            <label htmlFor="projectIds" className="block text-sm font-medium text-gray-700 mb-2">
+                                Projects *
+                            </label>
+                            <ProjectMultiSelectCombobox
+                                projects={projects}
+                                value={formData.projectIds || []}
+                                onChange={handleProjectChange}
+                                onProjectCreated={handleProjectCreated}
+                                onSaveNewProject={onSaveProject}
+                                placeholder="Select Projects"
+                            />
+                            {validationErrors.projectIds && (
+                                <p className="mt-1 text-sm text-red-600">{validationErrors.projectIds}</p>
+                            )}
+                        </div>}
                     </div>
 
                     {visibleFields.showInvoicePaymentTerms && (

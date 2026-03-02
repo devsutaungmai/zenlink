@@ -859,6 +859,7 @@ model CustomerFormSettings {
   showDeliveryAddressPostalCode    Boolean @default(true)
   showDeliveryAddressPostalAddress Boolean @default(true)
   showDepartment                   Boolean @default(true)
+  showProject                      Boolean @default(true)
   showInvoicePaymentTerms          Boolean @default(true)
   showContactPerson                Boolean @default(true)
 

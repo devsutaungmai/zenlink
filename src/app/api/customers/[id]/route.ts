@@ -86,7 +86,7 @@ export async function PUT(
     }
 
     const body = await request.json()
-    const { customerPaymentTerm, customerContacts, ...restData } = body
+    const { customerPaymentTerm, customerContacts, projectIds, ...restData } = body
 
     if (restData.discountPercentage === "" || restData.discountPercentage === null || restData.discountPercentage === undefined) {
       restData.discountPercentage = 0
@@ -154,7 +154,7 @@ export async function PUT(
       data: {
         ...restData,
         invoicepaymentTermsId: paymentTermsId,
-        ...(restData.departmentId && restData.departmentId !== "" ? { departmentId: restData.departmentId } : {departmentId: null}),
+        ...(restData.departmentId && restData.departmentId !== "" ? { departmentId: restData.departmentId } : { departmentId: null }),
         contactPersons: {
           deleteMany: {},
           create: (customerContacts || []).map((contact: any) => ({
@@ -163,7 +163,10 @@ export async function PUT(
             email: contact.email,
             isPrimary: contact.isPrimary,
           }))
-        }
+        },
+        projects: {
+          set: projectIds?.map((id: any) => ({ id })) || []
+        },
       }
     })
 

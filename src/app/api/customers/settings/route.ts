@@ -44,6 +44,7 @@ export async function GET(req: NextRequest) {
                     showDeliveryAddressPostalCode: true,
                     showDeliveryAddressPostalAddress: true,
                     showDepartment: true,
+                    showProject: true,
                     showInvoicePaymentTerms: true,
                     showContactPerson: true
                 }
@@ -86,6 +87,7 @@ export async function POST(req: NextRequest) {
             showDeliveryAddressPostalCode,
             showDeliveryAddressPostalAddress,
             showDepartment,
+            showProject,
             showInvoicePaymentTerms,
             showContactPerson
         } = body
@@ -102,6 +104,7 @@ export async function POST(req: NextRequest) {
             showDeliveryAddressPostalCode,
             showDeliveryAddressPostalAddress,
             showDepartment,
+            showProject,
             showInvoicePaymentTerms,
             showContactPerson
         }
@@ -129,6 +132,7 @@ export async function POST(req: NextRequest) {
                 showDeliveryAddressPostalCode,
                 showDeliveryAddressPostalAddress,
                 showDepartment,
+                showProject,
                 showInvoicePaymentTerms,
                 showContactPerson
             },
@@ -145,6 +149,7 @@ export async function POST(req: NextRequest) {
                 showDeliveryAddressPostalCode,
                 showDeliveryAddressPostalAddress,
                 showDepartment,
+                showProject,
                 showInvoicePaymentTerms,
                 showContactPerson
             }
