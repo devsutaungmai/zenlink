@@ -7,12 +7,24 @@ import { useTranslation } from 'react-i18next'
 import Swal from 'sweetalert2'
 import { AccountType } from '@prisma/client'
 import { Switch } from '@/components/ui/switch'
+import { ColumnVisibilityToggle } from '@/components/invoice/column-visibility-toggle'
+import { useColumnVisibility } from '@/hooks/use-column-visibility'
+import { useResizableColumns } from '@/hooks/use-resizable-columns'
+import { ResizeHandle } from '@/components/invoice/resize-handle'
 
 export interface LedgerAccount {
     id: string
     accountNumber: number
     name: string
     type: AccountType
+    vatCode?: {
+        id: string
+        code: string
+        name: string
+    }
+    reportGroup: string
+    saftStandardAccount: string
+    industrySpecification: string
     isActive: boolean
     businessId: string
 }
@@ -23,6 +35,50 @@ export default function LedgerAccountsPage() {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [searchTerm, setSearchTerm] = useState('')
+    const [selectedFilter, setSelectedFilter] = useState('active')
+
+    // Customer columns + usage
+    const COLUMNS = [
+        { key: "accountNumber", label: "Account Number" },
+        { key: "accountName", label: "Account Name" },
+        { key: "type", label: "Type" },
+        { key: "status", label: "Status" },
+        { key: "vatCode", label: "VAT Code" },
+        { key: "industrySpecification", label: "Industry Specification" },
+        { key: "reportGroup", label: "Report Group" },
+        { key: "saftStandardAccount", label: "SAFT Standard Account" },
+    ]
+
+    const { columns, toggleColumn, resetColumns, isColumnVisible } = useColumnVisibility({
+        storageKey: "ledger-account-columns",
+        initialColumns: COLUMNS,
+        defaultVisibility: {
+            accountNumber: true,
+            accountName: true,
+            type: true,
+            status: true,
+            vatCode: false,
+            industrySpecification: false,
+            reportGroup: false,
+            saftStandardAccount: false
+        },
+    })
+
+    const RESIZABLE_COLUMNS = [
+        { key: "accountNumber", initialWidth: 120, minWidth: 60 },
+        { key: "accountName", initialWidth: 120, minWidth: 90 },
+        { key: "type", initialWidth: 120, minWidth: 50 },
+        { key: "status", initialWidth: 120, minWidth: 70 },
+        { key: "vatCode", initialWidth: 120, minWidth: 100 },
+        { key: "industrySpecification", initialWidth: 120, minWidth: 120 },
+        { key: "reportGroup", initialWidth: 130, minWidth: 100 },
+        { key: "saftStandardAccount", initialWidth: 120, minWidth: 120 },
+        { key: "actions", initialWidth: 120, minWidth: 80 },
+    ]
+    const { getColumnWidth, onMouseDown, resetWidths } = useResizableColumns({
+        storageKey: "ledger-account-col-widths",
+        columns: RESIZABLE_COLUMNS,
+    })
 
     useEffect(() => {
         fetchledgerAccounts()
@@ -100,12 +156,17 @@ export default function LedgerAccountsPage() {
 
     const normalizedSearch = searchTerm.trim().toLowerCase()
     const filteredledgerAccounts = ledgerAccounts.filter(account => {
-        if (!normalizedSearch) return true
-        return (
+        const matchesSearch = (
+            !normalizedSearch ||
             account.name.toLowerCase().includes(normalizedSearch) ||
             account.accountNumber.toString().includes(normalizedSearch) ||
             account.type.toLowerCase().includes(normalizedSearch)
-        )
+        );
+        const matchesFilter =
+            selectedFilter === 'all' ||
+            (selectedFilter === 'active' && account.isActive === true) ||
+            (selectedFilter === 'inactive' && account.isActive === false);
+        return matchesSearch && matchesFilter;
     })
 
     const handleStatusChange = async (ledgerAccountId: string, newStatus: boolean) => {
@@ -144,6 +205,10 @@ export default function LedgerAccountsPage() {
                 confirmButtonColor: "#31BCFF",
             })
         }
+    }
+
+    const handleFilterClick = (filter: string) => () => {
+        setSelectedFilter(filter)
     }
 
     if (loading) {
@@ -214,6 +279,32 @@ export default function LedgerAccountsPage() {
                         Showing {filteredledgerAccounts.length} of {ledgerAccounts.length} accounts
                     </span>
                 </div>
+
+                {/* Filter Buttons */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4">
+                    <div className="flex flex-wrap items-center gap-2">
+                        {/* <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
+                            <FunnelIcon className="w-4 h-4 flex-shrink-0" />
+                            <span>Filter</span>
+                        </div> */}
+                        {[
+                            { value: 'all', label: "ALL" },
+                            { value: 'active', label: "ACTIVE" },
+                            { value: 'inactive', label: "INACTIVE" },
+                        ].map((filter) => (
+                            <button
+                                key={filter.value}
+                                onClick={handleFilterClick(filter.value)}
+                                className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${selectedFilter === filter.value
+                                    ? 'bg-[#31BCFF] text-white shadow-md'
+                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                    }`}
+                            >
+                                {filter.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
             </div>
 
             {/* ledgerAccounts List */}
@@ -239,72 +330,175 @@ export default function LedgerAccountsPage() {
             ) : (
                 <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg overflow-hidden">
                     <div className="hidden md:block overflow-x-auto">
-                        <table className="w-full">
-                            <thead className="bg-gray-50/80">
+                        <table className="w-full" style={{ tableLayout: "fixed" }}>
+                            <colgroup>
+                                {isColumnVisible("accountNumber") && (
+                                    <col style={{ width: getColumnWidth("accountNumber") }} />
+                                )}
+                                {isColumnVisible("accountName") && (
+                                    <col style={{ width: getColumnWidth("accountName") }} />
+                                )}
+                                {isColumnVisible("type") && (
+                                    <col style={{ width: getColumnWidth("type") }} />
+                                )}
+                                {isColumnVisible("vatCode") && (
+                                    <col style={{ width: getColumnWidth("vatCode") }} />
+                                )}
+                                {isColumnVisible("industrySpecification") && (
+                                    <col style={{ width: getColumnWidth("industrySpecification") }} />
+                                )}
+                                {isColumnVisible("reportGroup") && (
+                                    <col style={{ width: getColumnWidth("reportGroup") }} />
+                                )}
+                                {isColumnVisible("saftStandardAccount") && (
+                                    <col style={{ width: getColumnWidth("saftStandardAccount") }} />
+                                )}
+                                {isColumnVisible("status") && (
+                                    <col style={{ width: getColumnWidth("status") }} />
+                                )}
+                                <col style={{ width: getColumnWidth("actions") }} />
+                            </colgroup>
+                            <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
                                 <tr>
-                                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Account Number
-                                    </th>
-                                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Account Name
-                                    </th>
-                                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Type
-                                    </th>
-                                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Status
-                                    </th>
-                                    <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        {t('actions')}
+                                    {isColumnVisible("accountNumber") && (
+                                        <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
+                                            Account Number
+
+                                            <ResizeHandle onMouseDown={onMouseDown("accountNumber")} />
+
+                                        </th>
+                                    )}
+                                    {isColumnVisible("accountName") && (
+                                        <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
+                                            Account Name
+                                            <ResizeHandle onMouseDown={onMouseDown("accountName")} />
+
+                                        </th>
+                                    )}
+                                    {isColumnVisible("type") && (
+                                        <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
+                                            Type
+                                            <ResizeHandle onMouseDown={onMouseDown("type")} />
+                                        </th>
+                                    )}
+                                    {isColumnVisible("vatCode") && (
+                                        <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
+                                            VAT Code
+                                            <ResizeHandle onMouseDown={onMouseDown("vatCode")} />
+                                        </th>
+                                    )}
+                                    {isColumnVisible("industrySpecification") && (
+                                        <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
+                                            Industry Specification
+                                            <ResizeHandle onMouseDown={onMouseDown("industrySpecification")} />
+                                        </th>
+                                    )}
+                                    {isColumnVisible("reportGroup") && (
+                                        <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
+                                            Report Group
+                                            <ResizeHandle onMouseDown={onMouseDown("reportGroup")} />
+                                        </th>
+                                    )}
+                                    {isColumnVisible("saftStandardAccount") && (
+                                        <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
+                                            SAFT Standard Account
+                                            <ResizeHandle onMouseDown={onMouseDown("saftStandardAccount")} />
+                                        </th>
+                                    )}
+                                    {isColumnVisible("status") && (
+                                        <th className="relative px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
+                                            Status
+                                            <ResizeHandle onMouseDown={onMouseDown("status")} />
+                                        </th>
+                                    )}
+                                    <th className="relative px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase border-r border-border">
+                                        <div className="flex items-center justify-end gap-2">
+                                            <span>{t('actions')}</span>
+                                            <ColumnVisibilityToggle
+                                                columns={columns}
+                                                onColumnToggle={toggleColumn}
+                                                onResetColumns={() => {
+                                                    resetColumns()
+                                                    resetWidths()
+                                                }}
+                                            />
+                                        </div>
                                     </th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200/50">
                                 {filteredledgerAccounts.map((account) => (
                                     <tr key={account.id} className="hover:bg-blue-50/30 transition-colors duration-200">
-                                        <td className="px-6 py-4">
-                                            <div className="text-sm font-medium text-gray-900">
-                                                {account.accountNumber}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="text-sm text-gray-900">
-                                                {account.name}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="text-sm text-gray-900">
-                                                {account.type}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            {/* {account.isActive ? (
-                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                    Active
-                                                </span>
-                                            ) : (
-                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                                    Inactive
-                                                </span>
-                                            )} */}
-                                            <div className="flex items-center">
-                                                <Switch
-                                                    id="status"
-                                                    checked={account.isActive}
-                                                    onCheckedChange={(checked) => handleStatusChange(account.id, checked)}
-                                                />
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            {account.businessId !== null ? (
-                                                <div className="flex items-center justify-end gap-2">
-                                                    <Link
-                                                        href={`/dashboard/ledger-accounts/${account.id}/edit?default=false`}
-                                                        className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
-                                                        title="Edit Account"
-                                                    >
-                                                        <PencilIcon className="h-4 w-4" />
-                                                    </Link>
+                                        {isColumnVisible("accountNumber") && (
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="text-sm font-medium text-gray-900">
+                                                    {account.accountNumber}
+                                                </div>
+                                            </td>
+                                        )}
+                                        {isColumnVisible("accountName") && (
+                                            <td className="px-6 py-4">
+                                                <div className="text-sm text-gray-900">
+                                                    {account.name}
+                                                </div>
+                                            </td>
+                                        )}
+                                        {isColumnVisible("type") && (
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="text-sm text-gray-900">
+                                                    {account.type}
+                                                </div>
+                                            </td>
+                                        )}
+                                        {isColumnVisible("vatCode") && (
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="text-sm text-gray-900">
+                                                    {account.vatCode?.name ?? "-"}
+                                                </div>
+                                            </td>
+                                        )}
+                                        {isColumnVisible("industrySpecification") && (
+                                            <td className="px-6 py-4">
+                                                <div className="text-sm text-gray-900 truncate max-w-[200px]">
+                                                    {account.industrySpecification || "-"}
+                                                </div>
+                                            </td>
+                                        )}
+                                        {isColumnVisible("reportGroup") && (
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="text-sm text-gray-900 truncate max-w-[200px]" title={account.reportGroup || ""}>
+                                                    {account.reportGroup ? `${account.reportGroup.substring(0, 10)}...` : "-"}
+                                                </div>
+                                            </td>
+                                        )}
+                                        {isColumnVisible("saftStandardAccount") && (
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="text-sm text-gray-900" title={account.saftStandardAccount || ""}>
+                                                    {account.saftStandardAccount ? `${account.saftStandardAccount.substring(0, 10)}...` : "-"}
+                                                </div>
+                                            </td>
+                                        )}
+                                        {isColumnVisible("status") && (
+                                            <td className="px-6 py-4 whitespace-nowrap text-center">
+                                                <div className="flex items-center justify-center">
+                                                    <Switch
+                                                        id="status"
+                                                        checked={account.isActive}
+                                                        onCheckedChange={(checked) => handleStatusChange(account.id, checked)}
+                                                    />
+                                                </div>
+                                            </td>
+                                        )}
+                                        <td className="px-6 py-4 whitespace-nowrap text-right">
+                                            <div className="flex items-center justify-end gap-2">
+                                                <Link
+                                                    href={`/dashboard/ledger-accounts/${account.id}/edit?default=${account.businessId === null}`}
+                                                    className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
+                                                    title="Edit Account"
+                                                >
+                                                    <PencilIcon className="h-4 w-4" />
+                                                </Link>
+                                                {account.businessId !== null && (
                                                     <button
                                                         onClick={() => handleDelete(account.id, account.accountNumber)}
                                                         className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
@@ -312,19 +506,8 @@ export default function LedgerAccountsPage() {
                                                     >
                                                         <TrashIcon className="h-4 w-4" />
                                                     </button>
-                                                </div>
-                                            ) : (
-                                                <div className="flex items-center justify-end gap-2">
-                                                    <Link
-                                                        href={`/dashboard/ledger-accounts/${account.id}/edit?default=true`}
-                                                        className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
-                                                        title="Edit Account"
-                                                    >
-                                                        <PencilIcon className="h-4 w-4" />
-                                                    </Link>
-                                                </div>
-                                            )
-                                            }
+                                                )}
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}

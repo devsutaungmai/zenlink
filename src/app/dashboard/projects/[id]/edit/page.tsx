@@ -220,8 +220,8 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
                 </div>
                 <div className="space-y-6">
                     {/* Project Name & Project Number */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
+                    <div className="flex flex-wrap gap-6 mt-6">
+                        <div className="grow basis-[calc(20%-12px)] min-w-[150px]">
                             <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
                                 Project Name *
                             </label>
@@ -236,7 +236,7 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
                             />
                         </div>
 
-                        <div>
+                        <div className="grow basis-[calc(20%-12px)] min-w-[150px]">
                             <label htmlFor="projectNumber" className="block text-sm font-medium text-gray-700 mb-2">
                                 Project Number *
                             </label>
@@ -249,12 +249,12 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
                                 placeholder="Enter project number"
                             />
                         </div>
-                    </div>
 
-                    {/* Category & Customer */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                        {/* Category & Customer */}
+
                         {settings.showCategory
-                            && <div>
+                            && <div className="grow basis-[calc(20%-12px)] min-w-[150px]">
                                 <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700 mb-2">
                                     Category
                                 </label>
@@ -274,7 +274,7 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
                             </div>}
 
                         {settings.showCustomer
-                            && <div>
+                            && <div className="grow basis-[calc(20%-12px)] min-w-[150px]">
                                 <label htmlFor="customerId" className="block text-sm font-medium text-gray-700 mb-2">
                                     Customer
                                 </label>
@@ -293,12 +293,11 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
                                     ))}
                                 </select>
                             </div>}
-                    </div>
 
-                    {/* Start Date & End Date */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Start Date & End Date */}
+
                         {settings.showStartDate
-                            && <div>
+                            && <div className="grow basis-[calc(20%-12px)] min-w-[150px]">
                                 <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-2">
                                     Start Date
                                 </label>
@@ -312,7 +311,7 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
                             </div>}
 
                         {settings.showEndDate
-                            && <div>
+                            && <div className="grow basis-[calc(20%-12px)] min-w-[150px]">
                                 <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-2">
                                     End Date
                                 </label>

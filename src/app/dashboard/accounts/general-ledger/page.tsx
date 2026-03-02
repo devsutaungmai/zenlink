@@ -28,6 +28,8 @@ import { on } from "events"
 import { formatDateLocal, formatVoucherNumberForDisplay } from "@/shared/lib/invoiceHelper"
 import { Description } from "@/components/invoice/Description"
 import { DateRangePicker } from "@/components/ui/date-range-picker"
+import { useResizableColumns } from "@/hooks/use-resizable-columns"
+import { ResizeHandle } from "@/components/invoice/resize-handle"
 
 interface LedgerEntry {
   id: string
@@ -68,12 +70,26 @@ export default function GeneralLedger({ businessId }: { businessId: string }) {
   const today = new Date()
 
   const [dateRange, setDateRange] = useState({
-    startDate:formatDateLocal(today) ,
-    endDate: formatDateLocal(new Date(today.getFullYear(), today.getMonth()+1, 0)),
+    startDate: formatDateLocal(today),
+    endDate: formatDateLocal(new Date(today.getFullYear(), today.getMonth() + 1, 0)),
   })
 
   const [downloading, setDownloading] = useState(false)
   const [expandedAccounts, setExpandedAccounts] = useState<Set<string>>(new Set())
+
+  const RESIZABLE_COLUMNS = [
+    { key: "closed", initialWidth: 80, minWidth: 60 },
+    { key: "voucherNo", initialWidth: 120, minWidth: 80 },
+    { key: "date", initialWidth: 100, minWidth: 80 },
+    { key: "description", initialWidth: 220, minWidth: 120 },
+    { key: "vatCode", initialWidth: 100, minWidth: 70 },
+    { key: "currency", initialWidth: 100, minWidth: 70 },
+    { key: "amount", initialWidth: 120, minWidth: 80 },
+  ]
+  const { getColumnWidth, onMouseDown, resetWidths } = useResizableColumns({
+    storageKey: "general-ledger-col-widths",
+    columns: RESIZABLE_COLUMNS,
+  })
 
   // Fetch ledger data
   useEffect(() => {
@@ -307,9 +323,9 @@ export default function GeneralLedger({ businessId }: { businessId: string }) {
               </div>
             </div> */}
             <DateRangePicker
-            dateRange={dateRange}
-            onDateRangeChange={setDateRange}
-          />
+              dateRange={dateRange}
+              onDateRangeChange={setDateRange}
+            />
 
             {/* Download and Settings - Icon Buttons */}
             <div className="flex items-center gap-2 justify-end">
@@ -370,18 +386,52 @@ export default function GeneralLedger({ businessId }: { businessId: string }) {
           <>
             <div className="hidden md:block border border-border rounded-lg overflow-auto">
               <table className="w-full border-collapse">
+                <colgroup>
+                  <col style={{ width: getColumnWidth("closed") }} />
+                  <col style={{ width: getColumnWidth("voucherNo") }} />
+                  <col style={{ width: getColumnWidth("date") }} />
+                  <col style={{ width: getColumnWidth("description") }} />
+                  <col style={{ width: getColumnWidth("vatCode") }} />
+                  <col style={{ width: getColumnWidth("currency") }} />
+                  <col style={{ width: getColumnWidth("amount") }} />
+                </colgroup>
                 <thead>
                   <tr className="border-b border-border bg-muted/30">
                     <th className="w-12 border-r border-border p-3 text-left">
                       <Checkbox />
                     </th>
-                    <th className="border-r border-border p-3 text-left text-sm font-medium">Closed</th>
-                    <th className="border-r border-border p-3 text-left text-sm font-medium">Voucher no.</th>
-                    <th className="border-r border-border p-3 text-left text-sm font-medium">Date</th>
-                    <th className="border-r border-border p-3 text-left text-sm font-medium">Description</th>
-                    <th className="border-r border-border p-3 text-left text-sm font-medium">VAT c...</th>
-                    <th className="border-r border-border p-3 text-left text-sm font-medium">Currency</th>
-                    <th className="border-r border-border p-3 text-right text-sm font-medium">Amount</th>
+                    <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
+                      Closed
+                      <ResizeHandle onMouseDown={onMouseDown("closed")} />
+                    </th>
+
+                    <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
+                      Voucher no.
+                      <ResizeHandle onMouseDown={onMouseDown("voucherNo")} />
+                    </th>
+                    <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
+                      Date
+                      <ResizeHandle onMouseDown={onMouseDown("date")} />
+                    </th>
+                    <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
+                      Description
+                      <ResizeHandle onMouseDown={onMouseDown("description")} />
+                    </th>
+                    <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
+                      VAT c...
+                      <ResizeHandle onMouseDown={onMouseDown("vatCode")} />
+                    </th>
+                    <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
+                      Currency
+                      <ResizeHandle onMouseDown={onMouseDown("currency")} />
+                    </th>
+
+                    <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
+                      Amount
+                      <ResizeHandle onMouseDown={onMouseDown("amount")} />
+                    </th>
+
+
                     <th className="w-12 p-3"></th>
                   </tr>
                 </thead>

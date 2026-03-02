@@ -15,6 +15,7 @@ import {
     Calendar,
     X,
     Columns3,
+    IterationCcw,
 } from "lucide-react"
 import { da } from "date-fns/locale"
 import { formatCustomerNumberForDisplay, formatDateLocal, formatVoucherNumberForDisplay } from "@/shared/lib/invoiceHelper"
@@ -23,6 +24,8 @@ import { DateRangePicker } from "@/components/ui/date-range-picker"
 import { MatchedItemsDialog } from "@/components/invoice/MatchedItemsDialog"
 import { CustomerCombobox } from "@/components/invoice/CustomerCombobox"
 import { Customer } from "../../invoices/create/page"
+import { ResizeHandle } from "@/components/invoice/resize-handle"
+import { useResizableColumns } from "@/hooks/use-resizable-columns"
 
 // --- Data types ---
 
@@ -85,6 +88,21 @@ export default function CustomerLedger() {
 
     const [matchDialogOpen, setMatchDialogOpen] = useState(false)
     const [selectedMatchGroup, setSelectedMatchGroup] = useState<OpenItem | null>(null)
+
+     const RESIZABLE_COLUMNS = [
+        { key: "date", initialWidth: 80, minWidth: 60 },
+        { key: "text", initialWidth: 120, minWidth: 80 },
+        { key: "description", initialWidth: 220, minWidth: 120 },
+        { key: "dueDate", initialWidth: 100, minWidth: 70 },
+        { key: "voucher", initialWidth: 100, minWidth: 70 },
+        { key: "amount", initialWidth: 70, minWidth: 90 },
+        { key: "balance", initialWidth: 90, minWidth: 100 },
+        { key: "payable", initialWidth: 70, minWidth: 90 },
+      ]
+      const { getColumnWidth, onMouseDown, resetWidths } = useResizableColumns({
+        storageKey: "customer-ledger-col-widths",
+        columns: RESIZABLE_COLUMNS,
+      })
 
     const openMatchDialog = (item: OpenItem) => {
         setSelectedMatchGroup(item)
@@ -361,6 +379,15 @@ export default function CustomerLedger() {
                         />
 
                     </div>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={resetWidths}
+                        className="h-8 w-8 pointer-events-auto"
+                        title="Reset table column widths to default"
+                    >
+                        <IterationCcw className="h-4 w-4 text-[#667085]" />
+                    </Button>
 
                     {/* Hide reversals */}
                     {/* <label className="flex items-center gap-2 text-sm text-[#2c3e50] cursor-pointer">
@@ -443,31 +470,59 @@ export default function CustomerLedger() {
 
 
             {/* Table */}
-            <div className="px-4 py-3 sm:px-6 sm:py-4">
+            <div className="">
                 {/* Desktop table */}
                 <div className="hidden md:block overflow-auto">
                     <table className="w-full border-collapse text-sm">
+                        <colgroup>
+                            <col style={{ width:getColumnWidth("closed") }} />
+                            <col style={{ width: getColumnWidth("date") }} />
+                            <col style={{ width: getColumnWidth("text") }} />
+                            <col style={{ width: getColumnWidth("description") }} />
+                            <col style={{ width: getColumnWidth("dueDate") }} />
+                            <col style={{ width: getColumnWidth("voucher") }} />
+                            <col style={{ width: getColumnWidth("amount") }} />
+                            <col style={{ width: getColumnWidth("balance") }} />
+                            <col style={{ width: getColumnWidth("payable") }} />
+                        </colgroup>
                         <thead>
-                            <tr className="bg-[#3a5a6e] text-white">
+                            <tr className="bg-white text-black border-b border-[#e0e4e8]">
                                 <th className="p-2.5 text-left font-medium w-[100px]" />
-                                <th className="p-2.5 text-left font-medium w-[120px]">Date</th>
-                                <th className="p-2.5 text-left font-medium w-[260px]">Text</th>
-                                <th className="p-2.5 text-left font-medium">Description</th>
-                                <th className="p-2.5 text-left font-medium w-[110px]">Due date</th>
-                                <th className="p-2.5 text-left font-medium w-[90px]">Voucher</th>
-                                <th className="p-2.5 text-right font-medium w-[140px]">Amount</th>
-                                <th className="p-2.5 text-right font-medium w-[130px]">Balance</th>
+                                <th className="relative p-2.5 text-left font-medium w-[120px] border-r border-[#e0e4e8]">
+                                    Date
+                                    <ResizeHandle onMouseDown={onMouseDown("date")} />
+                                </th>
+                                <th className="relative p-2.5 text-left font-medium w-[260px] border-r border-[#e0e4e8]">
+                                    Text
+                                    <ResizeHandle onMouseDown={onMouseDown("text")} />
+                                </th>
+                                <th className="relative p-2.5 text-left font-medium border-r border-[#e0e4e8]">
+                                    Description
+                                    <ResizeHandle onMouseDown={onMouseDown("description")} />
+                                </th>
+                                <th className="relative p-2.5 text-left font-medium w-[110px] border-r border-[#e0e4e8]">
+                                    Due date
+                                    <ResizeHandle onMouseDown={onMouseDown("dueDate")} />
+                                </th>
+                                <th className="relative p-2.5 text-left font-medium w-[90px] border-r border-[#e0e4e8]">
+                                    Voucher
+                                    <ResizeHandle onMouseDown={onMouseDown("voucher")} />
+                                </th>
+                                <th className="relative p-2.5 text-right font-medium w-[140px] border-r border-[#e0e4e8]">
+                                    Amount
+                                    <ResizeHandle onMouseDown={onMouseDown("amount")} />
+                                </th>
+                                <th className="relative p-2.5 text-right font-medium w-[130px] border-r border-[#e0e4e8]">
+                                    Balance
+                                    <ResizeHandle onMouseDown={onMouseDown("balance")} />
+                                </th>
                                 <th className="p-2.5 text-right font-medium w-[100px]">Payable</th>
                             </tr>
                         </thead>
                         <tbody>
                             {filteredData.map((group) => {
-
-
-
                                 return (activeTab === "open"
                                     ? (
-
                                         // In CustomerLedger table body:
                                         <OpenItemsCustomerSection
                                             key={group.customerId}

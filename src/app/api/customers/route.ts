@@ -23,6 +23,31 @@ export async function GET(request: NextRequest) {
       where: {
         businessId: businessId
       },
+      select: {
+        id: true,
+        customerName: true,
+        customerNumber: true,
+        organizationNumber: true,
+        address: true,
+        postalCode: true,
+        postalAddress: true,
+        phoneNumber: true,
+        email: true,
+        active: true,
+        discountPercentage: true, 
+          deliveryAddress: true,
+          deliveryAddressPostalCode: true,
+          deliveryAddressPostalAddress: true,
+          department: true,
+          contactPersons: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phoneNumber: true
+            }
+          }
+      },
       orderBy: {
         customerName: 'asc',
       }

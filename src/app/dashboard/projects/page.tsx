@@ -16,6 +16,8 @@ import Swal from "sweetalert2"
 import { useColumnVisibility } from "@/hooks/use-column-visibility"
 import { ColumnVisibilityToggle } from "@/components/invoice/column-visibility-toggle"
 import { Switch } from "@/components/ui/switch"
+import { start } from "repl"
+import { useResizableColumns } from "@/hooks/use-resizable-columns"
 
 interface Customer {
   id: string
@@ -46,7 +48,7 @@ export default function ProjectPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
-  const [selectedFilter, setSelectedFilter] = useState('all')
+  const [selectedFilter, setSelectedFilter] = useState('active')
 
   useEffect(() => {
     fetchProjects()
@@ -61,6 +63,8 @@ export default function ProjectPage() {
     { key: "name", label: "Project Name" },
     { key: "customer", label: "Customer" },
     { key: "category", label: "Category" },
+    { key: "startDate", label: "Start Date" },
+    { key: "endDate", label: "End Date" },
     { key: "active", label: "Status" },
   ]
 
@@ -72,8 +76,25 @@ export default function ProjectPage() {
       name: true,
       customer: true,
       category: true,
+      startDate: false,
+      endDate: false,
       active: true,
     },
+  })
+
+  const RESIZABLE_COLUMNS = [
+    { key: "projectNumber", initialWidth: 120, minWidth: 80 },
+    { key: "name", initialWidth: 220, minWidth: 120 },
+    { key: "customer", initialWidth: 180, minWidth: 120 },
+    { key: "category", initialWidth: 140, minWidth: 100 },
+    { key: "startDate", initialWidth: 150, minWidth: 100 },
+    { key: "endDate", initialWidth: 150, minWidth: 100 },
+    { key: "active", initialWidth: 100, minWidth: 70 },
+    { key: "actions", initialWidth: 120, minWidth: 80 },
+  ]
+  const { getColumnWidth, onMouseDown, resetWidths } = useResizableColumns({
+    storageKey: "project-col-widths",
+    columns: RESIZABLE_COLUMNS,
   })
 
   const fetchProjects = async () => {
@@ -167,33 +188,24 @@ export default function ProjectPage() {
   }
 
   const handleStatusChange = async (projectId: string, newStatus: boolean) => {
-      try {
-        const res = await fetch(`/api/projects/${projectId}/toggle-active`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ id: projectId, active: newStatus }),
-        })
-  
-        if (res.ok) {
-          const updatedProject = await res.json()
-          setProjects((prevProjects) =>
-            prevProjects.map((project) =>
-              project.id === projectId ? { ...project, active: updatedProject.active } : project,
-            ),
-          )
-        } else {
-          // throw new Error("Failed to update project status")
-          await Swal.fire({
-            title: t("common.error"),
-            text: "Failed to update project status",
-            icon: "error",
-            confirmButtonColor: "#31BCFF",
-          })
-        }
-      } catch (error) {
-        console.error("Error updating project status:", error)
+    try {
+      const res = await fetch(`/api/projects/${projectId}/toggle-active`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id: projectId, active: newStatus }),
+      })
+
+      if (res.ok) {
+        const updatedProject = await res.json()
+        setProjects((prevProjects) =>
+          prevProjects.map((project) =>
+            project.id === projectId ? { ...project, active: updatedProject.active } : project,
+          ),
+        )
+      } else {
+        // throw new Error("Failed to update project status")
         await Swal.fire({
           title: t("common.error"),
           text: "Failed to update project status",
@@ -201,7 +213,16 @@ export default function ProjectPage() {
           confirmButtonColor: "#31BCFF",
         })
       }
+    } catch (error) {
+      console.error("Error updating project status:", error)
+      await Swal.fire({
+        title: t("common.error"),
+        text: "Failed to update project status",
+        icon: "error",
+        confirmButtonColor: "#31BCFF",
+      })
     }
+  }
 
   if (loading) {
     return (
@@ -260,10 +281,10 @@ export default function ProjectPage() {
         {/* Filter Buttons */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4">
           <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
+            {/* <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
               <FunnelIcon className="w-4 h-4 flex-shrink-0" />
               <span>Filter</span>
-            </div>
+            </div> */}
             {[
               { value: 'all', label: "ALL" },
               { value: 'active', label: "ACTIVE" },
@@ -309,41 +330,106 @@ export default function ProjectPage() {
           {/* Desktop Table View */}
           <div className="hidden md:block bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+              <table className="w-full" style={{ tableLayout: "fixed" }}>
+                <colgroup>
+                  {isColumnVisible("projectNumber") && (
+                    <col style={{ width: getColumnWidth("projectNumber") }} />
+                  )}
+                  {isColumnVisible("name") && (
+                    <col style={{ width: getColumnWidth("name") }} />
+                  )}
+                  {isColumnVisible("customer") && (
+                    <col style={{ width: getColumnWidth("customer") }} />
+                  )}
+                  {isColumnVisible("category") && (
+                    <col style={{ width: getColumnWidth("category") }} />
+                  )}
+                  {isColumnVisible("startDate") && (
+                    <col style={{ width: getColumnWidth("startDate") }} />
+                  )}
+                  {isColumnVisible("endDate") && (
+                    <col style={{ width: getColumnWidth("endDate") }} />
+                  )}
+                  {isColumnVisible("active") && (
+                    <col style={{ width: getColumnWidth("active") }} />
+                  )}
+                  <col style={{ width: getColumnWidth("actions") }} />
+                </colgroup>
+                <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+                  <tr>
                     {isColumnVisible("projectNumber") && (
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider select-none border-r border-border">
                         Project No.
+                        <div
+                          onMouseDown={onMouseDown("projectNumber")}
+                          className="absolute right-0 top-0 w-1 h-full cursor-col-resize hover:bg-[#31BCFF]"
+                        />
                       </th>
                     )}
                     {isColumnVisible("name") && (
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider select-none border-r border-border">
                         Project Name
+                        <div
+                          onMouseDown={onMouseDown("name")}
+                          className="absolute right-0 top-0 w-1 h-full cursor-col-resize hover:bg-[#31BCFF]"
+                        />
                       </th>
                     )}
                     {isColumnVisible("customer") && (
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider select-none border-r border-border">
                         Customer
+                        <div
+                          onMouseDown={onMouseDown("customer")}
+                          className="absolute right-0 top-0 w-1 h-full cursor-col-resize hover:bg-[#31BCFF]"
+                        />
                       </th>
                     )}
                     {isColumnVisible("category") && (
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider select-none border-r border-border">
                         Category
+                        <div
+                          onMouseDown={onMouseDown("category")}
+                          className="absolute right-0 top-0 w-1 h-full cursor-col-resize hover:bg-[#31BCFF]"
+                        />
+                      </th>
+                    )}
+                    {isColumnVisible("startDate") && (
+                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider select-none border-r border-border">
+                        Start Date
+                        <div
+                          onMouseDown={onMouseDown("startDate")}
+                          className="absolute right-0 top-0 w-1 h-full cursor-col-resize hover:bg-[#31BCFF]"
+                        />
+                      </th>
+                    )}
+                    {isColumnVisible("endDate") && (
+                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider select-none border-r border-border">
+                        End Date
+                        <div
+                          onMouseDown={onMouseDown("endDate")}
+                          className="absolute right-0 top-0 w-1 h-full cursor-col-resize hover:bg-[#31BCFF]"
+                        />
                       </th>
                     )}
                     {isColumnVisible("active") && (
-                      <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      <th className="relative px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider select-none border-r border-border">
                         Status
+                        <div
+                          onMouseDown={onMouseDown("active")}
+                          className="absolute right-0 top-0 w-1 h-full cursor-col-resize hover:bg-[#31BCFF]"
+                        />
                       </th>
                     )}
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    <th className="relative px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider border-r border-border">
                       <div className="flex items-center justify-end gap-2">
-                        <span>Actions</span>
+                        <span>Actions</span> 
                         <ColumnVisibilityToggle
                           columns={columns}
                           onColumnToggle={toggleColumn}
-                          onResetColumns={resetColumns}
+                          onResetColumns={() => {
+                            resetColumns()
+                            resetWidths()
+                          }}
                         />
                       </div>
                     </th>
@@ -354,14 +440,24 @@ export default function ProjectPage() {
                     <tr key={project.id} className="hover:bg-blue-50/50 transition-colors duration-150">
                       {isColumnVisible("projectNumber") && (
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#31BCFF]/10 text-[#31BCFF]">
+                            <Link
+                            href={`/dashboard/projects/${project.id}/edit`}
+                            title="Edit Project"
+                          >
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#31BCFF]/10 text-blue-600 hover:underline">
                             {project.projectNumber || "-"}
                           </span>
+                          </Link>
                         </td>
                       )}
                       {isColumnVisible("name") && (
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-sm font-medium text-gray-900">{project.name}</span>
+                             <Link
+                            href={`/dashboard/projects/${project.id}/edit`}
+                            title="Edit Project"
+                          >
+                          <span className="text-sm font-medium text-blue-600 hover:underline">{project.name}</span>
+                          </Link>
                         </td>
                       )}
                       {isColumnVisible("customer") && (
@@ -374,6 +470,16 @@ export default function ProjectPage() {
                           <span className="text-sm text-gray-600">{project.category?.name || "-"}</span>
                         </td>
                       )}
+                      {isColumnVisible("startDate") && (
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="text-sm text-gray-600">{project.startDate ? new Date(project.startDate).toLocaleDateString() : "-"}</span>
+                        </td>
+                      )}
+                      {isColumnVisible("endDate") && (
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="text-sm text-gray-600">{project.endDate ? new Date(project.endDate).toLocaleDateString() : "-"}</span>
+                        </td>
+                      )}
                       {isColumnVisible("active") && (
                         <td className="px-6 py-4">
                           {/* <span
@@ -383,12 +489,12 @@ export default function ProjectPage() {
                             {project.active ? "Active" : "Inactive"}
                           </span> */}
                           <div className="flex items-center">
-                          <Switch
-                            id="status"
-                            checked={project.active}
-                            onCheckedChange={(checked) => handleStatusChange(project.id, checked)}
-                          />
-                        </div>
+                            <Switch
+                              id="status"
+                              checked={project.active}
+                              onCheckedChange={(checked) => handleStatusChange(project.id, checked)}
+                            />
+                          </div>
                         </td>
                       )}
                       <td className="px-6 py-4 whitespace-nowrap text-right">
@@ -535,6 +641,32 @@ export default function ProjectPage() {
                         />
                       </svg>
                       <span className="truncate">{project.category.name}</span>
+                    </div>
+                  )}
+                  {isColumnVisible("startDate") && project.startDate && (
+                    <div className="flex items-center text-gray-600">
+                      <svg className="w-4 h-4 mr-2 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
+                      </svg>
+                      <span className="truncate">{new Date(project.startDate).toLocaleDateString()}</span>
+                    </div>
+                  )}
+                  {isColumnVisible("endDate") && project.endDate && (
+                    <div className="flex items-center text-gray-600">
+                      <svg className="w-4 h-4 mr-2 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
+                      </svg>
+                      <span className="truncate">{new Date(project.endDate).toLocaleDateString()}</span>
                     </div>
                   )}
                 </div>

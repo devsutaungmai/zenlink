@@ -21,6 +21,7 @@ import { get } from 'http'
 import { del } from '@vercel/blob'
 import { ro } from 'date-fns/locale'
 import { useInvoiceGeneralSettings } from '@/shared/hooks/useInvoiceGeneralSettings'
+import { useAutoFocus } from '@/shared/hooks/useAutoFocus'
 
 export interface Department {
     id: string
@@ -53,6 +54,7 @@ export default function CreateCustomersPage() {
         fixedDateDay: 1,
     })
     const [fetchingLoading, setFetchingLoading] = useState(false);
+    const firstInputRef = useAutoFocus<HTMLInputElement>()
     // Update formData state
     const [formData, setFormData] = useState<{
         customerName: string
@@ -76,7 +78,7 @@ export default function CreateCustomersPage() {
         customerContacts?: CustomerContact[]
     }>({
         customerName: "",
-        active: false,
+        active: true,
         sequence: 0,
         year: new Date().getFullYear(),
         customerNumber: "",
@@ -249,14 +251,10 @@ export default function CreateCustomersPage() {
     const [visibleFields, setVisibleFields] = useState({
         showOrganizationNumber: true,
         showAddress: true,
-        showPostalCode: true,
-        showPostalAddress: true,
         showPhoneNumber: true,
         showEmail: true,
         showDiscountPercentage: true,
         showDeliveryAddress: true,
-        showDeliveryAddressPostalCode: true,
-        showDeliveryAddressPostalAddress: true,
         showDepartment: true,
         showInvoicePaymentTerms: true,
         showContactPerson: true,
@@ -267,14 +265,10 @@ export default function CreateCustomersPage() {
             setVisibleFields({
                 showOrganizationNumber: settings.showOrganizationNumber ?? true,
                 showAddress: settings.showAddress ?? true,
-                showPostalCode: settings.showPostalCode ?? true,
-                showPostalAddress: settings.showPostalAddress ?? true,
                 showPhoneNumber: settings.showPhoneNumber ?? true,
                 showEmail: settings.showEmail ?? true,
                 showDiscountPercentage: settings.showDiscountPercentage ?? true,
                 showDeliveryAddress: settings.showDeliveryAddress ?? true,
-                showDeliveryAddressPostalCode: settings.showDeliveryAddressPostalCode ?? true,
-                showDeliveryAddressPostalAddress: settings.showDeliveryAddressPostalAddress ?? true,
                 showDepartment: settings.showDepartment ?? true,
                 showInvoicePaymentTerms: settings.showInvoicePaymentTerms ?? true,
                 showContactPerson: settings.showContactPerson ?? true,
@@ -346,11 +340,12 @@ export default function CreateCustomersPage() {
                     </div>
                     <div className="flex flex-wrap gap-6">
                         {/* Customer Name - Always visible */}
-                        <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                        <div className="grow basis-[calc(25%-12px)] min-w-[250px]">
                             <label htmlFor="customerName" className="block text-sm font-medium text-gray-700 mb-2">
                                 Customer Name *
                             </label>
                             <input
+                                ref={firstInputRef}
                                 type="text"
                                 id="customerName"
                                 required
@@ -370,7 +365,7 @@ export default function CreateCustomersPage() {
                         </div>
 
                         {/* Customer Number - Always visible */}
-                        <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                        <div className="grow basis-[calc(25%-12px)] min-w-[250px]">
                             <label htmlFor="customerNumber" className="block text-sm font-medium text-gray-700 mb-2">
                                 Customer Number *
                             </label>
@@ -395,7 +390,7 @@ export default function CreateCustomersPage() {
 
                         {/* Organization Number - Conditional */}
                         {visibleFields.showOrganizationNumber && (
-                            <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                            <div className="grow basis-[calc(25%-12px)] min-w-[250px]">
                                 <label htmlFor="organizationNumber" className="block text-sm font-medium text-gray-700 mb-2">
                                     Organization Number
                                 </label>
@@ -420,7 +415,7 @@ export default function CreateCustomersPage() {
 
                         {/* Address - Conditional */}
                         {visibleFields.showAddress && (
-                            <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                            <div className="grow basis-[calc(25%-12px)] min-w-[250px]">
                                 <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">
                                     Address
                                 </label>
@@ -442,8 +437,8 @@ export default function CreateCustomersPage() {
                         )}
 
                         {/* Postal Code - Conditional */}
-                        {visibleFields.showPostalCode && (
-                            <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                        {visibleFields.showAddress && (
+                            <div className="grow basis-[calc(25%-12px)] min-w-[250px]">
                                 <label htmlFor="postalCode" className="block text-sm font-medium text-gray-700 mb-2">
                                     Postal Code
                                 </label>
@@ -467,8 +462,8 @@ export default function CreateCustomersPage() {
                         )}
 
                         {/* Postal Address - Conditional */}
-                        {visibleFields.showPostalAddress && (
-                            <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                        {visibleFields.showAddress && (
+                            <div className="grow basis-[calc(25%-12px)] min-w-[250px]">
                                 <label htmlFor="postalAddress" className="block text-sm font-medium text-gray-700 mb-2">
                                     Postal Address
                                 </label>
@@ -493,7 +488,7 @@ export default function CreateCustomersPage() {
 
                         {/* Phone Number - Conditional */}
                         {visibleFields.showPhoneNumber && (
-                            <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                            <div className="grow basis-[calc(25%-12px)] min-w-[250px]">
                                 <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-2">
                                     Phone Number
                                 </label>
@@ -518,7 +513,7 @@ export default function CreateCustomersPage() {
 
                         {/* Email - Conditional */}
                         {visibleFields.showEmail && (
-                            <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                            <div className="grow basis-[calc(25%-12px)] min-w-[250px]">
                                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                                     Email
                                 </label>
@@ -541,7 +536,7 @@ export default function CreateCustomersPage() {
 
                         {/* Discount Percentage - Conditional */}
                         {visibleFields.showDiscountPercentage && (
-                            <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                            <div className="grow basis-[calc(25%-12px)] min-w-[250px]">
                                 <label htmlFor="discountPercentage" className="block text-sm font-medium text-gray-700 mb-2">
                                     Discount Percentage
                                 </label>
@@ -567,7 +562,7 @@ export default function CreateCustomersPage() {
 
                         {/* Delivery Address - Conditional */}
                         {visibleFields.showDeliveryAddress && (
-                            <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                            <div className="grow basis-[calc(25%-12px)] min-w-[250px]">
                                 <label htmlFor="deliveryAddress" className="block text-sm font-medium text-gray-700 mb-2">
                                     Delivery Address
                                 </label>
@@ -591,8 +586,8 @@ export default function CreateCustomersPage() {
                         )}
 
                         {/* Delivery Address Postal Code - Conditional */}
-                        {visibleFields.showDeliveryAddressPostalCode && (
-                            <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                        {visibleFields.showDeliveryAddress && (
+                            <div className="grow basis-[calc(25%-12px)] min-w-[250px]">
                                 <label htmlFor="deliveryAddressPostalCode" className="block text-sm font-medium text-gray-700 mb-2">
                                     Delivery Address Postal Code
                                 </label>
@@ -616,8 +611,8 @@ export default function CreateCustomersPage() {
                         )}
 
                         {/* Delivery Address Postal Address - Conditional */}
-                        {visibleFields.showDeliveryAddressPostalAddress && (
-                            <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                        {visibleFields.showDeliveryAddress && (
+                            <div className="grow basis-[calc(25%-12px)] min-w-[250px]">
                                 <label htmlFor="deliveryAddressPostalAddress" className="block text-sm font-medium text-gray-700 mb-2">
                                     Delivery Address Postal Address
                                 </label>
@@ -642,7 +637,7 @@ export default function CreateCustomersPage() {
 
                         {/* Department - Conditional */}
                         {visibleFields.showDepartment && (
-                            <div className="grow basis-[calc(50%-12px)] min-w-[250px]">
+                            <div className="grow basis-[calc(25%-12px)] min-w-[250px]">
                                 <label htmlFor="departmentId" className="block text-sm font-medium text-gray-700 mb-2">
                                     Department *
                                 </label>

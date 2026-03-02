@@ -8,14 +8,14 @@ import { t } from 'i18next'
 interface CustomerFieldSettings {
     showOrganizationNumber: boolean;
     showAddress: boolean;
-    showPostalCode: boolean;
-    showPostalAddress: boolean;
+    showPostalCode?: boolean; 
+    showPostalAddress?: boolean;
     showPhoneNumber: boolean;
     showEmail: boolean;
     showDiscountPercentage: boolean;
     showDeliveryAddress: boolean;
-    showDeliveryAddressPostalCode: boolean;
-    showDeliveryAddressPostalAddress: boolean;
+    showDeliveryAddressPostalCode?: boolean;
+    showDeliveryAddressPostalAddress?: boolean;
     showDepartment: boolean;
     showInvoicePaymentTerms: boolean;
     showContactPerson: boolean;
@@ -43,6 +43,11 @@ export function CustomerFieldSettingsDialog({
     }, [initialSettings, settingsOpen])
 
     const handleSaveSettings = async () => {
+
+        localSettings.showDeliveryAddressPostalAddress = localSettings.showDeliveryAddressPostalAddress ?? false
+        localSettings.showDeliveryAddressPostalCode = localSettings.showDeliveryAddressPostalCode ?? false
+        localSettings.showPostalAddress = localSettings.showPostalAddress ?? false
+        localSettings.showPostalCode = localSettings.showPostalCode ?? false
 
         setSettingsOpen(false)
         setLoading(true)
@@ -127,7 +132,7 @@ export function CustomerFieldSettingsDialog({
                     </label>
                 </div>
 
-                <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                {/* <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
                     <input
                         type="checkbox"
                         id="showPostalCode"
@@ -155,7 +160,7 @@ export function CustomerFieldSettingsDialog({
                     <label htmlFor="showPostalAddress" className="text-base font-medium cursor-pointer flex-1">
                         Postal Address
                     </label>
-                </div>
+                </div> */}
 
                 <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
                     <input
@@ -217,7 +222,7 @@ export function CustomerFieldSettingsDialog({
                     </label>
                 </div>
 
-                <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                {/* <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
                     <input
                         type="checkbox"
                         id="showDeliveryAddressPostalCode"
@@ -245,7 +250,7 @@ export function CustomerFieldSettingsDialog({
                     <label htmlFor="showDeliveryAddressPostalAddress" className="text-base font-medium cursor-pointer flex-1">
                         Delivery Address Postal Address
                     </label>
-                </div>
+                </div> */}
 
                 <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
                     <input
