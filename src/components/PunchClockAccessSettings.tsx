@@ -10,6 +10,7 @@ import {
 } from '@heroicons/react/24/outline'
 import GoogleMapsLocationPicker from './GoogleMapsLocationPicker'
 import { useTranslation } from 'react-i18next'
+import Swal from 'sweetalert2'
 
 interface Department {
   id: string
@@ -100,15 +101,30 @@ export default function PunchClockAccessSettings() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(settings)
+        body: JSON.stringify(settings),
       })
       
       if (res.ok) {
-        // Show success message
-        console.log('Settings saved successfully')
+        Swal.fire({
+          title: t('common.success', 'Success'),
+          text: t('punch_clock.access_setting.messages.save_success', 'Settings saved successfully'),
+          icon: 'success',
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true
+        })
+      } else {
+        throw new Error('Failed to save settings')
       }
     } catch (error) {
       console.error('Error saving settings:', error)
+      Swal.fire({
+        title: t('common.error', 'Error'),
+        text: t('punch_clock.access_setting.messages.save_error', 'Failed to save settings'),
+        icon: 'error'
+      })
     } finally {
       setSaving(false)
     }

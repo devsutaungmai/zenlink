@@ -197,7 +197,14 @@ export async function validatePunchLocation(employeeId?: string): Promise<Locati
     const settings = employeeId 
       ? await fetchAccessSettingsForEmployee(employeeId)
       : await fetchAccessSettings()
-    
+      
+    if ((settings as any).error) {
+      return {
+        isAllowed: false,
+        message: (settings as any).error
+      }
+    }
+
     if (settings.allowPunchFromAnywhere) {
       return {
         isAllowed: true,

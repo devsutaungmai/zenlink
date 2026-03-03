@@ -114,7 +114,7 @@
         "WORKING": "I arbeid",
         "COMPLETED": "Fullført",
         "CANCELLED": "Avlyst",
-        "OPEN":"Open"
+        "OPEN": "Open"
       }
     },
     "stats": {
@@ -884,7 +884,10 @@
     "reset": "Tilbakestill",
     "clear": "Fjern",
     "all": "Alle",
-    "actions": "Handlinger"
+    "actions": "Handlinger",
+    "information": "Informasjon",
+    "ok": "OK",
+    "department_not_permitted": "Din tildelte avdeling har ikke tillatelse til å stemple inn/ut."
   },
   "contracts": {
     "title": "Kontrakter",

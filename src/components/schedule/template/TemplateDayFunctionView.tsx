@@ -33,6 +33,7 @@ interface TemplateDayFunctionViewProps {
   onAddShift: (dayIndex: number, formData?: any) => void
   onEditShift: (shift: TemplateShift) => void
   onDeleteShift: (shiftId: string) => void
+  pendingShiftIds?: Set<string>
 }
 
 export default function TemplateDayFunctionView({
@@ -41,7 +42,8 @@ export default function TemplateDayFunctionView({
   functions,
   onAddShift,
   onEditShift,
-  onDeleteShift
+  onDeleteShift,
+  pendingShiftIds = new Set()
 }: TemplateDayFunctionViewProps) {
   const { t } = useTranslation('schedule')
   
@@ -130,12 +132,13 @@ export default function TemplateDayFunctionView({
                       <div className="space-y-2">
                         {functionShifts.map(shift => {
                           const groupName = getGroupName(shift.employeeGroupId)
+                          const isPending = pendingShiftIds.has(shift.id)
                           
                           return (
                             <div
                               key={shift.id}
-                              onClick={() => onEditShift(shift)}
-                              className="rounded-lg p-3 text-white cursor-pointer relative group"
+                              onClick={() => !isPending && onEditShift(shift)}
+                              className={`rounded-lg p-3 text-white cursor-pointer relative group ${isPending ? 'opacity-50 animate-pulse pointer-events-none' : ''}`}
                               style={{ backgroundColor: fn.color || '#31BCFF' }}
                             >
                               <div className="font-medium text-sm">
@@ -205,9 +208,9 @@ export default function TemplateDayFunctionView({
                   ) : (
                     <div className="flex flex-wrap gap-2">
                       {openShifts.map(shift => (
-                        <div key={shift.id} className="cursor-pointer group/shift relative">
+                        <div key={shift.id} className={`cursor-pointer group/shift relative ${pendingShiftIds.has(shift.id) ? 'opacity-50 animate-pulse pointer-events-none' : ''}`}>
                           <div
-                            onClick={() => onEditShift(shift)}
+                            onClick={() => !pendingShiftIds.has(shift.id) && onEditShift(shift)}
                             className="rounded p-2 text-xs border-2 border-dashed border-emerald-400 bg-emerald-100 min-w-[120px]"
                           >
                             <div className="font-medium text-emerald-800 flex items-center gap-1">
@@ -278,14 +281,15 @@ export default function TemplateDayFunctionView({
                     <div className="flex flex-wrap gap-2">
                       {functionShifts.map(shift => {
                         const groupName = getGroupName(shift.employeeGroupId)
+                        const isPending = pendingShiftIds.has(shift.id)
                         
                         return (
                           <div
                             key={shift.id}
-                            className="cursor-pointer group/shift relative"
+                            className={`cursor-pointer group/shift relative ${isPending ? 'opacity-50 animate-pulse pointer-events-none' : ''}`}
                           >
                             <div 
-                              onClick={() => onEditShift(shift)}
+                              onClick={() => !isPending && onEditShift(shift)}
                               className="rounded p-2 text-xs text-white font-medium min-w-[120px]"
                               style={{ backgroundColor: fn.color || '#31BCFF' }}
                             >

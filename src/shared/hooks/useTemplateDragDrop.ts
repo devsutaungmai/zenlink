@@ -13,12 +13,16 @@ export interface TemplateDropTarget {
   rowType: 'employee' | 'group' | 'function' | 'openEmployee' | 'openGroup' | 'openFunction'
 }
 
+type TemplateRowType = 'employee' | 'group' | 'function' | 'openEmployee' | 'openGroup' | 'openFunction'
+
 interface UseTemplateDragDropOptions {
   onMoveShift: (shiftId: string, target: { dayIndex: number; employeeId?: string | null; employeeGroupId?: string | null; functionId?: string | null }) => Promise<void>
   onDuplicateShift: (shiftId: string, target: { dayIndex: number; employeeId?: string | null; employeeGroupId?: string | null; functionId?: string | null }) => Promise<void>
+  isDropDisabled?: (targetRowId: string, targetDayIndex: number, rowType: TemplateRowType, shift?: any) => boolean
+  onDropRejected?: (targetRowId: string, targetDayIndex: number, rowType: TemplateRowType, shift?: any) => void
 }
 
-export function useTemplateDragDrop({ onMoveShift, onDuplicateShift }: UseTemplateDragDropOptions) {
+export function useTemplateDragDrop({ onMoveShift, onDuplicateShift, isDropDisabled, onDropRejected }: UseTemplateDragDropOptions) {
   const [dragOverCell, setDragOverCell] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [copyMode, setCopyMode] = useState(false)
@@ -58,12 +62,27 @@ export function useTemplateDragDrop({ onMoveShift, onDuplicateShift }: UseTempla
     requestAnimationFrame(() => ghost.remove())
   }, [])
 
-  const handleDragOver = useCallback((e: React.DragEvent, cellId: string) => {
+  const handleDragOver = useCallback((
+    e: React.DragEvent,
+    cellId: string,
+    targetRowId?: string,
+    targetDayIndex?: number,
+    rowType?: TemplateRowType
+  ) => {
     e.preventDefault()
     e.stopPropagation()
+    if (
+      targetRowId !== undefined &&
+      targetDayIndex !== undefined &&
+      rowType &&
+      isDropDisabled?.(targetRowId, targetDayIndex, rowType, dragDataRef.current?.shift)
+    ) {
+      setDragOverCell(null)
+      return
+    }
     e.dataTransfer.dropEffect = 'move'
     setDragOverCell(cellId)
-  }, [])
+  }, [isDropDisabled])
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -77,7 +96,7 @@ export function useTemplateDragDrop({ onMoveShift, onDuplicateShift }: UseTempla
     e: React.DragEvent,
     targetRowId: string,
     targetDayIndex: number,
-    rowType: 'employee' | 'group' | 'function' | 'openEmployee' | 'openGroup' | 'openFunction'
+    rowType: TemplateRowType
   ) => {
     e.preventDefault()
     e.stopPropagation()
@@ -86,6 +105,12 @@ export function useTemplateDragDrop({ onMoveShift, onDuplicateShift }: UseTempla
 
     const dragData = dragDataRef.current
     if (!dragData) return
+
+    if (isDropDisabled?.(targetRowId, targetDayIndex, rowType, dragData.shift)) {
+      onDropRejected?.(targetRowId, targetDayIndex, rowType, dragData.shift)
+      dragDataRef.current = null
+      return
+    }
 
     const sameCell = dragData.sourceRowId === targetRowId && dragData.sourceDayIndex === targetDayIndex
 
@@ -120,7 +145,7 @@ export function useTemplateDragDrop({ onMoveShift, onDuplicateShift }: UseTempla
     }
 
     dragDataRef.current = null
-  }, [onMoveShift, onDuplicateShift, copyMode])
+  }, [onMoveShift, onDuplicateShift, copyMode, isDropDisabled, onDropRejected])
 
   const handleDragEnd = useCallback(() => {
     setDragOverCell(null)

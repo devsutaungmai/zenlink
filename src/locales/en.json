@@ -121,7 +121,7 @@
         "WORKING": "Working",
         "COMPLETED": "Completed",
         "CANCELLED": "Cancelled",
-        "OPEN":"Open"
+        "OPEN": "Open"
       }
     },
     "recent_activity": "Recent Activity",
@@ -887,7 +887,10 @@
     "clear": "Clear",
     "all": "All",
     "none": "None",
-    "actions": "Actions"
+    "actions": "Actions",
+    "information": "Information",
+    "ok": "OK",
+    "department_not_permitted": "Your assigned department is not permitted to punch in/out."
   },
   "contracts": {
     "title": "Contracts",
