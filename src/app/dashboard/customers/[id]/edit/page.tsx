@@ -15,6 +15,9 @@ import { useCustomerSettings } from '@/shared/hooks/useCustomerSettings'
 import { CustomerFieldSettingsDialog } from '@/components/invoice/CustomerFieldSettingsDialog'
 import { formatCustomerNumberForDisplay } from '@/shared/lib/invoiceHelper'
 import { useInvoiceGeneralSettings } from '@/shared/hooks/useInvoiceGeneralSettings'
+import { ProjectMultiSelectCombobox } from '@/components/invoice/ProjectMultiSelectCombobox'
+import { Project } from '@/app/dashboard/invoices/create/page'
+import { ProjectFormType } from '@/components/invoice/ProjectDialog'
 
 export default function EditCustomersPage({ params, searchParams }: { params: Promise<{ id: string }>, searchParams: Promise<{ overview?: string }> }) {
     const resolvedParams = use(params)
@@ -32,6 +35,8 @@ export default function EditCustomersPage({ params, searchParams }: { params: Pr
         unit: 'DAYS' as const,
         fixedDateDay: 1,
     })
+    const [projects, setProjects] = useState<Project[]>([])
+    const [loadingProject, setLoadingProject] = useState<boolean>(false)
     const [formData, setFormData] = useState<{
         customerName: string
         active: boolean
@@ -49,6 +54,7 @@ export default function EditCustomersPage({ params, searchParams }: { params: Pr
         departmentId: string
         customerPaymentTerm: InvoicePaymentTerms,
         customerContacts?: CustomerContact[]
+        projectIds?: string[]
     }>({
         customerName: "",
         active: false,
@@ -69,7 +75,8 @@ export default function EditCustomersPage({ params, searchParams }: { params: Pr
             dueDateValue: 14,
             dueDateUnit: "DAYS"
         },
-        customerContacts: []
+        customerContacts: [],
+        projectIds: []
     })
     const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
     const validationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -82,6 +89,7 @@ export default function EditCustomersPage({ params, searchParams }: { params: Pr
         showDiscountPercentage: true,
         showDeliveryAddress: true,
         showDepartment: true,
+        showProject: true,
         showInvoicePaymentTerms: true,
         showContactPerson: true,
     })
@@ -96,6 +104,7 @@ export default function EditCustomersPage({ params, searchParams }: { params: Pr
                 showDiscountPercentage: settings.showDiscountPercentage ?? true,
                 showDeliveryAddress: settings.showDeliveryAddress ?? true,
                 showDepartment: settings.showDepartment ?? true,
+                showProject: settings.showProject ?? true,
                 showInvoicePaymentTerms: settings.showInvoicePaymentTerms ?? true,
                 showContactPerson: settings.showContactPerson ?? true,
             })
@@ -128,6 +137,7 @@ export default function EditCustomersPage({ params, searchParams }: { params: Pr
     useEffect(() => {
         fetchCustomer()
         fetchDepartments()
+        fetchProjects()
     }, [resolvedParams.id, overviewMode])
 
     const fetchDepartments = async () => {
@@ -166,6 +176,7 @@ export default function EditCustomersPage({ params, searchParams }: { params: Pr
                         unit: data.InvoicePaymentTerms.invoiceDueDateUnit,
                     }
                 }
+
                 setFormData({
                     customerName: data.customerName || '',
                     active: data.active || false,
@@ -186,6 +197,7 @@ export default function EditCustomersPage({ params, searchParams }: { params: Pr
                         dueDateValue: data.InvoicePaymentTerms?.invoiceDueDateValue || 14,
                         dueDateUnit: data.InvoicePaymentTerms?.invoiceDueDateUnit || "DAYS"
                     },
+                    projectIds: data.projects ? data.projects.map((p: any) => p.id) : [],
                     customerContacts: data.contactPersons || []
                 })
                 setPaymentTermDefaults(paymentTermForComponent)
@@ -238,6 +250,83 @@ export default function EditCustomersPage({ params, searchParams }: { params: Pr
         } else {
             router.push("/dashboard/customers")
         }
+    }
+
+    const handleProjectChange = (selectedProjectIds: string[]) => {
+        setFormData(prev => ({
+            ...prev,
+            projectIds: selectedProjectIds
+        }))
+    }
+
+    const onSaveProject = async (project: ProjectFormType): Promise<Project> => {
+        try {
+            const res = await fetch('/api/projects', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(project),
+            })
+            if (!res.ok) {
+                const error = await res.json()
+                throw new Error(error.error || 'Failed to create project')
+            }
+            const createdProject = await res.json()
+            setProjects(prev => [...prev, createdProject])
+            setFormData(prev => ({
+                ...prev,
+                projectIds: [...(prev.projectIds || []), createdProject.id]
+            }))
+            await Swal.fire({
+                title: 'Success!',
+                text: 'Project created successfully',
+                icon: 'success',
+                confirmButtonColor: '#31BCFF',
+                focusConfirm: false,
+            })
+            return createdProject
+        } catch (error) {
+            await Swal.fire({
+                title: 'Error',
+                text: error instanceof Error ? error.message : 'An error occurred',
+                icon: 'error',
+                confirmButtonColor: '#31BCFF',
+                focusConfirm: false,
+            })
+            throw error
+        } finally {
+            setLoadingProject(false)
+        }
+    }
+    const fetchProjects = async () => {
+        try {
+            const res = await fetch("/api/projects")
+
+            if (!res.ok) {
+                throw new Error(`HTTP error! status: ${res.status}`)
+            }
+
+            const data = await res.json()
+
+            if (Array.isArray(data)) {
+                setProjects(data)
+            } else {
+                console.error("API did not return an array:", data)
+                setProjects([])
+            }
+        } catch (error) {
+            console.error("Error fetching projects:", error)
+            setProjects([])
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleProjectCreated = (newProject: Project) => {
+        setProjects(prev => [...prev, newProject])
+        setFormData(prev => ({
+            ...prev,
+            projectIds: [...(prev.projectIds || []), newProject.id]
+        }))
     }
     if (fetchingLoading) {
         return (
@@ -636,6 +725,22 @@ export default function EditCustomersPage({ params, searchParams }: { params: Pr
                                 )}
                             </div>
                         )}
+                        {visibleFields.showProject && <div className="grow basis-[calc(100%-12px)] min-w-[250px]">
+                            <label htmlFor="projectIds" className="block text-sm font-medium text-gray-700 mb-2">
+                                Projects *
+                            </label>
+                            <ProjectMultiSelectCombobox
+                                projects={projects}
+                                value={formData.projectIds || []}
+                                onChange={handleProjectChange}
+                                onProjectCreated={handleProjectCreated}
+                                onSaveNewProject={onSaveProject}
+                                placeholder="Select Projects"
+                            />
+                            {validationErrors.projectIds && (
+                                <p className="mt-1 text-sm text-red-600">{validationErrors.projectIds}</p>
+                            )}
+                        </div>}
                     </div>
 
                     {settings.showInvoicePaymentTerms &&

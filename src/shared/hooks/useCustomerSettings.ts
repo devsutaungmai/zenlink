@@ -9,6 +9,7 @@ interface CustomerSettings {
     showDiscountPercentage: boolean
     showDeliveryAddress: boolean
     showDepartment: boolean
+    showProject: boolean
     showInvoicePaymentTerms: boolean
     showContactPerson: boolean
 }
@@ -22,6 +23,7 @@ export function useCustomerSettings() {
         showDiscountPercentage: true,
         showDeliveryAddress: true,
         showDepartment: true,
+        showProject: true,
         showInvoicePaymentTerms: true,
         showContactPerson: true
     })
@@ -53,6 +55,7 @@ export function useCustomerSettings() {
                 showDiscountPercentage: data.showDiscountPercentage ?? true,
                 showDeliveryAddress: data.showDeliveryAddress ?? true,
                 showDepartment: data.showDepartment ?? true,
+                showProject: data.showProject ?? true,
                 showInvoicePaymentTerms: data.showInvoicePaymentTerms ?? true,
                 showContactPerson: data.showContactPerson ?? true
             })
