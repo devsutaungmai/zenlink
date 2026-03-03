@@ -35,7 +35,7 @@ interface Customer {
   deliveryAddress?: string | null
   deliveryAddressPostalCode?: string | null
   deliveryAddressPostalAddress?: string | null
-  department?: string | null
+  department?: { id: string; name: string } | null 
 }
 
 export default function CustomersPage() {
@@ -514,7 +514,7 @@ export default function CustomersPage() {
                       )}
                       {isColumnVisible("department") && (
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-sm text-gray-600">{customer.department || "-"}</span>
+                          <span className="text-sm text-gray-600">{customer.department?.name || "-"}</span>
                         </td>
                       )}
                       {isColumnVisible("deliveryAddress") && (

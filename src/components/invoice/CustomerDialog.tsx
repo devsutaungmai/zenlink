@@ -3,6 +3,7 @@ import { X } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import Swal from "sweetalert2";
 import React from "react";
+import { formatCustomerNumberForDisplay } from "@/shared/lib/invoiceHelper";
 
 export interface CustomerContact {
     name: string
@@ -65,6 +66,17 @@ export default function CustomerDialog({
         setForm(customer ?? emptyCustomer);
     }, [customer]);
 
+    useEffect(() => {
+        if (open) {
+            if (!customer) {
+                getDefaultCustomerNumber();
+            }
+            setTimeout(() => {
+                customerNameRef.current?.focus();
+            }, 100);
+        }
+    }, [open]);
+
     const updateField = (field: keyof CustomerFormType, value: string) => {
         setForm((prev) => ({ ...prev, [field]: value }));
     };
@@ -89,6 +101,20 @@ export default function CustomerDialog({
 
         await onSave(payload);
     };
+
+    const getDefaultCustomerNumber = async () => {
+            try {
+                const res = await fetch('/api/customers/next-number');
+                const data = await res.json();
+    
+                const defaultNumber = formatCustomerNumberForDisplay(data.customerNumber);
+    
+                updateField("customerNumber", defaultNumber);
+            } catch (error) {
+                console.error('Error fetching customerDefaultNumber:', error)
+            }
+    
+        };
 
     return (
         <Dialog.Root open={open} onOpenChange={onOpenChange}>

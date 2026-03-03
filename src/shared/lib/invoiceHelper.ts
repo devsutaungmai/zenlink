@@ -74,7 +74,11 @@ export async function generateInvoiceNumber(
   });
 
   const lastInvoice = await txClient.invoice.findFirst({
-    where: { businessId, year, status: InvoiceStatus.OUTSTANDING },
+    where: { 
+      businessId, 
+      year,
+      status: { notIn: [InvoiceStatus.DRAFT, InvoiceStatus.SENT] }
+    },
     orderBy: { sequence: 'desc' }
   });
 
@@ -483,8 +487,10 @@ export function parseVoucherNumber(voucherNumber: string) {
 * 1. DR 1500 (Accounts Receivable) / CR Sales Account (Revenue excl VAT)
 * 2. DR 1500 (Accounts Receivable) / CR 3200 (VAT Payable)
 */
-export async function invoiceToLedgerPosting(invoiceId: string) {
-  const invoice = await prisma.invoice.findUnique({
+export async function invoiceToLedgerPosting(invoiceId: string,tx?: Prisma.TransactionClient) {
+  const txClient = tx || prisma;
+  
+  const invoice = await txClient.invoice.findUnique({
     where: { id: invoiceId },
     include: {
       customer: {
@@ -547,10 +553,10 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
   }
   const vatMap = new Map<string, number>();
 
-  await prisma.$transaction(async (tx) => {
+  // await prisma.$transaction(async (tx) => {
     // Update invoice status (only for normal invoices, not credit notes)
     if (!isCreditNote) {
-      await tx.invoice.update({
+      await txClient.invoice.update({
         where: { id: invoice.id },
         data: {
           status: InvoiceStatus.OUTSTANDING,
@@ -593,7 +599,7 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
 
       if (isCreditNote) {
         // CREDIT NOTE: DR Sales Account / CR 1500 (REVERSED)
-        await tx.ledgerEntry.create({
+        await txClient.ledgerEntry.create({
           data: {
             entryType: LedgerEntryType.CREDIT_NOTE,
             businessId,
@@ -611,7 +617,7 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
         });
       } else {
         // NORMAL INVOICE: DR 1500 / CR Sales Account
-        await tx.ledgerEntry.create({
+        await txClient.ledgerEntry.create({
           data: {
             entryType: LedgerEntryType.INVOICE_POST,
             businessId,
@@ -644,7 +650,7 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
       if (vat.vatAmount > 0) {
         if (isCreditNote) {
           // CREDIT NOTE: DR 2701 / CR 1500 (REVERSED)
-          await tx.ledgerEntry.create({
+          await txClient.ledgerEntry.create({
             data: {
               entryType: LedgerEntryType.CREDIT_NOTE,
               businessId,
@@ -662,7 +668,7 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
           });
         } else {
           // NORMAL INVOICE: DR 1500 / CR 2701
-          await tx.ledgerEntry.create({
+          await txClient.ledgerEntry.create({
             data: {
               entryType: LedgerEntryType.INVOICE_POST,
               businessId,
@@ -681,7 +687,7 @@ export async function invoiceToLedgerPosting(invoiceId: string) {
         }
       }
     }
-  });
+  // });
 
   return {
     success: true,

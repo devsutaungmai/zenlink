@@ -28,28 +28,29 @@ export async function GET(request: NextRequest) {
             email: true,
             deliveryAddress: true,
             discountPercentage: true,
-            business:{
-              select:{
+            business: {
+              select: {
                 id: true,
                 name: true
+              },
             },
           },
-        },},
-      
+        },
+
         project: {
           select: {
             id: true,
             name: true
           }
         },
-        department:{
+        department: {
           select: {
             id: true,
             name: true
           }
         },
-        paymentAllocations:{
-          select:{
+        paymentAllocations: {
+          select: {
             amountAllocated: true
           }
         }
@@ -268,21 +269,21 @@ export async function POST(request: NextRequest) {
             // Generate voucher and update invoice in a transaction
             const voucher = await generateVoucherNumber(businessId, VoucherType.INVOICE, tx);
 
-            const updated = await tx.invoice.update({
+            await tx.invoice.update({
               where: { id: invoice.id },
               data: { voucherId: voucher.id }
             });
-
-            return updated;
+            await invoiceToLedgerPosting(invoice.id, tx);
           }
+
 
           return invoice;
 
         });
 
-        if (invoice.status === "SENT") {
-          await invoiceToLedgerPosting(invoice.id);
-        }
+        // if (invoice.status === "SENT") {
+        //   await invoiceToLedgerPosting(invoice.id);
+        // }
 
         return NextResponse.json(invoice, { status: 201 })
       } catch (error: any) {
