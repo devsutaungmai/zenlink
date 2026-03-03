@@ -47,16 +47,30 @@ export function ProjectMultiSelectCombobox({
   const listRef = React.useRef<HTMLUListElement>(null)
   const containerRef = React.useRef<HTMLDivElement>(null)
 
-  const selectedProjects = projects.filter((p) => value.includes(p.id))
+  const uniqueValue = React.useMemo(
+  () => Array.from(new Set(value)),
+  [value]
+)
 
-  const filteredProjects = React.useMemo(() => {
-    if (!inputValue) return projects
-    return projects.filter(
-      (p) =>
-        p.name.toLowerCase().includes(inputValue.toLowerCase()) ||
-        p.projectNumber?.toLowerCase().includes(inputValue.toLowerCase())
-    )
-  }, [projects, inputValue])
+// Deduplicate projects prop in case parent passes duplicates
+const uniqueProjects = React.useMemo(
+  () => [...new Map(projects.map((p) => [p.id, p])).values()],
+  [projects]
+)
+
+const selectedProjects = React.useMemo(
+  () => uniqueProjects.filter((p) => uniqueValue.includes(p.id)),
+  [uniqueProjects, uniqueValue]
+)
+
+const filteredProjects = React.useMemo(() => {
+  if (!inputValue) return uniqueProjects
+  return uniqueProjects.filter(
+    (p) =>
+      p.name.toLowerCase().includes(inputValue.toLowerCase()) ||
+      p.projectNumber?.toLowerCase().includes(inputValue.toLowerCase())
+  )
+}, [uniqueProjects, inputValue])  
 
   React.useEffect(() => {
     setHighlightedIndex(0)
@@ -81,7 +95,7 @@ export function ProjectMultiSelectCombobox({
     if (value.includes(project.id)) {
       onChange(value.filter((id) => id !== project.id))
     } else {
-      onChange([...value, project.id])
+      onChange(Array.from(new Set([...value, project.id])))
     }
     setInputValue("")
     inputRef.current?.focus()
@@ -161,7 +175,8 @@ export function ProjectMultiSelectCombobox({
     try {
       const newProject = await onSaveNewProject(form)
       // Auto-select the newly created project
-      onChange([...value, newProject.id])
+      // onChange([...value, newProject.id])
+      onChange(Array.from(new Set([...value, newProject.id])))
       onProjectCreated?.(newProject)
       setProjectDialogOpen(false)
     } finally {
