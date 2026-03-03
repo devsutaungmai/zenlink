@@ -13,6 +13,7 @@ import LocationValidationModal from '@/components/LocationValidationModal'
 import DepartmentSelectionModal from '@/components/DepartmentSelectionModal'
 import { useTranslation } from 'react-i18next'
 import { DashboardStatsSkeleton } from '@/components/skeletons/CommonSkeletons'
+import Swal from 'sweetalert2'
 
 interface Employee {
   id: string
@@ -172,8 +173,8 @@ export default function DashboardPage() {
   const [recentAttendanceLoading, setRecentAttendanceLoading] = useState(false)
   const [weeklyShifts, setWeeklyShifts] = useState<WeeklyShift[]>([])
   const [weeklyShiftsLoading, setWeeklyShiftsLoading] = useState(false)
-  const {t} = useTranslation();
-  
+  const { t } = useTranslation();
+
   const canClockInOut = hasPermission(PERMISSIONS.ATTENDANCE_CLOCK_IN_OUT)
   const hasEmployeeRecord = Boolean(user?.employee)
   const canUsePunchClock = canClockInOut && hasEmployeeRecord
@@ -184,7 +185,7 @@ export default function DashboardPage() {
   const canViewMostActive = hasPermission(PERMISSIONS.DASHBOARD_VIEW_MOST_ACTIVE)
   const canViewShiftCompletion = hasPermission(PERMISSIONS.DASHBOARD_VIEW_SHIFT_COMPLETION)
   const canViewAttendanceFeed = hasPermission(PERMISSIONS.DASHBOARD_VIEW_ATTENDANCE_FEED)
-  
+
   const showAdminQuickCards = !isEmployeeUser && canViewStats
   const canAutoStartExtraShift = !todayShift || todayShift.status === 'COMPLETED'
 
@@ -440,7 +441,7 @@ export default function DashboardPage() {
         const data = await response.json()
         const activeShiftData = data.activeShift
         setActiveShift(activeShiftData || null)
-        
+
         // Check if user is currently on break
         if (activeShiftData && activeShiftData.breakStart && !activeShiftData.breakEnd) {
           setIsOnBreak(true)
@@ -462,7 +463,7 @@ export default function DashboardPage() {
 
   const fetchTodayShift = async () => {
     const currentEmployee = employees.find(emp => emp.userId === user?.id)
-    
+
     if (!currentEmployee) {
       return
     }
@@ -471,18 +472,18 @@ export default function DashboardPage() {
     try {
       const today = new Date().toISOString().split('T')[0]
       const response = await fetch(`/api/shifts?startDate=${today}&endDate=${today}&employeeId=${currentEmployee.id}`)
-      
+
       if (response.ok) {
         const shifts = await response.json()
-        
-        const todayApprovedShift = shifts.find((shift: TodayShift) => 
-          shift.date.substring(0, 10) === today && 
+
+        const todayApprovedShift = shifts.find((shift: TodayShift) =>
+          shift.date.substring(0, 10) === today &&
           shift.approved === true &&
           shift.status !== 'COMPLETED'
         )
-        
+
         setTodayShift(todayApprovedShift || null)
-        
+
         // Also check if this scheduled shift has break status
         if (todayApprovedShift && todayApprovedShift.breakStart && !todayApprovedShift.breakEnd) {
           setIsOnBreak(true)
@@ -497,7 +498,7 @@ export default function DashboardPage() {
 
   const fetchCurrentAttendance = async () => {
     const currentEmployee = employees.find(emp => emp.userId === user?.id)
-    
+
     if (!currentEmployee) {
       return
     }
@@ -505,7 +506,7 @@ export default function DashboardPage() {
     try {
       const today = new Date().toISOString().split('T')[0]
       const response = await fetch(`/api/attendance?employeeId=${currentEmployee.id}&date=${today}`)
-      
+
       if (response.ok) {
         const attendances = await response.json()
         // Find current attendance (punched in but not out)
@@ -585,11 +586,44 @@ export default function DashboardPage() {
       // For unscheduled work, validate location first, then show department selection
       setPendingUnscheduledWork(true)
       setPendingPunchAction('in')
-      setShowLocationModal(true)
+      const validationResult = await validatePunchLocation(currentEmployee.id)
+      if (validationResult.isAllowed && validationResult.message === 'Location restrictions disabled') {
+        setShowDepartmentModal(true)
+      } else if (!validationResult.isAllowed && validationResult.message !== 'No workplace locations have been configured. Contact your administrator.') {
+        Swal.fire({
+          icon: 'info',
+          title: t('common.information', 'Information'),
+          text: validationResult.message === 'Your assigned department is not permitted to punch in/out.'
+            ? t('common.department_not_permitted', validationResult.message)
+            : validationResult.message,
+          confirmButtonText: t('common.ok', 'OK'),
+          confirmButtonColor: '#31BCFF'
+        })
+        setPendingPunchAction(null)
+        setPendingUnscheduledWork(false)
+      } else {
+        setShowLocationModal(true)
+      }
     } else {
       // For scheduled shifts, just validate location and punch in
       setPendingPunchAction('in')
-      setShowLocationModal(true)
+      const validationResult = await validatePunchLocation(currentEmployee.id)
+      if (validationResult.isAllowed && validationResult.message === 'Location restrictions disabled') {
+        executePunchAction()
+      } else if (!validationResult.isAllowed && validationResult.message !== 'No workplace locations have been configured. Contact your administrator.') {
+        Swal.fire({
+          icon: 'info',
+          title: t('common.information', 'Information'),
+          text: validationResult.message === 'Your assigned department is not permitted to punch in/out.'
+            ? t('common.department_not_permitted', validationResult.message)
+            : validationResult.message,
+          confirmButtonText: t('common.ok', 'OK'),
+          confirmButtonColor: '#31BCFF'
+        })
+        setPendingPunchAction(null)
+      } else {
+        setShowLocationModal(true)
+      }
     }
   }
 
@@ -614,7 +648,7 @@ export default function DashboardPage() {
       }
 
       setCurrentAttendance(null)
-      
+
       // Refresh today's shift and attendance data
       await fetchTodayShift()
       await fetchCurrentAttendance()
@@ -656,7 +690,7 @@ export default function DashboardPage() {
 
         const result = await res.json()
         setCurrentAttendance(result.attendance)
-        
+
         // Refresh today's shift and attendance data
         await fetchTodayShift()
         await fetchCurrentAttendance()
@@ -676,7 +710,7 @@ export default function DashboardPage() {
   const handleLocationValidationSuccess = () => {
     // Location validation passed
     setShowLocationModal(false)
-    
+
     // If this is for unscheduled work, show department selection
     if (pendingUnscheduledWork && pendingPunchAction === 'in') {
       setShowDepartmentModal(true)
@@ -697,14 +731,14 @@ export default function DashboardPage() {
   const handleDepartmentSelected = async (departmentId: string) => {
     // Department selected for validation, now execute punch in for unscheduled work
     setShowDepartmentModal(false)
-    
+
     const currentEmployee = employees.find(emp => emp.userId === user?.id)
     if (!currentEmployee) return
 
     // Validate that the selected department is allowed at this location
     // This would typically involve checking location access settings
     // For now, we'll proceed with the punch in
-    
+
     await executePunchActionWithDepartment()
     setPendingUnscheduledWork(false)
     setPendingPunchAction(null)
@@ -737,7 +771,7 @@ export default function DashboardPage() {
 
       const result = await res.json()
       setCurrentAttendance(result.attendance)
-      
+
       // Refresh today's shift and attendance data
       await fetchTodayShift()
       await fetchCurrentAttendance()
@@ -780,12 +814,12 @@ export default function DashboardPage() {
       }
 
       const updatedShift = await res.json()
-      
+
       // Update the appropriate shift state
       if (activeShift && activeShift.id === shiftId) {
         setActiveShift(updatedShift)
       }
-      
+
       setIsOnBreak(true)
     } catch (error: any) {
       console.error('Error starting break for shift:', error)
@@ -809,11 +843,11 @@ export default function DashboardPage() {
       }
 
       const result = await res.json()
-      
+
       // Refresh attendance and shift data since a shift was auto-created
       await fetchCurrentAttendance()
       await fetchTodayShift()
-      
+
       setIsOnBreak(true)
     } catch (error: any) {
       console.error('Error starting break for attendance:', error)
@@ -825,10 +859,10 @@ export default function DashboardPage() {
 
   const handleEndBreak = async () => {
     setBreakLoading(true)
-    
+
     try {
       let shiftToUse = null
-      
+
       // Priority 1: Use activeShift (from "Start New Shift")
       if (activeShift) {
         shiftToUse = activeShift
@@ -848,7 +882,7 @@ export default function DashboardPage() {
       else if (todayShift) {
         shiftToUse = todayShift
       }
-      
+
       if (!shiftToUse) {
         alert('No active shift found to end break')
         return
@@ -865,7 +899,7 @@ export default function DashboardPage() {
       }
 
       const updatedShift = await res.json()
-      
+
       // Update the appropriate shift state
       if (activeShift && updatedShift.id === activeShift.id) {
         setActiveShift(updatedShift)
@@ -875,7 +909,7 @@ export default function DashboardPage() {
         await fetchCurrentAttendance()
         await fetchTodayShift()
       }
-      
+
       setIsOnBreak(false)
     } catch (error: any) {
       console.error('Error ending break:', error)
@@ -885,7 +919,7 @@ export default function DashboardPage() {
     }
   }
 
-  const currentEmployee = employees.find(emp => 
+  const currentEmployee = employees.find(emp =>
     emp.userId === user?.id
   )
 
@@ -968,7 +1002,7 @@ export default function DashboardPage() {
       COMPLETED: 'bg-blue-100 text-blue-700',
       CANCELLED: 'bg-red-100 text-red-700',
       SCHEDULED: 'bg-slate-200 text-slate-700',
-      OPEN:'bg-slate-200 text-slate-700'
+      OPEN: 'bg-slate-200 text-slate-700'
     }
 
     if (!status) {
@@ -1050,17 +1084,17 @@ export default function DashboardPage() {
 
   const shiftWindowLabel = attendanceShiftWindow
     ? [
-        attendanceShiftWindow,
-        currentAttendance?.shift?.employeeGroup?.name,
-        currentAttendance?.shift?.department?.name
-      ].filter(Boolean).join(' • ')
+      attendanceShiftWindow,
+      currentAttendance?.shift?.employeeGroup?.name,
+      currentAttendance?.shift?.department?.name
+    ].filter(Boolean).join(' • ')
     : (todayShift && todayShift.status !== 'COMPLETED'
-        ? [
-            `${formatShiftTime(todayShift.startTime) || '--:--'} - ${todayShift.endTime ? formatShiftTime(todayShift.endTime) : t('dashboard.cards.punch_clock.active')}`,
-            todayShift.employeeGroup?.name,
-            todayShift.department?.name
-          ].filter(Boolean).join(' • ')
-        : t('dashboard.cards.attendance.unscheduled_label'))
+      ? [
+        `${formatShiftTime(todayShift.startTime) || '--:--'} - ${todayShift.endTime ? formatShiftTime(todayShift.endTime) : t('dashboard.cards.punch_clock.active')}`,
+        todayShift.employeeGroup?.name,
+        todayShift.department?.name
+      ].filter(Boolean).join(' • ')
+      : t('dashboard.cards.attendance.unscheduled_label'))
 
   const weeklyShiftsSubtitle = isEmployeeUser
     ? t('dashboard.weekly_shifts.subtitle_employee')
@@ -1077,8 +1111,8 @@ export default function DashboardPage() {
   const mostActiveDisplayName = adminStatsLoading
     ? t('dashboard.admin_metrics.loading', { defaultValue: 'Loading...' })
     : (mostActiveEmployeeStat
-        ? `${mostActiveEmployeeStat.firstName || ''} ${mostActiveEmployeeStat.lastName || ''}`.trim() || t('dashboard.admin_metrics.unknown_employee', { defaultValue: 'Unnamed Employee' })
-        : t('dashboard.admin_metrics.no_employee_data', { defaultValue: 'Not enough data yet' }))
+      ? `${mostActiveEmployeeStat.firstName || ''} ${mostActiveEmployeeStat.lastName || ''}`.trim() || t('dashboard.admin_metrics.unknown_employee', { defaultValue: 'Unnamed Employee' })
+      : t('dashboard.admin_metrics.no_employee_data', { defaultValue: 'Not enough data yet' }))
 
   const getInitialShiftData = () => {
     const now = new Date()
@@ -1145,139 +1179,139 @@ export default function DashboardPage() {
               ) : weeklyShifts.length === 0 ? (
                 <p className="text-sm text-slate-500">{t('dashboard.weekly_shifts.empty')}</p>
               ) : (
-              displayedWeeklyShifts.map((shift) => {
-                const statusInfo = getShiftStatusInfo(shift.status)
-                const dateLabel = formatShiftDateLabel(shift.date)
-                const timeLabel = getWeeklyShiftTimeLabel(shift)
-                const secondaryLine = getWeeklyShiftSecondaryLine(shift)
-                const typeLabel = shift.shiftTypeConfig?.name || shift.shiftType
+                displayedWeeklyShifts.map((shift) => {
+                  const statusInfo = getShiftStatusInfo(shift.status)
+                  const dateLabel = formatShiftDateLabel(shift.date)
+                  const timeLabel = getWeeklyShiftTimeLabel(shift)
+                  const secondaryLine = getWeeklyShiftSecondaryLine(shift)
+                  const typeLabel = shift.shiftTypeConfig?.name || shift.shiftType
 
-                return (
-                  <div
-                    key={shift.id}
-                    className="flex flex-col gap-3 rounded-2xl border border-slate-100 bg-slate-50/80 p-4 sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div>
-                      <p className="text-xs uppercase text-slate-500">{dateLabel}</p>
-                      <p className="text-base font-semibold text-slate-900">{timeLabel}</p>
-                      <p className="text-sm text-slate-500">{secondaryLine}</p>
+                  return (
+                    <div
+                      key={shift.id}
+                      className="flex flex-col gap-3 rounded-2xl border border-slate-100 bg-slate-50/80 p-4 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div>
+                        <p className="text-xs uppercase text-slate-500">{dateLabel}</p>
+                        <p className="text-base font-semibold text-slate-900">{timeLabel}</p>
+                        <p className="text-sm text-slate-500">{secondaryLine}</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs text-slate-500">{typeLabel}</span>
+                        <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${statusInfo.classes}`}>
+                          {statusInfo.label}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs text-slate-500">{typeLabel}</span>
-                      <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${statusInfo.classes}`}>
-                        {statusInfo.label}
-                      </span>
-                    </div>
-                  </div>
-                )
-              })
-            )}
-          </div>
-        </section>
+                  )
+                })
+              )}
+            </div>
+          </section>
         )}
 
         {showAdminQuickCards && (
           <section className="mt-6 rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_20px_50px_rgba(15,23,42,0.08)]">
             <div className="grid gap-6 md:grid-cols-2">
               {canViewMostActive && (
-              <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-5">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-                      {t('dashboard.admin_metrics.most_active', { defaultValue: 'Most Active Employee' })}
-                    </p>
-                    <h3 className="text-lg font-semibold text-slate-900">{mostActiveDisplayName}</h3>
-                    {mostActiveEmployeeStat?.employeeGroup && (
-                      <p className="text-sm text-slate-500">{mostActiveEmployeeStat.employeeGroup}</p>
-                    )}
+                <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-5">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                        {t('dashboard.admin_metrics.most_active', { defaultValue: 'Most Active Employee' })}
+                      </p>
+                      <h3 className="text-lg font-semibold text-slate-900">{mostActiveDisplayName}</h3>
+                      {mostActiveEmployeeStat?.employeeGroup && (
+                        <p className="text-sm text-slate-500">{mostActiveEmployeeStat.employeeGroup}</p>
+                      )}
+                    </div>
+                    <div className="rounded-2xl bg-white px-4 py-2 text-center sm:text-right">
+                      <p className="text-xs uppercase text-slate-400">{t('dashboard.admin_metrics.hours', { defaultValue: 'Hours' })}</p>
+                      <p className="text-2xl font-semibold text-slate-900">{mostActiveEmployeeStat ? formatHoursValue(mostActiveEmployeeStat.hoursWorked) : '0.0h'}</p>
+                    </div>
                   </div>
-                  <div className="rounded-2xl bg-white px-4 py-2 text-center sm:text-right">
-                    <p className="text-xs uppercase text-slate-400">{t('dashboard.admin_metrics.hours', { defaultValue: 'Hours' })}</p>
-                    <p className="text-2xl font-semibold text-slate-900">{mostActiveEmployeeStat ? formatHoursValue(mostActiveEmployeeStat.hoursWorked) : '0.0h'}</p>
-                  </div>
-                </div>
 
-                {adminStatsLoading ? (
-                  <div className="mt-6 h-24 rounded-xl bg-slate-200/60 animate-pulse" />
-                ) : mostActiveEmployeeStat ? (
-                  <div className="mt-6 grid gap-4 text-sm text-slate-500 sm:grid-cols-2">
-                    <div className="rounded-xl border border-slate-100 bg-white p-4 text-center sm:text-left">
-                      <p className="text-xs uppercase tracking-wide text-slate-400">
-                        {t('dashboard.admin_metrics.completed_shifts', { defaultValue: 'Completed Shifts' })}
-                      </p>
-                      <p className="text-2xl font-semibold text-slate-900">{mostActiveEmployeeStat.completedShifts}</p>
+                  {adminStatsLoading ? (
+                    <div className="mt-6 h-24 rounded-xl bg-slate-200/60 animate-pulse" />
+                  ) : mostActiveEmployeeStat ? (
+                    <div className="mt-6 grid gap-4 text-sm text-slate-500 sm:grid-cols-2">
+                      <div className="rounded-xl border border-slate-100 bg-white p-4 text-center sm:text-left">
+                        <p className="text-xs uppercase tracking-wide text-slate-400">
+                          {t('dashboard.admin_metrics.completed_shifts', { defaultValue: 'Completed Shifts' })}
+                        </p>
+                        <p className="text-2xl font-semibold text-slate-900">{mostActiveEmployeeStat.completedShifts}</p>
+                      </div>
+                      <div className="rounded-xl border border-slate-100 bg-white p-4 text-center sm:text-left">
+                        <p className="text-xs uppercase tracking-wide text-slate-400">
+                          {t('dashboard.admin_metrics.total_hours', { defaultValue: 'Team Hours (Week)' })}
+                        </p>
+                        <p className="text-2xl font-semibold text-slate-900">{formatHoursValue(adminStats?.hoursWorkedThisWeek || 0)}</p>
+                      </div>
                     </div>
-                    <div className="rounded-xl border border-slate-100 bg-white p-4 text-center sm:text-left">
-                      <p className="text-xs uppercase tracking-wide text-slate-400">
-                        {t('dashboard.admin_metrics.total_hours', { defaultValue: 'Team Hours (Week)' })}
-                      </p>
-                      <p className="text-2xl font-semibold text-slate-900">{formatHoursValue(adminStats?.hoursWorkedThisWeek || 0)}</p>
-                    </div>
-                  </div>
-                ) : (
-                  <p className="mt-6 text-sm text-slate-500 text-center sm:text-left">
-                    {t('dashboard.admin_metrics.no_activity', { defaultValue: 'We need more recent activity to highlight a most active employee.' })}
-                  </p>
-                )}
-              </div>
+                  ) : (
+                    <p className="mt-6 text-sm text-slate-500 text-center sm:text-left">
+                      {t('dashboard.admin_metrics.no_activity', { defaultValue: 'We need more recent activity to highlight a most active employee.' })}
+                    </p>
+                  )}
+                </div>
               )}
 
               {canViewShiftCompletion && (
-              <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-5">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-                      {t('dashboard.admin_metrics.shift_health', { defaultValue: 'Shift Completion' })}
-                    </p>
-                    <h3 className="text-lg font-semibold text-slate-900">
-                      {t('dashboard.admin_metrics.weekly_pie_title', { defaultValue: 'Assigned vs Completed (Week)' })}
-                    </h3>
+                <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-5">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                        {t('dashboard.admin_metrics.shift_health', { defaultValue: 'Shift Completion' })}
+                      </p>
+                      <h3 className="text-lg font-semibold text-slate-900">
+                        {t('dashboard.admin_metrics.weekly_pie_title', { defaultValue: 'Assigned vs Completed (Week)' })}
+                      </h3>
+                    </div>
+                    <span className="text-2xl font-semibold text-slate-900">{shiftCompletionPercent}%</span>
                   </div>
-                  <span className="text-2xl font-semibold text-slate-900">{shiftCompletionPercent}%</span>
-                </div>
 
-                {adminStatsLoading ? (
-                  <div className="mt-6 h-32 rounded-full bg-slate-200/60 animate-pulse" />
-                ) : (
-                  <div className="mt-6 flex flex-col items-center gap-6 sm:flex-row sm:items-center">
-                    <div className="relative h-40 w-40 sm:h-32 sm:w-32">
-                      <div
-                        className="h-full w-full rounded-full"
-                        style={{
-                          background: `conic-gradient(#22c55e ${shiftCompletionPercent}%, #e2e8f0 ${shiftCompletionPercent}% 100%)`,
-                        }}
-                      />
-                      <div className="absolute inset-4 sm:inset-3 rounded-full bg-white flex flex-col items-center justify-center text-center">
-                        <span className="text-xs uppercase text-slate-400">{t('dashboard.admin_metrics.completed', { defaultValue: 'Completed' })}</span>
-                        <span className="text-2xl font-semibold text-slate-900">{totalCompletedShifts}</span>
+                  {adminStatsLoading ? (
+                    <div className="mt-6 h-32 rounded-full bg-slate-200/60 animate-pulse" />
+                  ) : (
+                    <div className="mt-6 flex flex-col items-center gap-6 sm:flex-row sm:items-center">
+                      <div className="relative h-40 w-40 sm:h-32 sm:w-32">
+                        <div
+                          className="h-full w-full rounded-full"
+                          style={{
+                            background: `conic-gradient(#22c55e ${shiftCompletionPercent}%, #e2e8f0 ${shiftCompletionPercent}% 100%)`,
+                          }}
+                        />
+                        <div className="absolute inset-4 sm:inset-3 rounded-full bg-white flex flex-col items-center justify-center text-center">
+                          <span className="text-xs uppercase text-slate-400">{t('dashboard.admin_metrics.completed', { defaultValue: 'Completed' })}</span>
+                          <span className="text-2xl font-semibold text-slate-900">{totalCompletedShifts}</span>
+                        </div>
+                      </div>
+                      <div className="space-y-4 text-sm text-slate-600 text-center sm:text-left">
+                        <div className="flex flex-col items-center gap-1 sm:flex-row sm:items-center sm:gap-3">
+                          <span className="h-3 w-3 rounded-full bg-[#22c55e]" />
+                          <div>
+                            <p className="text-xs uppercase tracking-wide text-slate-400">{t('dashboard.admin_metrics.completed_shifts', { defaultValue: 'Completed Shifts' })}</p>
+                            <p className="text-lg font-semibold text-slate-900">{totalCompletedShifts}</p>
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-center gap-1 sm:flex-row sm:items-center sm:gap-3">
+                          <span className="h-3 w-3 rounded-full bg-slate-300" />
+                          <div>
+                            <p className="text-xs uppercase tracking-wide text-slate-400">{t('dashboard.admin_metrics.assigned_shifts', { defaultValue: 'Assigned Shifts' })}</p>
+                            <p className="text-lg font-semibold text-slate-900">{totalAssignedShifts}</p>
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-center gap-1 sm:flex-row sm:items-center sm:gap-3">
+                          <span className="h-3 w-3 rounded-full bg-slate-100 border border-slate-300" />
+                          <div>
+                            <p className="text-xs uppercase tracking-wide text-slate-400">{t('dashboard.admin_metrics.remaining', { defaultValue: 'Remaining' })}</p>
+                            <p className="text-lg font-semibold text-slate-900">{Math.max(totalAssignedShifts - totalCompletedShifts, 0)}</p>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                    <div className="space-y-4 text-sm text-slate-600 text-center sm:text-left">
-                      <div className="flex flex-col items-center gap-1 sm:flex-row sm:items-center sm:gap-3">
-                        <span className="h-3 w-3 rounded-full bg-[#22c55e]" />
-                        <div>
-                          <p className="text-xs uppercase tracking-wide text-slate-400">{t('dashboard.admin_metrics.completed_shifts', { defaultValue: 'Completed Shifts' })}</p>
-                          <p className="text-lg font-semibold text-slate-900">{totalCompletedShifts}</p>
-                        </div>
-                      </div>
-                      <div className="flex flex-col items-center gap-1 sm:flex-row sm:items-center sm:gap-3">
-                        <span className="h-3 w-3 rounded-full bg-slate-300" />
-                        <div>
-                          <p className="text-xs uppercase tracking-wide text-slate-400">{t('dashboard.admin_metrics.assigned_shifts', { defaultValue: 'Assigned Shifts' })}</p>
-                          <p className="text-lg font-semibold text-slate-900">{totalAssignedShifts}</p>
-                        </div>
-                      </div>
-                      <div className="flex flex-col items-center gap-1 sm:flex-row sm:items-center sm:gap-3">
-                        <span className="h-3 w-3 rounded-full bg-slate-100 border border-slate-300" />
-                        <div>
-                          <p className="text-xs uppercase tracking-wide text-slate-400">{t('dashboard.admin_metrics.remaining', { defaultValue: 'Remaining' })}</p>
-                          <p className="text-lg font-semibold text-slate-900">{Math.max(totalAssignedShifts - totalCompletedShifts, 0)}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
               )}
             </div>
           </section>
@@ -1477,13 +1511,12 @@ export default function DashboardPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <span
-                        className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
-                          todayShift.status === 'WORKING'
+                        className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${todayShift.status === 'WORKING'
                             ? 'bg-green-100 text-green-700'
                             : todayShift.status === 'CANCELLED'
                               ? 'bg-red-100 text-red-700'
                               : 'bg-amber-100 text-amber-700'
-                        }`}
+                          }`}
                       >
                         {todayShift.status}
                       </span>

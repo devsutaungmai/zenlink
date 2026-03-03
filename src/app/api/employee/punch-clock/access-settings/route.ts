@@ -22,8 +22,12 @@ export async function GET(req: NextRequest) {
       }
     })
 
-    if (!employee || !employee.department?.business) {
+    if (!employee) {
       return NextResponse.json({ error: 'Employee or business not found' }, { status: 404 })
+    }
+
+    if (!employee.department?.business) {
+      return NextResponse.json({ error: 'Department is not assigned to this employee. Please assign a department first to punch in.' }, { status: 400 })
     }
 
     const businessId = employee.department.business.id
@@ -50,11 +54,12 @@ export async function GET(req: NextRequest) {
     // If department restrictions are enabled, filter locations
     if (settings.restrictByDepartment && settings.allowedDepartments.length > 0) {
       // Check if employee's department is in allowed departments
-      if (!settings.allowedDepartments.includes(employee.departmentId)) {
+      if (!employee.departmentId || !settings.allowedDepartments.includes(employee.departmentId)) {
         // Employee's department is not allowed to punch
         return NextResponse.json({
           allowPunchFromAnywhere: false,
-          specificLocations: []
+          specificLocations: [],
+          error: 'Your assigned department is not permitted to punch in/out.'
         })
       }
     }
@@ -66,6 +71,7 @@ export async function GET(req: NextRequest) {
         return true
       }
       // If location has department restrictions, check if employee's department is allowed
+      if (!employee.departmentId) return false
       return location.departmentIds.includes(employee.departmentId)
     })
 

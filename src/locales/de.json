@@ -134,7 +134,7 @@
         "WORKING": "Im Einsatz",
         "COMPLETED": "Abgeschlossen",
         "CANCELLED": "Abgesagt",
-        "OPEN":"Open"
+        "OPEN": "Open"
       }
     },
     "recent_activity": "Neueste Aktivität",
@@ -864,7 +864,10 @@
     "reset": "Zurücksetzen",
     "clear": "Löschen",
     "all": "Alle",
-    "actions": "Aktionen"
+    "actions": "Aktionen",
+    "information": "Information",
+    "ok": "OK",
+    "department_not_permitted": "Ihre zugewiesene Abteilung ist nicht berechtigt, ein-/auszustempeln."
   },
   "schedule": {
     "title": "Zeitplan",

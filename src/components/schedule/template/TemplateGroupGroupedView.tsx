@@ -3,6 +3,7 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { format } from 'date-fns'
+import Swal from 'sweetalert2'
 import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { Copy, ArrowRightLeft } from 'lucide-react'
 import { useTemplateDragDrop } from '@/shared/hooks/useTemplateDragDrop'
@@ -12,11 +13,38 @@ interface TemplateShift {
   dayIndex: number
   startTime: string
   endTime: string | null
+  employeeId?: string | null
   employeeGroupId?: string | null
   functionId?: string | null
+  departmentId?: string | null
   note?: string | null
   breakMinutes?: number
   breakPaid?: boolean
+}
+
+interface Employee {
+  id: string
+  firstName: string
+  lastName: string
+  employeeNo?: string | null
+  employeeGroupId?: string | null
+  departmentId?: string | null
+  departments?: Array<{
+    departmentId: string
+    isPrimary: boolean
+    department: {
+      id: string
+      name: string
+    }
+  }>
+  employeeGroups?: Array<{
+    employeeGroupId: string
+    isPrimary: boolean
+    employeeGroup: {
+      id: string
+      name: string
+    }
+  }>
 }
 
 interface EmployeeGroup {
@@ -28,11 +56,26 @@ interface FunctionItem {
   id: string
   name: string
   color?: string | null
+  employeeGroups?: Array<{ id: string; name: string }>
+  category?: {
+    department?: {
+      id: string
+      name: string
+    }
+    departments?: Array<{
+      departmentId?: string
+      department?: {
+        id: string
+        name: string
+      }
+    }>
+  }
 }
 
 interface TemplateGroupGroupedViewProps {
   weekDates: Date[]
   shifts: TemplateShift[]
+  employees: Employee[]
   employeeGroups: EmployeeGroup[]
   functions: FunctionItem[]
   onAddShift: (dayIndex: number, formData?: any) => void
@@ -46,6 +89,7 @@ interface TemplateGroupGroupedViewProps {
 export default function TemplateGroupGroupedView({
   weekDates,
   shifts,
+  employees,
   employeeGroups,
   functions,
   onAddShift,
@@ -57,9 +101,157 @@ export default function TemplateGroupGroupedView({
 }: TemplateGroupGroupedViewProps) {
   const { t } = useTranslation('schedule')
 
+  const functionById = React.useMemo(
+    () => new Map(functions.map((fn) => [fn.id, fn])),
+    [functions]
+  )
+
+  const employeeBelongsToGroup = React.useCallback((employee: Employee, groupId: string): boolean => {
+    if (employee.employeeGroups && employee.employeeGroups.length > 0) {
+      return employee.employeeGroups.some((eg) => eg.employeeGroupId === groupId)
+    }
+    return employee.employeeGroupId === groupId
+  }, [])
+
+  const getEmployeeDeptIds = React.useCallback((employeeId: string): string[] => {
+    const employee = employees.find((emp) => emp.id === employeeId)
+    if (!employee) return []
+
+    const departmentIds = new Set<string>()
+    if (employee.departments && employee.departments.length > 0) {
+      employee.departments.forEach((department) => departmentIds.add(department.departmentId))
+    }
+    if (employee.departmentId) {
+      departmentIds.add(employee.departmentId)
+    }
+
+    return Array.from(departmentIds)
+  }, [employees])
+
+  const getGroupDeptIds = React.useCallback((groupId: string): string[] => {
+    const departmentIds = new Set<string>()
+    employees.forEach((employee) => {
+      if (!employeeBelongsToGroup(employee, groupId)) return
+      if (employee.departments && employee.departments.length > 0) {
+        employee.departments.forEach((department) => departmentIds.add(department.departmentId))
+      }
+      if (employee.departmentId) {
+        departmentIds.add(employee.departmentId)
+      }
+    })
+    return Array.from(departmentIds)
+  }, [employees, employeeBelongsToGroup])
+
+  const getFunctionDeptIds = React.useCallback((functionId?: string | null): string[] => {
+    if (!functionId) return []
+    const fn = functionById.get(functionId)
+    if (!fn?.category) return []
+
+    const departmentIds = new Set<string>()
+    if (fn.category.departments && fn.category.departments.length > 0) {
+      fn.category.departments.forEach((categoryDepartment) => {
+        if (categoryDepartment.department?.id) {
+          departmentIds.add(categoryDepartment.department.id)
+        }
+        if (categoryDepartment.departmentId) {
+          departmentIds.add(categoryDepartment.departmentId)
+        }
+      })
+    }
+    if (fn.category.department?.id) {
+      departmentIds.add(fn.category.department.id)
+    }
+
+    return Array.from(departmentIds)
+  }, [functionById])
+
+  const getFunctionLinkedGroupIds = React.useCallback((functionId?: string | null): string[] => {
+    if (!functionId) return []
+    const fn = functionById.get(functionId)
+    if (!fn?.employeeGroups || fn.employeeGroups.length === 0) return []
+    return fn.employeeGroups.map((group) => group.id)
+  }, [functionById])
+
+  const getShiftDepartmentIds = React.useCallback((shift?: TemplateShift): string[] => {
+    if (!shift) return []
+    const departmentIds = new Set<string>()
+
+    if (shift.employeeId) {
+      getEmployeeDeptIds(shift.employeeId).forEach((departmentId) => departmentIds.add(departmentId))
+    }
+    if (shift.departmentId) {
+      departmentIds.add(shift.departmentId)
+    }
+    getFunctionDeptIds(shift.functionId).forEach((departmentId) => departmentIds.add(departmentId))
+
+    return Array.from(departmentIds)
+  }, [getEmployeeDeptIds, getFunctionDeptIds])
+
+  const isDropDisabled = React.useCallback((
+    targetRowId: string,
+    _targetDayIndex: number,
+    rowType: 'employee' | 'group' | 'function' | 'openEmployee' | 'openGroup' | 'openFunction',
+    shift?: TemplateShift
+  ) => {
+    if (!shift || rowType !== 'group') return false
+
+    const targetDepartmentIds = getGroupDeptIds(targetRowId)
+    const sourceDepartmentIds = getShiftDepartmentIds(shift)
+
+    if (
+      targetDepartmentIds.length > 0 &&
+      sourceDepartmentIds.length > 0 &&
+      !targetDepartmentIds.some((departmentId) => sourceDepartmentIds.includes(departmentId))
+    ) {
+      return true
+    }
+
+    const linkedGroupIds = getFunctionLinkedGroupIds(shift.functionId)
+    if (linkedGroupIds.length > 0 && !linkedGroupIds.includes(targetRowId)) {
+      return true
+    }
+
+    return false
+  }, [getGroupDeptIds, getShiftDepartmentIds, getFunctionLinkedGroupIds])
+
+  const onDropRejected = React.useCallback((
+    targetRowId: string,
+    _targetDayIndex: number,
+    rowType: 'employee' | 'group' | 'function' | 'openEmployee' | 'openGroup' | 'openFunction',
+    shift?: TemplateShift
+  ) => {
+    if (!shift || rowType !== 'group') return
+
+    const targetDepartmentIds = getGroupDeptIds(targetRowId)
+    const sourceDepartmentIds = getShiftDepartmentIds(shift)
+
+    if (
+      targetDepartmentIds.length > 0 &&
+      sourceDepartmentIds.length > 0 &&
+      !targetDepartmentIds.some((departmentId) => sourceDepartmentIds.includes(departmentId))
+    ) {
+      Swal.fire({
+        icon: 'error',
+        title: t('drag_drop.cross_dept_title', 'Cannot Move Shift'),
+        text: t('drag_drop.cross_dept_message', 'Cannot move shift to a group in a different department.'),
+        confirmButtonColor: '#31BCFF'
+      })
+      return
+    }
+
+    const linkedGroupIds = getFunctionLinkedGroupIds(shift.functionId)
+    if (linkedGroupIds.length > 0 && !linkedGroupIds.includes(targetRowId)) {
+      Swal.fire({
+        icon: 'error',
+        title: t('drag_drop.group_mismatch_title', 'Cannot Move Shift'),
+        text: t('drag_drop.group_mismatch_message', 'Cannot move shift to a group outside the function\'s linked groups.'),
+        confirmButtonColor: '#31BCFF'
+      })
+    }
+  }, [getGroupDeptIds, getShiftDepartmentIds, getFunctionLinkedGroupIds, t])
+
   const {
     dragOverCell,
-    isDragging,
     copyMode,
     toggleCopyMode,
     handleDragStart,
@@ -67,7 +259,7 @@ export default function TemplateGroupGroupedView({
     handleDragLeave,
     handleDrop,
     handleDragEnd
-  } = useTemplateDragDrop({ onMoveShift, onDuplicateShift })
+  } = useTemplateDragDrop({ onMoveShift, onDuplicateShift, isDropDisabled, onDropRejected })
   
   const getGroupShifts = (groupId: string, dayIndex: number) => {
     return shifts.filter(shift => shift.employeeGroupId === groupId && shift.dayIndex === dayIndex)
@@ -182,23 +374,27 @@ export default function TemplateGroupGroupedView({
                                 </button>
                               ) : (
                                 <div className="w-full h-full flex flex-col gap-1">
-                                  {dayShifts.map(shift => (
-                                    <button
-                                      key={shift.id}
-                                      onClick={() => onEditShift(shift)}
-                                      className="w-full rounded-xl text-white font-medium flex flex-col items-center justify-center gap-0.5 py-2 transition-all active:scale-95"
-                                      style={{ backgroundColor: getFunctionColor(shift.functionId) }}
-                                    >
-                                      <span className="text-xs leading-tight">
-                                        {shift.startTime.substring(0, 5)}
-                                      </span>
-                                      {shift.endTime && (
+                                  {dayShifts.map(shift => {
+                                    const isPending = pendingShiftIds.has(shift.id)
+
+                                    return (
+                                      <button
+                                        key={shift.id}
+                                        onClick={() => !isPending && onEditShift(shift)}
+                                        className={`w-full rounded-xl text-white font-medium flex flex-col items-center justify-center gap-0.5 py-2 transition-all active:scale-95 ${isPending ? 'opacity-50 animate-pulse pointer-events-none' : ''}`}
+                                        style={{ backgroundColor: getFunctionColor(shift.functionId) }}
+                                      >
                                         <span className="text-xs leading-tight">
-                                          {shift.endTime.substring(0, 5)}
+                                          {shift.startTime.substring(0, 5)}
                                         </span>
-                                      )}
-                                    </button>
-                                  ))}
+                                        {shift.endTime && (
+                                          <span className="text-xs leading-tight">
+                                            {shift.endTime.substring(0, 5)}
+                                          </span>
+                                        )}
+                                      </button>
+                                    )
+                                  })}
                                   <button
                                     onClick={() => onAddShift(dayIndex, { employeeGroupId: group.id })}
                                     className="w-full text-xs text-center text-[#31BCFF] font-semibold py-1 px-2 bg-blue-50 hover:bg-blue-100 rounded transition-all active:scale-95"
@@ -260,7 +456,7 @@ export default function TemplateGroupGroupedView({
                       className={`border-r p-2 relative min-h-[80px] group transition-colors ${
                         isOpenDropTarget ? 'bg-emerald-100 ring-2 ring-inset ring-emerald-400' : ''
                       }`}
-                      onDragOver={(e) => handleDragOver(e, openCellId)}
+                      onDragOver={(e) => handleDragOver(e, openCellId, 'open', dayIndex, 'openGroup')}
                       onDragLeave={handleDragLeave}
                       onDrop={(e) => handleDrop(e, 'open', dayIndex, 'openGroup')}
                     >
@@ -332,7 +528,7 @@ export default function TemplateGroupGroupedView({
                       className={`border-r p-2 relative min-h-[80px] group transition-colors ${
                         isDropTarget ? 'bg-blue-50 ring-2 ring-inset ring-[#31BCFF]' : ''
                       }`}
-                      onDragOver={(e) => handleDragOver(e, cellId)}
+                      onDragOver={(e) => handleDragOver(e, cellId, group.id, dateIndex, 'group')}
                       onDragLeave={handleDragLeave}
                       onDrop={(e) => handleDrop(e, group.id, dateIndex, 'group')}
                     >

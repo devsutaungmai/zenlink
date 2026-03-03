@@ -1,9 +1,9 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { 
-  XMarkIcon, 
-  ClockIcon, 
+import {
+  XMarkIcon,
+  ClockIcon,
   PlayIcon,
   StopIcon,
   CalendarIcon,
@@ -13,6 +13,8 @@ import {
 } from '@heroicons/react/24/outline'
 import { LocationValidationResult, validatePunchLocation } from '@/shared/lib/locationValidation'
 import LocationValidationModal from '@/components/LocationValidationModal'
+import Swal from 'sweetalert2'
+import { useTranslation } from 'react-i18next'
 
 interface Employee {
   id: string
@@ -58,6 +60,7 @@ interface EmployeeDashboardModalProps {
 }
 
 export default function EmployeeDashboardModal({ isOpen, onClose, employee }: EmployeeDashboardModalProps) {
+  const { t } = useTranslation()
   const [todayShifts, setTodayShifts] = useState<Shift[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -74,7 +77,7 @@ export default function EmployeeDashboardModal({ isOpen, onClose, employee }: Em
     if (isOpen && employee) {
       fetchTodayShifts()
     }
-    
+
     // Update current time every second
     const timeInterval = setInterval(() => {
       setCurrentTime(new Date())
@@ -95,7 +98,7 @@ export default function EmployeeDashboardModal({ isOpen, onClose, employee }: Em
       const endDate = startDate
 
       const response = await fetch(`/api/shifts?employeeId=${employee.id}&startDate=${startDate}&endDate=${endDate}`)
-      
+
       if (response.ok) {
         const shifts = await response.json()
         setTodayShifts(shifts)
@@ -111,15 +114,53 @@ export default function EmployeeDashboardModal({ isOpen, onClose, employee }: Em
   }
 
   const handlePunchIn = async (shift: Shift) => {
+    if (!employee) return
     // Set pending action and show location modal for validation
     setPendingPunchAction({ action: 'in', shift })
-    setShowLocationModal(true)
+
+    // Check if location validation is even required first
+    const validationResult = await validatePunchLocation(employee.id)
+    if (validationResult.isAllowed && validationResult.message === 'Location restrictions disabled') {
+      executePunchAction()
+    } else if (!validationResult.isAllowed && validationResult.message !== 'No workplace locations have been configured. Contact your administrator.') {
+      Swal.fire({
+        icon: 'info',
+        title: t('common.information', 'Information'),
+        text: validationResult.message === 'Your assigned department is not permitted to punch in/out.'
+          ? t('common.department_not_permitted', validationResult.message)
+          : validationResult.message,
+        confirmButtonText: t('common.ok', 'OK'),
+        confirmButtonColor: '#31BCFF'
+      })
+      setPendingPunchAction(null)
+    } else {
+      setShowLocationModal(true)
+    }
   }
 
   const handlePunchOut = async (shift: Shift) => {
+    if (!employee) return
     // Set pending action and show location modal for validation
     setPendingPunchAction({ action: 'out', shift })
-    setShowLocationModal(true)
+
+    // Check if location validation is even required first
+    const validationResult = await validatePunchLocation(employee.id)
+    if (validationResult.isAllowed && validationResult.message === 'Location restrictions disabled') {
+      executePunchAction()
+    } else if (!validationResult.isAllowed && validationResult.message !== 'No workplace locations have been configured. Contact your administrator.') {
+      Swal.fire({
+        icon: 'info',
+        title: t('common.information', 'Information'),
+        text: validationResult.message === 'Your assigned department is not permitted to punch in/out.'
+          ? t('common.department_not_permitted', validationResult.message)
+          : validationResult.message,
+        confirmButtonText: t('common.ok', 'OK'),
+        confirmButtonColor: '#31BCFF'
+      })
+      setPendingPunchAction(null)
+    } else {
+      setShowLocationModal(true)
+    }
   }
 
   const executePunchAction = async () => {
@@ -128,7 +169,7 @@ export default function EmployeeDashboardModal({ isOpen, onClose, employee }: Em
     const { action, shift } = pendingPunchAction
     setSelectedShift(shift)
     setPunchAction(action)
-    
+
     try {
       const now = new Date()
       const currentTime = now.toTimeString().substring(0, 5) // HH:MM format
@@ -194,19 +235,19 @@ export default function EmployeeDashboardModal({ isOpen, onClose, employee }: Em
   const calculateTimeDifference = (start: string, end: string) => {
     const [startHours, startMinutes] = start.split(':').map(Number)
     const [endHours, endMinutes] = end.split(':').map(Number)
-    
+
     const startTotalMinutes = startHours * 60 + startMinutes
     let endTotalMinutes = endHours * 60 + endMinutes
-    
+
     // Handle next day scenario
     if (endTotalMinutes < startTotalMinutes) {
       endTotalMinutes += 24 * 60
     }
-    
+
     const diffMinutes = endTotalMinutes - startTotalMinutes
     const hours = Math.floor(diffMinutes / 60)
     const minutes = diffMinutes % 60
-    
+
     return `${hours}h ${minutes}m`
   }
 
@@ -221,11 +262,11 @@ export default function EmployeeDashboardModal({ isOpen, onClose, employee }: Em
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
-      <div 
+      <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={onClose}
       />
-      
+
       {/* Modal */}
       <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden">
         {/* Header */}
@@ -256,21 +297,21 @@ export default function EmployeeDashboardModal({ isOpen, onClose, employee }: Em
               <XMarkIcon className="w-6 h-6" />
             </button>
           </div>
-          
+
           {/* Current Time */}
           <div className="mt-4 text-center">
             <div className="text-2xl font-bold text-blue-600">
-              {currentTime.toLocaleTimeString('en-US', { 
-                hour: '2-digit', 
+              {currentTime.toLocaleTimeString('en-US', {
+                hour: '2-digit',
                 minute: '2-digit',
                 second: '2-digit',
                 hour12: true
               })}
             </div>
             <div className="text-sm text-gray-500">
-              {currentTime.toLocaleDateString('en-US', { 
-                weekday: 'long', 
-                month: 'long', 
+              {currentTime.toLocaleDateString('en-US', {
+                weekday: 'long',
+                month: 'long',
                 day: 'numeric',
                 year: 'numeric'
               })}
@@ -304,7 +345,7 @@ export default function EmployeeDashboardModal({ isOpen, onClose, employee }: Em
               {todayShifts.map((shift) => {
                 const status = getShiftStatus(shift)
                 const isActive = !shift.endTime
-                
+
                 return (
                   <div
                     key={shift.id}
@@ -337,7 +378,7 @@ export default function EmployeeDashboardModal({ isOpen, onClose, employee }: Em
                       <div className="text-sm text-gray-500">
                         Duration: {calculateShiftDuration(shift.startTime, shift.endTime)}
                       </div>
-                      
+
                       <div className="flex gap-2">
                         {!shift.endTime ? (
                           <button

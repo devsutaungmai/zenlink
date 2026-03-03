@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import { format, addDays, startOfWeek } from 'date-fns'
+import Swal from 'sweetalert2'
 import { 
   ArrowLeftIcon, 
   PencilIcon, 
@@ -83,6 +84,24 @@ interface FunctionItem {
   employeeGroups?: Array<{ id: string; name: string }>
 }
 
+interface Department {
+  id: string
+  name: string
+}
+
+interface Category {
+  id: string
+  name: string
+  departmentId?: string | null
+  departments?: Array<{
+    departmentId?: string
+    department?: {
+      id: string
+      name: string
+    }
+  }>
+}
+
 type ViewType = 'employees' | 'groups' | 'functions'
 
 const VIEW_TABS = [
@@ -104,6 +123,11 @@ export default function TemplateEditorPage() {
   const [employees, setEmployees] = useState<Employee[]>([])
   const [employeeGroups, setEmployeeGroups] = useState<EmployeeGroup[]>([])
   const [functions, setFunctions] = useState<FunctionItem[]>([])
+  const [departments, setDepartments] = useState<Department[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState<string | null>(null)
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
+  const [selectedFunctionId, setSelectedFunctionId] = useState<string | null>(null)
   const [isEditingName, setIsEditingName] = useState(false)
   const [editedName, setEditedName] = useState('')
   const [showShiftModal, setShowShiftModal] = useState(false)
@@ -181,12 +205,145 @@ export default function TemplateEditorPage() {
     }
   }, [])
 
+  const fetchDepartments = useCallback(async () => {
+    try {
+      const response = await fetch('/api/departments')
+      if (response.ok) {
+        const data = await response.json()
+        setDepartments(data)
+      }
+    } catch (err) {
+      console.error('Failed to fetch departments:', err)
+    }
+  }, [])
+
+  const fetchCategories = useCallback(async () => {
+    try {
+      const response = await fetch('/api/categories')
+      if (response.ok) {
+        const data = await response.json()
+        setCategories(data)
+      }
+    } catch (err) {
+      console.error('Failed to fetch categories:', err)
+    }
+  }, [])
+
+  const filteredCategories = useMemo(() => {
+    if (!selectedDepartmentId) return categories
+    return categories.filter((category) => {
+      if (category.departments && category.departments.length > 0) {
+        return category.departments.some((cd) => cd.department?.id === selectedDepartmentId || cd.departmentId === selectedDepartmentId)
+      }
+      if (category.departmentId) {
+        return category.departmentId === selectedDepartmentId
+      }
+      return true
+    })
+  }, [categories, selectedDepartmentId])
+
+  const filteredFunctions = useMemo(() => {
+    let nextFunctions = functions
+
+    if (selectedDepartmentId) {
+      const filteredCategoryIds = new Set(filteredCategories.map((category) => category.id))
+      nextFunctions = nextFunctions.filter((fn) => filteredCategoryIds.has(fn.categoryId))
+    }
+
+    if (selectedCategoryId) {
+      nextFunctions = nextFunctions.filter((fn) => fn.categoryId === selectedCategoryId)
+    }
+
+    return nextFunctions
+  }, [functions, filteredCategories, selectedDepartmentId, selectedCategoryId])
+
+  const filteredEmployees = useMemo(() => {
+    if (!selectedDepartmentId) return employees
+    return employees.filter((employee) => {
+      if (employee.departments && employee.departments.length > 0) {
+        return employee.departments.some((ed) => ed.departmentId === selectedDepartmentId || ed.department?.id === selectedDepartmentId)
+      }
+      return employee.departmentId === selectedDepartmentId
+    })
+  }, [employees, selectedDepartmentId])
+
+  const filteredEmployeeGroups = useMemo(() => {
+    if (!selectedDepartmentId) return employeeGroups
+    const groupIds = new Set<string>()
+    filteredEmployees.forEach((employee) => {
+      if (employee.employeeGroups && employee.employeeGroups.length > 0) {
+        employee.employeeGroups.forEach((eg) => groupIds.add(eg.employeeGroupId))
+      }
+      if (employee.employeeGroupId) {
+        groupIds.add(employee.employeeGroupId)
+      }
+    })
+    return employeeGroups.filter((group) => groupIds.has(group.id))
+  }, [employeeGroups, filteredEmployees, selectedDepartmentId])
+
+  const categoryById = useMemo(() => {
+    return new Map(categories.map((category) => [category.id, category]))
+  }, [categories])
+
+  const functionById = useMemo(() => {
+    return new Map(functions.map((fn) => [fn.id, fn]))
+  }, [functions])
+
+  const filteredTemplateShifts = useMemo(() => {
+    if (!template) return []
+
+    return template.shifts.filter((shift) => {
+      const shiftFunction = shift.functionId ? functionById.get(shift.functionId) : undefined
+      const shiftCategoryId = shift.categoryId || shiftFunction?.categoryId || null
+
+      if (selectedDepartmentId) {
+        const departmentIds = new Set<string>()
+
+        if (shift.departmentId) {
+          departmentIds.add(shift.departmentId)
+        }
+
+        if (shiftCategoryId) {
+          const category = categoryById.get(shiftCategoryId)
+          if (category?.departments && category.departments.length > 0) {
+            category.departments.forEach((cd) => {
+              if (cd.department?.id) {
+                departmentIds.add(cd.department.id)
+              }
+              if (cd.departmentId) {
+                departmentIds.add(cd.departmentId)
+              }
+            })
+          } else if (category?.departmentId) {
+            departmentIds.add(category.departmentId)
+          }
+        }
+
+        if (!departmentIds.has(selectedDepartmentId)) {
+          return false
+        }
+      }
+
+      if (selectedCategoryId && shiftCategoryId !== selectedCategoryId) {
+        return false
+      }
+
+      if (selectedFunctionId && shift.functionId !== selectedFunctionId) {
+        return false
+      }
+
+      return true
+    })
+  }, [template, categoryById, functionById, selectedDepartmentId, selectedCategoryId, selectedFunctionId])
+
   useEffect(() => {
     fetchTemplate()
     fetchEmployees()
     fetchEmployeeGroups()
     fetchFunctions()
-  }, [fetchTemplate, fetchEmployees, fetchEmployeeGroups, fetchFunctions])
+    fetchDepartments()
+    fetchCategories()
+  }, [fetchTemplate, fetchEmployees, fetchEmployeeGroups, fetchFunctions, fetchDepartments, fetchCategories])
 
   const handleUpdateName = async () => {
     if (!template || !editedName.trim()) return
@@ -209,10 +366,17 @@ export default function TemplateEditorPage() {
   }
 
   const handleAddShift = (dayIndex: number, formData?: any) => {
+    const filterDefaults = {
+      ...(selectedDepartmentId ? { departmentId: selectedDepartmentId } : {}),
+      ...(selectedCategoryId ? { categoryId: selectedCategoryId } : {}),
+      ...(selectedFunctionId ? { functionId: selectedFunctionId } : {})
+    }
+
     setSelectedDayIndex(dayIndex)
     setEditingShift(null)
     setShiftInitialData({
       date: format(addDays(baseDate, dayIndex), 'yyyy-MM-dd'),
+      ...filterDefaults,
       ...formData
     })
     setShowShiftModal(true)
@@ -277,6 +441,23 @@ export default function TemplateEditorPage() {
   const handleDeleteShift = async (shiftId: string) => {
     if (!template) return
 
+    const result = await Swal.fire({
+      icon: 'warning',
+      title: t('templates.confirm_delete_shift_title', 'Delete Shift?'),
+      text: t('templates.confirm_delete_shift', 'Are you sure you want to delete this shift?'),
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: t('common.delete', 'Delete'),
+      cancelButtonText: t('common.cancel', 'Cancel')
+    })
+
+    if (!result.isConfirmed) {
+      return
+    }
+
+    setPendingShiftIds(prev => new Set(prev).add(shiftId))
+
     try {
       const response = await fetch(`/api/schedule-templates/${templateId}/shifts/${shiftId}`, {
         method: 'DELETE'
@@ -285,8 +466,33 @@ export default function TemplateEditorPage() {
       if (!response.ok) throw new Error('Failed to delete shift')
 
       await fetchTemplate()
+
+      Swal.fire({
+        text: t('toasts.shift_deleted', 'Shift deleted'),
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 2500,
+        timerProgressBar: true,
+        customClass: { popup: 'swal-toast-wide' }
+      })
     } catch (err) {
       console.error('Failed to delete shift:', err)
+      Swal.fire({
+        text: t('toasts.shift_delete_failed', 'Failed to delete shift'),
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3500,
+        timerProgressBar: true,
+        customClass: { popup: 'swal-toast-wide' }
+      })
+    } finally {
+      setPendingShiftIds(prev => {
+        const next = new Set(prev)
+        next.delete(shiftId)
+        return next
+      })
     }
   }
 
@@ -386,9 +592,9 @@ export default function TemplateEditorPage() {
         return (
           <TemplateEmployeeGroupedView
             weekDates={weekDates}
-            shifts={template.shifts}
-            employees={employees}
-            functions={functions}
+            shifts={filteredTemplateShifts}
+            employees={filteredEmployees}
+            functions={filteredFunctions}
             onAddShift={handleAddShift}
             onEditShift={handleEditShift}
             onDeleteShift={handleDeleteShift}
@@ -401,9 +607,10 @@ export default function TemplateEditorPage() {
         return (
           <TemplateGroupGroupedView
             weekDates={weekDates}
-            shifts={template.shifts}
-            employeeGroups={employeeGroups}
-            functions={functions}
+            shifts={filteredTemplateShifts}
+            employees={filteredEmployees}
+            employeeGroups={filteredEmployeeGroups}
+            functions={filteredFunctions}
             onAddShift={handleAddShift}
             onEditShift={handleEditShift}
             onDeleteShift={handleDeleteShift}
@@ -416,9 +623,10 @@ export default function TemplateEditorPage() {
         return (
           <TemplateFunctionGroupedView
             weekDates={weekDates}
-            shifts={template.shifts}
-            employeeGroups={employeeGroups}
-            functions={functions}
+            shifts={filteredTemplateShifts}
+            employees={filteredEmployees}
+            employeeGroups={filteredEmployeeGroups}
+            functions={filteredFunctions}
             onAddShift={handleAddShift}
             onEditShift={handleEditShift}
             onDeleteShift={handleDeleteShift}
@@ -435,40 +643,43 @@ export default function TemplateEditorPage() {
   const renderDayView = () => {
     if (!template) return null
 
-    const dayShifts = template.shifts.filter(s => s.dayIndex === 0)
+    const dayShifts = filteredTemplateShifts.filter(s => s.dayIndex === 0)
 
     switch (viewType) {
       case 'employees':
         return (
           <TemplateDayEmployeeView
             shifts={dayShifts}
-            employees={employees}
-            functions={functions}
+            employees={filteredEmployees}
+            functions={filteredFunctions}
             onAddShift={handleAddShift}
             onEditShift={handleEditShift}
             onDeleteShift={handleDeleteShift}
+            pendingShiftIds={pendingShiftIds}
           />
         )
       case 'groups':
         return (
           <TemplateDayGroupView
             shifts={dayShifts}
-            employeeGroups={employeeGroups}
-            functions={functions}
+            employeeGroups={filteredEmployeeGroups}
+            functions={filteredFunctions}
             onAddShift={handleAddShift}
             onEditShift={handleEditShift}
             onDeleteShift={handleDeleteShift}
+            pendingShiftIds={pendingShiftIds}
           />
         )
       case 'functions':
         return (
           <TemplateDayFunctionView
             shifts={dayShifts}
-            employeeGroups={employeeGroups}
-            functions={functions}
+            employeeGroups={filteredEmployeeGroups}
+            functions={filteredFunctions}
             onAddShift={handleAddShift}
             onEditShift={handleEditShift}
             onDeleteShift={handleDeleteShift}
+            pendingShiftIds={pendingShiftIds}
           />
         )
       default:
@@ -579,7 +790,7 @@ export default function TemplateEditorPage() {
                 onClick={() => router.push('/dashboard/schedule')}
                 className="px-4 py-2 bg-[#31BCFF] text-white rounded-lg font-medium hover:bg-[#28a8e6] transition-colors"
               >
-                {t('common.done', 'Done')}
+                {t('common.go_back', 'Go Back')}
               </button>
             </div>
           </div>
@@ -633,6 +844,64 @@ export default function TemplateEditorPage() {
                 </button>
               )
             })}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+            <select
+              value={selectedDepartmentId || ''}
+              onChange={(e) => {
+                const value = e.target.value || null
+                setSelectedDepartmentId(value)
+                setSelectedCategoryId(null)
+                setSelectedFunctionId(null)
+              }}
+              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#31BCFF]"
+            >
+              <option value="">{t('shift_form.department', 'Department')}</option>
+              {departments.map((department) => (
+                <option key={department.id} value={department.id}>{department.name}</option>
+              ))}
+            </select>
+
+            <select
+              value={selectedCategoryId || ''}
+              onChange={(e) => {
+                const value = e.target.value || null
+                setSelectedCategoryId(value)
+                setSelectedFunctionId(null)
+              }}
+              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#31BCFF] disabled:bg-gray-50"
+              disabled={filteredCategories.length === 0}
+            >
+              <option value="">{t('shift_form.category', 'Category')}</option>
+              {filteredCategories.map((category) => (
+                <option key={category.id} value={category.id}>{category.name}</option>
+              ))}
+            </select>
+
+            <select
+              value={selectedFunctionId || ''}
+              onChange={(e) => setSelectedFunctionId(e.target.value || null)}
+              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#31BCFF] disabled:bg-gray-50"
+              disabled={filteredFunctions.length === 0}
+            >
+              <option value="">{t('templates.function', 'Function')}</option>
+              {filteredFunctions.map((fn) => (
+                <option key={fn.id} value={fn.id}>{fn.name}</option>
+              ))}
+            </select>
+
+            <button
+              onClick={() => {
+                setSelectedDepartmentId(null)
+                setSelectedCategoryId(null)
+                setSelectedFunctionId(null)
+              }}
+              className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              disabled={!selectedDepartmentId && !selectedCategoryId && !selectedFunctionId}
+            >
+              {t('common.clear', 'Clear')}
+            </button>
           </div>
         </div>
       </div>
