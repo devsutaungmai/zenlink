@@ -526,7 +526,7 @@ export async function invoiceToLedgerPosting(invoiceId: string,tx?: Prisma.Trans
   }
 
   // Check if already posted
-  const existingEntries = await prisma.ledgerEntry.findFirst({
+  const existingEntries = await txClient.ledgerEntry.findFirst({
     where: { invoiceId: invoice.id }
   });
 
@@ -540,11 +540,11 @@ export async function invoiceToLedgerPosting(invoiceId: string,tx?: Prisma.Trans
   let vatListPerLines: any = [];
 
   // Get standard accounts
-  const accountsReceivable = await prisma.ledgerAccount.findFirst({
+  const accountsReceivable = await txClient.ledgerAccount.findFirst({
     where: { accountNumber: 1500 }
   });
 
-  const vatPayable = await prisma.ledgerAccount.findFirst({
+  const vatPayable = await txClient.ledgerAccount.findFirst({
     where: { accountNumber: 2701 }
   });
 

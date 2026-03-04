@@ -273,17 +273,16 @@ export async function POST(request: NextRequest) {
               where: { id: invoice.id },
               data: { voucherId: voucher.id }
             });
-            await invoiceToLedgerPosting(invoice.id, tx);
+            // await invoiceToLedgerPosting(invoice.id, tx);
           }
-
 
           return invoice;
 
         });
 
-        // if (invoice.status === "SENT") {
-        //   await invoiceToLedgerPosting(invoice.id);
-        // }
+        if (invoice.status === "SENT") {
+          await invoiceToLedgerPosting(invoice.id);
+        }
 
         return NextResponse.json(invoice, { status: 201 })
       } catch (error: any) {
