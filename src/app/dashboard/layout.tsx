@@ -1,9 +1,11 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import DashboardNavbar from '@/components/DashboardNavbar'
 import { useUser } from '@/shared/lib/useUser'
+
+const STALE_THRESHOLD_MS = 5 * 60 * 1000 // 5 minutes
 
 export default function DashboardLayout({
   children,
@@ -12,6 +14,14 @@ export default function DashboardLayout({
 }) {
   const router = useRouter()
   const { user, loading } = useUser()
+  const lastActiveRef = useRef<number>(Date.now())
+
+  const refreshRouterCache = useCallback(() => {
+    try {
+      router.refresh()
+    } catch {
+    }
+  }, [router])
 
   // Authentication check - redirect if not logged in or not admin/manager
   useEffect(() => {
@@ -29,7 +39,33 @@ export default function DashboardLayout({
     }
   }, [user, loading, router])
 
-  // Show loading while checking authentication
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        const idleDuration = Date.now() - lastActiveRef.current
+        if (idleDuration > STALE_THRESHOLD_MS) {
+          refreshRouterCache()
+        }
+        lastActiveRef.current = Date.now()
+      } else {
+        lastActiveRef.current = Date.now()
+      }
+    }
+
+    const periodicRefreshInterval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        refreshRouterCache()
+        lastActiveRef.current = Date.now()
+      }
+    }, STALE_THRESHOLD_MS)
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      clearInterval(periodicRefreshInterval)
+    }
+  }, [refreshRouterCache])
   if (loading || !user) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -41,7 +77,7 @@ export default function DashboardLayout({
   return (
     <div className="min-h-screen bg-gray-50">
       <DashboardNavbar />
-      
+
       <div className="flex flex-col flex-1">
         <div className="pt-16 pb-24 lg:pb-0"> {/* Padding for fixed top+bottom navs */}
           <div className="py-8 px-4 sm:px-6 lg:px-8">

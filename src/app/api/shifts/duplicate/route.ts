@@ -82,7 +82,7 @@ export async function POST(request: Request) {
           functionId: resolvedFunctionId,
           departmentId: resolvedDeptId,
           status: (target.employeeId !== undefined ? target.employeeId : shiftTemplate.employeeId)
-            ? (shiftTemplate.status === 'OPEN' ? 'SCHEDULED' : shiftTemplate.status)
+            ? 'SCHEDULED'
             : 'OPEN',
           approved: false,
         })
@@ -92,6 +92,7 @@ export async function POST(request: Request) {
       for (let i = 0; i < copies; i++) {
         shiftsToCreate.push({
           ...shiftTemplate,
+          status: shiftTemplate.employeeId ? 'SCHEDULED' : 'OPEN',
           approved: false,
         })
       }
@@ -101,9 +102,9 @@ export async function POST(request: Request) {
       shiftsToCreate.map(data => prisma.shift.create({ data, include: shiftWithRelationsInclude }))
     )
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       count: created.length,
-      shifts: created 
+      shifts: created
     }, { status: 201 })
   } catch (error) {
     console.error('Failed to duplicate shifts:', error)

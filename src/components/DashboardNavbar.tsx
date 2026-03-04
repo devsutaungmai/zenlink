@@ -2,8 +2,8 @@ import Link from 'next/link'
 import { Fragment, useState, useMemo } from 'react'
 import { Menu, Transition } from '@headlessui/react'
 import { APP_NAME } from '@/app/constants/constants'
-import { 
-  UserCircleIcon, 
+import {
+  UserCircleIcon,
   ChevronDownIcon,
   HomeIcon,
   UserGroupIcon,
@@ -53,7 +53,7 @@ export default function DashboardNavbar() {
     ? [user?.firstName, user?.lastName].filter(Boolean).join(' ')
     : user?.email || t('navigation.profile')
   const profileGreeting = t('common.welcome_back')
-  
+
   const adminNavigation: NavigationItem[] = [
     { name: t('navigation.home'), href: '/dashboard', icon: HomeIcon },
     {
@@ -103,10 +103,10 @@ export default function DashboardNavbar() {
         { name: 'Voucher Overviews', href: '/dashboard/voucher/overviews' },
         { name: 'Invoice Overviews', href: '/dashboard/invoice-overviews' },
         { name: 'Invoice', href: '/dashboard/invoices' },
-        { name:"Project", href: '/dashboard/projects' },
-        { name:"Customer", href: '/dashboard/customers' },
+        { name: "Project", href: '/dashboard/projects' },
+        { name: "Customer", href: '/dashboard/customers' },
         { name: "Product", href: '/dashboard/products' },
-        { name:"LedgerAccount", href: '/dashboard/ledger-accounts' },
+        { name: "LedgerAccount", href: '/dashboard/ledger-accounts' },
       ],
     },
     { name: t('navigation.settings'), href: '/dashboard/settings', icon: Cog6ToothIcon },
@@ -147,15 +147,15 @@ export default function DashboardNavbar() {
           })
 
           if (filteredChildren.length === 0) return null
-          
+
           return { ...item, children: filteredChildren }
         }
-        
+
         if (item.permissionKey) {
           const requiredPermissions = NAV_PERMISSIONS[item.permissionKey]
           if (!hasAnyPermission(requiredPermissions)) return null
         }
-        
+
         return item
       })
       .filter((item): item is NavigationItem => item !== null)
@@ -168,7 +168,7 @@ export default function DashboardNavbar() {
       const res = await fetch('/api/auth/logout', {
         method: 'POST',
       })
-      
+
       if (res.ok) {
         // Clear tab-specific session mode
         sessionStorage.removeItem('zenlink_session_mode')
@@ -188,13 +188,21 @@ export default function DashboardNavbar() {
     }
 
     if (item.href) {
-      router.push(item.href)
+      try {
+        router.push(item.href)
+      } catch {
+        window.location.href = item.href
+      }
       setActiveBottomMenu(null)
     }
   }
 
   const handleChildNavClick = (href: string) => {
-    router.push(href)
+    try {
+      router.push(href)
+    } catch {
+      window.location.href = href
+    }
     setActiveBottomMenu(null)
   }
 
@@ -217,122 +225,123 @@ export default function DashboardNavbar() {
   return (
     <>
       <nav className="hidden lg:block bg-white/80 backdrop-blur-xl border-b border-gray-200/50 shadow-lg fixed w-full z-30">
-      <div className="px-6 h-18 flex items-center justify-between">
-        {/* Left section with logo */}
-        <div className="flex items-center">
-          <Link href="/dashboard" className="text-2xl font-bold bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] bg-clip-text text-transparent ml-2 lg:ml-0 hover:scale-105 transition-transform duration-200">
-            {APP_NAME}
-          </Link>
-        </div>
+        <div className="px-6 h-18 flex items-center justify-between">
+          {/* Left section with logo */}
+          <div className="flex items-center">
+            <Link href="/dashboard" className="text-2xl font-bold bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] bg-clip-text text-transparent ml-2 lg:ml-0 hover:scale-105 transition-transform duration-200">
+              {APP_NAME}
+            </Link>
+          </div>
 
-        {/* Center section with navigation - conditionally rendered based on user role */}
-        <div className="hidden lg:flex items-center space-x-1">
-          {navigation.map((item) => 
-            !item.children ? (
-              <Link
-                key={item.name}
-                href={item.href || '#'}
-                className="flex items-center px-4 py-2.5 text-gray-600 hover:text-[#31BCFF] hover:bg-blue-50/50 rounded-xl transition-all duration-200 group"
-              >
-                <item.icon className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
-                <span className="font-medium">{item.name}</span>
-              </Link>
-            ) : (
-              <Menu key={item.name} as="div" className="relative">
-                <Menu.Button className="flex items-center px-4 py-2.5 text-gray-600 hover:text-[#31BCFF] hover:bg-blue-50/50 rounded-xl transition-all duration-200 group">
+          {/* Center section with navigation - conditionally rendered based on user role */}
+          <div className="hidden lg:flex items-center space-x-1">
+            {navigation.map((item) =>
+              !item.children ? (
+                <Link
+                  key={item.name}
+                  href={item.href || '#'}
+                  prefetch={false}
+                  className="flex items-center px-4 py-2.5 text-gray-600 hover:text-[#31BCFF] hover:bg-blue-50/50 rounded-xl transition-all duration-200 group"
+                >
                   <item.icon className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
                   <span className="font-medium">{item.name}</span>
-                  <ChevronDownIcon className="h-4 w-4 ml-1 group-hover:rotate-180 transition-transform duration-200" />
-                </Menu.Button>
-                <Transition
-                  as={Fragment}
-                  enter="transition ease-out duration-200"
-                  enterFrom="transform opacity-0 scale-95 translate-y-2"
-                  enterTo="transform opacity-100 scale-100 translate-y-0"
-                  leave="transition ease-in duration-150"
-                  leaveFrom="transform opacity-100 scale-100 translate-y-0"
-                  leaveTo="transform opacity-0 scale-95 translate-y-2"
-                >
-                  <Menu.Items className="absolute left-0 mt-3 w-56 origin-top-left bg-white/95 backdrop-blur-xl rounded-2xl shadow-xl ring-1 ring-black/5 focus:outline-none border border-gray-200/50">
-                    <div className="py-2">
-                      {item.children?.map((child) => (
-                        <Menu.Item key={child.name}>
-                          {({ active }) => (
-                            <Link
-                              href={child.href}
-                              className={`${
-                                active ? 'bg-blue-50/70 text-[#31BCFF]' : 'text-gray-700'
-                              } flex items-center px-4 py-3 text-sm font-medium rounded-xl mx-2 transition-all duration-200 hover:scale-105`}
-                            >
-                              <div className="w-2 h-2 bg-current rounded-full mr-3 opacity-60"></div>
-                              {child.name}
-                            </Link>
-                          )}
-                        </Menu.Item>
-                      ))}
+                </Link>
+              ) : (
+                <Menu key={item.name} as="div" className="relative">
+                  <Menu.Button className="flex items-center px-4 py-2.5 text-gray-600 hover:text-[#31BCFF] hover:bg-blue-50/50 rounded-xl transition-all duration-200 group">
+                    <item.icon className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
+                    <span className="font-medium">{item.name}</span>
+                    <ChevronDownIcon className="h-4 w-4 ml-1 group-hover:rotate-180 transition-transform duration-200" />
+                  </Menu.Button>
+                  <Transition
+                    as={Fragment}
+                    enter="transition ease-out duration-200"
+                    enterFrom="transform opacity-0 scale-95 translate-y-2"
+                    enterTo="transform opacity-100 scale-100 translate-y-0"
+                    leave="transition ease-in duration-150"
+                    leaveFrom="transform opacity-100 scale-100 translate-y-0"
+                    leaveTo="transform opacity-0 scale-95 translate-y-2"
+                  >
+                    <Menu.Items className="absolute left-0 mt-3 w-56 origin-top-left bg-white/95 backdrop-blur-xl rounded-2xl shadow-xl ring-1 ring-black/5 focus:outline-none border border-gray-200/50">
+                      <div className="py-2">
+                        {item.children?.map((child) => (
+                          <Menu.Item key={child.name}>
+                            {({ active }) => (
+                              <Link
+                                href={child.href}
+                                prefetch={false}
+                                className={`${active ? 'bg-blue-50/70 text-[#31BCFF]' : 'text-gray-700'
+                                  } flex items-center px-4 py-3 text-sm font-medium rounded-xl mx-2 transition-all duration-200 hover:scale-105`}
+                              >
+                                <div className="w-2 h-2 bg-current rounded-full mr-3 opacity-60"></div>
+                                {child.name}
+                              </Link>
+                            )}
+                          </Menu.Item>
+                        ))}
+                      </div>
+                    </Menu.Items>
+                  </Transition>
+                </Menu>
+              )
+            )}
+          </div>
+
+          {/* Right section with language switcher, notifications and profile */}
+          <div className="flex items-center space-x-3">
+            <LanguageSwitcher />
+
+            <NotificationCenter />
+
+            <Menu as="div" className="relative">
+              <Menu.Button className="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50/50 rounded-xl transition-all duration-200 group">
+                <div className="relative">
+                  <UserCircleIcon className="h-9 w-9 text-gray-600 group-hover:text-[#31BCFF] transition-colors duration-200" />
+                  <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-green-500 rounded-full border-2 border-white"></div>
+                </div>
+                <div className="hidden lg:block text-left">
+                  {loading ? (
+                    <div className="animate-pulse">
+                      <div className="h-4 bg-gray-200 rounded w-24 mb-1"></div>
+                      <div className="h-3 bg-gray-200 rounded w-32"></div>
                     </div>
-                  </Menu.Items>
-                </Transition>
-              </Menu>
-            )
-          )}
-        </div>
+                  ) : (
+                    <>
+                      <p className="text-sm font-semibold text-gray-900 group-hover:text-[#31BCFF] transition-colors duration-200">
+                        {user?.firstName} {user?.lastName}
+                      </p>
+                      <p className="text-xs text-gray-500 group-hover:text-gray-600 transition-colors duration-200">{user?.email}</p>
+                    </>
+                  )}
+                </div>
+                <ChevronDownIcon className="h-4 w-4 text-gray-500 group-hover:text-[#31BCFF] group-hover:rotate-180 transition-all duration-200" />
+              </Menu.Button>
 
-        {/* Right section with language switcher, notifications and profile */}
-        <div className="flex items-center space-x-3">
-          <LanguageSwitcher />
-          
-          <NotificationCenter />
-          
-          <Menu as="div" className="relative">
-            <Menu.Button className="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50/50 rounded-xl transition-all duration-200 group">
-              <div className="relative">
-                <UserCircleIcon className="h-9 w-9 text-gray-600 group-hover:text-[#31BCFF] transition-colors duration-200" />
-                <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-green-500 rounded-full border-2 border-white"></div>
-              </div>
-              <div className="hidden lg:block text-left">
-                {loading ? (
-                  <div className="animate-pulse">
-                    <div className="h-4 bg-gray-200 rounded w-24 mb-1"></div>
-                    <div className="h-3 bg-gray-200 rounded w-32"></div>
-                  </div>
-                ) : (
-                  <>
-                    <p className="text-sm font-semibold text-gray-900 group-hover:text-[#31BCFF] transition-colors duration-200">
-                      {user?.firstName} {user?.lastName}
-                    </p>
-                    <p className="text-xs text-gray-500 group-hover:text-gray-600 transition-colors duration-200">{user?.email}</p>
-                  </>
-                )}
-              </div>
-              <ChevronDownIcon className="h-4 w-4 text-gray-500 group-hover:text-[#31BCFF] group-hover:rotate-180 transition-all duration-200" />
-            </Menu.Button>
-
-            <Transition
-              as={Fragment}
-              enter="transition ease-out duration-200"
-              enterFrom="transform opacity-0 scale-95 translate-y-2"
-              enterTo="transform opacity-100 scale-100 translate-y-0"
-              leave="transition ease-in duration-150"
-              leaveFrom="transform opacity-100 scale-100 translate-y-0"
-              leaveTo="transform opacity-0 scale-95 translate-y-2"
-            >
-              <Menu.Items className="absolute right-0 mt-3 w-56 origin-top-right bg-white/95 backdrop-blur-xl rounded-2xl shadow-xl ring-1 ring-black/5 focus:outline-none border border-gray-200/50">
-                <div className="py-2">
-                  <Menu.Item>
-                    {({ active }) => (
-                      <Link
-                        href="/dashboard/profile"
-                        className={`${
-                          active ? 'bg-blue-50/70 text-[#31BCFF]' : 'text-gray-700'
-                        } flex items-center px-4 py-3 text-sm font-medium rounded-xl mx-2 transition-all duration-200 hover:scale-105`}
-                      >
-                        <UserCircleIcon className="h-4 w-4 mr-3 opacity-60" />
-                        {t('navigation.edit_profile')}
-                      </Link>
-                    )}
-                  </Menu.Item>
-                  {/* <Menu.Item>
+              <Transition
+                as={Fragment}
+                enter="transition ease-out duration-200"
+                enterFrom="transform opacity-0 scale-95 translate-y-2"
+                enterTo="transform opacity-100 scale-100 translate-y-0"
+                leave="transition ease-in duration-150"
+                leaveFrom="transform opacity-100 scale-100 translate-y-0"
+                leaveTo="transform opacity-0 scale-95 translate-y-2"
+              >
+                <Menu.Items className="absolute right-0 mt-3 w-56 origin-top-right bg-white/95 backdrop-blur-xl rounded-2xl shadow-xl ring-1 ring-black/5 focus:outline-none border border-gray-200/50">
+                  <div className="py-2">
+                    <Menu.Item>
+                      {({ active }) => (
+                        <Link
+                          href="/dashboard/profile"
+                          prefetch={false}
+                          className={`${active ? 'bg-blue-50/70 text-[#31BCFF]' : 'text-gray-700'
+                            } flex items-center px-4 py-3 text-sm font-medium rounded-xl mx-2 transition-all duration-200 hover:scale-105`}
+                        >
+                          <UserCircleIcon className="h-4 w-4 mr-3 opacity-60" />
+                          {t('navigation.edit_profile')}
+                        </Link>
+                      )}
+                    </Menu.Item>
+                    {/* <Menu.Item>
                     {({ active }) => (
                       <Link
                         href="/time-tracking"
@@ -345,28 +354,27 @@ export default function DashboardNavbar() {
                       </Link>
                     )}
                   </Menu.Item> */}
-                  <div className="border-t border-gray-200/50 mx-2 my-2" />
-                  <Menu.Item>
-                    {({ active }) => (
-                      <button
-                        onClick={handleLogout}
-                        className={`${
-                          active ? 'bg-red-50/70 text-red-600' : 'text-red-500'
-                        } flex w-full items-center px-4 py-3 text-sm font-medium rounded-xl mx-2 transition-all duration-200 hover:scale-105`}
-                      >
-                        <svg className="h-4 w-4 mr-3 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                        </svg>
-                        {t('navigation.logout')}
-                      </button>
-                    )}
-                  </Menu.Item>
-                </div>
-              </Menu.Items>
-            </Transition>
-          </Menu>
+                    <div className="border-t border-gray-200/50 mx-2 my-2" />
+                    <Menu.Item>
+                      {({ active }) => (
+                        <button
+                          onClick={handleLogout}
+                          className={`${active ? 'bg-red-50/70 text-red-600' : 'text-red-500'
+                            } flex w-full items-center px-4 py-3 text-sm font-medium rounded-xl mx-2 transition-all duration-200 hover:scale-105`}
+                        >
+                          <svg className="h-4 w-4 mr-3 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                          </svg>
+                          {t('navigation.logout')}
+                        </button>
+                      )}
+                    </Menu.Item>
+                  </div>
+                </Menu.Items>
+              </Transition>
+            </Menu>
+          </div>
         </div>
-      </div>
 
       </nav>
 
@@ -422,9 +430,9 @@ export default function DashboardNavbar() {
                     {({ active }) => (
                       <Link
                         href="/dashboard/profile"
-                        className={`${
-                          active ? 'bg-blue-50/70 text-[#31BCFF]' : 'text-gray-700'
-                        } flex items-center px-4 py-3 text-sm font-medium rounded-2xl transition-all duration-200`}
+                        prefetch={false}
+                        className={`${active ? 'bg-blue-50/70 text-[#31BCFF]' : 'text-gray-700'
+                          } flex items-center px-4 py-3 text-sm font-medium rounded-2xl transition-all duration-200`}
                       >
                         <UserCircleIcon className="h-5 w-5 mr-3 opacity-70" />
                         {t('navigation.edit_profile')}
@@ -436,9 +444,8 @@ export default function DashboardNavbar() {
                     {({ active }) => (
                       <button
                         onClick={handleLogout}
-                        className={`${
-                          active ? 'bg-red-50/70 text-red-600' : 'text-red-500'
-                        } flex w-full items-center px-4 py-3 text-sm font-semibold rounded-2xl transition-all duration-200`}
+                        className={`${active ? 'bg-red-50/70 text-red-600' : 'text-red-500'
+                          } flex w-full items-center px-4 py-3 text-sm font-semibold rounded-2xl transition-all duration-200`}
                       >
                         <svg className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -465,9 +472,8 @@ export default function DashboardNavbar() {
                 <button
                   key={item.name}
                   onClick={() => handleBottomNavClick(item)}
-                  className={`relative flex flex-col items-center flex-1 min-w-0 px-3 py-2 rounded-2xl transition-all duration-200 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#31BCFF] ${
-                    isActive ? 'text-[#31BCFF] bg-blue-50/60 shadow-inner' : 'text-gray-500'
-                  }`}
+                  className={`relative flex flex-col items-center flex-1 min-w-0 px-3 py-2 rounded-2xl transition-all duration-200 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#31BCFF] ${isActive ? 'text-[#31BCFF] bg-blue-50/60 shadow-inner' : 'text-gray-500'
+                    }`}
                 >
                   <item.icon className={`h-5 w-5 ${isActive ? 'text-[#31BCFF]' : 'text-gray-400'}`} />
                   <span className="text-[11px] font-medium mt-1 text-center leading-tight whitespace-normal break-words">
