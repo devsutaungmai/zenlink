@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 
 interface HeroSectionProps {
   isAuthenticated?: boolean
@@ -9,63 +10,74 @@ export default function HeroSection({ isAuthenticated = false }: HeroSectionProp
   const primaryCtaHref = isAuthenticated ? '/dashboard' : '/register'
 
   return (
-    <section className="bg-gradient-to-br from-[#31BCFF] to-[#0EA5E9] text-white pt-16 sm:pt-20 md:pt-24 relative overflow-hidden">
-      <div className="container mx-auto px-4 sm:px-6 py-12 sm:py-16 md:py-20 relative z-10">
-        <div className="text-center max-w-4xl mx-auto space-y-6 sm:space-y-8">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-            Employee Scheduling Made{' '}
-            <span className="block sm:inline">Simple</span>
-          </h1>
-          <p className="text-lg sm:text-xl md:text-2xl max-w-3xl mx-auto leading-relaxed opacity-90">
-            Streamline your workforce management with our comprehensive time tracking and scheduling solution.
-          </p>
-          
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-center pt-4 sm:pt-6">
-            <Link
-              href={primaryCtaHref}
-              className="w-full sm:w-auto bg-white text-[#31BCFF] px-6 sm:px-8 py-3 sm:py-4 rounded-lg font-semibold hover:bg-gray-100 transition-all duration-200 transform hover:scale-105 shadow-lg text-center"
-            >
-              {primaryCtaLabel}
-            </Link>
-            <Link
-              href="#demo"
-              className="w-full sm:w-auto border-2 border-white text-white px-6 sm:px-8 py-3 sm:py-4 rounded-lg font-semibold hover:bg-white/10 transition-all duration-200 transform hover:scale-105 text-center"
-            >
-              Book Demo
-            </Link>
-          </div>
+    <section className="bg-gradient-to-br from-[#E0F4FF] via-[#C8EAFF] to-[#A8D8F8] pt-16 sm:pt-20 relative overflow-hidden min-h-screen flex items-center">
+      {/* Decorative blobs */}
+      <div className="absolute top-20 right-0 w-96 h-96 bg-[#31BCFF]/20 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-10 left-0 w-72 h-72 bg-[#0EA5E9]/15 rounded-full blur-3xl pointer-events-none" />
 
-          {/* Trust Indicators */}
-          <div className="pt-8 sm:pt-12 space-y-4">
-            <p className="text-sm sm:text-base opacity-75">
-              Trusted by 1000+ businesses worldwide
+      <div className="container mx-auto px-4 sm:px-6 py-12 sm:py-16 relative z-10 w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+
+          {/* Left: Text + CTA */}
+          <div className="space-y-6 sm:space-y-8">
+            <div className="inline-flex items-center gap-2 bg-white/60 backdrop-blur-sm border border-[#31BCFF]/30 rounded-full px-4 py-1.5 text-sm font-medium text-[#0EA5E9]">
+              <span className="w-2 h-2 bg-[#31BCFF] rounded-full animate-pulse" />
+              Employee Scheduling Platform
+            </div>
+
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight text-gray-900">
+              Simplify{' '}
+              <span className="text-[#31BCFF]">Employee</span>
+              <br />
+              <span className="text-[#31BCFF]">Scheduling</span>
+            </h1>
+
+            <p className="text-lg sm:text-xl text-gray-600 leading-relaxed max-w-lg">
+              A clear and intuitive platform to streamline your work shifts easily
             </p>
-            <div className="flex flex-wrap justify-center items-center gap-4 sm:gap-8 opacity-60">
-              <div className="bg-white/10 px-4 py-2 rounded-lg">
-                <span className="text-sm font-medium">Enterprise Ready</span>
-              </div>
-              <div className="bg-white/10 px-4 py-2 rounded-lg">
-                <span className="text-sm font-medium">GDPR Compliant</span>
-              </div>
-              <div className="bg-white/10 px-4 py-2 rounded-lg">
-                <span className="text-sm font-medium">24/7 Support</span>
-              </div>
+
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Link
+                href={primaryCtaHref}
+                className="bg-[#31BCFF] text-white px-8 py-3.5 rounded-full font-semibold hover:bg-[#0EA5E9] transition-all duration-200 shadow-lg shadow-[#31BCFF]/30 hover:shadow-[#31BCFF]/50 text-center transform hover:scale-105"
+              >
+                {primaryCtaLabel}
+              </Link>
+              <Link
+                href="#demo"
+                className="border-2 border-[#31BCFF] text-[#31BCFF] px-8 py-3.5 rounded-full font-semibold hover:bg-[#31BCFF]/10 transition-all duration-200 text-center"
+              >
+                Book Demo
+              </Link>
+            </div>
+
+            {/* Trust badges */}
+            <div className="flex flex-wrap gap-3 pt-2">
+              {['Enterprise Ready', 'GDPR Compliant', '24/7 Support'].map((badge) => (
+                <span
+                  key={badge}
+                  className="bg-white/70 backdrop-blur-sm border border-white/80 text-gray-600 text-xs font-medium px-3 py-1.5 rounded-full"
+                >
+                  {badge}
+                </span>
+              ))}
             </div>
           </div>
+
+          {/* Right: Hero Image */}
+          <div className="relative flex justify-center lg:justify-end">
+            <Image
+              src="/hero.png"
+              alt="ZenLink Employee Scheduling Platform on laptop and mobile"
+              width={680}
+              height={480}
+              className="w-full max-w-xl lg:max-w-none h-auto"
+              style={{ mixBlendMode: 'multiply' }}
+              priority
+              unoptimized
+            />
+          </div>
         </div>
-      </div>
-      
-      {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-10 pointer-events-none">
-        <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-          <defs>
-            <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
-              <path d="M 10 0 L 0 0 0 10" fill="none" stroke="white" strokeWidth="0.5"/>
-            </pattern>
-          </defs>
-          <rect width="100" height="100" fill="url(#grid)" />
-        </svg>
       </div>
     </section>
   )
