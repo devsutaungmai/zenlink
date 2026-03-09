@@ -485,6 +485,40 @@ export async function importMvaCodes() {
   }
 }
 
+async function seedSalaryCodeCategories() {
+  console.log('\n Seeding Salary Code Categories...');
+  
+  const categories = [
+    { code: 'HOURLY', name: 'Hourly Wages', icon: 'ClockIcon', color: 'blue', sortOrder: 1 },
+    { code: 'OVERTIME', name: 'Overtime Pay', icon: 'CurrencyDollarIcon', color: 'orange', sortOrder: 2 },
+    { code: 'SICK_PAY', name: 'Sick Pay', icon: 'HeartIcon', color: 'purple', sortOrder: 3 },
+    { code: 'BONUS', name: 'Bonuses', icon: 'GiftIcon', color: 'green', sortOrder: 4 },
+    { code: 'DEDUCTION', name: 'Deductions', icon: 'MinusIcon', color: 'gray', sortOrder: 5 },
+  ];
+
+  let created = 0;
+  let skipped = 0;
+
+  for (const cat of categories) {
+    const existing = await prisma.salaryCodeCategory.findUnique({
+      where: { code: cat.code }
+    });
+
+    if (existing) {
+      skipped++;
+      continue;
+    }
+
+    await prisma.salaryCodeCategory.create({
+      data: cat
+    });
+    created++;
+  }
+
+  console.log(`   Created: ${created}`);
+  console.log(`   Skipped (already exist): ${skipped}`);
+}
+
 async function main() {
   //   // First, get the first business to use as default
   const business = await prisma.business.findFirst()
@@ -494,7 +528,10 @@ async function main() {
     return
   }
 
-  // 1. Import default ledger accounts
+  // Seed salary code categories (no business dependency)
+  await seedSalaryCodeCategories();
+
+  // Import default ledger accounts
   await importMvaCodes();
   await importLedgerAccounts();
 }

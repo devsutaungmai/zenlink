@@ -54,5 +54,50 @@
     "sickPay": "Sick Pay",
     "vacation": "Vacation Pay",
     "other": "Other"
+  },
+  "tabs": {
+    "salaryCodes": "Salary Codes",
+    "categories": "Categories"
+  },
+  "categoryManagement": {
+    "title": "Salary Code Categories",
+    "subtitle": "Manage categories for organizing salary codes",
+    "addCategory": "Add Category",
+    "editCategory": "Edit Category",
+    "newCategory": "New Category",
+    "code": "Code",
+    "name": "Name",
+    "color": "Color",
+    "icon": "Icon",
+    "sortOrder": "Sort Order",
+    "description": "Description",
+    "descriptionPlaceholder": "Optional description",
+    "codePlaceholder": "e.g., HOURLY",
+    "namePlaceholder": "e.g., Hourly Wages",
+    "noCategories": "No categories found. Click \"Add Category\" to create one.",
+    "colors": {
+      "blue": "Blue",
+      "orange": "Orange",
+      "purple": "Purple",
+      "green": "Green",
+      "gray": "Gray",
+      "red": "Red"
+    },
+    "icons": {
+      "clock": "Clock",
+      "currency": "Currency",
+      "heart": "Heart",
+      "gift": "Gift",
+      "minus": "Minus"
+    },
+    "toast": {
+      "created": "Category created",
+      "updated": "Category updated",
+      "deleted": "Category deleted",
+      "saveFailed": "Failed to save category",
+      "deleteFailed": "Failed to delete category",
+      "deleteConfirmTitle": "Delete Category",
+      "deleteConfirmText": "Are you sure you want to delete this category?"
+    }
   }
 }

@@ -729,20 +729,37 @@ model ContractTemplate {
   @@unique([name, businessId])
 }
 
-model SalaryCode {
-  id          String    @id @default(cuid())
-  code        String
+model SalaryCodeCategory {
+  id          String       @id @default(cuid())
+  code        String       @unique
   name        String
   description String?
-  category    String
-  isActive    Boolean   @default(true)
-  businessId  String
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  payRules    PayRule[]
-  business    Business  @relation(fields: [businessId], references: [id])
+  icon        String?
+  color       String?
+  sortOrder   Int          @default(0)
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  salaryCodes SalaryCode[]
+}
+
+model SalaryCode {
+  id                 String              @id @default(cuid())
+  code               String
+  name               String
+  description        String?
+  category           String              @default("HOURLY")
+  categoryId         String?
+  salaryCodeCategory SalaryCodeCategory? @relation(fields: [categoryId], references: [id])
+  isActive           Boolean             @default(true)
+  businessId         String
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  payRules           PayRule[]
+  business           Business            @relation(fields: [businessId], references: [id])
 
   @@unique([code, businessId])
+  @@index([categoryId])
 }
 
 model PayRule {

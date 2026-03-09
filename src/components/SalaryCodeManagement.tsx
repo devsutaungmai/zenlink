@@ -34,6 +34,14 @@ interface SalaryCodeFormData {
   category: string
 }
 
+interface SalaryCodeCategory {
+  id: string
+  code: string
+  name: string
+  icon?: string
+  color?: string
+}
+
 export default function SalaryCodeManagement() {
   const { t } = useTranslation('salary-codes')
   const [salaryCodes, setSalaryCodes] = useState<SalaryCode[]>([])
@@ -44,20 +52,41 @@ export default function SalaryCodeManagement() {
     code: '',
     name: '',
     description: '',
-    category: 'HOURLY',
+    category: '',
   })
+  const [categories, setCategories] = useState<SalaryCodeCategory[]>([])
+  const [loadingCategories, setLoadingCategories] = useState(true)
 
-  const categories = [
-    { value: 'HOURLY', label: 'Hourly Wages', icon: ClockIcon },
-    { value: 'OVERTIME', label: 'Overtime Pay', icon: CurrencyDollarIcon },
-    { value: 'SICK_PAY', label: 'Sick Pay', icon: HeartIcon },
-    { value: 'BONUS', label: 'Bonuses', icon: GiftIcon },
-    { value: 'DEDUCTION', label: 'Deductions', icon: MinusIcon },
-  ]
+  const iconMap: Record<string, any> = {
+    ClockIcon,
+    CurrencyDollarIcon,
+    HeartIcon,
+    GiftIcon,
+    MinusIcon,
+  }
 
   useEffect(() => {
     fetchSalaryCodes()
+    fetchCategories()
   }, [])
+
+  const fetchCategories = async () => {
+    try {
+      setLoadingCategories(true)
+      const response = await fetch('/api/salary-code-categories')
+      const data = await response.json()
+      if (response.ok) {
+        setCategories(data)
+        if (data.length > 0 && !formData.category) {
+          setFormData(prev => ({ ...prev, category: data[0].code }))
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error)
+    } finally {
+      setLoadingCategories(false)
+    }
+  }
 
   const fetchSalaryCodes = async () => {
     try {
@@ -100,7 +129,7 @@ export default function SalaryCodeManagement() {
           code: '',
           name: '',
           description: '',
-          category: 'HOURLY',
+          category: categories[0]?.code || '',
         })
       } else {
         const data = await response.json()
@@ -198,24 +227,26 @@ export default function SalaryCodeManagement() {
   }
 
   const getCategoryIcon = (category: string) => {
-    const categoryConfig = categories.find(c => c.value === category)
-    const IconComponent = categoryConfig?.icon || CurrencyDollarIcon
-    return IconComponent
+    const categoryConfig = categories.find(c => c.code === category)
+    const iconName = categoryConfig?.icon || 'CurrencyDollarIcon'
+    return iconMap[iconName] || CurrencyDollarIcon
   }
 
   const getCategoryLabel = (category: string) => {
-    return categories.find(c => c.value === category)?.label || category
+    return categories.find(c => c.code === category)?.name || category
   }
 
   const getCategoryColor = (category: string) => {
-    const colors = {
-      HOURLY: 'bg-blue-100 text-blue-800',
-      OVERTIME: 'bg-orange-100 text-orange-800',
-      SICK_PAY: 'bg-red-100 text-red-800',
-      BONUS: 'bg-green-100 text-green-800',
-      DEDUCTION: 'bg-gray-100 text-gray-800',
+    const categoryConfig = categories.find(c => c.code === category)
+    const colorMap: Record<string, string> = {
+      blue: 'bg-blue-100 text-blue-800',
+      orange: 'bg-orange-100 text-orange-800',
+      purple: 'bg-purple-100 text-purple-800',
+      green: 'bg-green-100 text-green-800',
+      gray: 'bg-gray-100 text-gray-800',
+      red: 'bg-red-100 text-red-800',
     }
-    return colors[category as keyof typeof colors] || 'bg-gray-100 text-gray-800'
+    return colorMap[categoryConfig?.color || 'gray'] || 'bg-gray-100 text-gray-800'
   }
 
   if (loading) {
@@ -247,7 +278,7 @@ export default function SalaryCodeManagement() {
                 code: '',
                 name: '',
                 description: '',
-                category: 'HOURLY',
+                category: categories[0]?.code || '',
               })
               setShowForm(true)
             }}
@@ -307,12 +338,17 @@ export default function SalaryCodeManagement() {
                   onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
                   className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base rounded-lg sm:rounded-xl border-2 border-gray-200 focus:border-[#31BCFF] focus:outline-none"
                   required
+                  disabled={loadingCategories}
                 >
-                  {categories.map((category) => (
-                    <option key={category.value} value={category.value}>
-                      {category.label}
-                    </option>
-                  ))}
+                  {loadingCategories ? (
+                    <option value="">Loading...</option>
+                  ) : (
+                    categories.map((cat) => (
+                      <option key={cat.code} value={cat.code}>
+                        {cat.name}
+                      </option>
+                    ))
+                  )}
                 </select>
               </div>
 

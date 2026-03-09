@@ -54,5 +54,50 @@
     "sickPay": "Sygepenge",
     "vacation": "Feriepenge",
     "other": "Andet"
+  },
+  "tabs": {
+    "salaryCodes": "Lønkoder",
+    "categories": "Kategorier"
+  },
+  "categoryManagement": {
+    "title": "Lønkodekategorier",
+    "subtitle": "Administrer kategorier til organisering af lønkoder",
+    "addCategory": "Tilføj Kategori",
+    "editCategory": "Rediger Kategori",
+    "newCategory": "Ny Kategori",
+    "code": "Kode",
+    "name": "Navn",
+    "color": "Farve",
+    "icon": "Ikon",
+    "sortOrder": "Sorteringsrækkefølge",
+    "description": "Beskrivelse",
+    "descriptionPlaceholder": "Valgfri beskrivelse",
+    "codePlaceholder": "f.eks. HOURLY",
+    "namePlaceholder": "f.eks. Timeløn",
+    "noCategories": "Ingen kategorier fundet. Klik \"Tilføj Kategori\" for at oprette en.",
+    "colors": {
+      "blue": "Blå",
+      "orange": "Orange",
+      "purple": "Lilla",
+      "green": "Grøn",
+      "gray": "Grå",
+      "red": "Rød"
+    },
+    "icons": {
+      "clock": "Ur",
+      "currency": "Valuta",
+      "heart": "Hjerte",
+      "gift": "Gave",
+      "minus": "Minus"
+    },
+    "toast": {
+      "created": "Kategori oprettet",
+      "updated": "Kategori opdateret",
+      "deleted": "Kategori slettet",
+      "saveFailed": "Kunne ikke gemme kategori",
+      "deleteFailed": "Kunne ikke slette kategori",
+      "deleteConfirmTitle": "Slet Kategori",
+      "deleteConfirmText": "Er du sikker på, at du vil slette denne kategori?"
+    }
   }
 }
