@@ -1269,6 +1269,7 @@ model InvoiceLine {
   // Product details snapshot (in case product changes later)
   productName   String  @map("product_name")
   productNumber String? @map("product_number")
+  isCredited    Boolean @default(false)
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -1287,6 +1288,7 @@ enum InvoiceStatus {
   OUTSTANDING //  sent and not paid yet
   CREDITED // Original invoice that was credited
   CREDIT_NOTE // Credit note issued
+  PARTIALLY_CREDITED // Invoice that has some lines credited
 
   @@map("invoice_status")
 }

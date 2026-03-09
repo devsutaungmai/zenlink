@@ -105,7 +105,6 @@ export default function InvoicesPage() {
     const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] = useState<Invoice | null>(null)
     const [loadingPayment, setLoadingPayment] = useState<boolean>(false);
 
-
     // Pagination states
     const [currentPage, setCurrentPage] = useState(1)
     const [itemsPerPage] = useState(10)
@@ -949,14 +948,20 @@ export default function InvoicesPage() {
                                                             <CheckCircleIcon className="h-4 w-4" />
                                                         </button>
                                                     ) : null}
-                                                    {(invoice.status !== InvoiceStatus.CREDIT_NOTE && invoice.status !== InvoiceStatus.CREDITED) ?
+                                                    {/* {(invoice.status !== InvoiceStatus.CREDIT_NOTE && invoice.status !== InvoiceStatus.CREDITED) ?
                                                         <button
                                                             className="px-1 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2"
                                                             onClick={() => setSelectedInvoiceForCredit(invoice)}
                                                         >
                                                             <span className="text-base">✓</span>
-                                                        </button> : null}
+                                                        </button> : null
+                                                    } */}
 
+                                                    {(invoice.status !== InvoiceStatus.CREDIT_NOTE && invoice.status !== InvoiceStatus.CREDITED) ?
+                                                        <Link href={`/dashboard/invoices/${invoice.id}/edit?credit-note=true`} className="px-1 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2">
+                                                            <span className="text-base">✓</span>
+                                                        </Link> : null
+                                                    } 
 
                                                     <button className="p-1 hover:bg-gray-200 rounded" onClick={() => handlePDf(invoice.id)}>
                                                         <PaperClipIcon className="h-4 w-4 text-gray-400" />
@@ -1247,7 +1252,7 @@ export default function InvoicesPage() {
                 loadingPayment={loadingPayment}
                 setLoadingPayment={setLoadingPayment}
             />}
-            {selectedInvoiceForCredit && (
+            {/* {selectedInvoiceForCredit && (
                 <CreditNoteDialog
                     open={true}
                     onOpenChange={(open) => {
@@ -1264,7 +1269,7 @@ export default function InvoicesPage() {
                     loadingCredit={loadingCredit}
                     setLoadingCredit={setLoadingCredit}
                 />
-            )}
+            )} */}
         </div>
     )
 }

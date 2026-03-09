@@ -42,8 +42,13 @@ interface Product {
     }
 }
 
-export default function EditInvoicePage({ params }: { params: Promise<{ id: string }> }) {
+export default function EditInvoicePage({ params, searchParams }: { params: Promise<{ id: string }>, searchParams: Promise<{ "credit-note"?: string }> }) {
     const resolvedParams = use(params)
+    const resolvedSearchParams = use(searchParams)
+    const isCreditNote =
+        resolvedSearchParams["credit-note"] != null
+            ? resolvedSearchParams["credit-note"] === "true"
+            : false;
     const router = useRouter()
     const { t } = useTranslation()
     const [loading, setLoading] = useState(false)
@@ -81,6 +86,11 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
         showProject: true,
         showNote: true
     })
+    // credit note
+    const [originalInvoiceData, setOriginalInvoiceData] = useState<{
+        customerId: string
+        amount: number
+    } | null>(null)
 
     useEffect(() => {
         if (settings) {
@@ -170,6 +180,31 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                     setContacts(data.customer?.contactPersons)
                 }
 
+                const rawLines: InvoiceLine[] = data.invoiceLines || [];
+
+                const invoiceLines = isCreditNote
+                    ? rawLines.map((line) => ({
+                        ...line,
+                        quantity: -Math.abs(Number(line.quantity)),
+                        pricePerUnit: -Math.abs(Number(line.pricePerUnit)),
+                    }))
+                    : rawLines;
+
+                if (isCreditNote) {
+                    const totalAmount = rawLines.reduce((sum, line) => {
+                        const qty = Math.abs(Number(line.quantity)) || 0;
+                        const price = Math.abs(Number(line.pricePerUnit)) || 0;
+                        const discount = Number(line.discountPercentage) || 0;
+                        const { totalExclVAT } = calculateInvoiceTotals(qty, price, discount, Number(line.vatPercentage) || 0);
+                        return sum + totalExclVAT;
+                    }, 0);
+
+                    setOriginalInvoiceData({
+                        customerId: data.customerId,
+                        amount: totalAmount,
+                    });
+                }
+
                 setFormData({
                     customerId: data.customerId || '',
                     invoiceNumber: data.invoiceNumber || '',
@@ -181,7 +216,7 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                     projectId: data.projectId || '',
                     departmentId: data.departmentId || '',
                     seller: data.customer.business.name || '',
-                    invoiceLines: data.invoiceLines || [],
+                    invoiceLines: invoiceLines || [],
                     status: data.status || '',
                     notes: data.notes || ''
                 })
@@ -223,17 +258,19 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
     }
 
     const handleCopyOrderLine = (copiedInvoiceLine: InvoiceLine, netTotal: number) => {
+        const isOriginalLine = !!copiedInvoiceLine.id
         setFormData((prev: InvoiceFormData) => ({
             ...prev,
             invoiceLines: [
                 ...prev.invoiceLines,
                 {
                     productId: copiedInvoiceLine.productId,
-                    quantity: copiedInvoiceLine.quantity,
-                    pricePerUnit: copiedInvoiceLine.pricePerUnit,
+                    quantity: isOriginalLine ? Math.abs(Number(copiedInvoiceLine.quantity)) : copiedInvoiceLine.quantity,
+                    pricePerUnit: isOriginalLine ? Math.abs(Number(copiedInvoiceLine.pricePerUnit)) : copiedInvoiceLine.pricePerUnit,
                     vatPercentage: copiedInvoiceLine.vatPercentage,
                     discountPercentage: copiedInvoiceLine.discountPercentage,
                     productName: copiedInvoiceLine.productName
+                    // no id → treated as rebill line
                 }
             ]
         }))
@@ -268,6 +305,39 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
         filteredData = { ...filteredData, status: invoiceStatus }
         console.log("Submitting data:", filteredData);
         try {
+            // If it's a credit note, create it using the specific endpoint and pass the original invoice data
+            if (isCreditNote && originalInvoiceData) {
+                const creditLines = formData.invoiceLines.filter(line => line.id) // original lines
+                const rebillLines = formData.invoiceLines.filter(line => !line.id) // new lines added by user
+
+                const response = await fetch(`/api/invoices/${resolvedParams.id}/customer/credit-note`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        customerId: originalInvoiceData.customerId,
+                        creditNoteDate: formData.sentAt,
+                        comment: formData.notes || "",
+                        creditLineIds: creditLines.map(l => l.id),   // IDs of original lines to credit
+                        rebillLines: rebillLines,                      // new lines for rebill invoice
+                    }),
+                })
+
+                if (!response.ok) {
+                    const error = await response.json()
+                    throw new Error(error.error || 'Failed to create the credit note')
+                }
+
+                await Swal.fire({
+                    title: 'Success!',
+                    text: 'Credit note sent successfully',
+                    icon: 'success',
+                    confirmButtonColor: '#31BCFF',
+                })
+
+                router.push('/dashboard/invoices')
+                router.refresh()
+                return
+            }
             const res = await fetch(`/api/invoices/${resolvedParams.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
@@ -553,9 +623,15 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                             const price = Number(line.pricePerUnit) || 0;
                             const discount = Number(line.discountPercentage) || 0;
                             const vat = Number(line.vatPercentage) || 0;
-                            const { totalExclVAT } = calculateInvoiceTotals(qty, price, discount, vat);
+                            const { totalExclVAT: rawTotal } = calculateInvoiceTotals(
+                                Math.abs(qty),
+                                Math.abs(price),
+                                discount,
+                                vat
+                            );
+                            const totalExclVAT = (isCreditNote && line.id) ? -rawTotal : rawTotal;
 
-                            return (
+                            return (!line.isCredited && (
                                 <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-10" key={index}>
                                     <div>
                                         <label htmlFor="productId" className="block text-sm font-medium text-gray-700 mb-2">
@@ -570,11 +646,12 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                                                 const product = products.find(p => p.id === e.target.value);
                                                 const businessVat = product?.ledgerAccount?.businessVatCodes?.[0]?.vatCode;
                                                 const vatRate = businessVat?.rate ?? product?.ledgerAccount?.vatCode?.rate ?? 0;
+                                                const basePrice = product?.salesPrice ?? 0;
 
-                                                // Create new array and new object references
                                                 updateInvoiceLine(index, {
                                                     productId: e.target.value,
-                                                    pricePerUnit: product?.salesPrice ?? 0,
+                                                    // line.id exists = original credit line → keep negative; no id = rebill line → keep positive
+                                                    pricePerUnit: (isCreditNote && line.id) ? -Math.abs(basePrice) : basePrice,
                                                     vatPercentage: Number(vatRate),
                                                     productName: product?.productName,
                                                 })
@@ -597,7 +674,6 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                                             type="number"
                                             id="quantity"
                                             required
-                                            min="1"
                                             value={line.quantity || ""}
                                             onChange={(e) => {
 
@@ -726,7 +802,7 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                                     </div>
 
                                 </div>
-                            )
+                            ))
                         })}
                     </div>
 
@@ -747,7 +823,7 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                         </div>}
 
                     {/* Summary Calculation */}
-                    <InvoiceSummaryCalculation invoiceLines={formData.invoiceLines} />
+                    <InvoiceSummaryCalculation invoiceLines={formData.invoiceLines} isCreditNote={isCreditNote} />
 
 
                     {/* Form Actions */}
@@ -765,20 +841,21 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
                                 disabled={loading}
                                 className="px-6 py-3 rounded-l-xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                             >
-                                {loading ? 'Updating...' : 'Update Invoice'}
+                                {isCreditNote ? 'Send Credit Note' : 'Update Invoice'}
                             </button>
 
-                            <button
-                                type="button"
-                                disabled={loading}
-                                onClick={() => setShowDropdown(!showDropdown)}
-                                className="px-3 py-3 rounded-r-xl bg-gradient-to-r from-[#0EA5E9] to-[#0284C7] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 border-l border-white/20 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                <ArrowDownIcon className="w-5 h-5" />
-                            </button>
+                            {!isCreditNote && (
+                                <button
+                                    type="button"
+                                    disabled={loading}
+                                    onClick={() => setShowDropdown(!showDropdown)}
+                                    className="px-3 py-3 rounded-r-xl bg-gradient-to-r from-[#0EA5E9] to-[#0284C7] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 border-l border-white/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <ArrowDownIcon className="w-5 h-5" />
+                                </button>)}
 
                             {/* Dropdown Menu */}
-                            {showDropdown && (
+                            {showDropdown && !isCreditNote && (
                                 <div className="absolute right-0 bottom-full mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-200 py-2 z-10">
                                     <button
                                         type="button"
