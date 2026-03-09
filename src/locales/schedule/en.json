@@ -48,7 +48,8 @@
   },
   "shift_card": {
     "unassigned": "Unassigned",
-    "active": "Active"
+    "active": "Active",
+    "draft": "Draft"
   },
   "messages": {
     "success_created": "Shift created successfully!",

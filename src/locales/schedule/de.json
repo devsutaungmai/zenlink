@@ -48,7 +48,8 @@
   },
   "shift_card": {
     "unassigned": "Nicht zugewiesen",
-    "active": "Aktiv"
+    "active": "Aktiv",
+    "draft": "Entwurf"
   },
   "messages": {
     "success_created": "Schicht erfolgreich erstellt!",

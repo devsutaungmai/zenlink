@@ -44,6 +44,7 @@ interface ShiftGridCardProps {
     lastName: string
   }>
   onApprove: (shiftId: string) => void
+  onPublish?: (shiftId: string) => void
   onEdit: (shift: ShiftWithRelations) => void
   onDragStart: (e: React.DragEvent, shift: ShiftWithRelations, employeeId: string) => void
   onDragEnd: (e: React.DragEvent) => void
@@ -54,10 +55,12 @@ export default function ShiftGridCard({
   employeeId,
   employees = [],
   onApprove,
+  onPublish,
   onEdit,
   onDragStart,
   onDragEnd,
 }: ShiftGridCardProps) {
+  const isDraft = !(shift as any).isPublished
   // Check if there's an approved exchange to determine the current assigned employee
   const approvedExchange = shift.shiftExchanges?.find(exchange => exchange.status === 'APPROVED')
   
@@ -77,7 +80,9 @@ export default function ShiftGridCard({
       className={`relative rounded-lg border shadow-md bg-white px-3 py-2 text-sm transition group cursor-grab
         ${shift.approved
           ? "border-green-300 bg-green-50 text-green-900"
-          : "border-gray-300 bg-gray-50 text-gray-900"}
+          : isDraft
+            ? "border-gray-200 bg-gray-100 text-gray-500"
+            : "border-gray-300 bg-gray-50 text-gray-900"}
         hover:shadow-lg`}
       draggable
       onDragStart={e => onDragStart(e, shift, employeeId)}
@@ -103,28 +108,50 @@ export default function ShiftGridCard({
             <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
             </svg>
-            Approved
+            Payroll Approved
+          </span>
+        ) : isDraft ? (
+          <span className="inline-flex items-center gap-1 text-gray-500">
+            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+            </svg>
+            Draft
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1 text-yellow-700">
+          <span className="inline-flex items-center gap-1 text-blue-600">
             <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <circle cx="12" cy="12" r="10" />
             </svg>
-            Pending
+            Published
           </span>
         )}
       </div>
 
       {/* Mini Actions - vertical stack */}
       <div className="absolute top-1 right-1 flex flex-col items-center space-y-1 opacity-0 group-hover:opacity-100 transition">
-        {!shift.approved && (
+        {isDraft && onPublish && (
+          <button
+            onClick={e => {
+              e.stopPropagation();
+              onPublish(shift.id);
+            }}
+            className="text-blue-600 hover:text-blue-800"
+            title="Publish Shift"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+              <line x1="22" y1="2" x2="11" y2="13" />
+              <polygon points="22 2 15 22 11 13 2 9 22 2" />
+            </svg>
+          </button>
+        )}
+        {!isDraft && !shift.approved && (
           <button
             onClick={e => {
               e.stopPropagation();
               onApprove(shift.id);
             }}
             className="text-green-600 hover:text-green-800"
-            title="Approve Shift"
+            title="Approve for Payroll"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"

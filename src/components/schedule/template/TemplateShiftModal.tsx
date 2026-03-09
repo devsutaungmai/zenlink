@@ -492,7 +492,8 @@ export default function TemplateShiftModal({
     e.preventDefault()
     setIsSubmitting(true)
 
-    if (!employeeGroupId) {
+    const finalEmployeeIdCheck = preSelectedEmployeeIdRef.current || employeeId
+    if (finalEmployeeIdCheck && !employeeGroupId) {
       setIsSubmitting(false)
       return
     }
@@ -684,7 +685,7 @@ export default function TemplateShiftModal({
           {/* Employee Group */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('templates.employee_group', 'Employee Group')} <span className="text-red-500">*</span>
+              {t('templates.employee_group', 'Employee Group')} {employeeId && <span className="text-red-500">*</span>}
             </label>
             <select
               value={employeeGroupId}
@@ -692,7 +693,7 @@ export default function TemplateShiftModal({
                 setEmployeeGroupId(e.target.value)
                 setEmployeeId('')
               }}
-              required
+              required={!!employeeId}
               disabled={isEmployeeGroupPreSelected || (isEmployeePreSelected && availableEmployeeGroupOptions.length === 1 && !!employeeGroupId) || (functionId ? linkedFunctionGroups.length === 1 && !!employeeGroupId : false)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] outline-none disabled:bg-gray-100"
             >

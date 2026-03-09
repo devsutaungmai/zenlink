@@ -2,7 +2,7 @@ import { format } from 'date-fns'
 import { Employee } from '@prisma/client'
 import { useCurrency } from '@/shared/hooks/useCurrency'
 import { ShiftWithRelations } from '@/types/schedule'
-import { AlertTriangle, AlertCircle, Clock, Pencil, Trash2 } from 'lucide-react'
+import { AlertTriangle, AlertCircle, Clock, Pencil, Trash2, Send } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -13,6 +13,7 @@ interface SpanningShiftCardProps {
   onEdit: (shift: ShiftWithRelations) => void
   onCreateAttendance?: (shift: ShiftWithRelations) => void
   onDelete?: (shift: ShiftWithRelations) => void
+  onPublish?: (shift: ShiftWithRelations) => void
   index?: number  // Position in the overlapping group
   total?: number  // Total shifts in the overlapping group
   displayStartTime?: string
@@ -29,6 +30,7 @@ export default function SpanningShiftCard({
   onEdit,
   onCreateAttendance,
   onDelete,
+  onPublish,
   index = 0, 
   total = 1,
   displayStartTime,
@@ -94,14 +96,15 @@ export default function SpanningShiftCard({
   const hasLaborLawViolations = shift.validation?.hasLaborLawViolations || false
   const hasContractDeviations = shift.validation?.hasContractDeviations || false
   
-  let borderColor = shift.approved ? '#84cc16' : '#31BCFF'
-  let backgroundColor = shift.approved ? '#d9f99d' : '#31BCFF' // lime-200 for approved, blue for unapproved
-  let textColor = shift.approved ? '#365314' : 'white' // dark green for approved, white for unapproved
-  
+  const isDraft = !(shift as any).isPublished
+  let borderColor = shift.approved ? '#84cc16' : isDraft ? '#9ca3af' : '#31BCFF'
+  let backgroundColor = shift.approved ? '#d9f99d' : isDraft ? '#f3f4f6' : '#31BCFF'
+  let textColor = shift.approved ? '#365314' : isDraft ? '#6b7280' : 'white'
+
   if (hasLaborLawViolations) {
-    borderColor = '#dc2626' // red-600
+    borderColor = '#dc2626'
   } else if (hasContractDeviations) {
-    borderColor = '#eab308' // yellow-500
+    borderColor = '#eab308'
   }
 
   return (
@@ -133,6 +136,13 @@ export default function SpanningShiftCard({
       title={`${shift.function?.name || 'No function'} | ${shift.startTime.substring(0, 5)} - ${endTimeDisplay} | ${currentEmployee ? `${currentEmployee.firstName} ${currentEmployee.lastName}` : 'Unassigned'}`}
       draggable={false}
     >
+      {/* Draft badge */}
+      {isDraft && (
+        <div className="absolute top-0.5 right-0.5 text-[9px] font-bold uppercase tracking-wide bg-gray-400 text-white px-1 rounded leading-tight">
+          {t('shift_card.draft')}
+        </div>
+      )}
+
       {/* Function name - most prominent */}
       {shift.function && (
         <div className="font-bold text-xs truncate mb-0.5">
@@ -187,6 +197,19 @@ export default function SpanningShiftCard({
           >
             <Pencil className="w-4 h-4" />
             {t('context_menu.edit_shift')}
+          </button>
+        )}
+        {canEdit && onPublish && isDraft && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setShowContextMenu(false)
+              onPublish(shift)
+            }}
+            className="w-full px-3 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center gap-2"
+          >
+            <Send className="w-4 h-4" />
+            {t('context_menu.publish_shift', 'Publish Shift')}
           </button>
         )}
         {canCreateAttendance && shift.employeeId && shift.approved && (

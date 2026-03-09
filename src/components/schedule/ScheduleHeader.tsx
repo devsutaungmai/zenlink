@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { formatDate } from '@/shared/lib/dateLocale'
 import { useState, useRef, useEffect } from 'react'
 import TemplatesDropdown, { TemplateAction } from './TemplatesDropdown'
+import { Send } from 'lucide-react'
 
 interface Employee {
   id: string
@@ -86,6 +87,8 @@ interface ScheduleHeaderProps {
   onScheduleViewTypeChange?: (type: 'time' | 'employees' | 'groups' | 'functions') => void
   onTemplateAction?: (action: TemplateAction) => void
   canUseTemplates?: boolean
+  onBulkPublishDrafts?: () => void
+  draftShiftCount?: number
 }
 
 export default function ScheduleHeader({
@@ -115,14 +118,30 @@ export default function ScheduleHeader({
   scheduleViewType = 'time',
   onScheduleViewTypeChange = () => {},
   onTemplateAction = () => {},
-  canUseTemplates = true
+  canUseTemplates = true,
+  onBulkPublishDrafts,
+  draftShiftCount = 0,
 }: ScheduleHeaderProps) {
   const { t, i18n } = useTranslation('schedule')
   const [showFilters, setShowFilters] = useState(false)
+  const [showActionsMenu, setShowActionsMenu] = useState(false)
   const [employeeSearchQuery, setEmployeeSearchQuery] = useState('')
   const filterButtonRef = useRef<HTMLDivElement>(null)
   const filterDropdownRef = useRef<HTMLDivElement>(null)
   const mobileFilterRef = useRef<HTMLDivElement>(null)
+  const actionsMenuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (actionsMenuRef.current && !actionsMenuRef.current.contains(event.target as Node)) {
+        setShowActionsMenu(false)
+      }
+    }
+    if (showActionsMenu) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showActionsMenu])
   
   const safeEmployees = Array.isArray(employees) ? employees : []
   const safeDepartments = Array.isArray(departments) ? departments : []
@@ -645,11 +664,32 @@ export default function ScheduleHeader({
             </div>
 
             <div className="flex flex-wrap items-center gap-2 justify-end">
-              <button className="p-2 hover:bg-gray-100 rounded-md border border-gray-200">
-                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                </svg>
-              </button>
+              <div className="relative" ref={actionsMenuRef}>
+                <button
+                  onClick={() => setShowActionsMenu(prev => !prev)}
+                  className="p-2 hover:bg-gray-100 rounded-md border border-gray-200"
+                >
+                  <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                  </svg>
+                </button>
+                {showActionsMenu && (
+                  <div className="absolute right-0 mt-1 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                    {onBulkPublishDrafts && draftShiftCount > 0 && (
+                      <button
+                        onClick={() => { setShowActionsMenu(false); onBulkPublishDrafts() }}
+                        className="w-full px-4 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center gap-2"
+                      >
+                        <Send className="w-4 h-4" />
+                        Publish All Drafts ({draftShiftCount})
+                      </button>
+                    )}
+                    {(!onBulkPublishDrafts || draftShiftCount === 0) && (
+                      <p className="px-4 py-2 text-sm text-gray-400">No actions available</p>
+                    )}
+                  </div>
+                )}
+              </div>
 
               {canUseTemplates && <TemplatesDropdown onAction={handleTemplateAction} />}
 

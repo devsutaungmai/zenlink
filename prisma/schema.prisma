@@ -536,7 +536,10 @@ model Shift {
   wage            Float
   wageType        WageType            @default(HOURLY)
   note            String?
+  isPublished     Boolean             @default(false)
   approved        Boolean             @default(false)
+  approvedAt      DateTime?
+  approvedBy      String?
   createdAt       DateTime            @default(now())
   updatedAt       DateTime            @default(now())
   breakPaid       Boolean             @default(false)
@@ -557,6 +560,7 @@ model Shift {
   @@index([departmentId])
   @@index([date])
   @@index([employeeId])
+  @@index([isPublished])
 }
 
 model ShiftExchange {
