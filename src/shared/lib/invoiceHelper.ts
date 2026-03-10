@@ -380,7 +380,7 @@ export async function createCreditNote(params: {
         }
       });
     }
-  });
+  },{ timeout: 30000 });
 
   if (!creditNote) throw new Error('Failed to create credit note');
   await invoiceToLedgerPosting(creditNote.id);
