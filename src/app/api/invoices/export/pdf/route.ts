@@ -29,17 +29,15 @@ export async function GET(request: NextRequest) {
       include: {
         customer: true,
         invoiceLines: {
-          select: {
-            productId: true,
-            quantity: true,
-            pricePerUnit: true,
-            discountPercentage: true,
+          include: {
+
             product: true,
-            vatPercentage: true,
-            vatAmount: true
+
           }
         },
-        business: true
+        business: {
+          include: { invoiceGeneralSetting: true, users: { where: { id: currentUser.id }, select: { id: true, email: true } } }
+        },
       }
     })
 
@@ -51,60 +49,62 @@ export async function GET(request: NextRequest) {
     let totalVatAmount = 0
     let totalIncVAT = 0
     const invoiceLinesData: any = []
-    const vatMap :Map<number,{netAmount: number,vatAmount: number}> = new Map();
-    let vatPayableBreakdowns:any = [];
+    const vatMap: Map<number, { netAmount: number, vatAmount: number }> = new Map();
+    let vatPayableBreakdowns: any = [];
 
     for (const line of invoice.invoiceLines) {
-      const { productId, quantity, pricePerUnit, discountPercentage,vatPercentage } = line
+      const { productId, quantity, pricePerUnit, discountPercentage, vatPercentage, product } = line
 
-      if (!productId || !quantity || !pricePerUnit) {
+      if (!productId || quantity == null || !pricePerUnit || !product) {
         return NextResponse.json(
-          { error: 'Each line must have productId, quantity, and pricePerUnit' },
+          { error: `Invalid line: productId=${productId}, quantity=${quantity}` },
           { status: 400 }
         )
       }
 
-      const product = await prisma.product.findFirst({
-        where: { id: productId, businessId }
-      })
+      const isCreditNote = !!invoice.creditedInvoiceId || invoice.status === 'CREDIT_NOTE';
+      const sign = isCreditNote ? -1 : 1;
 
-      if (!product) {
-        return NextResponse.json(
-          { error: `Product not found: ${productId}` },
-          { status: 404 }
-        )
-      }
+      // Then in the loop — no longer derive sign from quantity
+      const absQty = Math.abs(Number(quantity));
+      const absPrice = Math.abs(Number(pricePerUnit));
 
-      const calculations = calculateInvoiceTotals(
-        quantity,
-        Number(pricePerUnit),
-        Number(discountPercentage),
-        Number(vatPercentage)
-      )
-      const current = vatMap.get(Number(vatPercentage))||{netAmount:0,vatAmount:0};
-      vatMap.set(Number(vatPercentage), {netAmount: current.netAmount + calculations.totalExclVAT, vatAmount: current.vatAmount + calculations.vatAmount});
+      const calculations = calculateInvoiceTotals(absQty, absPrice, Number(discountPercentage), Number(vatPercentage));
+
+      const signedNet = calculations.totalExclVAT * sign;
+      const signedVat = calculations.vatAmount * sign;
+      const signedTotal = calculations.totalInclVAT * sign;
+
+      const vatKey = Number(vatPercentage);
+      const current = vatMap.get(vatKey) || { netAmount: 0, vatAmount: 0 };
+      vatMap.set(vatKey, {
+        netAmount: current.netAmount + signedNet,
+        vatAmount: current.vatAmount + signedVat
+      });
+
       vatPayableBreakdowns = Array.from(vatMap.entries())
-            .map(([vatPercentage, amounts]) => ({
-                vatPercentage,
-                netAmount: amounts.netAmount,
-                vatAmount: amounts.vatAmount,
-            }))
-            .sort((a, b) => b.vatPercentage - a.vatPercentage); // Sort descending
-      totalExclVAT += calculations.totalExclVAT
-      totalVatAmount += calculations.vatAmount
-      totalIncVAT += calculations.totalInclVAT
+        .map(([vp, amounts]) => ({
+          vatPercentage: vp,
+          netAmount: amounts.netAmount,
+          vatAmount: amounts.vatAmount,
+        }))
+        .sort((a, b) => b.vatPercentage - a.vatPercentage);
+
+      totalExclVAT += signedNet;
+      totalVatAmount += signedVat;
+      totalIncVAT += signedTotal;
 
       invoiceLinesData.push({
         productId,
-        quantity,
-        pricePerUnit, 
+        quantity: absQty * sign,       // keep negative for display
+        pricePerUnit: absPrice * sign, // keep negative for display
         discountPercentage,
-        netAmount: calculations.totalExclVAT,
-        totalAmount: calculations.totalInclVAT,
+        netAmount: signedNet,
+        totalAmount: signedTotal,
         vatPercentage: Number(vatPercentage),
-        vatAmount: line.vatAmount,
-        totalVatAmount,
-        productName: product.productName,
+        vatAmount: signedVat,
+        totalVatAmount: signedVat,
+        productName: product.productName,  // use included product, not separate fetch
         productNumber: product.productNumber || ''
       })
     }
@@ -114,11 +114,13 @@ export async function GET(request: NextRequest) {
     const totalIncVATAmount = totalIncVAT
 
     const formatCurrency = (amount: number) => {
-      return new Intl.NumberFormat('nb-NO', {
+      const absAmount = Math.abs(amount);
+      const formatted = new Intl.NumberFormat('nb-NO', {
         style: 'decimal',
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
-      }).format(amount)
+      }).format(absAmount);
+      return amount < 0 ? `-${formatted}` : formatted;
     }
 
     const formatDate = (date: Date) => {
@@ -143,13 +145,37 @@ export async function GET(request: NextRequest) {
     doc.text(invoice.business?.name || '[Firmanavn]', 14, 15)
     doc.setFontSize(9)
     doc.setFont('helvetica', 'normal')
-    doc.text('Org.nr.: [Organisasjonsnr]', 14, 20)
-    doc.text('Telefon: [Telefon]', 14, 25)
-    doc.text('Mailadresse: [Mailadresse]', 14, 30)
-    doc.text('Web: [Web]', 14, 35)
+    // doc.text('Org.nr.: [Organisasjonsnr]', 14, 20)
+    // doc.text(`Telefon: ${invoice.business?.phone || '[Telefon]'}`, 14, 25)
+    doc.text(`Mailadresse: ${invoice.business?.users?.[0]?.email || '[Mailadresse]'}`, 14, 30)
+    // doc.text('Web: [Web]', 14, 35)
 
     // Logo Placeholder (same layout)
-    doc.text('[Logo]', 180, 15)
+    // doc.text('[Logo]', 180, 15)
+
+
+    // Invoice number or Credit number (same layout as POST)
+    doc.setFont('helvetica', 'bold')
+
+    // Invoice number block (top-right, above divider)
+
+    const label = invoice.invoiceNumber?.startsWith('CN')
+      ? 'Kreditnota nummer:'
+      : 'Fakturanummer:'
+
+    // number (top)
+
+
+    // label (below number)
+    // Replace the label/number block (around line with doc.text(label...))
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(10)
+    doc.text(label, 120, 35)                          // ← align left like other fields
+    doc.setFont('helvetica', 'normal')
+    doc.text(
+      formatInvoiceNumberForDisplay(invoice.invoiceNumber) || invoice.id,
+      180, 35, { align: 'right' }                      // ← align right like other values
+    )
 
     // Divider line
     doc.setLineWidth(0.5)
@@ -163,11 +189,19 @@ export async function GET(request: NextRequest) {
     doc.setFontSize(10)
     doc.text('Kunde:', 14, yPos)
     doc.setFont('helvetica', 'normal')
-    doc.text(invoice.customer.customerName || '', 14, yPos + 5)
-    doc.text(invoice.customer.address || '[Firmaadresse]', 14, yPos + 10)
-    doc.text(invoice.customer.postalCode || '[Firmapostnummer]', 14, yPos + 15)
-    doc.text(`Org. nr.: ${invoice.customer.organizationNumber || '[Organisasjonsnr.]'}`, 14, yPos + 20)
-    doc.text(`Kundenummer: ${formatCustomerNumberForDisplay(invoice.customer.customerNumber)|| '[Kundenummer]'}`, 14, yPos + 25)
+    if (invoice.customer.customerName) {
+      doc.text(invoice.customer.customerName, 14, yPos + 5)
+    }
+    if (invoice.customer.address) {
+      doc.text(invoice.customer.address, 14, yPos + 10)
+    }
+    if (invoice.customer.postalCode) {
+      doc.text(invoice.customer.postalCode, 14, yPos + 15)
+    }
+    if (invoice.customer.organizationNumber) {
+      doc.text(`Org. nr.: ${invoice.customer.organizationNumber}`, 14, yPos + 20)
+    }
+    // doc.text(`Kundenummer: ${formatCustomerNumberForDisplay(invoice.customer.customerNumber)|| '[Kundenummer]'}`, 14, yPos + 25)
 
     // Invoice details (right)
     const rightX = 120
@@ -182,45 +216,38 @@ export async function GET(request: NextRequest) {
     doc.setFont('helvetica', 'normal')
     doc.text(formatDate(invoice.dueDate ?? invoice.createdAt), 170, yPos + 5, { align: 'right' })
 
-    doc.setFont('helvetica', 'bold')
-    doc.text('Bankkonto:', rightX, yPos + 10)
-    doc.setFont('helvetica', 'normal')
-    doc.text('[Bankkontonummer]', 173, yPos + 10, { align: 'right' })
+    if (invoice.business?.invoiceGeneralSetting?.defaultBankAccount) {
+      doc.setFont('helvetica', 'bold')
+      doc.text('Bankkonto:', rightX, yPos + 10)
+      doc.setFont('helvetica', 'normal')
+      doc.text(invoice.business?.invoiceGeneralSetting?.defaultBankAccount || '[Bankkontonummer]', 173, yPos + 10, { align: 'right' })
+    }
 
     doc.setFont('helvetica', 'bold')
     doc.text('Kundenummer:', rightX, yPos + 15)
     doc.setFont('helvetica', 'normal')
     doc.text(formatCustomerNumberForDisplay(invoice.customer.customerNumber) || '[Kundenummer]', 170, yPos + 15, { align: 'right' })
 
-    doc.setFont('helvetica', 'bold')
-    doc.text('Kid:', rightX, yPos + 20)
-    doc.setFont('helvetica', 'normal')
-    doc.text('[Kid]', 170, yPos + 20, { align: 'right' })
-
-    // Invoice number
-    doc.line(rightX, yPos + 23, 196, yPos + 23)
-    doc.setFont('helvetica', 'bold')
-    doc.text('Fakturanummer: ',rightX, yPos + 28)
-    doc.text(formatInvoiceNumberForDisplay(invoice.invoiceNumber) || invoice.id, 173, yPos + 28, { align: 'right' })
+    // doc.setFont('helvetica', 'bold')
+    // doc.text('Kid:', rightX, yPos + 20)
+    // doc.setFont('helvetica', 'normal')
+    // doc.text('[Kid]', 170, yPos + 20, { align: 'right' })
 
     //
     // ===== INVOICE TABLE (same as POST layout) =====
     //
 
-    const tableData = invoiceLinesData.map((line: any) => { 
-        
-
-      return[
-      line.productName,
-      line.quantity.toString(),
-      'Stk',
-      formatCurrency(line.pricePerUnit),
-      `${line.discountPercentage || 0}%`,
-      `${line.vatPercentage}%`,
-      formatCurrency(line.netAmount),
-      formatCurrency(line.totalAmount),
-    ]
-
+    const tableData = invoiceLinesData.map((line: any) => {
+      return [
+        line.productName,
+        String(Number(line.quantity)),         // ← force to plain number first
+        'Stk',
+        formatCurrency(Number(line.pricePerUnit)),  // ← force Number
+        `${line.discountPercentage || 0}%`,
+        `${line.vatPercentage}%`,
+        formatCurrency(Number(line.netAmount)),     // ← force Number
+        formatCurrency(Number(line.totalAmount)),   // ← force Number
+      ]
     })
 
     autoTable(doc, {
@@ -239,8 +266,8 @@ export async function GET(request: NextRequest) {
       theme: 'grid',
       styles: { fontSize: 8, cellPadding: 3 },
       headStyles: {
-        fillColor: [11,120,199],
-        textColor: [255,255,255],
+        fillColor: [11, 120, 199],
+        textColor: [255, 255, 255],
         fontStyle: 'bold',
         fontSize: 8
       },
@@ -268,10 +295,14 @@ export async function GET(request: NextRequest) {
 
     doc.line(summaryX, finalY + 1, 196, finalY + 1)
 
-    vatPayableBreakdowns.forEach((line:any,index:number) => {
-    const y = finalY + 5 + index * 5
-    doc.text(`VAT AMOUNT(${line.vatPercentage}%) of ${line.netAmount} - kr ${formatCurrency(line.vatAmount)}`, summaryX, y)
-    // doc.text(`kr ${formatCurrency(line.vatAmount)}`, 196, y, { align: 'right' })
+    vatPayableBreakdowns.forEach((line: any, index: number) => {
+      const y = finalY + 5 + index * 5
+      const netFormatted = formatCurrency(line.netAmount)  // now uses fixed formatCurrency
+      const vatFormatted = formatCurrency(line.vatAmount)
+      doc.text(
+        `VAT AMOUNT(${line.vatPercentage}%) of ${netFormatted} - kr ${vatFormatted}`,
+        summaryX, y
+      )
     });
 
     const totalVatY = finalY + 5 + invoiceLinesData.length * 5
@@ -305,6 +336,9 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('Error generating invoice PDF:', error)
-    return NextResponse.json({ error: 'Failed to generate invoice PDF' }, { status: 500 })
+    return NextResponse.json({
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    }, { status: 500 })
   }
 }

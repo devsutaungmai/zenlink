@@ -37,6 +37,7 @@ import { is } from "zod/v4/locales"
 import { ColumnVisibilityToggle } from "@/components/invoice/column-visibility-toggle"
 import { useResizableColumns } from "@/hooks/use-resizable-columns"
 import { ResizeHandle } from "@/components/invoice/resize-handle"
+import { CreditCard } from "lucide-react"
 
 export enum InvoiceStatus {
     DRAFT = "DRAFT", // Not sent yet
@@ -90,7 +91,7 @@ export interface Invoice {
     paymentAllocations: {
         amountAllocated: number
     }[],
-    outstandingAmount?:number
+    outstandingAmount?: number
 }
 
 export default function InvoiceOverview() {
@@ -408,11 +409,11 @@ export default function InvoiceOverview() {
                                 <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-10 sm:w-10">
                                     <ArrowDownTrayIcon className="h-5 w-5" />
                                 </Button>
-                                 <ColumnVisibilityToggle
-                                            columns={columns}
-                                            onColumnToggle={toggleColumn}
-                                            onResetColumns={() => {resetColumns(); resetWidths()}}
-                                        />
+                                <ColumnVisibilityToggle
+                                    columns={columns}
+                                    onColumnToggle={toggleColumn}
+                                    onResetColumns={() => { resetColumns(); resetWidths() }}
+                                />
                             </div>
                         </div>
                     </div>
@@ -451,54 +452,54 @@ export default function InvoiceOverview() {
                                         />
                                     </th>
                                     <th className="w-12 px-2 py-3"></th>
-                                    {isColumnVisible('invoiceNumber') && 
-                                     <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none">
-                                        Invoice no.
+                                    {isColumnVisible('invoiceNumber') &&
+                                        <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none">
+                                            Invoice no.
                                             <ResizeHandle onMouseDown={onMouseDown("invoiceNumber")} />
-                                    </th>}
-                                    {isColumnVisible('customer') && 
-                                    <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none">
-                                        Customer
+                                        </th>}
+                                    {isColumnVisible('customer') &&
+                                        <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none">
+                                            Customer
                                             <ResizeHandle onMouseDown={onMouseDown("customer")} />
-                                    </th>}
-                                    {isColumnVisible('project') && 
-                                    <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none">
-                                        Project
+                                        </th>}
+                                    {isColumnVisible('project') &&
+                                        <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none">
+                                            Project
                                             <ResizeHandle onMouseDown={onMouseDown("project")} />
-                                    </th>}
+                                        </th>}
                                     {isColumnVisible('status') && <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none">
                                         Status
-                                            <ResizeHandle onMouseDown={onMouseDown("status")} />
+                                        <ResizeHandle onMouseDown={onMouseDown("status")} />
                                     </th>}
-                                    {isColumnVisible('sentAt') && 
-                                    <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none">
-                                        Invoice date
+                                    {isColumnVisible('sentAt') &&
+                                        <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none">
+                                            Invoice date
                                             <ResizeHandle onMouseDown={onMouseDown("sentAt")} />
-                                    </th>}
+                                        </th>}
                                     {isColumnVisible('dueDate') && <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none">
                                         Due date
-                                            <ResizeHandle onMouseDown={onMouseDown("dueDate")} />
+                                        <ResizeHandle onMouseDown={onMouseDown("dueDate")} />
                                     </th>}
-                                    {isColumnVisible('totalInclVAT') && 
-                                    <th className="relative px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase select-none">
-                                        Amount incl. VAT
+                                    {isColumnVisible('totalInclVAT') &&
+                                        <th className="relative px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase select-none">
+                                            Amount incl. VAT
                                             <ResizeHandle onMouseDown={onMouseDown("totalInclVAT")} />
-                                    </th>}
+                                        </th>}
                                     {isColumnVisible('totalExclVAT') && <th className="relative px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase select-none">
                                         Net amount
-                                            <ResizeHandle onMouseDown={onMouseDown("totalExclVAT")} />
+                                        <ResizeHandle onMouseDown={onMouseDown("totalExclVAT")} />
                                     </th>}
                                     {isColumnVisible('totalVatAmount') && <th className="relative px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase select-none">
                                         Total VAT amount
-                                            <ResizeHandle onMouseDown={onMouseDown("totalVatAmount")} />
+                                        <ResizeHandle onMouseDown={onMouseDown("totalVatAmount")} />
                                     </th>}
                                     {isColumnVisible('paid') && <th className="relative px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase select-none">
                                         Paid
-                                            <ResizeHandle onMouseDown={onMouseDown("paid")} />
+                                        <ResizeHandle onMouseDown={onMouseDown("paid")} />
                                     </th>}
                                     {isColumnVisible('outstanding') && <th className="relative px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase select-none">
                                         Outstanding
-                                            <ResizeHandle onMouseDown={onMouseDown("outstanding")} />
+                                        <ResizeHandle onMouseDown={onMouseDown("outstanding")} />
                                     </th>}
                                     <th className="w-12 px-2 py-3"></th>
                                     <th className="w-12 px-2 py-3"></th>
@@ -509,205 +510,209 @@ export default function InvoiceOverview() {
                             <tbody className="divide-y divide-gray-200">
                                 {paginatedInvoices.map((invoice) => {
                                     const outstandingAmount = invoice.totalInclVAT - invoice.paymentAllocations.reduce((sum, pa) => sum + Number(pa.amountAllocated), 0);
-                                    return(
-                                    <React.Fragment key={invoice.id}>
-                                        <tr className={`hover:bg-gray-50 ${expandedRows.has(invoice.id) ? "bg-blue-50/30" : ""}`}>
-                                            <td className="px-4 py-3">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={selectedInvoices.has(invoice.id)}
-                                                    onChange={() => toggleSelectInvoice(invoice.id)}
-                                                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                                />
-                                            </td>
-                                            <td className="px-2 py-3">
-                                                <button onClick={() => toggleRow(invoice.id)} className="p-1 hover:bg-gray-200 rounded">
-                                                    {expandedRows.has(invoice.id) ? (
-                                                        <ChevronUpIcon className="h-4 w-4 text-gray-600" />
-                                                    ) : (
-                                                        <ChevronDownIcon className="h-4 w-4 text-gray-600" />
-                                                    )}
-                                                </button>
-                                            </td>
-                                            {isColumnVisible('invoiceNumber') && <td className="px-4 py-3">
-                                                <Link
-                                                    href={`/dashboard/invoices/create?invoiceId=${invoice.id}&copy=true&overview=true`}
-                                                >
-                                                    <span className="text-sm font-medium text-blue-600 hover:underline cursor-pointer">
-                                                        {invoice.status !== InvoiceStatus.DRAFT ? formatInvoiceNumberForDisplay(invoice.invoiceNumber) : "-"}
-
-                                                    </span>
-                                                </Link>
-                                            </td>
-                                            }   
-                                            {isColumnVisible('customer') && <td className="px-4 py-3">
-                                                <div className="text-sm">
-                                                    <Link
-                                                         href={`/dashboard/customers/${invoice.customer?.id}/edit?overview=true`}
-                                                    >
-                                                        <div className="text-blue-600 hover:underline cursor-pointer">
-                                                            {invoice.customer?.customerName}
-                                                        </div>
-                                                    </Link>
-                                                </div>
-                                            </td>}
-                                            {isColumnVisible('project') && <td className="px-4 py-3">
-                                                <div className="text-sm">
-                                                    <div className="text-blue-600 hover:underline cursor-pointer">{invoice.project ? invoice.project?.name : "-"}</div>
-                                                </div>
-                                            </td>}
-                                            {isColumnVisible('status') && <td className="px-4 py-3">
-                                                <span
-                                                    className={`text-sm ${invoice.status === InvoiceStatus.OUTSTANDING
-                                                        ? "text-gray-900"
-                                                        : invoice.status === InvoiceStatus.PAID
-                                                            ? "text-gray-900"
-                                                            : "text-gray-900"
-                                                        }`}
-                                                >
-                                                    {invoice.status}
-                                                </span>
-                                            </td>}
-                                            {isColumnVisible('sentAt') && <td className="px-4 py-3 text-sm text-gray-900">
-                                                {invoice.sentAt ? new Date(invoice.sentAt).toLocaleDateString() : ""}
-                                            </td>}
-                                            {isColumnVisible('dueDate') && <td className="px-4 py-3 text-sm text-gray-900">
-                                                {invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : ""}
-                                            </td>}
-                                            {isColumnVisible('totalInclVAT') && <td className="px-4 py-3 text-sm text-gray-900 text-right">{invoice.totalInclVAT.toString()}</td>}
-                                            {isColumnVisible('totalExclVAT') && <td className="px-4 py-3 text-sm text-gray-900 text-right">{invoice.totalExclVAT.toString()}</td>}
-                                            {isColumnVisible('totalVatAmount') && <td className="px-4 py-3 text-sm text-gray-900 text-right">{invoice.totalVatAmount?.toString() || "0.00"}</td>}
-                                            {isColumnVisible('paid') && <td className="px-4 py-3 text-sm text-gray-900 text-right">
-                                                {invoice.paymentAllocations.reduce((sum, pa) => sum + Number(pa.amountAllocated), 0)}
-                                            </td>}
-                                            {isColumnVisible('outstanding') && <td className="px-4 py-3 text-sm text-gray-900 text-right">
-                                                {outstandingAmount}
-                                            </td>}
-                                            <td className="px-2 py-3">
-                                                <button className="p-1 hover:bg-gray-200 rounded" onClick={() => handlePDf(invoice.id)}>
-                                                    <PaperClipIcon className="h-4 w-4 text-gray-400" />
-                                                </button>
-                                            </td>
-                                            {invoice.status !== InvoiceStatus.DRAFT &&
-                                                <>
-                                                    <td className="px-2 py-3">
-                                                        <button
-                                                            onClick={() => handleSendEmail(invoice.id)}
-                                                            disabled={loadingEmail[invoice.id]}
-                                                            className={`p-2 rounded-lg transition-all duration-200 ${loadingEmail[invoice.id]
-                                                                ? 'text-gray-300 bg-gray-50 cursor-not-allowed'
-                                                                : 'text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50'
-                                                                }`}
-                                                        >
-                                                            {loadingEmail[invoice.id] ? (
-                                                                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                                </svg>
-                                                            ) : (
-                                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25H4.5a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-                                                                </svg>
-                                                            )}
-                                                        </button>
-                                                    </td>
-                                                    <td className="px-2 py-3">
-                                                        <DropdownMenu.Root>
-                                                            <DropdownMenu.Trigger asChild>
-                                                                <button className="p-1 hover:bg-gray-200 rounded">
-                                                                    <EllipsisVerticalIcon className="h-4 w-4 text-gray-600" />
-                                                                </button>
-                                                            </DropdownMenu.Trigger>
-                                                            <DropdownMenu.Portal>
-                                                                <DropdownMenu.Content
-                                                                    align="end"
-                                                                    className="min-w-[220px] bg-white rounded-lg shadow-lg border border-gray-200 p-1 z-50"
-                                                                >
-                                                                    {outstandingAmount > 0 ? (
-                                                                        <DropdownMenu.Item
-                                                                            className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2"
-                                                                            onSelect={() => setSelectedInvoiceForPayment({...invoice, outstandingAmount})}
-                                                                        >
-                                                                            <CheckCircleIcon className="h-4 w-4" />
-                                                                            Register payment
-                                                                        </DropdownMenu.Item>
-                                                                    ) : null}
-                                                                    <DropdownMenu.Item className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2">
-                                                                        <Link
-                                                                            href={`/dashboard/invoices/create?invoiceId=${invoice.id}&copy=true`}
-                                                                            className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2"
-                                                                        >
-                                                                            <span className="text-base">📋</span>
-                                                                            Copy invoice
-                                                                        </Link>
-                                                                    </DropdownMenu.Item>
-                                                                    {(invoice.status !== InvoiceStatus.CREDIT_NOTE && invoice.status !== InvoiceStatus.CREDITED) ?
-                                                                        <DropdownMenu.Item
-                                                                            className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2"
-                                                                            onSelect={() => setSelectedInvoiceForCredit(invoice)}
-                                                                        >
-                                                                            <span className="text-base">✓</span>
-                                                                            Credit Note
-                                                                        </DropdownMenu.Item> : null}
-                                                                </DropdownMenu.Content>
-                                                            </DropdownMenu.Portal>
-                                                        </DropdownMenu.Root>
-                                                    </td>
-                                                </>}
-                                        </tr>
-                                        {expandedRows.has(invoice.id) && (
-                                            <tr className="bg-gray-50">
-                                                <td colSpan={13} className="px-4 py-4">
-                                                    <div className="ml-16 bg-white rounded-lg border border-gray-200 p-6">
-                                                        <table className="w-full">
-                                                            <thead className="border-b border-gray-200">
-                                                                <tr>
-                                                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">
-                                                                        Date sent
-                                                                    </th>
-                                                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">
-                                                                        Due date
-                                                                    </th>
-                                                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">
-                                                                        Description
-                                                                    </th>
-                                                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">
-                                                                        Sending type
-                                                                    </th>
-                                                                    <th className="px-4 py-2 text-right text-xs font-medium text-gray-600 uppercase">
-                                                                        Amount
-                                                                    </th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                <tr>
-                                                                    <td className="px-4 py-3 text-sm text-gray-900">
-                                                                        {invoice.sentAt ? new Date(invoice.sentAt).toLocaleDateString() : ""}
-                                                                    </td>
-                                                                    <td className="px-4 py-3 text-sm text-gray-900">
-                                                                        {invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : ""}
-                                                                    </td>
-                                                                    <td className="px-4 py-3 text-sm text-gray-900">{invoice.notes}</td>
-                                                                    <td className="px-4 py-3">
-                                                                        <div className="flex items-center gap-2">
-                                                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-300">
-                                                                                "email"
-                                                                            </span>
-                                                                            <span className="text-sm text-gray-600">{invoice.customer?.email}</span>
-                                                                        </div>
-                                                                    </td>
-                                                                    <td className="px-4 py-3 text-sm text-gray-900 text-right">
-                                                                        {invoice.totalInclVAT.toString()}
-                                                                    </td>
-                                                                </tr>
-                                                            </tbody>
-                                                        </table>
-                                                    </div>
+                                    return (
+                                        <React.Fragment key={invoice.id}>
+                                            <tr className={`hover:bg-gray-50 ${expandedRows.has(invoice.id) ? "bg-blue-50/30" : ""}`}>
+                                                <td className="px-4 py-3">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedInvoices.has(invoice.id)}
+                                                        onChange={() => toggleSelectInvoice(invoice.id)}
+                                                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                    />
                                                 </td>
+                                                <td className="px-2 py-3">
+                                                    <button onClick={() => toggleRow(invoice.id)} className="p-1 hover:bg-gray-200 rounded">
+                                                        {expandedRows.has(invoice.id) ? (
+                                                            <ChevronUpIcon className="h-4 w-4 text-gray-600" />
+                                                        ) : (
+                                                            <ChevronDownIcon className="h-4 w-4 text-gray-600" />
+                                                        )}
+                                                    </button>
+                                                </td>
+                                                {isColumnVisible('invoiceNumber') && <td className="px-4 py-3">
+                                                    <Link
+                                                        href={`/dashboard/invoices/create?invoiceId=${invoice.id}&copy=true&overview=true`}
+                                                    >
+                                                        <span className="text-sm font-medium text-blue-600 hover:underline cursor-pointer">
+                                                            {invoice.status !== InvoiceStatus.DRAFT ? formatInvoiceNumberForDisplay(invoice.invoiceNumber) : "-"}
+
+                                                        </span>
+                                                    </Link>
+                                                </td>
+                                                }
+                                                {isColumnVisible('customer') && <td className="px-4 py-3">
+                                                    <div className="text-sm">
+                                                        <Link
+                                                            href={`/dashboard/customers/${invoice.customer?.id}/edit?overview=true`}
+                                                        >
+                                                            <div className="text-blue-600 hover:underline cursor-pointer">
+                                                                {invoice.customer?.customerName}
+                                                            </div>
+                                                        </Link>
+                                                    </div>
+                                                </td>}
+                                                {isColumnVisible('project') && <td className="px-4 py-3">
+                                                    <div className="text-sm">
+                                                        <div className="text-blue-600 hover:underline cursor-pointer">{invoice.project ? invoice.project?.name : "-"}</div>
+                                                    </div>
+                                                </td>}
+                                                {isColumnVisible('status') && <td className="px-4 py-3">
+                                                    <span
+                                                        className={`text-sm ${invoice.status === InvoiceStatus.OUTSTANDING
+                                                            ? "text-gray-900"
+                                                            : invoice.status === InvoiceStatus.PAID
+                                                                ? "text-gray-900"
+                                                                : "text-gray-900"
+                                                            }`}
+                                                    >
+                                                        {invoice.status}
+                                                    </span>
+                                                </td>}
+                                                {isColumnVisible('sentAt') && <td className="px-4 py-3 text-sm text-gray-900">
+                                                    {invoice.sentAt ? new Date(invoice.sentAt).toLocaleDateString() : ""}
+                                                </td>}
+                                                {isColumnVisible('dueDate') && <td className="px-4 py-3 text-sm text-gray-900">
+                                                    {invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : ""}
+                                                </td>}
+                                                {isColumnVisible('totalInclVAT') && <td className="px-4 py-3 text-sm text-gray-900 text-right">{invoice.totalInclVAT.toString()}</td>}
+                                                {isColumnVisible('totalExclVAT') && <td className="px-4 py-3 text-sm text-gray-900 text-right">{invoice.totalExclVAT.toString()}</td>}
+                                                {isColumnVisible('totalVatAmount') && <td className="px-4 py-3 text-sm text-gray-900 text-right">{invoice.totalVatAmount?.toString() || "0.00"}</td>}
+                                                {isColumnVisible('paid') && <td className="px-4 py-3 text-sm text-gray-900 text-right">
+                                                    {invoice.paymentAllocations.reduce((sum, pa) => sum + Number(pa.amountAllocated), 0)}
+                                                </td>}
+                                                {isColumnVisible('outstanding') && <td className="px-4 py-3 text-sm text-gray-900 text-right">
+                                                    {outstandingAmount}
+                                                </td>}
+                                                <td className="px-2 py-3">
+                                                    <button className="p-1 hover:bg-gray-200 rounded" onClick={() => handlePDf(invoice.id)}>
+                                                        <PaperClipIcon className="h-4 w-4 text-gray-400" />
+                                                    </button>
+                                                </td>
+                                                {invoice.status !== InvoiceStatus.DRAFT &&
+                                                    <>
+                                                        <td className="px-2 py-3">
+                                                            <button
+                                                                onClick={() => handleSendEmail(invoice.id)}
+                                                                disabled={loadingEmail[invoice.id]}
+                                                                className={`p-2 rounded-lg transition-all duration-200 ${loadingEmail[invoice.id]
+                                                                    ? 'text-gray-300 bg-gray-50 cursor-not-allowed'
+                                                                    : 'text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50'
+                                                                    }`}
+                                                            >
+                                                                {loadingEmail[invoice.id] ? (
+                                                                    <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                                    </svg>
+                                                                ) : (
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25H4.5a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                                                                    </svg>
+                                                                )}
+                                                            </button>
+                                                        </td>
+                                                        <td className="px-2 py-3">
+                                                            <DropdownMenu.Root>
+                                                                <DropdownMenu.Trigger asChild>
+                                                                    <button className="p-1 hover:bg-gray-200 rounded">
+                                                                        <EllipsisVerticalIcon className="h-4 w-4 text-gray-600" />
+                                                                    </button>
+                                                                </DropdownMenu.Trigger>
+                                                                <DropdownMenu.Portal>
+                                                                    <DropdownMenu.Content
+                                                                        align="end"
+                                                                        className="min-w-[220px] bg-white rounded-lg shadow-lg border border-gray-200 p-1 z-50"
+                                                                    >
+                                                                        {outstandingAmount > 0 ? (
+                                                                            <DropdownMenu.Item
+                                                                                className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2"
+                                                                                onSelect={() => setSelectedInvoiceForPayment({ ...invoice, outstandingAmount })}
+                                                                            >
+                                                                                <CheckCircleIcon className="h-4 w-4" />
+                                                                                Register payment
+                                                                            </DropdownMenu.Item>
+                                                                        ) : null}
+                                                                        <DropdownMenu.Item className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2">
+                                                                            <Link
+                                                                                href={`/dashboard/invoices/create?invoiceId=${invoice.id}&copy=true`}
+                                                                                className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2"
+                                                                            >
+                                                                                <span className="text-base">📋</span>
+                                                                                Copy invoice
+                                                                            </Link>
+                                                                        </DropdownMenu.Item>
+                                                                        {(invoice.status !== InvoiceStatus.CREDIT_NOTE && invoice.status !== InvoiceStatus.CREDITED) ?
+                                                                            <DropdownMenu.Item
+                                                                                className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2"
+
+                                                                            >
+                                                                                <Link href={`/dashboard/invoices/${invoice.id}/edit?credit-note=true`} className="px-1 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2">
+                                                                                    <span className="flex gap-1.5 text-sm"><CreditCard className="h-4 w-4" />
+                                                                                        Credit Note
+                                                                                    </span>
+                                                                                </Link>
+                                                                            </DropdownMenu.Item> : null}
+                                                                    </DropdownMenu.Content>
+                                                                </DropdownMenu.Portal>
+                                                            </DropdownMenu.Root>
+                                                        </td>
+                                                    </>}
                                             </tr>
-                                        )}
-                                    </React.Fragment>
-                                )})}
+                                            {expandedRows.has(invoice.id) && (
+                                                <tr className="bg-gray-50">
+                                                    <td colSpan={13} className="px-4 py-4">
+                                                        <div className="ml-16 bg-white rounded-lg border border-gray-200 p-6">
+                                                            <table className="w-full">
+                                                                <thead className="border-b border-gray-200">
+                                                                    <tr>
+                                                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">
+                                                                            Date sent
+                                                                        </th>
+                                                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">
+                                                                            Due date
+                                                                        </th>
+                                                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">
+                                                                            Description
+                                                                        </th>
+                                                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">
+                                                                            Sending type
+                                                                        </th>
+                                                                        <th className="px-4 py-2 text-right text-xs font-medium text-gray-600 uppercase">
+                                                                            Amount
+                                                                        </th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    <tr>
+                                                                        <td className="px-4 py-3 text-sm text-gray-900">
+                                                                            {invoice.sentAt ? new Date(invoice.sentAt).toLocaleDateString() : ""}
+                                                                        </td>
+                                                                        <td className="px-4 py-3 text-sm text-gray-900">
+                                                                            {invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : ""}
+                                                                        </td>
+                                                                        <td className="px-4 py-3 text-sm text-gray-900">{invoice.notes}</td>
+                                                                        <td className="px-4 py-3">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-300">
+                                                                                    "email"
+                                                                                </span>
+                                                                                <span className="text-sm text-gray-600">{invoice.customer?.email}</span>
+                                                                            </div>
+                                                                        </td>
+                                                                        <td className="px-4 py-3 text-sm text-gray-900 text-right">
+                                                                            {invoice.totalInclVAT.toString()}
+                                                                        </td>
+                                                                    </tr>
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </React.Fragment>
+                                    )
+                                })}
                             </tbody>
                         </table>
                     </div>
@@ -800,152 +805,156 @@ export default function InvoiceOverview() {
                     {paginatedInvoices.map((invoice) => {
                         const outstandingAmount = invoice.totalInclVAT - invoice.paymentAllocations.reduce((sum, pa) => sum + Number(pa.amountAllocated), 0);
                         return (
-                        <div key={invoice.id} className="bg-white rounded-lg border border-gray-200 p-3 space-y-3">
-                            {/* Card Header - Invoice Number and Status */}
-                            <div className="flex items-start justify-between gap-2">
-                                <div className="flex-1">
-                                    <div className="flex items-center gap-2">
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedInvoices.has(invoice.id)}
-                                            onChange={() => toggleSelectInvoice(invoice.id)}
-                                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mt-1"
-                                        />
-                                      {isColumnVisible('invoiceNumber') &&<h3 className="font-semibold text-blue-600 text-sm">
-                                            {invoice.status !== InvoiceStatus.DRAFT ? formatInvoiceNumberForDisplay(invoice.invoiceNumber) : "-"}
-                                        </h3>}
-                                    </div>
-                                   {isColumnVisible('customer')&&<Link
-                                        href={`/dashboard/customers/${invoice.customer?.id}/edit?overview=true`}
-                                    >
-                                        <p className="text-xs text-gray-600 ml-6">{invoice.customer?.customerName}</p>
-                                    </Link>}
-                                </div>
-                               { isColumnVisible('status')&&<div className="text-right">
-                                    <span className="inline-block px-2 py-1 text-xs font-medium bg-gray-100 rounded">
-                                        {invoice.status}
-                                    </span>
-                                </div>}
-                            </div>
-
-                            {/* Card Details Grid */}
-                            <div className="grid grid-cols-2 gap-3 text-xs">
-                                {isColumnVisible('totalInclVAT')&&<div>
-                                    <p className="text-gray-600">Amount</p>
-                                    <p className="font-semibold text-gray-900">{invoice.totalInclVAT.toString()}</p>
-                                </div>}
-                                 { isColumnVisible('totalExclVAT')&&<div>
-                                    <p className="text-gray-600">Net Amount</p>
-                                    <p className="font-semibold text-gray-900">{invoice.totalExclVAT.toString()}</p>
-                                </div>}
-                                { isColumnVisible('totalVatAmount')&&<div>
-                                    <p className="text-gray-600">VAT Amount</p>
-                                    <p className="font-semibold text-gray-900">{invoice.totalVatAmount?.toString() || "0.00"}</p>
-                                </div>}
-                                {isColumnVisible('paid')&&<div>
-                                    <p className="text-gray-600">Paid</p>
-                                    <p className="font-semibold text-gray-900">
-                                        {outstandingAmount}
-                                    </p>
-                                </div>}
-                                {isColumnVisible('outstanding')&&<div>
-                                    <p className="text-gray-600">Outstanding</p>
-                                    <p className="font-semibold text-gray-900">
-                                        {(invoice.totalInclVAT - invoice.paymentAllocations.reduce((sum, pa) => sum + pa.amountAllocated, 0))}
-                                    </p>
-                                </div>}
-                               { isColumnVisible('sentAt')&&<div>
-                                    <p className="text-gray-600">Invoice Date</p>
-                                    <p className="font-semibold text-gray-900">
-                                        {invoice.sentAt ? new Date(invoice.sentAt).toLocaleDateString() : "-"}
-                                    </p>
-                                </div>}
-                                {isColumnVisible('dueDate')&&<div>
-                                    <p className="text-gray-600">Due Date</p>
-                                    <p className="font-semibold text-gray-900">
-                                        {invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : "-"}
-                                    </p>
-                                </div>}
-                                {isColumnVisible('project')&&invoice.project && (
-                                    <div className="col-span-2">
-                                        <p className="text-gray-600">Project</p>
-                                        <p className="font-semibold text-blue-600">{invoice.project.name}</p>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Card Actions */}
-                            <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-200">
-                                <div className="flex items-center gap-2">
-                                    <button className="p-1.5 hover:bg-gray-100 rounded" onClick={() => handlePDf(invoice.id)}>
-                                        <PaperClipIcon className="h-4 w-4 text-gray-400" />
-                                    </button>
-                                    {invoice.status !== InvoiceStatus.DRAFT &&
-                                        <button
-                                            onClick={() => handleSendEmail(invoice.id)}
-                                            disabled={loadingEmail[invoice.id]}
-                                            className={`p-2 rounded-lg transition-all duration-200 ${loadingEmail[invoice.id]
-                                                ? 'text-gray-300 bg-gray-50 cursor-not-allowed'
-                                                : 'text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50'
-                                                }`}
+                            <div key={invoice.id} className="bg-white rounded-lg border border-gray-200 p-3 space-y-3">
+                                {/* Card Header - Invoice Number and Status */}
+                                <div className="flex items-start justify-between gap-2">
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedInvoices.has(invoice.id)}
+                                                onChange={() => toggleSelectInvoice(invoice.id)}
+                                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mt-1"
+                                            />
+                                            {isColumnVisible('invoiceNumber') && <h3 className="font-semibold text-blue-600 text-sm">
+                                                {invoice.status !== InvoiceStatus.DRAFT ? formatInvoiceNumberForDisplay(invoice.invoiceNumber) : "-"}
+                                            </h3>}
+                                        </div>
+                                        {isColumnVisible('customer') && <Link
+                                            href={`/dashboard/customers/${invoice.customer?.id}/edit?overview=true`}
                                         >
-                                            {loadingEmail[invoice.id] ? (
-                                                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                </svg>
-                                            ) : (
-                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25H4.5a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-                                                </svg>
-                                            )}
-                                        </button>
-                                    }
+                                            <p className="text-xs text-gray-600 ml-6">{invoice.customer?.customerName}</p>
+                                        </Link>}
+                                    </div>
+                                    {isColumnVisible('status') && <div className="text-right">
+                                        <span className="inline-block px-2 py-1 text-xs font-medium bg-gray-100 rounded">
+                                            {invoice.status}
+                                        </span>
+                                    </div>}
                                 </div>
-                                {invoice.status !== InvoiceStatus.DRAFT &&
-                                    <DropdownMenu.Root>
-                                        <DropdownMenu.Trigger asChild>
-                                            <button className="p-1 hover:bg-gray-200 rounded">
-                                                <EllipsisVerticalIcon className="h-4 w-4 text-gray-600" />
-                                            </button>
-                                        </DropdownMenu.Trigger>
-                                        <DropdownMenu.Portal>
-                                            <DropdownMenu.Content
-                                                align="end"
-                                                className="min-w-[220px] bg-white rounded-lg shadow-lg border border-gray-200 p-1 z-50"
+
+                                {/* Card Details Grid */}
+                                <div className="grid grid-cols-2 gap-3 text-xs">
+                                    {isColumnVisible('totalInclVAT') && <div>
+                                        <p className="text-gray-600">Amount</p>
+                                        <p className="font-semibold text-gray-900">{invoice.totalInclVAT.toString()}</p>
+                                    </div>}
+                                    {isColumnVisible('totalExclVAT') && <div>
+                                        <p className="text-gray-600">Net Amount</p>
+                                        <p className="font-semibold text-gray-900">{invoice.totalExclVAT.toString()}</p>
+                                    </div>}
+                                    {isColumnVisible('totalVatAmount') && <div>
+                                        <p className="text-gray-600">VAT Amount</p>
+                                        <p className="font-semibold text-gray-900">{invoice.totalVatAmount?.toString() || "0.00"}</p>
+                                    </div>}
+                                    {isColumnVisible('paid') && <div>
+                                        <p className="text-gray-600">Paid</p>
+                                        <p className="font-semibold text-gray-900">
+                                            {outstandingAmount}
+                                        </p>
+                                    </div>}
+                                    {isColumnVisible('outstanding') && <div>
+                                        <p className="text-gray-600">Outstanding</p>
+                                        <p className="font-semibold text-gray-900">
+                                            {(invoice.totalInclVAT - invoice.paymentAllocations.reduce((sum, pa) => sum + pa.amountAllocated, 0))}
+                                        </p>
+                                    </div>}
+                                    {isColumnVisible('sentAt') && <div>
+                                        <p className="text-gray-600">Invoice Date</p>
+                                        <p className="font-semibold text-gray-900">
+                                            {invoice.sentAt ? new Date(invoice.sentAt).toLocaleDateString() : "-"}
+                                        </p>
+                                    </div>}
+                                    {isColumnVisible('dueDate') && <div>
+                                        <p className="text-gray-600">Due Date</p>
+                                        <p className="font-semibold text-gray-900">
+                                            {invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : "-"}
+                                        </p>
+                                    </div>}
+                                    {isColumnVisible('project') && invoice.project && (
+                                        <div className="col-span-2">
+                                            <p className="text-gray-600">Project</p>
+                                            <p className="font-semibold text-blue-600">{invoice.project.name}</p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Card Actions */}
+                                <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-200">
+                                    <div className="flex items-center gap-2">
+                                        <button className="p-1.5 hover:bg-gray-100 rounded" onClick={() => handlePDf(invoice.id)}>
+                                            <PaperClipIcon className="h-4 w-4 text-gray-400" />
+                                        </button>
+                                        {invoice.status !== InvoiceStatus.DRAFT &&
+                                            <button
+                                                onClick={() => handleSendEmail(invoice.id)}
+                                                disabled={loadingEmail[invoice.id]}
+                                                className={`p-2 rounded-lg transition-all duration-200 ${loadingEmail[invoice.id]
+                                                    ? 'text-gray-300 bg-gray-50 cursor-not-allowed'
+                                                    : 'text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50'
+                                                    }`}
                                             >
-                                                {outstandingAmount > 0 ? (
-                                                    <DropdownMenu.Item
-                                                        className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2"
-                                                        onSelect={() => setSelectedInvoiceForPayment({...invoice, outstandingAmount})}
-                                                    >
-                                                        <CheckCircleIcon className="h-4 w-4" />
-                                                        Register payment
+                                                {loadingEmail[invoice.id] ? (
+                                                    <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                    </svg>
+                                                ) : (
+                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25H4.5a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                                                    </svg>
+                                                )}
+                                            </button>
+                                        }
+                                    </div>
+                                    {invoice.status !== InvoiceStatus.DRAFT &&
+                                        <DropdownMenu.Root>
+                                            <DropdownMenu.Trigger asChild>
+                                                <button className="p-1 hover:bg-gray-200 rounded">
+                                                    <EllipsisVerticalIcon className="h-4 w-4 text-gray-600" />
+                                                </button>
+                                            </DropdownMenu.Trigger>
+                                            <DropdownMenu.Portal>
+                                                <DropdownMenu.Content
+                                                    align="end"
+                                                    className="min-w-[220px] bg-white rounded-lg shadow-lg border border-gray-200 p-1 z-50"
+                                                >
+                                                    {outstandingAmount > 0 ? (
+                                                        <DropdownMenu.Item
+                                                            className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2"
+                                                            onSelect={() => setSelectedInvoiceForPayment({ ...invoice, outstandingAmount })}
+                                                        >
+                                                            <CheckCircleIcon className="h-4 w-4" />
+                                                            Register payment
+                                                        </DropdownMenu.Item>
+                                                    ) : null}
+                                                    <DropdownMenu.Item className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2">
+                                                        <Link
+                                                            href={`/dashboard/invoices/create?invoiceId=${invoice.id}&copy=true`}
+                                                            className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2"
+                                                        >
+                                                            <span className="text-base">📋</span>
+                                                            Copy invoice
+                                                        </Link>
                                                     </DropdownMenu.Item>
-                                                ) : null}
-                                                <DropdownMenu.Item className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2">
-                                                    <Link
-                                                        href={`/dashboard/invoices/create?invoiceId=${invoice.id}&copy=true`}
-                                                        className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2"
-                                                    >
-                                                        <span className="text-base">📋</span>
-                                                        Copy invoice
-                                                    </Link>
-                                                </DropdownMenu.Item>
-                                                {(invoice.status !== InvoiceStatus.CREDIT_NOTE && invoice.status !== InvoiceStatus.CREDITED) ?
-                                                    <DropdownMenu.Item
-                                                        className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2"
-                                                        onSelect={() => setSelectedInvoiceForCredit(invoice)}
-                                                    >
-                                                        <span className="text-base">✓</span>
-                                                        Credit Note
-                                                    </DropdownMenu.Item> : null}
-                                            </DropdownMenu.Content>
-                                        </DropdownMenu.Portal>
-                                    </DropdownMenu.Root>}
+                                                    {(invoice.status !== InvoiceStatus.CREDIT_NOTE && invoice.status !== InvoiceStatus.CREDITED) ?
+                                                        <DropdownMenu.Item
+                                                            className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2"
+                                                        // onSelect={() => setSelectedInvoiceForCredit(invoice)}
+                                                        >
+                                                            <Link href={`/dashboard/invoices/${invoice.id}/edit?credit-note=true`} className="px-1 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2">
+                                                                <span className="flex gap-1.5 text-sm"><CreditCard className="h-4 w-4" />
+                                                                    Credit Note
+                                                                </span>
+                                                            </Link>
+                                                        </DropdownMenu.Item> : null}
+                                                </DropdownMenu.Content>
+                                            </DropdownMenu.Portal>
+                                        </DropdownMenu.Root>}
+                                </div>
                             </div>
-                        </div>
-                    )})}
+                        )
+                    })}
                 </div>
 
                 {/* Mobile Pagination */}
@@ -1015,7 +1024,7 @@ export default function InvoiceOverview() {
                             <p className="font-semibold text-gray-900">
                                 {invoices
                                     .reduce((sum, inv) => sum + (inv.status === "PAID" ? Number(inv.totalInclVAT) : 0), 0)
-                                    }
+                                }
                             </p>
                         </div>
                         <div>
@@ -1023,7 +1032,7 @@ export default function InvoiceOverview() {
                             <p className="font-semibold text-gray-900">
                                 {invoices
                                     .reduce((sum, inv) => sum + (inv.status !== "PAID" ? Number(inv.totalInclVAT) : 0), 0)
-                                   }
+                                }
                             </p>
                         </div>
                     </div>
@@ -1048,7 +1057,7 @@ export default function InvoiceOverview() {
                 />
             )}
 
-            {selectedInvoiceForCredit && (
+            {/* {selectedInvoiceForCredit && (
                 <CreditNoteDialog
                     open={true}
                     onOpenChange={(open) => {
@@ -1065,7 +1074,7 @@ export default function InvoiceOverview() {
                     loadingCredit={loadingCredit}
                     setLoadingCredit={setLoadingCredit}
                 />
-            )}
+            )} */}
         </div>
     )
 }

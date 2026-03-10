@@ -74,8 +74,8 @@ export async function generateInvoiceNumber(
   });
 
   const lastInvoice = await txClient.invoice.findFirst({
-    where: { 
-      businessId, 
+    where: {
+      businessId,
       year,
       status: { notIn: [InvoiceStatus.DRAFT, InvoiceStatus.SENT] }
     },
@@ -107,8 +107,11 @@ export async function exportToPDF(invoiceId: string) {
 
       return true
     } else {
-      console.error('Failed to export PDF')
-      return false
+       const error = await response.json()
+            console.error('Failed to export PDF:', error)
+            return false
+      // console.error('Failed to export PDF')
+      // return false
     }
   } catch (error) {
     console.error('Error exporting PDF:', error)
@@ -155,6 +158,89 @@ export async function sendEmail(invoiceId: string, type?: string) {
     });
   }
 }
+// Shared core used by both linked and standalone credit notes
+export async function createCreditNoteRecord(params: {
+  businessId: string;
+  customerId: string;
+  creditNoteDate: Date;
+  reason?: string;
+  lines: {
+    productId: string;
+    productName: string;
+    productNumber?: string | null;
+    quantity: number;
+    pricePerUnit: number;
+    discountPercentage?: number | null;
+    vatPercentage?: number | null;
+    subtotal: number;
+    discountAmount: number;
+    lineTotal: number;
+    vatAmount?: number | null;
+  }[];
+  creditedInvoiceId?: string | null; // null for standalone
+  projectId?: string | null;
+  departmentId?: string | null;
+  contactPersonId?: string | null;
+  voucherId: string;
+  creditNoteNumber: string;
+  year: number;
+  sequence: number;
+}, tx: Prisma.TransactionClient ) {
+  const {
+    businessId, customerId, creditNoteDate, reason,
+    lines, creditedInvoiceId, projectId, departmentId,
+    contactPersonId, voucherId, creditNoteNumber, year, sequence
+  } = params;
+
+  // Calculate totals from lines
+  const totals = lines.reduce((acc, line) => ({
+    totalExclVAT: acc.totalExclVAT + Number(line.lineTotal),
+    totalVatAmount: acc.totalVatAmount + Number(line.vatAmount ?? 0),
+    totalInclVAT: acc.totalInclVAT + Number(line.lineTotal) + Number(line.vatAmount ?? 0),
+  }), { totalExclVAT: 0, totalVatAmount: 0, totalInclVAT: 0 });
+
+  return await tx.invoice.create({
+    data: {
+      invoiceNumber: creditNoteNumber,
+      year,
+      sequence,
+      invoiceDate: creditNoteDate,
+      dueDate: creditNoteDate,
+      status: InvoiceStatus.CREDIT_NOTE,
+      customerId,
+      businessId,
+      projectId: projectId ?? null,
+      departmentId: departmentId ?? null,
+      contactPersonId: contactPersonId ?? null,
+      totalExclVAT: -Math.abs(totals.totalExclVAT),
+      totalVatAmount: -Math.abs(totals.totalVatAmount),
+      totalInclVAT: -Math.abs(totals.totalInclVAT),
+      creditedInvoiceId: creditedInvoiceId ?? null,
+      notes: reason || 'Credit note',
+      voucherId,
+      invoiceLines: {
+        create: lines.map(line => ({
+          productId: line.productId,
+          productName: line.productName,
+          productNumber: line.productNumber,
+          quantity: line.quantity,
+          pricePerUnit: line.pricePerUnit,
+          discountPercentage: line.discountPercentage ?? 0,
+          vatPercentage: line.vatPercentage ?? 0,
+          subtotal: -Math.abs(line.subtotal),
+          discountAmount: -Math.abs(line.discountAmount),
+          lineTotal: -Math.abs(line.lineTotal),
+          vatAmount: -Math.abs(Number(line.vatAmount ?? 0)),
+        }))
+      }
+    },
+    include: {
+      invoiceLines: {
+        include: { product: { include: { ledgerAccount: true } } }
+      }
+    }
+  });
+}
 
 /**
  * Create a credit note for an existing invoice
@@ -167,130 +253,144 @@ export async function createCreditNote(params: {
   originalInvoiceId: string;
   reason?: string;
   creditNoteDate?: Date;
-  businessId: string
+  businessId: string;
+  creditLineIds: string[];
+  rebillLines?: any[];
 }) {
-  const { originalInvoiceId, reason, creditNoteDate = new Date(), businessId } = params;
+  const { originalInvoiceId, reason, creditNoteDate = new Date(), businessId, creditLineIds, rebillLines } = params;
 
-  // Fetch original invoice with all details
   const originalInvoice = await prisma.invoice.findUnique({
     where: { id: originalInvoiceId },
-    include: {
-      customer: true,
-      invoiceLines: {
-        include: {
-          product: true
+    include: { customer: true, invoiceLines: { include: { product: true } }, project: true, department: true }
+  });
+
+  if (!originalInvoice) throw new Error('Original invoice not found');
+  if (originalInvoice.status === InvoiceStatus.DRAFT) throw new Error('Cannot credit a draft invoice');
+  if (originalInvoice.status === InvoiceStatus.CREDITED) throw new Error('Invoice has already been fully credited');
+  if (originalInvoice.status === InvoiceStatus.CREDIT_NOTE) throw new Error('Cannot credit a credit note');
+
+  const linesToCredit = originalInvoice.invoiceLines.filter(l => creditLineIds.includes(l.id));
+  if (linesToCredit.length === 0) throw new Error('No valid lines to credit');
+
+  const allUncreditedLines = originalInvoice.invoiceLines.filter(l => !l.isCredited);
+  const isFullCredit = allUncreditedLines.every(l => creditLineIds.includes(l.id));
+  const newOriginalStatus = isFullCredit ? InvoiceStatus.CREDITED : InvoiceStatus.PARTIALLY_CREDITED;
+
+  let creditNote: any = null;
+  let rebillInvoice: any = null;
+
+  await prisma.$transaction(async (tx) => {
+    // Mark credited lines
+    await tx.invoiceLine.updateMany({
+      where: { id: { in: creditLineIds } },
+      data: { isCredited: true }
+    });
+
+    // Update original invoice status
+    await tx.invoice.update({
+      where: { id: originalInvoiceId },
+      data: { status: newOriginalStatus, updatedAt: new Date() }
+    });
+
+    const { year, sequence, creditNoteNumber } = await generateCreditNoteNumber(businessId, tx);
+    const voucher = await generateVoucherNumber(businessId, VoucherType.CREDIT_NOTE, tx);
+
+    // Use shared function
+    creditNote = await createCreditNoteRecord({
+      businessId,
+      customerId: originalInvoice.customerId,
+      creditNoteDate,
+      reason,
+      lines: linesToCredit.map(line => ({
+        productId: line.productId,
+        productName: line.productName,
+        productNumber: line.productNumber,
+        quantity: line.quantity,
+        pricePerUnit: Number(line.pricePerUnit),
+        discountPercentage: Number(line.discountPercentage ?? 0),
+        vatPercentage: Number(line.vatPercentage ?? 0),
+        subtotal: Number(line.subtotal),
+        discountAmount: Number(line.discountAmount),
+        lineTotal: Number(line.lineTotal),
+        vatAmount: Number(line.vatAmount ?? 0),
+      })),
+      creditedInvoiceId: originalInvoiceId,
+      projectId: originalInvoice.projectId,
+      departmentId: originalInvoice.departmentId,
+      contactPersonId: originalInvoice.contactPersonId,
+      voucherId: voucher.id,
+      creditNoteNumber,
+      year,
+      sequence,
+    },tx);
+
+    // Rebill invoice if needed
+    if (rebillLines && rebillLines.length > 0) {
+      const { year: ry, sequence: rs, invoiceNumber: rn } = await generateInvoiceNumber(businessId, tx);
+      const rebillVoucher = await generateVoucherNumber(businessId, VoucherType.INVOICE, tx);
+      const rebillAmounts = rebillLines.reduce((acc: any, line: any) => {
+        const { totalExclVAT, vatAmount, totalInclVAT } = calculateInvoiceTotals(
+          Number(line.quantity), Number(line.pricePerUnit),
+          Number(line.discountPercentage ?? 0), Number(line.vatPercentage ?? 0)
+        );
+        return {
+          totalExclVAT: acc.totalExclVAT + totalExclVAT,
+          totalVatAmount: acc.totalVatAmount + vatAmount,
+          totalInclVAT: acc.totalInclVAT + totalInclVAT,
+        };
+      }, { totalExclVAT: 0, totalVatAmount: 0, totalInclVAT: 0 });
+
+      rebillInvoice = await tx.invoice.create({
+        data: {
+          invoiceNumber: rn, year: ry, sequence: rs,
+          invoiceDate: creditNoteDate,
+          status: InvoiceStatus.SENT,
+          customerId: originalInvoice.customerId,
+          businessId,
+          projectId: originalInvoice.projectId,
+          departmentId: originalInvoice.departmentId,
+          contactPersonId: originalInvoice.contactPersonId,
+          totalExclVAT: rebillAmounts.totalExclVAT,
+          totalVatAmount: rebillAmounts.totalVatAmount,
+          totalInclVAT: rebillAmounts.totalInclVAT,
+          notes: `Gjenfakturering relatert til kreditnota ${creditNoteNumber}`,
+          voucherId: rebillVoucher.id,
+          invoiceLines: {
+            create: rebillLines.map((line: any) => {
+              const qty = Number(line.quantity);
+              const price = Number(line.pricePerUnit);
+              const discount = Number(line.discountPercentage ?? 0);
+              const vat = Number(line.vatPercentage ?? 0);
+              const { totalExclVAT, vatAmount } = calculateInvoiceTotals(qty, price, discount, vat);
+              return {
+                productId: line.productId,
+                productName: line.productName,
+                productNumber: line.productNumber,
+                quantity: qty,
+                pricePerUnit: price,
+                discountPercentage: discount,
+                vatPercentage: vat,
+                subtotal: qty * price,
+                discountAmount: (qty * price) * (discount / 100),
+                lineTotal: totalExclVAT,
+                vatAmount,
+              };
+            })
+          }
         }
-      },
-      project: true,
-      department: true
+      });
     }
   });
 
-  if (!originalInvoice) {
-    throw new Error('Original invoice not found');
-  }
-
-  // Validate invoice can be credited
-  if (originalInvoice.status === InvoiceStatus.DRAFT) {
-    throw new Error('Cannot credit a draft invoice');
-  }
-
-  if (originalInvoice.status === InvoiceStatus.CREDITED) {
-    throw new Error('Invoice has already been credited');
-  }
-
-  if (originalInvoice.status === InvoiceStatus.CREDIT_NOTE) {
-    throw new Error('Cannot credit a credit note');
-  }
-
-  let creditNote: any = null;
-
-  await prisma.$transaction(async (tx) => {
-
-    // Generate credit note number
-    const { year, sequence, creditNoteNumber } = await generateCreditNoteNumber(originalInvoice.businessId, tx);
-
-    // 1. Update original invoice status to CREDITED
-    await tx.invoice.update({
-      where: { id: originalInvoiceId },
-      data: {
-        status: InvoiceStatus.CREDITED,
-        updatedAt: new Date()
-      }
-    });
-
-    const voucher = await generateVoucherNumber(businessId, VoucherType.CREDIT_NOTE, tx);
-
-    // 2. Create credit note (new invoice with negative amounts)
-    creditNote = await tx.invoice.create({
-      data: {
-        invoiceNumber: creditNoteNumber,
-        year: year,
-        sequence: sequence,
-        invoiceDate: creditNoteDate,
-        dueDate: creditNoteDate, // Credit notes don't have due dates
-        status: InvoiceStatus.CREDIT_NOTE,
-
-        customerId: originalInvoice.customerId,
-        businessId: originalInvoice.businessId,
-        projectId: originalInvoice.projectId,
-        departmentId: originalInvoice.departmentId,
-        contactPersonId: originalInvoice.contactPersonId,
-
-        // Negative amounts for credit note
-        totalExclVAT: -originalInvoice.totalExclVAT,
-        totalVatAmount: -originalInvoice.totalVatAmount,
-        totalInclVAT: -originalInvoice.totalInclVAT,
-
-        // Link to original invoice
-        creditedInvoiceId: originalInvoiceId,
-
-        notes: reason || `Kreditnota for faktura ${formatInvoiceNumberForDisplay(originalInvoice.invoiceNumber)} opprettet automatisk. customer: ${originalInvoice.customer?.customerName || ''}`,
-        voucherId: voucher.id,
-
-        invoiceLines: {
-          create: originalInvoice.invoiceLines.map(line => ({
-            productId: line.productId,
-            quantity: line.quantity, // Keep positive for display
-            pricePerUnit: line.pricePerUnit,
-            discountPercentage: line.discountPercentage,
-
-            // Negative amounts for credit note
-            subtotal: -line.subtotal,
-            discountAmount: -line.discountAmount,
-            lineTotal: -line.lineTotal,
-
-            productName: line.productName,
-            productNumber: line.productNumber,
-          }))
-        }
-      },
-      include: {
-        invoiceLines: {
-          include: {
-            product: {
-              include: {
-                ledgerAccount: true
-              }
-            }
-          }
-        }
-      }
-    });
-  });
-
-  // 3. Post credit note to ledger using the standard function
-  // The invoiceToLedgerPosting function will detect it's a credit note
-  // and automatically reverse the entries
-  if (!creditNote) {
-    throw new Error('Failed to create credit note');
-  }
+  if (!creditNote) throw new Error('Failed to create credit note');
   await invoiceToLedgerPosting(creditNote.id);
+  if (rebillInvoice) await invoiceToLedgerPosting(rebillInvoice.id);
 
   return {
     success: true,
     creditNote,
-    message: `Credit note created for invoice ${originalInvoice.invoiceNumber}`
+    rebillInvoice: rebillInvoice ?? null,
+    message: `Credit note created for invoice ${originalInvoice.invoiceNumber}${rebillInvoice ? `, rebill invoice ${rebillInvoice.invoiceNumber} created` : ''}`
   };
 }
 
@@ -487,9 +587,9 @@ export function parseVoucherNumber(voucherNumber: string) {
 * 1. DR 1500 (Accounts Receivable) / CR Sales Account (Revenue excl VAT)
 * 2. DR 1500 (Accounts Receivable) / CR 3200 (VAT Payable)
 */
-export async function invoiceToLedgerPosting(invoiceId: string,tx?: Prisma.TransactionClient) {
+export async function invoiceToLedgerPosting(invoiceId: string, tx?: Prisma.TransactionClient) {
   const txClient = tx || prisma;
-  
+
   const invoice = await txClient.invoice.findUnique({
     where: { id: invoiceId },
     include: {
@@ -554,51 +654,102 @@ export async function invoiceToLedgerPosting(invoiceId: string,tx?: Prisma.Trans
   const vatMap = new Map<string, number>();
 
   // await prisma.$transaction(async (tx) => {
-    // Update invoice status (only for normal invoices, not credit notes)
-    if (!isCreditNote) {
-      await txClient.invoice.update({
-        where: { id: invoice.id },
+  // Update invoice status (only for normal invoices, not credit notes)
+  if (!isCreditNote) {
+    await txClient.invoice.update({
+      where: { id: invoice.id },
+      data: {
+        status: InvoiceStatus.OUTSTANDING,
+        sentAt: invoice.sentAt || new Date()
+      }
+    });
+  }
+  const vatAccounts = new Map<number, string>();
+  const ledgerVatCodes = await prisma.ledgerAccount.findMany({ where: { accountNumber: { in: [2701, 2702, 2703, 2704, 2711, 2712, 2713, 2714] } } });
+  ledgerVatCodes.forEach(ledgerVatCode => {
+    vatAccounts.set(ledgerVatCode.accountNumber, ledgerVatCode.id);
+  });
+
+  for (const line of invoice.invoiceLines) {
+    const ledgerAccountId = line.product.ledgerAccount?.id;
+    let ledgerVatCodeId = vatPayable.id; // default 2701
+
+    const businessVat = line.product.ledgerAccount?.businessVatCodes
+      ?.find(bvc => bvc.businessId === invoice.businessId);
+
+    // console.log("BusinessVat>>>>>>>" + businessVat);
+
+    let settlementNumber;
+
+    if (businessVat?.vatCode?.settlementAccountNumber) {
+      settlementNumber = Number(
+        businessVat.vatCode.settlementAccountNumber
+      );
+    }
+    else {
+      settlementNumber = Number(line.product.ledgerAccount?.vatCode?.settlementAccountNumber);
+    }
+    ledgerVatCodeId =
+      vatAccounts.get(settlementNumber) || vatPayable.id;
+    if (!ledgerAccountId) {
+      throw new Error(`Product ${line.productName} has no linked ledger account`);
+    }
+
+    const lineTotal = Math.abs(parseFloat(line.lineTotal.toString()));
+
+    if (isCreditNote) {
+      // CREDIT NOTE: DR Sales Account / CR 1500 (REVERSED)
+      await txClient.ledgerEntry.create({
         data: {
-          status: InvoiceStatus.OUTSTANDING,
-          sentAt: invoice.sentAt || new Date()
+          entryType: LedgerEntryType.CREDIT_NOTE,
+          businessId,
+          invoiceId: invoice.id,
+          voucherId: invoice.voucherId ?? "",
+          documentDate,
+          postingDate,
+          debitAccountId: ledgerAccountId,
+          creditAccountId: accountsReceivable.id,
+          amount: lineTotal,
+          projectId: invoice.projectId,
+          departmentId: invoice.departmentId,
+          description: `(Kredit nota) (${formatInvoiceNumberForDisplay(invoice.invoiceNumber)}) (${invoice.customer?.customerName || 'customer'}) (${invoice.customer?.id || ''})`
+        }
+      });
+    } else {
+      // NORMAL INVOICE: DR 1500 / CR Sales Account
+      await txClient.ledgerEntry.create({
+        data: {
+          entryType: LedgerEntryType.INVOICE_POST,
+          businessId,
+          invoiceId: invoice.id,
+          voucherId: invoice.voucherId ?? "",
+          documentDate,
+          postingDate,
+          debitAccountId: accountsReceivable.id,
+          creditAccountId: ledgerAccountId,
+          amount: lineTotal,
+          projectId: invoice.projectId,
+          departmentId: invoice.departmentId,
+          description: `(Faktura nummer) (${formatInvoiceNumberForDisplay(invoice.invoiceNumber)}) (${invoice.customer?.customerName || 'customer'}) (${invoice.customer?.id || ''})`
         }
       });
     }
-    const vatAccounts = new Map<number, string>();
-    const ledgerVatCodes = await prisma.ledgerAccount.findMany({ where: { accountNumber: { in: [2701, 2702, 2703, 2704, 2711, 2712, 2713, 2714] } } });
-    ledgerVatCodes.forEach(ledgerVatCode => {
-      vatAccounts.set(ledgerVatCode.accountNumber, ledgerVatCode.id);
-    });
 
-    for (const line of invoice.invoiceLines) {
-      const ledgerAccountId = line.product.ledgerAccount?.id;
-      let ledgerVatCodeId = vatPayable.id; // default 2701
 
-      const businessVat = line.product.ledgerAccount?.businessVatCodes
-        ?.find(bvc => bvc.businessId === invoice.businessId);
+    // VAT Entry
+    const vatAmount = Math.abs(parseFloat((line.vatAmount || "0").toString()));
+    if (vatAmount > 0 && ledgerVatCodeId) {
+      const current = vatMap.get(ledgerVatCodeId) || 0;
+      const updatedAmount = current + vatAmount;
+      vatMap.set(ledgerVatCodeId, updatedAmount);
+    }
+  }
+  vatListPerLines = Array.from(vatMap.entries()).map(([ledgerVatCodeId, vatAmount]) => ({ ledgerVatCodeId, vatAmount }))
 
-      // console.log("BusinessVat>>>>>>>" + businessVat);
-
-      let settlementNumber;
-
-      if (businessVat?.vatCode?.settlementAccountNumber) {
-        settlementNumber = Number(
-          businessVat.vatCode.settlementAccountNumber
-        );
-      }
-      else {
-        settlementNumber = Number(line.product.ledgerAccount?.vatCode?.settlementAccountNumber);
-      }
-      ledgerVatCodeId =
-        vatAccounts.get(settlementNumber) || vatPayable.id;
-      if (!ledgerAccountId) {
-        throw new Error(`Product ${line.productName} has no linked ledger account`);
-      }
-
-      const lineTotal = Math.abs(parseFloat(line.lineTotal.toString()));
-
+  for (let vat of vatListPerLines) {
+    if (vat.vatAmount > 0) {
       if (isCreditNote) {
-        // CREDIT NOTE: DR Sales Account / CR 1500 (REVERSED)
+        // CREDIT NOTE: DR 2701 / CR 1500 (REVERSED)
         await txClient.ledgerEntry.create({
           data: {
             entryType: LedgerEntryType.CREDIT_NOTE,
@@ -607,16 +758,16 @@ export async function invoiceToLedgerPosting(invoiceId: string,tx?: Prisma.Trans
             voucherId: invoice.voucherId ?? "",
             documentDate,
             postingDate,
-            debitAccountId: ledgerAccountId,
+            debitAccountId: vat.ledgerVatCodeId,
             creditAccountId: accountsReceivable.id,
-            amount: lineTotal,
+            amount: vat.vatAmount,
             projectId: invoice.projectId,
             departmentId: invoice.departmentId,
             description: `(Kredit nota) (${formatInvoiceNumberForDisplay(invoice.invoiceNumber)}) (${invoice.customer?.customerName || 'customer'}) (${invoice.customer?.id || ''})`
           }
         });
       } else {
-        // NORMAL INVOICE: DR 1500 / CR Sales Account
+        // NORMAL INVOICE: DR 1500 / CR 2701
         await txClient.ledgerEntry.create({
           data: {
             entryType: LedgerEntryType.INVOICE_POST,
@@ -626,67 +777,16 @@ export async function invoiceToLedgerPosting(invoiceId: string,tx?: Prisma.Trans
             documentDate,
             postingDate,
             debitAccountId: accountsReceivable.id,
-            creditAccountId: ledgerAccountId,
-            amount: lineTotal,
+            creditAccountId: vat.ledgerVatCodeId,
+            amount: vat.vatAmount,
             projectId: invoice.projectId,
             departmentId: invoice.departmentId,
             description: `(Faktura nummer) (${formatInvoiceNumberForDisplay(invoice.invoiceNumber)}) (${invoice.customer?.customerName || 'customer'}) (${invoice.customer?.id || ''})`
           }
         });
       }
-
-
-      // VAT Entry
-      const vatAmount = Math.abs(parseFloat((line.vatAmount || "0").toString()));
-      if (vatAmount > 0 && ledgerVatCodeId) {
-        const current = vatMap.get(ledgerVatCodeId) || 0;
-        const updatedAmount = current + vatAmount;
-        vatMap.set(ledgerVatCodeId, updatedAmount);
-      }
     }
-    vatListPerLines = Array.from(vatMap.entries()).map(([ledgerVatCodeId, vatAmount]) => ({ ledgerVatCodeId, vatAmount }))
-
-    for (let vat of vatListPerLines) {
-      if (vat.vatAmount > 0) {
-        if (isCreditNote) {
-          // CREDIT NOTE: DR 2701 / CR 1500 (REVERSED)
-          await txClient.ledgerEntry.create({
-            data: {
-              entryType: LedgerEntryType.CREDIT_NOTE,
-              businessId,
-              invoiceId: invoice.id,
-              voucherId: invoice.voucherId ?? "",
-              documentDate,
-              postingDate,
-              debitAccountId: vat.ledgerVatCodeId,
-              creditAccountId: accountsReceivable.id,
-              amount: vat.vatAmount,
-              projectId: invoice.projectId,
-              departmentId: invoice.departmentId,
-              description: `(Kredit nota) (${formatInvoiceNumberForDisplay(invoice.invoiceNumber)}) (${invoice.customer?.customerName || 'customer'}) (${invoice.customer?.id || ''})`
-            }
-          });
-        } else {
-          // NORMAL INVOICE: DR 1500 / CR 2701
-          await txClient.ledgerEntry.create({
-            data: {
-              entryType: LedgerEntryType.INVOICE_POST,
-              businessId,
-              invoiceId: invoice.id,
-              voucherId: invoice.voucherId ?? "",
-              documentDate,
-              postingDate,
-              debitAccountId: accountsReceivable.id,
-              creditAccountId: vat.ledgerVatCodeId,
-              amount: vat.vatAmount,
-              projectId: invoice.projectId,
-              departmentId: invoice.departmentId,
-              description: `(Faktura nummer) (${formatInvoiceNumberForDisplay(invoice.invoiceNumber)}) (${invoice.customer?.customerName || 'customer'}) (${invoice.customer?.id || ''})`
-            }
-          });
-        }
-      }
-    }
+  }
   // });
 
   return {
@@ -1452,7 +1552,7 @@ export function getAccountType(accountNumber: number): AccountType {
     return AccountType.EQUITY;
   }
 
-  if(accountNumber >= 3000 && accountNumber <= 3900) {
+  if (accountNumber >= 3000 && accountNumber <= 3900) {
     return AccountType.INCOME; // 9000-9999 -> LIABILITIES (overrides general 9xxx INCOME rule)
   }
 

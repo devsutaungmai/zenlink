@@ -79,6 +79,7 @@ export interface ContactPerson {
     name: string
 }
 export interface InvoiceLine {
+    id?: string,
     productId: string;
     quantity: number;
     pricePerUnit: number;
@@ -89,6 +90,7 @@ export interface InvoiceLine {
     lineTotal?: number;
     productName?: string;
     productNumber?: string;
+    isCredited?: boolean;
 }
 export interface InvoiceFormData {
     invoiceNumber: string,
@@ -122,7 +124,7 @@ export default function CreateInvoicePage() {
     const [fetchingCustomer, setFetchingCustomer] = useState(false)
     const [fetchingLoading, setFetchingLoading] = useState(false);
     const [formData, setFormData] = useState<InvoiceFormData>({
-        invoiceNumber:'',
+        invoiceNumber: '',
         customerId: '',
         contactPersonId: '',
         deliveryAddress: '',
@@ -476,13 +478,69 @@ export default function CreateInvoicePage() {
     };
 
 
-    const handleSubmit = async (action: 'save' | 'print' | 'send_invoice_with_email' | 'send_invoice_without_email') => {
+    const handleSubmit = async (action: 'save' | 'print' | 'send_invoice_with_email' | 'send_invoice_without_email' | 'send_new_credit_note') => {
         setLoading(true)
         const invoiceStatus = action === "send_invoice_with_email" || action === "send_invoice_without_email" ? "SENT" : "DRAFT";
         let { seller, ...filteredData } = formData
         filteredData = { ...filteredData, status: invoiceStatus }
         // console.log("FormData ===>" + JSON.stringify(filteredData));
         try {
+            // Standalone credit note — separate flow
+            if (action === 'send_new_credit_note') {
+                if (!formData.customerId) {
+                    await Swal.fire({
+                        title: 'Validation Error',
+                        text: 'Please select a customer before creating a credit note',
+                        icon: 'warning',
+                        confirmButtonColor: '#31BCFF',
+                    })
+                    setLoading(false)
+                    return
+                }
+
+                if (formData.invoiceLines.length === 0 || formData.invoiceLines.every(l => !l.productId)) {
+                    await Swal.fire({
+                        title: 'Validation Error',
+                        text: 'Please add at least one order line',
+                        icon: 'warning',
+                        confirmButtonColor: '#31BCFF',
+                    })
+                    setLoading(false)
+                    return
+                }
+
+                const res = await fetch('/api/invoices/credit-note/standalone', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        customerId: formData.customerId,
+                        creditNoteDate: formData.sentAt,
+                        comment: formData.notes || '',
+                        lines: formData.invoiceLines.filter(l => l.productId), // only filled lines
+                        projectId: formData.projectId || null,
+                        departmentId: formData.departmentId || null,
+                        contactPersonId: formData.contactPersonId || null,
+                    }),
+                })
+
+                if (!res.ok) {
+                    const error = await res.json()
+                    throw new Error(error.error || 'Failed to create standalone credit note')
+                }
+
+                await Swal.fire({
+                    title: 'Success!',
+                    text: 'Standalone credit note created successfully',
+                    icon: 'success',
+                    confirmButtonColor: '#31BCFF',
+                })
+
+                router.push('/dashboard/invoices')
+                router.refresh()
+                return
+            }
+
+            //regular flow
             const res = await fetch('/api/invoices', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -991,6 +1049,17 @@ export default function CreateInvoicePage() {
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                                         </svg>
                                         <span className="text-gray-700 font-medium">Send Invoice </span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleSubmit('send_new_credit_note')}
+                                        disabled={loading}
+                                        className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                        </svg>
+                                        <span className="text-gray-700 font-medium">Create Credit Note </span>
                                     </button>
                                     <button
                                         type="button"

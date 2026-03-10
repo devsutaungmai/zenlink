@@ -6,7 +6,8 @@ import { InvoiceLine } from '@/app/dashboard/invoices/create/page'
 import { calculateInvoiceTotals } from '@/shared/lib/invoiceHelper'
 
 interface InvoiceSummaryCalculationProps {
-    invoiceLines: InvoiceLine[]
+    invoiceLines: InvoiceLine[],
+    isCreditNote?: boolean
 }
 
 interface Summary {
@@ -21,7 +22,7 @@ interface VatBreakdown {
     vatAmount: number
 }
 
-export default function InvoiceSummaryCalculation({ invoiceLines }: InvoiceSummaryCalculationProps) {
+export default function InvoiceSummaryCalculation({ invoiceLines, isCreditNote }: InvoiceSummaryCalculationProps) {
 
     // Use useMemo instead of useEffect + useState for better performance and reactivity
     const { summary, vatBreakdowns } = useMemo(() => {
@@ -33,19 +34,45 @@ export default function InvoiceSummaryCalculation({ invoiceLines }: InvoiceSumma
         // Group VAT amounts by percentage
         const vatMap = new Map<number, { netAmount: number, vatAmount: number }>();
 
+        // invoiceLines.forEach((line) => {
+        //     const { totalExclVAT, vatAmount, totalInclVAT } = calculateInvoiceTotals(
+        //         Number(line.quantity) || 0,
+        //         Number(line.pricePerUnit) || 0,
+        //         Number(line.discountPercentage) || 0,
+        //         Number(line.vatPercentage) || 0
+        //     );
+
+        //     finalNetAmount += totalExclVAT;
+        //     finalVatAmount += vatAmount;
+        //     finalTotalAmount += totalInclVAT;
+
+        //     // Group by VAT percentage
+        //     const vatKey = Number(line.vatPercentage) || 0;
+        //     const current = vatMap.get(vatKey) || { netAmount: 0, vatAmount: 0 };
+        //     vatMap.set(vatKey, {
+        //         netAmount: current.netAmount + totalExclVAT,
+        //         vatAmount: current.vatAmount + vatAmount
+        //     });
+        // });
+
         invoiceLines.forEach((line) => {
-            const { totalExclVAT, vatAmount, totalInclVAT } = calculateInvoiceTotals(
-                Number(line.quantity) || 0,
-                Number(line.pricePerUnit) || 0,
+            const { totalExclVAT: rawTotal, vatAmount: rawVat, totalInclVAT: rawInclVAT } = calculateInvoiceTotals(
+                Math.abs(Number(line.quantity)) || 0,
+                Math.abs(Number(line.pricePerUnit)) || 0,
                 Number(line.discountPercentage) || 0,
                 Number(line.vatPercentage) || 0
             );
+
+            const sign = (isCreditNote && line.id) ? -1 : 1;
+            const totalExclVAT = rawTotal * sign;
+            const vatAmount = rawVat * sign;
+            const totalInclVAT = rawInclVAT * sign;
 
             finalNetAmount += totalExclVAT;
             finalVatAmount += vatAmount;
             finalTotalAmount += totalInclVAT;
 
-            // Group by VAT percentage
+            // rest stays the same but use the signed values
             const vatKey = Number(line.vatPercentage) || 0;
             const current = vatMap.get(vatKey) || { netAmount: 0, vatAmount: 0 };
             vatMap.set(vatKey, {
@@ -95,7 +122,7 @@ export default function InvoiceSummaryCalculation({ invoiceLines }: InvoiceSumma
                                 <span className="text-gray-700">
                                     VAT ({breakdown.vatPercentage}%) of {breakdown.netAmount.toFixed(2)} - {breakdown.vatAmount.toFixed(2)}
                                 </span>
-                               
+
                             </div>
                         ))}
                     </div>

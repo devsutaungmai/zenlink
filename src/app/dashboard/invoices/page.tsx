@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon, Cog6ToothIcon, FunnelIcon, PaperAirplaneIcon, PaperClipIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon, Cog6ToothIcon, FunnelIcon, PaperAirplaneIcon, PaperClipIcon, CheckCircleIcon, CurrencyEuroIcon } from '@heroicons/react/24/outline'
 import { useTranslation } from 'react-i18next'
 import Swal from 'sweetalert2'
 import { useCurrency } from '@/shared/hooks/useCurrency'
@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/pagination"
 import { Decimal } from '@prisma/client/runtime/library'
 import { EmailService } from '@/shared/lib/notifications'
-import { Mail, MailIcon } from 'lucide-react'
+import { CreditCard, Mail, MailIcon } from 'lucide-react'
 import { exportToPDF, formatInvoiceNumberForDisplay, sendEmail } from '@/shared/lib/invoiceHelper'
 import { useRouter } from 'next/navigation'
 import { useColumnVisibility } from '@/hooks/use-column-visibility'
@@ -104,7 +104,6 @@ export default function InvoicesPage() {
     const [loadingCredit, setLoadingCredit] = useState<boolean>(false);
     const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] = useState<Invoice | null>(null)
     const [loadingPayment, setLoadingPayment] = useState<boolean>(false);
-
 
     // Pagination states
     const [currentPage, setCurrentPage] = useState(1)
@@ -946,17 +945,23 @@ export default function InvoicesPage() {
                                                             className="px-1 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2"
                                                             onClick={() => setSelectedInvoiceForPayment({ ...invoice, outstandingAmount })}
                                                         >
-                                                            <CheckCircleIcon className="h-4 w-4" />
+                                                            <CurrencyEuroIcon className="h-4 w-4" />
                                                         </button>
                                                     ) : null}
-                                                    {(invoice.status !== InvoiceStatus.CREDIT_NOTE && invoice.status !== InvoiceStatus.CREDITED) ?
+                                                    {/* {(invoice.status !== InvoiceStatus.CREDIT_NOTE && invoice.status !== InvoiceStatus.CREDITED) ?
                                                         <button
                                                             className="px-1 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2"
                                                             onClick={() => setSelectedInvoiceForCredit(invoice)}
                                                         >
                                                             <span className="text-base">✓</span>
-                                                        </button> : null}
+                                                        </button> : null
+                                                    } */}
 
+                                                    {(invoice.status !== InvoiceStatus.CREDIT_NOTE && invoice.status !== InvoiceStatus.CREDITED) ?
+                                                        <Link href={`/dashboard/invoices/${invoice.id}/edit?credit-note=true`} className="px-1 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2">
+                                                            <span className="text-base"><CreditCard className="h-4 w-4" /></span>
+                                                        </Link> : null
+                                                    } 
 
                                                     <button className="p-1 hover:bg-gray-200 rounded" onClick={() => handlePDf(invoice.id)}>
                                                         <PaperClipIcon className="h-4 w-4 text-gray-400" />
@@ -1247,7 +1252,7 @@ export default function InvoicesPage() {
                 loadingPayment={loadingPayment}
                 setLoadingPayment={setLoadingPayment}
             />}
-            {selectedInvoiceForCredit && (
+            {/* {selectedInvoiceForCredit && (
                 <CreditNoteDialog
                     open={true}
                     onOpenChange={(open) => {
@@ -1264,7 +1269,7 @@ export default function InvoicesPage() {
                     loadingCredit={loadingCredit}
                     setLoadingCredit={setLoadingCredit}
                 />
-            )}
+            )} */}
         </div>
     )
 }

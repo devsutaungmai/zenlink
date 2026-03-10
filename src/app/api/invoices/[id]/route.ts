@@ -44,13 +44,15 @@ export async function GET(
         },
         invoiceLines: {
           select: {
+            id: true,
             productId: true,
             quantity: true,
             pricePerUnit: true,
             discountPercentage: true,
             vatPercentage: true,
             productName: true,
-            productNumber: true
+            productNumber: true,
+            isCredited: true
         }
       }
     }

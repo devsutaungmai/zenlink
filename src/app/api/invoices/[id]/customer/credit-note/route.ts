@@ -17,9 +17,9 @@ export async function POST(request: NextRequest,
         }
 
         const body = await request.json();
-        const { creditNoteDate, comment, amount } = body ?? {};
+        const { creditNoteDate, comment, creditLineIds, rebillLines } = body ?? {};
 
-        if ( !creditNoteDate || amount == null) {
+        if (!creditNoteDate || !creditLineIds?.length) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
@@ -28,17 +28,16 @@ export async function POST(request: NextRequest,
             return NextResponse.json({ error: 'Invalid creditNoteDate' }, { status: 400 });
         }
 
-        const numericAmount = Number(amount);
-        if (!isFinite(numericAmount) || numericAmount <= 0) {
-            return NextResponse.json({ error: 'Invalid amount' }, { status: 400 });
-        }
+
 
         const result = await createCreditNote({
-                originalInvoiceId: originalInvoiceId,
-                reason: comment || "No reason provided",
-                creditNoteDate: parsedDate,
-                businessId: businessId
-            });
+            originalInvoiceId: originalInvoiceId,
+            reason: comment || "No reason provided",
+            creditNoteDate: parsedDate,
+            businessId: businessId,
+            creditLineIds: creditLineIds,
+            rebillLines: rebillLines || false
+        });
 
 
         return NextResponse.json(result, { status: 201 });
