@@ -107,8 +107,11 @@ export async function exportToPDF(invoiceId: string) {
 
       return true
     } else {
-      console.error('Failed to export PDF')
-      return false
+       const error = await response.json()
+            console.error('Failed to export PDF:', error)
+            return false
+      // console.error('Failed to export PDF')
+      // return false
     }
   } catch (error) {
     console.error('Error exporting PDF:', error)
