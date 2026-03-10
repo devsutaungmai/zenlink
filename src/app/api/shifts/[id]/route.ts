@@ -59,6 +59,8 @@ export async function GET(
         }
       }
     })
+
+    console.log('Fetched shift:', shift)
     
     if (!shift) {
       return NextResponse.json(

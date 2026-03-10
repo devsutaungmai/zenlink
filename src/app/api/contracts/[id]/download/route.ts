@@ -31,6 +31,13 @@ export async function GET(
         employeeGroup: true,
         contractTemplate: true,
         contractPerson: true,
+        adminSignedBy: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+          }
+        },
       },
     })
 
@@ -223,36 +230,110 @@ export async function GET(
     // Signature Section
     checkNewPage(40)
 
-    if (contract.signedStatus && contract.signedStatus !== 'UNSIGNED') {
-      // Signed contract
+    // Dual signature section
+    const signatureWidth = (contentWidth - 20) / 2
+    
+    // Admin Signature Section
+    pdf.setFontSize(11)
+    pdf.setFont('helvetica', 'bold')
+    pdf.setTextColor(0, 0, 0)
+    pdf.text('Employer Signature', margin, yPos)
+    yPos += 8
+    
+    if ((contract as any).adminSignedAt) {
       pdf.setFillColor(236, 253, 245)
-      pdf.rect(margin, yPos, contentWidth, 30, 'F')
-
-      pdf.setFontSize(12)
-      pdf.setFont('helvetica', 'bold')
-      pdf.setTextColor(6, 95, 70)
-      pdf.text('Contract Signature Status', margin + 5, yPos + 10)
-
-      pdf.setFontSize(10)
+      pdf.rect(margin, yPos, signatureWidth, 35, 'F')
+      
+      // Parse and display signature typography
+      let adminSignatureText = ''
+      try {
+        const sigData = JSON.parse((contract as any).adminSignatureData || '{}')
+        adminSignatureText = sigData.signature || ''
+      } catch (e) {}
+      
+      if (adminSignatureText) {
+        pdf.setFontSize(16)
+        pdf.setFont('times', 'italic')
+        pdf.setTextColor(0, 0, 0)
+        pdf.text(adminSignatureText, margin + 5, yPos + 12)
+      }
+      
+      pdf.setFontSize(9)
       pdf.setFont('helvetica', 'normal')
       pdf.setTextColor(4, 120, 87)
-      const signedMethod = contract.signedStatus === 'SIGNED_PAPER' ? 'on paper' : 'electronically'
-      const signedDate = contract.signedAt ? ' on ' + new Date(contract.signedAt).toLocaleDateString() : ''
-      const signedText = 'This contract has been signed ' + signedMethod + signedDate + '.'
-      pdf.text(signedText, margin + 5, yPos + 20)
-      yPos += 35
+      const adminName = (contract as any).adminSignedBy 
+        ? `${(contract as any).adminSignedBy.firstName} ${(contract as any).adminSignedBy.lastName}`
+        : 'Admin'
+      pdf.text(`Signed by: ${adminName}`, margin + 5, yPos + 22)
+      pdf.text(`Date: ${new Date((contract as any).adminSignedAt).toLocaleDateString()}`, margin + 5, yPos + 30)
     } else {
-      // Unsigned - add signature lines
-      const signatureWidth = (contentWidth - 20) / 2
       pdf.setDrawColor(0, 0, 0)
-      pdf.line(margin, yPos, margin + signatureWidth, yPos)
-      pdf.line(margin + signatureWidth + 20, yPos, pageWidth - margin, yPos)
-
+      pdf.line(margin, yPos + 20, margin + signatureWidth, yPos + 20)
       pdf.setFontSize(9)
       pdf.setTextColor(107, 114, 128)
-      pdf.text('Employee Signature', margin, yPos + 5)
-      pdf.text('Date', margin + signatureWidth + 20, yPos + 5)
-      yPos += 15
+      pdf.text('Signature', margin, yPos + 25)
+      pdf.text('Date', margin + signatureWidth - 30, yPos + 25)
+    }
+    
+    // Employee Signature Section
+    pdf.setFontSize(11)
+    pdf.setFont('helvetica', 'bold')
+    pdf.setTextColor(0, 0, 0)
+    pdf.text('Employee Signature', margin + signatureWidth + 20, yPos - 8)
+    
+    if ((contract as any).employeeSignedAt) {
+      pdf.setFillColor(236, 253, 245)
+      pdf.rect(margin + signatureWidth + 20, yPos, signatureWidth, 35, 'F')
+      
+      // Parse and display signature typography
+      let employeeSignatureText = ''
+      try {
+        const sigData = JSON.parse((contract as any).employeeSignatureData || '{}')
+        employeeSignatureText = sigData.signature || ''
+      } catch (e) {}
+      
+      if (employeeSignatureText) {
+        pdf.setFontSize(16)
+        pdf.setFont('times', 'italic')
+        pdf.setTextColor(0, 0, 0)
+        pdf.text(employeeSignatureText, margin + signatureWidth + 25, yPos + 12)
+      }
+      
+      pdf.setFontSize(9)
+      pdf.setFont('helvetica', 'normal')
+      pdf.setTextColor(4, 120, 87)
+      const employeeName = `${contract.employee.firstName} ${contract.employee.lastName}`
+      pdf.text(`Signed by: ${employeeName}`, margin + signatureWidth + 25, yPos + 22)
+      pdf.text(`Date: ${new Date((contract as any).employeeSignedAt).toLocaleDateString()}`, margin + signatureWidth + 25, yPos + 30)
+    } else {
+      pdf.setDrawColor(0, 0, 0)
+      pdf.line(margin + signatureWidth + 20, yPos + 20, pageWidth - margin, yPos + 20)
+      pdf.setFontSize(9)
+      pdf.setTextColor(107, 114, 128)
+      pdf.text('Signature', margin + signatureWidth + 20, yPos + 25)
+      pdf.text('Date', pageWidth - margin - 30, yPos + 25)
+    }
+    
+    yPos += 45
+    
+    // Status indicator
+    if (contract.signedStatus === 'SIGNED_PAPER' || contract.signedStatus === 'SIGNED_ELECTRONIC') {
+      pdf.setFillColor(220, 252, 231)
+      pdf.rect(margin, yPos, contentWidth, 15, 'F')
+      pdf.setFontSize(10)
+      pdf.setFont('helvetica', 'bold')
+      pdf.setTextColor(22, 101, 52)
+      const method = contract.signedStatus === 'SIGNED_PAPER' ? 'on paper' : 'electronically'
+      pdf.text(`Contract fully signed ${method}`, margin + 5, yPos + 10)
+      yPos += 20
+    } else if (contract.signedStatus === 'PENDING_EMPLOYEE_SIGNATURE') {
+      pdf.setFillColor(254, 249, 195)
+      pdf.rect(margin, yPos, contentWidth, 15, 'F')
+      pdf.setFontSize(10)
+      pdf.setFont('helvetica', 'bold')
+      pdf.setTextColor(133, 77, 14)
+      pdf.text('Awaiting employee signature', margin + 5, yPos + 10)
+      yPos += 20
     }
 
     // Footer

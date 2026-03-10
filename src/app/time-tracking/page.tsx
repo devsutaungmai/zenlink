@@ -223,13 +223,12 @@ export default function TimeTrackingPage() {
       }
 
       const today = new Date()
-      const startDate = new Date(today)
-      startDate.setHours(0, 0, 0, 0)
-      const endDate = new Date(today)
-      endDate.setHours(23, 59, 59, 999)
+      const year = today.getFullYear()
+      const month = String(today.getMonth() + 1).padStart(2, '0')
+      const day = String(today.getDate()).padStart(2, '0')
+      const todayDateString = `${year}-${month}-${day}`
       
-      const todayDateString = startDate.toISOString().split('T')[0]
-      let url = `/api/time-tracking/shifts?businessName=${encodeURIComponent(businessName)}&startDate=${todayDateString}&endDate=${endDate.toISOString().split('T')[0]}`
+      let url = `/api/time-tracking/shifts?businessName=${encodeURIComponent(businessName)}&startDate=${todayDateString}&endDate=${todayDateString}`
       
       const storedProfile = localStorage.getItem('punchClockProfile')
       if (storedProfile) {

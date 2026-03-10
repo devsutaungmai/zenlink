@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getCurrentUserOrEmployee } from "@/shared/lib/auth";
+import { getCurrentEmployee, getCurrentUser, getCurrentUserOrEmployee } from "@/shared/lib/auth";
 import { prisma } from "@/shared/lib/prisma";
 
 // Get accessible department IDs based on user's role
@@ -66,7 +66,24 @@ async function getAccessibleDepartmentIds(auth: any): Promise<string[] | null> {
 
 export async function GET(req: Request) {
   try {
-    const auth = await getCurrentUserOrEmployee();
+    const { searchParams } = new URL(req.url);
+    const employeeId = searchParams.get('employeeId');
+    const preferEmployee = searchParams.get('preferEmployee') === 'true';
+
+    let auth: any = null;
+
+    if (preferEmployee) {
+      const employee = await getCurrentEmployee();
+      if (employee) {
+        auth = { type: 'employee', data: employee };
+      } else {
+        const user = await getCurrentUser();
+        if (user) auth = { type: 'user', data: user };
+      }
+    } else {
+      auth = await getCurrentUserOrEmployee();
+    }
+
     if (!auth) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -81,15 +98,27 @@ export async function GET(req: Request) {
       businessId = (auth.data as any).user.businessId;
     }
 
-    const { searchParams } = new URL(req.url);
-    const employeeId = searchParams.get('employeeId');
+    const isEmployeeSession = auth.type === 'employee' || ((auth.data as any).role === 'EMPLOYEE');
+    let currentEmployeeId: string | null = null;
+
+    if (auth.type === 'employee') {
+      currentEmployeeId = (auth.data as any).id;
+    } else if ((auth.data as any).role === 'EMPLOYEE') {
+      const employee = await prisma.employee.findFirst({
+        where: { userId: (auth.data as any).id },
+        select: { id: true },
+      });
+      currentEmployeeId = employee?.id ?? null;
+    }
 
     // Get accessible department IDs
     const accessibleDepartmentIds = await getAccessibleDepartmentIds(auth);
 
     const whereClause: any = { businessId };
     
-    if (employeeId) {
+    if (isEmployeeSession && currentEmployeeId) {
+      whereClause.employeeId = currentEmployeeId;
+    } else if (employeeId) {
       whereClause.employeeId = employeeId;
     }
 

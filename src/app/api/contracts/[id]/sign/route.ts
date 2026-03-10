@@ -17,21 +17,26 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     }
 
     let businessId: string;
-    let signedBy: string;
+    let signerId: string;
+    let isAdmin = false;
+    let employeeId: string | null = null;
+
     if (auth.type === 'user') {
       businessId = (auth.data as any).businessId;
-      signedBy = (auth.data as any).id;
+      signerId = (auth.data as any).id;
+      isAdmin = true;
     } else {
       businessId = (auth.data as any).user.businessId;
-      signedBy = (auth.data as any).id;
+      signerId = (auth.data as any).id;
+      employeeId = (auth.data as any).id;
     }
 
-    console.log('[CONTRACT_SIGN] Auth details:', { businessId, signedBy, authType: auth.type });
+    console.log('[CONTRACT_SIGN] Auth details:', { businessId, signerId, isAdmin });
 
     const requestBody = await req.json();
     console.log('[CONTRACT_SIGN] Request body:', requestBody);
     
-    const { signingType, signatureData } = requestBody;
+    const { signingType, signatureData, signerRole } = requestBody;
 
     // Validate signing type
     if (!['MANUAL', 'ELECTRONIC'].includes(signingType)) {
@@ -42,11 +47,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       );
     }
 
-    // Get the contract
+    // Get the contract with employee info
     const contract = await prisma.contract.findFirst({
       where: {
         id: id,
         businessId
+      },
+      include: {
+        employee: true,
+        contractTemplate: true,
       }
     });
 
@@ -60,19 +69,102 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
     console.log('[CONTRACT_SIGN] Found contract:', contract.id, 'current status:', contract.signedStatus);
 
-    // Update contract with signing information
-    const signedStatus = signingType === 'MANUAL' ? 'SIGNED_PAPER' : 'SIGNED_ELECTRONIC';
-    
-    console.log('[CONTRACT_SIGN] Updating contract with status:', signedStatus);
+    // Determine who is signing: admin or employee
+    const isAdminSigning = signerRole === 'admin' || (isAdmin && !signerRole);
+    const isEmployeeSigning = signerRole === 'employee' || (!isAdmin && !signerRole);
+
+    // Validate employee can only sign their own contract
+    if (isEmployeeSigning && employeeId && contract.employeeId !== employeeId) {
+      return NextResponse.json(
+        { error: 'You can only sign your own contract' },
+        { status: 403 }
+      );
+    }
+
+    // Validate employee can only sign after admin has signed
+    if (isEmployeeSigning && !contract.adminSignedAt) {
+      return NextResponse.json(
+        { error: 'Contract must be signed by admin first' },
+        { status: 400 }
+      );
+    }
+
+    let updateData: any = {};
+    let newStatus: string;
+
+    if (isAdminSigning) {
+      updateData = {
+        adminSignatureData: signatureData ? JSON.stringify(signatureData) : null,
+        adminSignedAt: new Date(),
+        adminSignedById: signerId,
+        signedStatus: 'PENDING_EMPLOYEE_SIGNATURE',
+      };
+      newStatus = 'PENDING_EMPLOYEE_SIGNATURE';
+
+      // Create notification for employee to sign
+      await prisma.notification.create({
+        data: {
+          type: 'CONTRACT_PENDING_SIGNATURE',
+          title: 'Contract Ready for Signature',
+          message: `Your contract "${contract.contractTemplate.name}" is ready for your signature.`,
+          recipientId: contract.employeeId,
+          contractId: contract.id,
+          data: {
+            contractId: contract.id,
+            templateName: contract.contractTemplate.name,
+          },
+        },
+      });
+
+      console.log('[CONTRACT_SIGN] Notification created for employee:', contract.employeeId);
+
+    } else if (isEmployeeSigning) {
+      const finalStatus = signingType === 'MANUAL' ? 'SIGNED_PAPER' : 'SIGNED_ELECTRONIC';
+      updateData = {
+        employeeSignatureData: signatureData ? JSON.stringify(signatureData) : null,
+        employeeSignedAt: new Date(),
+        signedStatus: finalStatus,
+        signedAt: new Date(),
+        signedBy: signerId,
+        signatureData: signatureData ? JSON.stringify(signatureData) : null,
+      };
+      newStatus = finalStatus;
+
+      // Optionally notify admin that employee has signed
+      const adminUser = await prisma.user.findFirst({
+        where: { 
+          businessId,
+          role: { in: ['ADMIN', 'SUPER_ADMIN'] }
+        }
+      });
+
+      if (adminUser) {
+        await prisma.notification.create({
+          data: {
+            type: 'CONTRACT_SIGNED',
+            title: 'Contract Signed',
+            message: `${contract.employee.firstName} ${contract.employee.lastName} has signed their contract.`,
+            recipientUserId: adminUser.id,
+            contractId: contract.id,
+            data: {
+              contractId: contract.id,
+              employeeName: `${contract.employee.firstName} ${contract.employee.lastName}`,
+            },
+          },
+        });
+      }
+    } else {
+      return NextResponse.json(
+        { error: 'Invalid signer role' },
+        { status: 400 }
+      );
+    }
+
+    console.log('[CONTRACT_SIGN] Updating contract with status:', newStatus);
     
     const updatedContract = await prisma.contract.update({
       where: { id: id },
-      data: {
-        signedStatus,
-        signatureData: signatureData ? JSON.stringify(signatureData) : null,
-        signedAt: new Date(),
-        signedBy,
-      },
+      data: updateData,
       include: {
         employee: {
           include: {
@@ -88,7 +180,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     console.log('[CONTRACT_SIGN] Contract updated successfully:', {
       id: updatedContract.id,
       signedStatus: updatedContract.signedStatus,
-      signedAt: updatedContract.signedAt
+      adminSignedAt: updatedContract.adminSignedAt,
+      employeeSignedAt: updatedContract.employeeSignedAt
     });
 
     return NextResponse.json(updatedContract);

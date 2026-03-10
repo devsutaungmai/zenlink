@@ -24,6 +24,7 @@ model User {
   assignedRole        Role?                @relation(fields: [roleId], references: [id])
   passwordResetTokens PasswordResetToken[]
   notifications       Notification[]       @relation("NotificationRecipientUser")
+  signedContracts     Contract[]           @relation("ContractAdminSigner")
 
   @@index([roleId])
 }
@@ -265,25 +266,34 @@ model EmployeeGroup {
 }
 
 model Contract {
-  id                 String           @id @default(cuid())
-  employeeId         String
-  employeeGroupId    String
-  contractTemplateId String
-  startDate          DateTime
-  endDate            DateTime?
-  contractPersonId   String
-  businessId         String
-  signedStatus       String?          @default("UNSIGNED")
-  signatureData      String?
-  signedAt           DateTime?
-  signedBy           String?
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
-  business           Business         @relation(fields: [businessId], references: [id])
-  contractPerson     Employee         @relation("ContractPerson", fields: [contractPersonId], references: [id])
-  contractTemplate   ContractTemplate @relation(fields: [contractTemplateId], references: [id])
-  employeeGroup      EmployeeGroup    @relation(fields: [employeeGroupId], references: [id])
-  employee           Employee         @relation(fields: [employeeId], references: [id])
+  id                      String           @id @default(cuid())
+  employeeId              String
+  employeeGroupId         String
+  contractTemplateId      String
+  startDate               DateTime
+  endDate                 DateTime?
+  contractPersonId        String
+  businessId              String
+  signedStatus            String?          @default("UNSIGNED")
+  signatureData           String?
+  signedAt                DateTime?
+  signedBy                String?
+  adminSignatureData      String?
+  adminSignedAt           DateTime?
+  adminSignedById         String?
+  employeeSignatureData   String?
+  employeeSignedAt        DateTime?
+  createdAt               DateTime         @default(now())
+  updatedAt               DateTime         @updatedAt
+  business                Business         @relation(fields: [businessId], references: [id])
+  contractPerson          Employee         @relation("ContractPerson", fields: [contractPersonId], references: [id])
+  contractTemplate        ContractTemplate @relation(fields: [contractTemplateId], references: [id])
+  employeeGroup           EmployeeGroup    @relation(fields: [employeeGroupId], references: [id])
+  employee                Employee         @relation(fields: [employeeId], references: [id])
+  adminSignedBy           User?            @relation("ContractAdminSigner", fields: [adminSignedById], references: [id])
+  notifications           Notification[]
+
+  @@index([adminSignedById])
 }
 
 model Department {
@@ -665,6 +675,7 @@ model Notification {
   recipientUserId String?
   shiftExchangeId String?
   shiftId         String?
+  contractId      String?
   isRead          Boolean          @default(false)
   readAt          DateTime?
   emailSent       Boolean          @default(false)
@@ -679,10 +690,12 @@ model Notification {
   recipientUser   User?            @relation("NotificationRecipientUser", fields: [recipientUserId], references: [id])
   shiftExchange   ShiftExchange?   @relation(fields: [shiftExchangeId], references: [id])
   shift           Shift?           @relation(fields: [shiftId], references: [id])
+  contract        Contract?        @relation(fields: [contractId], references: [id])
 
   @@index([recipientId, isRead])
   @@index([recipientUserId, isRead])
   @@index([createdAt])
+  @@index([contractId])
 }
 
 model PunchClockAccessSettings {
@@ -1587,6 +1600,8 @@ enum NotificationType {
   SHIFT_REMINDER
   SCHEDULE_UPDATED
   SYSTEM_ANNOUNCEMENT
+  CONTRACT_PENDING_SIGNATURE
+  CONTRACT_SIGNED
 }
 
 enum LogoPosition {
