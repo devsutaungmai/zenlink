@@ -28,8 +28,6 @@ export async function POST(request: NextRequest,
             return NextResponse.json({ error: 'Invalid creditNoteDate' }, { status: 400 });
         }
 
-
-
         const result = await createCreditNote({
             originalInvoiceId: originalInvoiceId,
             reason: comment || "No reason provided",
