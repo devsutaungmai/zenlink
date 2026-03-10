@@ -52,27 +52,33 @@ export async function GET(request: Request) {
     const parsedDepartmentIds = departmentIds ? JSON.parse(departmentIds) : null
 
     const whereClause: any = {
-      employee: {
-        user: {
-          businessId: business.id
-        }
-      }
+      isPublished: true,
+      OR: [
+        { employee: { user: { businessId: business.id } } },
+        { department: { businessId: business.id } },
+        { employeeGroup: { businessId: business.id } }
+      ]
     }
 
     if (parsedDepartmentIds && Array.isArray(parsedDepartmentIds) && parsedDepartmentIds.length > 0) {
-      whereClause.employee.OR = [
-        { departmentId: { in: parsedDepartmentIds } },
-        { departments: { some: { departmentId: { in: parsedDepartmentIds } } } }
+      whereClause.AND = [
+        {
+          OR: [
+            { employee: { departmentId: { in: parsedDepartmentIds } } },
+            { employee: { departments: { some: { departmentId: { in: parsedDepartmentIds } } } } },
+            { departmentId: { in: parsedDepartmentIds } }
+          ]
+        }
       ]
     }
 
     if (startDate || endDate) {
       whereClause.date = {}
       if (startDate) {
-        whereClause.date.gte = new Date(startDate)
+        whereClause.date.gte = new Date(`${startDate}T00:00:00.000Z`)
       }
       if (endDate) {
-        whereClause.date.lte = new Date(endDate)
+        whereClause.date.lte = new Date(`${endDate}T23:59:59.999Z`)
       }
     }
 

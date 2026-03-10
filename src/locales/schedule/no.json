@@ -48,7 +48,8 @@
   },
   "shift_card": {
     "unassigned": "Ikke tildelt",
-    "active": "Aktiv"
+    "active": "Aktiv",
+    "draft": "Utkast"
   },
   "messages": {
     "success_created": "Skift opprettet!",

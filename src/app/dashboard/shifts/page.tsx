@@ -593,12 +593,18 @@ export default function ShiftsPage() {
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            shift.approved 
-                              ? 'bg-green-100 text-green-800 border-green-200' 
-                              : 'bg-blue-100 text-blue-800 border-blue-200'
-                          } border`}>
-                            {shift.approved ? t('shifts.status.approved') : 'In Progress'}
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
+                            shift.approved
+                              ? 'bg-green-100 text-green-800 border-green-200'
+                              : !(shift as any).isPublished
+                                ? 'bg-gray-100 text-gray-600 border-gray-200'
+                                : 'bg-blue-100 text-blue-800 border-blue-200'
+                          }`}>
+                            {shift.approved
+                              ? t('shifts.status.approved')
+                              : !(shift as any).isPublished
+                                ? 'Draft'
+                                : 'Published'}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">

@@ -121,11 +121,23 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const existingAttendance = await prisma.attendance.findFirst({
-      where: {
-        employeeId,
-        punchOutTime: null
+    // If a shiftId is provided, check for an existing open attendance for that exact shift first
+    if (shiftId) {
+      const existingForShift = await prisma.attendance.findFirst({
+        where: { employeeId, shiftId, punchOutTime: null },
+        include: {
+          employee: { select: { firstName: true, lastName: true, employeeNo: true } },
+          shift: true
+        }
+      })
+      if (existingForShift) {
+        return NextResponse.json({ message: 'Punched in successfully', attendance: existingForShift })
       }
+    }
+
+    // Check for any other open attendance (no punch out)
+    const existingAttendance = await prisma.attendance.findFirst({
+      where: { employeeId, punchOutTime: null }
     })
 
     if (existingAttendance) {

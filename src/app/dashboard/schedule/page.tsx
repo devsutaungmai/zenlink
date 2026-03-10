@@ -75,6 +75,7 @@ export default function SchedulePage() {
   const [employeeGroups, setEmployeeGroups] = useState<EmployeeGroup[]>([])
   const [shifts, setShifts] = useState<ShiftWithRelations[]>([])
   const [pendingShiftIds, setPendingShiftIds] = useState<Set<string>>(new Set())
+  const [selectedShiftIds, setSelectedShiftIds] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<'week' | 'two-week' | 'day' | 'month'>('week')
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
@@ -163,7 +164,8 @@ export default function SchedulePage() {
   // Filter shifts based on selected department, category, function, and filters
   const filteredShifts = useMemo(() => {
     return shifts.filter((shift: any) => {
-      if (selectedDepartmentId && shift.departmentId !== selectedDepartmentId) {
+      // In functions/groups views, don't filter by department — show shifts under their function/group
+      if (scheduleViewType !== 'functions' && scheduleViewType !== 'groups' && selectedDepartmentId && shift.departmentId !== selectedDepartmentId) {
         return false
       }
       if (selectedCategoryId && shift.function?.categoryId !== selectedCategoryId) {
@@ -176,8 +178,10 @@ export default function SchedulePage() {
         return false
       }
       if (filters.employeeGroupIds.length > 0) {
+        const shiftGroupId = (shift as any).employeeGroupId
         const employee = employees.find(emp => emp.id === shift.employeeId)
-        if (!employee || !employee.employeeGroupId || !filters.employeeGroupIds.includes(employee.employeeGroupId)) {
+        const effectiveGroupId = shiftGroupId || employee?.employeeGroupId
+        if (!effectiveGroupId || !filters.employeeGroupIds.includes(effectiveGroupId)) {
           return false
         }
       }
@@ -196,7 +200,7 @@ export default function SchedulePage() {
       
       return true
     })
-  }, [shifts, filters, employees, selectedDepartmentId, selectedCategoryId, selectedFunctionId])
+  }, [shifts, filters, employees, selectedDepartmentId, selectedCategoryId, selectedFunctionId, scheduleViewType])
 
   // Filter categories based on selected department
   const filteredCategories = useMemo(() => {
@@ -1183,6 +1187,122 @@ export default function SchedulePage() {
     }
   }, [])
 
+  const handlePublishShift = useCallback(async (shiftId: string) => {
+    setShifts(prev => prev.map(s => s.id === shiftId ? { ...s, isPublished: true } as any : s))
+    try {
+      const res = await fetch(`/api/shifts/${shiftId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'publish' }),
+      })
+      if (!res.ok) throw new Error('Failed to publish shift')
+      const updated = await res.json()
+      setShifts(prev => prev.map(s => s.id === shiftId ? { ...s, ...updated } : s))
+      Swal.fire({ text: 'Shift published', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, timerProgressBar: true, customClass: { popup: 'swal-toast-wide' } })
+    } catch (error) {
+      console.error('Error publishing shift:', error)
+      setShifts(prev => prev.map(s => s.id === shiftId ? { ...s, isPublished: false } as any : s))
+      Swal.fire({ text: 'Failed to publish shift', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true, customClass: { popup: 'swal-toast-wide' } })
+    }
+  }, [])
+
+  const handleToggleShiftSelection = useCallback((shiftId: string) => {
+    setSelectedShiftIds(prev => {
+      const next = new Set(prev)
+      if (next.has(shiftId)) next.delete(shiftId)
+      else next.add(shiftId)
+      return next
+    })
+  }, [])
+
+  const handleBulkPublishSelected = useCallback(async () => {
+    const ids = Array.from(selectedShiftIds)
+    if (ids.length === 0) return
+    setShifts(prev => prev.map(s => ids.includes(s.id) ? { ...s, isPublished: true } as any : s))
+    try {
+      const res = await fetch('/api/shifts/bulk-publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shiftIds: ids }),
+      })
+      if (!res.ok) throw new Error('Failed to publish')
+      const data = await res.json()
+      setSelectedShiftIds(new Set())
+      Swal.fire({ text: `${data.updated} shift${data.updated !== 1 ? 's' : ''} published`, toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, timerProgressBar: true, customClass: { popup: 'swal-toast-wide' } })
+    } catch {
+      setShifts(prev => prev.map(s => ids.includes(s.id) ? { ...s, isPublished: false } as any : s))
+      Swal.fire({ text: 'Failed to publish shifts', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true, customClass: { popup: 'swal-toast-wide' } })
+    }
+  }, [selectedShiftIds])
+
+  const handleBulkApproveSelected = useCallback(async () => {
+    const ids = Array.from(selectedShiftIds)
+    if (ids.length === 0) return
+    setShifts(prev => prev.map(s => ids.includes(s.id) ? { ...s, approved: true } as any : s))
+    try {
+      await Promise.all(ids.map(id =>
+        fetch(`/api/shifts/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'approve' }),
+        })
+      ))
+      setSelectedShiftIds(new Set())
+      Swal.fire({ text: `${ids.length} shift${ids.length !== 1 ? 's' : ''} approved`, toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, timerProgressBar: true, customClass: { popup: 'swal-toast-wide' } })
+    } catch {
+      setShifts(prev => prev.map(s => ids.includes(s.id) ? { ...s, approved: false } as any : s))
+      Swal.fire({ text: 'Failed to approve shifts', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true, customClass: { popup: 'swal-toast-wide' } })
+    }
+  }, [selectedShiftIds])
+
+  const handleBulkDeleteSelected = useCallback(async () => {
+    const ids = Array.from(selectedShiftIds)
+    if (ids.length === 0) return
+    const confirm = await Swal.fire({
+      title: `Delete ${ids.length} shift${ids.length !== 1 ? 's' : ''}?`,
+      text: 'This cannot be undone.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      confirmButtonText: 'Delete',
+    })
+    if (!confirm.isConfirmed) return
+    setShifts(prev => prev.filter(s => !ids.includes(s.id)))
+    try {
+      await Promise.all(ids.map(id =>
+        fetch(`/api/shifts/${id}`, { method: 'DELETE' })
+      ))
+      setSelectedShiftIds(new Set())
+      Swal.fire({ text: `${ids.length} shift${ids.length !== 1 ? 's' : ''} deleted`, toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, timerProgressBar: true, customClass: { popup: 'swal-toast-wide' } })
+    } catch {
+      fetchShifts()
+      Swal.fire({ text: 'Failed to delete some shifts', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true, customClass: { popup: 'swal-toast-wide' } })
+    }
+  }, [selectedShiftIds])
+
+  const handleBulkPublishDrafts = useCallback(async () => {
+    const draftShiftIds = filteredShifts.filter((s: any) => !s.isPublished).map(s => s.id)
+    if (draftShiftIds.length === 0) {
+      Swal.fire({ text: 'No draft shifts to publish', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, timerProgressBar: true, customClass: { popup: 'swal-toast-wide' } })
+      return
+    }
+    setShifts(prev => prev.map(s => draftShiftIds.includes(s.id) ? { ...s, isPublished: true } as any : s))
+    try {
+      const res = await fetch('/api/shifts/bulk-publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shiftIds: draftShiftIds }),
+      })
+      if (!res.ok) throw new Error('Failed to bulk publish')
+      const data = await res.json()
+      Swal.fire({ text: `${data.updated} shift${data.updated !== 1 ? 's' : ''} published`, toast: true, position: 'top-end', showConfirmButton: false, timer: 2500, timerProgressBar: true, customClass: { popup: 'swal-toast-wide' } })
+    } catch (error) {
+      console.error('Error bulk publishing shifts:', error)
+      setShifts(prev => prev.map(s => draftShiftIds.includes(s.id) ? { ...s, isPublished: false } as any : s))
+      Swal.fire({ text: 'Failed to publish shifts', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true, customClass: { popup: 'swal-toast-wide' } })
+    }
+  }, [filteredShifts])
+
   const calculateShiftHours = (startTime: string, endTime: string): number => {
     const getMinutes = (timeStr: string): number => {
       const [hours, minutes] = timeStr.split(':').map(Number)
@@ -1407,7 +1527,10 @@ export default function SchedulePage() {
           canCreateAttendance={canEditShifts}
           onMoveShift={handleMoveShift}
           onDuplicateShift={handleDuplicateShift}
+          onPublishShift={canEditShifts ? handlePublishShift : undefined}
           pendingShiftIds={pendingShiftIds}
+          selectedShiftIds={selectedShiftIds}
+          onSelectShift={canEditShifts ? handleToggleShiftSelection : undefined}
         />
       )
     }
@@ -1433,7 +1556,10 @@ export default function SchedulePage() {
           canCreateAttendance={canEditShifts}
           onMoveShift={handleMoveShift}
           onDuplicateShift={handleDuplicateShift}
+          onPublishShift={canEditShifts ? handlePublishShift : undefined}
           pendingShiftIds={pendingShiftIds}
+          selectedShiftIds={selectedShiftIds}
+          onSelectShift={canEditShifts ? handleToggleShiftSelection : undefined}
         />
       )
     }
@@ -1459,7 +1585,10 @@ export default function SchedulePage() {
           canCreateAttendance={canEditShifts}
           onMoveShift={handleMoveShift}
           onDuplicateShift={handleDuplicateShift}
+          onPublishShift={canEditShifts ? handlePublishShift : undefined}
           pendingShiftIds={pendingShiftIds}
+          selectedShiftIds={selectedShiftIds}
+          onSelectShift={canEditShifts ? handleToggleShiftSelection : undefined}
         />
       )
     }
@@ -1541,6 +1670,8 @@ export default function SchedulePage() {
           onScheduleViewTypeChange={setScheduleViewType}
           onTemplateAction={handleTemplateAction}
           canUseTemplates={canUseTemplates}
+          onBulkPublishDrafts={canEditShifts ? handleBulkPublishDrafts : undefined}
+          draftShiftCount={filteredShifts.filter((s: any) => !s.isPublished).length}
         />
       </div>
 
@@ -1950,6 +2081,56 @@ export default function SchedulePage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+      {/* Bulk Selection Action Bar */}
+      {selectedShiftIds.size > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-xl px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked
+                onChange={() => setSelectedShiftIds(new Set())}
+                className="w-4 h-4 rounded accent-[#31BCFF] cursor-pointer"
+              />
+              <span className="text-sm font-semibold text-gray-700">
+                {selectedShiftIds.size} selected
+              </span>
+            </label>
+            <button
+              onClick={() => setSelectedShiftIds(new Set())}
+              className="text-sm text-[#31BCFF] hover:underline font-medium"
+            >
+              Deselect all
+            </button>
+          </div>
+          <div className="flex items-center gap-2">
+            {canEditShifts && (
+              <>
+                <button
+                  onClick={handleBulkApproveSelected}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Approve
+                </button>
+                <button
+                  onClick={handleBulkPublishSelected}
+                  className="px-4 py-2 text-sm font-medium text-white bg-[#31BCFF] rounded-lg hover:bg-[#0EA5E9] transition-colors"
+                >
+                  Publish
+                </button>
+                {canDeleteShifts && (
+                  <button
+                    onClick={handleBulkDeleteSelected}
+                    className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
+                  >
+                    Delete
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
       </div>
   )
 }

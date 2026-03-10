@@ -156,6 +156,11 @@ export async function GET(request: Request) {
       whereCondition.employeeId = employeeId
     }
 
+    // Employees can only see published shifts; admins see all
+    if (!currentUser && currentEmployeeId) {
+      whereCondition.isPublished = true
+    }
+
     // Get accessible departments for the current user/employee
     let accessibleDepartmentIds: string[] | null = null
 

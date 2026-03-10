@@ -6,6 +6,7 @@ import {
   UserCircleIcon,
   ChevronDownIcon,
   HomeIcon,
+  DocumentTextIcon,
   UserGroupIcon,
   Cog6ToothIcon,
   ClockIcon,
@@ -112,7 +113,19 @@ export default function DashboardNavbar() {
     { name: t('navigation.settings'), href: '/dashboard/settings', icon: Cog6ToothIcon },
   ]
 
+  const employeeNavigation: NavigationItem[] = [
+    { name: t('navigation.home'), href: '/dashboard', icon: HomeIcon },
+    { name: t('navigation.your_hours'), href: '/dashboard/hours', icon: ClockIcon },
+    { name: t('navigation.contracts'), href: '/dashboard/contracts', icon: DocumentTextIcon },
+    { name: t('navigation.availability'), href: '/dashboard/availability', icon: CalendarDaysIcon },
+    { name: t('navigation.sick_leaves'), href: '/dashboard/sick-leaves', icon: ClockIcon },
+  ]
+
   const filteredNavigation = useMemo(() => {
+    if (isEmployeeUser) {
+      return employeeNavigation
+    }
+
     if (isAdmin) {
       return adminNavigation
         .map(item => {
@@ -159,7 +172,7 @@ export default function DashboardNavbar() {
         return item
       })
       .filter((item): item is NavigationItem => item !== null)
-  }, [adminNavigation, isAdmin, hasAnyPermission])
+  }, [adminNavigation, employeeNavigation, isEmployeeUser, isAdmin, hasAnyPermission])
 
   const navigation = filteredNavigation
 

@@ -14,6 +14,9 @@ import DepartmentSelectionModal from '@/components/DepartmentSelectionModal'
 import { useTranslation } from 'react-i18next'
 import { DashboardStatsSkeleton } from '@/components/skeletons/CommonSkeletons'
 import Swal from 'sweetalert2'
+import OpenShiftsCard from '@/components/employee/OpenShiftsCard'
+import ShiftDetailsModal from '@/components/ShiftDetailsModal'
+import ShiftCard from '@/components/employee/ShiftCard'
 
 interface Employee {
   id: string
@@ -70,10 +73,14 @@ interface TodayShift {
   breakEnd?: string | null
   employeeGroup?: {
     name: string
-  }
+  } | null
   department?: {
     name: string
-  }
+  } | null
+  function?: {
+    name: string
+    color?: string | null
+  } | null
 }
 
 interface WeeklyShift {
@@ -173,6 +180,11 @@ export default function DashboardPage() {
   const [recentAttendanceLoading, setRecentAttendanceLoading] = useState(false)
   const [weeklyShifts, setWeeklyShifts] = useState<WeeklyShift[]>([])
   const [weeklyShiftsLoading, setWeeklyShiftsLoading] = useState(false)
+  const [upcomingShifts, setUpcomingShifts] = useState<any[]>([])
+  const [openShifts, setOpenShifts] = useState<any[]>([])
+  const [myShiftRequests, setMyShiftRequests] = useState<any[]>([])
+  const [showShiftDetailsModal, setShowShiftDetailsModal] = useState(false)
+  const [selectedShiftForDetails, setSelectedShiftForDetails] = useState<any>(null)
   const { t } = useTranslation();
 
   const canClockInOut = hasPermission(PERMISSIONS.ATTENDANCE_CLOCK_IN_OUT)
@@ -230,6 +242,7 @@ export default function DashboardPage() {
     if (canUsePunchClock && employees.length > 0) {
       fetchTodayShift()
       fetchCurrentAttendance()
+      fetchEmployeeDashboardData()
     }
   }, [employees, canUsePunchClock])
 
@@ -478,7 +491,7 @@ export default function DashboardPage() {
 
         const todayApprovedShift = shifts.find((shift: TodayShift) =>
           shift.date.substring(0, 10) === today &&
-          shift.approved === true &&
+          (shift as any).isPublished === true &&
           shift.status !== 'COMPLETED'
         )
 
@@ -493,6 +506,22 @@ export default function DashboardPage() {
       console.error('Error fetching today\'s shift:', error)
     } finally {
       setLoadingTodayShift(false)
+    }
+  }
+
+  const fetchEmployeeDashboardData = async () => {
+    const emp = employees.find(e => e.userId === user?.id)
+    if (!emp) return
+    try {
+      const res = await fetch(`/api/employee/dashboard?employeeId=${emp.id}`)
+      if (res.ok) {
+        const data = await res.json()
+        setUpcomingShifts(data.upcomingShifts || [])
+        setOpenShifts(data.openShifts || [])
+        setMyShiftRequests(data.myShiftRequests || [])
+      }
+    } catch (err) {
+      console.error('Error fetching employee dashboard data:', err)
     }
   }
 
@@ -578,14 +607,18 @@ export default function DashboardPage() {
   }
 
   const handlePunchIn = async () => {
+    if (clockingIn) return
     const currentEmployee = employees.find(emp => emp.userId === user?.id)
     if (!currentEmployee) return
+
+    setClockingIn(true)
 
     // Check if this is for unscheduled work (no todayShift)
     if (!todayShift) {
       // For unscheduled work, validate location first, then show department selection
       setPendingUnscheduledWork(true)
       setPendingPunchAction('in')
+      setClockingIn(false)
       const validationResult = await validatePunchLocation(currentEmployee.id)
       if (validationResult.isAllowed && validationResult.message === 'Location restrictions disabled') {
         setShowDepartmentModal(true)
@@ -605,11 +638,12 @@ export default function DashboardPage() {
         setShowLocationModal(true)
       }
     } else {
-      // For scheduled shifts, just validate location and punch in
+      // For scheduled shifts, validate location then punch in
       setPendingPunchAction('in')
       const validationResult = await validatePunchLocation(currentEmployee.id)
       if (validationResult.isAllowed && validationResult.message === 'Location restrictions disabled') {
-        executePunchAction()
+        // clockingIn stays true — executePunchAction manages its own finally reset
+        executePunchAction('in')
       } else if (!validationResult.isAllowed && validationResult.message !== 'No workplace locations have been configured. Contact your administrator.') {
         Swal.fire({
           icon: 'info',
@@ -621,7 +655,9 @@ export default function DashboardPage() {
           confirmButtonColor: '#31BCFF'
         })
         setPendingPunchAction(null)
+        setClockingIn(false)
       } else {
+        setClockingIn(false)
         setShowLocationModal(true)
       }
     }
@@ -660,13 +696,14 @@ export default function DashboardPage() {
     }
   }
 
-  const executePunchAction = async () => {
-    if (!pendingPunchAction) return
+  const executePunchAction = async (action?: 'in' | 'out') => {
+    const punchAction = action ?? pendingPunchAction
+    if (!punchAction) return
 
     const currentEmployee = employees.find(emp => emp.userId === user?.id)
     if (!currentEmployee) return
 
-    if (pendingPunchAction === 'in') {
+    if (punchAction === 'in') {
       setClockingIn(true)
       try {
         const now = new Date()
@@ -1148,14 +1185,16 @@ export default function DashboardPage() {
             <h1 className="text-3xl font-bold text-slate-900">{t('dashboard.overview_title')}</h1>
           </div>
         </div> */}
-        <section className="mt-4 rounded-3xl bg-gradient-to-r from-[#1f3b73] via-[#1f5fdb] to-[#22a3ff] px-4 py-4 sm:p-6 text-white shadow-[0_20px_60px_rgba(30,64,175,0.35)]">
-          <div className="inline-flex items-center gap-2 text-xs sm:text-sm uppercase tracking-wide text-white/80">
-            <CheckCircleIcon className="h-4 w-4 text-white/80" />
-            <span>{t('dashboard.hero.caption')}</span>
-          </div>
-          <h2 className="mt-1 text-xl sm:mt-2 sm:text-2xl font-semibold">{t('dashboard.hero.title')}</h2>
-          <p className="mt-1 max-w-2xl text-xs sm:text-sm text-white/90">{t('dashboard.hero.description')}</p>
-        </section>
+        {!canUsePunchClock && (
+          <section className="mt-4 rounded-3xl bg-gradient-to-r from-[#1f3b73] via-[#1f5fdb] to-[#22a3ff] px-4 py-4 sm:p-6 text-white shadow-[0_20px_60px_rgba(30,64,175,0.35)]">
+            <div className="inline-flex items-center gap-2 text-xs sm:text-sm uppercase tracking-wide text-white/80">
+              <CheckCircleIcon className="h-4 w-4 text-white/80" />
+              <span>{t('dashboard.hero.caption')}</span>
+            </div>
+            <h2 className="mt-1 text-xl sm:mt-2 sm:text-2xl font-semibold">{t('dashboard.hero.title')}</h2>
+            <p className="mt-1 max-w-2xl text-xs sm:text-sm text-white/90">{t('dashboard.hero.description')}</p>
+          </section>
+        )}
 
         {canViewWeeklyShifts && (
           <section className="mt-6 rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_20px_50px_rgba(15,23,42,0.08)]">
@@ -1412,7 +1451,7 @@ export default function DashboardPage() {
         )}
 
         {canUsePunchClock && (
-          <section className="mt-6 rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_20px_50px_rgba(15,23,42,0.08)]">
+          <section className="mt-4 rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_20px_50px_rgba(15,23,42,0.08)]">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <div className="inline-flex items-center gap-2 text-sm font-medium text-slate-500">
@@ -1493,55 +1532,49 @@ export default function DashboardPage() {
                   <div className="h-4 w-1/2 animate-pulse rounded bg-slate-200" />
                 </div>
               ) : todayShift && todayShift.status !== 'COMPLETED' ? (
-                <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-white text-[#2563eb]">
-                        <CalendarIcon className="h-6 w-6" />
-                      </span>
-                      <div>
-                        <p className="text-sm font-medium text-slate-500">{t('dashboard.cards.punch_clock.today')}</p>
-                        <p className="text-lg font-semibold text-slate-900">
-                          {todayShift.startTime.substring(0, 5)} - {todayShift.endTime ? todayShift.endTime.substring(0, 5) : t('dashboard.cards.punch_clock.active')}
-                        </p>
-                        <p className="text-sm text-slate-500">
-                          {todayShift.shiftType} {todayShift.employeeGroup && `• ${todayShift.employeeGroup.name}`}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${todayShift.status === 'WORKING'
-                            ? 'bg-green-100 text-green-700'
-                            : todayShift.status === 'CANCELLED'
-                              ? 'bg-red-100 text-red-700'
-                              : 'bg-amber-100 text-amber-700'
-                          }`}
-                      >
-                        {todayShift.status}
-                      </span>
-                      {todayShift.approved && (
-                        <span className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-                          <CheckCircleIcon className="mr-1 h-3 w-3" />
-                          {t('dashboard.cards.punch_clock.approved')}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                </div>
+                <ShiftCard shift={todayShift} variant="today" />
               ) : (
-                <div className="space-y-4">
-                  <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-center">
-                    <CalendarIcon className="mx-auto h-10 w-10 text-slate-400" />
-                    <p className="mt-3 text-base font-semibold text-slate-900">{t('dashboard.cards.punch_clock.no_shift')}</p>
-                    <p className="text-sm text-slate-500">{t('dashboard.cards.punch_clock.no_shift_hint')}</p>
-                  </div>
+                <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-center">
+                  <CalendarIcon className="mx-auto h-10 w-10 text-slate-400" />
+                  <p className="mt-3 text-base font-semibold text-slate-900">{t('dashboard.cards.punch_clock.no_shift')}</p>
+                  <p className="text-sm text-slate-500">{t('dashboard.cards.punch_clock.no_shift_hint')}</p>
                 </div>
               )}
             </div>
           </section>
         )}
+
+        {canUsePunchClock && upcomingShifts.length > 0 && (
+          <section className="mt-6 rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_20px_50px_rgba(15,23,42,0.08)]">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold text-slate-900">{t('upcoming_shifts.title', 'Upcoming Shifts')}</h3>
+              <Link href="/dashboard/schedule" className="text-sm font-semibold text-[#2563eb] hover:text-[#1d4ed8]">
+                {t('dashboard.weekly_shifts.view_schedule', 'View Schedule')}
+              </Link>
+            </div>
+            <div className="space-y-3">
+              {upcomingShifts.map((shift) => (
+                <ShiftCard
+                  key={shift.id}
+                  shift={shift}
+                  variant="upcoming"
+                  onClick={() => { setSelectedShiftForDetails(shift); setShowShiftDetailsModal(true) }}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {canUsePunchClock && (
+          <div className="mt-6">
+            <OpenShiftsCard
+              openShifts={openShifts}
+              myShiftRequests={myShiftRequests}
+              onRefresh={fetchEmployeeDashboardData}
+            />
+          </div>
+        )}
+
       </div>
 
       {/* Punch Clock Modal */}
@@ -1555,6 +1588,15 @@ export default function DashboardPage() {
           departments={departments}
           onSubmit={handleShiftFormSubmit}
           loading={submittingShift}
+        />
+      )}
+
+      {canUsePunchClock && (
+        <ShiftDetailsModal
+          isOpen={showShiftDetailsModal}
+          onClose={() => { setShowShiftDetailsModal(false); setSelectedShiftForDetails(null) }}
+          shift={selectedShiftForDetails}
+          currentEmployeeId={currentEmployee?.id || ''}
         />
       )}
 

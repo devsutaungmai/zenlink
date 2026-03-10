@@ -301,8 +301,8 @@ export default function PunchClockPage() {
     if (!dateRange) return null
 
     const params = new URLSearchParams()
-    const startIso = new Date(`${dateRange.startDate}T00:00:00`).toISOString()
-    const endIso = new Date(`${dateRange.endDate}T23:59:59.999`).toISOString()
+    const startIso = `${dateRange.startDate}T00:00:00.000Z`
+    const endIso = `${dateRange.endDate}T23:59:59.999Z`
     params.append('startDate', startIso)
     params.append('endDate', endIso)
 

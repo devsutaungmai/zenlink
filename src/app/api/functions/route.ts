@@ -150,12 +150,14 @@ export async function GET(request: NextRequest) {
         employeeGroups: {
           select: {
             id: true,
-            name: true
+            name: true,
+            employeesMulti: {
+              select: { employeeId: true }
+            }
           }
         },
         _count: {
           select: {
-            employees: true,
             shifts: true
           }
         }
@@ -165,7 +167,20 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    return NextResponse.json(functions)
+    const result = functions.map((f) => {
+      const uniqueEmployeeIds = new Set(
+        f.employeeGroups.flatMap(g => g.employeesMulti.map(e => e.employeeId))
+      )
+      return {
+        ...f,
+        _count: {
+          shifts: f._count.shifts,
+          employees: uniqueEmployeeIds.size
+        }
+      }
+    })
+
+    return NextResponse.json(result)
   } catch (error) {
     console.error('Error fetching functions:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

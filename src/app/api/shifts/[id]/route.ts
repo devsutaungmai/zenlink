@@ -59,6 +59,8 @@ export async function GET(
         }
       }
     })
+
+    console.log('Fetched shift:', shift)
     
     if (!shift) {
       return NextResponse.json(
@@ -125,6 +127,7 @@ export async function PUT(
       wage: rawData.wage !== undefined ? parseFloat(rawData.wage) : undefined,
       wageType: rawData.wageType as WageType,
       note: rawData.note !== undefined ? rawData.note : null,
+      isPublished: rawData.isPublished !== undefined ? Boolean(rawData.isPublished) : undefined,
       approved: rawData.approved !== undefined ? Boolean(rawData.approved) : undefined,
       breakPaid: rawData.breakPaid !== undefined ? Boolean(rawData.breakPaid) : undefined
     }
@@ -249,30 +252,53 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const { id } = await params
 
   try {
-    // Check permission to edit shifts (approve is an edit operation)
     const canEdit = await hasAnyServerPermission([
       PERMISSIONS.SCHEDULE_EDIT,
       PERMISSIONS.SHIFTS_EDIT,
       PERMISSIONS.SCHEDULE_PUBLISH
     ])
-    
+
     if (!canEdit) {
       return NextResponse.json(
-        { error: 'You do not have permission to approve shifts' },
+        { error: 'You do not have permission to update shifts' },
         { status: 403 }
       )
     }
 
+    const body = await req.json().catch(() => ({}))
+    const action = body.action as string | undefined
+
+    const currentUser = await getCurrentUser()
+
+    let updateData: any
+
+    if (action === 'publish') {
+      updateData = { isPublished: true }
+    } else if (action === 'unpublish') {
+      updateData = { isPublished: false }
+    } else if (action === 'approve') {
+      updateData = {
+        approved: true,
+        approvedAt: new Date(),
+        approvedBy: currentUser?.id ?? null,
+      }
+    } else if (action === 'unapprove') {
+      updateData = { approved: false, approvedAt: null, approvedBy: null }
+    } else {
+      // Legacy: default to approve for backwards compatibility
+      updateData = { approved: true }
+    }
+
     const shift = await prisma.shift.update({
       where: { id },
-      data: { approved: true },
+      data: updateData,
     })
 
     return NextResponse.json(shift)
   } catch (error) {
-    console.error('Failed to approve shift:', error)
+    console.error('Failed to update shift:', error)
     return NextResponse.json(
-      { error: 'Failed to approve shift' },
+      { error: 'Failed to update shift' },
       { status: 500 }
     )
   }

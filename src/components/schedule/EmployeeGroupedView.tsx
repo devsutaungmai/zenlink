@@ -3,7 +3,7 @@ import { format } from 'date-fns'
 import { useTranslation } from 'react-i18next'
 import { formatDate } from '@/shared/lib/dateLocale'
 import { ChevronDownIcon, ChevronRightIcon, PlusIcon } from '@heroicons/react/24/outline'
-import { Clock, Pencil, Copy, CopyPlus, GripVertical, ArrowRightLeft } from 'lucide-react'
+import { Clock, Pencil, Copy, CopyPlus, GripVertical, ArrowRightLeft, Send } from 'lucide-react'
 import { Employee } from '@prisma/client'
 import SpanningShiftCard from './SpanningShiftCard'
 import { ShiftWithRelations } from '@/types/schedule'
@@ -28,7 +28,10 @@ interface EmployeeGroupedViewProps {
   canCreateAttendance?: boolean
   onMoveShift?: (shiftId: string, target: any) => Promise<void>
   onDuplicateShift?: (shiftId: string, targets: any[]) => Promise<void>
+  onPublishShift?: (shiftId: string) => Promise<void>
   pendingShiftIds?: Set<string>
+  selectedShiftIds?: Set<string>
+  onSelectShift?: (shiftId: string) => void
 }
 
 export default function EmployeeGroupedView({
@@ -47,7 +50,10 @@ export default function EmployeeGroupedView({
   canCreateAttendance = false,
   onMoveShift,
   onDuplicateShift,
-  pendingShiftIds = new Set()
+  onPublishShift,
+  pendingShiftIds = new Set(),
+  selectedShiftIds = new Set(),
+  onSelectShift
 }: EmployeeGroupedViewProps) {
   const { t, i18n } = useTranslation('schedule')
   const { currencySymbol } = useCurrency()
@@ -100,9 +106,34 @@ export default function EmployeeGroupedView({
 
   const noopMove = async () => {}
   const noopDuplicate = async () => {}
+
+  const wrappedMoveShift = useCallback(async (shiftId: string, target: any) => {
+    const fn = onMoveShift || noopMove
+    const enriched = { ...target }
+    if (target.employeeId !== undefined && target.employeeId !== null) {
+      const emp = employees.find(e => e.id === target.employeeId)
+      const empGroupId = (emp as any)?.employeeGroupId
+      if (empGroupId) enriched.employeeGroupId = empGroupId
+    }
+    return fn(shiftId, enriched)
+  }, [employees, onMoveShift])
+
+  const wrappedDuplicateShift = useCallback(async (shiftId: string, targets: any[]) => {
+    const fn = onDuplicateShift || noopDuplicate
+    const enriched = targets.map(target => {
+      if (target.employeeId !== undefined && target.employeeId !== null) {
+        const emp = employees.find(e => e.id === target.employeeId)
+        const empGroupId = (emp as any)?.employeeGroupId
+        if (empGroupId) return { ...target, employeeGroupId: empGroupId }
+      }
+      return target
+    })
+    return fn(shiftId, enriched)
+  }, [employees, onDuplicateShift])
+
   const { dragOverCell, isDragging, copyMode, toggleCopyMode, handleDragStart, handleDragOver, handleDragLeave, handleDrop, handleDragEnd } = useShiftDragDrop({
-    onMoveShift: onMoveShift || noopMove,
-    onDuplicateShift: onDuplicateShift || noopDuplicate,
+    onMoveShift: wrappedMoveShift,
+    onDuplicateShift: wrappedDuplicateShift,
     canEditShifts,
     isDropDisabled,
     onDropRejected
@@ -706,28 +737,47 @@ export default function EmployeeGroupedView({
                     ) : (
                       <>
                         {dayShifts.slice(0, 2).map((shift, shiftIndex) => {
-                          const backgroundColor = shift.approved ? '#d9f99d' : (shift.function?.color || '#dbeafe')
-                          const borderColor = shift.approved ? '#84cc16' : (shift.function?.color || '#93c5fd')
-                          const textColor = shift.approved ? '#365314' : '#1f2937'
+                          const isDraft = !(shift as any).isPublished
+                          const backgroundColor = shift.approved ? '#d9f99d' : isDraft ? '#f3f4f6' : (shift.function?.color || '#dbeafe')
+                          const borderColor = shift.approved ? '#84cc16' : isDraft ? '#9ca3af' : (shift.function?.color || '#93c5fd')
+                          const textColor = shift.approved ? '#365314' : isDraft ? '#6b7280' : '#1f2937'
                           
+                          const isSelected = selectedShiftIds.has(shift.id)
                           return (
                             <div
                               key={shift.id}
-                              draggable={canEditShifts && !pendingShiftIds.has(shift.id)}
+                              draggable={canEditShifts && !pendingShiftIds.has(shift.id) && !isSelected}
                               onDragStart={(e) => handleDragStart(e, shift, employee.id, formattedDate)}
                               onDragEnd={handleDragEnd}
                               onClick={() => !pendingShiftIds.has(shift.id) && onEditShift(shift)}
                               onContextMenu={(e) => handleShiftContextMenu(e, shift)}
-                              className={`mb-1 cursor-pointer ${canEditShifts ? 'cursor-grab active:cursor-grabbing' : ''} ${pendingShiftIds.has(shift.id) ? 'opacity-50 animate-pulse pointer-events-none' : ''}`}
+                              className={`mb-1 cursor-pointer group/card ${canEditShifts ? 'cursor-grab active:cursor-grabbing' : ''} ${pendingShiftIds.has(shift.id) ? 'opacity-50 animate-pulse pointer-events-none' : ''}`}
                             >
                               <div 
-                                className="rounded p-2 text-xs border"
+                                className={`rounded p-2 text-xs border relative ${isSelected ? 'ring-2 ring-[#31BCFF]' : ''}`}
                                 style={{
                                   backgroundColor: backgroundColor,
-                                  borderColor: borderColor,
+                                  borderColor: isSelected ? '#31BCFF' : borderColor,
                                   borderWidth: shift.approved ? '2px' : '1px'
                                 }}
                               >
+                                {!isSelected && isDraft && (
+                                  <span className="absolute top-0.5 right-0.5 text-[8px] font-bold uppercase bg-gray-400 text-white px-0.5 rounded leading-tight">{t('shift_card.draft')}</span>
+                                )}
+                                {onSelectShift && (
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); onSelectShift(shift.id) }}
+                                    className={`absolute top-0.5 right-0.5 w-3.5 h-3.5 rounded border flex items-center justify-center transition-all z-10 ${
+                                      isSelected
+                                        ? 'bg-[#31BCFF] border-[#31BCFF] opacity-100'
+                                        : 'bg-white border-gray-400 opacity-0 group-hover/card:opacity-100'
+                                    }`}
+                                  >
+                                    {isSelected && (
+                                      <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 10 10" fill="currentColor"><path d="M2 5l2.5 2.5L8 2.5" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round"/></svg>
+                                    )}
+                                  </button>
+                                )}
                                 <div className="font-medium" style={{ color: textColor }}>
                                   {shift.function?.name || 'No Function'}
                                 </div>
@@ -833,6 +883,19 @@ export default function EmployeeGroupedView({
             >
               <CopyPlus className="w-4 h-4" />
               {t('context_menu.duplicate_multiple') || 'Duplicate Multiple...'}
+            </button>
+          )}
+          {canEditShifts && onPublishShift && !(contextMenu.shift as any).isPublished && (
+            <button
+              onClick={() => {
+                const shift = contextMenu.shift!
+                setContextMenu(prev => ({ ...prev, show: false }))
+                onPublishShift(shift.id)
+              }}
+              className="w-full px-3 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center gap-2"
+            >
+              <Send className="w-4 h-4" />
+              {t('context_menu.publish_shift', 'Publish Shift')}
             </button>
           )}
           {canCreateAttendance && contextMenu.shift.employeeId && contextMenu.shift.approved && (

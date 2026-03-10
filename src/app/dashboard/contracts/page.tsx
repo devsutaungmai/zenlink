@@ -70,6 +70,8 @@ interface Contract {
   signatureData?: string
   signedAt?: string
   signedBy?: string
+  adminSignedAt?: string
+  employeeSignedAt?: string
 }
 
 interface ContractStatistics {
@@ -105,6 +107,7 @@ export default function ContractsPage() {
   const [statistics, setStatistics] = useState<ContractStatistics | null>(null)
   const [activeFilter, setActiveFilter] = useState<'all' | 'missing' | 'expiring' | 'expired'>('all')
   const { user } = useUser()
+  const isEmployeeUser = user?.role === 'EMPLOYEE' || Boolean(user?.employee)
   const { hasPermission } = usePermissions()
   const searchParams = useSearchParams()
   const preselectedEmployeeId = searchParams.get('employeeId') || undefined
@@ -124,7 +127,28 @@ export default function ContractsPage() {
     try {
       setLoading(true)
       setError(null)
-      
+
+      if (isEmployeeUser) {
+        const contractsResponse = await fetch('/api/contracts?preferEmployee=true')
+
+        if (!contractsResponse.ok) {
+          const errorData = await contractsResponse.json()
+          throw new Error(errorData.error || 'Failed to fetch contracts')
+        }
+
+        const contractsData = await contractsResponse.json()
+
+        if (Array.isArray(contractsData)) {
+          setContracts(contractsData)
+        } else {
+          throw new Error('Invalid data format received from server')
+        }
+
+        setStatistics(null)
+        setActiveFilter('all')
+        return
+      }
+
       const [contractsResponse, statisticsResponse] = await Promise.all([
         fetch('/api/contracts'),
         fetch('/api/contracts/statistics')
@@ -163,7 +187,7 @@ export default function ContractsPage() {
 
   useEffect(() => {
     fetchContracts()
-  }, [])
+  }, [isEmployeeUser])
 
   const openCreateForm = React.useCallback((employeeId?: string) => {
     setSelectedEmployeeId(employeeId)
@@ -171,10 +195,10 @@ export default function ContractsPage() {
   }, [])
 
   useEffect(() => {
-    if (preselectedEmployeeId) {
+    if (preselectedEmployeeId && !isEmployeeUser) {
       openCreateForm(preselectedEmployeeId)
     }
-  }, [preselectedEmployeeId, openCreateForm])
+  }, [preselectedEmployeeId, openCreateForm, isEmployeeUser])
 
   const handleCloseForm = () => {
     setShowCreateForm(false)
@@ -311,10 +335,24 @@ export default function ContractsPage() {
   }
 
   const handleSign = async (contract: Contract) => {
-    if (contract.signedStatus && contract.signedStatus !== 'UNSIGNED') {
+    const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN'
+    
+    // Check if contract is fully signed (both admin and employee)
+    if (contract.signedStatus === 'SIGNED_PAPER' || contract.signedStatus === 'SIGNED_ELECTRONIC') {
       Swal.fire({
         title: t('contracts.already_signed_title'),
         text: t('contracts.already_signed_text', { method: contract.signedStatus === 'SIGNED_PAPER' ? t('contracts.on_paper') : t('contracts.electronically') }),
+        icon: 'info',
+        confirmButtonColor: '#31BCFF',
+      });
+      return;
+    }
+
+    // Check if waiting for employee signature - only show waiting message to admin
+    if (contract.signedStatus === 'PENDING_EMPLOYEE_SIGNATURE' && isAdmin) {
+      Swal.fire({
+        title: t('contracts.pending_employee_signature_title', 'Awaiting Employee Signature'),
+        text: t('contracts.pending_employee_signature_text', 'You have already signed this contract. Waiting for the employee to sign.'),
         icon: 'info',
         confirmButtonColor: '#31BCFF',
       });
@@ -369,7 +407,10 @@ export default function ContractsPage() {
 
   const submitSignature = async (signingType: 'MANUAL' | 'ELECTRONIC', signatureData: any, contractId: string) => {
     try {
-      console.log('Submitting signature:', { signingType, contractId, signatureData });
+      const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN'
+      const signerRole = isAdmin ? 'admin' : 'employee'
+      
+      console.log('Submitting signature:', { signingType, contractId, signatureData, signerRole });
       
       const response = await fetch(`/api/contracts/${contractId}/sign`, {
         method: 'POST',
@@ -377,6 +418,7 @@ export default function ContractsPage() {
         body: JSON.stringify({
           signingType,
           signatureData,
+          signerRole,
         }),
       });
 
@@ -397,7 +439,9 @@ export default function ContractsPage() {
             signedStatus: updatedContract.signedStatus,
             signatureData: updatedContract.signatureData,
             signedAt: updatedContract.signedAt,
-            signedBy: updatedContract.signedBy
+            signedBy: updatedContract.signedBy,
+            adminSignedAt: updatedContract.adminSignedAt,
+            employeeSignedAt: updatedContract.employeeSignedAt
           } : c
         )
       );
@@ -460,6 +504,12 @@ export default function ContractsPage() {
       return (
         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
           Unsigned
+        </span>
+      );
+    } else if (status === 'PENDING_EMPLOYEE_SIGNATURE') {
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+          Pending Employee Signature
         </span>
       );
     } else if (status === 'SIGNED_PAPER') {
@@ -662,7 +712,7 @@ export default function ContractsPage() {
             {/* Contract status alerts */}
               
           </div>
-          {canCreateContracts && (
+          {canCreateContracts && !isEmployeeUser && (
             <button
               onClick={() => openCreateForm()}
               className="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 group"
@@ -674,7 +724,7 @@ export default function ContractsPage() {
         </div>
       </div>
 
-      {showCreateForm && (
+      {showCreateForm && !isEmployeeUser && (
         <ContractForm 
           onClose={handleCloseForm}
           onContractCreated={handleContractCreated}
@@ -685,7 +735,7 @@ export default function ContractsPage() {
       {!showCreateForm && (
         <>
           {/* Dashboard Cards */}
-          {statistics && (
+          {statistics && !isEmployeeUser && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {/* Total Employees */}
               <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 border border-gray-200/50 shadow-lg">
@@ -796,39 +846,40 @@ export default function ContractsPage() {
               </div>
             </div>
           )}
-          {/* Search and Filters */}
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 border border-gray-200/50 shadow-lg">
-            <div className="flex flex-col lg:flex-row gap-4">
-              <div className="relative flex-1">
-                <MagnifyingGlassIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder={t('contracts.search_placeholder')}
-                  className="block w-full pl-12 pr-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                />
+          {!isEmployeeUser && (
+            <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 border border-gray-200/50 shadow-lg">
+              <div className="flex flex-col lg:flex-row gap-4">
+                <div className="relative flex-1">
+                  <MagnifyingGlassIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder={t('contracts.search_placeholder')}
+                    className="block w-full pl-12 pr-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center justify-between mt-4 text-sm text-gray-500">
+                <span>
+                  {activeFilter === 'missing' ? (
+                    filteredMissingEmployees.length > 0 
+                      ? t('contracts.showing_employees', { start: startIndex + 1, end: Math.min(endIndex, filteredMissingEmployees.length), total: filteredMissingEmployees.length })
+                      : t('contracts.showing_zero_employees')
+                  ) : (
+                    filteredContracts.length > 0 
+                      ? t('contracts.showing_contracts', { start: startIndex + 1, end: Math.min(endIndex, filteredContracts.length), total: filteredContracts.length })
+                      : t('contracts.showing_zero_contracts', { total: contracts.length })
+                  )}
+                </span>
+                {totalPages > 1 && (
+                  <span className="text-xs text-gray-400">
+                    {t('contracts.page_of', { current: currentPage, total: totalPages })}
+                  </span>
+                )}
               </div>
             </div>
-            <div className="flex items-center justify-between mt-4 text-sm text-gray-500">
-              <span>
-                {activeFilter === 'missing' ? (
-                  filteredMissingEmployees.length > 0 
-                    ? t('contracts.showing_employees', { start: startIndex + 1, end: Math.min(endIndex, filteredMissingEmployees.length), total: filteredMissingEmployees.length })
-                    : t('contracts.showing_zero_employees')
-                ) : (
-                  filteredContracts.length > 0 
-                    ? t('contracts.showing_contracts', { start: startIndex + 1, end: Math.min(endIndex, filteredContracts.length), total: filteredContracts.length })
-                    : t('contracts.showing_zero_contracts', { total: contracts.length })
-                )}
-              </span>
-              {totalPages > 1 && (
-                <span className="text-xs text-gray-400">
-                  {t('contracts.page_of', { current: currentPage, total: totalPages })}
-                </span>
-              )}
-            </div>
-          </div>
+          )}
 
           {/* Contracts List or Missing Employees List */}
           {activeFilter === 'missing' ? (
@@ -891,7 +942,7 @@ export default function ContractsPage() {
                       </MobileCardSection>
 
                       <MobileCardActions>
-                        {canCreateContracts && (
+                        {canCreateContracts && !isEmployeeUser && (
                           <button
                             onClick={() => openCreateForm(employee.id)}
                             className="inline-flex items-center px-3 py-1.5 rounded-lg bg-orange-100 text-orange-800 text-sm font-medium hover:bg-orange-200 transition-colors duration-200"
@@ -954,7 +1005,7 @@ export default function ContractsPage() {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                               <div className="flex items-center justify-end gap-2">
-                                {canCreateContracts && (
+                                {canCreateContracts && !isEmployeeUser && (
                                   <button
                                     onClick={() => openCreateForm(employee.id)}
                                     className="inline-flex items-center px-3 py-1.5 rounded-lg bg-orange-100 text-orange-800 text-sm font-medium hover:bg-orange-200 transition-colors duration-200"
@@ -1043,7 +1094,7 @@ export default function ContractsPage() {
                     : t('contracts.get_started')
                   }
                 </p>
-                {!searchTerm && canCreateContracts && (
+                {!searchTerm && canCreateContracts && !isEmployeeUser && (
                   <button
                     onClick={() => openCreateForm()}
                     className="inline-flex items-center px-6 py-3 rounded-xl bg-[#31BCFF] text-white font-medium hover:bg-[#31BCFF]/90 transition-colors duration-200"
@@ -1118,7 +1169,7 @@ export default function ContractsPage() {
                             <PencilSquareIcon className="h-5 w-5" />
                           </button>
                         )}
-                        {canDeleteContracts && (
+                        {canDeleteContracts && !isEmployeeUser && (
                           <button
                             onClick={() => handleDelete(contract)}
                             disabled={!canDeleteContract(contract)}
@@ -1207,7 +1258,7 @@ export default function ContractsPage() {
                                     <PencilSquareIcon className="h-4 w-4" />
                                   </button>
                                 )}
-                                {canDeleteContracts && (
+                                {canDeleteContracts && !isEmployeeUser && (
                                   <button
                                     onClick={() => handleDelete(contract)}
                                     disabled={!canDeleteContract(contract)}
@@ -1414,6 +1465,43 @@ export default function ContractsPage() {
                     <span className="font-medium text-gray-500">{t('contracts.preview_modal.template')}</span>
                     <div className="text-gray-900">{previewContract.contractTemplate.name}</div>
                   </div>
+                </div>
+              </div>
+
+              {/* Signature Status Section */}
+              <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Signature Status</h3>
+                <div className="grid grid-cols-2 gap-6">
+                  {/* Employer Signature */}
+                  <div className={`p-4 rounded-lg ${previewContract.adminSignedAt ? 'bg-green-50 border border-green-200' : 'bg-gray-100 border border-gray-200'}`}>
+                    <h4 className="font-medium text-gray-700 mb-2">Employer Signature</h4>
+                    {previewContract.adminSignedAt ? (
+                      <div className="text-green-700">
+                        <p className="font-medium">✓ Signed</p>
+                        <p className="text-sm">Date: {new Date(previewContract.adminSignedAt).toLocaleDateString()}</p>
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 text-sm">Not signed yet</p>
+                    )}
+                  </div>
+                  
+                  {/* Employee Signature */}
+                  <div className={`p-4 rounded-lg ${previewContract.employeeSignedAt ? 'bg-green-50 border border-green-200' : 'bg-gray-100 border border-gray-200'}`}>
+                    <h4 className="font-medium text-gray-700 mb-2">Employee Signature</h4>
+                    {previewContract.employeeSignedAt ? (
+                      <div className="text-green-700">
+                        <p className="font-medium">✓ Signed</p>
+                        <p className="text-sm">Date: {new Date(previewContract.employeeSignedAt).toLocaleDateString()}</p>
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 text-sm">Not signed yet</p>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Overall Status */}
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  {getSignedStatusBadge(previewContract.signedStatus)}
                 </div>
               </div>
             </div>

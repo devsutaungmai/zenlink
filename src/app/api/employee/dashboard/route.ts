@@ -45,6 +45,7 @@ export async function GET(request: Request) {
     nextWeek.setDate(today.getDate() + 7)
     const tomorrow = new Date(today)
     tomorrow.setDate(today.getDate() + 1)
+    const tomorrowStr = tomorrow.toISOString().split('T')[0]
 
     const [
       employee,
@@ -57,7 +58,7 @@ export async function GET(request: Request) {
       myShiftRequests
     ] = await Promise.all([
       prisma.employee.findUnique({
-        where: { id: employeeId },
+        where: { id: employeeId},
         select: {
           id: true,
           firstName: true,
@@ -84,7 +85,8 @@ export async function GET(request: Request) {
       prisma.shift.findFirst({
         where: {
           employeeId,
-          status: 'WORKING'
+          status: 'WORKING',
+          isPublished: true
         },
         include: {
           employee: {
@@ -109,7 +111,7 @@ export async function GET(request: Request) {
             gte: new Date(todayStr),
             lt: new Date(new Date(todayStr).getTime() + 24 * 60 * 60 * 1000)
           },
-          approved: true
+          isPublished: true
         },
         include: {
           employee: {
@@ -123,6 +125,9 @@ export async function GET(request: Request) {
           },
           department: {
             select: { name: true }
+          },
+          function: {
+            select: { id: true, name: true, color: true }
           },
           shiftExchanges: {
             where: { status: { in: ['EMPLOYEE_PENDING', 'ADMIN_PENDING'] } },
@@ -150,10 +155,10 @@ export async function GET(request: Request) {
         where: {
           employeeId,
           date: {
-            gte: tomorrow,
+            gte: new Date(tomorrowStr),
             lte: nextWeek
           },
-          approved: true
+          isPublished: true
         },
         include: {
           employee: {
@@ -167,6 +172,9 @@ export async function GET(request: Request) {
           },
           department: {
             select: { name: true }
+          },
+          function: {
+            select: { id: true, name: true, color: true }
           },
           shiftExchanges: {
             where: { status: { in: ['EMPLOYEE_PENDING', 'ADMIN_PENDING'] } },

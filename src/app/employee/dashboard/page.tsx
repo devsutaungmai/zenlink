@@ -14,6 +14,7 @@ import PendingRequestsModal from "@/components/PendingRequestsModal"
 import NotificationCenter from "@/components/NotificationCenter"
 import LanguageSwitcher from "@/components/LanguageSwitcher"
 import OpenShiftsCard from "@/components/employee/OpenShiftsCard"
+import ShiftCard from "@/components/employee/ShiftCard"
 import {
   Building2,
   Clock,
@@ -60,6 +61,7 @@ interface Shift {
   breakStart?: string | null
   breakEnd?: string | null
   employeeId: string
+  isPublished: boolean
   approved: boolean
   status: 'SCHEDULED' | 'WORKING' | 'COMPLETED' | 'CANCELLED'
   note?: string | null
@@ -369,7 +371,7 @@ function EmployeeDashboardContent() {
         const todayApprovedShift = shifts.find((shift: Shift) => 
           shift.date.substring(0, 10) === today && 
           shift.employeeId === employeeId &&
-          shift.approved === true
+          shift.isPublished === true
         )
         setTodayShift(todayApprovedShift || null)
       }
@@ -395,7 +397,7 @@ function EmployeeDashboardContent() {
         const shifts = await res.json()
         // Filter to only include approved shifts for this employee
         const employeeApprovedShifts = shifts.filter((shift: Shift) => 
-          shift.employeeId === employeeId && shift.approved === true
+          shift.employeeId === employeeId && shift.isPublished === true
         )
         setUpcomingShifts(employeeApprovedShifts)
         
@@ -445,7 +447,7 @@ function EmployeeDashboardContent() {
         const shifts = await res.json()
         // Filter to only include approved shifts for this employee
         const employeeApprovedShifts = shifts.filter((shift: Shift) => 
-          shift.employeeId === employeeId && shift.approved === true
+          shift.employeeId === employeeId && shift.isPublished === true
         )
         setMonthlyShifts(employeeApprovedShifts)
       }
@@ -901,43 +903,7 @@ function EmployeeDashboardContent() {
               <CardContent className="space-y-4">
                 {todayShift ? (
                   <>
-                    <div className="text-center p-4 bg-sky-50 rounded-lg">
-                      <h3 className="font-semibold text-sky-700 mb-2">
-                        {formatShiftDate(todayShift.date)}
-                      </h3>
-                      <div className="text-2xl font-bold text-sky-600 mb-2">
-                        {todayShift.startTime.substring(0, 5)} - {todayShift.endTime ? todayShift.endTime.substring(0, 5) : t('common.active')}
-                      </div>
-                      {todayShift.employeeGroup && (
-                        <div className="flex justify-center gap-4 text-sm text-sky-600">
-                          <span className="flex items-center gap-1">
-                            <Users className="w-4 h-4" />
-                            {todayShift.employeeGroup.name}
-                          </span>
-                        </div>
-                      )}
-                      
-                      {/* Shift Status Badges */}
-                      <div className="mt-3 flex flex-wrap justify-center gap-2">
-                        <Badge className={`${
-                          todayShift.status === 'WORKING' ? 'bg-green-100 text-green-800' :
-                          todayShift.status === 'COMPLETED' ? 'bg-blue-100 text-blue-800' :
-                          todayShift.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
-                          'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {todayShift.status === 'SCHEDULED' ? t('shift_status.scheduled') :
-                           todayShift.status === 'WORKING' ? t('shift_status.working') :
-                           todayShift.status === 'COMPLETED' ? t('shift_status.completed') :
-                           todayShift.status === 'CANCELLED' ? t('shift_status.cancelled') : todayShift.status}
-                        </Badge>
-                        {todayShift.approved && (
-                          <Badge className="bg-emerald-100 text-emerald-800">
-                            <CheckCircle className="w-3 h-3 mr-1" />
-                            {t('shift_status.approved')}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
+                    <ShiftCard shift={todayShift} variant="today" />
 
                     {/* Attendance Section */}
                     <div className="space-y-3">
@@ -1012,103 +978,28 @@ function EmployeeDashboardContent() {
                 <div className="space-y-3">
                   {upcomingShifts.length > 0 ? (
                     upcomingShifts.map((shift) => {
-                      const shiftDate = new Date(shift.date)
-                      const today = new Date()
-                      const tomorrow = new Date(today)
-                      tomorrow.setDate(today.getDate() + 1)
-                      
-                      const isTomorrow = shiftDate.toDateString() === tomorrow.toDateString()
-                      
-                      const dayOfWeek = shiftDate.toLocaleDateString(i18n.language, { weekday: 'short' }).toUpperCase()
-                      const formattedDate = isTomorrow 
-                        ? t('upcoming_shifts.tomorrow')
-                        : shiftDate.toLocaleDateString(i18n.language, { 
-                            month: 'short', 
-                            day: 'numeric' 
-                          })
-                      const timeRange = `${shift.startTime.substring(0, 5)} - ${shift.endTime ? shift.endTime.substring(0, 5) : t('common.tbd')}`
-                      
-                      // Check for approved shift exchanges
-                      const approvedExchange = shift.shiftExchanges?.find(exchange => exchange.approved)
-                      
-                      // Check for pending exchanges for this shift
-                      const hasPendingExchange = pendingExchanges.some(exchange => exchange.shiftId === shift.id)
-                      
-                      // Check if shift is for sale
-                      const isForSale = shift.note && shift.note.includes('[FOR SALE]')
-                      
-                      // Determine background color based on status
-                      let bgColor, hoverColor, dayBadgeColor, textColor, subtextColor, statusLabel, borderClass
-                      
-                      if (isForSale) {
-                        bgColor = 'bg-orange-50'
-                        hoverColor = 'hover:bg-orange-100'
-                        dayBadgeColor = 'bg-orange-500'
-                        textColor = 'text-orange-700'
-                        subtextColor = 'text-orange-600'
-                        statusLabel = t('upcoming_shifts.for_sale')
-                        borderClass = 'border border-orange-200'
-                      } else if (hasPendingExchange) {
-                        bgColor = 'bg-yellow-50'
-                        hoverColor = 'hover:bg-yellow-100'
-                        dayBadgeColor = 'bg-yellow-500'
-                        textColor = 'text-yellow-700'
-                        subtextColor = 'text-yellow-600'
-                        statusLabel = t('upcoming_shifts.pending_exchange')
-                        borderClass = 'border border-yellow-200'
-                      } else {
-                        bgColor = 'bg-sky-50'
-                        hoverColor = 'hover:bg-sky-100'
-                        dayBadgeColor = 'bg-sky-500'
-                        textColor = 'text-sky-700'
-                        subtextColor = 'text-sky-600'
-                        statusLabel = null
-                        borderClass = ''
+                      const approvedExchange = shift.shiftExchanges?.find((exchange: any) => exchange.approved)
+                      const shiftForCard = {
+                        ...shift,
+                        shiftExchanges: pendingExchanges
+                          .filter((e: any) => e.shiftId === shift.id)
+                          .map((e: any) => ({ status: e.status }))
                       }
-                      
                       return (
-                        <div 
-                          key={shift.id} 
-                          className={`p-3 ${bgColor} rounded-lg space-y-3 cursor-pointer ${hoverColor} transition-colors ${borderClass}`}
-                          onClick={() => handleShiftDetails(shift)}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <div className={`w-12 h-12 ${dayBadgeColor} rounded-lg flex items-center justify-center text-white font-bold text-xs`}>
-                                {dayOfWeek}
-                              </div>
-                              <div>
-                                <p className={`font-medium ${textColor}`}>{formattedDate}</p>
-                                <p className={`text-sm ${subtextColor}`}>{timeRange}</p>
-                                {statusLabel && (
-                                  <p className={`text-xs font-medium ${textColor}`}>{statusLabel}</p>
-                                )}
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <div className={`text-sm ${subtextColor}`}>
-                                {shift.employeeGroup?.name || t('common.general')}
-                              </div>
-                              <div className={`text-xs mt-1 ${isForSale ? 'text-orange-500' : hasPendingExchange ? 'text-yellow-500' : 'text-sky-500'}`}>
-                                {t('upcoming_shifts.click_for_options')}
-                              </div>
-                            </div>
-                          </div>
-                          
-                          {/* Show exchange information if there's an approved exchange */}
+                        <div key={shift.id} className="space-y-2">
+                          <ShiftCard
+                            shift={shiftForCard}
+                            variant="upcoming"
+                            onClick={() => handleShiftDetails(shift)}
+                          />
                           {approvedExchange && (
-                            <div className="pl-15">
-                              <ShiftExchangeInfo 
-                                shift={{
-                                  id: shift.id,
-                                  approved: true,
-                                  shiftExchanges: [{
-                                    ...approvedExchange,
-                                    status: 'APPROVED' // Transform approved boolean to status string
-                                  }]
-                                }} 
-                              />
-                            </div>
+                            <ShiftExchangeInfo
+                              shift={{
+                                id: shift.id,
+                                approved: true,
+                                shiftExchanges: [{ ...approvedExchange, status: 'APPROVED' }]
+                              }}
+                            />
                           )}
                         </div>
                       )

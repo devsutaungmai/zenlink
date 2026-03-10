@@ -6,6 +6,7 @@ import { useUser } from '@/shared/lib/useUser'
 import { useTranslation } from 'react-i18next'
 import { ShiftExchange } from '@/shared/types'
 import Swal from 'sweetalert2'
+import { Send } from 'lucide-react'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -82,6 +83,7 @@ interface ShiftFormData {
   wage: number
   wageType: WageType
   note?: string
+  isPublished?: boolean
   approved: boolean
   exchangeToEmployeeId?: string
   exchangeReason?: string
@@ -205,6 +207,7 @@ export default function ShiftForm({
       shiftType: initialData.shiftType || 'NORMAL' as ShiftType,
       wage: initialData.wage ?? 0,
       wageType: initialData.wageType || 'HOURLY' as WageType,
+      isPublished: initialData.isPublished ?? false,
       approved: initialData.approved || false,
       breakStart: convertDateTimeToTimeString(initialData.breakStart),
       breakEnd: convertDateTimeToTimeString(initialData.breakEnd),
@@ -223,6 +226,7 @@ export default function ShiftForm({
       shiftTypeId: undefined,
       wage: 0,
       wageType: 'HOURLY' as WageType,
+      isPublished: false,
       approved: false,
       employeeId: undefined,
       employeeGroupId: undefined,
@@ -1030,7 +1034,7 @@ export default function ShiftForm({
       return
     }
 
-    if (!formData.employeeGroupId) {
+    if (formData.employeeId && !formData.employeeGroupId) {
       Swal.fire({
         toast: true,
         position: 'top-end',
@@ -1038,7 +1042,7 @@ export default function ShiftForm({
         timer: 3000,
         timerProgressBar: true,
         icon: 'warning',
-        title: t('shifts.form.employee_group_required', 'Employee group is required')
+        title: t('shifts.form.employee_group_required', 'Employee group is required when assigning an employee')
       })
       return
     }
@@ -1307,14 +1311,14 @@ export default function ShiftForm({
           {/* Department */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('shifts.form.department')} <span className="text-red-500">*</span>
+              {t('shifts.form.department')} {formData.employeeId && <span className="text-red-500">*</span>}
             </label>
             <select
               value={formData.departmentId || ''}
               onChange={(e) => setFormData({ ...formData, departmentId: e.target.value || undefined, categoryId: undefined, functionId: undefined })}
               disabled={isDisabled || loadingDepartments}
               className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isDisabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-              required
+              required={!!formData.employeeId}
             >
               <option value="">{t('shifts.form.select_department')}</option>
               {filteredDepartments.map((dept) => (
@@ -1328,14 +1332,14 @@ export default function ShiftForm({
           {/* Category */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('shifts.form.category')} {formData.departmentId && <span className="text-red-500">*</span>}
+              {t('shifts.form.category')} {formData.employeeId && formData.departmentId && <span className="text-red-500">*</span>}
             </label>
             <select
               value={formData.categoryId || ''}
               onChange={(e) => setFormData({ ...formData, categoryId: e.target.value || undefined, functionId: undefined })}
               disabled={isDisabled || !formData.departmentId || loadingCategories}
               className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee || !formData.departmentId ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-              required={!!formData.departmentId}
+              required={!!formData.employeeId && !!formData.departmentId}
             >
               <option value="">
                 {!formData.departmentId ? t('shifts.form.select_department_first') : loadingCategories ? t('shifts.form.loading') : t('shifts.form.select_category')}
@@ -1351,14 +1355,14 @@ export default function ShiftForm({
           {/* Function */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('shifts.form.function')} {formData.categoryId && <span className="text-red-500">*</span>}
+              {t('shifts.form.function')} {formData.employeeId && formData.categoryId && <span className="text-red-500">*</span>}
             </label>
             <select
               value={formData.functionId || ''}
               onChange={(e) => setFormData({ ...formData, functionId: e.target.value || undefined })}
               disabled={isDisabled || !formData.categoryId || loadingFunctions}
               className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${isEmployee || !formData.categoryId ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-              required={!!formData.categoryId}
+              required={!!formData.employeeId && !!formData.categoryId}
             >
               <option value="">
                 {!formData.categoryId ? t('shifts.form.select_category_first') : loadingFunctions ? t('shifts.form.loading') : t('shifts.form.select_function')}
@@ -1423,13 +1427,13 @@ export default function ShiftForm({
           {/* Employee Group */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('shifts.form.employee_group')} <span className="text-red-500">*</span>
+              {t('shifts.form.employee_group')} {formData.employeeId && <span className="text-red-500">*</span>}
             </label>
             <select
               value={formData.employeeGroupId || ''}
               onChange={(e) => setFormData({ ...formData, employeeGroupId: e.target.value || undefined })}
               disabled={employeeGroupSelectDisabled}
-              required
+              required={!!formData.employeeId}
               className={`block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF] ${employeeGroupSelectDisabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
             >
               <option value="">
@@ -1491,9 +1495,22 @@ export default function ShiftForm({
             />
           </div>
 
-          {/* Approved */}
-          <div>
-            <label className="flex items-center space-x-2 cursor-pointer">
+          {/* Publish & Approved */}
+          <div className="sm:col-span-2 flex items-center gap-3 flex-wrap">
+            <button
+              type="button"
+              onClick={() => !isDisabled && setFormData({ ...formData, isPublished: !formData.isPublished })}
+              disabled={isDisabled}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border transition-colors ${
+                formData.isPublished
+                  ? 'bg-blue-500 text-white border-blue-500 hover:bg-blue-600'
+                  : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
+              } ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              <Send className="w-3.5 h-3.5" />
+              {formData.isPublished ? 'Published' : 'Publish'}
+            </button>
+            <label className="flex items-center space-x-2 cursor-pointer ml-auto">
               <input
                 type="checkbox"
                 checked={formData.approved}
