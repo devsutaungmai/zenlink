@@ -722,6 +722,7 @@ export default function SchedulePage() {
           
           // If there are only overridable violations, show confirmation dialog
           if (overridable.length > 0) {
+            setShiftInitialData({ ...formData })
             setShowShiftModal(false);
 
             const violationsList = overridable
