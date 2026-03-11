@@ -114,8 +114,18 @@ export default function AdminAvailabilityPage() {
   const currentEmployeeUserId = user?.id ?? null
 
   // Helper functions for employee interaction
+  const getDateKeyFromString = (value: string) => value.slice(0, 10)
+
+  const parseDateKey = (dateKey: string) => {
+    const [year, month, day] = dateKey.split('-').map(Number)
+    return new Date(year, month - 1, day)
+  }
+
   const formatDateKey = (date: Date) => {
-    return date.toISOString().split('T')[0]
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
   }
 
   const isDateSelected = (date: Date) => {
@@ -416,12 +426,12 @@ export default function AdminAvailabilityPage() {
 
   const fetchStats = async (employeesData?: Employee[], availabilitiesData?: Availability[]) => {
     try {
-      const today = new Date().toISOString().split('T')[0]
+      const today = formatDateKey(new Date())
       const sourceEmployees = employeesData ?? employees
       const sourceAvailabilities = availabilitiesData ?? availabilities
 
       const todayAvailabilities = sourceAvailabilities.filter(a => 
-        a.date.split('T')[0] === today
+        getDateKeyFromString(a.date) === today
       )
       
       setStats({
@@ -459,12 +469,12 @@ export default function AdminAvailabilityPage() {
   const getAvailabilityForDate = useMemo(() => {
     const availabilityMap = new Map<string, Availability>()
     availabilities.forEach(availability => {
-      const key = `${availability.employee.id}-${availability.date.split('T')[0]}`
+      const key = `${availability.employee.id}-${getDateKeyFromString(availability.date)}`
       availabilityMap.set(key, availability)
     })
     
     return (employeeId: string, date: Date) => {
-      const dateStr = date.toISOString().split('T')[0]
+      const dateStr = formatDateKey(date)
       const key = `${employeeId}-${dateStr}`
       return availabilityMap.get(key)
     }
@@ -490,10 +500,10 @@ export default function AdminAvailabilityPage() {
 
       if (selectedFilter === 'all') return matchesSearch && matchesDepartment
       
-      const today = new Date().toISOString().split('T')[0]
+      const today = formatDateKey(new Date())
       const todayAvailability = availabilities.find(a => 
         a.employee.id === employee.id && 
-        a.date.split('T')[0] === today
+        getDateKeyFromString(a.date) === today
       )
 
       if (selectedFilter === 'available') {
@@ -871,10 +881,10 @@ export default function AdminAvailabilityPage() {
           <CardContent className="p-3 sm:p-6">
             <div className="space-y-3 sm:space-y-4">
               {currentEmployees.map(employee => {
-                const today = new Date().toISOString().split('T')[0]
+                const today = formatDateKey(new Date())
                 const todayAvailability = availabilities.find(a => 
                   a.employee.id === employee.id && 
-                  a.date.split('T')[0] === today
+                  getDateKeyFromString(a.date) === today
                 )
                 
                 return (
@@ -1108,7 +1118,7 @@ export default function AdminAvailabilityPage() {
                     }
                   </span>
                   <span className="text-sm text-gray-500">
-                    {new Date(viewingNote.date).toLocaleDateString(i18n.language, {
+                    {parseDateKey(viewingNote.date).toLocaleDateString(i18n.language, {
                       weekday: 'long',
                       year: 'numeric',
                       month: 'long',

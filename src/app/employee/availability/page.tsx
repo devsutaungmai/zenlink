@@ -91,13 +91,23 @@ export default function EmployeeAvailabilityPage() {
     return days
   }
 
+  const getDateKeyFromString = (value: string) => value.slice(0, 10)
+
+  const parseDateKey = (dateKey: string) => {
+    const [year, month, day] = dateKey.split('-').map(Number)
+    return new Date(year, month - 1, day)
+  }
+
   const formatDateKey = (date: Date) => {
-    return date.toISOString().split('T')[0]
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
   }
 
   const getAvailabilityForDate = (date: Date) => {
     const dateKey = formatDateKey(date)
-    return availabilities.find(av => av.date.startsWith(dateKey))
+    return availabilities.find(av => getDateKeyFromString(av.date) === dateKey)
   }
 
   const isDateSelected = (date: Date) => {
@@ -488,7 +498,7 @@ export default function EmployeeAvailabilityPage() {
                   }
                 </span>
                 <span className="text-sm text-gray-500">
-                  {new Date(viewingNote.date).toLocaleDateString(i18n.language, {
+                  {parseDateKey(viewingNote.date).toLocaleDateString(i18n.language, {
                     weekday: 'long',
                     year: 'numeric',
                     month: 'long',

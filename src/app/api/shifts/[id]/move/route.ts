@@ -42,6 +42,10 @@ export async function PATCH(
       return NextResponse.json({ error: 'Shift not found' }, { status: 404 })
     }
 
+    if (shift.status === 'COMPLETED' || shift.approved) {
+      return NextResponse.json({ error: 'Completed or approved shifts cannot be moved' }, { status: 400 })
+    }
+
     const updateData: any = {}
 
     if (date !== undefined) {

@@ -53,6 +53,7 @@ export async function GET(request: Request) {
       todayShifts,
       upcomingShifts,
       pendingExchanges,
+      pendingRequestsCount,
       currentAttendance,
       openShifts,
       myShiftRequests
@@ -226,6 +227,15 @@ export async function GET(request: Request) {
         }
       }),
 
+      prisma.shiftExchange.count({
+        where: {
+          toEmployeeId: employeeId,
+          status: {
+            in: ['EMPLOYEE_PENDING', 'EMPLOYEE_ACCEPTED']
+          }
+        }
+      }),
+
       prisma.attendance.findFirst({
         where: {
           employeeId,
@@ -302,7 +312,7 @@ export async function GET(request: Request) {
       todayShift,
       upcomingShifts,
       pendingExchanges,
-      pendingRequestsCount: pendingExchanges.length,
+      pendingRequestsCount,
       currentAttendance,
       openShifts,
       myShiftRequests

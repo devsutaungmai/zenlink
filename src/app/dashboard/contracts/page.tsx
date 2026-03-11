@@ -117,6 +117,7 @@ export default function ContractsPage() {
   const canCreateContracts = hasPermission(PERMISSIONS.CONTRACTS_CREATE)
   const canEditContracts = hasPermission(PERMISSIONS.CONTRACTS_EDIT)
   const canDeleteContracts = hasPermission(PERMISSIONS.CONTRACTS_DELETE)
+  const canSignContracts = isEmployeeUser || canEditContracts
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | undefined>(preselectedEmployeeId)
 
   // Pagination states
@@ -409,8 +410,6 @@ export default function ContractsPage() {
     try {
       const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN'
       const signerRole = isAdmin ? 'admin' : 'employee'
-      
-      console.log('Submitting signature:', { signingType, contractId, signatureData, signerRole });
       
       const response = await fetch(`/api/contracts/${contractId}/sign`, {
         method: 'POST',
@@ -1160,7 +1159,7 @@ export default function ContractsPage() {
                         >
                           <ArrowDownTrayIcon className="h-5 w-5" />
                         </button>
-                        {canEditContracts && (
+                        {canSignContracts && (
                           <button
                             onClick={() => handleSign(contract)}
                             className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all duration-200"
@@ -1249,7 +1248,7 @@ export default function ContractsPage() {
                                 >
                                   <ArrowDownTrayIcon className="h-4 w-4" />
                                 </button>
-                                {canEditContracts && (
+                                {canSignContracts && (
                                   <button
                                     onClick={() => handleSign(contract)}
                                     className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all duration-200"

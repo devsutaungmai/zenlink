@@ -247,7 +247,7 @@ export default function NotificationCenter({ employeeId }: NotificationCenterPro
                             </span>
                             
                             {/* View Details Button */}
-                            {notification.data?.shiftExchangeId && (
+                            {/* {notification.data?.shiftExchangeId && (
                               <button
                                 onClick={() => {
                                   // Navigate to shift exchange details
@@ -258,7 +258,7 @@ export default function NotificationCenter({ employeeId }: NotificationCenterPro
                               >
                                 {t('notifications.view_details')}
                               </button>
-                            )}
+                            )} */}
                           </div>
                         </div>
                       </div>

@@ -28,6 +28,11 @@ export function useShiftDragDrop({ onMoveShift, onDuplicateShift, canEditShifts,
   const [copyMode, setCopyMode] = useState(false)
   const dragDataRef = useRef<DragData | null>(null)
 
+  const isShiftLocked = useCallback((shift: ShiftWithRelations) => {
+    const status = String(shift.status)
+    return status === 'COMPLETED' || status === 'APPROVED' || Boolean(shift.approved)
+  }, [])
+
   const toggleCopyMode = useCallback(() => {
     setCopyMode(prev => !prev)
   }, [])
@@ -38,7 +43,7 @@ export function useShiftDragDrop({ onMoveShift, onDuplicateShift, canEditShifts,
     sourceRowId: string,
     sourceDate: string
   ) => {
-    if (!canEditShifts) {
+    if (!canEditShifts || isShiftLocked(shift)) {
       e.preventDefault()
       return
     }
@@ -66,7 +71,7 @@ export function useShiftDragDrop({ onMoveShift, onDuplicateShift, canEditShifts,
     document.body.appendChild(ghost)
     e.dataTransfer.setDragImage(ghost, el.offsetWidth / 2, 20)
     requestAnimationFrame(() => ghost.remove())
-  }, [canEditShifts])
+  }, [canEditShifts, isShiftLocked])
 
   const handleDragOver = useCallback((e: React.DragEvent, cellId: string, rowId?: string, date?: string) => {
     e.preventDefault()

@@ -383,6 +383,16 @@ export default function SchedulePage() {
     }
   }
 
+  const getDateKeyFromString = (value: string) => (value.includes('T') ? value.slice(0, 10) : value)
+
+  const parseDateKey = (dateKey: string) => {
+    const [year, month, day] = dateKey.split('-').map(Number)
+    if (!year || !month || !day) {
+      return new Date(dateKey)
+    }
+    return new Date(year, month - 1, day)
+  }
+
   const fetchAvailability = async () => {
     try {
       const start = format(startDate, 'yyyy-MM-dd')
@@ -400,7 +410,7 @@ export default function SchedulePage() {
 
       data.forEach((entry: any) => {
         if (!entry?.employeeId || !entry?.date) return
-        const dateKey = format(new Date(entry.date), 'yyyy-MM-dd')
+        const dateKey = getDateKeyFromString(String(entry.date))
         lookup[`${entry.employeeId}-${dateKey}`] = {
           isAvailable: Boolean(entry.isAvailable),
           note: entry.note || undefined
@@ -446,7 +456,7 @@ export default function SchedulePage() {
 
   const getAvailabilityStatus = useCallback((employeeId: string, date: string) => {
     if (!employeeId || !date) return undefined
-    const normalizedDate = format(new Date(date), 'yyyy-MM-dd')
+    const normalizedDate = getDateKeyFromString(date)
     return availabilityLookup[`${employeeId}-${normalizedDate}`]
   }, [availabilityLookup])
 
@@ -454,7 +464,7 @@ export default function SchedulePage() {
     const employee = employees.find(emp => emp.id === employeeId)
     const employeeName = employee ? `${employee.firstName} ${employee.lastName}` : t('labels.this_employee')
     const status = getAvailabilityStatus(employeeId, date)
-    const formattedDate = format(new Date(date), 'MMM d, yyyy')
+    const formattedDate = format(parseDateKey(getDateKeyFromString(date)), 'MMM d, yyyy')
 
     Swal.fire({
       icon: 'info',
