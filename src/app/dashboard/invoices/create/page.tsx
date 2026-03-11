@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import Link from 'next/link'
 import { ArrowLeftIcon, ArrowDownIcon } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
 import { Contact } from 'lucide-react'
-import { calculateInvoiceTotals, exportToPDF, formatInvoiceNumberForDisplay, sendEmail } from '@/shared/lib/invoiceHelper'
+import { calculateInvoiceTotals, exportToPDF, formatCreditNoteNumberForDisplay, formatInvoiceNumberForDisplay, sendEmail } from '@/shared/lib/invoiceHelper'
 import { Decimal } from '@prisma/client/runtime/library'
 import InvoiceSummaryCalculation from '@/components/invoice/InvoiceSummaryCalculation'
 import { se } from 'date-fns/locale'
@@ -113,6 +113,7 @@ export default function CreateInvoicePage() {
     const copyMode = searchParams.get('copy') === "true";
     const overviewMode = searchParams.get('overview') === "true";
     const invoiceId = searchParams.get('invoiceId') ?? "";
+    const isCreditNote = searchParams.get('credit-note') === "true";
     const { t } = useTranslation()
     const [loading, setLoading] = useState(false)
     const [customers, setCustomers] = useState<Customer[]>([])
@@ -154,6 +155,122 @@ export default function CreateInvoicePage() {
         showProject: true,
         showNote: true
     })
+    // ─── 1. Refs (place after all useState declarations) ─────────────────────────
+
+    // Track whether form has been "dirtied" with a customer selection
+    const isDirtyRef = useRef(false)
+    // Prevent double-firing (pushState + popstate can both trigger on back nav)
+    const isSavingRef = useRef(false)
+    // Always holds latest formData — safe to read inside event handlers
+    const formDataRef = useRef(formData)
+    useEffect(() => {
+        formDataRef.current = formData
+        if (formData.customerId) {
+            isDirtyRef.current = true
+        }
+    }, [formData])
+
+
+    // ─── 2. Core beacon helper — fire-and-forget, survives page unload ───────────
+
+    const fireBeacon = useCallback(() => {
+        if (!isDirtyRef.current || isSavingRef.current || overviewMode) return
+        const current = formDataRef.current
+        if (!current.customerId) return
+        isSavingRef.current = true
+        const { seller, ...filteredData } = current
+        navigator.sendBeacon('/api/invoices', JSON.stringify({ ...filteredData, status: 'DRAFT' }))
+        isDirtyRef.current = false
+        // Reset flag after a tick so rapid navigations don't permanently block
+        setTimeout(() => { isSavingRef.current = false }, 500)
+    }, [overviewMode])
+
+
+    // ─── 3. Intercept ALL client-side navigation (Next.js App Router) ────────────
+    // Next.js App Router uses history.pushState / replaceState for every
+    // <Link> click and router.push(). Patching them is the only reliable hook.
+
+    useEffect(() => {
+        if (overviewMode) return
+
+        const originalPush = history.pushState.bind(history)
+        const originalReplace = history.replaceState.bind(history)
+
+        history.pushState = (...args) => {
+            fireBeacon()
+            return originalPush(...args)
+        }
+        history.replaceState = (...args) => {
+            fireBeacon()
+            return originalReplace(...args)
+        }
+
+        // Browser back/forward button
+        window.addEventListener('popstate', fireBeacon)
+        // Hard refresh / tab close
+        window.addEventListener('beforeunload', fireBeacon)
+
+        return () => {
+            // Restore originals on unmount so other pages aren't affected
+            history.pushState = originalPush
+            history.replaceState = originalReplace
+            window.removeEventListener('popstate', fireBeacon)
+            window.removeEventListener('beforeunload', fireBeacon)
+        }
+    }, [overviewMode, fireBeacon])
+
+
+    // ─── 4. Awaitable save — used by the explicit back button only ────────────────
+
+    const autoSaveDraft = useCallback(async () => {
+        if (!isDirtyRef.current || overviewMode) return
+        const current = formDataRef.current
+        if (!current.customerId) return
+        try {
+            const { seller, ...filteredData } = current
+            await fetch('/api/invoices', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...filteredData, status: 'DRAFT' }),
+            })
+            isDirtyRef.current = false
+        } catch (_) {
+            // Silent fail
+        }
+    }, [overviewMode])
+
+
+    // ─── 5. Back button handler ───────────────────────────────────────────────────
+
+    const handleBack = async () => {
+        if (!overviewMode && isDirtyRef.current) {
+            await autoSaveDraft()
+            // Prevent the history.pushState patch from double-saving on router.back()
+            isDirtyRef.current = false
+        }
+        if (window.history.length > 1) {
+            router.back()
+        } else {
+            router.push("/dashboard/invoices")
+        }
+    }
+
+    // ─── Handle browser/tab close / hard navigation away ─────────────────────
+    // useEffect(() => {
+    //     const handleBeforeUnload = () => {
+    //         // Use sendBeacon for reliability on tab close
+    //         const current = formDataRef.current
+    //         if (!current.customerId || overviewMode) return
+    //         const { seller, ...filteredData } = current
+    //         const payload = JSON.stringify({ ...filteredData, status: 'DRAFT' })
+    //         navigator.sendBeacon('/api/invoices/draft-autosave', payload)
+    //     }
+
+    //     window.addEventListener('beforeunload', handleBeforeUnload)
+    //     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+    // }, [overviewMode])
+
+
     const onSaveCustomer = async (customer: CustomerFormType) => {
         console.log("CustomerFormData" + JSON.stringify(customer));
         setCustomerDialog(false)
@@ -280,6 +397,16 @@ export default function CreateInvoicePage() {
                     setContacts(data.customer?.contactPersons)
                 }
 
+                const rawLines: InvoiceLine[] = data.invoiceLines || [];
+
+                const invoiceLines = isCreditNote
+                    ? rawLines.map((line) => ({
+                        ...line,
+                        quantity: -Math.abs(Number(line.quantity)),
+                        pricePerUnit: -Math.abs(Number(line.pricePerUnit)),
+                    }))
+                    : rawLines;
+
                 setFormData({
                     invoiceNumber: data.invoiceNumber || '',
                     customerId: data.customerId || '',
@@ -290,17 +417,17 @@ export default function CreateInvoicePage() {
                     paidAt: data.paidAt ? data.paidAt.split('T')[0] : '',
                     projectId: data.projectId || '',
                     departmentId: data.departmentId || '',
-                    invoiceLines: data.invoiceLines || [],
+                    invoiceLines: invoiceLines || [],
                     seller: data.customer.business.name || '',
                     status: data.status || '',
                     notes: data.notes || ''
                 })
-                const calculatedNetTotals = (data.invoiceLines || []).map((line: InvoiceLine) => {
-                    const qty = Number(line.quantity) || 0;
-                    const price = Number(line.pricePerUnit) || 0;
+                const calculatedNetTotals = (rawLines || []).map((line: InvoiceLine) => {
+                    const qty = Math.abs(Number(line.quantity)) || 0;
+                    const price = Math.abs(Number(line.pricePerUnit)) || 0;
                     const discount = Number(line.discountPercentage) || 0;
-
-                    return calculateInvoiceTotals(qty, price, discount, line.vatPercentage || 0).totalExclVAT;
+                    const { totalExclVAT } = calculateInvoiceTotals(qty, price, discount, Number(line.vatPercentage) || 0);
+                    return isCreditNote ? -totalExclVAT : totalExclVAT;  // ← apply sign
                 });
                 setNetTotals(calculatedNetTotals);
             }
@@ -464,21 +591,21 @@ export default function CreateInvoicePage() {
 
     const updateLineTotal = (index: number) => {
         const line = formData.invoiceLines[index];
-
-        const qty = Number(line.quantity) || 0;
-        const price = Number(line.pricePerUnit) || 0;
+        const qty = Math.abs(Number(line.quantity)) || 0;
+        const price = Math.abs(Number(line.pricePerUnit)) || 0;
         const discount = Number(line.discountPercentage) || 0;
-
-        const { totalExclVAT } = calculateInvoiceTotals(qty, price, discount, 25);
+        const vat = Number(line.vatPercentage) || 0;
+        const { totalExclVAT } = calculateInvoiceTotals(qty, price, discount, vat);
+        const sign = isCreditNote ? -1 : 1;
         setNetTotals((prevNetTotals) => {
             const newNetTotals = [...prevNetTotals];
-            newNetTotals[index] = totalExclVAT;
+            newNetTotals[index] = totalExclVAT * sign;
             return newNetTotals;
         });
     };
 
 
-    const handleSubmit = async (action: 'save' | 'print' | 'send_invoice_with_email' | 'send_invoice_without_email' | 'send_new_credit_note') => {
+    const handleSubmit = async (action: 'print' | 'send_invoice_with_email' | 'send_invoice_without_email' | 'send_new_credit_note') => {
         setLoading(true)
         const invoiceStatus = action === "send_invoice_with_email" || action === "send_invoice_without_email" ? "SENT" : "DRAFT";
         let { seller, ...filteredData } = formData
@@ -584,7 +711,7 @@ export default function CreateInvoicePage() {
                     confirmButtonColor: '#31BCFF',
                 })
             }
-
+            isDirtyRef.current = false
             router.push('/dashboard/invoices')
             router.refresh()
         } catch (error) {
@@ -598,14 +725,6 @@ export default function CreateInvoicePage() {
             setLoading(false)
         }
     }
-    const handleBack = () => {
-        if (window.history.length > 1) {
-            router.back()
-        } else {
-            router.push("/dashboard/invoices")
-        }
-    }
-
 
     return (
         <div className="space-y-6">
@@ -618,7 +737,11 @@ export default function CreateInvoicePage() {
                                 <ArrowLeftIcon className="w-5 h-5 text-gray-600" />
                             </button>
                             <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                                {overviewMode ? `Invoice Details (Invoice Number -${formatInvoiceNumberForDisplay(formData.invoiceNumber)})` : "Create Invoice"}
+                                {overviewMode && !isCreditNote
+                                    ? `Invoice Details (Invoice Number -${formatInvoiceNumberForDisplay(formData.invoiceNumber)})`
+                                    : overviewMode && isCreditNote
+                                        ? `Credit Note Detail (${formData.invoiceNumber.startsWith('CN') ? formatCreditNoteNumberForDisplay(formData.invoiceNumber) : formatInvoiceNumberForDisplay(formData.invoiceNumber)})`
+                                        : "Create Invoice"}
                             </h1>
                         </div>
                         {overviewMode ? null : <p className="mt-2 text-gray-600 ml-14">
@@ -642,7 +765,8 @@ export default function CreateInvoicePage() {
             </div>
             {/* Form Container */}
             <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg p-6">
-                <form onSubmit={(e) => { e.preventDefault(); handleSubmit('save'); }} className="space-y-6">
+                {/* <form onSubmit={(e) => { e.preventDefault(); handleSubmit('save'); }} className="space-y-6"> */}
+                <div className="space-y-6">
                     <div className="bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-xl border border-slate-200 p-6">
                         <div className="flex items-center justify-between mb-4">
                             <h2 className="text-lg font-semibold text-gray-900">Customer Information</h2>
@@ -824,7 +948,6 @@ export default function CreateInvoicePage() {
                                     </label>
                                     <select
                                         id="productId"
-                                        required
                                         value={line.productId || ''}
                                         onChange={(e) => {
                                             const product = products.find(p => p.id === e.target.value);
@@ -996,7 +1119,7 @@ export default function CreateInvoicePage() {
                             />
                         </div>}
                     {/* Summary Calculation */}
-                    <InvoiceSummaryCalculation invoiceLines={formData.invoiceLines} />
+                    <InvoiceSummaryCalculation invoiceLines={formData.invoiceLines} isCreditNote={isCreditNote} />
 
                     {/* Form Actions */}
                     {overviewMode ? null : <div className="flex items-center justify-end gap-4 pt-6 border-t border-gray-200">
@@ -1009,11 +1132,12 @@ export default function CreateInvoicePage() {
                         {/* Dropdown Button Group */}
                         <div className="relative inline-flex">
                             <button
-                                type="submit"
+                                type="button"
                                 disabled={loading}
+                                onClick={() => handleSubmit('send_invoice_without_email')}
                                 className="px-6 py-3 rounded-l-xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                             >
-                                {loading ? 'Creating...' : 'Create Invoice'}
+                                <span className="text-white font-medium">{loading ? 'Sending...' : 'Send Invoice'}</span>
                             </button>
 
                             <button
@@ -1039,17 +1163,7 @@ export default function CreateInvoicePage() {
                                         </svg>
                                         <span className="text-gray-700 font-medium">Preview(PDF)</span>
                                     </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => handleSubmit('send_invoice_without_email')}
-                                        disabled={loading}
-                                        className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                        </svg>
-                                        <span className="text-gray-700 font-medium">Send Invoice </span>
-                                    </button>
+
                                     <button
                                         type="button"
                                         onClick={() => handleSubmit('send_new_credit_note')}
@@ -1076,7 +1190,8 @@ export default function CreateInvoicePage() {
                             )}
                         </div>
                     </div>}
-                </form>
+                    {/* </form> */}
+                </div>
             </div>
             {customerDialog && <CustomerDialog
                 open={true}

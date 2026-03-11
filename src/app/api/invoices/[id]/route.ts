@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/shared/lib/prisma'
 import { getCurrentUserOrEmployee } from '@/shared/lib/auth'
-import { calculateInvoiceTotals, generateVoucherNumber, getBusinessId, invoiceToLedgerPosting } from '@/shared/lib/invoiceHelper'
+import { calculateInvoiceTotals, generateInvoiceNumber, generateVoucherNumber, getBusinessId, invoiceToLedgerPosting } from '@/shared/lib/invoiceHelper'
 import { VoucherType } from '@prisma/client'
+import { InvoiceStatus } from '@/app/dashboard/invoices/page'
 
 // GET /api/invoices/[id]
 export async function GET(
@@ -192,6 +193,9 @@ export async function PUT(
     // Calculate invoice-level VAT (after summing all lines)
     const totalVatAmount = invoiceLinesData.reduce((total: any, line: any)=> total + line.vatAmount,0)
     const totalInclVAT = totalExclVAT + totalVatAmount  // Correct calculation
+    const isTransitioningToSent =
+      existingInvoice.status === InvoiceStatus.DRAFT &&
+      status === InvoiceStatus.SENT
 
     // Update invoice with transaction (delete old lines, create new ones)
     const invoice = await prisma.$transaction(async (tx) => {
@@ -213,6 +217,12 @@ export async function PUT(
         invoiceLines: {
           create: invoiceLinesData
         }
+      }
+      if (isTransitioningToSent) {
+        const { year, sequence, invoiceNumber } = await generateInvoiceNumber(businessId, tx)
+        invoiceData.invoiceNumber = invoiceNumber
+        invoiceData.year = year
+        invoiceData.sequence = sequence
       }
 
       if (contactPersonId && contactPersonId.trim() !== '') {
@@ -244,7 +254,7 @@ export async function PUT(
       }
 
       // Update invoice with new data and create new lines
-      return await tx.invoice.update({
+      const updatedInvoice = await tx.invoice.update({
         where: { id: invoiceId },
         data: invoiceData,
         include: {
@@ -256,16 +266,17 @@ export async function PUT(
           }
         }
       })
+      if (isTransitioningToSent) {
+        const voucher = await generateVoucherNumber(businessId, VoucherType.INVOICE, tx)
+        await tx.invoice.update({
+          where: { id: updatedInvoice.id },
+          data: { voucherId: voucher.id }
+        })
+      }
+      return updatedInvoice
     })
 
-    if (invoice.status === "SENT") {
-      const voucher = await generateVoucherNumber(businessId, VoucherType.INVOICE);
-
-      await prisma.invoice.update({
-        where: { id: invoice.id },
-        data: { voucherId: voucher.id }
-      });
-
+    if (isTransitioningToSent) {
       await invoiceToLedgerPosting(invoice.id);
     }
 

@@ -77,7 +77,8 @@ export async function generateInvoiceNumber(
     where: {
       businessId,
       year,
-      status: { notIn: [InvoiceStatus.DRAFT, InvoiceStatus.SENT] }
+      status: InvoiceStatus.OUTSTANDING,
+      sequence: { gt: 0 }
     },
     orderBy: { sequence: 'desc' }
   });

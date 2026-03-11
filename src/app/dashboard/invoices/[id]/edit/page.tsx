@@ -410,7 +410,7 @@ export default function EditInvoicePage({ params, searchParams }: { params: Prom
                                 <ArrowLeftIcon className="w-5 h-5 text-gray-600" />
                             </Link>
                             <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                                Edit Invoice
+                                {isCreditNote ? "Credit Note" : "Edit Invoice"}
                             </h1>
                         </div>
                         <p className="mt-2 text-gray-600 ml-14">
@@ -435,6 +435,11 @@ export default function EditInvoicePage({ params, searchParams }: { params: Prom
 
             {/* Form Container */}
             <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg p-6">
+                {isCreditNote && (
+                    <div className="mb-3 text-amber-800 text-sm text-right font-medium">
+                        ⚠️ You are issuing a credit note. Invoice details are locked and cannot be edited!
+                    </div>
+                )}
                 <form onSubmit={(e) => handleSubmit(e, 'update')} className="space-y-6">
 
                     <div className="bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-xl border border-slate-200 p-6">
@@ -468,6 +473,7 @@ export default function EditInvoicePage({ params, searchParams }: { params: Prom
                                     value={formData.customerId || ""}
                                     onChange={(customerId) => setFormData({ ...formData, customerId })}
                                     placeholder="Select Customer"
+                                    disabled={isCreditNote}
                                 />
                                 <p className="text-xs mt-2 text-blue-400">Customer is already assigned </p>
                             </div>
@@ -481,7 +487,8 @@ export default function EditInvoicePage({ params, searchParams }: { params: Prom
                                         id="contactPersonId"
                                         value={formData.contactPersonId || ""}
                                         onChange={(e) => setFormData({ ...formData, contactPersonId: e.target.value })}
-                                        className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                        disabled={isCreditNote}
+                                        className={`block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 ${isCreditNote ? 'disabled:opacity-60 disabled:cursor-not-allowed' : ''}`}
                                     >
                                         <option value="">Select Contact Name</option>
                                         {contacts.map((contact) => (
@@ -505,7 +512,8 @@ export default function EditInvoicePage({ params, searchParams }: { params: Prom
                                             required
                                             value={formData.sentAt || ""}
                                             onChange={(e) => setFormData({ ...formData, sentAt: e.target.value })}
-                                            className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                            disabled={isCreditNote}
+                                            className={`block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 ${isCreditNote ? 'disabled:opacity-60 disabled:cursor-not-allowed' : ''}`}
                                         />
                                     </div>
                                     <div className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] min-w-[250px]">
@@ -519,7 +527,8 @@ export default function EditInvoicePage({ params, searchParams }: { params: Prom
                                             min="0"
                                             value={formData.dueDay}
                                             onChange={(e) => setFormData({ ...formData, dueDay: Number.parseInt(e.target.value) || 0 })}
-                                            className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                            disabled={isCreditNote}
+                                            className={`block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 ${isCreditNote ? 'disabled:opacity-60 disabled:cursor-not-allowed' : ''}`}
                                             placeholder="Enter days until due"
                                         />
                                     </div>
@@ -535,7 +544,8 @@ export default function EditInvoicePage({ params, searchParams }: { params: Prom
                                         id="projectId"
                                         value={formData.projectId || ""}
                                         onChange={(e) => setFormData({ ...formData, projectId: e.target.value })}
-                                        className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                        disabled={isCreditNote}
+                                        className={`block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 ${isCreditNote ? 'disabled:opacity-60 disabled:cursor-not-allowed' : ''}`}
                                     >
                                         <option value="">Select Project</option>
                                         {projects.map((proj) => (
@@ -556,7 +566,8 @@ export default function EditInvoicePage({ params, searchParams }: { params: Prom
                                         id="departmentId"
                                         value={formData.departmentId || ""}
                                         onChange={(e) => setFormData({ ...formData, departmentId: e.target.value })}
-                                        className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                        disabled={isCreditNote}
+                                        className={`block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 ${isCreditNote ? 'disabled:opacity-60 disabled:cursor-not-allowed' : ''}`}
                                     >
                                         <option value="">Select Department</option>
                                         {departments.map((dept) => (
@@ -578,7 +589,8 @@ export default function EditInvoicePage({ params, searchParams }: { params: Prom
                                         id="deliveryAddress"
                                         value={formData.deliveryAddress || ""}
                                         onChange={(e) => setFormData({ ...formData, deliveryAddress: e.target.value })}
-                                        className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                        disabled={isCreditNote}
+                                        className={`block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 ${isCreditNote ? 'disabled:opacity-60 disabled:cursor-not-allowed' : ''}`}
                                         placeholder="Enter delivery address"
                                     />
                                 </div>
@@ -602,7 +614,7 @@ export default function EditInvoicePage({ params, searchParams }: { params: Prom
                                     min="1"
                                     value={formData.seller || ""}
                                     disabled
-                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                    className={`block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 ${isCreditNote ? 'disabled:opacity-60 disabled:cursor-not-allowed' : ''}`}
                                     placeholder="Seller Name"
                                 />
                             </div>
@@ -611,11 +623,15 @@ export default function EditInvoicePage({ params, searchParams }: { params: Prom
                     <div className="bg-gradient-to-br rounded-xl border p-6">
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-lg font-semibold text-gray-900 mb-4">Order Lines</h2>
-                            <button
-                                type="button"
-                                onClick={handleNewOrderLine}
-                                disabled={loading}
-                            >New Order Line</button>
+                            {!isCreditNote && (
+                                <button
+                                    type="button"
+                                    onClick={handleNewOrderLine}
+                                    disabled={loading}
+                                >
+                                    New Order Line
+                                </button>
+                            )}
                         </div>
                         {formData.invoiceLines.map((line, index) => {
                             // Calculate net total for display
@@ -641,7 +657,7 @@ export default function EditInvoicePage({ params, searchParams }: { params: Prom
                                             id="productId"
                                             required
                                             value={line.productId || ''}
-
+                                            disabled={isCreditNote}
                                             onChange={(e) => {
                                                 const product = products.find(p => p.id === e.target.value);
                                                 const businessVat = product?.ledgerAccount?.businessVatCodes?.[0]?.vatCode;
@@ -656,7 +672,7 @@ export default function EditInvoicePage({ params, searchParams }: { params: Prom
                                                     productName: product?.productName,
                                                 })
                                             }}
-                                            className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                            className={`block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 ${isCreditNote ? 'disabled:opacity-60 disabled:cursor-not-allowed' : ''}`}
                                         >
                                             <option value="">Select Product</option>
                                             {products.map((pr) => (
@@ -675,12 +691,13 @@ export default function EditInvoicePage({ params, searchParams }: { params: Prom
                                             id="quantity"
                                             required
                                             value={line.quantity || ""}
+                                            disabled={isCreditNote}
                                             onChange={(e) => {
 
                                                 updateInvoiceLine(index, { quantity: parseFloat(e.target.value) })
 
                                             }}
-                                            className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                            className={`block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 ${isCreditNote ? 'disabled:opacity-60 disabled:cursor-not-allowed' : ''}`}
                                             placeholder="Enter quantity"
                                         />
                                     </div>
@@ -695,6 +712,7 @@ export default function EditInvoicePage({ params, searchParams }: { params: Prom
                                             required
                                             step="0.01"
                                             value={line.pricePerUnit || 0.0}
+                                            disabled={isCreditNote}
                                             onChange={(e) => {
                                                 updateInvoiceLine(index, {
                                                     pricePerUnit: parseFloat(e.target.value)
@@ -708,7 +726,7 @@ export default function EditInvoicePage({ params, searchParams }: { params: Prom
                                                 }))
                                                 updateLineTotal(index);
                                             }}
-                                            className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                            className={`block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 ${isCreditNote ? 'disabled:opacity-60 disabled:cursor-not-allowed' : ''}`}
                                             placeholder="Enter price per unit"
                                         />
                                     </div>
@@ -720,11 +738,11 @@ export default function EditInvoicePage({ params, searchParams }: { params: Prom
                                         <input
                                             type="number"
                                             id="vatPercent"
-                                            required
+                                            readOnly
                                             step="0.01"
                                             value={line.vatPercentage || 0}
-                                            disabled
-                                            className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                                            disabled={isCreditNote}
+                                            className={`block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 ${isCreditNote ? 'disabled:opacity-60 disabled:cursor-not-allowed' : ''}`}
                                         />
                                     </div>
 
@@ -741,6 +759,7 @@ export default function EditInvoicePage({ params, searchParams }: { params: Prom
                                                 min="0"
                                                 max="100"
                                                 value={line.discountPercentage || ""}
+                                                disabled={isCreditNote}
                                                 onChange={(e) => {
 
                                                     updateInvoiceLine(index, {
@@ -758,7 +777,7 @@ export default function EditInvoicePage({ params, searchParams }: { params: Prom
                                                     // setFormData({ ...formData, invoiceLines: updatedLines })
                                                     // updateLineTotal(index);
                                                 }}
-                                                className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                                className={`block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 ${isCreditNote ? 'disabled:opacity-60 disabled:cursor-not-allowed' : ''}`}
                                                 placeholder="Enter discount percentage"
                                             />
                                         </div>
@@ -782,6 +801,8 @@ export default function EditInvoicePage({ params, searchParams }: { params: Prom
                                         <button
                                             type='button'
                                             onClick={() => deleteInvoiceLine(index)}
+                                            disabled={isCreditNote}
+                                            className={`${isCreditNote ? 'disabled:opacity-60 disabled:cursor-not-allowed' : ''}`}
                                         >
                                             <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -791,6 +812,8 @@ export default function EditInvoicePage({ params, searchParams }: { params: Prom
                                         <button
                                             type='button'
                                             onClick={() => handleCopyOrderLine(line, Number(totalExclVAT || 0))}
+                                            disabled={isCreditNote}
+                                            className={`${isCreditNote ? 'disabled:opacity-60 disabled:cursor-not-allowed' : ''}`}
                                         >
                                             <svg className="w-8 h-8 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2h-6a2 2 0 01-2-2V7z" />

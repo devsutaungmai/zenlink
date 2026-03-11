@@ -827,7 +827,7 @@ export default function InvoicesPage() {
                                             {isColumnVisible('invoiceNumber') && <td className="px-6 py-4">
                                                 <div className="text-sm font-medium text-gray-900">
                                                     <Link
-                                                        href={`/dashboard/invoices/create?invoiceId=${invoice.id}&copy=true&overview=true`}
+                                                        href={`/dashboard/invoices/create?invoiceId=${invoice.id}&copy=true&overview=true&credit-note=${invoice.status === InvoiceStatus.CREDITED || invoice.status === InvoiceStatus.CREDIT_NOTE ? true : false}`}
                                                     >
                                                         <span className="text-sm font-medium text-blue-600 hover:underline cursor-pointer">
 
