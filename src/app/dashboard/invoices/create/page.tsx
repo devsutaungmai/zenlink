@@ -596,7 +596,7 @@ export default function CreateInvoicePage() {
         const discount = Number(line.discountPercentage) || 0;
         const vat = Number(line.vatPercentage) || 0;
         const { totalExclVAT } = calculateInvoiceTotals(qty, price, discount, vat);
-        const sign = isCreditNote ? -1 : 1;
+        const sign = (isCreditNote && !!line.id) ? -1 : (qty < 0 ? -1 : 1);  
         setNetTotals((prevNetTotals) => {
             const newNetTotals = [...prevNetTotals];
             newNetTotals[index] = totalExclVAT * sign;
@@ -725,6 +725,17 @@ export default function CreateInvoicePage() {
             setLoading(false)
         }
     }
+
+    const totalInclVAT = formData.invoiceLines.reduce((sum, line) => {
+        const qty = Number(line.quantity) || 0;
+        const price = Number(line.pricePerUnit) || 0;
+        const discount = Number(line.discountPercentage) || 0;
+        const vat = Number(line.vatPercentage) || 0;
+        const { totalInclVAT } = calculateInvoiceTotals(Math.abs(qty), Math.abs(price), discount, vat);
+        return sum + (qty < 0 ? -totalInclVAT : totalInclVAT);
+    }, 0);
+
+    const isNegativeTotal = totalInclVAT < 0;
 
     return (
         <div className="space-y-6">
@@ -986,11 +997,11 @@ export default function CreateInvoicePage() {
                                         type="number"
                                         id="quantity"
                                         required
-                                        min="1"
                                         value={line.quantity || ""}
                                         onChange={(e) => {
+                                            const val = e.target.value;
                                             const updatedLines = [...formData.invoiceLines];
-                                            updatedLines[index].quantity = parseFloat(e.target.value);
+                                            updatedLines[index].quantity = Number(val);
                                             setFormData({ ...formData, invoiceLines: updatedLines })
                                             updateLineTotal(index);
 
@@ -1134,10 +1145,10 @@ export default function CreateInvoicePage() {
                             <button
                                 type="button"
                                 disabled={loading}
-                                onClick={() => handleSubmit('send_invoice_without_email')}
-                                className="px-6 py-3 rounded-l-xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                                onClick={() => handleSubmit(isNegativeTotal ? 'send_new_credit_note' : 'send_invoice_without_email')}
+                                className="px-6 py-3 rounded-l-xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 border-l border-white/20 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                <span className="text-white font-medium">{loading ? 'Sending...' : 'Send Invoice'}</span>
+                                {loading ? 'Sending...' : isNegativeTotal ? 'Create Credit Note' : 'Send Invoice'}
                             </button>
 
                             <button
@@ -1164,17 +1175,7 @@ export default function CreateInvoicePage() {
                                         <span className="text-gray-700 font-medium">Preview(PDF)</span>
                                     </button>
 
-                                    <button
-                                        type="button"
-                                        onClick={() => handleSubmit('send_new_credit_note')}
-                                        disabled={loading}
-                                        className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                        </svg>
-                                        <span className="text-gray-700 font-medium">Create Credit Note </span>
-                                    </button>
+
                                     <button
                                         type="button"
                                         onClick={() => handleSubmit('send_invoice_with_email')}

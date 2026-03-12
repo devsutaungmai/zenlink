@@ -54,9 +54,9 @@ export async function GET(
             productName: true,
             productNumber: true,
             isCredited: true
+          }
         }
       }
-    }
     })
 
     if (!invoice) {
@@ -183,7 +183,7 @@ export async function PUT(
         subtotal: calculations.subtotal,
         discountAmount: calculations.discountAmount,
         lineTotal: calculations.totalExclVAT,
-        vatAmount:calculations.vatAmount,
+        vatAmount: calculations.vatAmount,
         vatPercentage: vatPerc,
         productName: product.productName,
         productNumber: product.productNumber || ''
@@ -191,11 +191,13 @@ export async function PUT(
     }
 
     // Calculate invoice-level VAT (after summing all lines)
-    const totalVatAmount = invoiceLinesData.reduce((total: any, line: any)=> total + line.vatAmount,0)
+    const totalVatAmount = invoiceLinesData.reduce((total: any, line: any) => total + line.vatAmount, 0)
     const totalInclVAT = totalExclVAT + totalVatAmount  // Correct calculation
     const isTransitioningToSent =
-      existingInvoice.status === InvoiceStatus.DRAFT &&
-      status === InvoiceStatus.SENT
+      (existingInvoice.status === "DRAFT" && status === "SENT") ? true : false;
+    console.log("Existing Invoice Status==>", existingInvoice.status);
+
+    console.log("Invoice Lines Data==>", JSON.stringify(isTransitioningToSent));
 
     // Update invoice with transaction (delete old lines, create new ones)
     const invoice = await prisma.$transaction(async (tx) => {
@@ -253,6 +255,8 @@ export async function PUT(
 
       }
 
+      console.log("Invoice Data to update==>", JSON.stringify(invoiceData));
+
       // Update invoice with new data and create new lines
       const updatedInvoice = await tx.invoice.update({
         where: { id: invoiceId },
@@ -296,7 +300,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
-  
+
   // Check if it's a bulk delete request
   if (id === 'bulk') {
     try {
@@ -304,7 +308,7 @@ export async function DELETE(
       const { ids } = body
 
       console.log('Received IDs for deletion:', ids)
-      
+
       if (!ids || !Array.isArray(ids) || ids.length === 0) {
         return NextResponse.json(
           { error: 'Invoice IDs are required' },

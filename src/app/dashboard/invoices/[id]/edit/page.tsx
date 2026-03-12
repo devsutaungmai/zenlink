@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect, use, useCallback, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import Link from 'next/link'
@@ -91,6 +91,96 @@ export default function EditInvoicePage({ params, searchParams }: { params: Prom
         customerId: string
         amount: number
     } | null>(null)
+
+    // ─── 1. Refs ──────────────────────────────────────────────────────────────────
+    const isDirtyRef = useRef(false)
+    const isSavingRef = useRef(false)
+    const formDataRef = useRef(formData)
+    useEffect(() => {
+        formDataRef.current = formData
+        // Only mark dirty after invoice is loaded (customerId present) AND not a credit note
+        if (formData.customerId && !isCreditNote) {
+            isDirtyRef.current = true
+        }
+    }, [formData, isCreditNote])
+
+
+    // ─── 2. Core beacon helper — PUT to existing invoice ─────────────────────────
+    const fireBeacon = useCallback(() => {
+        if (!isDirtyRef.current || isSavingRef.current || isCreditNote) return
+        const current = formDataRef.current
+        if (!current.customerId) return
+        isSavingRef.current = true
+        const { seller, ...filteredData } = current
+        // Keep current status (DRAFT stays DRAFT, SENT stays SENT) — no promotion on auto-save
+        navigator.sendBeacon(
+            `/api/invoices/${resolvedParams.id}`,
+            JSON.stringify(filteredData)
+        )
+        isDirtyRef.current = false
+        setTimeout(() => { isSavingRef.current = false }, 500)
+    }, [isCreditNote, resolvedParams.id])
+
+
+    // ─── 3. Intercept ALL client-side navigation ──────────────────────────────────
+    useEffect(() => {
+        if (isCreditNote) return  // credit note page never auto-saves
+
+        const originalPush = history.pushState.bind(history)
+        const originalReplace = history.replaceState.bind(history)
+
+        history.pushState = (...args) => {
+            fireBeacon()
+            return originalPush(...args)
+        }
+        history.replaceState = (...args) => {
+            fireBeacon()
+            return originalReplace(...args)
+        }
+
+        window.addEventListener('popstate', fireBeacon)
+        window.addEventListener('beforeunload', fireBeacon)
+
+        return () => {
+            history.pushState = originalPush
+            history.replaceState = originalReplace
+            window.removeEventListener('popstate', fireBeacon)
+            window.removeEventListener('beforeunload', fireBeacon)
+        }
+    }, [isCreditNote, fireBeacon])
+
+
+    // ─── 4. Awaitable save — used by back button only ─────────────────────────────
+    const autoSave = useCallback(async () => {
+        if (!isDirtyRef.current || isCreditNote) return
+        const current = formDataRef.current
+        if (!current.customerId) return
+        try {
+            const { seller, ...filteredData } = current
+            await fetch(`/api/invoices/${resolvedParams.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(filteredData),
+            })
+            isDirtyRef.current = false
+        } catch (_) {
+            // Silent fail
+        }
+    }, [isCreditNote, resolvedParams.id])
+
+
+    // ─── 5. Back button handler ───────────────────────────────────────────────────
+    const handleBack = async () => {
+        if (!isCreditNote && isDirtyRef.current) {
+            await autoSave()
+            isDirtyRef.current = false
+        }
+        if (window.history.length > 1) {
+            router.back()
+        } else {
+            router.push("/dashboard/invoices")
+        }
+    }
 
     useEffect(() => {
         if (settings) {
@@ -221,6 +311,9 @@ export default function EditInvoicePage({ params, searchParams }: { params: Prom
                     notes: data.notes || ''
                 })
 
+                // Don't mark dirty from the initial load
+                isDirtyRef.current = false
+
             }
         } catch (error) {
             console.error('Error fetching invoice:', error)
@@ -228,11 +321,6 @@ export default function EditInvoicePage({ params, searchParams }: { params: Prom
             setFetchingLoading(false)
         }
     }
-
-    // const handleCustomerChange = (customerId: string) => {
-    //     setFormData({ ...formData, customerId })
-    //     fetchCustomerDetails(customerId)
-    // }
 
     const deleteInvoiceLine = (index: number) => {
         console.log("Deleting....")
@@ -297,14 +385,71 @@ export default function EditInvoicePage({ params, searchParams }: { params: Prom
         }))
     }
 
-    const handleSubmit = async (e: React.FormEvent, action: 'update' | 'print' | 'send_invoice_with_email' | 'send_invoice_without_email') => {
-        e.preventDefault()
+    const handleSubmit = async (action: 'print' | 'send_invoice_with_email' | 'send_invoice_without_email' | 'send_new_credit_note') => {
         setLoading(true)
         const invoiceStatus = action === "send_invoice_with_email" || action === "send_invoice_without_email" ? "SENT" : "DRAFT";
         let { seller, ...filteredData } = formData
         filteredData = { ...filteredData, status: invoiceStatus }
         console.log("Submitting data:", filteredData);
         try {
+            // Standalone credit note — separate flow
+
+            if (action === 'send_new_credit_note' && !isCreditNote && isNegativeTotal) {
+                if (!formData.customerId) {
+                    await Swal.fire({
+                        title: 'Validation Error',
+                        text: 'Please select a customer before creating a credit note',
+                        icon: 'warning',
+                        confirmButtonColor: '#31BCFF',
+                    })
+                    setLoading(false)
+                    return
+                }
+
+                if (formData.invoiceLines.length === 0 || formData.invoiceLines.every(l => !l.productId)) {
+                    await Swal.fire({
+                        title: 'Validation Error',
+                        text: 'Please add at least one order line',
+                        icon: 'warning',
+                        confirmButtonColor: '#31BCFF',
+                    })
+                    setLoading(false)
+                    return
+                }
+
+                const res = await fetch('/api/invoices/credit-note/standalone', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        customerId: formData.customerId,
+                        creditNoteDate: formData.sentAt,
+                        comment: formData.notes || '',
+                        lines: formData.invoiceLines.filter(l => l.productId),
+                        projectId: formData.projectId || null,
+                        departmentId: formData.departmentId || null,
+                        contactPersonId: formData.contactPersonId || null,
+                        sourceDraftId: resolvedParams.id,  // ← pass the current draft ID so it gets deleted atomically
+                    }),
+                })
+
+                if (!res.ok) {
+                    const error = await res.json()
+                    throw new Error(error.error || 'Failed to create standalone credit note')
+                }
+
+                await Swal.fire({
+                    title: 'Success!',
+                    text: 'Credit note created successfully',
+                    icon: 'success',
+                    confirmButtonColor: '#31BCFF',
+                })
+
+                isDirtyRef.current = false
+                router.push('/dashboard/invoices')
+                router.refresh()
+                return
+            }
+
             // If it's a credit note, create it using the specific endpoint and pass the original invoice data
             if (isCreditNote && originalInvoiceData) {
                 const creditLines = formData.invoiceLines.filter(line => line.id) // original lines
@@ -333,7 +478,7 @@ export default function EditInvoicePage({ params, searchParams }: { params: Prom
                     icon: 'success',
                     confirmButtonColor: '#31BCFF',
                 })
-
+                isDirtyRef.current = false
                 router.push('/dashboard/invoices')
                 router.refresh()
                 return
@@ -381,7 +526,7 @@ export default function EditInvoicePage({ params, searchParams }: { params: Prom
                 icon: 'success',
                 confirmButtonColor: '#31BCFF',
             })
-
+            isDirtyRef.current = false
             router.push('/dashboard/invoices')
             router.refresh()
         } catch (error) {
@@ -396,6 +541,18 @@ export default function EditInvoicePage({ params, searchParams }: { params: Prom
         }
     }
 
+    const totalInclVAT = formData.invoiceLines.reduce((sum, line) => {
+        const qty = Number(line.quantity) || 0;
+        const price = Number(line.pricePerUnit) || 0;
+        const discount = Number(line.discountPercentage) || 0;
+        const vat = Number(line.vatPercentage) || 0;
+        const { totalInclVAT } = calculateInvoiceTotals(Math.abs(qty), Math.abs(price), discount, vat);
+        const sign = (isCreditNote && !!line.id) ? -1 : (qty < 0 ? -1 : 1);
+        return sum + (totalInclVAT * sign);
+    }, 0);
+
+    const isNegativeTotal = totalInclVAT < 0;
+
     return (
         <div className="space-y-6">
             {/* Header Section */}
@@ -403,12 +560,12 @@ export default function EditInvoicePage({ params, searchParams }: { params: Prom
                 <div className="flex items-center justify-between">
                     <div>
                         <div className="flex items-center gap-3 mb-2">
-                            <Link
-                                href="/dashboard/invoices"
+                            <button
+                                onClick={handleBack}
                                 className="p-2 hover:bg-white/50 rounded-lg transition-colors"
                             >
                                 <ArrowLeftIcon className="w-5 h-5 text-gray-600" />
-                            </Link>
+                            </button>
                             <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
                                 {isCreditNote ? "Credit Note" : "Edit Invoice"}
                             </h1>
@@ -440,7 +597,7 @@ export default function EditInvoicePage({ params, searchParams }: { params: Prom
                         ⚠️ You are issuing a credit note. Invoice details are locked and cannot be edited!
                     </div>
                 )}
-                <form onSubmit={(e) => handleSubmit(e, 'update')} className="space-y-6">
+                <div className="space-y-6">
 
                     <div className="bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-xl border border-slate-200 p-6">
                         <div className="flex items-center justify-between mb-4">
@@ -860,11 +1017,12 @@ export default function EditInvoicePage({ params, searchParams }: { params: Prom
                         {/* Dropdown Button Group */}
                         <div className="relative inline-flex">
                             <button
-                                type="submit"
+                                type="button"
+                                onClick={() => handleSubmit(isNegativeTotal ? 'send_new_credit_note' : 'send_invoice_without_email')}
                                 disabled={loading}
                                 className="px-6 py-3 rounded-l-xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                             >
-                                {isCreditNote ? 'Send Credit Note' : 'Update Invoice'}
+                                {loading ? 'Sending...' : isCreditNote ? 'Send Credit Note' : isNegativeTotal ? 'Create Credit Note' : 'Send Invoice'}
                             </button>
 
                             {!isCreditNote && (
@@ -882,7 +1040,7 @@ export default function EditInvoicePage({ params, searchParams }: { params: Prom
                                 <div className="absolute right-0 bottom-full mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-200 py-2 z-10">
                                     <button
                                         type="button"
-                                        onClick={(e) => { handleSubmit(e, 'print') }}
+                                        onClick={() => { handleSubmit('print') }}
                                         disabled={loading}
                                         className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
@@ -891,7 +1049,7 @@ export default function EditInvoicePage({ params, searchParams }: { params: Prom
                                         </svg>
                                         <span className="text-gray-700 font-medium">Preview(PDF)</span>
                                     </button>
-                                    <button
+                                    {/* <button
                                         type="button"
                                         onClick={(e) => { handleSubmit(e, 'send_invoice_without_email') }}
                                         disabled={loading}
@@ -901,11 +1059,11 @@ export default function EditInvoicePage({ params, searchParams }: { params: Prom
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                                         </svg>
                                         <span className="text-gray-700 font-medium">Send Invoice</span>
-                                    </button>
+                                    </button> */}
 
                                     <button
                                         type="button"
-                                        onClick={(e) => { handleSubmit(e, 'send_invoice_with_email') }}
+                                        onClick={() => handleSubmit('send_invoice_with_email')}
                                         disabled={loading}
                                         className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
@@ -918,7 +1076,7 @@ export default function EditInvoicePage({ params, searchParams }: { params: Prom
                             )}
                         </div>
                     </div>
-                </form>
+                </div>
             </div>
         </div>
     )

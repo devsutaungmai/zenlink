@@ -18,7 +18,7 @@ import {
 import { Decimal } from '@prisma/client/runtime/library'
 import { EmailService } from '@/shared/lib/notifications'
 import { CreditCard, Mail, MailIcon } from 'lucide-react'
-import { exportToPDF, formatInvoiceNumberForDisplay, sendEmail } from '@/shared/lib/invoiceHelper'
+import { exportToPDF, formatCreditNoteNumberForDisplay, formatInvoiceNumberForDisplay, sendEmail } from '@/shared/lib/invoiceHelper'
 import { useRouter } from 'next/navigation'
 import { useColumnVisibility } from '@/hooks/use-column-visibility'
 import { ColumnVisibilityToggle } from '@/components/invoice/column-visibility-toggle'
@@ -831,7 +831,7 @@ export default function InvoicesPage() {
                                                     >
                                                         <span className="text-sm font-medium text-blue-600 hover:underline cursor-pointer">
 
-                                                            {invoice.status !== InvoiceStatus.DRAFT ? formatInvoiceNumberForDisplay(invoice.invoiceNumber) : "-"}
+                                                            {invoice.status !== InvoiceStatus.DRAFT ?  invoice.invoiceNumber.startsWith("CN") ? formatCreditNoteNumberForDisplay(invoice.invoiceNumber) : formatInvoiceNumberForDisplay(invoice.invoiceNumber) : "-"}
                                                         </span>
                                                     </Link>
                                                 </div>
