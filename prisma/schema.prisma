@@ -488,6 +488,7 @@ model SickLeave {
   endDate    DateTime
   document   String?
   approved   Boolean  @default(false)
+  status     SickLeaveStatus @default(PENDING)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @default(now())
   reason     String?
@@ -1604,6 +1605,12 @@ enum NotificationType {
   SYSTEM_ANNOUNCEMENT
   CONTRACT_PENDING_SIGNATURE
   CONTRACT_SIGNED
+}
+
+enum SickLeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 enum LogoPosition {

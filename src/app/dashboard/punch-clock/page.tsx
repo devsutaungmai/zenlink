@@ -81,6 +81,12 @@ interface Shift {
   startTime: string
   endTime: string | null
   status: string
+  employeeGroup?: {
+    name: string
+  }
+  department?: {
+    name: string
+  }
   employee: {
     firstName: string
     lastName: string
@@ -111,12 +117,17 @@ interface Attendance {
     startTime: string
     endTime: string | null
     status: string
+    approved?: boolean
   }
 }
 
-type AttendanceStatus = 'working' | 'completed' | 'pending' | 'rejected'
+type AttendanceStatus = 'working' | 'completed' | 'pending' | 'rejected' | 'approved'
 
 const getAttendanceStatus = (record: Attendance): AttendanceStatus => {
+  if (record.shift?.approved) {
+    return 'approved'
+  }
+
   if (!record.approved) {
     return record.punchOutTime ? 'rejected' : 'pending'
   }
@@ -583,6 +594,15 @@ export default function PunchClockPage() {
       )
     }
 
+    if (status === 'approved') {
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+          <CheckCircleIcon className="w-3 h-3 mr-1" />
+          {t('status.approved', { defaultValue: 'Approved' })}
+        </span>
+      )
+    }
+
     return (
       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
         <CheckCircleIcon className="w-3 h-3 mr-1" />
@@ -667,7 +687,13 @@ export default function PunchClockPage() {
       const today = new Date(editingRecord.punchInTime).toDateString()
 
       const punchInDateTime = new Date(`${today} ${editFormData.punchInTime}`)
-      const punchOutDateTime = editFormData.punchOutTime ? new Date(`${today} ${editFormData.punchOutTime}`) : null
+      let punchOutDateTime: Date | null = null
+      if (editFormData.punchOutTime) {
+        punchOutDateTime = new Date(`${today} ${editFormData.punchOutTime}`)
+        if (punchOutDateTime <= punchInDateTime) {
+          punchOutDateTime.setDate(punchOutDateTime.getDate() + 1)
+        }
+      }
 
       const response = await fetch(`/api/attendance/${editingRecord.id}`, {
         method: 'PATCH',
@@ -834,6 +860,9 @@ export default function PunchClockPage() {
       // If punch out time is provided, update the attendance record
       if (createFormData.punchOutTime) {
         const punchOutDateTime = new Date(`${createFormData.punchInDate}T${createFormData.punchOutTime}:00`)
+        if (punchOutDateTime <= punchInDateTime) {
+          punchOutDateTime.setDate(punchOutDateTime.getDate() + 1)
+        }
 
         await fetch(`/api/attendance/${attendance.id}`, {
           method: 'PATCH',
@@ -916,6 +945,8 @@ export default function PunchClockPage() {
             ? t('status.pending', { defaultValue: 'Pending Approval' })
             : status === 'rejected'
               ? t('status.rejected', { defaultValue: 'Rejected' })
+              : status === 'approved'
+                ? t('status.approved', { defaultValue: 'Approved' })
               : status === 'working'
                 ? t('status.working')
                 : t('status.completed')
@@ -1782,7 +1813,8 @@ export default function PunchClockPage() {
                   employeeId: '',
                   punchInDate: getCurrentDateISO(),
                   punchInTime: '',
-                  punchOutTime: ''
+                  punchOutTime: '',
+                  shiftId: ''
                 })
               }}
             >

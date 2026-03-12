@@ -15,6 +15,7 @@ interface SickLeave {
   reason?: string
   document?: string
   approved: boolean
+  status: 'PENDING' | 'APPROVED' | 'REJECTED'
   createdAt: string
   employee: {
     id: string
@@ -42,7 +43,7 @@ export default function EmployeeSickLeavesPage() {
   const [editingData, setEditingData] = useState<SickLeave | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved'>('all')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all')
 
   const fetchSickLeaves = async () => {
     try {
@@ -211,27 +212,37 @@ export default function EmployeeSickLeavesPage() {
     return `${days} ${t('table.day', { count: days })}`
   }
 
-  const getStatusIcon = (approved: boolean) => {
-    if (approved) {
+  const getStatusIcon = (status: SickLeave['status']) => {
+    if (status === 'APPROVED') {
       return <CheckCircle2 className="w-5 h-5 text-green-500" />
+    }
+    if (status === 'REJECTED') {
+      return <XCircle className="w-5 h-5 text-red-500" />
     }
     return <AlertCircle className="w-5 h-5 text-yellow-500" />
   }
 
-  const getStatusText = (approved: boolean) => {
-    return approved ? t('status.approved') : t('status.pending')
+  const getStatusText = (status: SickLeave['status']) => {
+    if (status === 'APPROVED') return t('status.approved')
+    if (status === 'REJECTED') return t('status.rejected')
+    return t('status.pending')
   }
 
-  const getStatusColor = (approved: boolean) => {
-    return approved 
-      ? 'bg-green-100 text-green-800 border-green-200' 
-      : 'bg-yellow-100 text-yellow-800 border-yellow-200'
+  const getStatusColor = (status: SickLeave['status']) => {
+    if (status === 'APPROVED') {
+      return 'bg-green-100 text-green-800 border-green-200'
+    }
+    if (status === 'REJECTED') {
+      return 'bg-red-100 text-red-700 border-red-200'
+    }
+    return 'bg-yellow-100 text-yellow-800 border-yellow-200'
   }
 
   const filteredSickLeaves = sickLeaves.filter(sl => {
     const matchesStatus = statusFilter === 'all' || 
-      (statusFilter === 'approved' && sl.approved) ||
-      (statusFilter === 'pending' && !sl.approved)
+      (statusFilter === 'approved' && sl.status === 'APPROVED') ||
+      (statusFilter === 'pending' && sl.status === 'PENDING') ||
+      (statusFilter === 'rejected' && sl.status === 'REJECTED')
     
     return matchesStatus
   })
@@ -323,7 +334,7 @@ export default function EmployeeSickLeavesPage() {
                       {t('status.approved')}
                     </dt>
                     <dd className="text-2xl font-semibold text-gray-900">
-                      {sickLeaves.filter(sl => sl.approved).length}
+                      {sickLeaves.filter(sl => sl.status === 'APPROVED').length}
                     </dd>
                   </dl>
                 </div>
@@ -343,7 +354,7 @@ export default function EmployeeSickLeavesPage() {
                       {t('status.pending')}
                     </dt>
                     <dd className="text-2xl font-semibold text-gray-900">
-                      {sickLeaves.filter(sl => !sl.approved).length}
+                      {sickLeaves.filter(sl => sl.status === 'PENDING').length}
                     </dd>
                   </dl>
                 </div>
@@ -364,7 +375,7 @@ export default function EmployeeSickLeavesPage() {
                     </dt>
                     <dd className="text-2xl font-semibold text-gray-900">
                       {sickLeaves
-                        .filter(sl => sl.approved && new Date(sl.startDate).getFullYear() === new Date().getFullYear())
+                        .filter(sl => sl.status === 'APPROVED' && new Date(sl.startDate).getFullYear() === new Date().getFullYear())
                         .reduce((total, sl) => {
                           const start = new Date(sl.startDate)
                           const end = new Date(sl.endDate)
@@ -384,12 +395,13 @@ export default function EmployeeSickLeavesPage() {
           <div>
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as 'all' | 'pending' | 'approved')}
+              onChange={(e) => setStatusFilter(e.target.value as 'all' | 'pending' | 'approved' | 'rejected')}
               className="block w-full rounded-md border border-gray-300 bg-white py-2 px-3 text-sm focus:border-[#31BCFF] focus:outline-none focus:ring-1 focus:ring-[#31BCFF]"
             >
               <option value="all">{t('filters.all_status')}</option>
               <option value="pending">{t('status.pending')}</option>
               <option value="approved">{t('status.approved')}</option>
+              <option value="rejected">{t('status.rejected')}</option>
             </select>
           </div>
         </div>
@@ -428,9 +440,9 @@ export default function EmployeeSickLeavesPage() {
                   <tr key={sickLeave.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        {getStatusIcon(sickLeave.approved)}
-                        <span className={`ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(sickLeave.approved)}`}>
-                          {getStatusText(sickLeave.approved)}
+                        {getStatusIcon(sickLeave.status)}
+                        <span className={`ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(sickLeave.status)}`}>
+                          {getStatusText(sickLeave.status)}
                         </span>
                       </div>
                     </td>
@@ -470,7 +482,7 @@ export default function EmployeeSickLeavesPage() {
                       {formatDate(sickLeave.createdAt)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      {!sickLeave.approved && (
+                      {sickLeave.status === 'PENDING' && (
                         <div className="flex items-center justify-end space-x-2">
                           <button
                             onClick={() => handleEdit(sickLeave)}

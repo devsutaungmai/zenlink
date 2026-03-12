@@ -427,6 +427,7 @@ export async function GET(request: NextRequest) {
             endTime: true,
             shiftType: true,
             status: true,
+            approved: true,
             employeeGroup: {
               select: {
                 name: true
