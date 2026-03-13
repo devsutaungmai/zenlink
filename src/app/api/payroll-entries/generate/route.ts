@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/shared/lib/auth'
 import { prisma } from '@/shared/lib/prisma'
-import { calculatePayroll } from '@/shared/lib/salary-calculator'
+import { payRulesEngine } from '@/shared/lib/pay-rules-engine'
+import { attendanceCalculator } from '@/shared/lib/attendance-calculator'
 import { getEmployeeContractInfo, ContractValidator } from '@/shared/lib/contractValidation'
 
 export async function POST(request: NextRequest) {
@@ -45,9 +46,12 @@ export async function POST(request: NextRequest) {
 
     const employees = await prisma.employee.findMany({
       where: employeeWhere,
-      include: {
-        department: true,
-        employeeGroup: true,
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        employeeNo: true,
+        ftePercent: true,
         contractType: {
           include: {
             laborLawProfile: {
@@ -61,36 +65,9 @@ export async function POST(request: NextRequest) {
           select: {
             roleId: true
           }
-        },
-        attendances: {
-          where: {
-            punchInTime: {
-              gte: new Date(startDate),
-              lte: new Date(endDate)
-            },
-            approved: true,
-            punchOutTime: {
-              not: null
-            }
-          }
         }
       }
     })
-
-    const shiftIds = employees
-      .flatMap(emp => emp.attendances.map(att => att.shiftId))
-      .filter((id): id is string => id !== null)
-
-    const shiftsData = await prisma.shift.findMany({
-      where: {
-        id: { in: shiftIds }
-      },
-      include: {
-        shiftTypeConfig: true
-      }
-    })
-
-    const shiftsMap = new Map(shiftsData.map(shift => [shift.id, shift]))
 
     const payrollPeriod = await prisma.payrollPeriod.findFirst({
       where: {
@@ -123,39 +100,13 @@ export async function POST(request: NextRequest) {
         continue
       }
 
-      let isOvertimeEligible = true
-      let overtimeExemptReason = null
-
-      if (employee.contractType) {
-        const employeeRoleIds = employee.employeeRoles.map(er => er.roleId)
-        const contractValidator = new ContractValidator(
-          employee.contractType,
-          employee.ftePercent,
-          employeeRoleIds
-        )
-        
-        isOvertimeEligible = contractValidator.isOvertimeEligible()
-        overtimeExemptReason = contractValidator.getOvertimeExemptReason()
-      }
-
-      const payrollCalc = calculatePayroll({
-        employee,
-        shifts: shiftsMap,
-        regularHoursPerDay: 8,
-        overtimeMultiplier: 1.5
+      // Use attendanceCalculator (same as recalculate flow)
+      const attendanceCalc = await attendanceCalculator.calculateAttendanceHours({
+        employeeId: employee.id,
+        payrollPeriodId
       })
 
-      let adjustedOvertimeHours = payrollCalc.overtimeHours
-      let adjustedOvertimePay = payrollCalc.overtimePay
-      
-      if (!isOvertimeEligible) {
-        adjustedOvertimeHours = 0
-        adjustedOvertimePay = 0
-      }
-
-      const adjustedGrossPay = payrollCalc.regularPay + adjustedOvertimePay
-
-      if (payrollCalc.regularHours === 0 && adjustedOvertimeHours === 0) {
+      if (attendanceCalc.approvedHours === 0) {
         skippedEmployees.push({
           id: employee.id,
           name: `${employee.firstName} ${employee.lastName}`,
@@ -164,14 +115,59 @@ export async function POST(request: NextRequest) {
         continue
       }
 
-      const deductions = 0
-      const netPay = adjustedGrossPay - deductions
+      // Build shift details for pay rules engine
+      const shiftDetails = attendanceCalc.attendanceDetails
+        .filter(att => att.isApproved && att.punchOutTime)
+        .map(att => ({
+          date: att.date,
+          startTime: new Date(att.punchInTime).toTimeString().substring(0, 5),
+          endTime: att.punchOutTime ? new Date(att.punchOutTime).toTimeString().substring(0, 5) : '',
+          hours: att.duration,
+          breakDuration: 0,
+          breakPaid: false
+        }))
+
+      // Use payRulesEngine (same as recalculate flow)
+      const payCalc = await payRulesEngine.calculatePay({
+        employeeId: employee.id,
+        payrollPeriodId,
+        totalHours: attendanceCalc.approvedHours,
+        regularHours: attendanceCalc.regularHours,
+        shiftDetails
+      })
+
+      // Check contract rules for overtime eligibility
+      let isOvertimeEligible = true
+      let overtimeExemptReason: string | null = null
+
+      if (employee.contractType) {
+        const employeeRoleIds = employee.employeeRoles.map(er => er.roleId)
+        const contractValidator = new ContractValidator(
+          employee.contractType,
+          employee.ftePercent,
+          employeeRoleIds
+        )
+        isOvertimeEligible = contractValidator.isOvertimeEligible()
+        overtimeExemptReason = contractValidator.getOvertimeExemptReason()
+      }
+
+      let finalOvertimeHours = payCalc.overtimeHours
+      let finalOvertimePay = finalOvertimeHours * payCalc.overtimeRate
+
+      if (!isOvertimeEligible) {
+        finalOvertimeHours = 0
+        finalOvertimePay = 0
+      }
+
+      const regularPay = payCalc.regularHours * payCalc.regularRate
+      const grossPay = regularPay + finalOvertimePay + payCalc.bonuses
+      const netPay = grossPay - payCalc.deductions
 
       let notes = ''
-      if (payrollCalc.adjustments.length > 0) {
-        notes = 'Shift Type Adjustments:\n' + 
-          payrollCalc.adjustments.map(adj => 
-            `- ${adj.shiftTypeName}: ${adj.adjustment >= 0 ? '+' : ''}${adj.adjustment.toFixed(2)}`
+      if (payCalc.appliedRules.length > 0) {
+        notes = 'Applied Pay Rules:\n' +
+          payCalc.appliedRules.map(rule =>
+            `- ${rule.ruleName} (${rule.salaryCode}): ${rule.amount >= 0 ? '+' : ''}${rule.amount.toFixed(2)}`
           ).join('\n')
       }
 
@@ -183,14 +179,14 @@ export async function POST(request: NextRequest) {
         data: {
           employeeId: employee.id,
           payrollPeriodId: payrollPeriodId,
-          regularHours: payrollCalc.regularHours,
-          overtimeHours: adjustedOvertimeHours,
-          regularRate: payrollCalc.regularRate,
-          overtimeRate: payrollCalc.overtimeRate,
-          grossPay: adjustedGrossPay,
-          deductions: deductions,
+          regularHours: payCalc.regularHours,
+          overtimeHours: finalOvertimeHours,
+          regularRate: payCalc.regularRate,
+          overtimeRate: payCalc.overtimeRate,
+          grossPay: grossPay,
+          deductions: payCalc.deductions,
           netPay: netPay,
-          bonuses: 0,
+          bonuses: payCalc.bonuses,
           status: 'DRAFT',
           notes: notes || undefined
         },

@@ -99,6 +99,7 @@ interface Attendance {
   punchInTime: string
   punchOutTime: string | null
   approved: boolean
+  approvedBy?: string | null
   employee: {
     firstName: string
     lastName: string
@@ -129,7 +130,10 @@ const getAttendanceStatus = (record: Attendance): AttendanceStatus => {
   }
 
   if (!record.approved) {
-    return record.punchOutTime ? 'rejected' : 'pending'
+    if (record.approvedBy) {
+      return 'rejected'
+    }
+    return 'pending'
   }
 
   return record.punchOutTime ? 'completed' : 'working'
@@ -464,10 +468,11 @@ export default function PunchClockPage() {
     const endTime = punchOut ? new Date(punchOut) : new Date()
 
     const diffMs = endTime.getTime() - startTime.getTime()
+    const decimalHours = Math.round((diffMs / (1000 * 60 * 60)) * 100) / 100
     const hours = Math.floor(diffMs / (1000 * 60 * 60))
     const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
 
-    return `${hours}h ${minutes}m`
+    return `${hours}h ${minutes}m (${decimalHours}h)`
   }
 
   const getEarlyLateStatus = (record: Attendance) => {

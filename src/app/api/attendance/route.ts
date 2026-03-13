@@ -400,7 +400,19 @@ export async function GET(request: NextRequest) {
 
     const attendances = await prisma.attendance.findMany({
       where: whereClause,
-      include: {
+      select: {
+        id: true,
+        punchInTime: true,
+        punchOutTime: true,
+        approved: true,
+        approvedBy: true,
+        approvedAt: true,
+        employeeId: true,
+        businessId: true,
+        shiftId: true,
+        punchClockProfileId: true,
+        createdAt: true,
+        updatedAt: true,
         employee: {
           select: {
             firstName: true,
@@ -442,7 +454,7 @@ export async function GET(request: NextRequest) {
         }
       },
       orderBy: {
-        punchInTime: 'desc'
+        punchInTime: 'desc' as const
       },
       ...(isPaginated
         ? {
