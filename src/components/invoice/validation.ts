@@ -117,3 +117,31 @@ export const customerValidationSchema = z.object({
     dueDateUnit: z.enum(['DAYS', 'MONTHS'])
   })
 })
+
+export const projectValidationSchema = z.object({
+  name: z.string()
+    .min(1, 'Project name is required')
+    .min(2, 'Project name must be at least 2 characters')
+    .max(100, 'Project name must be less than 100 characters'),
+
+  projectNumber: z
+    .string()
+    .min(1, 'Project number is required')
+    .refine(val => {
+      const num = Number(val);
+      return !isNaN(num) && num >= 10000;
+    }, {
+      message: 'Project number must be at least 10000'
+    })
+    .refine(val => {
+      const num = Number(val);
+      return !isNaN(num) && num <= 19999;
+    }, {
+      message: 'Project number must be equal to or less than 19999'
+    }),
+  categoryId: z.string().optional().or(z.literal('')),
+  customerId: z.string().optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+
+})

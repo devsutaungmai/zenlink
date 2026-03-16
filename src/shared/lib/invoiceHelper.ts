@@ -125,40 +125,43 @@ export async function sendEmail(invoiceId: string, type?: string) {
     const response = await fetch('/api/invoices/email/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        invoiceId: invoiceId,
-      }),
+      body: JSON.stringify({ invoiceId }),
     })
 
     if (response.ok) {
       Swal.fire({
         title: 'Success!',
-        text: type === "invoiced" ? "Email sent to the customer!" : "Invoice created and sent email to the customer!",
+        text: type === 'invoiced'
+          ? 'Email sent to the customer!'
+          : 'Invoice created and sent email to the customer!',
         icon: 'success',
         toast: true,
         position: 'top-end',
         showConfirmButton: false,
         timer: 3000,
-        timerProgressBar: true
-      });
+        timerProgressBar: true,
+      })
     } else {
-      const data = await response.json();
-      throw new Error(data.error || 'Failed to send invite');
+      const data = await response.json()
+      // Show the actual API error message (e.g. "Customer email not found...")
+      Swal.fire({
+        title: 'Email Failed',
+        text: data.error || 'Failed to send email',
+        icon: 'warning',
+        confirmButtonColor: '#31BCFF',
+      })
     }
   } catch (error) {
-    console.error('Error sending invite:', error);
+    // Network or unexpected errors
     Swal.fire({
-      title: 'Partial Success!',
-      text: 'Invoice created but Email functionality failed!',
-      icon: 'info',
-      toast: true,
-      position: 'top-end',
-      showConfirmButton: false,
-      timer: 3000,
-      timerProgressBar: true
-    });
+      title: 'Email Failed',
+      text: error instanceof Error ? error.message : 'Failed to send email',
+      icon: 'warning',
+      confirmButtonColor: '#31BCFF',
+    })
   }
 }
+
 // Shared core used by both linked and standalone credit notes
 export async function createCreditNoteRecord(params: {
   businessId: string;
@@ -508,7 +511,101 @@ export async function generateCustomerNumber(
   };
 }
 
+export async function generateProductNumber(
+  businessId: string,
+  tx?: Prisma.TransactionClient
+) {
+  const year = new Date().getFullYear();
+  const txClient = tx || prisma;
+
+  await txClient.$executeRaw`
+    SELECT 1 FROM "Business"
+    WHERE id = ${businessId}
+    FOR UPDATE
+  `;
+
+  const settings = await txClient.invoiceGeneralSetting.findUnique({
+    where: { businessId }
+  });
+
+  const lastProduct = await txClient.product.findFirst({
+    where: { businessId, year },
+    orderBy: { sequence: 'desc' }
+  });
+
+  const firstProductNumber = settings?.productNumberSeriesStart || 1000;
+  const nextSeq = lastProduct ? lastProduct.sequence + 1 : firstProductNumber;
+
+  if (nextSeq > (settings?.productNumberSeriesEnd || 9999)) {
+    throw new Error('Product number series exceeded the maximum limit for the year.');
+  }
+
+  return {
+    year,
+    sequence: nextSeq,
+    productNumber: `${businessId}-${year}-${nextSeq}`
+  };
+}
+
+export async function generateProjectNumber(
+  businessId: string,
+  tx?: Prisma.TransactionClient
+) {
+  const year = new Date().getFullYear();
+  const txClient = tx || prisma;
+
+  await txClient.$executeRaw`
+    SELECT 1 FROM "Business"
+    WHERE id = ${businessId}
+    FOR UPDATE
+  `;
+
+  const settings = await txClient.invoiceGeneralSetting.findUnique({
+    where: { businessId }
+  });
+
+  const lastProject = await txClient.project.findFirst({
+    where: { businessId, year },
+    orderBy: { sequence: 'desc' }
+  });
+
+  const firstProjectNumber = settings?.projectNumberSeriesStart || 5000;
+  const nextSeq = lastProject ? lastProject.sequence + 1 : firstProjectNumber;
+
+  if (nextSeq > (settings?.projectNumberSeriesEnd || 5999)) {
+    throw new Error('Project number series exceeded the maximum limit for the year.');
+  }
+
+  return {
+    year,
+    sequence: nextSeq,
+    projectNumber: `${businessId}-${year}-${nextSeq}`
+  };
+}
+
 export function formatCustomerNumberForDisplay(number: string): string {
+  const parts = number.split('-');
+
+  if (parts.length >= 3) {
+    const sequence = parts[parts.length - 1];
+    return sequence;
+  }
+
+  return number;
+}
+
+export function formatProjectNumberForDisplay(number: string): string {
+  const parts = number.split('-');
+
+  if (parts.length >= 3) {
+    const sequence = parts[parts.length - 1];
+    return sequence;
+  }
+
+  return number;
+}
+
+export function formatProductNumberForDisplay(number: string): string {
   const parts = number.split('-');
 
   if (parts.length >= 3) {

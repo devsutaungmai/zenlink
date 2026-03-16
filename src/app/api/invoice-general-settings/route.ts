@@ -111,6 +111,24 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    if(body.projectNumberSeriesStart && body.projectNumberSeriesEnd) {
+      if (body.projectNumberSeriesStart >= body.projectNumberSeriesEnd) {
+        return NextResponse.json(
+          { error: 'Project number series start must be less than end' },
+          { status: 400 }
+        )
+      }
+    }
+
+    if(body.productNumberSeriesStart && body.productNumberSeriesEnd) {
+      if (body.productNumberSeriesStart >= body.productNumberSeriesEnd) {
+        return NextResponse.json(
+          { error: 'Product number series start must be less than end' },
+          { status: 400 }
+        )
+      }
+    }
+
     // Check if settings already exist
     const existingSettings = await prisma.invoiceGeneralSetting.findUnique({
       where: { businessId }
@@ -127,11 +145,17 @@ export async function POST(request: NextRequest) {
           firstCreditNoteNumber: body.firstCreditNoteNumber || 1,
           customerNumberSeriesStart: body.customerNumberSeriesStart || null,
           customerNumberSeriesEnd: body.customerNumberSeriesEnd || null,
+          projectNumberSeriesStart: body.projectNumberSeriesStart || null,
+          projectNumberSeriesEnd: body.projectNumberSeriesEnd || null,
+          productNumberSeriesStart: body.productNumberSeriesStart || null,
+          productNumberSeriesEnd: body.productNumberSeriesEnd || null,
           defaultBankAccount: body.defaultBankAccount || null,
           defaultPaymentTermsDays: body.defaultPaymentTermsDays || 30,
           defaultDueDays: body.defaultDueDays || 30,
           // Set nextCustomerNumber if series is being set for the first time
-          nextCustomerNumber: existingSettings.nextCustomerNumber || body.customerNumberSeriesStart || null
+          nextCustomerNumber: existingSettings.nextCustomerNumber || body.customerNumberSeriesStart || null,
+          nextProductNumber: existingSettings.nextProductNumber || body.productNumberSeriesStart || null,
+          nextProjectNumber: existingSettings.nextProjectNumber || body.projectNumberSeriesStart || null
         }
       })
     } else {
@@ -143,10 +167,16 @@ export async function POST(request: NextRequest) {
           firstCreditNoteNumber: body.firstCreditNoteNumber || 1,
           customerNumberSeriesStart: body.customerNumberSeriesStart || null,
           customerNumberSeriesEnd: body.customerNumberSeriesEnd || null,
+          projectNumberSeriesStart: body.projectNumberSeriesStart || null,
+          projectNumberSeriesEnd: body.projectNumberSeriesEnd || null,
+          productNumberSeriesStart: body.productNumberSeriesStart || null,
+          productNumberSeriesEnd: body.productNumberSeriesEnd || null,
           defaultBankAccount: body.defaultBankAccount || null,
           defaultPaymentTermsDays: body.defaultPaymentTermsDays || 30,
           defaultDueDays: body.defaultDueDays || 30,
-          nextCustomerNumber: body.customerNumberSeriesStart || null
+          nextCustomerNumber: body.customerNumberSeriesStart || null,
+          nextProductNumber: body.productNumberSeriesStart || null,
+          nextProjectNumber: body.projectNumberSeriesStart || null
         }
       })
     }

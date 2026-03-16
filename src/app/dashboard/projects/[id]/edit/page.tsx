@@ -8,6 +8,7 @@ import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
 import { useProjectSettings } from '@/shared/hooks/useProjectSettings'
 import { ProjectFieldSettingsDialog } from '@/components/invoice/ProjectFieldSettingsDialog'
+import { formatProjectNumberForDisplay } from '@/shared/lib/invoiceHelper'
 
 interface Customer {
     id: string
@@ -243,7 +244,7 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
                             <input
                                 type="text"
                                 id="projectNumber"
-                                value={formData.projectNumber}
+                                value={formatProjectNumberForDisplay(formData.projectNumber)}
                                 onChange={(e) => setFormData({ ...formData, projectNumber: e.target.value })}
                                 className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
                                 placeholder="Enter project number"

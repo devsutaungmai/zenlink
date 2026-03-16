@@ -4,21 +4,15 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import Link from 'next/link'
-import { ArrowLeftIcon, ArrowDownIcon } from '@heroicons/react/24/outline'
+import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
-import { Contact } from 'lucide-react'
 import { calculateInvoiceTotals, exportToPDF, formatCreditNoteNumberForDisplay, formatInvoiceNumberForDisplay, sendEmail } from '@/shared/lib/invoiceHelper'
-import { Decimal } from '@prisma/client/runtime/library'
 import InvoiceSummaryCalculation from '@/components/invoice/InvoiceSummaryCalculation'
-import { se } from 'date-fns/locale'
-import { set } from 'zod'
 import CustomerDialog, { CustomerFormType } from '@/components/invoice/CustomerDialog'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
 import { useInvoiceSettings } from '@/shared/hooks/useInvoiceSettings'
-import Cog6ToothIcon from '@heroicons/react/24/solid/Cog6ToothIcon'
 import { CustomerCombobox } from '@/components/invoice/CustomerCombobox'
 import { InvoiceFieldSettingsDialog } from '@/components/invoice/InvoiceFieldSettingsDialog'
+import SendInvoiceDialog, { SendInvoiceDialogResult } from '@/components/invoice/SendInvoiceDialog'
 
 export interface Customer {
     id: string
@@ -121,7 +115,6 @@ export default function CreateInvoicePage() {
     const [projects, setProjects] = useState<Project[]>([])
     const [departments, setDepartments] = useState<Department[]>([])
     const [contacts, setContacts] = useState<ContactPerson[]>([]);
-    const [showDropdown, setShowDropdown] = useState(false)
     const [fetchingCustomer, setFetchingCustomer] = useState(false)
     const [fetchingLoading, setFetchingLoading] = useState(false);
     const [formData, setFormData] = useState<InvoiceFormData>({
@@ -139,7 +132,6 @@ export default function CreateInvoicePage() {
         status: '',
         notes: ''
     })
-    const [emailSendLoading, setEmailSendLoading] = useState(false);
     const [netTotals, setNetTotals] = useState<Number[]>([]);
 
     const [loadingCustomer, setLoadingCustomer] = useState<boolean>(false);
@@ -155,6 +147,10 @@ export default function CreateInvoicePage() {
         showProject: true,
         showNote: true
     })
+
+    const [showSendDialog, setShowSendDialog] = useState(false)
+    const [pendingAction, setPendingAction] = useState<'send_invoice_without_email' | 'send_invoice_with_email' | 'print' | 'send_new_credit_note' | null>(null)
+
     // ─── 1. Refs (place after all useState declarations) ─────────────────────────
 
     // Track whether form has been "dirtied" with a customer selection
@@ -255,22 +251,6 @@ export default function CreateInvoicePage() {
         }
     }
 
-    // ─── Handle browser/tab close / hard navigation away ─────────────────────
-    // useEffect(() => {
-    //     const handleBeforeUnload = () => {
-    //         // Use sendBeacon for reliability on tab close
-    //         const current = formDataRef.current
-    //         if (!current.customerId || overviewMode) return
-    //         const { seller, ...filteredData } = current
-    //         const payload = JSON.stringify({ ...filteredData, status: 'DRAFT' })
-    //         navigator.sendBeacon('/api/invoices/draft-autosave', payload)
-    //     }
-
-    //     window.addEventListener('beforeunload', handleBeforeUnload)
-    //     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-    // }, [overviewMode])
-
-
     const onSaveCustomer = async (customer: CustomerFormType) => {
         console.log("CustomerFormData" + JSON.stringify(customer));
         setCustomerDialog(false)
@@ -345,20 +325,6 @@ export default function CreateInvoicePage() {
             fetchCustomers()
         }
     }, [customerDialog, loadingCustomer])
-
-    // Calculate paidAt whenever sentAt or dueDay changes
-    useEffect(() => {
-        if (formData.sentAt && formData.dueDay) {
-            const sentDate = new Date(formData.sentAt)
-            const paidDate = new Date(sentDate)
-            paidDate.setDate(paidDate.getDate() + Number(formData.dueDay))
-
-            setFormData(prev => ({
-                ...prev,
-                paidAt: paidDate.toISOString().split('T')[0]
-            }))
-        }
-    }, [formData.sentAt, formData.dueDay])
 
     useEffect(() => {
         if (settings) {
@@ -596,7 +562,7 @@ export default function CreateInvoicePage() {
         const discount = Number(line.discountPercentage) || 0;
         const vat = Number(line.vatPercentage) || 0;
         const { totalExclVAT } = calculateInvoiceTotals(qty, price, discount, vat);
-        const sign = (isCreditNote && !!line.id) ? -1 : (qty < 0 ? -1 : 1);  
+        const sign = (isCreditNote && !!line.id) ? -1 : (qty < 0 ? -1 : 1);
         setNetTotals((prevNetTotals) => {
             const newNetTotals = [...prevNetTotals];
             newNetTotals[index] = totalExclVAT * sign;
@@ -604,13 +570,51 @@ export default function CreateInvoicePage() {
         });
     };
 
+    const handleSendClick = (action: 'send_invoice_without_email' | 'send_invoice_with_email' | 'print' | 'send_new_credit_note') => {
+        setPendingAction(action)
+        setShowSendDialog(true)
+    }
 
-    const handleSubmit = async (action: 'print' | 'send_invoice_with_email' | 'send_invoice_without_email' | 'send_new_credit_note') => {
+    const handleSendDialogConfirm = async (result: SendInvoiceDialogResult) => {
+        setShowSendDialog(false)
+        if (!pendingAction) return
+
+        setFormData(prev => ({ ...prev, sentAt: result.sentAt, dueDay: result.dueDay, paidAt: result.paidAt }))
+
+        // For credit note: keep as-is. For invoices: delivery method decides the action.
+        let resolvedAction = pendingAction
+        if (pendingAction !== 'send_new_credit_note') {
+            if (result.deliveryMethod === 'EMAIL') resolvedAction = 'send_invoice_with_email'
+            else if (result.deliveryMethod === 'PRINT') resolvedAction = 'print'
+            else resolvedAction = 'send_invoice_without_email' // EHF coming soon
+        }
+
+        await handleSubmit(resolvedAction, { sentAt: result.sentAt, dueDay: result.dueDay, paidAt: result.paidAt })
+    }
+
+    // Updated handleSubmit — accepts optional dateOverride to avoid stale state
+    const handleSubmit = async (
+        action: 'print' | 'send_invoice_with_email' | 'send_invoice_without_email' | 'send_new_credit_note',
+        dateOverride?: { sentAt: string; dueDay: number; paidAt: string }
+    ) => {
         setLoading(true)
-        const invoiceStatus = action === "send_invoice_with_email" || action === "send_invoice_without_email" ? "SENT" : "DRAFT";
+
+        const invoiceStatus =
+            action === 'send_invoice_with_email' || action === 'send_invoice_without_email'
+                ? 'SENT'
+                : 'DRAFT'
+
         let { seller, ...filteredData } = formData
-        filteredData = { ...filteredData, status: invoiceStatus }
-        // console.log("FormData ===>" + JSON.stringify(filteredData));
+
+        // Use dialog-provided dates if available (setFormData is async — override prevents stale read)
+        filteredData = {
+            ...filteredData,
+            sentAt: dateOverride?.sentAt ?? filteredData.sentAt,
+            dueDay: dateOverride?.dueDay ?? filteredData.dueDay,
+            paidAt: dateOverride?.paidAt ?? filteredData.paidAt,
+            status: invoiceStatus,
+        }
+
         try {
             // Standalone credit note — separate flow
             if (action === 'send_new_credit_note') {
@@ -624,7 +628,6 @@ export default function CreateInvoicePage() {
                     setLoading(false)
                     return
                 }
-
                 if (formData.invoiceLines.length === 0 || formData.invoiceLines.every(l => !l.productId)) {
                     await Swal.fire({
                         title: 'Validation Error',
@@ -635,74 +638,65 @@ export default function CreateInvoicePage() {
                     setLoading(false)
                     return
                 }
-
                 const res = await fetch('/api/invoices/credit-note/standalone', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         customerId: formData.customerId,
-                        creditNoteDate: formData.sentAt,
+                        creditNoteDate: filteredData.sentAt,
                         comment: formData.notes || '',
-                        lines: formData.invoiceLines.filter(l => l.productId), // only filled lines
+                        lines: formData.invoiceLines.filter(l => l.productId),
                         projectId: formData.projectId || null,
                         departmentId: formData.departmentId || null,
                         contactPersonId: formData.contactPersonId || null,
                     }),
                 })
-
                 if (!res.ok) {
                     const error = await res.json()
                     throw new Error(error.error || 'Failed to create standalone credit note')
                 }
-
                 await Swal.fire({
                     title: 'Success!',
                     text: 'Standalone credit note created successfully',
                     icon: 'success',
                     confirmButtonColor: '#31BCFF',
                 })
-
+                isDirtyRef.current = false
                 router.push('/dashboard/invoices')
                 router.refresh()
                 return
             }
 
-            //regular flow
+            // Regular invoice flow
             const res = await fetch('/api/invoices', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(filteredData),
             })
-
             if (!res.ok) {
                 const error = await res.json()
-                throw new Error(error.error || 'Failed to create product')
+                throw new Error(error.error || 'Failed to create invoice')
             }
             const createdInvoice = await res.json()
 
-            // Handle different actions
             if (action === 'print') {
                 const pdfSuccess = await exportToPDF(createdInvoice.id)
-
-                if (pdfSuccess) {
-                    await Swal.fire({
-                        title: 'Success!',
-                        text: 'Invoice created and PDF downloaded',
-                        icon: 'success',
-                        confirmButtonColor: '#31BCFF',
-                    })
-                } else {
-                    await Swal.fire({
-                        title: 'Partial Success',
-                        text: 'Invoice created but PDF download failed',
-                        icon: 'warning',
-                        confirmButtonColor: '#31BCFF',
-                    })
-                }
+                await Swal.fire({
+                    title: pdfSuccess ? 'Success!' : 'Partial Success',
+                    text: pdfSuccess
+                        ? 'Invoice created and PDF downloaded'
+                        : 'Invoice created but PDF download failed',
+                    icon: pdfSuccess ? 'success' : 'warning',
+                    confirmButtonColor: '#31BCFF',
+                })
             } else if (action === 'send_invoice_with_email') {
-                // Placeholder for email functionality
-                await sendEmail(createdInvoice.id);
-
+                await sendEmail(createdInvoice.id)
+                await Swal.fire({
+                    title: 'Success!',
+                    text: 'Invoice created successfully',
+                    icon: 'success',
+                    confirmButtonColor: '#31BCFF',
+                })
             } else {
                 await Swal.fire({
                     title: 'Success!',
@@ -711,6 +705,7 @@ export default function CreateInvoicePage() {
                     confirmButtonColor: '#31BCFF',
                 })
             }
+
             isDirtyRef.current = false
             router.push('/dashboard/invoices')
             router.refresh()
@@ -752,11 +747,15 @@ export default function CreateInvoicePage() {
                                     ? `Invoice Details (Invoice Number -${formatInvoiceNumberForDisplay(formData.invoiceNumber)})`
                                     : overviewMode && isCreditNote
                                         ? `Credit Note Detail (${formData.invoiceNumber.startsWith('CN') ? formatCreditNoteNumberForDisplay(formData.invoiceNumber) : formatInvoiceNumberForDisplay(formData.invoiceNumber)})`
-                                        : "Create Invoice"}
+                                        : isNegativeTotal
+                                            ? "Create Credit Note"
+                                            : "Create Invoice"}
                             </h1>
                         </div>
                         {overviewMode ? null : <p className="mt-2 text-gray-600 ml-14">
-                            Add a new invoice to send
+                            {isNegativeTotal
+                                ? "Add a new credit note to issue"
+                                : "Add a new invoice to send"}
                         </p>}
                     </div>
                     <div className="hidden md:flex items-center space-x-2">
@@ -826,7 +825,7 @@ export default function CreateInvoicePage() {
                                 </div>
                             )}
 
-                            {visibleFields.showPaymentTerms && (
+                            {/* {visibleFields.showPaymentTerms && (
                                 <>
                                     <div className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] min-w-[250px]">
                                         <label htmlFor="sentAt" className="block text-sm font-medium text-gray-700 mb-2">
@@ -857,7 +856,7 @@ export default function CreateInvoicePage() {
                                         />
                                     </div>
                                 </>
-                            )}
+                            )} */}
 
                             {visibleFields.showProject && (
                                 <div className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] min-w-[250px]">
@@ -1133,64 +1132,22 @@ export default function CreateInvoicePage() {
                     <InvoiceSummaryCalculation invoiceLines={formData.invoiceLines} isCreditNote={isCreditNote} />
 
                     {/* Form Actions */}
-                    {overviewMode ? null : <div className="flex items-center justify-end gap-4 pt-6 border-t border-gray-200">
-                        <Link
-                            href="/dashboard/invoices"
-                            className="px-6 py-3 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium hover:bg-gray-50 transition-colors duration-200"
-                        >
-                            Cancel
-                        </Link>
-                        {/* Dropdown Button Group */}
-                        <div className="relative inline-flex">
+                    {overviewMode ? null :
+
+                        <div className="flex items-center justify-end gap-4 pt-6 border-t border-gray-200">
+                            <Link href="/dashboard/invoices" className="px-6 py-3 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium hover:bg-gray-50 transition-colors duration-200">
+                                Cancel
+                            </Link>
                             <button
                                 type="button"
                                 disabled={loading}
-                                onClick={() => handleSubmit(isNegativeTotal ? 'send_new_credit_note' : 'send_invoice_without_email')}
-                                className="px-6 py-3 rounded-l-xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 border-l border-white/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                                onClick={() => handleSendClick(isNegativeTotal ? 'send_new_credit_note' : 'send_invoice_without_email')}
+                                className="px-6 py-3 rounded-xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                             >
                                 {loading ? 'Sending...' : isNegativeTotal ? 'Create Credit Note' : 'Send Invoice'}
                             </button>
-
-                            <button
-                                type="button"
-                                disabled={loading}
-                                onClick={() => setShowDropdown(!showDropdown)}
-                                className="px-3 py-3 rounded-r-xl bg-gradient-to-r from-[#0EA5E9] to-[#0284C7] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 border-l border-white/20 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                <ArrowDownIcon className="w-5 h-5" />
-                            </button>
-
-                            {/* Dropdown Menu */}
-                            {showDropdown && (
-                                <div className="absolute right-0 bottom-full mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-200 py-2 z-10">
-                                    <button
-                                        type="button"
-                                        onClick={(e) => { e.preventDefault(); handleSubmit('print') }}
-                                        disabled={loading}
-                                        className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                                        </svg>
-                                        <span className="text-gray-700 font-medium">Preview(PDF)</span>
-                                    </button>
-
-
-                                    <button
-                                        type="button"
-                                        onClick={() => handleSubmit('send_invoice_with_email')}
-                                        disabled={loading}
-                                        className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                        </svg>
-                                        <span className="text-gray-700 font-medium">Send Invoice with Email</span>
-                                    </button>
-                                </div>
-                            )}
                         </div>
-                    </div>}
+                    }
                     {/* </form> */}
                 </div>
             </div>
@@ -1202,6 +1159,15 @@ export default function CreateInvoicePage() {
                 loading={loadingCustomer}
                 onSave={onSaveCustomer}
             />}
+
+            <SendInvoiceDialog
+                open={showSendDialog}
+                onOpenChange={setShowSendDialog}
+                defaultDueDay={formData.dueDay}   // carries customer payment terms
+                loading={loading}
+                isCreditNote={isNegativeTotal || isCreditNote}
+                onConfirm={handleSendDialogConfirm}
+            />
         </div>
     )
 }

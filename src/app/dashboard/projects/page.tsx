@@ -18,6 +18,7 @@ import { ColumnVisibilityToggle } from "@/components/invoice/column-visibility-t
 import { Switch } from "@/components/ui/switch"
 import { start } from "repl"
 import { useResizableColumns } from "@/hooks/use-resizable-columns"
+import { formatProjectNumberForDisplay } from "@/shared/lib/invoiceHelper"
 
 interface Customer {
   id: string
@@ -31,7 +32,7 @@ interface ProjectCategory {
 interface Project {
   id: string
   name: string
-  projectNumber?: string | null
+  projectNumber: string
   active: boolean
   categoryId: string | null
   category?: ProjectCategory | null
@@ -445,7 +446,7 @@ export default function ProjectPage() {
                             title="Edit Project"
                           >
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#31BCFF]/10 text-blue-600 hover:underline">
-                            {project.projectNumber || "-"}
+                            {formatProjectNumberForDisplay(project.projectNumber) || "-"}
                           </span>
                           </Link>
                         </td>
@@ -572,7 +573,7 @@ export default function ProjectPage() {
                     <div className="flex items-center gap-2 mb-1">
                       {isColumnVisible("projectNumber") && (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#31BCFF]/10 text-[#31BCFF]">
-                          {project.projectNumber}
+                          {formatProjectNumberForDisplay(project.projectNumber)}
                         </span>
                       )}
                       {isColumnVisible("active") && project.active !== null && (
