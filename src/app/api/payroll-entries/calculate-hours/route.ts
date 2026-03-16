@@ -158,12 +158,15 @@ export async function POST(req: NextRequest) {
     } catch (attendanceError) {
       console.warn('Attendance calculation failed, falling back to shift-based calculation:', attendanceError)
 
+      const shiftEndDate = new Date(payrollPeriod.endDate)
+      shiftEndDate.setHours(23, 59, 59, 999)
+
       const shifts = await prisma.shift.findMany({
         where: {
           employeeId: employeeId,
           date: {
             gte: new Date(payrollPeriod.startDate),
-            lte: new Date(payrollPeriod.endDate),
+            lte: shiftEndDate,
           },
           approved: true,
         },

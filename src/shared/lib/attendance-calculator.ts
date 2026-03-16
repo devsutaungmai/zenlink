@@ -90,12 +90,16 @@ export class AttendanceBasedCalculator {
     }
 
     // Get attendance records for the payroll period
+    // Extend endDate to end-of-day so records on the last day are included
+    const periodEnd = new Date(payrollPeriod.endDate)
+    periodEnd.setHours(23, 59, 59, 999)
+
     const attendances = await prisma.attendance.findMany({
       where: {
         employeeId,
         punchInTime: {
           gte: new Date(payrollPeriod.startDate),
-          lte: new Date(payrollPeriod.endDate)
+          lte: periodEnd
         }
       },
       include: {
@@ -331,12 +335,15 @@ export class AttendanceBasedCalculator {
       throw new Error('Payroll period not found')
     }
 
+    const summaryEnd = new Date(payrollPeriod.endDate)
+    summaryEnd.setHours(23, 59, 59, 999)
+
     const attendances = await prisma.attendance.findMany({
       where: {
         employeeId,
         punchInTime: {
           gte: new Date(payrollPeriod.startDate),
-          lte: new Date(payrollPeriod.endDate)
+          lte: summaryEnd
         }
       }
     })
