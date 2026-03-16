@@ -312,14 +312,18 @@ export class LaborLawValidator {
       } else {
         const breakStart = this.parseTime(shift.breakStart)
         const breakEnd = this.parseTime(shift.breakEnd)
-        const breakMinutes = (breakEnd - breakStart) * 60
+        let breakMinutes = (breakEnd - breakStart) * 60
+        if (breakMinutes < 0) {
+          breakMinutes += 24 * 60
+        }
+        const normalizedBreakMinutes = Math.round(breakMinutes)
         
-        if (breakMinutes < this.rules.minBreakForLongShifts) {
+        if (normalizedBreakMinutes < this.rules.minBreakForLongShifts) {
           violations.push({
             type: 'MISSING_BREAK',
-            message: `Break duration (${breakMinutes.toFixed(0)} min) is less than required (${this.rules.minBreakForLongShifts} min)`,
+            message: `Break duration (${normalizedBreakMinutes} min) is less than required (${this.rules.minBreakForLongShifts} min)`,
             severity: 'ERROR',
-            currentValue: breakMinutes,
+            currentValue: normalizedBreakMinutes,
             allowedValue: this.rules.minBreakForLongShifts,
             affectedDate: typeof shift.date === 'string' ? shift.date : shift.date.toISOString().split('T')[0],
             overridable: true // Allow admin to override with confirmation

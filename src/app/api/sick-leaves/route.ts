@@ -91,6 +91,7 @@ export async function POST(request: NextRequest) {
 
     let targetEmployeeId = employeeId
     let isAutoApproved = false
+    let status: 'PENDING' | 'APPROVED' = 'PENDING'
 
     if (auth.type === 'employee') {
       // Employee logged in via PIN - creating sick leave for themselves
@@ -132,18 +133,22 @@ export async function POST(request: NextRequest) {
           )
         }
         isAutoApproved = true // Auto-approve if created by admin
+        status = 'APPROVED'
       }
     }
 
+    const createData: any = {
+      employeeId: targetEmployeeId,
+      startDate: new Date(startDate),
+      endDate: new Date(endDate),
+      reason: reason || null,
+      document: document || null,
+      approved: isAutoApproved,
+      status,
+    }
+
     const sickLeave = await prisma.sickLeave.create({
-      data: {
-        employeeId: targetEmployeeId,
-        startDate: new Date(startDate),
-        endDate: new Date(endDate),
-        reason: reason || null,
-        document: document || null,
-        approved: isAutoApproved,
-      },
+      data: createData,
       include: {
         employee: {
           select: {

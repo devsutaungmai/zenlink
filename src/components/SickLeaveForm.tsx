@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Upload, X, FileText, Calendar } from 'lucide-react'
 import Swal from 'sweetalert2'
 import { useTranslation } from 'react-i18next'
+import { DatePicker } from '@/components/ui/date-picker'
 
 interface SickLeaveFormData {
   employeeId?: string
@@ -33,6 +34,26 @@ export default function SickLeaveForm({
   isEmployee = false
 }: SickLeaveFormProps) {
   const { t } = useTranslation('sick-leave')
+  const formatDateOnly = (date: Date) => {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+  const parseDateOnly = (value?: string) => {
+    if (!value) return undefined
+    return new Date(`${value}T00:00:00`)
+  }
+  const startOfToday = () => {
+    const now = new Date()
+    now.setHours(0, 0, 0, 0)
+    return now
+  }
+  const addDays = (date: Date, days: number) => {
+    const d = new Date(date)
+    d.setDate(d.getDate() + days)
+    return d
+  }
   const normalizeDateValue = (value?: string) => {
     if (!value) return ''
     if (value.includes('T')) {
@@ -171,7 +192,23 @@ export default function SickLeaveForm({
       return
     }
 
-    if (new Date(formData.startDate) > new Date(formData.endDate)) {
+    const startDate = parseDateOnly(formData.startDate)
+    const endDate = parseDateOnly(formData.endDate)
+
+    if (!startDate || !endDate) {
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        icon: 'error',
+        title: t('validation.dates_required')
+      })
+      return
+    }
+
+    if (endDate < addDays(startDate, 1)) {
       Swal.fire({
         toast: true,
         position: 'top-end',
@@ -201,7 +238,7 @@ export default function SickLeaveForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} noValidate className="space-y-6">
       {/* Employee Selection (Admin only) */}
       {showEmployeeSelection && (
         <div>
@@ -231,12 +268,24 @@ export default function SickLeaveForm({
             <Calendar className="w-4 h-4 inline mr-1" />
             {t('form.start_date')} <span className="text-red-500">*</span>
           </label>
-          <input
-            type="date"
-            value={formData.startDate}
-            onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF]"
-            required
+          <DatePicker
+            date={parseDateOnly(formData.startDate)}
+            onDateChange={(d) => {
+              if (!d) {
+                setFormData({ ...formData, startDate: '', endDate: '' })
+                return
+              }
+              const normalizedStart = new Date(d)
+              normalizedStart.setHours(0, 0, 0, 0)
+              const nextDay = addDays(normalizedStart, 1)
+              setFormData({
+                ...formData,
+                startDate: formatDateOnly(normalizedStart),
+                endDate: formatDateOnly(nextDay)
+              })
+            }}
+            placeholder={t('form.start_date')}
+            disabledDates={(date) => date < startOfToday()}
           />
         </div>
 
@@ -245,12 +294,15 @@ export default function SickLeaveForm({
             <Calendar className="w-4 h-4 inline mr-1" />
             {t('form.end_date')} <span className="text-red-500">*</span>
           </label>
-          <input
-            type="date"
-            value={formData.endDate}
-            onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#31BCFF] focus:ring-[#31BCFF]"
-            required
+          <DatePicker
+            date={parseDateOnly(formData.endDate)}
+            onDateChange={(d) => setFormData({ ...formData, endDate: d ? formatDateOnly(d) : '' })}
+            placeholder={t('form.end_date')}
+            disabledDates={(date) => {
+              const startDate = parseDateOnly(formData.startDate)
+              const minEndDate = startDate ? addDays(startDate, 1) : startOfToday()
+              return date < minEndDate
+            }}
           />
         </div>
       </div>

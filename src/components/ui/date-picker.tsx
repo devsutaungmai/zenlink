@@ -17,6 +17,7 @@ interface DatePickerProps {
   onDateChange?: (date: Date | undefined) => void
   placeholder?: string
   disabled?: boolean
+  disabledDates?: React.ComponentProps<typeof Calendar>["disabled"]
   className?: string
   dateFormat?: string
   yearRange?: { from: number; to: number }
@@ -27,6 +28,7 @@ export function DatePicker({
   onDateChange,
   placeholder = "Pick a date",
   disabled = false,
+  disabledDates,
   className,
   dateFormat = "dd/MM/yyyy",
   yearRange,
@@ -64,9 +66,20 @@ export function DatePicker({
             onDateChange?.(selectedDate)
             setIsOpen(false)
           }}
-          disabled={(date) =>
-            date > new Date(toYear, 11, 31) || date < new Date(fromYear, 0, 1)
-          }
+          disabled={(currentDate) => {
+            const outOfYearRange =
+              currentDate > new Date(toYear, 11, 31) || currentDate < new Date(fromYear, 0, 1)
+
+            if (outOfYearRange) return true
+
+            if (!disabledDates) return false
+
+            if (typeof disabledDates === "function") {
+              return disabledDates(currentDate)
+            }
+
+            return false
+          }}
           initialFocus
           captionLayout="dropdown"
           fromYear={fromYear}

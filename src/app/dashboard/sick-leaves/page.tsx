@@ -17,6 +17,7 @@ interface SickLeave {
   reason?: string
   document?: string
   approved: boolean
+  status: 'PENDING' | 'APPROVED' | 'REJECTED'
   createdAt: string
   employee: {
     id: string
@@ -59,7 +60,7 @@ export default function SickLeavesPage() {
   const [editingData, setEditingData] = useState<SickLeave | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved'>('all')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all')
   const [currentEmployeeId, setCurrentEmployeeId] = useState<string | null>(null)
 
   const resolveEmployeeId = useCallback(async (): Promise<string | null> => {
@@ -284,7 +285,7 @@ export default function SickLeavesPage() {
 
   const handleDelete = async (id: string) => {
     const target = sickLeaves.find(sl => sl.id === id)
-    if (target?.approved) {
+    if (target?.status !== 'PENDING') {
       Swal.fire({
         toast: true,
         position: 'top-end',
@@ -292,7 +293,7 @@ export default function SickLeavesPage() {
         timer: 3000,
         timerProgressBar: true,
         icon: 'info',
-        title: t('actions.locked_message', { defaultValue: 'Approved sick leaves cannot be deleted.' })
+        title: t('actions.locked_message', { defaultValue: 'Reviewed sick leaves cannot be deleted.' })
       })
       return
     }
@@ -345,7 +346,7 @@ export default function SickLeavesPage() {
   }
 
   const handleEdit = (sickLeave: SickLeave) => {
-    if (sickLeave.approved) {
+    if (sickLeave.status !== 'PENDING') {
       Swal.fire({
         toast: true,
         position: 'top-end',
@@ -353,7 +354,7 @@ export default function SickLeavesPage() {
         timer: 3000,
         timerProgressBar: true,
         icon: 'info',
-        title: t('actions.locked_message', { defaultValue: 'Approved sick leaves cannot be edited.' })
+        title: t('actions.locked_message', { defaultValue: 'Reviewed sick leaves cannot be edited.' })
       })
       return
     }
@@ -379,8 +380,8 @@ export default function SickLeavesPage() {
 
   const stats = useMemo(() => {
     const totalRequests = sickLeaves.length
-    const approvedCount = sickLeaves.filter(sl => sl.approved).length
-    const pendingCount = totalRequests - approvedCount
+    const approvedCount = sickLeaves.filter(sl => sl.status === 'APPROVED').length
+    const pendingCount = sickLeaves.filter(sl => sl.status === 'PENDING').length
     const documentedCount = sickLeaves.filter(sl => Boolean(sl.document)).length
 
     return {
@@ -397,8 +398,9 @@ export default function SickLeavesPage() {
       (!!sl.employee.employeeNo && sl.employee.employeeNo.toLowerCase().includes(searchTerm.toLowerCase()))
     
     const matchesStatus = statusFilter === 'all' || 
-      (statusFilter === 'approved' && sl.approved) ||
-      (statusFilter === 'pending' && !sl.approved)
+      (statusFilter === 'approved' && sl.status === 'APPROVED') ||
+      (statusFilter === 'pending' && sl.status === 'PENDING') ||
+      (statusFilter === 'rejected' && sl.status === 'REJECTED')
     
     return matchesSearch && matchesStatus
   })
@@ -520,12 +522,13 @@ export default function SickLeavesPage() {
         <div>
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as 'all' | 'pending' | 'approved')}
+            onChange={(e) => setStatusFilter(e.target.value as 'all' | 'pending' | 'approved' | 'rejected')}
             className="block w-full rounded-md border border-gray-300 bg-white py-2 px-3 text-sm focus:border-[#31BCFF] focus:outline-none focus:ring-1 focus:ring-[#31BCFF]"
           >
             <option value="all">{t('filters.all_status')}</option>
             <option value="pending">{t('status.pending')}</option>
             <option value="approved">{t('status.approved')}</option>
+            <option value="rejected">{t('status.rejected')}</option>
           </select>
         </div>
       </div>
@@ -611,10 +614,15 @@ export default function SickLeavesPage() {
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {sickLeave.approved ? (
+                    {sickLeave.status === 'APPROVED' ? (
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                         <CheckIcon className="w-3 h-3 mr-1" />
                         {t('status.approved')}
+                      </span>
+                    ) : sickLeave.status === 'REJECTED' ? (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                        <XMarkIcon className="w-3 h-3 mr-1" />
+                        {t('status.rejected')}
                       </span>
                     ) : (
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
@@ -628,7 +636,7 @@ export default function SickLeavesPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end space-x-2">
-                      {!isEmployeeUser && !sickLeave.approved && (
+                      {!isEmployeeUser && sickLeave.status === 'PENDING' && (
                         <>
                           <button
                             onClick={() => handleApprove(sickLeave.id, true)}
@@ -648,17 +656,17 @@ export default function SickLeavesPage() {
                       )}
                       <button
                         onClick={() => handleEdit(sickLeave)}
-                        className={`p-1 rounded ${sickLeave.approved ? 'text-gray-400 cursor-not-allowed' : 'text-[#31BCFF] hover:text-[#31BCFF]/90'}`}
-                        title={sickLeave.approved ? t('actions.locked_tooltip', { defaultValue: 'Approved sick leaves cannot be edited' }) : t('actions.edit')}
-                        disabled={sickLeave.approved}
+                        className={`p-1 rounded ${sickLeave.status !== 'PENDING' ? 'text-gray-400 cursor-not-allowed' : 'text-[#31BCFF] hover:text-[#31BCFF]/90'}`}
+                        title={sickLeave.status !== 'PENDING' ? t('actions.locked_tooltip', { defaultValue: 'Reviewed sick leaves cannot be edited' }) : t('actions.edit')}
+                        disabled={sickLeave.status !== 'PENDING'}
                       >
                         <PencilIcon className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(sickLeave.id)}
-                        className={`p-1 rounded ${sickLeave.approved ? 'text-gray-300 cursor-not-allowed' : 'text-red-600 hover:text-red-900'}`}
-                        title={sickLeave.approved ? t('actions.locked_tooltip', { defaultValue: 'Approved sick leaves cannot be deleted' }) : t('actions.delete')}
-                        disabled={sickLeave.approved}
+                        className={`p-1 rounded ${sickLeave.status !== 'PENDING' ? 'text-gray-300 cursor-not-allowed' : 'text-red-600 hover:text-red-900'}`}
+                        title={sickLeave.status !== 'PENDING' ? t('actions.locked_tooltip', { defaultValue: 'Reviewed sick leaves cannot be deleted' }) : t('actions.delete')}
+                        disabled={sickLeave.status !== 'PENDING'}
                       >
                         <TrashIcon className="h-4 w-4" />
                       </button>

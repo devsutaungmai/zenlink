@@ -216,13 +216,13 @@ export default function PayrollEntryForm({
           {errors.employeeId && <p className="mt-1 text-sm text-red-600">{errors.employeeId}</p>}
         </div>
 
-        {/* Auto-Calculate Section */}
-        {formData.employeeId && mode === 'create' && (
+        {/* Auto-Calculate / Recalculate Section */}
+        {formData.employeeId && (
           <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-sm font-semibold text-blue-900">{t('form.auto_calculate_title')}</h3>
-                <p className="text-sm text-blue-700">{t('form.auto_calculate_desc')}</p>
+                <h3 className="text-sm font-semibold text-blue-900">{mode === 'edit' ? t('form.recalculate_title') : t('form.auto_calculate_title')}</h3>
+                <p className="text-sm text-blue-700">{mode === 'edit' ? t('form.recalculate_desc') : t('form.auto_calculate_desc')}</p>
               </div>
               <button
                 type="button"
@@ -236,7 +236,7 @@ export default function PayrollEntryForm({
                     {t('form.calculating')}
                   </div>
                 ) : (
-                  t('form.calculate_button')
+                  mode === 'edit' ? t('form.recalculate_button') : t('form.calculate_button')
                 )}
               </button>
             </div>
@@ -381,7 +381,7 @@ export default function PayrollEntryForm({
               value={formData.regularHours}
               onChange={handleChange}
               min="0"
-              step="0.25"
+              step="0.01"
               className={`block w-full px-4 py-3 rounded-xl border-2 bg-white/70 backdrop-blur-sm text-gray-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#31BCFF]/50 ${
                 errors.regularHours 
                   ? 'border-red-300 focus:border-red-500' 
@@ -427,7 +427,7 @@ export default function PayrollEntryForm({
               value={formData.overtimeHours}
               onChange={handleChange}
               min="0"
-              step="0.25"
+              step="0.01"
               className={`block w-full px-4 py-3 rounded-xl border-2 bg-white/70 backdrop-blur-sm text-gray-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#31BCFF]/50 ${
                 errors.overtimeHours 
                   ? 'border-red-300 focus:border-red-500' 
