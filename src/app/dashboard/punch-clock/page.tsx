@@ -927,7 +927,10 @@ export default function PunchClockPage() {
 
       const response = await fetch(`/api/attendance?${params.toString()}`)
       if (!response.ok) {
-        throw new Error('Failed to fetch attendance for export')
+        const text = await response.text()
+        let errorMsg = 'Failed to fetch attendance for export'
+        try { errorMsg = JSON.parse(text)?.error || errorMsg } catch {}
+        throw new Error(errorMsg)
       }
 
       const json = await response.json()
@@ -1009,11 +1012,19 @@ export default function PunchClockPage() {
         const filename = `attendance_${dateRange?.startDate || selectedDate}.pdf`
         downloadBlob(blob, filename)
       } else {
-        alert('Failed to export PDF')
+        throw new Error('Failed to export PDF. The request may have timed out due to large data. Try narrowing the date range.')
       }
     } catch (error) {
       console.error('Error exporting PDF:', error)
-      alert('Failed to export PDF')
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 5000,
+        timerProgressBar: true,
+        icon: 'error',
+        title: error instanceof Error ? error.message : 'Failed to export PDF'
+      })
     }
   }
 

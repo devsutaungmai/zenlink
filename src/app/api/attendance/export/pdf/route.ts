@@ -4,7 +4,7 @@ import { getCurrentUser } from '@/shared/lib/auth'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
-export const maxDuration = 30
+export const maxDuration = 60
 
 export async function GET(request: NextRequest) {
   try {
@@ -43,7 +43,10 @@ export async function GET(request: NextRequest) {
 
     const attendances = await prisma.attendance.findMany({
       where: whereClause,
-      include: {
+      select: {
+        punchInTime: true,
+        punchOutTime: true,
+        approved: true,
         employee: {
           select: {
             firstName: true,
@@ -63,17 +66,16 @@ export async function GET(request: NextRequest) {
         },
         shift: {
           select: {
-            id: true,
             startTime: true,
             endTime: true,
-            shiftType: true,
             status: true
           }
         }
       },
       orderBy: {
         punchInTime: 'desc'
-      }
+      },
+      take: 5000
     })
 
     const formatTime = (dateValue: Date | string) => {

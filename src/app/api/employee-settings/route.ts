@@ -23,27 +23,38 @@ export async function GET(req: NextRequest) {
     })
 
     if (!settings) {
+      const employeeRole = await prisma.role.findFirst({
+        where: {
+          businessId: userWithBusiness.businessId,
+          OR: [
+            { isDefault: true },
+            { name: 'Employee' }
+          ]
+        },
+        orderBy: { isDefault: 'desc' }
+      })
+
       return NextResponse.json({
         requireFirstName: true,
         requireLastName: true,
         requireBirthday: true,
         requireGender: true,
-        requireAddress: false,
+        requireAddress: true,
         requirePhone: true,
-        requireEmail: false,
-        requireSocialSecurityNo: false,
+        requireEmail: true,
+        requireSocialSecurityNo: true,
         requireEmployeeNo: true,
         requireDateOfHire: true,
         requireHoursPerMonth: true,
-        requireBankAccount: false,
+        requireBankAccount: true,
         requireDepartment: true,
-        requireEmployeeGroup: false,
-        requireRole: false,
-        requireSalaryRate: false,
+        requireEmployeeGroup: true,
+        requireRole: true,
+        requireSalaryRate: true,
         incompleteProfileBehavior: 'SHOW_WARNING',
         defaultDepartmentId: null,
         defaultEmployeeGroupId: null,
-        defaultRoleId: null,
+        defaultRoleId: employeeRole?.id || null,
         rolesCanViewEmployees: [],
         employeesCanSeeContactInfo: true,
         limitVisibilityByDepartment: false,
@@ -103,6 +114,18 @@ export async function POST(req: NextRequest) {
 
     const data = await req.json()
 
+    // Resolve default Employee role for sensible defaults
+    const defaultEmployeeRole = await prisma.role.findFirst({
+      where: {
+        businessId: userWithBusiness.businessId,
+        OR: [
+          { isDefault: true },
+          { name: 'Employee' }
+        ]
+      },
+      orderBy: { isDefault: 'desc' }
+    })
+
     const settings = await prisma.employeeSettings.upsert({
       where: { businessId: userWithBusiness.businessId },
       create: {
@@ -111,22 +134,22 @@ export async function POST(req: NextRequest) {
         requireLastName: data.requireLastName ?? true,
         requireBirthday: data.requireBirthday ?? true,
         requireGender: data.requireGender ?? true,
-        requireAddress: data.requireAddress ?? false,
+        requireAddress: data.requireAddress ?? true,
         requirePhone: data.requirePhone ?? true,
-        requireEmail: data.requireEmail ?? false,
-        requireSocialSecurityNo: data.requireSocialSecurityNo ?? false,
+        requireEmail: data.requireEmail ?? true,
+        requireSocialSecurityNo: data.requireSocialSecurityNo ?? true,
         requireEmployeeNo: data.requireEmployeeNo ?? true,
         requireDateOfHire: data.requireDateOfHire ?? true,
         requireHoursPerMonth: data.requireHoursPerMonth ?? true,
-        requireBankAccount: data.requireBankAccount ?? false,
+        requireBankAccount: data.requireBankAccount ?? true,
         requireDepartment: data.requireDepartment ?? true,
-        requireEmployeeGroup: data.requireEmployeeGroup ?? false,
-        requireRole: data.requireRole ?? false,
-        requireSalaryRate: data.requireSalaryRate ?? false,
+        requireEmployeeGroup: data.requireEmployeeGroup ?? true,
+        requireRole: data.requireRole ?? true,
+        requireSalaryRate: data.requireSalaryRate ?? true,
         incompleteProfileBehavior: data.incompleteProfileBehavior ?? 'SHOW_WARNING',
         defaultDepartmentId: data.defaultDepartmentId || null,
         defaultEmployeeGroupId: data.defaultEmployeeGroupId || null,
-        defaultRoleId: data.defaultRoleId || null,
+        defaultRoleId: data.defaultRoleId || defaultEmployeeRole?.id || null,
         rolesCanViewEmployees: data.rolesCanViewEmployees ?? [],
         employeesCanSeeContactInfo: data.employeesCanSeeContactInfo ?? true,
         limitVisibilityByDepartment: data.limitVisibilityByDepartment ?? false,
