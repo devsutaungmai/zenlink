@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/shared/lib/prisma'
 import { getCurrentUserOrEmployee } from '@/shared/lib/auth'
+import { de, se } from 'date-fns/locale'
 
 // GET /api/products - Get all products for the business
 export async function GET(request: NextRequest) {
@@ -73,12 +74,12 @@ export async function POST(request: NextRequest) {
     }
 
     const formData = await request.json()
-    const { productNumber, productName, unitId, productGroupId } = formData
+    const { productNumber, productName, unitId, productGroupId, sequence, year, defaultProductNumber,...restData } = formData
 
     console.log('Creating product with data:', JSON.stringify(formData))
 
-    if (!productNumber) {
-      return NextResponse.json({ error: 'ProductNumber is required' }, { status: 400 })
+    if (!productNumber || !defaultProductNumber) {
+      return NextResponse.json({ error: 'ProductNumber and DefaultProductNumber are required' }, { status: 400 })
     }
     if (!productName) {
       return NextResponse.json({ error: 'ProductName is required' }, { status: 400 })
@@ -92,9 +93,12 @@ export async function POST(request: NextRequest) {
         : null;
 
     const productData = {
-      ...formData,
+      ...restData,
+      productName,
+      productNumber: defaultProductNumber,
       businessId,
-
+      year: year || new Date().getFullYear(),
+      sequence: sequence || 0,
       unitId: refinedUnitId,
       productGroupId: refinedProductGroupId,
     };

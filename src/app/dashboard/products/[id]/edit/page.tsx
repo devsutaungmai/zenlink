@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect, use, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import Link from 'next/link'
@@ -8,6 +8,9 @@ import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
 import { useProductSettings } from '@/shared/hooks/useProductSettings'
 import { ProductFieldSettingsDialog } from '@/components/invoice/ProductFieldSettingsDialog'
+import { formatProductNumberForDisplay } from '@/shared/lib/invoiceHelper'
+import z from 'zod'
+import { productValidationSchema } from '@/components/invoice/validation'
 
 interface Unit {
     id: string
@@ -69,7 +72,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         showUnit: true,
         showProductGroup: true,
     });
-
+    const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
+    const validationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
     useEffect(() => {
         if (settings) {
             setVisibleFields({
@@ -157,6 +161,32 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         } finally {
             setFetchingLoading(false)
         }
+    }
+
+
+
+    const validateField = (fieldName: string, value: any) => {
+        try {
+            const fieldSchema = productValidationSchema.shape[fieldName as keyof typeof productValidationSchema.shape]
+            if (fieldSchema) {
+                fieldSchema.parse(value)
+                setValidationErrors(prev => ({ ...prev, [fieldName]: '' }))
+            }
+        } catch (error) {
+            if (error instanceof z.ZodError && error.issues.length > 0) {
+                setValidationErrors(prev => ({ ...prev, [fieldName]: error.issues[0].message }))
+            }
+        }
+    }
+
+    const debouncedValidation = (fieldName: string, value: any) => {
+        if (validationTimeoutRef.current) {
+            clearTimeout(validationTimeoutRef.current)
+        }
+
+        validationTimeoutRef.current = setTimeout(() => {
+            validateField(fieldName, value)
+        }, 500)
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -271,10 +301,14 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                                     id="productName"
                                     required
                                     value={formData.productName}
-                                    onChange={(e) => setFormData({ ...formData, productName: e.target.value })}
-                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                    onChange={(e) => { setFormData({ ...formData, productName: e.target.value }); debouncedValidation('productName', e.target.value) }}
+                                    onBlur={(e) => validateField('productName', e.target.value)}
+                                    className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.productName ? 'border-red-500' : 'border-gray-300'} bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
                                     placeholder="Enter product name"
                                 />
+                                {validationErrors.productName && (
+                                    <p className="mt-1 text-sm text-red-600">{validationErrors.productName}</p>
+                                )}
                             </div>
 
                             <div>
@@ -285,11 +319,15 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                                     type="text"
                                     id="productNumber"
                                     required
-                                    value={formData.productNumber}
-                                    onChange={(e) => setFormData({ ...formData, productNumber: e.target.value })}
-                                    className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                    value={formatProductNumberForDisplay(formData.productNumber)}
+                                    onChange={(e) => { setFormData({ ...formData, productNumber: e.target.value }); debouncedValidation('productNumber', e.target.value) }}
+                                    onBlur={(e) => validateField('productNumber', e.target.value)}
+                                    className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.productNumber ? 'border-red-500' : 'border-gray-300'} bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
                                     placeholder="Enter product number"
                                 />
+                                {validationErrors.productNumber && (
+                                    <p className="mt-1 text-sm text-red-600">{validationErrors.productNumber}</p>
+                                )}
                             </div>
                         </div>
 

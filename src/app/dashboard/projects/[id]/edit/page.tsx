@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect, use, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import Link from 'next/link'
@@ -9,6 +9,8 @@ import Swal from 'sweetalert2'
 import { useProjectSettings } from '@/shared/hooks/useProjectSettings'
 import { ProjectFieldSettingsDialog } from '@/components/invoice/ProjectFieldSettingsDialog'
 import { formatProjectNumberForDisplay } from '@/shared/lib/invoiceHelper'
+import { projectValidationSchema } from '@/components/invoice/validation'
+import z from 'zod'
 
 interface Customer {
     id: string
@@ -41,6 +43,8 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
         endDate: '',
         customerId: ''
     })
+    const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
+    const validationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
     useEffect(() => {
         fetchProjectCategories()
@@ -66,6 +70,29 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
             })
         }
     }, [settings])
+       const validateField = (fieldName: string, value: any) => {
+            try {
+                const fieldSchema = projectValidationSchema.shape[fieldName as keyof typeof projectValidationSchema.shape]
+                if (fieldSchema) {
+                    fieldSchema.parse(value)
+                    setValidationErrors(prev => ({ ...prev, [fieldName]: '' }))
+                }
+            } catch (error) {
+                if (error instanceof z.ZodError && error.issues.length > 0) {
+                    setValidationErrors(prev => ({ ...prev, [fieldName]: error.issues[0].message }))
+                }
+            }
+        }
+    
+        const debouncedValidation = (fieldName: string, value: any) => {
+            if (validationTimeoutRef.current) {
+                clearTimeout(validationTimeoutRef.current)
+            }
+    
+            validationTimeoutRef.current = setTimeout(() => {
+                validateField(fieldName, value)
+            }, 500)
+        }
 
     const fetchProject = async () => {
         try {
@@ -231,10 +258,14 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
                                 id="name"
                                 required
                                 value={formData.name}
-                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                onChange={(e) => { setFormData({ ...formData, name: e.target.value }); debouncedValidation('name', e.target.value) }}
+                                onBlur={(e) => validateField('name', e.target.value)}
+                                className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.name ? 'border-red-500' : 'border-gray-300'} bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
                                 placeholder="Enter project name"
                             />
+                            {validationErrors.name && (
+                                <p className="mt-1 text-sm text-red-600">{validationErrors.name}</p>
+                            )}
                         </div>
 
                         <div className="grow basis-[calc(20%-12px)] min-w-[150px]">
@@ -245,12 +276,15 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
                                 type="text"
                                 id="projectNumber"
                                 value={formatProjectNumberForDisplay(formData.projectNumber)}
-                                onChange={(e) => setFormData({ ...formData, projectNumber: e.target.value })}
-                                className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                onChange={(e) => { setFormData({ ...formData, projectNumber: e.target.value }); debouncedValidation('projectNumber', e.target.value) }}
+                                onBlur={(e) => validateField('projectNumber', e.target.value)}
+                                className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.projectNumber ? 'border-red-500' : 'border-gray-300'} bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
                                 placeholder="Enter project number"
                             />
+                            {validationErrors.projectNumber && (
+                                <p className="mt-1 text-sm text-red-600">{validationErrors.projectNumber}</p>
+                            )}
                         </div>
-
 
                         {/* Category & Customer */}
 

@@ -126,8 +126,7 @@ export default function CreateProjectPage() {
             validateField(fieldName, value)
         }, 500)
     }
-
-
+    
     const fetchProjectCategories = async () => {
         try {
             const res = await fetch('/api/project-categories')

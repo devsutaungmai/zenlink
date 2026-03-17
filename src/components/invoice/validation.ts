@@ -129,19 +129,49 @@ export const projectValidationSchema = z.object({
     .min(1, 'Project number is required')
     .refine(val => {
       const num = Number(val);
-      return !isNaN(num) && num >= 10000;
+      return !isNaN(num) && num >= 1000;
     }, {
-      message: 'Project number must be at least 10000'
+      message: 'Project number must be at least 1000'
     })
     .refine(val => {
       const num = Number(val);
-      return !isNaN(num) && num <= 19999;
+      return !isNaN(num) && num <= 9999;
     }, {
-      message: 'Project number must be equal to or less than 19999'
+      message: 'Project number must be equal to or less than 9999'
     }),
   categoryId: z.string().optional().or(z.literal('')),
   customerId: z.string().optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
 
+})
+
+export const productValidationSchema = z.object({
+  productName: z.string()
+    .min(1, 'Product name is required')
+    .min(2, 'Product name must be at least 2 characters')
+    .max(100, 'Product name must be less than 100 characters'),
+
+  productNumber: z
+    .string()
+    .min(1, 'Product number is required')
+    .refine(val => {
+      const num = Number(val);
+      return !isNaN(num) && num >= 1000;
+    }, {
+      message: 'Product number must be at least 1000'
+    })
+    .refine(val => {
+      const num = Number(val);
+      return !isNaN(num) && num <= 9999;
+    }, {
+      message: 'Product number must be equal to or less than 9999'
+    }),
+
+  salesPrice: z.number().optional().default(0),
+  costPrice: z.number().optional().default(0),
+  discountPercentage: z.number().optional().default(0),
+  unitId: z.string().optional().or(z.literal('')),
+  productGroupId: z.string().optional().or(z.literal('')),
+  ledgerAccountId: z.string().optional().or(z.literal('')),
 })

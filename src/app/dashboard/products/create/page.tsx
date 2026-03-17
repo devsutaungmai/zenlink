@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import Link from 'next/link'
@@ -9,6 +9,9 @@ import Swal from 'sweetalert2'
 import { useProductSettings } from '@/shared/hooks/useProductSettings'
 import { ProductFieldSettingsDialog } from '@/components/invoice/ProductFieldSettingsDialog'
 import { useAutoFocus } from '@/shared/hooks/useAutoFocus'
+import { formatProductNumberForDisplay } from '@/shared/lib/invoiceHelper'
+import { productValidationSchema } from '@/components/invoice/validation'
+import z from 'zod'
 
 interface Unit {
   id: string
@@ -53,6 +56,9 @@ export default function CreateProductPage() {
   const [formData, setFormData] = useState({
     active: true,
     productNumber: '',
+    defaultProductNumber: '',
+    sequence: 0,
+    year: 0,
     productName: '',
     salesPrice: 0,
     costPrice: 0,
@@ -83,11 +89,14 @@ export default function CreateProductPage() {
     }
   }, [settings]);
 
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
+  const validationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     fetchUnits()
     fetchProductGroups()
     fetchSalesLedgerAccounts()
+    getDefaultProductNumber()
   }, [])
 
   const fetchUnits = async () => {
@@ -134,6 +143,49 @@ export default function CreateProductPage() {
       console.error('Error fetching sales ledger accounts:', error)
     }
   }
+
+  const getDefaultProductNumber = async () => {
+    try {
+      const res = await fetch('/api/products/next-number')
+
+      if (res.ok) {
+        const data = await res.json()
+        const defaultNumber = formatProductNumberForDisplay(data.productNumber);
+
+        setFormData(prev => ({
+          ...prev, productNumber: defaultNumber, defaultProductNumber: data.productNumber, sequence: data.sequence,
+          year: data.year
+        }))
+      }
+    } catch (error) {
+      console.error('Error fetching default project number:', error)
+    }
+  }
+
+  const validateField = (fieldName: string, value: any) => {
+    try {
+      const fieldSchema = productValidationSchema.shape[fieldName as keyof typeof productValidationSchema.shape]
+      if (fieldSchema) {
+        fieldSchema.parse(value)
+        setValidationErrors(prev => ({ ...prev, [fieldName]: '' }))
+      }
+    } catch (error) {
+      if (error instanceof z.ZodError && error.issues.length > 0) {
+        setValidationErrors(prev => ({ ...prev, [fieldName]: error.issues[0].message }))
+      }
+    }
+  }
+
+  const debouncedValidation = (fieldName: string, value: any) => {
+    if (validationTimeoutRef.current) {
+      clearTimeout(validationTimeoutRef.current)
+    }
+
+    validationTimeoutRef.current = setTimeout(() => {
+      validateField(fieldName, value)
+    }, 500)
+  }
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -242,10 +294,14 @@ export default function CreateProductPage() {
                   id="productName"
                   required
                   value={formData.productName}
-                  onChange={(e) => setFormData({ ...formData, productName: e.target.value })}
-                  className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                  onChange={(e) => { setFormData({ ...formData, productName: e.target.value }); debouncedValidation('productName', e.target.value) }}
+                  onBlur={(e) => validateField('productName', e.target.value)}
+                  className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.productName ? 'border-red-500' : 'border-gray-300'} bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
                   placeholder="Enter product name"
                 />
+                {validationErrors.productName && (
+                  <p className="mt-1 text-sm text-red-600">{validationErrors.productName}</p>
+                )}
               </div>
 
               <div>
@@ -257,10 +313,14 @@ export default function CreateProductPage() {
                   id="productNumber"
                   required
                   value={formData.productNumber}
-                  onChange={(e) => setFormData({ ...formData, productNumber: e.target.value })}
-                  className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                  onChange={(e) => { setFormData({ ...formData, productNumber: e.target.value }); debouncedValidation('productNumber', e.target.value) }}
+                  onBlur={(e) => validateField('productNumber', e.target.value)}
+                  className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.productNumber ? 'border-red-500' : 'border-gray-300'} bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
                   placeholder="Enter product number"
                 />
+                {validationErrors.productNumber && (
+                  <p className="mt-1 text-sm text-red-600">{validationErrors.productNumber}</p>
+                )}
               </div>
             </div>
 
@@ -381,7 +441,7 @@ export default function CreateProductPage() {
                         ? `${businessVat.name} (${businessVat.rate}%)`
                         : sa.vatCode
                           ? `${sa.vatCode.name} (${sa.vatCode.rate}%)`
-                          : "0%" }
+                          : "0%"}
                     </option>
                   )
                 })}
