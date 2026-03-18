@@ -126,7 +126,7 @@ export default function CreateProjectPage() {
             validateField(fieldName, value)
         }, 500)
     }
-    
+
     const fetchProjectCategories = async () => {
         try {
             const res = await fetch('/api/project-categories')
@@ -175,10 +175,16 @@ export default function CreateProjectPage() {
                 )
 
                 await Swal.fire({
-                    title: 'Validation Error',
                     text: contactError?.message || 'Please fix the errors in the form',
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 3500,
+                    timerProgressBar: true,
                     icon: 'error',
-                    confirmButtonColor: '#31BCFF',
+                    customClass: {
+                        popup: 'swal-toast-wide'
+                    }
                 })
                 return
             }
@@ -198,20 +204,33 @@ export default function CreateProjectPage() {
             }
 
             await Swal.fire({
-                title: 'Success!',
                 text: 'Project created successfully',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
                 icon: 'success',
-                confirmButtonColor: '#31BCFF',
+                customClass: {
+                    popup: 'swal-toast-wide'
+                }
             })
+
 
             router.push('/dashboard/projects')
             router.refresh()
         } catch (error) {
             await Swal.fire({
-                title: 'Error',
                 text: error instanceof Error ? error.message : 'An error occurred',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
                 icon: 'error',
-                confirmButtonColor: '#31BCFF',
+                customClass: {
+                    popup: 'swal-toast-wide'
+                }
             })
         } finally {
             setLoading(false)
@@ -280,7 +299,7 @@ export default function CreateProjectPage() {
                                 type="text"
                                 id="name"
                                 value={formData.name}
-                                onChange={(e) =>{ setFormData({ ...formData, name: e.target.value }); debouncedValidation('name', e.target.value) }}
+                                onChange={(e) => { setFormData({ ...formData, name: e.target.value }); debouncedValidation('name', e.target.value) }}
                                 onBlur={(e) => validateField('name', e.target.value)}
                                 className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.name ? 'border-red-500' : 'border-gray-300'} bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
                                 placeholder="Enter project name"

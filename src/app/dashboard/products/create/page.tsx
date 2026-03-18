@@ -203,21 +203,37 @@ export default function CreateProductPage() {
         throw new Error(error.error || 'Failed to create product')
       }
 
-      await Swal.fire({
-        title: 'Success!',
+       Swal.fire({
         text: 'Product created successfully',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
         icon: 'success',
-        confirmButtonColor: '#31BCFF',
+        customClass: {
+          popup: 'swal-toast-wide'
+        }
       })
 
       router.push('/dashboard/products')
       router.refresh()
     } catch (error) {
+
       await Swal.fire({
         title: 'Error',
         text: error instanceof Error ? error.message : 'An error occurred',
+
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
         icon: 'error',
         confirmButtonColor: '#31BCFF',
+        customClass: {
+          popup: 'swal-toast-wide'
+        }
       })
     } finally {
       setLoading(false)
@@ -245,6 +261,7 @@ export default function CreateProductPage() {
               Add a new category to organize your department functions
             </p>
           </div>
+          
           <div className="hidden md:flex items-center space-x-2">
             <ProductFieldSettingsDialog
               initialSettings={visibleFields}

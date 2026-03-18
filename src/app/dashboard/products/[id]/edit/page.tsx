@@ -11,6 +11,9 @@ import { ProductFieldSettingsDialog } from '@/components/invoice/ProductFieldSet
 import { formatProductNumberForDisplay } from '@/shared/lib/invoiceHelper'
 import z from 'zod'
 import { productValidationSchema } from '@/components/invoice/validation'
+import { useHasChanges } from '@/hooks/useHasChanges'
+import { AlertTriangle } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
 
 interface Unit {
     id: string
@@ -74,6 +77,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     });
     const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
     const validationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+    const { hasChanges, setInitialData, resetChanges } = useHasChanges(formData)
+
     useEffect(() => {
         if (settings) {
             setVisibleFields({
@@ -144,7 +149,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             const res = await fetch(`/api/products/${resolvedParams.id}`)
             if (res.ok) {
                 const data = await res.json()
-                setFormData({
+                const formattedData = {
                     active: data.active,
                     productNumber: data.productNumber || '',
                     productName: data.productName || '',
@@ -154,7 +159,9 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                     unitId: data.unitId || '',
                     productGroupId: data.productGroupId || '',
                     ledgerAccountId: data.ledgerAccountId || ''
-                })
+                };
+                setFormData(formattedData)
+                setInitialData(formattedData)
             }
         } catch (error) {
             console.error('Error fetching category:', error)
@@ -206,20 +213,32 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             }
 
             await Swal.fire({
-                title: 'Success!',
                 text: 'Product updated successfully',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
                 icon: 'success',
-                confirmButtonColor: '#31BCFF',
+                customClass: {
+                    popup: 'swal-toast-wide'
+                }
             })
-
+            resetChanges()
             router.push('/dashboard/products')
             router.refresh()
         } catch (error) {
             await Swal.fire({
-                title: 'Error',
                 text: error instanceof Error ? error.message : 'An error occurred',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
                 icon: 'error',
-                confirmButtonColor: '#31BCFF',
+                customClass: {
+                    popup: 'swal-toast-wide'
+                }
             })
         } finally {
             setLoading(false)
@@ -276,6 +295,15 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             {/* Form Container */}
             <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg p-6">
                 <form onSubmit={handleSubmit} className="space-y-6">
+                    {hasChanges && (
+                        <div className="flex justify-end items-center gap-3">
+                            <Badge variant="secondary" className="bg-amber-100 text-amber-800">
+                                <AlertTriangle className="w-3 h-3 mr-1" />
+                                Unsaved Changes
+                            </Badge>
+                        </div>
+
+                    )}
                     <div className="flex justify-end items-center gap-3 mt-8">
                         <input
                             id="active"
@@ -464,7 +492,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                             </Link>
                             <button
                                 type="submit"
-                                disabled={loading}
+                                disabled={loading || !hasChanges}
                                 className="px-6 py-3 rounded-xl bg-gradient-to-r from-[#31BCFF] to-[#0EA5E9] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                             >
                                 {loading ? 'Updating...' : 'Update Product'}

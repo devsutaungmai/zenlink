@@ -1,9 +1,9 @@
 import { getCurrentUserOrEmployee } from '@/shared/lib/auth'
-import Swal from 'sweetalert2'
 import { prisma } from './prisma'
 import { AccountType, InvoiceStatus, LedgerEntryType, Prisma, VoucherType } from '@prisma/client'
 import { isValid } from 'date-fns'
 import { fi, is } from 'date-fns/locale'
+import { success } from 'zod'
 
 export interface InvoiceCalculation {
   subtotal: number
@@ -108,9 +108,9 @@ export async function exportToPDF(invoiceId: string) {
 
       return true
     } else {
-       const error = await response.json()
-            console.error('Failed to export PDF:', error)
-            return false
+      const error = await response.json()
+      console.error('Failed to export PDF:', error)
+      return false
       // console.error('Failed to export PDF')
       // return false
     }
@@ -127,38 +127,26 @@ export async function sendEmail(invoiceId: string, type?: string) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ invoiceId }),
     })
+    const data = await response.json()
+    if (!response.ok) {
+      return {
+        success: false,
+        message: data.error || 'Failed to send email'
+      }
+    }
 
-    if (response.ok) {
-      Swal.fire({
-        title: 'Success!',
-        text: type === 'invoiced'
+    return {
+      success: true,
+      message:
+        type === 'invoiced'
           ? 'Email sent to the customer!'
           : 'Invoice created and sent email to the customer!',
-        icon: 'success',
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        timer: 3000,
-        timerProgressBar: true,
-      })
-    } else {
-      const data = await response.json()
-      // Show the actual API error message (e.g. "Customer email not found...")
-      Swal.fire({
-        title: 'Email Failed',
-        text: data.error || 'Failed to send email',
-        icon: 'warning',
-        confirmButtonColor: '#31BCFF',
-      })
     }
   } catch (error) {
-    // Network or unexpected errors
-    Swal.fire({
-      title: 'Email Failed',
-      text: error instanceof Error ? error.message : 'Failed to send email',
-      icon: 'warning',
-      confirmButtonColor: '#31BCFF',
-    })
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Failed to send email',
+    }
   }
 }
 
@@ -189,7 +177,7 @@ export async function createCreditNoteRecord(params: {
   creditNoteNumber: string;
   year: number;
   sequence: number;
-}, tx: Prisma.TransactionClient ) {
+}, tx: Prisma.TransactionClient) {
   const {
     businessId, customerId, creditNoteDate, reason,
     lines, creditedInvoiceId, projectId, departmentId,
@@ -326,7 +314,7 @@ export async function createCreditNote(params: {
       creditNoteNumber,
       year,
       sequence,
-    },tx);
+    }, tx);
 
     // Rebill invoice if needed
     if (rebillLines && rebillLines.length > 0) {
@@ -384,7 +372,7 @@ export async function createCreditNote(params: {
         }
       });
     }
-  },{ timeout: 30000 });
+  }, { timeout: 30000 });
 
   if (!creditNote) throw new Error('Failed to create credit note');
   await invoiceToLedgerPosting(creditNote.id);
@@ -421,7 +409,7 @@ export async function generateCreditNoteNumber(businessId: string, tx?: Prisma.T
     where: {
       businessId,
       year,
-      status:{not:InvoiceStatus.DRAFT}
+      status: { not: InvoiceStatus.DRAFT }
     },
     orderBy: { sequence: 'desc' }
   });

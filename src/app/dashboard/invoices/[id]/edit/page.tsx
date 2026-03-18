@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next'
 import Link from 'next/link'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
-import { ContactPerson, InvoiceFormData, InvoiceLine, Project } from '../../create/page'
+import { ContactPerson, InvoiceFormData, InvoiceLine, Project, toast } from '../../create/page'
 import { Department } from '@prisma/client'
 import { useInvoiceSettings } from '@/shared/hooks/useInvoiceSettings'
 import { calculateInvoiceTotals, exportToPDF, sendEmail } from '@/shared/lib/invoiceHelper'
@@ -14,6 +14,9 @@ import InvoiceSummaryCalculation from '@/components/invoice/InvoiceSummaryCalcul
 import { CustomerCombobox } from '@/components/invoice/CustomerCombobox'
 import { InvoiceFieldSettingsDialog } from '@/components/invoice/InvoiceFieldSettingsDialog'
 import SendInvoiceDialog, { SendInvoiceDialogResult } from '@/components/invoice/SendInvoiceDialog'
+import { useHasChanges } from '@/hooks/useHasChanges'
+import { AlertTriangle } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
 
 interface Customer {
     id: string
@@ -147,7 +150,7 @@ export default function EditInvoicePage({
                 body: JSON.stringify(filteredData),
             })
             isDirtyRef.current = false
-        } catch (_) {}
+        } catch (_) { }
     }, [isCreditNote, resolvedParams.id])
 
     // ─── 5. Back button ───────────────────────────────────────────────────────
@@ -175,6 +178,8 @@ export default function EditInvoicePage({
             })
         }
     }, [settings])
+
+    const { hasChanges, resetChanges, setInitialData } = useHasChanges(formData);
 
     useEffect(() => {
         fetchCustomers()
@@ -236,8 +241,7 @@ export default function EditInvoicePage({
                     }, 0)
                     setOriginalInvoiceData({ customerId: data.customerId, amount: totalAmount })
                 }
-
-                setFormData({
+                const formattedData = {
                     customerId: data.customerId || '',
                     invoiceNumber: data.invoiceNumber || '',
                     contactPersonId: data.contactPersonId || '',
@@ -251,7 +255,9 @@ export default function EditInvoicePage({
                     invoiceLines: invoiceLines || [],
                     status: data.status || '',
                     notes: data.notes || '',
-                })
+                };
+                setFormData(formattedData)
+                setInitialData(formattedData)
                 isDirtyRef.current = false
             }
         } catch (error) {
@@ -350,12 +356,12 @@ export default function EditInvoicePage({
             // Standalone credit note from edit page (negative total on a draft)
             if (action === 'send_new_credit_note' && !isCreditNote && isNegativeTotal) {
                 if (!formData.customerId) {
-                    await Swal.fire({ title: 'Validation Error', text: 'Please select a customer before creating a credit note', icon: 'warning', confirmButtonColor: '#31BCFF' })
+                    await toast('warning', 'Please select a customer before creating a credit note')
                     setLoading(false)
                     return
                 }
                 if (formData.invoiceLines.length === 0 || formData.invoiceLines.every(l => !l.productId)) {
-                    await Swal.fire({ title: 'Validation Error', text: 'Please add at least one order line', icon: 'warning', confirmButtonColor: '#31BCFF' })
+                    await toast('warning', 'Please add at least one order line')
                     setLoading(false)
                     return
                 }
@@ -374,7 +380,8 @@ export default function EditInvoicePage({
                     }),
                 })
                 if (!res.ok) { const error = await res.json(); throw new Error(error.error || 'Failed to create standalone credit note') }
-                await Swal.fire({ title: 'Success!', text: 'Credit note created successfully', icon: 'success', confirmButtonColor: '#31BCFF' })
+                await toast('success', 'Credit note created successfully')
+                resetChanges();
                 isDirtyRef.current = false
                 router.push('/dashboard/invoices')
                 router.refresh()
@@ -397,7 +404,7 @@ export default function EditInvoicePage({
                     }),
                 })
                 if (!response.ok) { const error = await response.json(); throw new Error(error.error || 'Failed to create the credit note') }
-                await Swal.fire({ title: 'Success!', text: 'Credit note sent successfully', icon: 'success', confirmButtonColor: '#31BCFF' })
+                await toast('success', 'Credit note sent successfully')
                 isDirtyRef.current = false
                 router.push('/dashboard/invoices')
                 router.refresh()
@@ -415,24 +422,28 @@ export default function EditInvoicePage({
 
             if (action === 'print') {
                 const pdfSuccess = await exportToPDF(updatedInvoice.id)
-                await Swal.fire({
-                    title: pdfSuccess ? 'Success!' : 'Partial Success',
-                    text: pdfSuccess ? 'Invoice updated and PDF downloaded' : 'Invoice updated but PDF download failed',
-                    icon: pdfSuccess ? 'success' : 'warning',
-                    confirmButtonColor: '#31BCFF',
-                })
+
+                await toast(
+                    pdfSuccess ? 'success' : 'warning',
+                    pdfSuccess
+                        ? 'Invoice updated and PDF downloaded'
+                        : 'Invoice updated but PDF download failed'
+                )
             } else if (action === 'send_invoice_with_email') {
-                await sendEmail(updatedInvoice.id)
-                // sendEmail shows its own Swal toast — no extra alert needed
+                const result = await sendEmail(updatedInvoice.id)
+                toast('success', result.message)
             } else {
-                await Swal.fire({ title: 'Success!', text: 'Invoice updated successfully', icon: 'success', confirmButtonColor: '#31BCFF' })
+                toast('success', 'Invoice updated successfully')
             }
 
             isDirtyRef.current = false
             router.push('/dashboard/invoices')
             router.refresh()
         } catch (error) {
-            await Swal.fire({ title: 'Error', text: error instanceof Error ? error.message : 'An error occurred', icon: 'error', confirmButtonColor: '#31BCFF' })
+            await toast(
+                'error',
+                error instanceof Error ? error.message : 'An error occurred'
+            )
         } finally {
             setLoading(false)
         }
@@ -489,6 +500,15 @@ export default function EditInvoicePage({
                 <div className="space-y-6">
                     {/* Customer Information */}
                     <div className="bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-xl border border-slate-200 p-6">
+                        {hasChanges && (
+                            <div className="flex justify-end items-center gap-3">
+                                <Badge variant="secondary" className="bg-amber-100 text-amber-800">
+                                    <AlertTriangle className="w-3 h-3 mr-1" />
+                                    Unsaved Changes
+                                </Badge>
+                            </div>
+
+                        )}
                         <div className="flex items-center justify-between mb-4">
                             <h2 className="text-lg font-semibold text-gray-900">Customer Information</h2>
                         </div>
@@ -509,7 +529,7 @@ export default function EditInvoicePage({
                                 </div>
                             )}
 
-                            {settings.showPaymentTerms && (
+                            {/* {settings.showPaymentTerms && (
                                 <>
                                     <div className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] min-w-[250px]">
                                         <label className="block text-sm font-medium text-gray-700 mb-2">Invoice Date (sentAt) *</label>
@@ -520,7 +540,7 @@ export default function EditInvoicePage({
                                         <input type="number" min="0" value={formData.dueDay} onChange={(e) => setFormData({ ...formData, dueDay: Number.parseInt(e.target.value) || 0 })} disabled={isCreditNote} className={`block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 ${isCreditNote ? 'opacity-60 cursor-not-allowed' : ''}`} placeholder="Enter days until due" />
                                     </div>
                                 </>
-                            )}
+                            )} */}
 
                             {settings.showProject && (
                                 <div className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] min-w-[250px]">

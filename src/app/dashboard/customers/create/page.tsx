@@ -260,21 +260,33 @@ export default function CreateCustomersPage() {
                 projectIds: [...(prev.projectIds || []), createdProject.id]
             }))
             await Swal.fire({
-                title: 'Success!',
                 text: 'Project created successfully',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
                 icon: 'success',
-                confirmButtonColor: '#31BCFF',
-                focusConfirm: false,
+                customClass: {
+                    popup: 'swal-toast-wide'
+                }
             })
+
             return createdProject
         } catch (error) {
             await Swal.fire({
-                title: 'Error',
                 text: error instanceof Error ? error.message : 'An error occurred',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
                 icon: 'error',
-                confirmButtonColor: '#31BCFF',
-                focusConfirm: false,
+                customClass: {
+                    popup: 'swal-toast-wide'
+                }
             })
+
             throw error
         } finally {
             setLoadingProject(false)
@@ -306,11 +318,18 @@ export default function CreateCustomersPage() {
                 )
 
                 await Swal.fire({
-                    title: 'Validation Error',
                     text: contactError?.message || 'Please fix the errors in the form',
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 3500,
+                    timerProgressBar: true,
                     icon: 'error',
-                    confirmButtonColor: '#31BCFF',
+                    customClass: {
+                        popup: 'swal-toast-wide'
+                    }
                 })
+
                 return
             }
         }
@@ -330,20 +349,32 @@ export default function CreateCustomersPage() {
             }
 
             await Swal.fire({
-                title: 'Success!',
                 text: 'Customer created successfully',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
                 icon: 'success',
-                confirmButtonColor: '#31BCFF',
+                customClass: {
+                    popup: 'swal-toast-wide'
+                }
             })
 
             router.push('/dashboard/customers')
             router.refresh()
         } catch (error) {
             await Swal.fire({
-                title: 'Error',
                 text: error instanceof Error ? error.message : 'An error occurred',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
                 icon: 'error',
-                confirmButtonColor: '#31BCFF',
+                customClass: {
+                    popup: 'swal-toast-wide'
+                }
             })
         } finally {
             setLoading(false)

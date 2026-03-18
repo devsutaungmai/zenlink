@@ -13,7 +13,19 @@ import { useInvoiceSettings } from '@/shared/hooks/useInvoiceSettings'
 import { CustomerCombobox } from '@/components/invoice/CustomerCombobox'
 import { InvoiceFieldSettingsDialog } from '@/components/invoice/InvoiceFieldSettingsDialog'
 import SendInvoiceDialog, { SendInvoiceDialogResult } from '@/components/invoice/SendInvoiceDialog'
-
+export const toast = (icon: 'success' | 'error' | 'warning', text: string) =>
+    Swal.fire({
+        text,
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        icon,
+        customClass: {
+            popup: 'swal-toast-wide'
+        }
+    })
 export interface Customer {
     id: string
     customerName: string
@@ -267,22 +279,13 @@ export default function CreateInvoicePage() {
                 throw new Error(error.error || 'Failed to create customer')
             }
 
-            await Swal.fire({
-                title: 'Success!',
-                text: 'Customer created successfully',
-                icon: 'success',
-                confirmButtonColor: '#31BCFF',
-                focusConfirm: false,
-            })
+            await toast('success', 'Customer created successfully')
             router.refresh()
         } catch (error) {
-            await Swal.fire({
-                title: 'Error',
-                text: error instanceof Error ? error.message : 'An error occurred',
-                icon: 'error',
-                confirmButtonColor: '#31BCFF',
-                focusConfirm: false,
-            })
+            await toast(
+                'error',
+                error instanceof Error ? error.message : 'An error occurred'
+            )
         } finally {
             setLoadingCustomer(false)
             setCustomerDialog(false)
@@ -496,12 +499,7 @@ export default function CreateInvoicePage() {
             }
         } catch (error) {
             console.error('Error fetching customer details:', error)
-            await Swal.fire({
-                title: 'Error',
-                text: 'Failed to fetch customer details',
-                icon: 'error',
-                confirmButtonColor: '#31BCFF',
-            })
+            await toast('error', 'Failed to fetch customer details')
         } finally {
             setFetchingCustomer(false)
         }
@@ -619,22 +617,13 @@ export default function CreateInvoicePage() {
             // Standalone credit note — separate flow
             if (action === 'send_new_credit_note') {
                 if (!formData.customerId) {
-                    await Swal.fire({
-                        title: 'Validation Error',
-                        text: 'Please select a customer before creating a credit note',
-                        icon: 'warning',
-                        confirmButtonColor: '#31BCFF',
-                    })
+                    await toast('warning', 'Please select a customer before creating a credit note')
                     setLoading(false)
                     return
                 }
                 if (formData.invoiceLines.length === 0 || formData.invoiceLines.every(l => !l.productId)) {
-                    await Swal.fire({
-                        title: 'Validation Error',
-                        text: 'Please add at least one order line',
-                        icon: 'warning',
-                        confirmButtonColor: '#31BCFF',
-                    })
+
+                    await toast('warning', 'Please add at least one order line')
                     setLoading(false)
                     return
                 }
@@ -655,12 +644,7 @@ export default function CreateInvoicePage() {
                     const error = await res.json()
                     throw new Error(error.error || 'Failed to create standalone credit note')
                 }
-                await Swal.fire({
-                    title: 'Success!',
-                    text: 'Standalone credit note created successfully',
-                    icon: 'success',
-                    confirmButtonColor: '#31BCFF',
-                })
+                await toast('success', 'Standalone credit note created successfully')
                 isDirtyRef.current = false
                 router.push('/dashboard/invoices')
                 router.refresh()
@@ -681,41 +665,28 @@ export default function CreateInvoicePage() {
 
             if (action === 'print') {
                 const pdfSuccess = await exportToPDF(createdInvoice.id)
-                await Swal.fire({
-                    title: pdfSuccess ? 'Success!' : 'Partial Success',
-                    text: pdfSuccess
+                await toast(
+                    pdfSuccess ? 'success' : 'warning',
+                    pdfSuccess
                         ? 'Invoice created and PDF downloaded'
-                        : 'Invoice created but PDF download failed',
-                    icon: pdfSuccess ? 'success' : 'warning',
-                    confirmButtonColor: '#31BCFF',
-                })
+                        : 'Invoice created but PDF download failed'
+                )
             } else if (action === 'send_invoice_with_email') {
-                await sendEmail(createdInvoice.id)
-                await Swal.fire({
-                    title: 'Success!',
-                    text: 'Invoice created successfully',
-                    icon: 'success',
-                    confirmButtonColor: '#31BCFF',
-                })
+               const result = await sendEmail(createdInvoice.id)
+
+                await toast('success',result?.message)
             } else {
-                await Swal.fire({
-                    title: 'Success!',
-                    text: 'Invoice created successfully',
-                    icon: 'success',
-                    confirmButtonColor: '#31BCFF',
-                })
+                await toast('success', 'Invoice created successfully')
             }
 
             isDirtyRef.current = false
             router.push('/dashboard/invoices')
             router.refresh()
         } catch (error) {
-            await Swal.fire({
-                title: 'Error',
-                text: error instanceof Error ? error.message : 'An error occurred',
-                icon: 'error',
-                confirmButtonColor: '#31BCFF',
-            })
+            await toast(
+                'error',
+                error instanceof Error ? error.message : 'An error occurred'
+            )
         } finally {
             setLoading(false)
         }
