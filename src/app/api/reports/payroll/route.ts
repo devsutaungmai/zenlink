@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/shared/lib/auth'
 import { prisma } from '@/shared/lib/prisma'
 
+export const maxDuration = 60
+
 export async function POST(request: NextRequest) {
   try {
     const user = await requireAuth()

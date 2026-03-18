@@ -3,6 +3,8 @@ import { prisma } from '@/shared/lib/prisma'
 import { getCurrentUserOrEmployee } from '@/shared/lib/auth'
 import { captureApiError } from '@/shared/lib/sentry'
 
+export const maxDuration = 60
+
 async function getAccessibleDepartmentIds(auth: any): Promise<string[] | null> {
   if (auth.type === 'user') {
     const user = auth.data as any
@@ -121,8 +123,24 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // If a shiftId is provided, check for an existing open attendance for that exact shift first
+    // If a shiftId is provided, validate it exists and is in a valid state
     if (shiftId) {
+      const shift = await prisma.shift.findUnique({
+        where: { id: shiftId }
+      })
+
+      if (!shift) {
+        return NextResponse.json({ 
+          error: 'Shift not found. It may have been deleted.' 
+        }, { status: 400 })
+      }
+
+      if (shift.status === 'COMPLETED') {
+        return NextResponse.json({ 
+          error: 'This shift is already completed. Please select a scheduled shift.' 
+        }, { status: 400 })
+      }
+
       const existingForShift = await prisma.attendance.findFirst({
         where: { employeeId, shiftId, punchOutTime: null },
         include: {
@@ -461,9 +479,7 @@ export async function GET(request: NextRequest) {
             skip: (page - 1) * pageSize,
             take: pageSize
           }
-        : limit
-          ? { take: limit }
-          : {})
+        : { take: limit || 5000 })
     })
 
     if (isPaginated) {

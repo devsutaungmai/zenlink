@@ -125,10 +125,6 @@ interface Attendance {
 type AttendanceStatus = 'working' | 'completed' | 'pending' | 'rejected' | 'approved'
 
 const getAttendanceStatus = (record: Attendance): AttendanceStatus => {
-  if (record.shift?.approved) {
-    return 'approved'
-  }
-
   if (!record.approved) {
     if (record.approvedBy) {
       return 'rejected'
@@ -136,7 +132,11 @@ const getAttendanceStatus = (record: Attendance): AttendanceStatus => {
     return 'pending'
   }
 
-  return record.punchOutTime ? 'completed' : 'working'
+  if (!record.punchOutTime) {
+    return 'working'
+  }
+
+  return 'approved'
 }
 
 export default function PunchClockPage() {
@@ -217,11 +217,13 @@ export default function PunchClockPage() {
         const shifts = await res.json()
         if (!Array.isArray(shifts)) return
 
-        // Prefer a shift that is approved (status or approved flag depending on model)
-        const approvedShift = shifts.find((s: any) => s.status === 'APPROVED' || s.approved === true)
-        if (approvedShift) {
-          setCreateFormData(prev => ({ ...prev, shiftId: approvedShift.id }))
-          setSelectedCreateShift(approvedShift)
+        // Only consider SCHEDULED shifts (exclude COMPLETED, WORKING, etc.)
+        const availableShifts = shifts.filter((s: any) => s.status === 'SCHEDULED')
+        // Prefer an approved scheduled shift
+        const bestShift = availableShifts.find((s: any) => s.approved === true) || availableShifts[0]
+        if (bestShift) {
+          setCreateFormData(prev => ({ ...prev, shiftId: bestShift.id }))
+          setSelectedCreateShift(bestShift)
         } else {
           setCreateFormData(prev => ({ ...prev, shiftId: '' }))
           setSelectedCreateShift(null)
@@ -639,17 +641,6 @@ export default function PunchClockPage() {
       )
     }
 
-    if (status === 'completed') {
-      return (
-        <div className="mt-1">
-          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-            <CheckCircleIcon className="w-3 h-3 mr-1" />
-            {t('status.approved', { defaultValue: 'Approved' })}
-          </span>
-        </div>
-      )
-    }
-
     return null
   }
 
@@ -936,7 +927,10 @@ export default function PunchClockPage() {
 
       const response = await fetch(`/api/attendance?${params.toString()}`)
       if (!response.ok) {
-        throw new Error('Failed to fetch attendance for export')
+        const text = await response.text()
+        let errorMsg = 'Failed to fetch attendance for export'
+        try { errorMsg = JSON.parse(text)?.error || errorMsg } catch {}
+        throw new Error(errorMsg)
       }
 
       const json = await response.json()
@@ -1018,11 +1012,19 @@ export default function PunchClockPage() {
         const filename = `attendance_${dateRange?.startDate || selectedDate}.pdf`
         downloadBlob(blob, filename)
       } else {
-        alert('Failed to export PDF')
+        throw new Error('Failed to export PDF. The request may have timed out due to large data. Try narrowing the date range.')
       }
     } catch (error) {
       console.error('Error exporting PDF:', error)
-      alert('Failed to export PDF')
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 5000,
+        timerProgressBar: true,
+        icon: 'error',
+        title: error instanceof Error ? error.message : 'Failed to export PDF'
+      })
     }
   }
 

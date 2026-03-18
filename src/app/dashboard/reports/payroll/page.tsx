@@ -195,22 +195,30 @@ export default function PayrollReportsPage() {
         })
       })
 
-      const data = await response.json()
-      
-      if (response.ok) {
-        setReportData(data)
-        setPreviewMode(preview)
-        
-        if (!preview) {
-          Swal.fire({
-            title: t('success_title', 'Success!'),
-            text: t('report_generated', 'Report generated with {{count}} entries.', { count: data.summary.totalEntries }),
-            icon: 'success',
-            confirmButtonColor: '#31BCFF'
-          })
+      if (!response.ok) {
+        let errorMsg = 'Failed to generate report'
+        try {
+          const errData = await response.json()
+          errorMsg = errData.error || errorMsg
+        } catch {
+          errorMsg = response.status === 504 
+            ? 'Request timed out. Try narrowing the date range or selecting fewer employees.'
+            : errorMsg
         }
-      } else {
-        throw new Error(data.error || 'Failed to generate report')
+        throw new Error(errorMsg)
+      }
+
+      const data = await response.json()
+      setReportData(data)
+      setPreviewMode(preview)
+      
+      if (!preview) {
+        Swal.fire({
+          title: t('success_title', 'Success!'),
+          text: t('report_generated', 'Report generated with {{count}} entries.', { count: data.summary.totalEntries }),
+          icon: 'success',
+          confirmButtonColor: '#31BCFF'
+        })
       }
     } catch (error) {
       console.error('Error generating report:', error)

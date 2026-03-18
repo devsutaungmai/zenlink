@@ -89,22 +89,22 @@ export default function SettingsPage() {
             description: t('punch_clock.menu.access.description'),
             component: PunchClockAccessSettings
           },
-          {
-            id: 'punch-clock-general',
-            name: t('punch_clock.menu.general.title'),
-            description: t('punch_clock.menu.general.description')
-          },
+          // {
+          //   id: 'punch-clock-general',
+          //   name: t('punch_clock.menu.general.title'),
+          //   description: t('punch_clock.menu.general.description')
+          // },
           {
             id: 'punch-clock-profiles',
             name: t('punch_clock.menu.profiles.title'),
             description: t('punch_clock.menu.profiles.description'),
             component: PunchClockProfiles
           },
-          {
-            id: 'punch-clock-advance',
-            name: t('punch_clock.menu.advance.title'),
-            description: t('punch_clock.menu.advance.description')
-          }
+          // {
+          //   id: 'punch-clock-advance',
+          //   name: t('punch_clock.menu.advance.title'),
+          //   description: t('punch_clock.menu.advance.description')
+          // }
         ]
       })
     }
