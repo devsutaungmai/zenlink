@@ -29,7 +29,6 @@ import {
 import type { Decimal } from "@prisma/client/runtime/library"
 import Link from "next/link"
 import { exportToPDF, formatInvoiceNumberForDisplay, sendEmail } from "@/shared/lib/invoiceHelper"
-import Swal from "sweetalert2"
 import RegisterPaymentDialog from "@/components/invoice/RegisterPaymentDialog"
 import CreditNoteDialog from "@/components/invoice/CreditNoteDialog"
 import { useColumnVisibility } from "@/hooks/use-column-visibility"
@@ -38,6 +37,7 @@ import { ColumnVisibilityToggle } from "@/components/invoice/column-visibility-t
 import { useResizableColumns } from "@/hooks/use-resizable-columns"
 import { ResizeHandle } from "@/components/invoice/resize-handle"
 import { CreditCard } from "lucide-react"
+import { toast } from "@/shared/lib/toast"
 
 export enum InvoiceStatus {
     DRAFT = "DRAFT", // Not sent yet
@@ -249,27 +249,14 @@ export default function InvoiceOverview() {
         try {
             const pdfSuccess = await exportToPDF(invoiceId)
             if (pdfSuccess) {
-                await Swal.fire({
-                    title: "Success!",
-                    text: "PDF downloaded",
-                    icon: "success",
-                    confirmButtonColor: "#31BCFF",
-                })
+                toast('success', 'PDF downloaded')
             } else {
-                await Swal.fire({
-                    title: "Partial Success",
-                    text: "PDF download failed",
-                    icon: "warning",
-                    confirmButtonColor: "#31BCFF",
-                })
+                toast('warning', 'PDF download failed')
             }
         } catch (error) {
-            await Swal.fire({
-                title: "Partial Success",
-                text: "PDF download failed",
-                icon: "warning",
-                confirmButtonColor: "#31BCFF",
-            })
+
+            toast('warning', 'PDF download failed')
+
         }
     }
 

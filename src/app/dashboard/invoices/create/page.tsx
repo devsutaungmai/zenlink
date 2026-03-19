@@ -13,19 +13,7 @@ import { useInvoiceSettings } from '@/shared/hooks/useInvoiceSettings'
 import { CustomerCombobox } from '@/components/invoice/CustomerCombobox'
 import { InvoiceFieldSettingsDialog } from '@/components/invoice/InvoiceFieldSettingsDialog'
 import SendInvoiceDialog, { SendInvoiceDialogResult } from '@/components/invoice/SendInvoiceDialog'
-export const toast = (icon: 'success' | 'error' | 'warning', text: string) =>
-    Swal.fire({
-        text,
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        timer: 3000,
-        timerProgressBar: true,
-        icon,
-        customClass: {
-            popup: 'swal-toast-wide'
-        }
-    })
+import { toast } from '@/shared/lib/toast'
 export interface Customer {
     id: string
     customerName: string
@@ -1106,9 +1094,9 @@ export default function CreateInvoicePage() {
                     {overviewMode ? null :
 
                         <div className="flex items-center justify-end gap-4 pt-6 border-t border-gray-200">
-                            <Link href="/dashboard/invoices" className="px-6 py-3 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium hover:bg-gray-50 transition-colors duration-200">
+                            {/* <Link href="/dashboard/invoices" className="px-6 py-3 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium hover:bg-gray-50 transition-colors duration-200">
                                 Cancel
-                            </Link>
+                            </Link> */}
                             <button
                                 type="button"
                                 disabled={loading}

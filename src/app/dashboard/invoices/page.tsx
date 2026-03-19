@@ -26,6 +26,7 @@ import { useResizableColumns } from '@/hooks/use-resizable-columns'
 import { ResizeHandle } from '@/components/invoice/resize-handle'
 import CreditNoteDialog from '@/components/invoice/CreditNoteDialog'
 import RegisterPaymentDialog from '@/components/invoice/RegisterPaymentDialog'
+import { toast } from '@/shared/lib/toast'
 
 
 export enum InvoiceStatus {
@@ -239,21 +240,11 @@ export default function InvoicesPage() {
 
                 setInvoices(invoices.filter(invoice => invoice.id !== id))
 
-                await Swal.fire({
-                    title: t('common.success'),
-                    text: 'Invoice deleted successfully',
-                    icon: 'success',
-                    confirmButtonColor: '#31BCFF',
-                })
+                toast('success', 'Invoice deleted successfully')
             }
         } catch (error) {
             console.error('Error deleting invoice:', error)
-            await Swal.fire({
-                title: t('common.error'),
-                text: 'Failed to delete invoice',
-                icon: 'error',
-                confirmButtonColor: '#31BCFF',
-            })
+            toast('error', 'Failed to delete invoice')
         }
     }
 
@@ -324,22 +315,12 @@ export default function InvoicesPage() {
         )
 
         if (nonDraftInvoices.length > 0) {
-            await Swal.fire({
-                title: 'Error',
-                text: 'Only DRAFT invoices can be sent',
-                icon: 'error',
-                confirmButtonColor: '#31BCFF',
-            })
+            toast('error', 'Only DRAFT invoices can be sent')
             return
         }
 
         if (selectedInvoices.length === 0) {
-            await Swal.fire({
-                title: 'Error',
-                text: 'Please select at least one invoice',
-                icon: 'error',
-                confirmButtonColor: '#31BCFF',
-            })
+            toast('error', 'Please select at least one invoice')
             return
         }
 
@@ -403,12 +384,7 @@ export default function InvoicesPage() {
                 //   }
             } else {
                 // Just show success for status update
-                await Swal.fire({
-                    title: 'Success!',
-                    text: `Invoice(s) sent successfully`,
-                    icon: 'success',
-                    confirmButtonColor: '#31BCFF',
-                })
+                toast('success', 'Invoice(s) sent successfully')
             }
 
             // Clear selection and refresh
@@ -417,12 +393,10 @@ export default function InvoicesPage() {
             router.refresh()
 
         } catch (error) {
-            await Swal.fire({
-                title: 'Error',
-                text: error instanceof Error ? error.message : 'An error occurred',
-                icon: 'error',
-                confirmButtonColor: '#31BCFF',
-            })
+            toast(
+                'error',
+                error instanceof Error ? error.message : 'An error occurred'
+            )
         } finally {
             setLoading(false)
         }
@@ -432,27 +406,14 @@ export default function InvoicesPage() {
         try {
             const pdfSuccess = await exportToPDF(invoiceId)
             if (pdfSuccess) {
-                await Swal.fire({
-                    title: "Success!",
-                    text: "PDF downloaded",
-                    icon: "success",
-                    confirmButtonColor: "#31BCFF",
-                })
+                toast('success', 'PDF downloaded')
             } else {
-                await Swal.fire({
-                    title: "Partial Success",
-                    text: "PDF download failed",
-                    icon: "warning",
-                    confirmButtonColor: "#31BCFF",
-                })
+                toast('warning', 'PDF download failed')
             }
         } catch (error) {
-            await Swal.fire({
-                title: "Partial Success",
-                text: "PDF download failed",
-                icon: "warning",
-                confirmButtonColor: "#31BCFF",
-            })
+
+            toast('warning', 'PDF download failed')
+
         }
     }
 
@@ -466,22 +427,14 @@ export default function InvoicesPage() {
         )
 
         if (nonDraftInvoices.length > 0) {
-            await Swal.fire({
-                title: 'Error',
-                text: 'Only DRAFT invoices can be sent',
-                icon: 'error',
-                confirmButtonColor: '#31BCFF',
-            })
+
+            toast('error', 'Only DRAFT invoices can be deleted')
             return
         }
 
         if (selectedInvoices.length === 0) {
-            await Swal.fire({
-                title: 'Error',
-                text: 'Please select at least one invoice',
-                icon: 'error',
-                confirmButtonColor: '#31BCFF',
-            })
+
+            toast('error', 'Please select at least one invoice')
             return
         }
 
@@ -502,25 +455,18 @@ export default function InvoicesPage() {
             }
 
             const result = await res.json()
-            await Swal.fire({
-                title: t('common.success'),
-                text: 'Invoices deleted successfully',
-                icon: 'success',
-                confirmButtonColor: '#31BCFF',
-            })
 
+            toast('success', 'Invoices deleted successfully')
             // Clear selection and refresh
             setSelectedInvoices([])
             fetchInvoices()
             router.refresh()
 
         } catch (error) {
-            await Swal.fire({
-                title: 'Error',
-                text: error instanceof Error ? error.message : 'An error occurred',
-                icon: 'error',
-                confirmButtonColor: '#31BCFF',
-            })
+            toast(
+                'error',
+                error instanceof Error ? error.message : 'An error occurred'
+            )
         } finally {
             setLoading(false)
         }
