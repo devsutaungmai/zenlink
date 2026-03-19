@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
         year,
         sequence,
       }, tx);
-    });
+    },{ timeout: 30000 });
 
     if (!creditNote) throw new Error('Failed to create standalone credit note');
 

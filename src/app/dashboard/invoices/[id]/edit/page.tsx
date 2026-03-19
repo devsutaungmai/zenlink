@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next'
 import Link from 'next/link'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
-import { ContactPerson, InvoiceFormData, InvoiceLine, Project, toast } from '../../create/page'
+import { ContactPerson, InvoiceFormData, InvoiceLine, Project } from '../../create/page'
 import { Department } from '@prisma/client'
 import { useInvoiceSettings } from '@/shared/hooks/useInvoiceSettings'
 import { calculateInvoiceTotals, exportToPDF, sendEmail } from '@/shared/lib/invoiceHelper'
@@ -17,6 +17,7 @@ import SendInvoiceDialog, { SendInvoiceDialogResult } from '@/components/invoice
 import { useHasChanges } from '@/hooks/useHasChanges'
 import { AlertTriangle } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { toast } from '@/shared/lib/toast'
 
 interface Customer {
     id: string
@@ -667,9 +668,9 @@ export default function EditInvoicePage({
 
                     {/* Form Actions — single button, dialog handles delivery method */}
                     <div className="flex items-center justify-end gap-4 pt-6 border-t border-gray-200">
-                        <Link href="/dashboard/invoices" className="px-6 py-3 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium hover:bg-gray-50 transition-colors duration-200">
+                        {/* <Link href="/dashboard/invoices" className="px-6 py-3 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium hover:bg-gray-50 transition-colors duration-200">
                             Cancel
-                        </Link>
+                        </Link> */}
                         <button
                             type="button"
                             disabled={loading}
