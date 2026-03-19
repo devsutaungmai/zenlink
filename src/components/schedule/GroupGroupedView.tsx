@@ -859,7 +859,7 @@ export default function GroupGroupedView({
               {t('context_menu.publish_shift', 'Publish Shift')}
             </button>
           )}
-          {canCreateAttendance && contextMenu.shift.employeeId && contextMenu.shift.approved && (
+          {canCreateAttendance && contextMenu.shift.employeeId && contextMenu.shift.approved && contextMenu.shift.status !== 'COMPLETED' && (
             <button
               onClick={() => {
                 setContextMenu(prev => ({ ...prev, show: false }))
