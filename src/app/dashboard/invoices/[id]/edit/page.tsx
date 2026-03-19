@@ -298,10 +298,6 @@ export default function EditInvoicePage({
         }))
     }
 
-    const updateLineTotal = (index: number) => {
-        // no-op — net total is calculated inline in JSX for edit page
-    }
-
     const updateInvoiceLine = (index: number, updates: Partial<InvoiceLine>) => {
         setFormData(prev => ({
             ...prev,
@@ -599,8 +595,8 @@ export default function EditInvoicePage({
                             const discount = Number(line.discountPercentage) || 0
                             const vat = Number(line.vatPercentage) || 0
                             const { totalExclVAT: rawTotal } = calculateInvoiceTotals(Math.abs(qty), Math.abs(price), discount, vat)
-                            const totalExclVAT = isCreditNote && line.id ? -rawTotal : rawTotal
-
+                            const sign = (isCreditNote && !!line.id) ? -1 : (qty < 0 ? -1 : 1)
+                            const totalExclVAT = rawTotal * sign
                             return (!line.isCredited && (
                                 <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-10" key={index}>
                                     <div>

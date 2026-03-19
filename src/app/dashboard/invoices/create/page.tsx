@@ -541,20 +541,22 @@ export default function CreateInvoicePage() {
 
     }
 
-    const updateLineTotal = (index: number) => {
-        const line = formData.invoiceLines[index];
-        const qty = Math.abs(Number(line.quantity)) || 0;
-        const price = Math.abs(Number(line.pricePerUnit)) || 0;
-        const discount = Number(line.discountPercentage) || 0;
-        const vat = Number(line.vatPercentage) || 0;
-        const { totalExclVAT } = calculateInvoiceTotals(qty, price, discount, vat);
-        const sign = (isCreditNote && !!line.id) ? -1 : (qty < 0 ? -1 : 1);
-        setNetTotals((prevNetTotals) => {
-            const newNetTotals = [...prevNetTotals];
-            newNetTotals[index] = totalExclVAT * sign;
-            return newNetTotals;
-        });
-    };
+const updateLineTotal = (index: number, currentQty?: number) => {
+    const line = formData.invoiceLines[index];
+    const qty = currentQty !== undefined ? currentQty : Number(line.quantity);
+    const absQty = Math.abs(qty) || 0;
+    const price = Math.abs(Number(line.pricePerUnit)) || 0;
+    const discount = Number(line.discountPercentage) || 0;
+    const vat = Number(line.vatPercentage) || 0;
+    const { totalExclVAT } = calculateInvoiceTotals(absQty, price, discount, vat);
+    // Derive sign from the actual current quantity, not stale isNegativeTotal
+    const sign = (isCreditNote && !!line.id) ? -1 : (qty < 0 ? -1 : 1);
+    setNetTotals((prevNetTotals) => {
+        const newNetTotals = [...prevNetTotals];
+        newNetTotals[index] = totalExclVAT * sign;
+        return newNetTotals;
+    });
+};
 
     const handleSendClick = (action: 'send_invoice_without_email' | 'send_invoice_with_email' | 'print' | 'send_new_credit_note') => {
         setPendingAction(action)
@@ -934,7 +936,7 @@ export default function CreateInvoicePage() {
                                             updatedLines[index].vatPercentage = Number(vatRate);
                                             updatedLines[index].productName = product?.productName;
                                             setFormData({ ...formData, invoiceLines: updatedLines });
-                                            updateLineTotal(index);
+                                            updateLineTotal(index,updatedLines[index].quantity);
                                         }}
                                         disabled={overviewMode}
                                         className="block w-full px-1 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
@@ -961,7 +963,7 @@ export default function CreateInvoicePage() {
                                             const updatedLines = [...formData.invoiceLines];
                                             updatedLines[index].quantity = Number(val);
                                             setFormData({ ...formData, invoiceLines: updatedLines })
-                                            updateLineTotal(index);
+                                            updateLineTotal(index,Number(val));
 
                                         }}
                                         disabled={overviewMode}
