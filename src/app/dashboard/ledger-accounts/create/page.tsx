@@ -62,22 +62,34 @@ export default function CreateLedgerAccountPage() {
                 throw new Error(error.error || 'Failed to create ledger account')
             }
 
-            await Swal.fire({
-                title: 'Success!',
-                text: 'Ledger account created successfully',
-                icon: 'success',
-                confirmButtonColor: '#31BCFF',
-            })
+             await Swal.fire({
+            text: 'Ledger account created successfully',
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+            icon: 'success',
+            customClass: {
+                popup: 'swal-toast-wide'
+            }
+        })
 
             router.push('/dashboard/ledger-accounts')
             router.refresh()
         } catch (error) {
             await Swal.fire({
-                title: 'Error',
-                text: error instanceof Error ? error.message : 'An error occurred',
-                icon: 'error',
-                confirmButtonColor: '#31BCFF',
-            })
+            text: error instanceof Error ? error.message : 'An error occurred',
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+            icon: 'error',
+            customClass: {
+                popup: 'swal-toast-wide'
+            }
+        })
         } finally {
             setLoading(false)
         }

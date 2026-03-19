@@ -95,19 +95,35 @@ export async function POST(request: NextRequest) {
       status
     } = body
 
-    // Validate inputs - only check for required fields
-    if (!customerId) {
-      return NextResponse.json(
-        { error: 'Customer is required!' },
-        { status: 400 }
-      )
+    const isDraft = status === 'DRAFT'
+    const hasLines = Array.isArray(invoiceLines) && invoiceLines.length > 0
+
+    // DRAFT with no customer — silently do nothing (auto-save with no meaningful data)
+    if (isDraft && !customerId) {
+      return NextResponse.json({ message: 'Nothing to save.' }, { status: 200 })
     }
-    if (!invoiceLines || invoiceLines.length === 0) {
-      return NextResponse.json(
-        { error: 'InvoiceLine is required!' },
-        { status: 400 }
-      )
+
+    // SENT — customer and at least one line are required
+    if (!isDraft) {
+      if (!customerId) {
+        return NextResponse.json(
+          { error: 'Customer is required!' },
+          { status: 400 }
+        )
+      }
+      if (!hasLines) {
+        return NextResponse.json(
+          { error: 'At least one invoice line is required to send an invoice.' },
+          { status: 400 }
+        )
+      }
     }
+
+    // Filter out empty/incomplete lines (e.g. placeholder rows with no productId)
+    const validLines = hasLines
+      ? invoiceLines.filter((l: any) => l.productId && l.quantity && l.pricePerUnit)
+      : []
+
     const maxRetries = 3
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
@@ -115,7 +131,7 @@ export async function POST(request: NextRequest) {
         let invoiceLinesData = [];
         let totalExclVAT = 0
 
-        for (const line of invoiceLines) {
+        for (const line of validLines) {
 
           const { productId, quantity, pricePerUnit, discountPercentage = 0, vatPercentage } = line;
           // Validate line data

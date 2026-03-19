@@ -62,11 +62,13 @@ export default function InvoiceSummaryCalculation({ invoiceLines, isCreditNote }
                 Number(line.discountPercentage) || 0,
                 Number(line.vatPercentage) || 0
             );
-
-            const sign = (isCreditNote && line.id) ? -1 : 1;
-            const totalExclVAT = rawTotal * sign;
-            const vatAmount = rawVat * sign;
-            const totalInclVAT = rawInclVAT * sign;
+            // sign from quantity (works for both standalone and linked credit notes)
+            const sign = Number(line.quantity) < 0 ? -1 : 1;
+            // For linked credit note original lines (isCreditNote && line.id), also force negative
+            const finalSign = (isCreditNote && !!line.id) ? -1 : sign;
+            const totalExclVAT = rawTotal * finalSign;
+            const vatAmount = rawVat * finalSign;
+            const totalInclVAT = rawInclVAT * finalSign;
 
             finalNetAmount += totalExclVAT;
             finalVatAmount += vatAmount;

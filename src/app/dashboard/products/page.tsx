@@ -20,6 +20,7 @@ import { Switch } from "@/components/ui/switch"
 import { FunnelIcon } from "lucide-react"
 import { ResizeHandle } from "@/components/invoice/resize-handle"
 import { useResizableColumns } from "@/hooks/use-resizable-columns"
+import { formatProductNumberForDisplay } from "@/shared/lib/invoiceHelper"
 
 interface Unit {
   id: string
@@ -509,7 +510,7 @@ export default function ProductsPage() {
                           >
                             <div className="text-sm font-medium text-blue-600 hover:underline cursor-pointer">
 
-                              {product.productNumber}
+                              {formatProductNumberForDisplay(product.productNumber)}
                             </div>
                           </Link>
 
@@ -723,7 +724,7 @@ export default function ProductsPage() {
                       </div>
                       <div>
                         <p className="text-xs text-gray-500">Product Number</p>
-                        <p className="text-lg font-bold text-gray-900">{product.productNumber}</p>
+                        <p className="text-lg font-bold text-gray-900">{formatProductNumberForDisplay(product.productNumber)}</p>
                       </div>
                     </div>
                   </div>

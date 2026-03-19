@@ -8,6 +8,9 @@ import Swal from 'sweetalert2'
 import { AccountType } from '@prisma/client'
 import { getAccountType } from '@/shared/lib/invoiceHelper'
 import { fa } from 'zod/v4/locales'
+import { useHasChanges } from '@/hooks/useHasChanges'
+import { Badge } from '@/components/ui/badge'
+import { AlertTriangle } from 'lucide-react'
 
 
 interface AccountLedgerForm {
@@ -51,6 +54,8 @@ export default function EditLedgerAccountPage({ params, searchParams }: { params
         vatCodeId: ''
     })
 
+    const { resetChanges, hasChanges, setInitialData } = useHasChanges(formData);
+
     useEffect(() => {
         fetchLedgerAccount()
         checkledgerAccountInUse(resolvedParams.id)
@@ -63,7 +68,7 @@ export default function EditLedgerAccountPage({ params, searchParams }: { params
             if (res.ok) {
                 const data = await res.json()
                 console.log("LedgerAccount", JSON.stringify(data));
-                setFormData({
+                const formattedData = {
                     accountNumber: data.accountNumber ?? 0,
                     name: data.name || '',
                     type: (data.type as AccountType) ?? AccountType.ASSET,
@@ -72,7 +77,9 @@ export default function EditLedgerAccountPage({ params, searchParams }: { params
                     reportGroup: data.reportGroup || '',
                     saftStandardAccount: data.saftStandardAccount || '',
                     vatCodeId: data.vatCodeId || data.businessVatCodes[0]?.vatCodeId || ''
-                })
+                };
+                setFormData(formattedData)
+                setInitialData(formattedData)
             }
         } catch (error) {
             console.error('Error fetching LedgerAccount:', error)
@@ -118,20 +125,33 @@ export default function EditLedgerAccountPage({ params, searchParams }: { params
             }
 
             await Swal.fire({
-                title: 'Success!',
                 text: 'Ledger account updated successfully',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
                 icon: 'success',
-                confirmButtonColor: '#31BCFF',
+                customClass: {
+                    popup: 'swal-toast-wide'
+                }
             })
 
+            resetChanges()
             router.push('/dashboard/ledger-accounts')
             router.refresh()
         } catch (error) {
             await Swal.fire({
-                title: 'Error',
                 text: error instanceof Error ? error.message : 'An error occurred',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
                 icon: 'error',
-                confirmButtonColor: '#31BCFF',
+                customClass: {
+                    popup: 'swal-toast-wide'
+                }
             })
         } finally {
             setLoading(false)
@@ -213,6 +233,15 @@ export default function EditLedgerAccountPage({ params, searchParams }: { params
             {/* Form Container */}
             <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg p-6">
                 <form onSubmit={handleSubmit} className="space-y-6">
+                    {hasChanges && (
+                        <div className="flex justify-end items-center gap-3">
+                            <Badge variant="secondary" className="bg-amber-100 text-amber-800">
+                                <AlertTriangle className="w-3 h-3 mr-1" />
+                                Unsaved Changes
+                            </Badge>
+                        </div>
+
+                    )}
                     <div className="flex justify-end items-center gap-3 mt-8">
                         <input
                             id="isActive"
@@ -243,8 +272,8 @@ export default function EditLedgerAccountPage({ params, searchParams }: { params
                                     setFormData(prev => ({ ...prev, type: accountType }));
                                 }}
                                 className={`block w-full px-4 py-3 rounded-xl border backdrop-blur-sm placeholder-gray-500 transition-all duration-200 ${isAccountInUse
-                                        ? 'border-gray-200 bg-gray-100 text-gray-500 cursor-not-allowed opacity-70'
-                                        : 'border-gray-300 bg-white/70 text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF]'
+                                    ? 'border-gray-200 bg-gray-100 text-gray-500 cursor-not-allowed opacity-70'
+                                    : 'border-gray-300 bg-white/70 text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF]'
                                     }`}
                                 placeholder="Enter account number"
                                 title={isAccountInUse ? 'Account number cannot be edited because this account is in use' : 'Enter account number'}
@@ -300,8 +329,8 @@ export default function EditLedgerAccountPage({ params, searchParams }: { params
                                 disabled={isAccountInUse}
                                 onChange={(e) => setFormData({ ...formData, vatCodeId: e.target.value })}
                                 className={`block w-full px-4 py-3 rounded-xl border backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 ${isAccountInUse
-                                        ? 'border-gray-200 bg-gray-100 text-gray-500 cursor-not-allowed opacity-70'
-                                        : 'border-gray-300 bg-white/70'
+                                    ? 'border-gray-200 bg-gray-100 text-gray-500 cursor-not-allowed opacity-70'
+                                    : 'border-gray-300 bg-white/70'
                                     }`}
                             >
                                 <option value="">Select VAT Code</option>

@@ -18,7 +18,7 @@ import {
 import { Decimal } from '@prisma/client/runtime/library'
 import { EmailService } from '@/shared/lib/notifications'
 import { CreditCard, Mail, MailIcon } from 'lucide-react'
-import { exportToPDF, formatInvoiceNumberForDisplay, sendEmail } from '@/shared/lib/invoiceHelper'
+import { exportToPDF, formatCreditNoteNumberForDisplay, formatInvoiceNumberForDisplay, sendEmail } from '@/shared/lib/invoiceHelper'
 import { useRouter } from 'next/navigation'
 import { useColumnVisibility } from '@/hooks/use-column-visibility'
 import { ColumnVisibilityToggle } from '@/components/invoice/column-visibility-toggle'
@@ -266,7 +266,11 @@ export default function InvoicesPage() {
 
         return matchesSearch && matchesFilter;
     }
-    )
+    ).sort((a, b) => {
+        const numA = parseInt(a.invoiceNumber.replace(/\D/g, '')) || 0
+        const numB = parseInt(b.invoiceNumber.replace(/\D/g, '')) || 0
+        return numA - numB
+    })
 
     // Pagination calculations
     const totalPages = Math.ceil(filteredInvoices.length / itemsPerPage)
@@ -827,11 +831,11 @@ export default function InvoicesPage() {
                                             {isColumnVisible('invoiceNumber') && <td className="px-6 py-4">
                                                 <div className="text-sm font-medium text-gray-900">
                                                     <Link
-                                                        href={`/dashboard/invoices/create?invoiceId=${invoice.id}&copy=true&overview=true`}
+                                                        href={`/dashboard/invoices/create?invoiceId=${invoice.id}&copy=true&overview=true&credit-note=${invoice.status === InvoiceStatus.CREDITED || invoice.status === InvoiceStatus.CREDIT_NOTE ? true : false}`}
                                                     >
                                                         <span className="text-sm font-medium text-blue-600 hover:underline cursor-pointer">
 
-                                                            {invoice.status !== InvoiceStatus.DRAFT ? formatInvoiceNumberForDisplay(invoice.invoiceNumber) : "-"}
+                                                            {invoice.status !== InvoiceStatus.DRAFT ? invoice.invoiceNumber.startsWith("CN") ? formatCreditNoteNumberForDisplay(invoice.invoiceNumber) : formatInvoiceNumberForDisplay(invoice.invoiceNumber) : "-"}
                                                         </span>
                                                     </Link>
                                                 </div>
@@ -961,7 +965,7 @@ export default function InvoicesPage() {
                                                         <Link href={`/dashboard/invoices/${invoice.id}/edit?credit-note=true`} className="px-1 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2">
                                                             <span className="text-base"><CreditCard className="h-4 w-4" /></span>
                                                         </Link> : null
-                                                    } 
+                                                    }
 
                                                     <button className="p-1 hover:bg-gray-200 rounded" onClick={() => handlePDf(invoice.id)}>
                                                         <PaperClipIcon className="h-4 w-4 text-gray-400" />

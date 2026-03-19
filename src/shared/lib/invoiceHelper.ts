@@ -1,9 +1,9 @@
 import { getCurrentUserOrEmployee } from '@/shared/lib/auth'
-import Swal from 'sweetalert2'
 import { prisma } from './prisma'
 import { AccountType, InvoiceStatus, LedgerEntryType, Prisma, VoucherType } from '@prisma/client'
 import { isValid } from 'date-fns'
-import { is } from 'date-fns/locale'
+import { fi, is } from 'date-fns/locale'
+import { success } from 'zod'
 
 export interface InvoiceCalculation {
   subtotal: number
@@ -77,7 +77,8 @@ export async function generateInvoiceNumber(
     where: {
       businessId,
       year,
-      status: { notIn: [InvoiceStatus.DRAFT, InvoiceStatus.SENT] }
+      status: { not: InvoiceStatus.DRAFT },
+      sequence: { gt: 0 }
     },
     orderBy: { sequence: 'desc' }
   });
@@ -107,9 +108,9 @@ export async function exportToPDF(invoiceId: string) {
 
       return true
     } else {
-       const error = await response.json()
-            console.error('Failed to export PDF:', error)
-            return false
+      const error = await response.json()
+      console.error('Failed to export PDF:', error)
+      return false
       // console.error('Failed to export PDF')
       // return false
     }
@@ -124,40 +125,31 @@ export async function sendEmail(invoiceId: string, type?: string) {
     const response = await fetch('/api/invoices/email/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        invoiceId: invoiceId,
-      }),
+      body: JSON.stringify({ invoiceId }),
     })
+    const data = await response.json()
+    if (!response.ok) {
+      return {
+        success: false,
+        message: data.error || 'Failed to send email'
+      }
+    }
 
-    if (response.ok) {
-      Swal.fire({
-        title: 'Success!',
-        text: type === "invoiced" ? "Email sent to the customer!" : "Invoice created and sent email to the customer!",
-        icon: 'success',
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        timer: 3000,
-        timerProgressBar: true
-      });
-    } else {
-      const data = await response.json();
-      throw new Error(data.error || 'Failed to send invite');
+    return {
+      success: true,
+      message:
+        type === 'invoiced'
+          ? 'Email sent to the customer!'
+          : 'Invoice created and sent email to the customer!',
     }
   } catch (error) {
-    console.error('Error sending invite:', error);
-    Swal.fire({
-      title: 'Partial Success!',
-      text: 'Invoice created but Email functionality failed!',
-      icon: 'info',
-      toast: true,
-      position: 'top-end',
-      showConfirmButton: false,
-      timer: 3000,
-      timerProgressBar: true
-    });
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Failed to send email',
+    }
   }
 }
+
 // Shared core used by both linked and standalone credit notes
 export async function createCreditNoteRecord(params: {
   businessId: string;
@@ -185,7 +177,7 @@ export async function createCreditNoteRecord(params: {
   creditNoteNumber: string;
   year: number;
   sequence: number;
-}, tx: Prisma.TransactionClient ) {
+}, tx: Prisma.TransactionClient) {
   const {
     businessId, customerId, creditNoteDate, reason,
     lines, creditedInvoiceId, projectId, departmentId,
@@ -322,7 +314,7 @@ export async function createCreditNote(params: {
       creditNoteNumber,
       year,
       sequence,
-    },tx);
+    }, tx);
 
     // Rebill invoice if needed
     if (rebillLines && rebillLines.length > 0) {
@@ -380,7 +372,7 @@ export async function createCreditNote(params: {
         }
       });
     }
-  },{ timeout: 30000 });
+  }, { timeout: 30000 });
 
   if (!creditNote) throw new Error('Failed to create credit note');
   await invoiceToLedgerPosting(creditNote.id);
@@ -409,19 +401,23 @@ export async function generateCreditNoteNumber(businessId: string, tx?: Prisma.T
     FOR UPDATE
   `;
 
+  const settings = await txClient.invoiceGeneralSetting.findUnique({
+    where: { businessId }
+  });
+
   const last = await txClient.invoice.findFirst({
     where: {
       businessId,
-      year
+      year,
+      status: { not: InvoiceStatus.DRAFT }
     },
     orderBy: { sequence: 'desc' }
   });
 
-  const sequence = last ? last.sequence + 1 : 1;
+  const firstInvoiceNumber = settings?.firstInvoiceNumber || 1;
+  const nextsequence = last ? last.sequence + 1 : firstInvoiceNumber;
 
-  const creditNoteNumber = `CN-${businessId}-${year}-${sequence.toString().padStart(4, '0')}`;
-
-  return { year, sequence, creditNoteNumber };
+  return { year, sequence: nextsequence, creditNoteNumber: `CN-${businessId}-${year}-${nextsequence}` };
 }
 
 export async function generateVoucherNumber(
@@ -503,7 +499,101 @@ export async function generateCustomerNumber(
   };
 }
 
+export async function generateProductNumber(
+  businessId: string,
+  tx?: Prisma.TransactionClient
+) {
+  const year = new Date().getFullYear();
+  const txClient = tx || prisma;
+
+  await txClient.$executeRaw`
+    SELECT 1 FROM "Business"
+    WHERE id = ${businessId}
+    FOR UPDATE
+  `;
+
+  const settings = await txClient.invoiceGeneralSetting.findUnique({
+    where: { businessId }
+  });
+
+  const lastProduct = await txClient.product.findFirst({
+    where: { businessId, year },
+    orderBy: { sequence: 'desc' }
+  });
+
+  const firstProductNumber = settings?.productNumberSeriesStart || 1000;
+  const nextSeq = lastProduct ? lastProduct.sequence + 1 : firstProductNumber;
+
+  if (nextSeq > (settings?.productNumberSeriesEnd || 9999)) {
+    throw new Error('Product number series exceeded the maximum limit for the year.');
+  }
+
+  return {
+    year,
+    sequence: nextSeq,
+    productNumber: `${businessId}-${year}-${nextSeq}`
+  };
+}
+
+export async function generateProjectNumber(
+  businessId: string,
+  tx?: Prisma.TransactionClient
+) {
+  const year = new Date().getFullYear();
+  const txClient = tx || prisma;
+
+  await txClient.$executeRaw`
+    SELECT 1 FROM "Business"
+    WHERE id = ${businessId}
+    FOR UPDATE
+  `;
+
+  const settings = await txClient.invoiceGeneralSetting.findUnique({
+    where: { businessId }
+  });
+
+  const lastProject = await txClient.project.findFirst({
+    where: { businessId, year },
+    orderBy: { sequence: 'desc' }
+  });
+
+  const firstProjectNumber = settings?.projectNumberSeriesStart || 5000;
+  const nextSeq = lastProject ? lastProject.sequence + 1 : firstProjectNumber;
+
+  if (nextSeq > (settings?.projectNumberSeriesEnd || 5999)) {
+    throw new Error('Project number series exceeded the maximum limit for the year.');
+  }
+
+  return {
+    year,
+    sequence: nextSeq,
+    projectNumber: `${businessId}-${year}-${nextSeq}`
+  };
+}
+
 export function formatCustomerNumberForDisplay(number: string): string {
+  const parts = number.split('-');
+
+  if (parts.length >= 3) {
+    const sequence = parts[parts.length - 1];
+    return sequence;
+  }
+
+  return number;
+}
+
+export function formatProjectNumberForDisplay(number: string): string {
+  const parts = number.split('-');
+
+  if (parts.length >= 3) {
+    const sequence = parts[parts.length - 1];
+    return sequence;
+  }
+
+  return number;
+}
+
+export function formatProductNumberForDisplay(number: string): string {
   const parts = number.split('-');
 
   if (parts.length >= 3) {
@@ -555,7 +645,7 @@ export function formatCreditNoteNumberForDisplay(creditNoteNumber: string): stri
     const cn = parts[parts.length - 4];
     const year = parts[parts.length - 2];
     const sequence = parts[parts.length - 1];
-    return `${cn}-${year}-${sequence}`; // Remove leading zeros
+    return `${sequence}`; // Remove leading zeros
   }
 
   return creditNoteNumber; // Fallback
@@ -913,343 +1003,6 @@ export async function getAccountBalance(
  * Generate ledger report matching Tripletex display format
  * Groups account 1500 ONLY for INVOICE_POST and CREDIT_NOTE types
  */
-// export async function generateLedgerReport(
-//   businessId: string,
-//   startDate: Date,
-//   endDate: Date,
-//   accountNumbers?: number[]
-// ) {
-//   // Define which accounts to include
-//   const whereClause: any = {};
-//   // Filter accounts: use provided numbers OR default to 1500-4000 range
-//   if (accountNumbers && accountNumbers.length > 0) {
-//     whereClause.accountNumber = { in: accountNumbers };
-//   } else {
-//     whereClause.accountNumber = {
-//       gte: 1500,
-//       lte: 4000
-//     };
-//   }
-
-//   // Step 1: Fetch all accounts (same as before)
-//   const accounts = await prisma.ledgerAccount.findMany({
-//     where: whereClause,
-//     orderBy: { accountNumber: 'asc' }
-//   });
-
-//   const dayBeforeStart = new Date(startDate);
-//   dayBeforeStart.setDate(dayBeforeStart.getDate() - 1);
-//   dayBeforeStart.setHours(23, 59, 59, 999);
-
-//   // ========== OPTIMIZATION START ==========
-
-//   // Step 2: Get all account IDs
-//   const accountIds = accounts.map(a => a.id);
-
-//   // Step 3: Fetch ALL entries for ALL accounts in ONE query (instead of looping)
-//   // BEFORE: You did this INSIDE the loop, one query per account
-//   // AFTER: We do it ONCE for all accounts
-//   const allEntries = await prisma.ledgerEntry.findMany({
-//     where: {
-//       businessId,
-//       OR: [
-//         { debitAccountId: { in: accountIds } },  // Get entries where ANY account is debited
-//         { creditAccountId: { in: accountIds } }  // Get entries where ANY account is credited
-//       ],
-//       postingDate: {
-//         gte: startDate,
-//         lte: endDate
-//       }
-//     },
-//     include: {
-//       voucher: {
-//         select: {
-//           id: true,
-//           voucherNumber: true
-//         }
-//       },
-//       invoice: {
-//         select: {
-//           invoiceNumber: true,
-//           status: true,
-//           voucher: {
-//             select: {
-//               id: true,
-//               voucherNumber: true
-//             }
-//           },
-//           customer: {
-//             select: {
-//               id: true,
-//               customerName: true,
-//               customerNumber: true
-//             }
-//           }
-//         }
-//       },
-//       debitAccount: true,
-//       creditAccount: true
-//     },
-//     orderBy: [
-//       { postingDate: 'asc' },
-//       { createdAt: 'asc' }
-//     ]
-//   });
-
-//   // Step 4: Calculate ALL opening balances in PARALLEL (instead of one-by-one)
-//   // BEFORE: You did await getAccountBalance() inside the loop - each one waited for the previous
-//   // AFTER: Promise.all() runs them all at the same time
-//   const openingBalances = await Promise.all(
-//     accounts.map(account =>
-//       getAccountBalance(
-//         account.id,
-//         businessId,
-//         undefined,
-//         dayBeforeStart
-//       )
-//     )
-//   );
-
-//   // Step 5: Organize entries by account for quick lookup
-//   // This creates a Map where: key = accountId, value = array of entries for that account
-//   const entriesByAccount = new Map<string | null, typeof allEntries>();
-
-//   allEntries.forEach(entry => {
-//     // Each entry appears in TWO accounts: debit and credit
-//     const debitId = entry.debitAccountId;
-//     const creditId = entry.creditAccountId;
-
-//     // Initialize arrays if they don't exist
-//     if (!entriesByAccount.has(debitId)) {
-//       entriesByAccount.set(debitId, []);
-//     }
-//     if (!entriesByAccount.has(creditId)) {
-//       entriesByAccount.set(creditId, []);
-//     }
-
-//     // Add this entry to both accounts
-//     entriesByAccount.get(debitId)!.push(entry);
-//     entriesByAccount.get(creditId)!.push(entry);
-//   });
-
-//   const accountGroups = [];
-
-//   // Step 6: Process each account (YOUR ORIGINAL LOGIC - UNCHANGED!)
-//   for (let i = 0; i < accounts.length; i++) {
-//     const account = accounts[i];
-
-//     // Get pre-calculated opening balance from Step 4
-//     const openingBalance = openingBalances[i];
-
-//     // Get pre-fetched entries from Step 5 (instead of querying database)
-//     const entries = entriesByAccount.get(account.id) || [];
-
-//     // Skip accounts with no activity and zero opening balance
-//     if (entries.length === 0 && Math.abs(openingBalance) < 0.01) {
-//       continue;
-//     }
-
-//     // For calculating running balance, use PROPER ACCOUNTING
-//     const isNormalDebit = account.type === 'ASSET' || account.type === 'EXPENSE';
-//     let runningBalance = openingBalance;
-
-//     // Group 1500 entries ONLY for INVOICE_POST and CREDIT_NOTE
-//     const shouldGroupByInvoice =
-//       account.accountNumber === 1500 ||
-//       (account.accountNumber >= 3000 && account.accountNumber < 4000);
-
-//     let ledgerEntries;
-
-//     if (shouldGroupByInvoice) {
-//       // Separate entries into grouped and ungrouped
-//       const groupedMap = new Map<string, {
-//         invoiceId: string | null;
-//         voucherNo: string;
-//         date: Date;
-//         description: string;
-//         displayAmount: number;
-//         isDebit: boolean;
-//         trueMovement: number;
-//       }>();
-
-//       const allEntriesForDisplay: Array<{
-//         type: 'grouped' | 'ungrouped';
-//         date: Date;
-//         data: any;
-//       }> = [];
-
-//       for (const entry of entries) {
-//         const amount = parseFloat(entry.amount.toString());
-//         const isDebit = entry.debitAccountId === account.id;
-
-//         // Calculate TRUE movement using accounting principles
-//         const trueMovement = isDebit
-//           ? (isNormalDebit ? amount : -amount)
-//           : (isNormalDebit ? -amount : amount);
-
-//         // Calculate DISPLAY amount (Tripletex: Debit = +, Credit = -)
-//         const displayAmount = isDebit ? amount : -amount;
-
-//         // Group INVOICE_POST and CREDIT_NOTE only
-//         if (
-//           entry.entryType === LedgerEntryType.INVOICE_POST ||
-//           entry.entryType === LedgerEntryType.CREDIT_NOTE
-//         ) {
-//           const groupKey = entry.invoiceId || `no-invoice-${entry.id}`;
-//           const voucherNo = entry.voucher?.voucherNumber || `V-${entry.id.slice(-8)}`;
-//           const customerName = entry.invoice?.customer?.customerName || '';
-//           const customerId = entry.invoice?.customer?.id || '';
-//           const invoiceDisplayNumber = entry.invoice?.invoiceNumber ? formatInvoiceNumberForDisplay(entry.invoice?.invoiceNumber) : '';
-
-//           if (!groupedMap.has(groupKey)) {
-//             groupedMap.set(groupKey, {
-//               invoiceId: entry.invoiceId,
-//               voucherNo,
-//               date: entry.postingDate || new Date(),
-//               description: entry.invoiceId
-//                 ? `(Faktura nummer) (${invoiceDisplayNumber}) (${customerName}) (${customerId})`
-//                 : entry.description || '',
-//               displayAmount: displayAmount,
-//               isDebit: isDebit,
-//               trueMovement: trueMovement
-//             });
-//           } else {
-//             const group = groupedMap.get(groupKey)!;
-//             group.displayAmount += displayAmount;
-//             group.trueMovement += trueMovement;
-//           }
-//         } else {
-//           // Don't group PAYMENT_RECEIVED, etc.
-//           allEntriesForDisplay.push({
-//             type: 'ungrouped',
-//             date: entry.postingDate || new Date(),
-//             data: {
-//               entry,
-//               displayAmount,
-//               isDebit,
-//               trueMovement
-//             }
-//           });
-//         }
-//       }
-
-//       // Add grouped entries to display list
-//       groupedMap.forEach((group) => {
-//         allEntriesForDisplay.push({
-//           type: 'grouped',
-//           date: group.date,
-//           data: group
-//         });
-//       });
-
-//       // Sort all entries by date
-//       allEntriesForDisplay.sort((a, b) => a.date.getTime() - b.date.getTime());
-
-//       // Build ledger entries with running balance
-//       ledgerEntries = allEntriesForDisplay.map((item) => {
-//         if (item.type === 'grouped') {
-//           const group = item.data;
-//           runningBalance += group.trueMovement;
-
-//           return {
-//             id: group.invoiceId || `grouped-${group.date.getTime()}`,
-//             closed: true,
-//             voucherNo: group.voucherNo,
-//             date: group.date.toISOString().split('T')[0],
-//             description: group.description,
-//             vatCode: undefined,
-//             currency: undefined,
-//             amount: group.displayAmount,
-//             balance: runningBalance,
-//             isDebit: group.isDebit,
-//             hasAttachment: false
-//           };
-//         } else {
-//           // Ungrouped entry
-//           const { entry, displayAmount, trueMovement, isDebit } = item.data;
-//           runningBalance += trueMovement;
-//           const displayRunningBalance = isDebit ? runningBalance : -runningBalance;
-
-//           const voucherNo = entry.voucher?.voucherNumber || `V-${entry.id.slice(-8)}`;
-
-//           return {
-//             id: entry.id,
-//             closed: true,
-//             voucherNo,
-//             date: entry.postingDate?.toISOString().split('T')[0] || '',
-//             description: entry.description || '',
-//             vatCode: undefined,
-//             currency: undefined,
-//             amount: displayAmount,
-//             balance: runningBalance,
-//             displayRunningBalance: displayRunningBalance,
-//             isDebit: isDebit,
-//             hasAttachment: false
-//           };
-//         }
-//       });
-//     } else {
-//       // For non-1500 accounts: Show all entries individually
-//       ledgerEntries = entries.map(entry => {
-//         const amount = parseFloat(entry.amount.toString());
-//         const isDebit = entry.debitAccountId === account.id;
-
-//         // TRUE movement (accounting rules)
-//         const trueMovement = isDebit
-//           ? (isNormalDebit ? amount : -amount)
-//           : (isNormalDebit ? -amount : amount);
-
-//         // DISPLAY amount (Tripletex: Debit = +, Credit = -)
-//         const displayAmount = isDebit ? amount : -amount;
-
-//         runningBalance += trueMovement;
-
-//         const displayRunningBalance = isDebit ? runningBalance : -runningBalance;
-
-//         const voucherNo = entry.voucher?.voucherNumber || `V-${entry.id.slice(-8)}`;
-
-//         const isVATEntry =
-//           entry.creditAccount?.accountNumber === 2740 ||
-//           entry.debitAccount?.accountNumber === 2740;
-
-//         return {
-//           id: entry.id,
-//           closed: true,
-//           voucherNo,
-//           date: entry.postingDate?.toISOString().split('T')[0] || '',
-//           description: entry.description || '',
-//           vatCode: isVATEntry ? '3' : undefined,
-//           vatName: isVATEntry ? 'Output VAT, high rate' : undefined,
-//           currency: undefined,
-//           amount: displayAmount,
-//           balance: runningBalance,
-//           displayRunningBalance: displayRunningBalance,
-//           isDebit: isDebit,
-//           hasAttachment: false
-//         };
-//       });
-//     }
-
-//     accountGroups.push({
-//       id: account.id,
-//       code: account.accountNumber.toString(),
-//       name: account.name,
-//       type: account.type,
-//       openingBalance,
-//       closingBalance: runningBalance,
-//       entries: ledgerEntries
-//     });
-//   }
-
-//   return {
-//     accounts: accountGroups,
-//     period: {
-//       startDate: startDate.toISOString().split('T')[0],
-//       endDate: endDate.toISOString().split('T')[0]
-//     },
-//     totalBalance: accountGroups.reduce((sum, acc) => sum + acc.closingBalance, 0)
-//   };
-// }
 
 export async function generateLedgerReport(
   businessId: string,

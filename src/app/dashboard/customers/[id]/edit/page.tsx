@@ -18,6 +18,9 @@ import { useInvoiceGeneralSettings } from '@/shared/hooks/useInvoiceGeneralSetti
 import { ProjectMultiSelectCombobox } from '@/components/invoice/ProjectMultiSelectCombobox'
 import { Project } from '@/app/dashboard/invoices/create/page'
 import { ProjectFormType } from '@/components/invoice/ProjectDialog'
+import { useHasChanges } from '@/hooks/useHasChanges'
+import { AlertTriangle } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
 
 export default function EditCustomersPage({ params, searchParams }: { params: Promise<{ id: string }>, searchParams: Promise<{ overview?: string }> }) {
     const resolvedParams = use(params)
@@ -93,6 +96,8 @@ export default function EditCustomersPage({ params, searchParams }: { params: Pr
         showInvoicePaymentTerms: true,
         showContactPerson: true,
     })
+
+    const { hasChanges, setInitialData, resetChanges } = useHasChanges(formData)
 
     useEffect(() => {
         if (settings) {
@@ -176,8 +181,7 @@ export default function EditCustomersPage({ params, searchParams }: { params: Pr
                         unit: data.InvoicePaymentTerms.invoiceDueDateUnit,
                     }
                 }
-
-                setFormData({
+                const formattedData =  {
                     customerName: data.customerName || '',
                     active: data.active || false,
                     customerNumber: data.customerNumber || '',
@@ -199,7 +203,9 @@ export default function EditCustomersPage({ params, searchParams }: { params: Pr
                     },
                     projectIds: data.projects ? data.projects.map((p: any) => p.id) : [],
                     customerContacts: data.contactPersons || []
-                })
+                }
+                setFormData(formattedData)
+                setInitialData(formattedData)
                 setPaymentTermDefaults(paymentTermForComponent)
             }
         } catch (error) {
@@ -225,20 +231,33 @@ export default function EditCustomersPage({ params, searchParams }: { params: Pr
             }
 
             await Swal.fire({
-                title: 'Success!',
                 text: 'Customer updated successfully',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
                 icon: 'success',
-                confirmButtonColor: '#31BCFF',
+                customClass: {
+                    popup: 'swal-toast-wide'
+                }
             })
 
+            resetChanges();
             router.push('/dashboard/customers')
             router.refresh()
         } catch (error) {
             await Swal.fire({
-                title: 'Error',
                 text: error instanceof Error ? error.message : 'An error occurred',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
                 icon: 'error',
-                confirmButtonColor: '#31BCFF',
+                customClass: {
+                    popup: 'swal-toast-wide'
+                }
             })
         } finally {
             setLoading(false)
@@ -277,21 +296,32 @@ export default function EditCustomersPage({ params, searchParams }: { params: Pr
                 projectIds: [...(prev.projectIds || []), createdProject.id]
             }))
             await Swal.fire({
-                title: 'Success!',
                 text: 'Project created successfully',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
                 icon: 'success',
-                confirmButtonColor: '#31BCFF',
-                focusConfirm: false,
+                customClass: {
+                    popup: 'swal-toast-wide'
+                }
             })
             return createdProject
         } catch (error) {
             await Swal.fire({
-                title: 'Error',
                 text: error instanceof Error ? error.message : 'An error occurred',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
                 icon: 'error',
-                confirmButtonColor: '#31BCFF',
-                focusConfirm: false,
+                customClass: {
+                    popup: 'swal-toast-wide'
+                }
             })
+
             throw error
         } finally {
             setLoadingProject(false)
@@ -398,7 +428,17 @@ export default function EditCustomersPage({ params, searchParams }: { params: Pr
             {/* Form Container */}
             <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg p-6">
                 <form onSubmit={handleSubmit} className="space-y-6">
+                     {hasChanges && (
+                        <div className="flex justify-end items-center gap-3">
+                            <Badge variant="secondary" className="bg-amber-100 text-amber-800">
+                                <AlertTriangle className="w-3 h-3 mr-1" />
+                                Unsaved Changes
+                            </Badge>
+                        </div>
+
+                    )}
                     <div className="flex justify-end items-center gap-3 mt-8">
+                        
                         <input
                             id="active"
                             type="checkbox"

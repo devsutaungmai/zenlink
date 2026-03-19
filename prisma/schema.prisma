@@ -449,6 +449,8 @@ model Project {
   customer      Customer?        @relation(fields: [customerId], references: [id], onDelete: SetNull)
   name          String // Prosjektnummer - project number/identifier
   projectNumber String?          @unique
+  year          Int
+  sequence      Int
   active        Boolean          @default(true) // Aktiv - checkbox to activate
   status        String? // Status (nullable)
   categoryId    String?          @map("category_id")
@@ -994,6 +996,8 @@ model ProductFormSettings {
 model Product {
   id                 String        @id @default(cuid())
   active             Boolean       @default(true)
+  sequence           Int
+  year               Int   
   productNumber      String        @unique @map("product_number")
   productName        String        @map("product_name")
   salesPrice         Decimal       @map("sales_price") @db.Decimal(10, 2)
@@ -1202,7 +1206,17 @@ model InvoiceGeneralSetting {
   // Customer number series
   customerNumberSeriesStart Int? @default(10000)   @map("customer_number_series_start") // e.g., 10000
   customerNumberSeriesEnd   Int? @default(19999)   @map("customer_number_series_end")   // e.g., 19999
-  nextCustomerNumber        Int?    @map("next_customer_number")
+  nextCustomerNumber        Int? @map("next_customer_number")
+
+  //Project number series
+  projectNumberSeriesStart Int? @default(1000)    @map("project_number_series_start") // e.g., 1000
+  projectNumberSeriesEnd   Int? @default(9999)    @map("project_number_series_end")   // e.g., 9999
+  nextProjectNumber        Int? @map("next_project_number")
+
+  //prouct number series
+  productNumberSeriesStart Int? @default(1000)    @map("product_number_series_start") // e.g., 1000
+  productNumberSeriesEnd   Int? @default(9999)    @map("product_number_series_end")   // e.g., 9999
+  nextProductNumber        Int? @map("next_product_number")
   
   // Bank account settings
   defaultBankAccount        String? @map("default_bank_account")

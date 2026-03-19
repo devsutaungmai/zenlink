@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import Link from 'next/link'
@@ -12,6 +12,10 @@ import Cog6ToothIcon from '@heroicons/react/24/solid/Cog6ToothIcon'
 import { useProjectSettings } from '@/shared/hooks/useProjectSettings'
 import { ProjectFieldSettingsDialog } from '@/components/invoice/ProjectFieldSettingsDialog'
 import { useAutoFocus } from '@/shared/hooks/useAutoFocus'
+import { formatProjectNumberForDisplay } from '@/shared/lib/invoiceHelper'
+import { get } from 'http'
+import { projectValidationSchema } from '@/components/invoice/validation'
+import z from 'zod'
 
 interface Customer {
     id: string
@@ -29,10 +33,24 @@ export default function CreateProjectPage() {
     const [customers, setCustomers] = useState<Customer[]>([])
     const [projectCategories, setProjectCategories] = useState<ProjectCategory[]>([])
     const today = new Date().toISOString().split("T")[0];
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<{
+        name: string
+        projectNumber: string
+        defaultProjectNumber?: string
+        active: boolean
+        sequence: number
+        year: number
+        categoryId: string
+        startDate: string
+        endDate: string
+        customerId: string
+    }>({
         name: '',
         projectNumber: '',
+        defaultProjectNumber: '',
         active: true,
+        sequence: 0,
+        year: new Date().getFullYear(),
         categoryId: '',
         startDate: today,
         endDate: '',
@@ -47,6 +65,8 @@ export default function CreateProjectPage() {
         showStartDate: true,
         showEndDate: true,
     })
+    const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
+    const validationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
     useEffect(() => {
         if (settings) {
@@ -62,7 +82,50 @@ export default function CreateProjectPage() {
     useEffect(() => {
         fetchProjectCategories()
         fetchCustomers()
+        getDefaultProjectNumber()
     }, [])
+
+    const getDefaultProjectNumber = async () => {
+        try {
+            const res = await fetch('/api/projects/next-number')
+
+            if (res.ok) {
+                const data = await res.json()
+                const defaultNumber = formatProjectNumberForDisplay(data.projectNumber);
+
+                setFormData(prev => ({
+                    ...prev, projectNumber: defaultNumber, defaultProjectNumber: data.projectNumber, sequence: data.sequence,
+                    year: data.year
+                }))
+            }
+        } catch (error) {
+            console.error('Error fetching default project number:', error)
+        }
+    }
+
+    const validateField = (fieldName: string, value: any) => {
+        try {
+            const fieldSchema = projectValidationSchema.shape[fieldName as keyof typeof projectValidationSchema.shape]
+            if (fieldSchema) {
+                fieldSchema.parse(value)
+                setValidationErrors(prev => ({ ...prev, [fieldName]: '' }))
+            }
+        } catch (error) {
+            if (error instanceof z.ZodError && error.issues.length > 0) {
+                setValidationErrors(prev => ({ ...prev, [fieldName]: error.issues[0].message }))
+            }
+        }
+    }
+
+    const debouncedValidation = (fieldName: string, value: any) => {
+        if (validationTimeoutRef.current) {
+            clearTimeout(validationTimeoutRef.current)
+        }
+
+        validationTimeoutRef.current = setTimeout(() => {
+            validateField(fieldName, value)
+        }, 500)
+    }
 
     const fetchProjectCategories = async () => {
         try {
@@ -90,6 +153,42 @@ export default function CreateProjectPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
+        // Validate all fields before submission
+        try {
+            projectValidationSchema.parse(formData)
+            setValidationErrors({})
+        } catch (error) {
+
+            if (error instanceof z.ZodError) {
+                const errors: Record<string, string> = {}
+
+                error.issues.forEach(issue => {
+                    if (issue.path[0]) {
+                        errors[issue.path[0].toString()] = issue.message
+                    }
+                })
+                setValidationErrors(errors)
+
+                // Show specific message if customerContacts is the issue
+                const contactError = error.issues.find(issue =>
+                    issue.path[0] === 'customerContacts'
+                )
+
+                await Swal.fire({
+                    text: contactError?.message || 'Please fix the errors in the form',
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 3500,
+                    timerProgressBar: true,
+                    icon: 'error',
+                    customClass: {
+                        popup: 'swal-toast-wide'
+                    }
+                })
+                return
+            }
+        }
         setLoading(true)
 
         try {
@@ -105,20 +204,33 @@ export default function CreateProjectPage() {
             }
 
             await Swal.fire({
-                title: 'Success!',
                 text: 'Project created successfully',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
                 icon: 'success',
-                confirmButtonColor: '#31BCFF',
+                customClass: {
+                    popup: 'swal-toast-wide'
+                }
             })
+
 
             router.push('/dashboard/projects')
             router.refresh()
         } catch (error) {
             await Swal.fire({
-                title: 'Error',
                 text: error instanceof Error ? error.message : 'An error occurred',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
                 icon: 'error',
-                confirmButtonColor: '#31BCFF',
+                customClass: {
+                    popup: 'swal-toast-wide'
+                }
             })
         } finally {
             setLoading(false)
@@ -186,12 +298,15 @@ export default function CreateProjectPage() {
                                 ref={firstInputRef}
                                 type="text"
                                 id="name"
-                                required
                                 value={formData.name}
-                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                onChange={(e) => { setFormData({ ...formData, name: e.target.value }); debouncedValidation('name', e.target.value) }}
+                                onBlur={(e) => validateField('name', e.target.value)}
+                                className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.name ? 'border-red-500' : 'border-gray-300'} bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
                                 placeholder="Enter project name"
                             />
+                            {validationErrors.name && (
+                                <p className="mt-1 text-sm text-red-600">{validationErrors.name}</p>
+                            )}
                         </div>
 
                         <div className="grow basis-[calc(20%-12px)] min-w-[150px]">
@@ -202,12 +317,15 @@ export default function CreateProjectPage() {
                                 type="text"
                                 id="projectNumber"
                                 value={formData.projectNumber}
-                                onChange={(e) => setFormData({ ...formData, projectNumber: e.target.value })}
-                                className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                onChange={(e) => { setFormData({ ...formData, projectNumber: e.target.value }); debouncedValidation('projectNumber', e.target.value) }}
+                                onBlur={(e) => validateField('projectNumber', e.target.value)}
+                                className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.projectNumber ? 'border-red-500' : 'border-gray-300'} bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
                                 placeholder="Enter project number"
                             />
+                            {validationErrors.projectNumber && (
+                                <p className="mt-1 text-sm text-red-600">{validationErrors.projectNumber}</p>
+                            )}
                         </div>
-
 
                         {/* Category & Customer */}
                         {visibleFields.showCategory

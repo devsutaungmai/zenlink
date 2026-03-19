@@ -14,6 +14,10 @@ export interface GeneralSetting {
   firstCreditNoteNumber: number
   customerNumberSeriesStart: number | null
   customerNumberSeriesEnd: number | null
+  projectNumberSeriesStart: number | null
+  projectNumberSeriesEnd: number | null
+  productNumberSeriesStart: number | null
+  productNumberSeriesEnd: number | null
   defaultBankAccount: string
   defaultPaymentTermsDays: number
   defaultDueDays: number
@@ -26,17 +30,36 @@ export default function GeneralSetting() {
   const [formData, setFormData] = useState<GeneralSetting>({
     firstInvoiceNumber: 1,
     firstCreditNoteNumber: 1,
-    customerNumberSeriesStart: 1000,
+    customerNumberSeriesStart: 10000,
     customerNumberSeriesEnd: 19999,
+    projectNumberSeriesStart: 10000,
+    projectNumberSeriesEnd: 19999,
+    productNumberSeriesStart: 10000,
+    productNumberSeriesEnd: 19999,
     defaultBankAccount: '',
     defaultPaymentTermsDays: 30,
     defaultDueDays: 30
   })
   const [originalData, setOriginalData] = useState<GeneralSetting>(formData)
+  const [isInvoiceStarted,setIsInvoiceStarted] = useState<boolean>(false);
 
   useEffect(() => {
     fetchSettings()
+    fetchInvoiceStarted()
   }, [])
+
+  const fetchInvoiceStarted = async()=>{
+    try {
+      const response = await fetch('/api/invoice-started')
+      if(response.ok){
+        const data = await response.json()
+        setIsInvoiceStarted(data.started)
+      }
+
+    } catch (error) {
+      console.error('Error fetching settings....',error);
+    }
+  }
 
   const fetchSettings = async () => {
     try {
@@ -51,6 +74,10 @@ export default function GeneralSetting() {
             firstCreditNoteNumber: data.settings.firstCreditNoteNumber || 1,
             customerNumberSeriesStart: data.settings.customerNumberSeriesStart || 10000,
             customerNumberSeriesEnd: data.settings.customerNumberSeriesEnd || 19999,
+            projectNumberSeriesStart: data.settings.projectNumberSeriesStart || 10000,
+            projectNumberSeriesEnd: data.settings.projectNumberSeriesEnd || 19999,
+            productNumberSeriesStart: data.settings.productNumberSeriesStart || 10000,
+            productNumberSeriesEnd: data.settings.productNumberSeriesEnd || 19999, 
             defaultBankAccount: data.settings.defaultBankAccount || '',
             defaultPaymentTermsDays: data.settings.defaultPaymentTermsDays || 30,
             defaultDueDays: data.settings.defaultDueDays || 30
@@ -85,6 +112,28 @@ export default function GeneralSetting() {
             icon: 'error',
             title: 'Validation Error',
             text: 'Customer number series start must be less than end',
+          })
+          return
+        }
+      }
+
+      if(formData.projectNumberSeriesStart && formData.projectNumberSeriesEnd){
+        if(formData.projectNumberSeriesStart >= formData.projectNumberSeriesEnd){
+          Swal.fire({
+            icon: 'error',
+            title: 'Validation Error',
+            text: 'Project number series start must be less than end',
+          })
+          return
+        }
+      }
+
+      if(formData.productNumberSeriesStart && formData.productNumberSeriesEnd){
+        if(formData.productNumberSeriesStart >= formData.productNumberSeriesEnd){
+          Swal.fire({
+            icon: 'error',
+            title: 'Validation Error',
+            text: 'Product number series start must be less than end',
           })
           return
         }
@@ -181,6 +230,7 @@ export default function GeneralSetting() {
                 type="number"
                 min="1"
                 value={formData.firstInvoiceNumber}
+                disabled={isInvoiceStarted}
                 onChange={(e) => handleInputChange('firstInvoiceNumber', parseInt(e.target.value) || 1)}
                 className="mt-1"
               />
@@ -189,7 +239,7 @@ export default function GeneralSetting() {
               </p>
             </div>
 
-            <div>
+            {/* <div>
               <Label htmlFor="firstCreditNoteNumber">First Credit Note Number</Label>
               <Input
                 id="firstCreditNoteNumber"
@@ -202,7 +252,7 @@ export default function GeneralSetting() {
               <p className="text-xs text-gray-500 mt-1">
                 The starting number for credit notes. Format: CN-{formData.firstCreditNoteNumber.toString().padStart(4, '0')}
               </p>
-            </div>
+            </div> */}
           </div>
         </CardContent>
       </Card>
@@ -248,6 +298,96 @@ export default function GeneralSetting() {
               />
               <p className="text-xs text-gray-500 mt-1">
                 Ending number for customer IDs (must be greater than start)
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Project Number Series */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="w-5 h-5" />
+            Project Number Series
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <Label htmlFor="projectNumberSeriesStart">Series Start</Label>
+              <Input
+                id="projectNumberSeriesStart"
+                type="number"
+                min="10000"
+                value={formData.projectNumberSeriesStart || ''}
+                disabled
+                onChange={(e) => handleInputChange('projectNumberSeriesStart', e.target.value ? parseInt(e.target.value) : null)}
+                className="mt-1"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Starting number for project IDs (leave empty to use default)
+              </p>
+            </div>
+
+            <div>
+              <Label htmlFor="projectNumberSeriesEnd">Series End</Label>
+              <Input
+                id="projectNumberSeriesEnd"
+                type="number"
+                min="19999"
+                disabled
+                value={formData.projectNumberSeriesEnd || ''}
+                onChange={(e) => handleInputChange('projectNumberSeriesEnd', e.target.value ? parseInt(e.target.value) : null)}
+                className="mt-1"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Ending number for project IDs (must be greater than start)
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Product Number Series */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="w-5 h-5" />
+            Product Number Series
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <Label htmlFor="productNumberSeriesStart">Series Start</Label>
+              <Input
+                id="productNumberSeriesStart"
+                type="number"
+                min="10000"
+                value={formData.productNumberSeriesStart || ''}
+                disabled
+                onChange={(e) => handleInputChange('productNumberSeriesStart', e.target.value ? parseInt(e.target.value) : null)}
+                className="mt-1"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Starting number for product IDs (leave empty to use default)
+              </p>
+            </div>
+
+            <div>
+              <Label htmlFor="productNumberSeriesEnd">Series End</Label>
+              <Input
+                id="productNumberSeriesEnd"
+                type="number"
+                min="19999"
+                disabled
+                value={formData.productNumberSeriesEnd || ''}
+                onChange={(e) => handleInputChange('productNumberSeriesEnd', e.target.value ? parseInt(e.target.value) : null)}
+                className="mt-1"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Ending number for product IDs (must be greater than start)
               </p>
             </div>
           </div>

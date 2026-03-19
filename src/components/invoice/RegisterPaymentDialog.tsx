@@ -140,11 +140,11 @@ export default function RegisterPaymentDialog({
                             {/* Payment type */}
                             <div className="flex flex-col">
                                 <label className="text-xs sm:text-sm font-medium text-gray-600 mb-2">Payment type</label>
-                                <div className="flex items-center justify-between border px-2 sm:px-3 py-2 rounded-md">
+                                <div className="relative flex items-center border rounded-md">
                                     <select
                                         value={payment.paymentMethod ?? ""}
                                         onChange={(e) => setPayment({ ...payment, paymentMethod: e.target.value })}
-                                        className="bg-transparent outline-none appearance-none flex-1 text-xs sm:text-sm"
+                                        className="bg-transparent outline-none appearance-none flex-1 text-xs sm:text-sm px-2 sm:px-3 py-2 pr-8"
                                     >
                                         <option value="">Select</option>
                                         {paymentMethods.map((m) => (
@@ -153,7 +153,7 @@ export default function RegisterPaymentDialog({
                                             </option>
                                         ))}
                                     </select>
-                                    <ChevronDown size={16} className="text-gray-600" />
+                                    <ChevronDown size={16} className="text-gray-600 absolute right-2 pointer-events-none" />
                                 </div>
                             </div>
 

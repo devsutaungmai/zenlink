@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/shared/lib/prisma'
 import { getCurrentUserOrEmployee } from '@/shared/lib/auth'
-import { calculateInvoiceTotals, generateVoucherNumber, getBusinessId, invoiceToLedgerPosting } from '@/shared/lib/invoiceHelper'
+import { calculateInvoiceTotals, generateInvoiceNumber, generateVoucherNumber, getBusinessId, invoiceToLedgerPosting } from '@/shared/lib/invoiceHelper'
 import { VoucherType } from '@prisma/client'
+import { InvoiceStatus } from '@/app/dashboard/invoices/page'
 
 // GET /api/invoices/[id]
 export async function GET(
@@ -53,9 +54,9 @@ export async function GET(
             productName: true,
             productNumber: true,
             isCredited: true
+          }
         }
       }
-    }
     })
 
     if (!invoice) {
@@ -182,7 +183,7 @@ export async function PUT(
         subtotal: calculations.subtotal,
         discountAmount: calculations.discountAmount,
         lineTotal: calculations.totalExclVAT,
-        vatAmount:calculations.vatAmount,
+        vatAmount: calculations.vatAmount,
         vatPercentage: vatPerc,
         productName: product.productName,
         productNumber: product.productNumber || ''
@@ -190,8 +191,13 @@ export async function PUT(
     }
 
     // Calculate invoice-level VAT (after summing all lines)
-    const totalVatAmount = invoiceLinesData.reduce((total: any, line: any)=> total + line.vatAmount,0)
+    const totalVatAmount = invoiceLinesData.reduce((total: any, line: any) => total + line.vatAmount, 0)
     const totalInclVAT = totalExclVAT + totalVatAmount  // Correct calculation
+    const isTransitioningToSent =
+      (existingInvoice.status === "DRAFT" && status === "SENT") ? true : false;
+    console.log("Existing Invoice Status==>", existingInvoice.status);
+
+    console.log("Invoice Lines Data==>", JSON.stringify(isTransitioningToSent));
 
     // Update invoice with transaction (delete old lines, create new ones)
     const invoice = await prisma.$transaction(async (tx) => {
@@ -213,6 +219,12 @@ export async function PUT(
         invoiceLines: {
           create: invoiceLinesData
         }
+      }
+      if (isTransitioningToSent) {
+        const { year, sequence, invoiceNumber } = await generateInvoiceNumber(businessId, tx)
+        invoiceData.invoiceNumber = invoiceNumber
+        invoiceData.year = year
+        invoiceData.sequence = sequence
       }
 
       if (contactPersonId && contactPersonId.trim() !== '') {
@@ -243,8 +255,10 @@ export async function PUT(
 
       }
 
+      console.log("Invoice Data to update==>", JSON.stringify(invoiceData));
+
       // Update invoice with new data and create new lines
-      return await tx.invoice.update({
+      const updatedInvoice = await tx.invoice.update({
         where: { id: invoiceId },
         data: invoiceData,
         include: {
@@ -256,16 +270,17 @@ export async function PUT(
           }
         }
       })
+      if (isTransitioningToSent) {
+        const voucher = await generateVoucherNumber(businessId, VoucherType.INVOICE, tx)
+        await tx.invoice.update({
+          where: { id: updatedInvoice.id },
+          data: { voucherId: voucher.id }
+        })
+      }
+      return updatedInvoice
     })
 
-    if (invoice.status === "SENT") {
-      const voucher = await generateVoucherNumber(businessId, VoucherType.INVOICE);
-
-      await prisma.invoice.update({
-        where: { id: invoice.id },
-        data: { voucherId: voucher.id }
-      });
-
+    if (isTransitioningToSent) {
       await invoiceToLedgerPosting(invoice.id);
     }
 
@@ -285,7 +300,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
-  
+
   // Check if it's a bulk delete request
   if (id === 'bulk') {
     try {
@@ -293,7 +308,7 @@ export async function DELETE(
       const { ids } = body
 
       console.log('Received IDs for deletion:', ids)
-      
+
       if (!ids || !Array.isArray(ids) || ids.length === 0) {
         return NextResponse.json(
           { error: 'Invoice IDs are required' },

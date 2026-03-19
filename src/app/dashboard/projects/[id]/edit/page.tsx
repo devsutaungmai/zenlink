@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect, use, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import Link from 'next/link'
@@ -8,6 +8,12 @@ import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
 import { useProjectSettings } from '@/shared/hooks/useProjectSettings'
 import { ProjectFieldSettingsDialog } from '@/components/invoice/ProjectFieldSettingsDialog'
+import { formatProjectNumberForDisplay } from '@/shared/lib/invoiceHelper'
+import { projectValidationSchema } from '@/components/invoice/validation'
+import z from 'zod'
+import { useHasChanges } from '@/hooks/useHasChanges'
+import { Badge } from '@/components/ui/badge'
+import { AlertTriangle } from 'lucide-react'
 
 interface Customer {
     id: string
@@ -40,6 +46,9 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
         endDate: '',
         customerId: ''
     })
+    const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
+    const validationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+    const { hasChanges, resetChanges, setInitialData } = useHasChanges(formData);
 
     useEffect(() => {
         fetchProjectCategories()
@@ -65,13 +74,36 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
             })
         }
     }, [settings])
+    const validateField = (fieldName: string, value: any) => {
+        try {
+            const fieldSchema = projectValidationSchema.shape[fieldName as keyof typeof projectValidationSchema.shape]
+            if (fieldSchema) {
+                fieldSchema.parse(value)
+                setValidationErrors(prev => ({ ...prev, [fieldName]: '' }))
+            }
+        } catch (error) {
+            if (error instanceof z.ZodError && error.issues.length > 0) {
+                setValidationErrors(prev => ({ ...prev, [fieldName]: error.issues[0].message }))
+            }
+        }
+    }
+
+    const debouncedValidation = (fieldName: string, value: any) => {
+        if (validationTimeoutRef.current) {
+            clearTimeout(validationTimeoutRef.current)
+        }
+
+        validationTimeoutRef.current = setTimeout(() => {
+            validateField(fieldName, value)
+        }, 500)
+    }
 
     const fetchProject = async () => {
         try {
             const res = await fetch(`/api/projects/${resolvedParams.id}`)
             if (res.ok) {
                 const data = await res.json()
-                setFormData({
+                const formattedData = {
                     name: data.name || '',
                     projectNumber: data.projectNumber || '',
                     active: data.active ?? true,
@@ -79,17 +111,25 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
                     startDate: data.startDate ? new Date(data.startDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
                     endDate: data.endDate ? new Date(data.endDate).toISOString().split('T')[0] : '',
                     customerId: data.customerId || ''
-                })
+                }
+                setFormData(formattedData);
+                setInitialData(formattedData)
             } else {
                 throw new Error('Failed to fetch project')
             }
         } catch (error) {
             console.error('Error fetching project:', error)
             await Swal.fire({
-                title: 'Error',
                 text: 'Failed to load project data',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3500,
+                timerProgressBar: true,
                 icon: 'error',
-                confirmButtonColor: '#31BCFF',
+                customClass: {
+                    popup: 'swal-toast-wide'
+                }
             })
             router.push('/dashboard/projects')
         } finally {
@@ -137,20 +177,33 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
             }
 
             await Swal.fire({
-                title: 'Success!',
                 text: 'Project updated successfully',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
                 icon: 'success',
-                confirmButtonColor: '#31BCFF',
+                customClass: {
+                    popup: 'swal-toast-wide'
+                }
             })
 
+            resetChanges();
             router.push('/dashboard/projects')
             router.refresh()
         } catch (error) {
             await Swal.fire({
-                title: 'Error',
                 text: error instanceof Error ? error.message : 'An error occurred',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
                 icon: 'error',
-                confirmButtonColor: '#31BCFF',
+                customClass: {
+                    popup: 'swal-toast-wide'
+                }
             })
         } finally {
             setLoading(false)
@@ -206,6 +259,15 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
             {/* Form Container */}
             <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg p-6">
                 {/* Active Checkbox */}
+                {hasChanges && (
+                    <div className="flex justify-end items-center gap-3">
+                        <Badge variant="secondary" className="bg-amber-100 text-amber-800">
+                            <AlertTriangle className="w-3 h-3 mr-1" />
+                            Unsaved Changes
+                        </Badge>
+                    </div>
+
+                )}
                 <div className="flex justify-end items-center gap-3 mt-8">
                     <input
                         id="active"
@@ -230,10 +292,14 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
                                 id="name"
                                 required
                                 value={formData.name}
-                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                onChange={(e) => { setFormData({ ...formData, name: e.target.value }); debouncedValidation('name', e.target.value) }}
+                                onBlur={(e) => validateField('name', e.target.value)}
+                                className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.name ? 'border-red-500' : 'border-gray-300'} bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
                                 placeholder="Enter project name"
                             />
+                            {validationErrors.name && (
+                                <p className="mt-1 text-sm text-red-600">{validationErrors.name}</p>
+                            )}
                         </div>
 
                         <div className="grow basis-[calc(20%-12px)] min-w-[150px]">
@@ -243,13 +309,16 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
                             <input
                                 type="text"
                                 id="projectNumber"
-                                value={formData.projectNumber}
-                                onChange={(e) => setFormData({ ...formData, projectNumber: e.target.value })}
-                                className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                value={formatProjectNumberForDisplay(formData.projectNumber)}
+                                onChange={(e) => { setFormData({ ...formData, projectNumber: e.target.value }); debouncedValidation('projectNumber', e.target.value) }}
+                                onBlur={(e) => validateField('projectNumber', e.target.value)}
+                                className={`block w-full px-4 py-3 rounded-xl border ${validationErrors.projectNumber ? 'border-red-500' : 'border-gray-300'} bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200`}
                                 placeholder="Enter project number"
                             />
+                            {validationErrors.projectNumber && (
+                                <p className="mt-1 text-sm text-red-600">{validationErrors.projectNumber}</p>
+                            )}
                         </div>
-
 
                         {/* Category & Customer */}
 

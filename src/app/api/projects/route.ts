@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/shared/lib/prisma'
 import { getCurrentUserOrEmployee, requireAuth } from '@/shared/lib/auth'
+import { de } from 'date-fns/locale'
 
 // GET /api/projects - Get all projects
 export async function GET(request: NextRequest) {
@@ -60,13 +61,13 @@ export async function POST(request: NextRequest) {
     }
 
     const formData = await request.json()
-    const { name, projectNumber, customerId, categoryId, startDate, endDate,active } = formData
+    const { name, projectNumber, customerId, categoryId, startDate, endDate,active ,defaultProjectNumber,sequence,year} = formData
 
     if (!name) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 })
     }
 
-     if (!projectNumber) {
+     if (!defaultProjectNumber && !projectNumber) {
       return NextResponse.json({ error: 'Project Number is required' }, { status: 400 })
     }
 
@@ -102,14 +103,16 @@ export async function POST(request: NextRequest) {
     const project = await prisma.project.create({
       data: {
         name,
-        projectNumber,
+        projectNumber: defaultProjectNumber ? defaultProjectNumber : projectNumber,
         businessId,
         categoryId: categoryId || null,
         customerId: refinedCustomerId,
         departmentId: departmentIdForProject,
         startDate: startDate ? new Date(startDate) : null,
         endDate: endDate ? new Date(endDate) : null,
-        active: active
+        active: active,
+        sequence: sequence || 0,
+        year: year || new Date().getFullYear()
       }
     })
 
