@@ -67,7 +67,7 @@ export default function EditInvoicePage({
         contactPersonId: '',
         deliveryAddress: '',
         sentAt: new Date().toISOString().split('T')[0],
-        dueDay: 0,
+        dueDay: 14,
         paidAt: '',
         projectId: '',
         departmentId: '',
@@ -513,7 +513,7 @@ export default function EditInvoicePage({
                             <div className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] min-w-[250px]">
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Customer *</label>
                                 <CustomerCombobox customers={customers} value={formData.customerId || ''} onChange={(customerId) => setFormData({ ...formData, customerId })} placeholder="Select Customer" disabled={isCreditNote} />
-                                <p className="text-xs mt-2 text-blue-400">Customer is already assigned</p>
+                                {/* <p className="text-xs mt-2 text-blue-400">Customer is already assigned</p> */}
                             </div>
 
                             {settings.showContactPerson && (

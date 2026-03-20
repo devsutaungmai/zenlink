@@ -58,6 +58,7 @@ interface Product {
 export interface Invoice {
     id: string
     invoiceNumber: string
+    sequence?: number
     invoiceDate: Date
     dueDate?: Date | null
     status: InvoiceStatus
@@ -105,6 +106,7 @@ export default function InvoicesPage() {
     const [loadingCredit, setLoadingCredit] = useState<boolean>(false);
     const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] = useState<Invoice | null>(null)
     const [loadingPayment, setLoadingPayment] = useState<boolean>(false);
+    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
 
     // Pagination states
     const [currentPage, setCurrentPage] = useState(1)
@@ -258,9 +260,9 @@ export default function InvoicesPage() {
         return matchesSearch && matchesFilter;
     }
     ).sort((a, b) => {
-        const numA = parseInt(a.invoiceNumber.replace(/\D/g, '')) || 0
-        const numB = parseInt(b.invoiceNumber.replace(/\D/g, '')) || 0
-        return numA - numB
+        const seqA = a.sequence ?? 0
+        const seqB = b.sequence ?? 0
+        return sortOrder === 'asc' ? seqA - seqB : seqB - seqA
     })
 
     // Pagination calculations
@@ -418,57 +420,71 @@ export default function InvoicesPage() {
     }
 
     const handleDeleteInvoices = async () => {
-        // Validate that selected invoices are all in DRAFT status
-        const selectedInvoicesList = paginatedInvoices.filter(inv =>
-            selectedInvoices.includes(inv.id)
-        )
-        const nonDraftInvoices = selectedInvoicesList.filter(
-            inv => inv.status !== InvoiceStatus.DRAFT
-        )
+        const result = await Swal.fire({
+            title: t('common.confirm'),
+            text: `Are you sure you want to delete?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#31BCFF',
+            cancelButtonColor: '#d33',
+            confirmButtonText: t('common.yes'),
+            cancelButtonText: t('common.cancel')
+        })
 
-        if (nonDraftInvoices.length > 0) {
+        if (result.isConfirmed) {
+            // Validate that selected invoices are all in DRAFT status
+            const selectedInvoicesList = paginatedInvoices.filter(inv =>
+                selectedInvoices.includes(inv.id)
+            )
+            const nonDraftInvoices = selectedInvoicesList.filter(
+                inv => inv.status !== InvoiceStatus.DRAFT
+            )
 
-            toast('error', 'Only DRAFT invoices can be deleted')
-            return
-        }
+            if (nonDraftInvoices.length > 0) {
 
-        if (selectedInvoices.length === 0) {
-
-            toast('error', 'Please select at least one invoice')
-            return
-        }
-
-        setLoading(true)
-        console.log('Selected invoice IDs to send:', selectedInvoices)
-        try {
-            const res = await fetch('/api/invoices/bulk', {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    ids: selectedInvoices,
-                }),
-            })
-
-            if (!res.ok) {
-                const error = await res.json()
-                throw new Error(error.error || 'Failed to delete invoices')
+                toast('error', 'Only DRAFT invoices can be deleted')
+                return
             }
 
-            const result = await res.json()
+            if (selectedInvoices.length === 0) {
 
-            toast('success', 'Invoices deleted successfully')
-            // Clear selection and refresh
-            setSelectedInvoices([])
-            fetchInvoices()
-            router.refresh()
+                toast('error', 'Please select at least one invoice')
+                return
+            }
 
-        } catch (error) {
-            toast(
-                'error',
-                error instanceof Error ? error.message : 'An error occurred'
-            )
-        } finally {
-            setLoading(false)
+            setLoading(true)
+            console.log('Selected invoice IDs to send:', selectedInvoices)
+            try {
+                const res = await fetch('/api/invoices/bulk', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        ids: selectedInvoices,
+                    }),
+                })
+
+                if (!res.ok) {
+                    const error = await res.json()
+                    throw new Error(error.error || 'Failed to delete invoices')
+                }
+
+                const result = await res.json()
+
+                toast('success', 'Invoices deleted successfully')
+                // Clear selection and refresh
+                setSelectedInvoices([])
+                fetchInvoices()
+                router.refresh()
+
+
+            } catch (error) {
+                toast(
+                    'error',
+                    error instanceof Error ? error.message : 'An error occurred'
+                )
+            } finally {
+                setLoading(false)
+            }
         }
     }
 
@@ -662,10 +678,25 @@ export default function InvoicesPage() {
                                             className="w-4 h-4 text-[#31BCFF] border-gray-300 rounded focus:ring-[#31BCFF] cursor-pointer"
                                         />
                                     </th>
-                                    {isColumnVisible('invoiceNumber') && <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
-                                        Invoice Number
-                                        <ResizeHandle onMouseDown={onMouseDown("invoiceNumber")} />
-                                    </th>}
+                                    {isColumnVisible('invoiceNumber') && (
+                                        <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
+                                            <button
+                                                onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                                                className="flex items-center gap-1 hover:text-gray-900 transition-colors duration-150 group"
+                                            >
+                                                Invoice Number
+                                                <span className="flex flex-col leading-none text-gray-400 group-hover:text-gray-600 transition-colors">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 6" className={`w-2.5 h-2 ${sortOrder === 'asc' ? 'text-[#31BCFF]' : 'text-gray-300'}`} fill="currentColor">
+                                                        <path d="M5 0L10 6H0z" />
+                                                    </svg>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 6" className={`w-2.5 h-2 ${sortOrder === 'desc' ? 'text-[#31BCFF]' : 'text-gray-300'}`} fill="currentColor">
+                                                        <path d="M5 6L0 0H10z" />
+                                                    </svg>
+                                                </span>
+                                            </button>
+                                            <ResizeHandle onMouseDown={onMouseDown("invoiceNumber")} />
+                                        </th>
+                                    )}
                                     {isColumnVisible('customer') && <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
                                         Customer
                                         <ResizeHandle onMouseDown={onMouseDown("customer")} />

@@ -541,22 +541,22 @@ export default function CreateInvoicePage() {
 
     }
 
-const updateLineTotal = (index: number, currentQty?: number) => {
-    const line = formData.invoiceLines[index];
-    const qty = currentQty !== undefined ? currentQty : Number(line.quantity);
-    const absQty = Math.abs(qty) || 0;
-    const price = Math.abs(Number(line.pricePerUnit)) || 0;
-    const discount = Number(line.discountPercentage) || 0;
-    const vat = Number(line.vatPercentage) || 0;
-    const { totalExclVAT } = calculateInvoiceTotals(absQty, price, discount, vat);
-    // Derive sign from the actual current quantity, not stale isNegativeTotal
-    const sign = (isCreditNote && !!line.id) ? -1 : (qty < 0 ? -1 : 1);
-    setNetTotals((prevNetTotals) => {
-        const newNetTotals = [...prevNetTotals];
-        newNetTotals[index] = totalExclVAT * sign;
-        return newNetTotals;
-    });
-};
+    const updateLineTotal = (index: number, currentQty?: number) => {
+        const line = formData.invoiceLines[index];
+        const qty = currentQty !== undefined ? currentQty : Number(line.quantity);
+        const absQty = Math.abs(qty) || 0;
+        const price = Math.abs(Number(line.pricePerUnit)) || 0;
+        const discount = Number(line.discountPercentage) || 0;
+        const vat = Number(line.vatPercentage) || 0;
+        const { totalExclVAT } = calculateInvoiceTotals(absQty, price, discount, vat);
+        // Derive sign from the actual current quantity, not stale isNegativeTotal
+        const sign = (isCreditNote && !!line.id) ? -1 : (qty < 0 ? -1 : 1);
+        setNetTotals((prevNetTotals) => {
+            const newNetTotals = [...prevNetTotals];
+            newNetTotals[index] = totalExclVAT * sign;
+            return newNetTotals;
+        });
+    };
 
     const handleSendClick = (action: 'send_invoice_without_email' | 'send_invoice_with_email' | 'print' | 'send_new_credit_note') => {
         setPendingAction(action)
