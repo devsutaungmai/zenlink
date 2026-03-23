@@ -3,6 +3,7 @@
 import * as React from "react"
 import { Check, ChevronDown, X, Plus } from "lucide-react"
 import ProjectDialog, { ProjectFormType } from "./ProjectDialog"
+import { formatProjectNumberForDisplay } from "@/shared/lib/invoiceHelper"
 
 export interface ProjectOption {
   id: string
@@ -285,7 +286,7 @@ const filteredProjects = React.useMemo(() => {
                     <span>
                       {project.projectNumber && (
                         <span className="text-gray-300 mr-1">
-                          {project.projectNumber} –
+                          {formatProjectNumberForDisplay(project.projectNumber)} –
                         </span>
                       )}
                       {project.name}

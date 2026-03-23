@@ -187,7 +187,7 @@ export default function CustomerDialog({
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                             <Input
                                 ref={customerNameRef}
-                                label="Customer name"
+                                label="Customer name *"
                                 value={form.customerName}
                                 onChange={(v) => {
                                     updateField("customerName", v)
@@ -200,7 +200,7 @@ export default function CustomerDialog({
 
 
                             <Input ref={customerNumberRef}
-                                label="Customer number"
+                                label="Customer number *"
                                 value={form.customerNumber}
                                 onChange={(v) => { updateField("customerNumber", v); debouncedValidation("customerNumber", v) }}
                                 onBlur={(v) => validateField("customerNumber", v)}
@@ -264,7 +264,7 @@ const Input = React.forwardRef<HTMLInputElement, {
     className?: string;
     required?: boolean;
     placeholder?: string;
-    error?: string; // ✅ add this
+    error?: string; 
 }>(({ label, value, onChange, onBlur, className = "", required = false, placeholder, error }, ref) => {
     return (
         <div className={className}>

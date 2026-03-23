@@ -572,8 +572,11 @@ export default function InvoiceOverview() {
                                                     {outstandingAmount}
                                                 </td>}
                                                 <td className="px-2 py-3">
-                                                    <button className="p-1 hover:bg-gray-200 rounded" onClick={() => handlePDf(invoice.id)}>
+                                                    <button className="group relative p-1 hover:bg-gray-200 rounded" onClick={() => handlePDf(invoice.id)}>
                                                         <PaperClipIcon className="h-4 w-4 text-gray-400" />
+                                                        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 text-xs text-white bg-gray-800 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                                                            PDF
+                                                        </span>
                                                     </button>
                                                 </td>
                                                 {invoice.status !== InvoiceStatus.DRAFT &&
@@ -582,7 +585,7 @@ export default function InvoiceOverview() {
                                                             <button
                                                                 onClick={() => handleSendEmail(invoice.id)}
                                                                 disabled={loadingEmail[invoice.id]}
-                                                                className={`p-2 rounded-lg transition-all duration-200 ${loadingEmail[invoice.id]
+                                                                className={`group relative p-2 rounded-lg transition-all duration-200 ${loadingEmail[invoice.id]
                                                                     ? 'text-gray-300 bg-gray-50 cursor-not-allowed'
                                                                     : 'text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50'
                                                                     }`}
@@ -597,6 +600,9 @@ export default function InvoiceOverview() {
                                                                         <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25H4.5a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
                                                                     </svg>
                                                                 )}
+                                                                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 text-xs text-white bg-gray-800 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                                                                    Email
+                                                                </span>
                                                             </button>
                                                         </td>
                                                         <td className="px-2 py-3">
@@ -869,14 +875,18 @@ export default function InvoiceOverview() {
                                 {/* Card Actions */}
                                 <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-200">
                                     <div className="flex items-center gap-2">
-                                        <button className="p-1.5 hover:bg-gray-100 rounded" onClick={() => handlePDf(invoice.id)}>
+                                        <button className="group relative p-1.5 hover:bg-gray-100 rounded" onClick={() => handlePDf(invoice.id)}>
                                             <PaperClipIcon className="h-4 w-4 text-gray-400" />
+                                            <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 text-xs text-white bg-gray-800 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                                                PDF
+                                            </span>
+
                                         </button>
                                         {invoice.status !== InvoiceStatus.DRAFT &&
                                             <button
                                                 onClick={() => handleSendEmail(invoice.id)}
                                                 disabled={loadingEmail[invoice.id]}
-                                                className={`p-2 rounded-lg transition-all duration-200 ${loadingEmail[invoice.id]
+                                                className={`group relative p-2 rounded-lg transition-all duration-200 ${loadingEmail[invoice.id]
                                                     ? 'text-gray-300 bg-gray-50 cursor-not-allowed'
                                                     : 'text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50'
                                                     }`}
@@ -891,6 +901,10 @@ export default function InvoiceOverview() {
                                                         <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25H4.5a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
                                                     </svg>
                                                 )}
+                                                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 text-xs text-white bg-gray-800 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                                                    Send Email
+                                                </span>
+
                                             </button>
                                         }
                                     </div>

@@ -129,7 +129,7 @@ export default function CustomerContactComponent({
                 className="w-full px-6 py-4 flex items-center justify-between bg-white hover:bg-gray-50 transition-colors"
             >
                 <div className="flex items-center gap-2">
-                    <h2 className="text-lg font-semibold text-gray-900">Customer Contact *</h2>
+                    <h2 className="text-lg font-semibold text-gray-900">Customer Contact</h2>
                     {customerContacts.length === 0 && (
                         <span className="text-xs text-red-600 font-normal">(Required)</span>
                     )}

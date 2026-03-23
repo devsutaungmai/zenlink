@@ -900,33 +900,48 @@ export default function InvoicesPage() {
                                                     <div className="flex items-center justify-end gap-2">
                                                         <Link
                                                             href={`/dashboard/invoices/${invoice.id}/edit`}
-                                                            className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
-                                                            title="Edit Invoice"
+                                                            className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200 group relative"
                                                         >
                                                             <PencilIcon className="h-4 w-4" />
+                                                            <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 text-xs text-white bg-gray-800 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                                                                Edit Invoice
+                                                            </span>
                                                         </Link>
                                                         <button
                                                             onClick={() => handleDelete(invoice.id, invoice.invoiceNumber)}
-                                                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                                                            title={t("employee_groups.delete_group")}
+                                                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 group relative"
+
                                                         >
                                                             <TrashIcon className="h-4 w-4" />
+                                                            <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 text-xs text-white bg-gray-800 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                                                                Delete
+                                                            </span>
                                                         </button>
                                                     </div>
                                                 ) : (<div className="flex items-center justify-end">
                                                     <Link
                                                         href={`/dashboard/invoices/create?invoiceId=${invoice.id}&copy=true`}
-                                                        className="px-1 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2"
+                                                        className="px-1 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2 group relative"
+
                                                     >
                                                         <span className="text-base">📋</span>
+                                                        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 text-xs text-white bg-gray-800 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                                                            Copy Invoice
+                                                        </span>
+
                                                     </Link>
 
                                                     {outstandingAmount > 0 ? (
                                                         <button
-                                                            className="px-1 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2"
+                                                            className="px-1 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2 group relative"
                                                             onClick={() => setSelectedInvoiceForPayment({ ...invoice, outstandingAmount })}
+
                                                         >
                                                             <CurrencyEuroIcon className="h-4 w-4" />
+                                                            <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 text-xs text-white bg-gray-800 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                                                                Register Payment
+                                                            </span>
+
                                                         </button>
                                                     ) : null}
                                                     {/* {(invoice.status !== InvoiceStatus.CREDIT_NOTE && invoice.status !== InvoiceStatus.CREDITED) ?
@@ -939,13 +954,22 @@ export default function InvoicesPage() {
                                                     } */}
 
                                                     {(invoice.status !== InvoiceStatus.CREDIT_NOTE && invoice.status !== InvoiceStatus.CREDITED) ?
-                                                        <Link href={`/dashboard/invoices/${invoice.id}/edit?credit-note=true`} className="px-1 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2">
+                                                        <Link href={`/dashboard/invoices/${invoice.id}/edit?credit-note=true`} className="px-1 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2 group relative"
+                                                            title='Credit Note'>
                                                             <span className="text-base"><CreditCard className="h-4 w-4" /></span>
+                                                            <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 text-xs text-white bg-gray-800 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                                                                Credit Note
+                                                            </span>
+
                                                         </Link> : null
                                                     }
 
-                                                    <button className="p-1 hover:bg-gray-200 rounded" onClick={() => handlePDf(invoice.id)}>
+                                                    <button className="p-1 hover:bg-gray-200 rounded group relative" onClick={() => handlePDf(invoice.id)} title='PDF'>
                                                         <PaperClipIcon className="h-4 w-4 text-gray-400" />
+                                                        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 text-xs text-white bg-gray-800 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                                                            PDF
+                                                        </span>
+
                                                     </button>
                                                     <button
                                                         onClick={() => handleSendEmail(invoice.id)}
@@ -953,7 +977,8 @@ export default function InvoicesPage() {
                                                         className={`p-1 rounded-lg transition-all duration-200 ${loadingEmail[invoice.id]
                                                             ? 'text-gray-300 bg-gray-50 cursor-not-allowed'
                                                             : 'text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50'
-                                                            }`}
+                                                            } group relative`}
+                                                        title='Send Email'
                                                     >
                                                         {loadingEmail[invoice.id] ? (
                                                             <svg className="animate-spin h-2 w-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -965,6 +990,10 @@ export default function InvoicesPage() {
                                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25H4.5a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
                                                             </svg>
                                                         )}
+                                                        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 text-xs text-white bg-gray-800 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                                                            Send Email
+                                                        </span>
+
                                                     </button>
                                                 </div>)}
                                             </td>
@@ -1194,17 +1223,23 @@ export default function InvoicesPage() {
                                                 <>
                                                     <Link
                                                         href={`/dashboard/invoices/${invoice.id}/edit`}
-                                                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                                                        className="group relative p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
                                                         title="Edit Invoice"
                                                     >
                                                         <PencilIcon className="h-5 w-5" />
+                                                        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 text-xs text-white bg-gray-800 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                                                            Edit Invoice
+                                                        </span>
                                                     </Link>
                                                     <button
                                                         onClick={() => handleDelete(invoice.id, invoice.invoiceNumber)}
-                                                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                                                        className="group relative p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
                                                         title={t("employee_groups.delete_group")}
                                                     >
                                                         <TrashIcon className="h-5 w-5" />
+                                                        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 text-xs text-white bg-gray-800 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                                                            Delete
+                                                        </span>
                                                     </button>
                                                 </>
                                             ) : null}

@@ -1,11 +1,15 @@
+import { formatProjectNumberForDisplay } from "@/shared/lib/invoiceHelper";
 import * as Dialog from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import React from "react";
+import { projectValidationSchema } from "./validation";
+import z from "zod";
 
 export interface ProjectFormType {
   name: string;
   projectNumber: string;
+  defaultProjectNumber?: string
   startDate?: string;
   endDate?: string;
 }
@@ -32,10 +36,59 @@ export default function ProjectDialog({
 }: ProjectDialogProps) {
   const [form, setForm] = useState<ProjectFormType>(emptyProject);
   const projectNameRef = useRef<HTMLInputElement>(null);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
+  const validationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     if (open) setForm(emptyProject);
   }, [open]);
+
+  useEffect(() => {
+    getDefaultProjectNumber();
+  }, [])
+
+  const getDefaultProjectNumber = async () => {
+    try {
+      const res = await fetch('/api/projects/next-number')
+
+      if (res.ok) {
+        const data = await res.json()
+        const defaultNumber = formatProjectNumberForDisplay(data.projectNumber);
+
+        setForm(prev => ({
+          ...prev, projectNumber: defaultNumber, defaultProjectNumber: data.projectNumber, sequence: data.sequence,
+          year: data.year
+        }))
+      }
+    } catch (error) {
+      console.error('Error fetching default project number:', error)
+    }
+  }
+
+  const validateField = (fieldName: string, value: any) => {
+    try {
+      const fieldSchema = projectValidationSchema.shape[fieldName as keyof typeof projectValidationSchema.shape]
+      if (fieldSchema) {
+        fieldSchema.parse(value)
+        setValidationErrors(prev => ({ ...prev, [fieldName]: '' }))
+      }
+    } catch (error) {
+      if (error instanceof z.ZodError && error.issues.length > 0) {
+        setValidationErrors(prev => ({ ...prev, [fieldName]: error.issues[0].message }))
+      }
+    }
+  }
+
+  const debouncedValidation = (fieldName: string, value: any) => {
+    if (validationTimeoutRef.current) {
+      clearTimeout(validationTimeoutRef.current)
+    }
+
+    validationTimeoutRef.current = setTimeout(() => {
+      validateField(fieldName, value)
+    }, 500)
+  }
+
 
   const updateField = (field: keyof ProjectFormType, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -75,15 +128,21 @@ export default function ProjectDialog({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
               <ProjectInput
                 ref={projectNameRef}
-                label="Project Name"
+                label="Project Name *"
                 value={form.name}
-                onChange={(v) => updateField("name", v)}
+                onChange={(v) => { updateField("name", v); debouncedValidation('name', v) }}
+                onBlur={(v) => validateField("name", v)}
+                error={validationErrors.name}
                 required
               />
               <ProjectInput
-                label="Project Number"
+                label="Project Number *"
                 value={form.projectNumber}
-                onChange={(v) => updateField("projectNumber", v)}
+                onChange={(v) => { updateField("projectNumber", v); debouncedValidation('projectNumber', v) }}
+
+                onBlur={(v) => validateField("projectNumber", v)}
+
+                error={validationErrors.projectNumber}
               />
               <ProjectInput
                 label="Start Date"
@@ -133,25 +192,31 @@ const ProjectInput = React.forwardRef<
     label: string;
     value: string;
     onChange: (value: string) => void;
+    onBlur?: (value: string) => void;
     className?: string;
     required?: boolean;
     type?: string;
+    error?: string;
   }
->(({ label, value, onChange, className = "", required = false, type = "text" }, ref) => {
+>(({ label, value, onChange, onBlur, className = "", required = false, type = "text", error }, ref) => {
   return (
     <div className={className}>
       <label className="block text-gray-500 mb-1">
         {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
       </label>
       <input
         ref={ref}
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full border px-3 py-2 rounded-md focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] focus:outline-none"
+        onBlur={(e) => onBlur?.(e.target.value)}
+        className={`w-full px-3 py-2 rounded-md border ${error ? "border-red-500 focus:ring-red-300" : "border-gray-300 focus:ring-[#31BCFF]/50"
+          } focus:ring-2 outline-none`}
         required={required}
       />
+      {error && (
+        <p className="mt-1 text-xs text-red-600">{error}</p>
+      )}
     </div>
   );
 });

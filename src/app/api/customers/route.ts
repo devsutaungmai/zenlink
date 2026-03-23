@@ -40,6 +40,7 @@ export async function GET(request: NextRequest) {
         deliveryAddressPostalAddress: true,
         department: true,
         contactPersons: {
+          where:{isPrimary: true},
           select: {
             id: true,
             name: true,

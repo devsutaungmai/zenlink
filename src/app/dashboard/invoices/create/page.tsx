@@ -141,7 +141,6 @@ export default function CreateInvoicePage() {
         showDiscount: true,
         showPaymentTerms: true,
         showDepartment: true,
-        showSeller: true,
         showContactPerson: true,
         showDeliveryAddress: true,
         showProject: true,
@@ -323,7 +322,6 @@ export default function CreateInvoicePage() {
                 showDiscount: settings.showDiscount,
                 showPaymentTerms: settings.showPaymentTerms,
                 showDepartment: settings.showDepartment,
-                showSeller: settings.showSeller,
                 showContactPerson: settings.showContactPerson,
                 showDeliveryAddress: settings.showDeliveryAddress,
                 showProject: settings.showProject,
@@ -768,7 +766,7 @@ export default function CreateInvoicePage() {
                             {visibleFields.showContactPerson && (
                                 <div className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] min-w-[250px]">
                                     <label htmlFor="contactPersonId" className="block text-sm font-medium text-gray-700 mb-2">
-                                        Contact Name *
+                                        Contact Name
                                     </label>
                                     <select
                                         id="contactPersonId"
@@ -822,7 +820,7 @@ export default function CreateInvoicePage() {
                             {visibleFields.showProject && (
                                 <div className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] min-w-[250px]">
                                     <label htmlFor="projectId" className="block text-sm font-medium text-gray-700 mb-2">
-                                        Project *
+                                        Project
                                     </label>
                                     <select
                                         id="projectId"
@@ -843,7 +841,7 @@ export default function CreateInvoicePage() {
                             {visibleFields.showDepartment && (
                                 <div className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] min-w-[250px]">
                                     <label htmlFor="departmentId" className="block text-sm font-medium text-gray-700 mb-2">
-                                        Department *
+                                        Department
                                     </label>
                                     <select
                                         id="departmentId"
@@ -864,7 +862,7 @@ export default function CreateInvoicePage() {
                             {visibleFields.showDeliveryAddress && (
                                 <div className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] min-w-[250px]">
                                     <label htmlFor="deliveryAddress" className="block text-sm font-medium text-gray-700 mb-2">
-                                        Delivery Address *
+                                        Delivery Address
                                     </label>
                                     <input
                                         type="text"
@@ -878,7 +876,7 @@ export default function CreateInvoicePage() {
                             )}
                         </div>
                     </div>
-                    {visibleFields.showSeller && <div className="bg-gradient-to-br rounded-xl border p-6">
+                    {/* {visibleFields.showSeller && <div className="bg-gradient-to-br rounded-xl border p-6">
                         <h2 className="text-lg font-semibold text-gray-900 mb-4">Seller Information</h2>
 
                         <div className="grid grid-cols-1 md:grid-cols-1 gap-6 mb-6">
@@ -899,11 +897,11 @@ export default function CreateInvoicePage() {
                                 />
                             </div>
                         </div>
-                    </div>}
+                    </div>} */}
 
                     <div className="bg-gradient-to-br rounded-xl border p-6">
                         <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-lg font-semibold text-gray-900 mb-4">Order Lines</h2>
+                            <h2 className="text-lg font-semibold text-gray-900 mb-4">Order Lines *</h2>
                             {!overviewMode && <button
                                 type="button"
                                 onClick={handleNewOrderLine}

@@ -19,12 +19,14 @@ import { ColumnVisibilityToggle } from "@/components/invoice/column-visibility-t
 import { Switch } from "@/components/ui/switch"
 import { useResizableColumns } from "@/hooks/use-resizable-columns"
 import { ResizeHandle } from "@/components/invoice/resize-handle"
+import { CustomerContact } from "./create/page"
 
 interface Customer {
   id: string
   active: boolean
   customerNumber: string
   customerName: string
+  contactPersons: CustomerContact[]
   organizationNumber?: string | null
   address?: string | null
   postalCode?: string | null
@@ -50,6 +52,7 @@ export default function CustomersPage() {
   const COLUMNS = [
     { key: "customerNumber", label: "Customer Number" },
     { key: "customerName", label: "Customer Name" },
+    {key: "contactPersons",label: "Customer Contact"},
     { key: "email", label: "Email" },
     { key: "phoneNumber", label: "Phone" },
     { key: "address", label: "Address" },
@@ -67,6 +70,7 @@ export default function CustomersPage() {
     defaultVisibility: {
       customerNumber: true,
       customerName: true,
+      contactPersons: true,
       email: true,
       phoneNumber: true,
       address: true,
@@ -217,6 +221,7 @@ export default function CustomersPage() {
   const RESIZABLE_COLUMNS = [
     { key: "customerNumber", initialWidth: 120, minWidth: 80 },
     { key: "customerName", initialWidth: 220, minWidth: 120 },
+    { key: "contactPersons", initialWidth: 220, minWidth: 120 },
     { key: "email", initialWidth: 180, minWidth: 120 },
     { key: "phoneNumber", initialWidth: 140, minWidth: 100 },
     { key: "address", initialWidth: 200, minWidth: 120 },
@@ -347,6 +352,9 @@ export default function CustomersPage() {
                   {isColumnVisible("customerName") && (
                     <col style={{ width: getColumnWidth("customerName") }} />
                   )}
+                  {isColumnVisible("contactPersons") && (
+                    <col style={{ width: getColumnWidth("contactPersons") }} />
+                  )}
                   {isColumnVisible("email") && (
                     <col style={{ width: getColumnWidth("email") }} />
                   )}
@@ -386,6 +394,13 @@ export default function CustomersPage() {
                       <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
                         Customer Name
                         <ResizeHandle onMouseDown={onMouseDown("customerName")} />
+                      </th>
+                    )}
+
+                    {isColumnVisible("contactPersons") && (
+                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
+                        Customer Contact
+                        <ResizeHandle onMouseDown={onMouseDown("contactPersons")} />
                       </th>
                     )}
 
@@ -480,6 +495,17 @@ export default function CustomersPage() {
                             title="Edit Customer"
                           >
                             <span className="text-sm font-medium text-blue-600 hover:underline">{customer.customerName}</span>
+                          </Link>
+                        </td>
+                      )}
+
+                      {isColumnVisible("contactPersons") && (
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <Link
+                            href={`/dashboard/customers/${customer.id}/edit`}
+                            title="Edit Customer"
+                          >
+                            <span className="text-sm font-medium text-blue-600 hover:underline">{customer.contactPersons?.[0]?.name || "-"}</span>
                           </Link>
                         </td>
                       )}

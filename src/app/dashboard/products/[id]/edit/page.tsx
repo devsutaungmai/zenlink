@@ -363,7 +363,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                             {visibleFields.showSalesPrice && (
                                 <div className="grow basis-[calc(20%-12px)] min-w-[150px]">
                                     <label htmlFor="salesPrice" className="block text-sm font-medium text-gray-700 mb-2">
-                                        Sales Price *
+                                        Sales Price
                                     </label>
                                     <input
                                         type="number"
@@ -379,7 +379,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                             {visibleFields.showCostPrice && (
                                 <div className="grow basis-[calc(20%-12px)] min-w-[150px]">
                                     <label htmlFor="costPrice" className="block text-sm font-medium text-gray-700 mb-2">
-                                        Cost Price *
+                                        Cost Price
                                     </label>
                                     <input
                                         type="number"
@@ -413,7 +413,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                             {visibleFields.showUnit && (
                                 <div className="grow basis-[calc(20%-12px)] min-w-[150px]">
                                     <label htmlFor="unitId" className="block text-sm font-medium text-gray-700 mb-2">
-                                        Unit *
+                                        Unit
                                     </label>
                                     <select
                                         id="unitId"
@@ -434,7 +434,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                             {visibleFields.showProductGroup && (
                                 <div className="grow basis-[calc(20%-12px)] min-w-[150px]">
                                     <label htmlFor="productGroupId" className="block text-sm font-medium text-gray-700 mb-2">
-                                        Product Group *
+                                        Product Group
                                     </label>
                                     <select
                                         id="productGroupId"
@@ -456,7 +456,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                         {/* Sales Account - always visible */}
                         <div className='mt-4'>
                             <label htmlFor="ledgerAccountId" className="block text-sm font-medium text-gray-700 mb-2">
-                                Ledger Account *
+                                Ledger Account
                             </label>
                             <select
                                 id="ledgerAccountId"

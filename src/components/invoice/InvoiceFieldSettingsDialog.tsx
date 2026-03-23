@@ -9,7 +9,6 @@ interface InvoiceFieldSettings {
     showDiscount: boolean
     showPaymentTerms: boolean
     showDepartment: boolean
-    showSeller: boolean
     showContactPerson: boolean
     showDeliveryAddress: boolean
     showProject: boolean
@@ -134,7 +133,7 @@ export function InvoiceFieldSettingsDialog({
                     </label>
                 </div>
 
-                <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                {/* <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
                     <input
                         type="checkbox"
                         id="showSeller"
@@ -147,7 +146,7 @@ export function InvoiceFieldSettingsDialog({
                     <label htmlFor="showSeller" className="text-base font-medium cursor-pointer flex-1">
                         Seller
                     </label>
-                </div>
+                </div> */}
 
                 <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
                     <input
