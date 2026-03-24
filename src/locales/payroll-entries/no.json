@@ -5,6 +5,7 @@
   "create_first_entry": "Opprett Første Oppføring",
   "search_placeholder": "Søk etter medarbeidernavn, nummer eller periode...",
   "filters": {
+    "title": "Filtre",
     "all_status": "Alle statuser",
     "all_periods": "Alle Perioder"
   },
@@ -15,7 +16,15 @@
   },
   "table": {
     "employee": "Medarbeider",
+    "first_name": "Fornavn",
+    "last_name": "Etternavn",
     "period": "Periode",
+    "period_dates": "Periodedatoer",
+    "tax_id": "Skatte-ID",
+    "employee_group_name": "Medarbeidergruppenavn",
+    "total_worked_hours_excl_breaks": "Totale arbeidstimer (ekskl. pauser)",
+    "avg_hourly_wage": "Gj.sn. timelønn",
+    "salary_amount": "Lønnsbeløp",
     "hours": "Timer",
     "gross_pay": "Bruttolønn",
     "net_pay": "Nettolønn",
@@ -26,13 +35,25 @@
   },
   "actions": {
     "view_entry": "Vis Oppføring",
+    "view": "Vis",
     "edit_entry": "Rediger Oppføring",
     "download_payslip": "Last ned PDF Lønnslipp",
+    "pdf": "PDF",
     "delete_entry": "Slett Oppføring",
     "export_excel": "Eksporter til Excel",
+    "export_short": "Eksporter",
     "generate_entries": "Generer oppføringer",
     "generate_entries_short": "Generer",
     "generate_entries_tooltip": "Generer lønnsoppføringer fra fraværsdata"
+  },
+  "bulk": {
+    "one_selected": "1 oppføring valgt",
+    "many_selected": "{{count}} oppføringer valgt",
+    "approve_selected": "Godkjenn valgte",
+    "approve": "Godkjenn",
+    "change_status": "Endre status",
+    "clear_selection": "Fjern valg",
+    "clear": "Fjern"
   },
   "export_excel": "Eksporter Excel",
   "pagination": {

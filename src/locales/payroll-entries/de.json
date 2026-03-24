@@ -5,6 +5,7 @@
   "create_first_entry": "Ersten Eintrag Erstellen",
   "search_placeholder": "Nach Mitarbeitername, Nummer oder Periode suchen...",
   "filters": {
+    "title": "Filter",
     "all_status": "Alle Status",
     "all_periods": "Alle Perioden"
   },
@@ -15,7 +16,15 @@
   },
   "table": {
     "employee": "Mitarbeiter",
+    "first_name": "Vorname",
+    "last_name": "Nachname",
     "period": "Periode",
+    "period_dates": "Periodendaten",
+    "tax_id": "Steuer-ID",
+    "employee_group_name": "Mitarbeitergruppenname",
+    "total_worked_hours_excl_breaks": "Gesamtarbeitsstunden (ohne Pausen)",
+    "avg_hourly_wage": "Durchschn. Stundenlohn",
+    "salary_amount": "Lohnbetrag",
     "hours": "Stunden",
     "gross_pay": "Bruttolohn",
     "net_pay": "Nettolohn",
@@ -26,10 +35,25 @@
   },
   "actions": {
     "view_entry": "Eintrag Anzeigen",
+    "view": "Anzeigen",
     "edit_entry": "Eintrag Bearbeiten",
     "download_payslip": "PDF Lohnzettel Herunterladen",
+    "pdf": "PDF",
     "delete_entry": "Eintrag Löschen",
-    "export_excel": "Nach Excel Exportieren"
+    "export_excel": "Nach Excel Exportieren",
+    "export_short": "Export",
+    "generate_entries": "Einträge generieren",
+    "generate_entries_short": "Generieren",
+    "generate_entries_tooltip": "Lohneinträge aus Anwesenheitsdaten generieren"
+  },
+  "bulk": {
+    "one_selected": "1 Eintrag ausgewählt",
+    "many_selected": "{{count}} Einträge ausgewählt",
+    "approve_selected": "Auswahl genehmigen",
+    "approve": "Genehmigen",
+    "change_status": "Status ändern",
+    "clear_selection": "Auswahl löschen",
+    "clear": "Löschen"
   },
   "export_excel": "Excel exportieren",
   "generate_entries": "Einträge generieren",

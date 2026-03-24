@@ -63,8 +63,9 @@ export function createEmployeeValidationSchema(settings: EmployeeSettingsForVali
         const today = new Date()
         const hundredYearsAgo = new Date(today.getFullYear() - 100, today.getMonth(), today.getDate())
         const eighteenYearsAgo = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate())
-        return actualDate >= hundredYearsAgo && actualDate <= eighteenYearsAgo
-      }, 'Employee must be between 18 and 100 years old')
+        const fourteenYearsAgo = new Date(today.getFullYear() - 14, today.getMonth(), today.getDate())
+        return actualDate >= hundredYearsAgo && actualDate <= fourteenYearsAgo
+      }, 'Employee must be between 14 and 100 years old')
     : z.union([z.date(), z.string(), z.null()]).optional().nullable(),
   
   sex: settings.requireGender

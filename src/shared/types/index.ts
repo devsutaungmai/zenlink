@@ -108,6 +108,18 @@ export interface PayrollEntry {
     lastName: string
     employeeNo?: string
     email?: string
+    employeeGroup?: {
+      id: string
+      name: string
+    } | null
+    employeeGroups?: Array<{
+      employeeGroupId: string
+      isPrimary: boolean
+      employeeGroup: {
+        id: string
+        name: string
+      }
+    }>
   }
   payrollPeriod: {
     id: string

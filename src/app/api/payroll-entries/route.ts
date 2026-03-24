@@ -45,6 +45,27 @@ export async function GET(request: NextRequest) {
               lastName: true,
               employeeNo: true,
               email: true,
+              employeeGroup: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+              employeeGroups: {
+                select: {
+                  employeeGroupId: true,
+                  isPrimary: true,
+                  employeeGroup: {
+                    select: {
+                      id: true,
+                      name: true,
+                    },
+                  },
+                },
+                orderBy: {
+                  isPrimary: 'desc',
+                },
+              },
             },
           },
           payrollPeriod: {
@@ -180,6 +201,27 @@ export async function POST(request: NextRequest) {
             lastName: true,
             employeeNo: true,
             email: true,
+            employeeGroup: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+            employeeGroups: {
+              select: {
+                employeeGroupId: true,
+                isPrimary: true,
+                employeeGroup: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
+              },
+              orderBy: {
+                isPrimary: 'desc',
+              },
+            },
           },
         },
         payrollPeriod: {

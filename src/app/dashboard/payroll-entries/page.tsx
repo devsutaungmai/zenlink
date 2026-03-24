@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, type ReactNode } from 'react'
 import Link from 'next/link'
 import { useTranslation } from 'react-i18next'
 import { PayrollSkeleton } from '@/components/skeletons/CommonSkeletons'
@@ -8,12 +8,14 @@ import { PayrollEntry, PayrollPeriod } from '@/shared/types'
 import { 
   PlusIcon,
   MagnifyingGlassIcon,
-  PencilIcon,
-  TrashIcon,
   EyeIcon,
+  TrashIcon,
   DocumentArrowDownIcon,
   TableCellsIcon,
-  DocumentTextIcon
+  DocumentTextIcon,
+  FunnelIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
 } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
 import { downloadBlob } from '@/shared/utils/download'
@@ -143,7 +145,7 @@ export default function PayrollEntriesPage() {
 
         if (response.ok) {
           setEntries(prev => prev.filter(entry => entry.id !== id))
-          
+
           await Swal.fire({
             title: 'Deleted!',
             text: t('success.deleted'),
@@ -465,6 +467,112 @@ export default function PayrollEntriesPage() {
     )
   }
 
+  const getTotalWorkedHours = (entry: PayrollEntry) => {
+    return entry.regularHours + entry.overtimeHours
+  }
+
+  const getSalaryAmount = (entry: PayrollEntry) => {
+    return entry.grossPay
+  }
+
+  const getAverageHourlyWage = (entry: PayrollEntry) => {
+    const salaryAmount = getSalaryAmount(entry)
+    if (salaryAmount === 0) {
+      return 0
+    }
+    return getTotalWorkedHours(entry) / salaryAmount
+  }
+
+  const getEmployeeGroupName = (entry: PayrollEntry) => {
+    const primaryGroup = entry.employee.employeeGroups?.find(group => group.isPrimary)?.employeeGroup
+    const fallbackGroup = entry.employee.employeeGroups?.[0]?.employeeGroup
+    return primaryGroup?.name || fallbackGroup?.name || entry.employee.employeeGroup?.name || '-'
+  }
+
+  const sortedPeriods = useMemo(
+    () => [...periods].sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime()),
+    [periods]
+  )
+
+  const currentPeriodIndex = sortedPeriods.findIndex((period) => period.id === periodFilter)
+  const selectedPeriod = currentPeriodIndex >= 0 ? sortedPeriods[currentPeriodIndex] : null
+
+  const canGoPrevPeriod = periodFilter === 'all'
+    ? sortedPeriods.length > 0
+    : currentPeriodIndex > 0
+
+  const canGoNextPeriod = periodFilter === 'all'
+    ? sortedPeriods.length > 0
+    : currentPeriodIndex >= 0 && currentPeriodIndex < sortedPeriods.length - 1
+
+  const periodLabel = selectedPeriod
+    ? `${new Date(selectedPeriod.startDate).toLocaleDateString()} - ${new Date(selectedPeriod.endDate).toLocaleDateString()}`
+    : t('filters.all_periods')
+
+  const goToPrevPeriod = () => {
+    if (sortedPeriods.length === 0) return
+    if (periodFilter === 'all') {
+      setPeriodFilter(sortedPeriods[sortedPeriods.length - 1].id)
+      return
+    }
+    if (currentPeriodIndex > 0) {
+      setPeriodFilter(sortedPeriods[currentPeriodIndex - 1].id)
+    }
+  }
+
+  const goToNextPeriod = () => {
+    if (sortedPeriods.length === 0) return
+    if (periodFilter === 'all') {
+      setPeriodFilter(sortedPeriods[0].id)
+      return
+    }
+    if (currentPeriodIndex >= 0 && currentPeriodIndex < sortedPeriods.length - 1) {
+      setPeriodFilter(sortedPeriods[currentPeriodIndex + 1].id)
+    }
+  }
+
+  const listColumns: Array<{
+    key: string
+    label: string
+    render: (entry: PayrollEntry) => ReactNode
+  }> = [
+    {
+      key: 'first_name',
+      label: t('table.first_name'),
+      render: (entry) => entry.employee.firstName,
+    },
+    {
+      key: 'last_name',
+      label: t('table.last_name'),
+      render: (entry) => entry.employee.lastName,
+    },
+    {
+      key: 'period_dates',
+      label: t('table.period_dates'),
+      render: (entry) => `${new Date(entry.payrollPeriod.startDate).toLocaleDateString()} - ${new Date(entry.payrollPeriod.endDate).toLocaleDateString()}`,
+    },
+    {
+      key: 'employee_group_name',
+      label: t('table.employee_group_name'),
+      render: (entry) => getEmployeeGroupName(entry),
+    },
+    {
+      key: 'total_worked_hours_excl_breaks',
+      label: t('table.total_worked_hours_excl_breaks'),
+      render: (entry) => getTotalWorkedHours(entry).toFixed(2),
+    },
+    {
+      key: 'avg_hourly_wage',
+      label: t('table.avg_hourly_wage'),
+      render: (entry) => getAverageHourlyWage(entry).toFixed(2),
+    },
+    {
+      key: 'salary_amount',
+      label: t('table.salary_amount'),
+      render: (entry) => getSalaryAmount(entry).toFixed(2),
+    },
+  ]
+
   const filteredEntries = entries.filter(entry =>
     `${entry.employee.firstName} ${entry.employee.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
     entry.employee.employeeNo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -501,7 +609,7 @@ export default function PayrollEntriesPage() {
             >
               <TableCellsIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
               <span className="hidden sm:inline">{t('export_excel')}</span>
-              <span className="sm:hidden">Export</span>
+              <span className="sm:hidden">{t('actions.export_short')}</span>
             </button>
             <Link
               href="/dashboard/payroll-entries/generate"
@@ -525,7 +633,15 @@ export default function PayrollEntriesPage() {
 
       {/* Search and Filters */}
       <div className="bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-200/50 shadow-lg">
-        <div className="flex flex-col gap-3 sm:gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-3 sm:gap-4">
+          <button
+            type="button"
+            className="inline-flex items-center justify-center px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl border border-gray-300 bg-white text-gray-700 text-sm sm:text-base font-medium"
+          >
+            <FunnelIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+            {t('filters.title')}
+          </button>
+
           <div className="relative flex-1">
             <MagnifyingGlassIcon className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
             <input
@@ -536,29 +652,40 @@ export default function PayrollEntriesPage() {
               className="block w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 text-sm sm:text-base rounded-lg sm:rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
             />
           </div>
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full sm:w-auto px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base rounded-lg sm:rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-            >
-              <option value="all">{t('filters.all_status')}</option>
-              <option value="DRAFT">{t('status.draft')}</option>
-              <option value="APPROVED">{t('status.approved')}</option>
-              <option value="PAID">{t('status.paid')}</option>
-            </select>
-            <select
-              value={periodFilter}
-              onChange={(e) => setPeriodFilter(e.target.value)}
-              className="w-full sm:w-auto px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base rounded-lg sm:rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-            >
-              <option value="all">{t('filters.all_periods')}</option>
-              {periods.map((period) => (
-                <option key={period.id} value={period.id}>
-                  {period.name}
-                </option>
-              ))}
-            </select>
+
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="w-full lg:w-auto px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base rounded-lg sm:rounded-xl border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+          >
+            <option value="all">{t('filters.all_status')}</option>
+            <option value="DRAFT">{t('status.draft')}</option>
+            <option value="APPROVED">{t('status.approved')}</option>
+            <option value="PAID">{t('status.paid')}</option>
+          </select>
+
+          <div className="w-full lg:w-auto inline-flex items-center justify-between gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl border border-gray-300 bg-white text-gray-900">
+            <span className="text-sm sm:text-base whitespace-nowrap">{periodLabel}</span>
+            <div className="inline-flex items-center gap-1">
+              <button
+                type="button"
+                onClick={goToPrevPeriod}
+                disabled={!canGoPrevPeriod}
+                aria-label={t('pagination.previous')}
+                className="p-1 rounded hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <ChevronLeftIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+              </button>
+              <button
+                type="button"
+                onClick={goToNextPeriod}
+                disabled={!canGoNextPeriod}
+                aria-label={t('pagination.next')}
+                className="p-1 rounded hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <ChevronRightIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+              </button>
+            </div>
           </div>
         </div>
         <div className="flex items-center justify-between mt-3 sm:mt-4 text-xs sm:text-sm text-gray-500">
@@ -570,28 +697,30 @@ export default function PayrollEntriesPage() {
           <div className="mt-3 sm:mt-4 p-3 sm:p-4 bg-blue-50 rounded-lg border border-blue-200">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <span className="text-xs sm:text-sm font-medium text-blue-900">
-                {selectedEntries.length} {selectedEntries.length === 1 ? 'entry' : 'entries'} selected
+                {selectedEntries.length === 1
+                  ? t('bulk.one_selected')
+                  : t('bulk.many_selected', { count: selectedEntries.length })}
               </span>
               <div className="flex flex-col sm:flex-row gap-2">
                 <button
                   onClick={handleBulkApprove}
                   className="px-3 sm:px-4 py-2 bg-green-600 text-white text-xs sm:text-sm rounded-lg hover:bg-green-700 font-medium transition-colors"
                 >
-                  <span className="hidden sm:inline">Approve Selected</span>
-                  <span className="sm:hidden">Approve</span>
+                  <span className="hidden sm:inline">{t('bulk.approve_selected')}</span>
+                  <span className="sm:hidden">{t('bulk.approve')}</span>
                 </button>
                 <button
                   onClick={handleBulkStatusChange}
                   className="px-3 sm:px-4 py-2 bg-[#31BCFF] text-white text-xs sm:text-sm rounded-lg hover:bg-[#31BCFF]/90 font-medium transition-colors"
                 >
-                  Change Status
+                  {t('bulk.change_status')}
                 </button>
                 <button
                   onClick={() => setSelectedEntries([])}
                   className="px-3 sm:px-4 py-2 bg-gray-200 text-gray-700 text-xs sm:text-sm rounded-lg hover:bg-gray-300 font-medium transition-colors"
                 >
-                  <span className="hidden sm:inline">Clear Selection</span>
-                  <span className="sm:hidden">Clear</span>
+                  <span className="hidden sm:inline">{t('bulk.clear_selection')}</span>
+                  <span className="sm:hidden">{t('bulk.clear')}</span>
                 </button>
               </div>
             </div>
@@ -635,21 +764,11 @@ export default function PayrollEntriesPage() {
                         className="rounded border-gray-300 text-[#31BCFF] focus:ring-[#31BCFF] h-4 w-4"
                       />
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      {t('table.employee')}
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      {t('table.period')}
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      {t('table.hours')}
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      {t('table.gross_pay')}
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      {t('table.net_pay')}
-                    </th>
+                    {listColumns.map((column) => (
+                      <th key={column.key} className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        {column.label}
+                      </th>
+                    ))}
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       {t('table.status')}
                     </th>
@@ -669,42 +788,11 @@ export default function PayrollEntriesPage() {
                           className="rounded border-gray-300 text-[#31BCFF] focus:ring-[#31BCFF] h-4 w-4"
                         />
                       </td>
-                      <td className="px-6 py-4">
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">
-                            {entry.employee.firstName} {entry.employee.lastName}
-                          </div>
-                          {entry.employee.employeeNo && (
-                            <div className="text-sm text-gray-500">
-                              #{entry.employee.employeeNo}
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900">{entry.payrollPeriod.name}</div>
-                        <div className="text-sm text-gray-500">
-                          {new Date(entry.payrollPeriod.startDate).toLocaleDateString()} - {new Date(entry.payrollPeriod.endDate).toLocaleDateString()}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900">
-                          {t('table.regular')}: {entry.regularHours}h
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {t('table.overtime')}: {entry.overtimeHours}h
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm font-medium text-gray-900">
-                          ${entry.grossPay.toFixed(2)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm font-medium text-green-600">
-                          ${entry.netPay.toFixed(2)}
-                        </div>
-                      </td>
+                      {listColumns.map((column) => (
+                        <td key={column.key} className="px-6 py-4">
+                          <div className="text-sm font-medium text-gray-900">{column.render(entry)}</div>
+                        </td>
+                      ))}
                       <td className="px-6 py-4">
                         {getStatusBadge(entry.status)}
                       </td>
@@ -716,13 +804,6 @@ export default function PayrollEntriesPage() {
                             title={t('actions.view_entry')}
                           >
                             <EyeIcon className="h-4 w-4" />
-                          </Link>
-                          <Link
-                            href={`/dashboard/payroll-entries/${entry.id}/edit`}
-                            className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
-                            title={t('actions.edit_entry')}
-                          >
-                            <PencilIcon className="h-4 w-4" />
                           </Link>
                           <button
                             onClick={() => handleExportPayslip(entry.id, `${entry.employee.firstName} ${entry.employee.lastName}`)}
@@ -802,31 +883,24 @@ export default function PayrollEntriesPage() {
                   </div>
 
                   <div className="space-y-2 mb-3">
+                    {listColumns.map((column) => {
+                      const isSalary = column.key === 'salary_amount'
+                      const needsRightAlign = column.key === 'period_dates' || column.key === 'employee_group_name'
+                      return (
+                        <div
+                          key={column.key}
+                          className={`flex justify-between text-xs ${isSalary ? 'pt-2 border-t border-gray-200' : ''}`}
+                        >
+                          <span className="text-gray-500">{column.label}</span>
+                          <span className={`text-gray-900 ${isSalary ? 'font-semibold' : 'font-medium'} ${needsRightAlign ? 'text-right' : ''}`}>
+                            {column.render(entry)}
+                          </span>
+                        </div>
+                      )
+                    })}
                     <div className="flex justify-between text-xs">
-                      <span className="text-gray-500">{t('table.period')}</span>
-                      <span className="text-gray-900 font-medium text-right">{entry.payrollPeriod.name}</span>
-                    </div>
-                    <div className="flex justify-between text-xs">
-                      <span className="text-gray-500">Date Range</span>
-                      <span className="text-gray-900 text-right text-[10px]">
-                        {new Date(entry.payrollPeriod.startDate).toLocaleDateString()} - {new Date(entry.payrollPeriod.endDate).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-xs">
-                      <span className="text-gray-500">{t('table.regular')}</span>
-                      <span className="text-gray-900 font-medium">{entry.regularHours}h</span>
-                    </div>
-                    <div className="flex justify-between text-xs">
-                      <span className="text-gray-500">{t('table.overtime')}</span>
-                      <span className="text-gray-900 font-medium">{entry.overtimeHours}h</span>
-                    </div>
-                    <div className="flex justify-between text-xs pt-2 border-t border-gray-200">
-                      <span className="text-gray-500">{t('table.gross_pay')}</span>
-                      <span className="text-gray-900 font-semibold">${entry.grossPay.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-xs">
-                      <span className="text-gray-500">{t('table.net_pay')}</span>
-                      <span className="text-green-600 font-semibold">${entry.netPay.toFixed(2)}</span>
+                      <span className="text-gray-500">{t('table.status')}</span>
+                      <span>{getStatusBadge(entry.status)}</span>
                     </div>
                   </div>
 
@@ -836,21 +910,14 @@ export default function PayrollEntriesPage() {
                       className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                     >
                       <EyeIcon className="h-3.5 w-3.5" />
-                      View
-                    </Link>
-                    <Link
-                      href={`/dashboard/payroll-entries/${entry.id}/edit`}
-                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium text-[#31BCFF] bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
-                    >
-                      <PencilIcon className="h-3.5 w-3.5" />
-                      Edit
+                      {t('actions.view')}
                     </Link>
                     <button
                       onClick={() => handleExportPayslip(entry.id, `${entry.employee.firstName} ${entry.employee.lastName}`)}
                       className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium text-green-600 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
                     >
                       <DocumentArrowDownIcon className="h-3.5 w-3.5" />
-                      PDF
+                      {t('actions.pdf')}
                     </button>
                     {entry.status === 'DRAFT' && (
                       <button

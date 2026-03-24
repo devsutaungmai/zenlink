@@ -5,6 +5,7 @@
   "create_first_entry": "Create First Entry",
   "search_placeholder": "Search by employee name, number, or period...",
   "filters": {
+    "title": "Filters",
     "all_status": "All Status",
     "all_periods": "All Periods"
   },
@@ -15,7 +16,15 @@
   },
   "table": {
     "employee": "Employee",
+    "first_name": "First Name",
+    "last_name": "Last Name",
     "period": "Period",
+    "period_dates": "Period Dates",
+    "tax_id": "Tax ID",
+    "employee_group_name": "Employee Group Name",
+    "total_worked_hours_excl_breaks": "Total worked hours (excl. breaks)",
+    "avg_hourly_wage": "Avg. hourly wage",
+    "salary_amount": "Salary amount",
     "hours": "Hours",
     "gross_pay": "Gross Pay",
     "net_pay": "Net Pay",
@@ -26,13 +35,25 @@
   },
   "actions": {
     "view_entry": "View Entry",
+    "view": "View",
     "edit_entry": "Edit Entry",
     "download_payslip": "Download PDF Payslip",
+    "pdf": "PDF",
     "delete_entry": "Delete Entry",
     "export_excel": "Export to Excel",
+    "export_short": "Export",
     "generate_entries": "Generate Entries",
     "generate_entries_short": "Generate",
     "generate_entries_tooltip": "Generate payroll entries from attendance data"
+  },
+  "bulk": {
+    "one_selected": "1 entry selected",
+    "many_selected": "{{count}} entries selected",
+    "approve_selected": "Approve Selected",
+    "approve": "Approve",
+    "change_status": "Change Status",
+    "clear_selection": "Clear Selection",
+    "clear": "Clear"
   },
   "export_excel": "Export to Excel",
   "pagination": {

@@ -49,7 +49,31 @@ export async function GET(request: NextRequest) {
     const payrollEntries = await prisma.payrollEntry.findMany({
       where: whereClause,
       include: {
-        employee: true,
+        employee: {
+          include: {
+            employeeGroup: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+            employeeGroups: {
+              select: {
+                employeeGroupId: true,
+                isPrimary: true,
+                employeeGroup: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
+              },
+              orderBy: {
+                isPrimary: 'desc',
+              },
+            },
+          },
+        },
         payrollPeriod: true,
       },
       orderBy: { createdAt: 'desc' },
@@ -59,18 +83,15 @@ export async function GET(request: NextRequest) {
     const worksheet = workbook.addWorksheet('Payroll Entries')
 
     worksheet.columns = [
-      { header: 'Employee Name', key: 'employeeName', width: 25 },
-      { header: 'Employee No', key: 'employeeNo', width: 15 },
-      { header: 'Payroll Period', key: 'period', width: 20 },
-      { header: 'Period Start Date', key: 'startDate', width: 15 },
-      { header: 'Period End Date', key: 'endDate', width: 15 },
-      { header: 'Regular Hours', key: 'regularHours', width: 12 },
-      { header: 'Overtime Hours', key: 'overtimeHours', width: 14 },
-      { header: 'Gross Pay', key: 'grossPay', width: 12 },
-      { header: 'Deductions', key: 'deductions', width: 12 },
-      { header: 'Net Pay', key: 'netPay', width: 12 },
+      { header: 'First name', key: 'firstName', width: 18 },
+      { header: 'Last Name', key: 'lastName', width: 18 },
+      { header: 'Period Dates', key: 'periodDates', width: 24 },
+      { header: 'Tax ID', key: 'taxId', width: 14 },
+      { header: 'Employee group name', key: 'employeeGroupName', width: 24 },
+      { header: 'Total worked hours (excl. breaks)', key: 'totalWorkedHours', width: 30 },
+      { header: 'Avg. hourly wage', key: 'avgHourlyWage', width: 16 },
+      { header: 'Salary amount', key: 'salaryAmount', width: 14 },
       { header: 'Status', key: 'status', width: 12 },
-      { header: 'Created Date', key: 'createdAt', width: 15 },
     ]
 
     const headerRow = worksheet.getRow(1)
@@ -83,19 +104,23 @@ export async function GET(request: NextRequest) {
     headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } }
 
     payrollEntries.forEach((entry) => {
+      const totalWorkedHours = (entry.regularHours ?? 0) + (entry.overtimeHours ?? 0)
+      const salaryAmount = entry.grossPay ?? 0
+      const avgHourlyWage = salaryAmount === 0 ? 0 : totalWorkedHours / salaryAmount
+      const primaryGroup = entry.employee.employeeGroups?.find(group => group.isPrimary)?.employeeGroup
+      const fallbackGroup = entry.employee.employeeGroups?.[0]?.employeeGroup
+      const employeeGroupName = primaryGroup?.name || fallbackGroup?.name || entry.employee.employeeGroup?.name || ''
+
       worksheet.addRow({
-        employeeName: `${entry.employee.firstName} ${entry.employee.lastName}`,
-        employeeNo: entry.employee.employeeNo || '',
-        period: entry.payrollPeriod.name,
-        startDate: new Date(entry.payrollPeriod.startDate).toLocaleDateString(),
-        endDate: new Date(entry.payrollPeriod.endDate).toLocaleDateString(),
-        regularHours: entry.regularHours,
-        overtimeHours: entry.overtimeHours,
-        grossPay: entry.grossPay,
-        deductions: entry.deductions,
-        netPay: entry.netPay,
+        firstName: entry.employee.firstName,
+        lastName: entry.employee.lastName,
+        periodDates: `${new Date(entry.payrollPeriod.startDate).toLocaleDateString()} - ${new Date(entry.payrollPeriod.endDate).toLocaleDateString()}`,
+        taxId: '',
+        employeeGroupName,
+        totalWorkedHours: Number(totalWorkedHours.toFixed(2)),
+        avgHourlyWage: Number(avgHourlyWage.toFixed(2)),
+        salaryAmount: Number(salaryAmount.toFixed(2)),
         status: entry.status,
-        createdAt: new Date(entry.createdAt).toLocaleDateString(),
       })
     })
 
