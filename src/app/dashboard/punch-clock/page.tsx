@@ -81,6 +81,11 @@ interface Shift {
   startTime: string
   endTime: string | null
   status: string
+  shiftType?: string
+  shiftTypeConfig?: {
+    id: string
+    name: string
+  } | null
   employeeGroup?: {
     name: string
   }
@@ -119,6 +124,11 @@ interface Attendance {
     endTime: string | null
     status: string
     approved?: boolean
+    shiftType?: string
+    shiftTypeConfig?: {
+      id: string
+      name: string
+    } | null
   }
 }
 
@@ -1405,6 +1415,9 @@ export default function PunchClockPage() {
                             <div className="text-sm text-gray-900">
                               {formatShiftTime(record.shift.startTime)} - {record.shift.endTime ? formatShiftTime(record.shift.endTime) : 'Active'}
                             </div>
+                            {record.shift.shiftTypeConfig && (
+                              <div className="text-xs text-purple-700 font-medium mt-0.5">{record.shift.shiftTypeConfig.name}</div>
+                            )}
                             <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${record.shift.status === 'WORKING' ? 'bg-green-100 text-green-800' :
                               record.shift.status === 'COMPLETED' ? 'bg-blue-100 text-blue-800' :
                                 'bg-gray-100 text-gray-800'
@@ -1549,8 +1562,13 @@ export default function PunchClockPage() {
                     <div className="text-xs text-gray-500 mb-1">{t('table.columns.shift_info')}</div>
                     {record.shift ? (
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                        <div className="text-sm font-medium text-gray-900">
-                          {formatShiftTime(record.shift.startTime)} - {record.shift.endTime ? formatShiftTime(record.shift.endTime) : 'Active'}
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {formatShiftTime(record.shift.startTime)} - {record.shift.endTime ? formatShiftTime(record.shift.endTime) : 'Active'}
+                          </div>
+                          {record.shift.shiftTypeConfig && (
+                            <div className="text-xs text-purple-700 font-medium mt-0.5">{record.shift.shiftTypeConfig.name}</div>
+                          )}
                         </div>
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${record.shift.status === 'WORKING' ? 'bg-green-100 text-green-800' :
                           record.shift.status === 'COMPLETED' ? 'bg-blue-100 text-blue-800' :
@@ -1774,8 +1792,17 @@ export default function PunchClockPage() {
                 <div className="text-sm text-gray-700">
                   {selectedCreateShift.date} — {selectedCreateShift.startTime} - {selectedCreateShift.endTime || 'Open'}
                 </div>
-                <div className="text-xs text-gray-500">
-                  {selectedCreateShift.employeeGroup?.name || selectedCreateShift.department?.name || ''}
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {selectedCreateShift.shiftTypeConfig && (
+                    <span className="text-xs bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-medium">
+                      {selectedCreateShift.shiftTypeConfig.name}
+                    </span>
+                  )}
+                  {(selectedCreateShift.employeeGroup?.name || selectedCreateShift.department?.name) && (
+                    <span className="text-xs text-gray-500">
+                      {selectedCreateShift.employeeGroup?.name || selectedCreateShift.department?.name}
+                    </span>
+                  )}
                 </div>
               </div>
             )}

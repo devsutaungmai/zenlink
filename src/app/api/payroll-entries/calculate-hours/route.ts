@@ -3,6 +3,7 @@ import { prisma } from '@/shared/lib/prisma'
 import { getCurrentUser } from '@/shared/lib/auth'
 import { payRulesEngine } from '@/shared/lib/pay-rules-engine'
 import { attendanceCalculator } from '@/shared/lib/attendance-calculator'
+import { calculateShiftTypeAdjustment } from '@/shared/lib/salary-calculator'
 
 export async function POST(req: NextRequest) {
   try {
@@ -89,6 +90,44 @@ export async function POST(req: NextRequest) {
           shiftDetails
         })
 
+        // Per-attendance pay calculation with shift type adjustments
+        const approvedDetails = attendanceCalculation.attendanceDetails
+          .filter(att => att.isApproved && att.punchOutTime)
+
+        const dateOvertimeMap = new Map<string, { regularHours: number; overtimeHours: number; totalHours: number }>()
+        for (const day of payCalculation.overtimeCalculations) {
+          const total = day.regularHours + day.overtimeHours
+          dateOvertimeMap.set(day.date, {
+            regularHours: day.regularHours,
+            overtimeHours: day.overtimeHours,
+            totalHours: total
+          })
+        }
+
+        const overtimeMultiplier = payCalculation.regularRate > 0
+          ? payCalculation.overtimeRate / payCalculation.regularRate
+          : 1.5
+
+        let adjustedGrossPay = 0
+        for (const att of approvedDetails) {
+          const dayInfo = dateOvertimeMap.get(att.date)
+          let attRegularHours = att.duration
+          let attOvertimeHours = 0
+
+          if (dayInfo && dayInfo.totalHours > 0) {
+            const regularRatio = dayInfo.regularHours / dayInfo.totalHours
+            const overtimeRatio = dayInfo.overtimeHours / dayInfo.totalHours
+            attRegularHours = att.duration * regularRatio
+            attOvertimeHours = att.duration * overtimeRatio
+          }
+
+          const shiftTypeConfig = att.shift?.shiftTypeConfig || null
+          const effectiveRegularRate = calculateShiftTypeAdjustment(payCalculation.regularRate, shiftTypeConfig as any)
+          const effectiveOvertimeRate = effectiveRegularRate * overtimeMultiplier
+
+          adjustedGrossPay += attRegularHours * effectiveRegularRate + attOvertimeHours * effectiveOvertimeRate
+        }
+
         const attendanceSummary = await attendanceCalculator.getAttendanceSummary(
           employeeId,
           payrollPeriodId
@@ -108,8 +147,8 @@ export async function POST(req: NextRequest) {
           attendanceSummary,
           appliedRules: payCalculation.appliedRules,
           overtimeCalculations: payCalculation.overtimeCalculations,
-          grossPay: payCalculation.grossPay,
-          netPay: payCalculation.netPay,
+          grossPay: adjustedGrossPay,
+          netPay: adjustedGrossPay,
           employee: {
             firstName: employee.firstName,
             lastName: employee.lastName,

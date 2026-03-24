@@ -23,6 +23,13 @@ interface AttendanceCalculationResult {
       id: string
       startTime: string
       endTime: string | null
+      shiftTypeId: string | null
+      shiftTypeConfig: {
+        id: string
+        name: string
+        payCalculationType: string
+        payCalculationValue: any
+      } | null
     }
   }>
   wageCalculationMethod: string
@@ -107,7 +114,16 @@ export class AttendanceBasedCalculator {
           select: {
             id: true,
             startTime: true,
-            endTime: true
+            endTime: true,
+            shiftTypeId: true,
+            shiftTypeConfig: {
+              select: {
+                id: true,
+                name: true,
+                payCalculationType: true,
+                payCalculationValue: true
+              }
+            }
           }
         }
       },
@@ -119,19 +135,7 @@ export class AttendanceBasedCalculator {
     let totalHours = 0
     let approvedHours = 0
     let unapprovedHours = 0
-    const attendanceDetails: Array<{
-      id: string
-      date: string
-      punchInTime: string
-      punchOutTime: string | null
-      duration: number
-      isApproved: boolean
-      shift?: {
-        id: string
-        startTime: string
-        endTime: string | null
-      }
-    }> = []
+    const attendanceDetails: AttendanceCalculationResult['attendanceDetails'] = []
 
     // Process each attendance record
     for (const attendance of attendances) {
@@ -156,14 +160,23 @@ export class AttendanceBasedCalculator {
       attendanceDetails.push({
         id: attendance.id,
         date: punchIn.toISOString().split('T')[0],
-        punchInTime: attendance.punchInTime,
-        punchOutTime: attendance.punchOutTime,
+        punchInTime: punchIn.toISOString(),
+        punchOutTime: punchOut.toISOString(),
         duration: Math.round(durationHours * 100) / 100,
         isApproved: attendance.approved,
         shift: attendance.shift ? {
           id: attendance.shift.id,
           startTime: attendance.shift.startTime,
-          endTime: attendance.shift.endTime
+          endTime: attendance.shift.endTime,
+          shiftTypeId: attendance.shift.shiftTypeId ?? null,
+          shiftTypeConfig: attendance.shift.shiftTypeConfig ? {
+            id: attendance.shift.shiftTypeConfig.id,
+            name: attendance.shift.shiftTypeConfig.name,
+            payCalculationType: attendance.shift.shiftTypeConfig.payCalculationType as string,
+            payCalculationValue: attendance.shift.shiftTypeConfig.payCalculationValue
+              ? Number(attendance.shift.shiftTypeConfig.payCalculationValue)
+              : null
+          } : null
         } : undefined
       })
     }

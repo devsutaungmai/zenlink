@@ -130,6 +130,9 @@ export async function GET(request: Request) {
           function: {
             select: { id: true, name: true, color: true }
           },
+          shiftTypeConfig: {
+            select: { id: true, name: true }
+          },
           shiftExchanges: {
             where: { status: { in: ['EMPLOYEE_PENDING', 'ADMIN_PENDING'] } },
             include: {
@@ -176,6 +179,9 @@ export async function GET(request: Request) {
           },
           function: {
             select: { id: true, name: true, color: true }
+          },
+          shiftTypeConfig: {
+            select: { id: true, name: true }
           },
           shiftExchanges: {
             where: { status: { in: ['EMPLOYEE_PENDING', 'ADMIN_PENDING'] } },

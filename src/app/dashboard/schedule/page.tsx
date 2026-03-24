@@ -2062,6 +2062,14 @@ export default function SchedulePage() {
                     </p>
                   </div>
                 </div>
+                {attendanceShift.shiftTypeConfig && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-gray-500">{t('create_attendance.shift_type', 'Shift Type')}:</span>
+                    <span className="bg-violet-100 text-violet-700 px-2 py-0.5 rounded text-xs font-medium">
+                      {attendanceShift.shiftTypeConfig.name}
+                    </span>
+                  </div>
+                )}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-sm font-medium">{t('create_attendance.punch_in')}</label>

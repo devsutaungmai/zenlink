@@ -197,11 +197,25 @@ export async function PUT(
       }
     }
     
+    const currentUser = await getCurrentUser()
+
     const shift = await prisma.shift.update({
       where: { id },
       data,
       include: shiftWithRelationsInclude
     })
+
+    if (rawData.approved !== undefined) {
+      const isApproved = Boolean(rawData.approved)
+      await prisma.attendance.updateMany({
+        where: { shiftId: id },
+        data: {
+          approved: isApproved,
+          approvedAt: isApproved ? new Date() : null,
+          approvedBy: isApproved ? (currentUser?.id ?? null) : null
+        }
+      })
+    }
     
     return NextResponse.json(shift)
   } catch (error:any) {
@@ -292,7 +306,28 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const shift = await prisma.shift.update({
       where: { id },
       data: updateData,
+      include: { attendances: { select: { id: true } } }
     })
+
+    if (action === 'approve' && shift.attendances.length > 0) {
+      await prisma.attendance.updateMany({
+        where: { shiftId: id },
+        data: {
+          approved: true,
+          approvedAt: new Date(),
+          approvedBy: currentUser?.id ?? null
+        }
+      })
+    } else if (action === 'unapprove' && shift.attendances.length > 0) {
+      await prisma.attendance.updateMany({
+        where: { shiftId: id },
+        data: {
+          approved: false,
+          approvedAt: null,
+          approvedBy: null
+        }
+      })
+    }
 
     return NextResponse.json(shift)
   } catch (error) {

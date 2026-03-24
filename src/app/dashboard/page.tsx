@@ -81,6 +81,10 @@ interface TodayShift {
     name: string
     color?: string | null
   } | null
+  shiftTypeConfig?: {
+    id: string
+    name: string
+  } | null
 }
 
 interface WeeklyShift {
@@ -1571,6 +1575,7 @@ export default function DashboardPage() {
               openShifts={openShifts}
               myShiftRequests={myShiftRequests}
               onRefresh={fetchEmployeeDashboardData}
+              employeeId={currentEmployee?.id}
             />
           </div>
         )}
