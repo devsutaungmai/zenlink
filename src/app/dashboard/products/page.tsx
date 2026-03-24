@@ -512,12 +512,13 @@ export default function ProductsPage() {
                     ))}
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2">
-                        <button
-                          className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
-                          title="Edit Product"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
+                        <Link
+                            href={`/dashboard/products/${product.id}/edit`}
+                            className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
+                            title="Edit Product"
+                          >
+                            <PencilIcon className="h-4 w-4" />
+                          </Link>
                         <button
                           onClick={() => handleDelete(product.id, product.productName)}
                           className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
