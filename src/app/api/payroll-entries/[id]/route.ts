@@ -1,6 +1,78 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/shared/lib/auth';
 import { prisma } from '@/shared/lib/prisma';
+import { calculateShiftTypeAdjustment, getBaseHourlyRate } from '@/shared/lib/salary-calculator';
+
+type PayCalculationType = 'BASE' | 'HOURLY_PLUS_FIXED' | 'FIXED_AMOUNT' | 'PERCENTAGE' | 'UNPAID'
+
+function allocateByWeight(total: number, weights: number[]): number[] {
+  if (weights.length === 0) return []
+
+  const totalUnits = Math.round(total * 100)
+  const safeWeights = weights.map((w) => (Number.isFinite(w) && w > 0 ? w : 0))
+  const weightSum = safeWeights.reduce((sum, w) => sum + w, 0)
+
+  if (weightSum <= 0) {
+    const evenBase = Math.floor(totalUnits / weights.length)
+    let remainder = totalUnits - evenBase * weights.length
+    return safeWeights.map(() => {
+      const unit = evenBase + (remainder > 0 ? 1 : 0)
+      if (remainder > 0) remainder -= 1
+      return unit / 100
+    })
+  }
+
+  const rawShares = safeWeights.map((w) => (totalUnits * w) / weightSum)
+  const floorUnits = rawShares.map((value) => Math.floor(value))
+  let remainder = totalUnits - floorUnits.reduce((sum, value) => sum + value, 0)
+
+  const indicesByRemainder = rawShares
+    .map((value, index) => ({ index, fraction: value - Math.floor(value) }))
+    .sort((a, b) => b.fraction - a.fraction)
+    .map((item) => item.index)
+
+  let pointer = 0
+  while (remainder > 0 && indicesByRemainder.length > 0) {
+    const idx = indicesByRemainder[pointer % indicesByRemainder.length]
+    floorUnits[idx] += 1
+    remainder -= 1
+    pointer += 1
+  }
+
+  return floorUnits.map((units) => units / 100)
+}
+
+function formatAmount(value: number): string {
+  const rounded = Math.round(value * 100) / 100
+  if (Number.isInteger(rounded)) {
+    return String(rounded)
+  }
+  return rounded.toFixed(2)
+}
+
+function buildPayCalculationLabel(
+  payCalculationType: PayCalculationType,
+  payCalculationValue: number
+): string {
+  if (payCalculationType === 'BASE') {
+    return 'Pay Calculation: Hourly Wage'
+  }
+
+  const safeValue = Number.isFinite(payCalculationValue) ? payCalculationValue : 0
+
+  switch (payCalculationType) {
+    case 'HOURLY_PLUS_FIXED':
+      return `Pay Calculation: Hourly Wage + Fixed Amount ($${formatAmount(safeValue)})`
+    case 'FIXED_AMOUNT':
+      return `Pay Calculation: Fixed Amount ($${formatAmount(safeValue)})`
+    case 'PERCENTAGE':
+      return `Pay Calculation: Hourly Wage + ${formatAmount(safeValue)}%`
+    case 'UNPAID':
+      return 'Pay Calculation: Unpaid'
+    default:
+      return 'Pay Calculation: Hourly Wage'
+  }
+}
 
 export async function GET(
   request: NextRequest,
@@ -29,6 +101,12 @@ export async function GET(
             lastName: true,
             employeeNo: true,
             email: true,
+            salaryRate: true,
+            employeeGroup: {
+              select: {
+                hourlyWage: true,
+              },
+            },
           },
         },
         payrollPeriod: {
@@ -50,7 +128,222 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(payrollEntry);
+    const periodStart = new Date(payrollEntry.payrollPeriod.startDate)
+    const periodEnd = new Date(payrollEntry.payrollPeriod.endDate)
+    periodEnd.setHours(23, 59, 59, 999)
+
+    const attendances = await prisma.attendance.findMany({
+      where: {
+        employeeId: payrollEntry.employeeId,
+        approved: true,
+        punchInTime: {
+          gte: periodStart,
+          lte: periodEnd,
+        },
+        punchOutTime: {
+          not: null,
+        },
+      },
+      include: {
+        shift: {
+          select: {
+            breakStart: true,
+            breakEnd: true,
+            breakPaid: true,
+            shiftTypeConfig: {
+              select: {
+                id: true,
+                name: true,
+                payCalculationType: true,
+                payCalculationValue: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        punchInTime: 'asc',
+      },
+    })
+
+    const inferredBaseRate = getBaseHourlyRate({
+      salaryRate: payrollEntry.employee.salaryRate,
+      employeeGroup: payrollEntry.employee.employeeGroup ? { hourlyWage: payrollEntry.employee.employeeGroup.hourlyWage } : null,
+    })
+    const baseSalaryRate = payrollEntry.regularRate > 0 ? payrollEntry.regularRate : inferredBaseRate
+
+    const attendanceRows: Array<{
+      date: string
+      workedHours: number
+      breakHours: number
+      shiftType: string
+      payCalculationType: PayCalculationType
+      payCalculationValue: number
+      payCalculationLabel: string
+      rawEarned: number
+    }> = []
+
+    for (const attendance of attendances) {
+      if (!attendance.punchOutTime) continue
+
+      let workedHours = (new Date(attendance.punchOutTime).getTime() - new Date(attendance.punchInTime).getTime()) / (1000 * 60 * 60)
+      let breakHours = 0
+
+      const breakStart = attendance.shift?.breakStart
+      const breakEnd = attendance.shift?.breakEnd
+      const breakPaid = attendance.shift?.breakPaid ?? false
+      if (breakStart && breakEnd && !breakPaid) {
+        breakHours = (new Date(breakEnd).getTime() - new Date(breakStart).getTime()) / (1000 * 60 * 60)
+      }
+
+      const safeWorkedHours = Number.isFinite(workedHours) && workedHours > 0 ? workedHours : 0
+      const date = new Date(attendance.punchInTime).toISOString().split('T')[0]
+      const shiftTypeName = attendance.shift?.shiftTypeConfig?.name || 'Normal Shift'
+      const payCalculationType = (attendance.shift?.shiftTypeConfig?.payCalculationType ?? 'BASE') as PayCalculationType
+      const payCalculationValueRaw = Number(attendance.shift?.shiftTypeConfig?.payCalculationValue ?? 0)
+      const payCalculationValue = Number.isFinite(payCalculationValueRaw) ? payCalculationValueRaw : 0
+      const payCalculationLabel = buildPayCalculationLabel(payCalculationType, payCalculationValue)
+      const effectiveRate = calculateShiftTypeAdjustment(baseSalaryRate, attendance.shift?.shiftTypeConfig || null)
+
+      attendanceRows.push({
+        date,
+        workedHours: safeWorkedHours,
+        breakHours: Number.isFinite(breakHours) && breakHours > 0 ? breakHours : 0,
+        shiftType: shiftTypeName,
+        payCalculationType,
+        payCalculationValue,
+        payCalculationLabel,
+        rawEarned: safeWorkedHours * effectiveRate,
+      })
+    }
+
+    const dayMap = new Map<string, {
+      date: string
+      workedHours: number
+      breakHours: number
+      shiftCount: number
+      rawEarned: number
+      shiftTypes: Set<string>
+      payCalculationRules: Set<string>
+      payCalculationLabels: Set<string>
+    }>()
+
+    for (const row of attendanceRows) {
+      const existing = dayMap.get(row.date)
+      if (existing) {
+        existing.workedHours += row.workedHours
+        existing.breakHours += row.breakHours
+        existing.shiftCount += 1
+        existing.rawEarned += row.rawEarned
+        existing.shiftTypes.add(row.shiftType)
+        existing.payCalculationRules.add(`${row.payCalculationType}:${row.payCalculationValue}`)
+        existing.payCalculationLabels.add(row.payCalculationLabel)
+      } else {
+        dayMap.set(row.date, {
+          date: row.date,
+          workedHours: row.workedHours,
+          breakHours: row.breakHours,
+          shiftCount: 1,
+          rawEarned: row.rawEarned,
+          shiftTypes: new Set([row.shiftType]),
+          payCalculationRules: new Set([`${row.payCalculationType}:${row.payCalculationValue}`]),
+          payCalculationLabels: new Set([row.payCalculationLabel]),
+        })
+      }
+    }
+
+    const dayRows = Array.from(dayMap.values()).sort((a, b) => a.date.localeCompare(b.date))
+
+    if (dayRows.length === 0) {
+      const fallbackDate = new Date(payrollEntry.payrollPeriod.endDate).toISOString().split('T')[0]
+      dayRows.push({
+        date: fallbackDate,
+        workedHours: (payrollEntry.regularHours ?? 0) + (payrollEntry.overtimeHours ?? 0),
+        breakHours: 0,
+        shiftCount: 0,
+        rawEarned: (payrollEntry.regularHours ?? 0) * baseSalaryRate,
+        shiftTypes: new Set(['No Shift Data']),
+        payCalculationRules: new Set(['BASE:0']),
+        payCalculationLabels: new Set(['Pay Calculation: Hourly Wage']),
+      })
+    }
+
+    const rawRegularHours = dayRows.map((row) => Math.min(row.workedHours, 8))
+    const rawOvertimeHours = dayRows.map((row) => Math.max(row.workedHours - 8, 0))
+    const workedHourWeights = dayRows.map((row) => row.workedHours)
+
+    const regularHoursByDay = allocateByWeight(payrollEntry.regularHours ?? 0, rawRegularHours.some((h) => h > 0) ? rawRegularHours : workedHourWeights)
+    const overtimeHoursByDay = allocateByWeight(payrollEntry.overtimeHours ?? 0, rawOvertimeHours.some((h) => h > 0) ? rawOvertimeHours : workedHourWeights)
+
+    const grossWeights = dayRows.map((_, index) => {
+      const regularPay = regularHoursByDay[index] * (payrollEntry.regularRate ?? 0)
+      const overtimePay = overtimeHoursByDay[index] * (payrollEntry.overtimeRate ?? 0)
+      return regularPay + overtimePay
+    })
+
+    const attendanceEarnedWeights = dayRows.map((row) => row.rawEarned)
+    const grossByDay = allocateByWeight(
+      payrollEntry.grossPay ?? 0,
+      attendanceEarnedWeights.some((w) => w > 0) ? attendanceEarnedWeights : (grossWeights.some((w) => w > 0) ? grossWeights : workedHourWeights)
+    )
+    const bonusByDay = allocateByWeight(payrollEntry.bonuses ?? 0, grossByDay.some((w) => w > 0) ? grossByDay : workedHourWeights)
+    const deductionByDay = allocateByWeight(payrollEntry.deductions ?? 0, grossByDay.some((w) => w > 0) ? grossByDay : workedHourWeights)
+    const netByDay = grossByDay.map((gross, index) => gross + bonusByDay[index] - deductionByDay[index])
+
+    const netTotal = netByDay.reduce((sum, value) => sum + value, 0)
+    const netDelta = Math.round(((payrollEntry.netPay ?? 0) - netTotal) * 100) / 100
+    if (Math.abs(netDelta) > 0 && netByDay.length > 0) {
+      netByDay[netByDay.length - 1] = Math.round((netByDay[netByDay.length - 1] + netDelta) * 100) / 100
+    }
+
+    const dailyBreakdown = dayRows.map((row, index) => {
+      const payCalculationRules = Array.from(row.payCalculationRules).map((rule) => {
+        const [rawType, rawValue] = rule.split(':')
+        const value = Number(rawValue)
+        return {
+          type: (rawType || 'BASE') as PayCalculationType,
+          value: Number.isFinite(value) ? value : 0,
+        }
+      })
+
+      return {
+        date: row.date,
+        workedHours: row.workedHours,
+        totalBreakHours: row.breakHours,
+        totalShifts: row.shiftCount,
+        regularHours: regularHoursByDay[index],
+        overtimeHours: overtimeHoursByDay[index],
+        shiftTypes: Array.from(row.shiftTypes),
+        shiftTypeLabel: Array.from(row.shiftTypes).join(', '),
+        payCalculationRules,
+        payCalculationLabel: Array.from(row.payCalculationLabels).join(' | '),
+        effectiveRate: baseSalaryRate,
+        effectiveRateLabel: baseSalaryRate.toFixed(2),
+        earned: grossByDay[index],
+        bonus: bonusByDay[index],
+        deduction: deductionByDay[index],
+        net: netByDay[index],
+      }
+    })
+
+    const breakdownTotals = {
+      workedHours: dailyBreakdown.reduce((sum, row) => sum + row.workedHours, 0),
+      breakHours: dailyBreakdown.reduce((sum, row) => sum + row.totalBreakHours, 0),
+      totalShifts: dailyBreakdown.reduce((sum, row) => sum + row.totalShifts, 0),
+      basicSalaryRate: baseSalaryRate,
+      regularHours: dailyBreakdown.reduce((sum, row) => sum + row.regularHours, 0),
+      overtimeHours: dailyBreakdown.reduce((sum, row) => sum + row.overtimeHours, 0),
+      earned: dailyBreakdown.reduce((sum, row) => sum + row.earned, 0),
+      bonus: dailyBreakdown.reduce((sum, row) => sum + row.bonus, 0),
+      deduction: dailyBreakdown.reduce((sum, row) => sum + row.deduction, 0),
+      net: dailyBreakdown.reduce((sum, row) => sum + row.net, 0),
+    }
+
+    return NextResponse.json({
+      ...payrollEntry,
+      dailyBreakdown,
+      breakdownTotals,
+    });
   } catch (error) {
     console.error('Error fetching payroll entry:', error);
     return NextResponse.json(

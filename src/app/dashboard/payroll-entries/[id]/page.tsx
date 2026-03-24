@@ -48,6 +48,39 @@ interface PayrollEntry {
     endDate: string
     status: string
   }
+  dailyBreakdown?: Array<{
+    date: string
+    workedHours: number
+    totalBreakHours: number
+    totalShifts: number
+    regularHours: number
+    overtimeHours: number
+    shiftTypes: string[]
+    shiftTypeLabel: string
+    payCalculationRules?: Array<{
+      type: 'BASE' | 'HOURLY_PLUS_FIXED' | 'FIXED_AMOUNT' | 'PERCENTAGE' | 'UNPAID'
+      value: number
+    }>
+    payCalculationLabel: string
+    effectiveRate: number | null
+    effectiveRateLabel: string
+    earned: number
+    bonus: number
+    deduction: number
+    net: number
+  }>
+  breakdownTotals?: {
+    workedHours: number
+    breakHours: number
+    totalShifts: number
+    basicSalaryRate: number
+    regularHours: number
+    overtimeHours: number
+    earned: number
+    bonus: number
+    deduction: number
+    net: number
+  }
 }
 
 export default function PayrollEntryViewPage({ params }: { params: Promise<{ id: string }> }) {
@@ -114,6 +147,45 @@ export default function PayrollEntryViewPage({ params }: { params: Promise<{ id:
       hour: '2-digit',
       minute: '2-digit'
     })
+  }
+
+  const formatDay = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      weekday: 'short',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    })
+  }
+
+  const formatAmount = (value: number) => {
+    if (!Number.isFinite(value)) return '0'
+    const rounded = Math.round(value * 100) / 100
+    return Number.isInteger(rounded) ? rounded.toString() : rounded.toFixed(2)
+  }
+
+  const getPayCalculationText = (
+    rules?: Array<{ type: 'BASE' | 'HOURLY_PLUS_FIXED' | 'FIXED_AMOUNT' | 'PERCENTAGE' | 'UNPAID'; value: number }>
+  ) => {
+    const safeRules = (rules || []).filter((rule) => rule?.type)
+    if (safeRules.length === 0) {
+      return t('view_page.pay_calculation.hourly_wage')
+    }
+
+    return safeRules.map((rule) => {
+      switch (rule.type) {
+        case 'HOURLY_PLUS_FIXED':
+          return t('view_page.pay_calculation.hourly_plus_fixed', { amount: formatAmount(rule.value) })
+        case 'FIXED_AMOUNT':
+          return t('view_page.pay_calculation.fixed_amount', { amount: formatAmount(rule.value) })
+        case 'PERCENTAGE':
+          return t('view_page.pay_calculation.percentage', { percentage: formatAmount(rule.value) })
+        case 'UNPAID':
+          return t('view_page.pay_calculation.unpaid')
+        default:
+          return t('view_page.pay_calculation.hourly_wage')
+      }
+    }).join(' | ')
   }
 
   const getStatusColor = (status: string) => {
@@ -326,222 +398,97 @@ export default function PayrollEntryViewPage({ params }: { params: Promise<{ id:
       </div>
 
       {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-        {/* Left Column - Main Details */}
-        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-          {/* Status Card */}
-          <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 sm:gap-3">
-                {getStatusIcon(entry.status)}
-                <div>
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-900">{t('view_page.status')}</h3>
-                  <p className="text-xs sm:text-sm text-gray-500">{t('view_page.current_status')}</p>
-                </div>
-              </div>
-              <span className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium ${getStatusColor(entry.status)}`}>
-                {entry.status === 'DRAFT' ? t('status.draft') : entry.status === 'APPROVED' ? t('status.approved') : t('status.paid')}
-              </span>
-            </div>
-          </div>
+      <div className="space-y-4 sm:space-y-6">
 
           {/* Hours & Rates */}
           <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
             <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
               <ClockIcon className="w-5 h-5 sm:w-6 sm:h-6 text-[#31BCFF]" />
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900">{t('view_page.hours_rates')}</h3>
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900">{t('view_page.work_summary')}</h3>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-              <div className="space-y-3 sm:space-y-4">
-                <div>
-                  <label className="text-xs sm:text-sm font-medium text-gray-500">{t('view_page.regular_hours')}</label>
-                  <p className="text-xl sm:text-2xl font-bold text-gray-900">{entry.regularHours.toFixed(2)}</p>
-                </div>
-                <div>
-                  <label className="text-xs sm:text-sm font-medium text-gray-500">{t('view_page.regular_rate')}</label>
-                  <p className="text-xl sm:text-2xl font-bold text-gray-900">{formatCurrency(entry.regularRate)}</p>
-                </div>
-                <div className="pt-3 sm:pt-4 border-t border-gray-200">
-                  <label className="text-xs sm:text-sm font-medium text-gray-500">{t('view_page.regular_pay')}</label>
-                  <p className="text-xl sm:text-2xl font-bold text-[#31BCFF]">
-                    {formatCurrency(entry.regularHours * entry.regularRate)}
-                  </p>
-                </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="rounded-lg border border-gray-200 p-4 bg-gray-50">
+                <p className="text-xs text-gray-500">{t('view_page.total_work_hours')}</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">{(entry.breakdownTotals?.workedHours ?? 0).toFixed(2)}</p>
               </div>
-
-              <div className="space-y-3 sm:space-y-4">
-                <div>
-                  <label className="text-xs sm:text-sm font-medium text-gray-500">{t('view_page.overtime_hours')}</label>
-                  <p className="text-xl sm:text-2xl font-bold text-gray-900">{entry.overtimeHours.toFixed(2)}</p>
-                </div>
-                <div>
-                  <label className="text-xs sm:text-sm font-medium text-gray-500">{t('view_page.overtime_rate')}</label>
-                  <p className="text-xl sm:text-2xl font-bold text-gray-900">{formatCurrency(entry.overtimeRate)}</p>
-                </div>
-                <div className="pt-3 sm:pt-4 border-t border-gray-200">
-                  <label className="text-xs sm:text-sm font-medium text-gray-500">{t('view_page.overtime_pay')}</label>
-                  <p className="text-xl sm:text-2xl font-bold text-[#31BCFF]">
-                    {formatCurrency(entry.overtimeHours * entry.overtimeRate)}
-                  </p>
-                </div>
+              <div className="rounded-lg border border-gray-200 p-4 bg-gray-50">
+                <p className="text-xs text-gray-500">{t('view_page.salary_amount')}</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">{formatCurrency(entry.grossPay)}</p>
+              </div>
+              <div className="rounded-lg border border-gray-200 p-4 bg-gray-50">
+                <p className="text-xs text-gray-500">{t('view_page.total_shifts')}</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">{(entry.breakdownTotals?.totalShifts ?? 0).toFixed(0)}</p>
+              </div>
+              <div className="rounded-lg border border-gray-200 p-4 bg-gray-50">
+                <p className="text-xs text-gray-500">{t('view_page.basic_salary_rate')}</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">{formatCurrency(entry.breakdownTotals?.basicSalaryRate ?? entry.regularRate)}</p>
               </div>
             </div>
           </div>
 
           {/* Payment Breakdown */}
-          <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
-            <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
-              <BanknotesIcon className="w-5 h-5 sm:w-6 sm:h-6 text-[#31BCFF]" />
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900">{t('view_page.payment_breakdown')}</h3>
-            </div>
-
-            <div className="space-y-3 sm:space-y-4">
-              <div className="flex justify-between items-center pb-2">
-                <span className="text-sm sm:text-base text-gray-600">{t('view_page.gross_pay')}</span>
-                <span className="text-base sm:text-lg font-semibold text-gray-900">{formatCurrency(entry.grossPay)}</span>
-              </div>
-              
-              <div className="flex justify-between items-center pb-2">
-                <span className="text-sm sm:text-base text-gray-600">{t('view_page.bonuses')}</span>
-                <span className="text-base sm:text-lg font-semibold text-green-600">+{formatCurrency(entry.bonuses)}</span>
-              </div>
-              
-              <div className="flex justify-between items-center pb-3 sm:pb-4 border-b border-gray-200">
-                <span className="text-sm sm:text-base text-gray-600">{t('view_page.deductions')}</span>
-                <span className="text-base sm:text-lg font-semibold text-red-600">-{formatCurrency(entry.deductions)}</span>
-              </div>
-              
-              <div className="flex justify-between items-center pt-2">
-                <span className="text-base sm:text-lg font-bold text-gray-900">{t('view_page.net_pay')}</span>
-                <span className="text-xl sm:text-2xl font-bold text-[#31BCFF]">{formatCurrency(entry.netPay)}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Notes */}
-          {entry.notes && (
-            <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
-              <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-                <DocumentTextIcon className="w-5 h-5 sm:w-6 sm:h-6 text-[#31BCFF]" />
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900">{t('view_page.notes')}</h3>
-              </div>
-              <p className="text-sm sm:text-base text-gray-700 whitespace-pre-wrap">{entry.notes}</p>
-            </div>
-          )}
-        </div>
-
-        {/* Right Column - Employee & Period Info */}
-        <div className="space-y-4 sm:space-y-6">
-          {/* Employee Information */}
-          <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
-            <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
-              <UserIcon className="w-5 h-5 sm:w-6 sm:h-6 text-[#31BCFF]" />
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900">{t('view_page.employee')}</h3>
-            </div>
-
-            <div className="space-y-3 sm:space-y-4">
-              <div>
-                <label className="text-xs sm:text-sm font-medium text-gray-500">{t('view_page.name')}</label>
-                <p className="text-sm sm:text-base font-medium text-gray-900">
-                  {entry.employee.firstName} {entry.employee.lastName}
-                </p>
-              </div>
-
-              {entry.employee.employeeNo && (
-                <div>
-                  <label className="text-xs sm:text-sm font-medium text-gray-500">{t('view_page.employee_no')}</label>
-                  <p className="text-sm sm:text-base text-gray-900">{entry.employee.employeeNo}</p>
-                </div>
-              )}
-
-              {entry.employee.email && (
-                <div>
-                  <label className="text-xs sm:text-sm font-medium text-gray-500">{t('view_page.email')}</label>
-                  <p className="text-sm sm:text-base text-gray-900 break-all">{entry.employee.email}</p>
-                </div>
-              )}
-
-              <div className="pt-3 sm:pt-4 border-t border-gray-200">
-                <button
-                  onClick={() => router.push(`/dashboard/employees/${entry.employee.id}/edit`)}
-                  className="text-[#31BCFF] hover:text-[#31BCFF]/80 text-xs sm:text-sm font-medium"
-                >
-                  {t('view_page.view_employee_profile')} →
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Payroll Period Information */}
+          
+          {/* Daily Breakdown */}
           <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
             <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
               <CalendarIcon className="w-5 h-5 sm:w-6 sm:h-6 text-[#31BCFF]" />
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900">{t('view_page.payroll_period')}</h3>
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900">{t('view_page.daily_earnings_deductions')}</h3>
             </div>
 
-            <div className="space-y-3 sm:space-y-4">
-              <div>
-                <label className="text-xs sm:text-sm font-medium text-gray-500">{t('view_page.period_name')}</label>
-                <p className="text-sm sm:text-base font-medium text-gray-900">{entry.payrollPeriod.name}</p>
-              </div>
-
-              <div>
-                <label className="text-xs sm:text-sm font-medium text-gray-500">{t('view_page.start_date')}</label>
-                <p className="text-sm sm:text-base text-gray-900">{formatDate(entry.payrollPeriod.startDate)}</p>
-              </div>
-
-              <div>
-                <label className="text-xs sm:text-sm font-medium text-gray-500">{t('view_page.end_date')}</label>
-                <p className="text-sm sm:text-base text-gray-900">{formatDate(entry.payrollPeriod.endDate)}</p>
-              </div>
-
-              <div>
-                <label className="text-xs sm:text-sm font-medium text-gray-500">{t('view_page.period_status')}</label>
-                <p className="text-sm sm:text-base text-gray-900">
-                  <span className={`inline-block px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${
-                    entry.payrollPeriod.status === 'CLOSED' ? 'bg-gray-100 text-gray-800' :
-                    entry.payrollPeriod.status === 'FINALIZED' ? 'bg-blue-100 text-blue-800' :
-                    'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {entry.payrollPeriod.status === 'DRAFT' ? t('status.draft') : entry.payrollPeriod.status === 'FINALIZED' ? t('status.approved') : t('status.paid')}
-                  </span>
-                </p>
-              </div>
-
-              <div className="pt-3 sm:pt-4 border-t border-gray-200">
-                <button
-                  onClick={() => router.push(`/dashboard/payroll-periods`)}
-                  className="text-[#31BCFF] hover:text-[#31BCFF]/80 text-xs sm:text-sm font-medium"
-                >
-                  {t('view_page.view_all_periods')} →
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Metadata */}
-          <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3 sm:mb-4">{t('view_page.record_info')}</h3>
-            
-            <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm">
-              <div>
-                <label className="text-gray-500">{t('view_page.created')}</label>
-                <p className="text-gray-900">{formatDateTime(entry.createdAt)}</p>
-              </div>
-              
-              <div>
-                <label className="text-gray-500">{t('view_page.last_updated')}</label>
-                <p className="text-gray-900">{formatDateTime(entry.updatedAt)}</p>
-              </div>
-              
-              <div>
-                <label className="text-gray-500">{t('view_page.entry_id')}</label>
-                <p className="text-gray-900 font-mono text-[10px] sm:text-xs break-all">{entry.id}</p>
-              </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-xs sm:text-sm">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-3 py-2 text-left font-medium text-gray-600">{t('view_page.date')}</th>
+                    <th className="px-3 py-2 text-left font-medium text-gray-600">{t('view_page.shift_types')}</th>
+                    <th className="px-3 py-2 text-right font-medium text-gray-600">{t('view_page.rate_per_hour')}</th>
+                    <th className="px-3 py-2 text-right font-medium text-gray-600">{t('view_page.worked_hours')}</th>
+                    <th className="px-3 py-2 text-right font-medium text-gray-600">{t('view_page.earned')}</th>
+                    <th className="px-3 py-2 text-right font-medium text-gray-600">{t('view_page.reduced')}</th>
+                    <th className="px-3 py-2 text-right font-medium text-gray-600">{t('view_page.net')}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {(entry.dailyBreakdown || []).map((day) => (
+                    <tr key={day.date}>
+                      <td className="px-3 py-2 text-gray-900">{formatDay(day.date)}</td>
+                      <td className="px-3 py-2 text-gray-900">
+                        <div className="font-medium">{day.shiftTypeLabel || t('view_page.normal_shift')}</div>
+                        <div className="text-[11px] text-gray-500 mt-0.5">{getPayCalculationText(day.payCalculationRules)}</div>
+                      </td>
+                      <td className="px-3 py-2 text-right text-gray-900">{day.effectiveRateLabel || '-'}</td>
+                      <td className="px-3 py-2 text-right text-gray-900">{day.workedHours.toFixed(2)}</td>
+                      <td className="px-3 py-2 text-right text-green-700">{formatCurrency(day.earned + day.bonus)}</td>
+                      <td className="px-3 py-2 text-right text-red-700">-{formatCurrency(day.deduction)}</td>
+                      <td className="px-3 py-2 text-right font-semibold text-gray-900">{formatCurrency(day.net)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot className="bg-gray-50 border-t border-gray-200">
+                  <tr>
+                    <th className="px-3 py-2 text-left font-semibold text-gray-900">{t('view_page.totals')}</th>
+                    <th className="px-3 py-2 text-left font-semibold text-gray-900">-</th>
+                    <th className="px-3 py-2 text-right font-semibold text-gray-900">
+                      {(entry.breakdownTotals?.basicSalaryRate ?? entry.regularRate).toFixed(2)}
+                    </th>
+                    <th className="px-3 py-2 text-right font-semibold text-gray-900">
+                      {(entry.breakdownTotals?.workedHours ?? 0).toFixed(2)}
+                    </th>
+                    <th className="px-3 py-2 text-right font-semibold text-green-700">
+                      {formatCurrency((entry.breakdownTotals?.earned ?? 0) + (entry.breakdownTotals?.bonus ?? 0))}
+                    </th>
+                    <th className="px-3 py-2 text-right font-semibold text-red-700">
+                      -{formatCurrency(entry.breakdownTotals?.deduction ?? 0)}
+                    </th>
+                    <th className="px-3 py-2 text-right font-semibold text-gray-900">
+                      {formatCurrency(entry.breakdownTotals?.net ?? 0)}
+                    </th>
+                  </tr>
+                </tfoot>
+              </table>
             </div>
           </div>
-        </div>
       </div>
     </div>
   )

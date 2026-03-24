@@ -89,7 +89,7 @@ export default function DashboardNavbar() {
       children: [
         { name: t('navigation.payroll_periods'), href: '/dashboard/payroll-periods', permissionKey: 'payrollPeriods' },
         { name: t('navigation.payroll_entries'), href: '/dashboard/payroll-entries', permissionKey: 'payrollEntries' },
-        { name: t('navigation.payroll_reports'), href: '/dashboard/reports/payroll', permissionKey: 'payrollReports' },
+        // { name: t('navigation.payroll_reports'), href: '/dashboard/reports/payroll', permissionKey: 'payrollReports' },
         { name: t('navigation.salary_codes'), href: '/dashboard/salary-codes', permissionKey: 'salaryCodes' },
         { name: t('navigation.pay_rules'), href: '/dashboard/pay-rules', permissionKey: 'payRules' },
         { name: t('navigation.overtime_rules'), href: '/dashboard/overtime-rules', permissionKey: 'overtimeRules' },
