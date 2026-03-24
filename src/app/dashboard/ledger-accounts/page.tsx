@@ -11,6 +11,8 @@ import { ColumnVisibilityToggle } from '@/components/invoice/column-visibility-t
 import { useColumnVisibility } from '@/hooks/use-column-visibility'
 import { useResizableColumns } from '@/hooks/use-resizable-columns'
 import { ResizeHandle } from '@/components/invoice/resize-handle'
+import { GripVertical } from 'lucide-react'
+import { cn } from '@/shared/lib/utils'
 
 export interface LedgerAccount {
     id: string
@@ -75,7 +77,23 @@ export default function LedgerAccountsPage() {
         { key: "saftStandardAccount", initialWidth: 120, minWidth: 120 },
         { key: "actions", initialWidth: 120, minWidth: 80 },
     ]
-    const { getColumnWidth, onMouseDown, resetWidths } = useResizableColumns({
+
+
+    const {
+        getColumnWidth,
+        onMouseDown,
+        resetWidths,
+        columnOrder,
+        draggedColumn,
+        dropTargetColumn,
+        onDragStart,
+        onDragOver,
+        onDragLeave,
+        onDrop,
+        onDragEnd,
+        resetColumnOrder,
+        getOrderedColumns,
+    } = useResizableColumns({
         storageKey: "ledger-account-col-widths",
         columns: RESIZABLE_COLUMNS,
     })
@@ -211,6 +229,87 @@ export default function LedgerAccountsPage() {
         setSelectedFilter(filter)
     }
 
+    // Get ordered and visible columns
+    const orderedColumns = getOrderedColumns(COLUMNS).filter((col) => isColumnVisible(col.key))
+
+    const renderCell = (account: LedgerAccount, columnKey: string) => {
+        switch (columnKey) {
+            case "accountNumber":
+                return (
+                    <span className="text-sm font-medium text-gray-900">
+                        {account.accountNumber}
+                    </span>
+                )
+
+            case "accountName":
+                return (
+                    <span className="text-sm text-gray-900">
+                        {account.name}
+                    </span>
+                )
+
+            case "type":
+                return (
+                    <span className="text-sm text-gray-600">
+                        {account.type}
+                    </span>
+                )
+
+            case "vatCode":
+                return (
+                    <span className="text-sm text-gray-600">
+                        {account.vatCode?.name ?? "-"}
+                    </span>
+                )
+
+            case "industrySpecification":
+                return (
+                    <span className="text-sm text-gray-600 truncate max-w-[200px] block">
+                        {account.industrySpecification || "-"}
+                    </span>
+                )
+
+            case "reportGroup":
+                return (
+                    <span
+                        className="text-sm text-gray-600 truncate max-w-[200px] block"
+                        title={account.reportGroup || ""}
+                    >
+                        {account.reportGroup
+                            ? `${account.reportGroup.substring(0, 10)}...`
+                            : "-"}
+                    </span>
+                )
+
+            case "saftStandardAccount":
+                return (
+                    <span
+                        className="text-sm text-gray-600"
+                        title={account.saftStandardAccount || ""}
+                    >
+                        {account.saftStandardAccount
+                            ? `${account.saftStandardAccount.substring(0, 10)}...`
+                            : "-"}
+                    </span>
+                )
+
+            case "status":
+                return (
+                    <div className="text-left w-full">
+                        <Switch
+                            checked={account.isActive}
+                            onCheckedChange={(checked) =>
+                                handleStatusChange(account.id, checked)
+                            }
+                        />
+                    </div>
+                )
+
+            default:
+                return null
+        }
+    }
+
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
@@ -332,163 +431,65 @@ export default function LedgerAccountsPage() {
                     <div className="hidden md:block overflow-x-auto">
                         <table className="w-full" style={{ tableLayout: "fixed" }}>
                             <colgroup>
-                                {isColumnVisible("accountNumber") && (
-                                    <col style={{ width: getColumnWidth("accountNumber") }} />
-                                )}
-                                {isColumnVisible("accountName") && (
-                                    <col style={{ width: getColumnWidth("accountName") }} />
-                                )}
-                                {isColumnVisible("type") && (
-                                    <col style={{ width: getColumnWidth("type") }} />
-                                )}
-                                {isColumnVisible("vatCode") && (
-                                    <col style={{ width: getColumnWidth("vatCode") }} />
-                                )}
-                                {isColumnVisible("industrySpecification") && (
-                                    <col style={{ width: getColumnWidth("industrySpecification") }} />
-                                )}
-                                {isColumnVisible("reportGroup") && (
-                                    <col style={{ width: getColumnWidth("reportGroup") }} />
-                                )}
-                                {isColumnVisible("saftStandardAccount") && (
-                                    <col style={{ width: getColumnWidth("saftStandardAccount") }} />
-                                )}
-                                {isColumnVisible("status") && (
-                                    <col style={{ width: getColumnWidth("status") }} />
-                                )}
+                                {orderedColumns.map((col) => (
+                                    <col key={col.key} style={{ width: getColumnWidth(col.key) }} />
+                                ))}
                                 <col style={{ width: getColumnWidth("actions") }} />
                             </colgroup>
+
                             <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
                                 <tr>
-                                    {isColumnVisible("accountNumber") && (
-                                        <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
-                                            Account Number
-
-                                            <ResizeHandle onMouseDown={onMouseDown("accountNumber")} />
-
-                                        </th>
-                                    )}
-                                    {isColumnVisible("accountName") && (
-                                        <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
-                                            Account Name
-                                            <ResizeHandle onMouseDown={onMouseDown("accountName")} />
-
-                                        </th>
-                                    )}
-                                    {isColumnVisible("type") && (
-                                        <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
-                                            Type
-                                            <ResizeHandle onMouseDown={onMouseDown("type")} />
-                                        </th>
-                                    )}
-                                    {isColumnVisible("vatCode") && (
-                                        <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
-                                            VAT Code
-                                            <ResizeHandle onMouseDown={onMouseDown("vatCode")} />
-                                        </th>
-                                    )}
-                                    {isColumnVisible("industrySpecification") && (
-                                        <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
-                                            Industry Specification
-                                            <ResizeHandle onMouseDown={onMouseDown("industrySpecification")} />
-                                        </th>
-                                    )}
-                                    {isColumnVisible("reportGroup") && (
-                                        <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
-                                            Report Group
-                                            <ResizeHandle onMouseDown={onMouseDown("reportGroup")} />
-                                        </th>
-                                    )}
-                                    {isColumnVisible("saftStandardAccount") && (
-                                        <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
-                                            SAFT Standard Account
-                                            <ResizeHandle onMouseDown={onMouseDown("saftStandardAccount")} />
-                                        </th>
-                                    )}
-                                    {isColumnVisible("status") && (
-                                        <th className="relative px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
-                                            Status
-                                            <ResizeHandle onMouseDown={onMouseDown("status")} />
-                                        </th>
-                                    )}
-                                    <th className="relative px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase border-r border-border">
+                                    {orderedColumns.map((col) => (
+                                        <th
+                                            key={col.key}
+                                            draggable
+                                            onDragStart={onDragStart(col.key)}
+                                            onDragOver={onDragOver(col.key)}
+                                            onDragLeave={onDragLeave}
+                                            onDrop={onDrop(col.key)}
+                                            onDragEnd={onDragEnd}
+                                            className={cn(
+                                                "group/th relative px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider select-none cursor-grab active:cursor-grabbing transition-colors",
+                                                draggedColumn === col.key && "opacity-50 bg-muted",
+                                                dropTargetColumn === col.key && "bg-[#31BCFF]/10 border-l-2 border-l-[#31BCFF]"
+                                            )}
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                <GripVertical className="w-3 h-3 text-muted-foreground/50 flex-shrink-0" />
+                                                <span className="truncate">{col.label}</span>
+                                            </div>
+                                            <ResizeHandle onMouseDown={onMouseDown(col.key)} />
+                                        </th>))}
+                                    <th className="relative px-6 py-4 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider border-r border-border">
                                         <div className="flex items-center justify-end gap-2">
-                                            <span>{t('actions')}</span>
+                                            <span>Actions</span>
                                             <ColumnVisibilityToggle
                                                 columns={columns}
                                                 onColumnToggle={toggleColumn}
                                                 onResetColumns={() => {
                                                     resetColumns()
                                                     resetWidths()
+                                                    resetColumnOrder()
                                                 }}
                                             />
                                         </div>
                                     </th>
                                 </tr>
+
                             </thead>
                             <tbody className="divide-y divide-gray-200/50">
                                 {filteredledgerAccounts.map((account) => (
-                                    <tr key={account.id} className="hover:bg-blue-50/30 transition-colors duration-200">
-                                        {isColumnVisible("accountNumber") && (
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm font-medium text-gray-900">
-                                                    {account.accountNumber}
-                                                </div>
+                                    <tr
+                                        key={account.id}
+                                        className="hover:bg-blue-50/30 transition-colors duration-200"
+                                    >
+                                        {orderedColumns.map((col) => (
+                                            <td key={col.key} className="px-6 py-4 overflow-hidden">
+                                                {renderCell(account, col.key)}
                                             </td>
-                                        )}
-                                        {isColumnVisible("accountName") && (
-                                            <td className="px-6 py-4">
-                                                <div className="text-sm text-gray-900">
-                                                    {account.name}
-                                                </div>
-                                            </td>
-                                        )}
-                                        {isColumnVisible("type") && (
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm text-gray-900">
-                                                    {account.type}
-                                                </div>
-                                            </td>
-                                        )}
-                                        {isColumnVisible("vatCode") && (
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm text-gray-900">
-                                                    {account.vatCode?.name ?? "-"}
-                                                </div>
-                                            </td>
-                                        )}
-                                        {isColumnVisible("industrySpecification") && (
-                                            <td className="px-6 py-4">
-                                                <div className="text-sm text-gray-900 truncate max-w-[200px]">
-                                                    {account.industrySpecification || "-"}
-                                                </div>
-                                            </td>
-                                        )}
-                                        {isColumnVisible("reportGroup") && (
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm text-gray-900 truncate max-w-[200px]" title={account.reportGroup || ""}>
-                                                    {account.reportGroup ? `${account.reportGroup.substring(0, 10)}...` : "-"}
-                                                </div>
-                                            </td>
-                                        )}
-                                        {isColumnVisible("saftStandardAccount") && (
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm text-gray-900" title={account.saftStandardAccount || ""}>
-                                                    {account.saftStandardAccount ? `${account.saftStandardAccount.substring(0, 10)}...` : "-"}
-                                                </div>
-                                            </td>
-                                        )}
-                                        {isColumnVisible("status") && (
-                                            <td className="px-6 py-4 whitespace-nowrap text-center">
-                                                <div className="flex items-center justify-center">
-                                                    <Switch
-                                                        id="status"
-                                                        checked={account.isActive}
-                                                        onCheckedChange={(checked) => handleStatusChange(account.id, checked)}
-                                                    />
-                                                </div>
-                                            </td>
-                                        )}
+                                        ))}
+
+                                        {/* Actions */}
                                         <td className="px-6 py-4 whitespace-nowrap text-right">
                                             <div className="flex items-center justify-end gap-2">
                                                 <Link
@@ -498,6 +499,7 @@ export default function LedgerAccountsPage() {
                                                 >
                                                     <PencilIcon className="h-4 w-4" />
                                                 </Link>
+
                                                 {account.businessId !== null && (
                                                     <button
                                                         onClick={() => handleDelete(account.id, account.accountNumber)}

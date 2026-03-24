@@ -477,7 +477,7 @@ export default function ProjectPage() {
                         )}
                       >
                         <div className="flex items-center gap-2">
-                          <GripVertical className="w-3 h-3 text-muted-foreground/40 opacity-0 group-hover/th:opacity-100 transition-opacity flex-shrink-0" />
+                          <GripVertical className="w-3 h-3 text-muted-foreground/50 flex-shrink-0" />
                           <span className="truncate">{col.label}</span>
                         </div>
                         <ResizeHandle onMouseDown={onMouseDown(col.key)} />
