@@ -74,6 +74,7 @@ export function ColumnVisibilityToggle({ columns, onColumnToggle, onResetColumns
                     key={column.key}
                     checked={column.visible}
                     onCheckedChange={(checked) => onColumnToggle(column.key, checked)}
+                    onSelect={(e) => e.preventDefault()}
                     disabled={column.required}
                     className={cn(
                       "relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none",

@@ -141,7 +141,6 @@ export default function CreateInvoicePage() {
         showDiscount: true,
         showPaymentTerms: true,
         showDepartment: true,
-        showSeller: true,
         showContactPerson: true,
         showDeliveryAddress: true,
         showProject: true,
@@ -323,7 +322,6 @@ export default function CreateInvoicePage() {
                 showDiscount: settings.showDiscount,
                 showPaymentTerms: settings.showPaymentTerms,
                 showDepartment: settings.showDepartment,
-                showSeller: settings.showSeller,
                 showContactPerson: settings.showContactPerson,
                 showDeliveryAddress: settings.showDeliveryAddress,
                 showProject: settings.showProject,
@@ -541,22 +539,22 @@ export default function CreateInvoicePage() {
 
     }
 
-const updateLineTotal = (index: number, currentQty?: number) => {
-    const line = formData.invoiceLines[index];
-    const qty = currentQty !== undefined ? currentQty : Number(line.quantity);
-    const absQty = Math.abs(qty) || 0;
-    const price = Math.abs(Number(line.pricePerUnit)) || 0;
-    const discount = Number(line.discountPercentage) || 0;
-    const vat = Number(line.vatPercentage) || 0;
-    const { totalExclVAT } = calculateInvoiceTotals(absQty, price, discount, vat);
-    // Derive sign from the actual current quantity, not stale isNegativeTotal
-    const sign = (isCreditNote && !!line.id) ? -1 : (qty < 0 ? -1 : 1);
-    setNetTotals((prevNetTotals) => {
-        const newNetTotals = [...prevNetTotals];
-        newNetTotals[index] = totalExclVAT * sign;
-        return newNetTotals;
-    });
-};
+    const updateLineTotal = (index: number, currentQty?: number) => {
+        const line = formData.invoiceLines[index];
+        const qty = currentQty !== undefined ? currentQty : Number(line.quantity);
+        const absQty = Math.abs(qty) || 0;
+        const price = Math.abs(Number(line.pricePerUnit)) || 0;
+        const discount = Number(line.discountPercentage) || 0;
+        const vat = Number(line.vatPercentage) || 0;
+        const { totalExclVAT } = calculateInvoiceTotals(absQty, price, discount, vat);
+        // Derive sign from the actual current quantity, not stale isNegativeTotal
+        const sign = (isCreditNote && !!line.id) ? -1 : (qty < 0 ? -1 : 1);
+        setNetTotals((prevNetTotals) => {
+            const newNetTotals = [...prevNetTotals];
+            newNetTotals[index] = totalExclVAT * sign;
+            return newNetTotals;
+        });
+    };
 
     const handleSendClick = (action: 'send_invoice_without_email' | 'send_invoice_with_email' | 'print' | 'send_new_credit_note') => {
         setPendingAction(action)
@@ -768,7 +766,7 @@ const updateLineTotal = (index: number, currentQty?: number) => {
                             {visibleFields.showContactPerson && (
                                 <div className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] min-w-[250px]">
                                     <label htmlFor="contactPersonId" className="block text-sm font-medium text-gray-700 mb-2">
-                                        Contact Name *
+                                        Contact Name
                                     </label>
                                     <select
                                         id="contactPersonId"
@@ -822,7 +820,7 @@ const updateLineTotal = (index: number, currentQty?: number) => {
                             {visibleFields.showProject && (
                                 <div className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] min-w-[250px]">
                                     <label htmlFor="projectId" className="block text-sm font-medium text-gray-700 mb-2">
-                                        Project *
+                                        Project
                                     </label>
                                     <select
                                         id="projectId"
@@ -843,7 +841,7 @@ const updateLineTotal = (index: number, currentQty?: number) => {
                             {visibleFields.showDepartment && (
                                 <div className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] min-w-[250px]">
                                     <label htmlFor="departmentId" className="block text-sm font-medium text-gray-700 mb-2">
-                                        Department *
+                                        Department
                                     </label>
                                     <select
                                         id="departmentId"
@@ -864,7 +862,7 @@ const updateLineTotal = (index: number, currentQty?: number) => {
                             {visibleFields.showDeliveryAddress && (
                                 <div className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] min-w-[250px]">
                                     <label htmlFor="deliveryAddress" className="block text-sm font-medium text-gray-700 mb-2">
-                                        Delivery Address *
+                                        Delivery Address
                                     </label>
                                     <input
                                         type="text"
@@ -878,7 +876,7 @@ const updateLineTotal = (index: number, currentQty?: number) => {
                             )}
                         </div>
                     </div>
-                    {visibleFields.showSeller && <div className="bg-gradient-to-br rounded-xl border p-6">
+                    {/* {visibleFields.showSeller && <div className="bg-gradient-to-br rounded-xl border p-6">
                         <h2 className="text-lg font-semibold text-gray-900 mb-4">Seller Information</h2>
 
                         <div className="grid grid-cols-1 md:grid-cols-1 gap-6 mb-6">
@@ -899,11 +897,11 @@ const updateLineTotal = (index: number, currentQty?: number) => {
                                 />
                             </div>
                         </div>
-                    </div>}
+                    </div>} */}
 
                     <div className="bg-gradient-to-br rounded-xl border p-6">
                         <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-lg font-semibold text-gray-900 mb-4">Order Lines</h2>
+                            <h2 className="text-lg font-semibold text-gray-900 mb-4">Order Lines *</h2>
                             {!overviewMode && <button
                                 type="button"
                                 onClick={handleNewOrderLine}

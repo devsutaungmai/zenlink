@@ -716,7 +716,7 @@ export default function EditCustomersPage({ params, searchParams }: { params: Pr
                         {settings.showDepartment && (
                             <div className="grow basis-[calc(25%-12px)] min-w-[250px]">
                                 <label htmlFor="departmentId" className="block text-sm font-medium text-gray-700 mb-2">
-                                    Department *
+                                    Department
                                 </label>
                                 <select
                                     id="departmentId"
@@ -767,7 +767,7 @@ export default function EditCustomersPage({ params, searchParams }: { params: Pr
                         )}
                         {visibleFields.showProject && <div className="grow basis-[calc(100%-12px)] min-w-[250px]">
                             <label htmlFor="projectIds" className="block text-sm font-medium text-gray-700 mb-2">
-                                Projects *
+                                Projects
                             </label>
                             <ProjectMultiSelectCombobox
                                 projects={projects}

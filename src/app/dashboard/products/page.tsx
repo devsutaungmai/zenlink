@@ -17,10 +17,11 @@ import {
 import { ColumnVisibilityToggle } from "@/components/invoice/column-visibility-toggle"
 import { useColumnVisibility } from "@/hooks/use-column-visibility"
 import { Switch } from "@/components/ui/switch"
-import { FunnelIcon } from "lucide-react"
+import { FunnelIcon, GripVertical, Pencil, Trash2 } from "lucide-react"
 import { ResizeHandle } from "@/components/invoice/resize-handle"
 import { useResizableColumns } from "@/hooks/use-resizable-columns"
 import { formatProductNumberForDisplay } from "@/shared/lib/invoiceHelper"
+import { cn } from "@/shared/lib/utils"
 
 interface Unit {
   id: string
@@ -136,7 +137,21 @@ export default function ProductsPage() {
     { key: "status", initialWidth: 100, minWidth: 70 },
     { key: "actions", initialWidth: 120, minWidth: 80 },
   ]
-  const { getColumnWidth, onMouseDown, resetWidths } = useResizableColumns({
+  const {
+    getColumnWidth,
+    onMouseDown,
+    resetWidths,
+    columnOrder,
+    draggedColumn,
+    dropTargetColumn,
+    onDragStart,
+    onDragOver,
+    onDragLeave,
+    onDrop,
+    onDragEnd,
+    resetColumnOrder,
+    getOrderedColumns,
+  } = useResizableColumns({
     storageKey: "products-col-widths",
     columns: RESIZABLE_COLUMNS,
   })
@@ -211,6 +226,9 @@ export default function ProductsPage() {
     }
   }
 
+  // Get ordered and visible columns
+  const orderedColumns = getOrderedColumns(COLUMNS).filter((col) => isColumnVisible(col.key))
+
   const handleFilterClick = (filter: string) => () => {
     setSelectedFilter(filter)
     setCurrentPage(1)
@@ -274,6 +292,54 @@ export default function ProductsPage() {
         icon: "error",
         confirmButtonColor: "#31BCFF",
       })
+    }
+  }
+
+  // Render cell content based on column key
+  const renderCell = (product: Product, columnKey: string) => {
+    switch (columnKey) {
+      case "productNumber":
+        return <div className="text-sm font-medium text-gray-900 truncate">{formatProductNumberForDisplay(product.productNumber)}</div>
+      case "productName":
+        return <div className="text-sm text-gray-900 truncate">{product.productName}</div>
+      case "ledgerAccount":
+        return (
+          <div className="text-sm text-blue-600 hover:underline truncate cursor-pointer">
+            {product.ledgerAccount.name} ({product.ledgerAccount.accountNumber})
+          </div>
+        )
+      case "salesPrice":
+        return <div className="text-sm text-gray-900 truncate">{Number(product.salesPrice).toFixed(2)}</div>
+      case "costPrice":
+        return <div className="text-sm text-gray-900 truncate">{Number(product.costPrice).toFixed(2)}</div>
+      case "vatRate":
+        return (
+          <div className="text-sm text-gray-900 truncate">
+            {product.ledgerAccount.businessVatCodes.length > 0
+              ? `${product.ledgerAccount.businessVatCodes[0].vatCode.rate}%`
+              : product.ledgerAccount.vatCode
+                ? `${product.ledgerAccount.vatCode.rate}%`
+                : "0%"}
+          </div>
+        )
+      case "discount":
+        return (
+          <div className="text-sm text-gray-900 truncate">
+            {product.discountPercentage ? `${product.discountPercentage}%` : "-"}
+          </div>
+        )
+      case "status":
+        return (
+          <div className="flex items-center space-x-2">
+            <Switch
+              id={`status-${product.id}`}
+              checked={product.active}
+              onCheckedChange={(checked) => handleStatusChange(product.id, checked)}
+            />
+          </div>
+        )
+      default:
+        return null
     }
   }
 
@@ -392,94 +458,34 @@ export default function ProductsPage() {
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full" style={{ tableLayout: "fixed" }}>
               <colgroup>
-                {isColumnVisible("productNumber") && (
-                  <col style={{ width: getColumnWidth("productNumber") }} />
-                )}
-                {isColumnVisible("productName") && (
-                  <col style={{ width: getColumnWidth("productName") }} />
-                )}
-                {isColumnVisible("ledgerAccount") && (
-                  <col style={{ width: getColumnWidth("ledgerAccount") }} />
-                )}
-                {isColumnVisible("salesPrice") && (
-                  <col style={{ width: getColumnWidth("salesPrice") }} />
-                )}
-                {isColumnVisible("costPrice") && (
-                  <col style={{ width: getColumnWidth("costPrice") }} />
-                )}
-                {isColumnVisible("vatRate") && (
-                  <col style={{ width: getColumnWidth("vatRate") }} />
-                )}
-                {isColumnVisible("discount") && (
-                  <col style={{ width: getColumnWidth("discount") }} />
-                )}
-                {isColumnVisible("status") && (
-                  <col style={{ width: getColumnWidth("status") }} />
-                )}
+                {orderedColumns.map((col) => (
+                  <col key={col.key} style={{ width: getColumnWidth(col.key) }} />
+                ))}
                 <col style={{ width: getColumnWidth("actions") }} />
               </colgroup>
               <thead className="bg-muted/50">
                 <tr>
-                  {isColumnVisible("productNumber") && (
-                    <th className="relative px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider select-none border-r border-border">
-                      Product Number
-                      <ResizeHandle onMouseDown={onMouseDown("productNumber")} />
-                    </th>
-                  )}
-                  {isColumnVisible("productName") && (
-                    <th className="relative px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider select-none border-r border-border">
-                      Product Name
-                      <ResizeHandle onMouseDown={onMouseDown("productName")} />
-                    </th>
-                  )}
-                  {isColumnVisible("ledgerAccount") && (
-                    <th className="relative px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider select-none border-r border-border">
-                      Ledger Account
-                      <ResizeHandle onMouseDown={onMouseDown("ledgerAccount")} />
-                    </th>
-                  )}
-                  {isColumnVisible("salesPrice") && (
-                    <th className="relative px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider select-none border-r border-border">
-                      Sales Price
-                      <ResizeHandle onMouseDown={onMouseDown("salesPrice")} />
-                    </th>
-                  )}
-                  {isColumnVisible("costPrice") && (
-                    <th className="relative px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider select-none border-r border-border">
-                      Cost Price
-                      <ResizeHandle onMouseDown={onMouseDown("costPrice")} />
-                    </th>
-                  )}
-                  {isColumnVisible("vatRate") && (
-                    <th className="relative px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider select-none border-r border-border">
-                      {"VAT %"}
-                      <ResizeHandle onMouseDown={onMouseDown("vatRate")} />
-                    </th>
-                  )}
-                  {isColumnVisible("discount") && (
-                    <th className="relative px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider select-none border-r border-border">
-                      {"Discount %"}
-                      <ResizeHandle onMouseDown={onMouseDown("discount")} />
-                    </th>
-                  )}
-                  {isColumnVisible("unit") && (
-                    <th className="relative px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider select-none border-r border-border">
-                      Unit
-                      <ResizeHandle onMouseDown={onMouseDown("unit")} />
-                    </th>
-                  )}
-                  {isColumnVisible("productGroup") && (
-                    <th className="relative px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider select-none border-r border-border">
-                      Product Group
-                      <ResizeHandle onMouseDown={onMouseDown("productGroup")} />
-                    </th>
-                  )}
-                  {isColumnVisible("status") && (
-                    <th className="relative px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider select-none border-r border-border">
-                      Status
-                      <ResizeHandle onMouseDown={onMouseDown("status")} />
-                    </th>
-                  )}
+                  {orderedColumns.map((col) => (
+                    <th
+                      key={col.key}
+                      draggable
+                      onDragStart={onDragStart(col.key)}
+                      onDragOver={onDragOver(col.key)}
+                      onDragLeave={onDragLeave}
+                      onDrop={onDrop(col.key)}
+                      onDragEnd={onDragEnd}
+                      className={cn(
+                        "group/th relative px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider select-none cursor-grab active:cursor-grabbing transition-colors",
+                        draggedColumn === col.key && "opacity-50 bg-muted",
+                        dropTargetColumn === col.key && "bg-[#31BCFF]/10 border-l-2 border-l-[#31BCFF]"
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        <GripVertical className="w-3 h-3 text-muted-foreground/50 flex-shrink-0" />
+                        <span className="truncate">{col.label}</span>
+                      </div>
+                      <ResizeHandle onMouseDown={onMouseDown(col.key)} />
+                    </th>))}
                   <th className="relative px-6 py-4 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider border-r border-border">
                     <div className="flex items-center justify-end gap-2">
                       <span>Actions</span>
@@ -489,6 +495,7 @@ export default function ProductsPage() {
                         onResetColumns={() => {
                           resetColumns()
                           resetWidths()
+                          resetColumnOrder()
                         }}
                       />
                     </div>
@@ -496,131 +503,33 @@ export default function ProductsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200/50">
-                {paginatedProducts.map((product) => {
-                  const isDefaultLedgerAccount = product.ledgerAccount.businessId == null ? "true" : "false";
-                  return (
-                    <tr key={product.id} className="hover:bg-blue-50/30 transition-colors duration-200">
-                      {isColumnVisible("productNumber") && (
-                        <td className="px-6 py-4">
-
-                          <Link
-                            href={`/dashboard/products/${product.id}/edit`}
-
-                            title="Edit Product"
-                          >
-                            <div className="text-sm font-medium text-blue-600 hover:underline cursor-pointer">
-
-                              {formatProductNumberForDisplay(product.productNumber)}
-                            </div>
-                          </Link>
-
-                        </td>
-                      )}
-
-                      {isColumnVisible("productName") && (
-                        <td className="px-6 py-4">
-
-                          <Link
-                            href={`/dashboard/products/${product.id}/edit`}
-
-                            title="Edit Product"
-                          >
-                            <div className="text-sm font-medium text-blue-600 hover:underline cursor-pointer">
-
-                              {product.productName}
-                            </div>
-
-                          </Link>
-                        </td>
-                      )}
-
-                      {isColumnVisible("ledgerAccount") && (
-                        <td className="px-6 py-4">
-                          <Link href={`/dashboard/ledger-accounts/${product.ledgerAccount.id}/edit?default=${isDefaultLedgerAccount}`} className="hover:underline">
-                            <div className="text-sm text-blue-600 hover:underline">{product.ledgerAccount.name} ({product.ledgerAccount.accountNumber})</div>
-                          </Link>
-                        </td>
-                      )}
-
-                      {isColumnVisible("salesPrice") && (
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-gray-900">{Number(product.salesPrice).toFixed(2)}</div>
-                        </td>
-                      )}
-
-                      {isColumnVisible("costPrice") && (
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-gray-900">{Number(product.costPrice).toFixed(2)}</div>
-                        </td>
-                      )}
-
-                      {isColumnVisible("vatRate") && (
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-gray-900">
-                            {product.ledgerAccount.businessVatCodes.length > 0
-                              ? `${product.ledgerAccount.businessVatCodes[0].vatCode.rate}%`
-                              : product.ledgerAccount.vatCode
-                                ? `${product.ledgerAccount.vatCode.rate}%`
-                                : "0%"}
-                          </div>
-                        </td>
-                      )}
-
-
-                      {isColumnVisible("discount") && (
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-gray-900">{product.discountPercentage ? `${product.discountPercentage}%` : "-"}</div>
-                        </td>
-                      )}
-                      {isColumnVisible("unit") && (
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-gray-900">{product.unit ? product.unit.name : "-"}</div>
-                        </td>
-                      )}
-                      {isColumnVisible("productGroup") && (
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-gray-900">{product.productGroup ? product.productGroup.name : "-"}</div>
-                        </td>
-                      )}
-
-                      {isColumnVisible("status") && (
-                        <td className="px-6 py-4">
-                          {/* <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${product.active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
-                            }`}
-                        >
-                          {product.active ? "Active" : "Inactive"}
-                        </span> */}
-                          <div className="flex items-center space-x-2">
-                            <Switch
-                              id="status"
-                              checked={product.active}
-                              onCheckedChange={(checked) => handleStatusChange(product.id, checked)}
-                            />
-                          </div>
-                        </td>
-                      )}
-                      <td className="px-6 py-4">
-                        <div className="flex items-center justify-end gap-2">
-                          <Link
+                {paginatedProducts.map((product) => (
+                  <tr key={product.id} className="hover:bg-blue-50/30 transition-colors duration-200">
+                    {orderedColumns.map((col) => (
+                      <td key={col.key} className="px-6 py-4 overflow-hidden">
+                        {renderCell(product, col.key)}
+                      </td>
+                    ))}
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-end gap-2">
+                        <Link
                             href={`/dashboard/products/${product.id}/edit`}
                             className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
                             title="Edit Product"
                           >
                             <PencilIcon className="h-4 w-4" />
                           </Link>
-                          <button
-                            onClick={() => handleDelete(product.id, product.productName)}
-                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                            title="Delete Product"
-                          >
-                            <TrashIcon className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
+                        <button
+                          onClick={() => handleDelete(product.id, product.productName)}
+                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                          title="Delete Product"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

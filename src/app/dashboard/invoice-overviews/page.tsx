@@ -36,8 +36,9 @@ import { is } from "zod/v4/locales"
 import { ColumnVisibilityToggle } from "@/components/invoice/column-visibility-toggle"
 import { useResizableColumns } from "@/hooks/use-resizable-columns"
 import { ResizeHandle } from "@/components/invoice/resize-handle"
-import { CreditCard } from "lucide-react"
+import { CreditCard, GripVertical } from "lucide-react"
 import { toast } from "@/shared/lib/toast"
+import { cn } from "@/shared/lib/utils"
 
 export enum InvoiceStatus {
     DRAFT = "DRAFT", // Not sent yet
@@ -163,7 +164,22 @@ export default function InvoiceOverview() {
         { key: "paid", initialWidth: 120, minWidth: 80 },
         { key: "outstanding", initialWidth: 120, minWidth: 80 },
     ]
-    const { getColumnWidth, onMouseDown, resetWidths } = useResizableColumns({
+
+    const {
+        getColumnWidth,
+        onMouseDown,
+        resetWidths,
+        columnOrder,
+        draggedColumn,
+        dropTargetColumn,
+        onDragStart,
+        onDragOver,
+        onDragLeave,
+        onDrop,
+        onDragEnd,
+        resetColumnOrder,
+        getOrderedColumns,
+    } = useResizableColumns({
         storageKey: "invoice-overview-col-widths",
         columns: RESIZABLE_COLUMNS,
     })
@@ -265,6 +281,83 @@ export default function InvoiceOverview() {
         await sendEmail(invoiceId, "invoiced");
         setLoadingEmail(prev => ({ ...prev, [invoiceId]: false }));
     }
+
+    // Get ordered and visible columns
+    const orderedColumns = getOrderedColumns(COLUMNS).filter((col) => isColumnVisible(col.key))
+
+    const renderCell = (invoice: any, key: string, outstandingAmount: number) => {
+        switch (key) {
+            case "invoiceNumber":
+                return (
+                    <Link href={`/dashboard/invoices/create?invoiceId=${invoice.id}&copy=true&overview=true`}>
+                        <span className="text-sm font-medium text-blue-600 hover:underline cursor-pointer">
+                            {invoice.status !== InvoiceStatus.DRAFT
+                                ? formatInvoiceNumberForDisplay(invoice.invoiceNumber)
+                                : "-"}
+                        </span>
+                    </Link>
+                )
+
+            case "customer":
+                return (
+                    <div className="text-sm">
+                        <Link href={`/dashboard/customers/${invoice.customer?.id}/edit?overview=true`}>
+                            <div className="text-blue-600 hover:underline cursor-pointer">
+                                {invoice.customer?.customerName}
+                            </div>
+                        </Link>
+                    </div>
+                )
+
+            case "project":
+                return (
+                    <div className="text-sm">
+                        <div className="text-blue-600 hover:underline cursor-pointer">
+                            {invoice.project ? invoice.project?.name : "-"}
+                        </div>
+                    </div>
+                )
+
+            case "status":
+                return (
+                    <span className="text-sm text-gray-900">
+                        {invoice.status}
+                    </span>
+                )
+
+            case "sentAt":
+                return invoice.sentAt
+                    ? new Date(invoice.sentAt).toLocaleDateString()
+                    : ""
+
+            case "dueDate":
+                return invoice.dueDate
+                    ? new Date(invoice.dueDate).toLocaleDateString()
+                    : ""
+
+            case "totalInclVAT":
+                return invoice.totalInclVAT?.toString()
+
+            case "totalExclVAT":
+                return invoice.totalExclVAT?.toString()
+
+            case "totalVatAmount":
+                return invoice.totalVatAmount?.toString() || "0.00"
+
+            case "paid":
+                return invoice.paymentAllocations.reduce(
+                    (sum: number, pa: any) => sum + Number(pa.amountAllocated),
+                    0
+                )
+
+            case "outstanding":
+                return outstandingAmount
+
+            default:
+                return null
+        }
+    }
+
     return (
         <div className="min-h-screen bg-gray-50 p-3 sm:p-6">
             <div className="max-w-[1600px] mx-auto space-y-4 sm:space-y-6">
@@ -412,22 +505,14 @@ export default function InvoiceOverview() {
                             <colgroup>
                                 <col style={{ width: "48px" }} />
                                 <col style={{ width: "40px" }} />
-                                {isColumnVisible("invoiceNumber") && <col style={{ width: getColumnWidth("invoiceNumber") }} />}
-                                {isColumnVisible("customer") && <col style={{ width: getColumnWidth("customer") }} />}
-                                {isColumnVisible("project") && <col style={{ width: getColumnWidth("project") }} />}
-                                {isColumnVisible("status") && <col style={{ width: getColumnWidth("status") }} />}
-                                {isColumnVisible("sentAt") && <col style={{ width: getColumnWidth("sentAt") }} />}
-                                {isColumnVisible("dueDate") && <col style={{ width: getColumnWidth("dueDate") }} />}
-                                {isColumnVisible("totalInclVAT") && <col style={{ width: getColumnWidth("totalInclVAT") }} />}
-                                {isColumnVisible("totalExclVAT") && <col style={{ width: getColumnWidth("totalExclVAT") }} />}
-                                {isColumnVisible("totalVatAmount") && <col style={{ width: getColumnWidth("totalVatAmount") }} />}
-                                {isColumnVisible("paid") && <col style={{ width: getColumnWidth("paid") }} />}
-                                {isColumnVisible("outstanding") && <col style={{ width: getColumnWidth("outstanding") }} />}
+                                {orderedColumns.map((col) => (
+                                    <col key={col.key} style={{ width: getColumnWidth(col.key) }} />
+                                ))}
                                 <col style={{ width: "40px" }} />
                                 <col style={{ width: "40px" }} />
                                 <col style={{ width: "40px" }} />
-
                             </colgroup>
+
                             <thead className="bg-gray-50 border-b border-gray-200">
                                 <tr>
                                     <th className="w-12 px-4 py-3">
@@ -439,55 +524,27 @@ export default function InvoiceOverview() {
                                         />
                                     </th>
                                     <th className="w-12 px-2 py-3"></th>
-                                    {isColumnVisible('invoiceNumber') &&
-                                        <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none">
-                                            Invoice no.
-                                            <ResizeHandle onMouseDown={onMouseDown("invoiceNumber")} />
-                                        </th>}
-                                    {isColumnVisible('customer') &&
-                                        <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none">
-                                            Customer
-                                            <ResizeHandle onMouseDown={onMouseDown("customer")} />
-                                        </th>}
-                                    {isColumnVisible('project') &&
-                                        <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none">
-                                            Project
-                                            <ResizeHandle onMouseDown={onMouseDown("project")} />
-                                        </th>}
-                                    {isColumnVisible('status') && <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none">
-                                        Status
-                                        <ResizeHandle onMouseDown={onMouseDown("status")} />
-                                    </th>}
-                                    {isColumnVisible('sentAt') &&
-                                        <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none">
-                                            Invoice date
-                                            <ResizeHandle onMouseDown={onMouseDown("sentAt")} />
-                                        </th>}
-                                    {isColumnVisible('dueDate') && <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none">
-                                        Due date
-                                        <ResizeHandle onMouseDown={onMouseDown("dueDate")} />
-                                    </th>}
-                                    {isColumnVisible('totalInclVAT') &&
-                                        <th className="relative px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase select-none">
-                                            Amount incl. VAT
-                                            <ResizeHandle onMouseDown={onMouseDown("totalInclVAT")} />
-                                        </th>}
-                                    {isColumnVisible('totalExclVAT') && <th className="relative px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase select-none">
-                                        Net amount
-                                        <ResizeHandle onMouseDown={onMouseDown("totalExclVAT")} />
-                                    </th>}
-                                    {isColumnVisible('totalVatAmount') && <th className="relative px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase select-none">
-                                        Total VAT amount
-                                        <ResizeHandle onMouseDown={onMouseDown("totalVatAmount")} />
-                                    </th>}
-                                    {isColumnVisible('paid') && <th className="relative px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase select-none">
-                                        Paid
-                                        <ResizeHandle onMouseDown={onMouseDown("paid")} />
-                                    </th>}
-                                    {isColumnVisible('outstanding') && <th className="relative px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase select-none">
-                                        Outstanding
-                                        <ResizeHandle onMouseDown={onMouseDown("outstanding")} />
-                                    </th>}
+                                    {orderedColumns.map((col) => (
+                                        <th
+                                            key={col.key}
+                                            draggable
+                                            onDragStart={onDragStart(col.key)}
+                                            onDragOver={onDragOver(col.key)}
+                                            onDragLeave={onDragLeave}
+                                            onDrop={onDrop(col.key)}
+                                            onDragEnd={onDragEnd}
+                                            className={cn(
+                                                "group/th relative px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider select-none cursor-grab active:cursor-grabbing transition-colors",
+                                                draggedColumn === col.key && "opacity-50 bg-muted",
+                                                dropTargetColumn === col.key && "bg-[#31BCFF]/10 border-l-2 border-l-[#31BCFF]"
+                                            )}
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                <GripVertical className="w-3 h-3 text-muted-foreground/50 flex-shrink-0" />
+                                                <span className="truncate">{col.label}</span>
+                                            </div>
+                                            <ResizeHandle onMouseDown={onMouseDown(col.key)} />
+                                        </th>))}
                                     <th className="w-12 px-2 py-3"></th>
                                     <th className="w-12 px-2 py-3"></th>
                                     <th className="w-12 px-2 py-3">
@@ -517,63 +574,24 @@ export default function InvoiceOverview() {
                                                         )}
                                                     </button>
                                                 </td>
-                                                {isColumnVisible('invoiceNumber') && <td className="px-4 py-3">
-                                                    <Link
-                                                        href={`/dashboard/invoices/create?invoiceId=${invoice.id}&copy=true&overview=true`}
-                                                    >
-                                                        <span className="text-sm font-medium text-blue-600 hover:underline cursor-pointer">
-                                                            {invoice.status !== InvoiceStatus.DRAFT ? formatInvoiceNumberForDisplay(invoice.invoiceNumber) : "-"}
-
-                                                        </span>
-                                                    </Link>
-                                                </td>
-                                                }
-                                                {isColumnVisible('customer') && <td className="px-4 py-3">
-                                                    <div className="text-sm">
-                                                        <Link
-                                                            href={`/dashboard/customers/${invoice.customer?.id}/edit?overview=true`}
+                                                {/* Dynamic Columns */}
+                                                {orderedColumns.map((col) =>
+                                                    isColumnVisible(col.key) ? (
+                                                        <td
+                                                            key={col.key}
+                                                            className={`px-4 py-3 text-sm text-gray-900 text-center`}
                                                         >
-                                                            <div className="text-blue-600 hover:underline cursor-pointer">
-                                                                {invoice.customer?.customerName}
-                                                            </div>
-                                                        </Link>
-                                                    </div>
-                                                </td>}
-                                                {isColumnVisible('project') && <td className="px-4 py-3">
-                                                    <div className="text-sm">
-                                                        <div className="text-blue-600 hover:underline cursor-pointer">{invoice.project ? invoice.project?.name : "-"}</div>
-                                                    </div>
-                                                </td>}
-                                                {isColumnVisible('status') && <td className="px-4 py-3">
-                                                    <span
-                                                        className={`text-sm ${invoice.status === InvoiceStatus.OUTSTANDING
-                                                            ? "text-gray-900"
-                                                            : invoice.status === InvoiceStatus.PAID
-                                                                ? "text-gray-900"
-                                                                : "text-gray-900"
-                                                            }`}
-                                                    >
-                                                        {invoice.status}
-                                                    </span>
-                                                </td>}
-                                                {isColumnVisible('sentAt') && <td className="px-4 py-3 text-sm text-gray-900">
-                                                    {invoice.sentAt ? new Date(invoice.sentAt).toLocaleDateString() : ""}
-                                                </td>}
-                                                {isColumnVisible('dueDate') && <td className="px-4 py-3 text-sm text-gray-900">
-                                                    {invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : ""}
-                                                </td>}
-                                                {isColumnVisible('totalInclVAT') && <td className="px-4 py-3 text-sm text-gray-900 text-right">{invoice.totalInclVAT.toString()}</td>}
-                                                {isColumnVisible('totalExclVAT') && <td className="px-4 py-3 text-sm text-gray-900 text-right">{invoice.totalExclVAT.toString()}</td>}
-                                                {isColumnVisible('totalVatAmount') && <td className="px-4 py-3 text-sm text-gray-900 text-right">{invoice.totalVatAmount?.toString() || "0.00"}</td>}
-                                                {isColumnVisible('paid') && <td className="px-4 py-3 text-sm text-gray-900 text-right">
-                                                    {invoice.paymentAllocations.reduce((sum, pa) => sum + Number(pa.amountAllocated), 0)}
-                                                </td>}
-                                                {isColumnVisible('outstanding') && <td className="px-4 py-3 text-sm text-gray-900 text-right">
-                                                    {outstandingAmount}
-                                                </td>}
+                                                            {renderCell(invoice, col.key, outstandingAmount)}
+                                                        </td>
+                                                    ) : null
+                                                )}
+
                                                 <td className="px-2 py-3">
-                                                    <button className="p-1 hover:bg-gray-200 rounded" onClick={() => handlePDf(invoice.id)}>
+                                                    <button className="group relative p-1 hover:bg-gray-200 rounded" onClick={() => handlePDf(invoice.id)}>
                                                         <PaperClipIcon className="h-4 w-4 text-gray-400" />
+                                                        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 text-xs text-white bg-gray-800 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                                                            PDF
+                                                        </span>
                                                     </button>
                                                 </td>
                                                 {invoice.status !== InvoiceStatus.DRAFT &&
@@ -582,7 +600,7 @@ export default function InvoiceOverview() {
                                                             <button
                                                                 onClick={() => handleSendEmail(invoice.id)}
                                                                 disabled={loadingEmail[invoice.id]}
-                                                                className={`p-2 rounded-lg transition-all duration-200 ${loadingEmail[invoice.id]
+                                                                className={`group relative p-2 rounded-lg transition-all duration-200 ${loadingEmail[invoice.id]
                                                                     ? 'text-gray-300 bg-gray-50 cursor-not-allowed'
                                                                     : 'text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50'
                                                                     }`}
@@ -597,6 +615,9 @@ export default function InvoiceOverview() {
                                                                         <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25H4.5a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
                                                                     </svg>
                                                                 )}
+                                                                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 text-xs text-white bg-gray-800 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                                                                    Email
+                                                                </span>
                                                             </button>
                                                         </td>
                                                         <td className="px-2 py-3">
@@ -869,14 +890,18 @@ export default function InvoiceOverview() {
                                 {/* Card Actions */}
                                 <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-200">
                                     <div className="flex items-center gap-2">
-                                        <button className="p-1.5 hover:bg-gray-100 rounded" onClick={() => handlePDf(invoice.id)}>
+                                        <button className="group relative p-1.5 hover:bg-gray-100 rounded" onClick={() => handlePDf(invoice.id)}>
                                             <PaperClipIcon className="h-4 w-4 text-gray-400" />
+                                            <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 text-xs text-white bg-gray-800 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                                                PDF
+                                            </span>
+
                                         </button>
                                         {invoice.status !== InvoiceStatus.DRAFT &&
                                             <button
                                                 onClick={() => handleSendEmail(invoice.id)}
                                                 disabled={loadingEmail[invoice.id]}
-                                                className={`p-2 rounded-lg transition-all duration-200 ${loadingEmail[invoice.id]
+                                                className={`group relative p-2 rounded-lg transition-all duration-200 ${loadingEmail[invoice.id]
                                                     ? 'text-gray-300 bg-gray-50 cursor-not-allowed'
                                                     : 'text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50'
                                                     }`}
@@ -891,6 +916,10 @@ export default function InvoiceOverview() {
                                                         <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25H4.5a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
                                                     </svg>
                                                 )}
+                                                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 text-xs text-white bg-gray-800 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                                                    Send Email
+                                                </span>
+
                                             </button>
                                         }
                                     </div>

@@ -4,6 +4,8 @@ import { useEffect, useState, useRef } from "react";
 import Swal from "sweetalert2";
 import React from "react";
 import { formatCustomerNumberForDisplay } from "@/shared/lib/invoiceHelper";
+import { customerValidationSchema } from "./validation";
+import z from "zod";
 
 export interface CustomerContact {
     name: string
@@ -14,7 +16,10 @@ export interface CustomerContact {
 export interface CustomerFormType {
     customerName: string;
     customerNumber: string;
+    defaultCustomerNumber?: string;
     organizationNumber: string;
+    sequence: number
+        year: number
     address: string;
     postalCode: string;
     postalAddress: string;
@@ -40,6 +45,8 @@ const emptyCustomer: CustomerFormType = {
     customerName: "",
     customerNumber: "",
     organizationNumber: "",
+    sequence:0,
+    year:new Date().getFullYear(),
     address: "",
     postalCode: "",
     postalAddress: "",
@@ -61,6 +68,9 @@ export default function CustomerDialog({
     const [form, setForm] = useState<CustomerFormType>(customer ?? emptyCustomer);
     const customerNameRef = useRef<HTMLInputElement>(null);
     const customerNumberRef = useRef<HTMLInputElement>(null);
+    const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
+    const validationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const hasErrors = Object.values(validationErrors).some(Boolean)
 
     useEffect(() => {
         setForm(customer ?? emptyCustomer);
@@ -71,15 +81,43 @@ export default function CustomerDialog({
             if (!customer) {
                 getDefaultCustomerNumber();
             }
-            setTimeout(() => {
+            requestAnimationFrame(() => {
                 customerNameRef.current?.focus();
-            }, 100);
+            });
         }
     }, [open]);
 
     const updateField = (field: keyof CustomerFormType, value: string) => {
         setForm((prev) => ({ ...prev, [field]: value }));
     };
+    const validateField = (fieldName: string, value: any) => {
+        try {
+            const fieldSchema = customerValidationSchema.shape[fieldName as keyof typeof customerValidationSchema.shape]
+            if (fieldSchema) {
+                fieldSchema.parse(value)
+                setValidationErrors(prev => ({ ...prev, [fieldName]: '' }))
+            }
+        } catch (error) {
+            if (error instanceof z.ZodError && error.issues.length > 0) {
+                setValidationErrors(prev => ({ ...prev, [fieldName]: error.issues[0].message }))
+            }
+        }
+    }
+
+    const debouncedValidation = (fieldName: string, value: any) => {
+        if (!value) {
+            setValidationErrors(prev => ({ ...prev, [fieldName]: '' }))
+            return
+        }
+
+        if (validationTimeoutRef.current) {
+            clearTimeout(validationTimeoutRef.current)
+        }
+
+        validationTimeoutRef.current = setTimeout(() => {
+            validateField(fieldName, value)
+        }, 400)
+    }
 
     const handleSubmit = async () => {
         const payload: any = { ...form };
@@ -103,18 +141,22 @@ export default function CustomerDialog({
     };
 
     const getDefaultCustomerNumber = async () => {
-            try {
-                const res = await fetch('/api/customers/next-number');
-                const data = await res.json();
-    
-                const defaultNumber = formatCustomerNumberForDisplay(data.customerNumber);
-    
-                updateField("customerNumber", defaultNumber);
-            } catch (error) {
-                console.error('Error fetching customerDefaultNumber:', error)
-            }
-    
-        };
+        try {
+            const res = await fetch('/api/customers/next-number');
+            const data = await res.json();
+
+            const defaultNumber = formatCustomerNumberForDisplay(data.customerNumber);
+
+            updateField("customerNumber", defaultNumber);
+            updateField("defaultCustomerNumber", data.customerNumber);
+            updateField("sequence",data.sequence)
+            updateField("year",data.year)
+
+        } catch (error) {
+            console.error('Error fetching customerDefaultNumber:', error)
+        }
+
+    };
 
     return (
         <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -143,8 +185,28 @@ export default function CustomerDialog({
                     {/* Form */}
                     <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                            <Input ref={customerNameRef} label="Customer name" value={form.customerName} onChange={(v) => updateField("customerName", v)} required />
-                            <Input ref={customerNumberRef} label="Customer number" value={form.customerNumber} onChange={(v) => updateField("customerNumber", v)} required />
+                            <Input
+                                ref={customerNameRef}
+                                label="Customer name *"
+                                value={form.customerName}
+                                onChange={(v) => {
+                                    updateField("customerName", v)
+                                    debouncedValidation("customerName", v)
+                                }}
+                                onBlur={(v) => validateField("customerName", v)}
+                                error={validationErrors.customerName}
+                                placeholder="Customer name"
+                            />
+
+
+                            <Input ref={customerNumberRef}
+                                label="Customer number *"
+                                value={form.customerNumber}
+                                onChange={(v) => { updateField("customerNumber", v); debouncedValidation("customerNumber", v) }}
+                                onBlur={(v) => validateField("customerNumber", v)}
+                                error={validationErrors.customerNumber}
+                                placeholder="Customer number"
+                            />
                             <Input label="Organization number" value={form.organizationNumber} onChange={(v) => updateField("organizationNumber", v)} />
 
                             <Input
@@ -180,7 +242,7 @@ export default function CustomerDialog({
 
                             <button
                                 type="submit"
-                                disabled={loading}
+                                disabled={loading || hasErrors}
                                 className="px-6 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
                             >
                                 {loading ? "Saving..." : "Save customer"}
@@ -198,24 +260,33 @@ const Input = React.forwardRef<HTMLInputElement, {
     label: string;
     value: string;
     onChange: (value: string) => void;
+    onBlur?: (value: string) => void;
     className?: string;
     required?: boolean;
-}>(({ label, value, onChange, className = "", required = false }, ref) => {
+    placeholder?: string;
+    error?: string; 
+}>(({ label, value, onChange, onBlur, className = "", required = false, placeholder, error }, ref) => {
     return (
         <div className={className}>
             <label className="block text-gray-500 mb-1">
                 {label}
                 {required && <span className="text-red-500 ml-1">*</span>}
             </label>
+
             <input
                 ref={ref}
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
-                className="w-full border px-3 py-2 rounded-md"
+                onBlur={(e) => onBlur?.(e.target.value)}
+                className={`w-full px-3 py-2 rounded-md border ${error ? "border-red-500 focus:ring-red-300" : "border-gray-300 focus:ring-[#31BCFF]/50"
+                    } focus:ring-2 outline-none`}
                 required={required}
+                placeholder={placeholder}
             />
+
+            {error && (
+                <p className="mt-1 text-xs text-red-600">{error}</p>
+            )}
         </div>
     );
 });
-
-Input.displayName = "Input";

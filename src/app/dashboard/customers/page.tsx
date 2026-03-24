@@ -19,12 +19,16 @@ import { ColumnVisibilityToggle } from "@/components/invoice/column-visibility-t
 import { Switch } from "@/components/ui/switch"
 import { useResizableColumns } from "@/hooks/use-resizable-columns"
 import { ResizeHandle } from "@/components/invoice/resize-handle"
+import { CustomerContact } from "./create/page"
+import { GripVertical } from "lucide-react"
+import { cn } from "@/shared/lib/utils"
 
 interface Customer {
   id: string
   active: boolean
   customerNumber: string
   customerName: string
+  contactPersons: CustomerContact[]
   organizationNumber?: string | null
   address?: string | null
   postalCode?: string | null
@@ -35,7 +39,7 @@ interface Customer {
   deliveryAddress?: string | null
   deliveryAddressPostalCode?: string | null
   deliveryAddressPostalAddress?: string | null
-  department?: { id: string; name: string } | null 
+  department?: { id: string; name: string } | null
 }
 
 export default function CustomersPage() {
@@ -50,6 +54,7 @@ export default function CustomersPage() {
   const COLUMNS = [
     { key: "customerNumber", label: "Customer Number" },
     { key: "customerName", label: "Customer Name" },
+    { key: "contactPersons", label: "Customer Contact" },
     { key: "email", label: "Email" },
     { key: "phoneNumber", label: "Phone" },
     { key: "address", label: "Address" },
@@ -67,6 +72,7 @@ export default function CustomersPage() {
     defaultVisibility: {
       customerNumber: true,
       customerName: true,
+      contactPersons: true,
       email: true,
       phoneNumber: true,
       address: true,
@@ -217,6 +223,7 @@ export default function CustomersPage() {
   const RESIZABLE_COLUMNS = [
     { key: "customerNumber", initialWidth: 120, minWidth: 80 },
     { key: "customerName", initialWidth: 220, minWidth: 120 },
+    { key: "contactPersons", initialWidth: 220, minWidth: 120 },
     { key: "email", initialWidth: 180, minWidth: 120 },
     { key: "phoneNumber", initialWidth: 140, minWidth: 100 },
     { key: "address", initialWidth: 200, minWidth: 120 },
@@ -227,10 +234,134 @@ export default function CustomersPage() {
     { key: "active", initialWidth: 100, minWidth: 70 },
     { key: "actions", initialWidth: 120, minWidth: 80 },
   ]
-  const { getColumnWidth, onMouseDown, resetWidths } = useResizableColumns({
+
+  const {
+    getColumnWidth,
+    onMouseDown,
+    resetWidths,
+    columnOrder,
+    draggedColumn,
+    dropTargetColumn,
+    onDragStart,
+    onDragOver,
+    onDragLeave,
+    onDrop,
+    onDragEnd,
+    resetColumnOrder,
+    getOrderedColumns,
+  } = useResizableColumns({
     storageKey: "customer-col-widths",
     columns: RESIZABLE_COLUMNS,
   })
+
+  // Get ordered and visible columns
+  const orderedColumns = getOrderedColumns(COLUMNS).filter((col) => isColumnVisible(col.key))
+
+  const renderCell = (customer: Customer, columnKey: string) => {
+    switch (columnKey) {
+      case "customerNumber":
+        return (
+          <Link
+            href={`/dashboard/customers/${customer.id}/edit`}
+            title="Edit Customer"
+          >
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#31BCFF]/10 text-blue-600 hover:underline">
+              {formatCustomerNumberForDisplay(customer.customerNumber) || "-"}
+            </span>
+          </Link>
+        )
+
+      case "customerName":
+        return (
+          <Link
+            href={`/dashboard/customers/${customer.id}/edit`}
+            title="Edit Customer"
+          >
+            <span className="text-sm font-medium text-blue-600 hover:underline">
+              {customer.customerName}
+            </span>
+          </Link>
+        )
+
+      case "contactPersons":
+        return (
+          <Link
+            href={`/dashboard/customers/${customer.id}/edit`}
+            title="Edit Customer"
+          >
+            <span className="text-sm font-medium text-blue-600 hover:underline">
+              {customer.contactPersons?.[0]?.name || "-"}
+            </span>
+          </Link>
+        )
+
+      case "email":
+        return (
+          <span className="text-sm text-gray-600">
+            {customer.email || "-"}
+          </span>
+        )
+
+      case "phoneNumber":
+        return (
+          <span className="text-sm text-gray-600">
+            {customer.phoneNumber || "-"}
+          </span>
+        )
+
+      case "address":
+        return (
+          <span className="text-sm text-gray-600 truncate max-w-[200px] block">
+            {customer.address || "-"}
+          </span>
+        )
+
+      case "discountPercentage":
+        return (
+          <span className="text-sm text-gray-600">
+            {customer.discountPercentage != null
+              ? `${customer.discountPercentage}%`
+              : "-"}
+          </span>
+        )
+
+      case "organizationNumber":
+        return (
+          <span className="text-sm text-gray-600">
+            {customer.organizationNumber || "-"}
+          </span>
+        )
+
+      case "department":
+        return (
+          <span className="text-sm text-gray-600">
+            {customer.department?.name || "-"}
+          </span>
+        )
+
+      case "deliveryAddress":
+        return (
+          <span className="text-sm text-gray-600 truncate max-w-[200px] block">
+            {customer.deliveryAddress || "-"}
+          </span>
+        )
+
+      case "active":
+        return (
+          <div className="flex items-center justify-center">
+            <Switch
+              checked={customer.active}
+              onCheckedChange={(checked) =>
+                handleStatusChange(customer.id, checked)
+              }
+            />
+          </div>
+        )
+
+      default:
+        return null
+    }
+  }
 
   if (loading) {
     return (
@@ -340,12 +471,15 @@ export default function CustomersPage() {
             <div className="overflow-x-auto">
 
               <table className="w-full" style={{ tableLayout: "fixed" }}>
-                <colgroup>
+                {/* <colgroup>
                   {isColumnVisible("customerNumber") && (
                     <col style={{ width: getColumnWidth("customerNumber") }} />
                   )}
                   {isColumnVisible("customerName") && (
                     <col style={{ width: getColumnWidth("customerName") }} />
+                  )}
+                  {isColumnVisible("contactPersons") && (
+                    <col style={{ width: getColumnWidth("contactPersons") }} />
                   )}
                   {isColumnVisible("email") && (
                     <col style={{ width: getColumnWidth("email") }} />
@@ -372,9 +506,15 @@ export default function CustomersPage() {
                     <col style={{ width: getColumnWidth("active") }} />
                   )}
                   <col style={{ width: getColumnWidth("actions") }} />
+                </colgroup> */}
+                <colgroup>
+                  {orderedColumns.map((col) => (
+                    <col key={col.key} style={{ width: getColumnWidth(col.key) }} />
+                  ))}
+                  <col style={{ width: getColumnWidth("actions") }} />
                 </colgroup>
                 <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
-                  <tr>
+                  {/* <tr>
                     {isColumnVisible("customerNumber") && (
                       <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
                         Customer No.
@@ -386,6 +526,13 @@ export default function CustomersPage() {
                       <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
                         Customer Name
                         <ResizeHandle onMouseDown={onMouseDown("customerName")} />
+                      </th>
+                    )}
+
+                    {isColumnVisible("contactPersons") && (
+                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase select-none border-r border-border">
+                        Customer Contact
+                        <ResizeHandle onMouseDown={onMouseDown("contactPersons")} />
                       </th>
                     )}
 
@@ -455,91 +602,58 @@ export default function CustomersPage() {
                         />
                       </div>
                     </th>
+                  </tr> */}
+                  <tr>
+                    {orderedColumns.map((col) => (
+                      <th
+                        key={col.key}
+                        draggable
+                        onDragStart={onDragStart(col.key)}
+                        onDragOver={onDragOver(col.key)}
+                        onDragLeave={onDragLeave}
+                        onDrop={onDrop(col.key)}
+                        onDragEnd={onDragEnd}
+                        className={cn(
+                          "group/th relative px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider select-none cursor-grab active:cursor-grabbing transition-colors",
+                          draggedColumn === col.key && "opacity-50 bg-muted",
+                          dropTargetColumn === col.key && "bg-[#31BCFF]/10 border-l-2 border-l-[#31BCFF]"
+                        )}
+                      >
+                        <div className="flex items-center gap-2">
+                          <GripVertical className="w-3 h-3 text-muted-foreground/50 flex-shrink-0" />
+                          <span className="truncate">{col.label}</span>
+                        </div>
+                        <ResizeHandle onMouseDown={onMouseDown(col.key)} />
+                      </th>))}
+                    <th className="relative px-6 py-4 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider border-r border-border">
+                      <div className="flex items-center justify-end gap-2">
+                        <span>Actions</span>
+                        <ColumnVisibilityToggle
+                          columns={columns}
+                          onColumnToggle={toggleColumn}
+                          onResetColumns={() => {
+                            resetColumns()
+                            resetWidths()
+                            resetColumnOrder()
+                          }}
+                        />
+                      </div>
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {paginatedCustomers.map((customer) => (
-                    <tr key={customer.id} className="hover:bg-blue-50/50 transition-colors duration-150">
-                      {isColumnVisible("customerNumber") && (
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <Link
-                            href={`/dashboard/customers/${customer.id}/edit`}
+                    <tr
+                      key={customer.id}
+                      className="hover:bg-blue-50/50 transition-colors duration-150"
+                    >
+                      {orderedColumns.map((col) => (
+                        <td key={col.key} className="px-6 py-4 overflow-hidden">
+                          {renderCell(customer, col.key)}
+                        </td>
+                      ))}
 
-                            title="Edit Customer"
-                          >
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#31BCFF]/10 text-blue-600 hover:underline">
-                              {formatCustomerNumberForDisplay(customer.customerNumber)}
-                            </span>
-                          </Link>
-                        </td>
-                      )}
-                      {isColumnVisible("customerName") && (
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <Link
-                            href={`/dashboard/customers/${customer.id}/edit`}
-                            title="Edit Customer"
-                          >
-                            <span className="text-sm font-medium text-blue-600 hover:underline">{customer.customerName}</span>
-                          </Link>
-                        </td>
-                      )}
-
-                      {isColumnVisible("email") && (
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-sm text-gray-600">{customer.email || "-"}</span>
-                        </td>
-                      )}
-                      {isColumnVisible("phoneNumber") && (
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-sm text-gray-600">{customer.phoneNumber || "-"}</span>
-                        </td>
-                      )}
-                      {isColumnVisible("address") && (
-                        <td className="px-6 py-4">
-                          <span className="text-sm text-gray-600 truncate max-w-[200px] block">
-                            {customer.address || "-"}
-                          </span>
-                        </td>
-                      )}
-
-                      {isColumnVisible("discountPercentage") && (
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-sm text-gray-600">{customer.discountPercentage != null ? `${customer.discountPercentage}%` : "-"}</span>
-                        </td>
-                      )}
-                      {isColumnVisible("organizationNumber") && (
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-sm text-gray-600">{customer.organizationNumber || "-"}</span>
-                        </td>
-                      )}
-                      {isColumnVisible("department") && (
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-sm text-gray-600">{customer.department?.name || "-"}</span>
-                        </td>
-                      )}
-                      {isColumnVisible("deliveryAddress") && (
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-sm text-gray-600 truncate max-w-[200px] block">
-                            {customer.deliveryAddress || "-"}
-                          </span>
-                        </td>
-                      )}
-
-                      {isColumnVisible("active") && <td className="px-6 py-4 whitespace-nowrap text-center">
-                        {/* <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${customer.active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
-                            }`}
-                        >
-                          {customer.active ? "Active" : "Inactive"}
-                        </span> */}
-                        <div className="flex items-center space-x-2">
-                          <Switch
-                            id="status"
-                            checked={customer.active}
-                            onCheckedChange={(checked) => handleStatusChange(customer.id, checked)}
-                          />
-                        </div>
-                      </td>}
+                      {/* Actions */}
                       <td className="px-6 py-4 whitespace-nowrap text-right">
                         <div className="flex items-center justify-end gap-2">
                           <Link
@@ -549,6 +663,7 @@ export default function CustomersPage() {
                           >
                             <PencilIcon className="h-4 w-4" />
                           </Link>
+
                           <button
                             onClick={() => handleDelete(customer.id, customer.customerName)}
                             className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"

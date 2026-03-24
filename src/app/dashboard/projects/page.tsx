@@ -19,6 +19,9 @@ import { Switch } from "@/components/ui/switch"
 import { start } from "repl"
 import { useResizableColumns } from "@/hooks/use-resizable-columns"
 import { formatProjectNumberForDisplay } from "@/shared/lib/invoiceHelper"
+import { GripVertical } from "lucide-react"
+import { ResizeHandle } from "@/components/invoice/resize-handle"
+import { cn } from "@/shared/lib/utils"
 
 interface Customer {
   id: string
@@ -93,7 +96,21 @@ export default function ProjectPage() {
     { key: "active", initialWidth: 100, minWidth: 70 },
     { key: "actions", initialWidth: 120, minWidth: 80 },
   ]
-  const { getColumnWidth, onMouseDown, resetWidths } = useResizableColumns({
+  const {
+    getColumnWidth,
+    onMouseDown,
+    resetWidths,
+    columnOrder,
+    draggedColumn,
+    dropTargetColumn,
+    onDragStart,
+    onDragOver,
+    onDragLeave,
+    onDrop,
+    onDragEnd,
+    resetColumnOrder,
+    getOrderedColumns,
+  } = useResizableColumns({
     storageKey: "project-col-widths",
     columns: RESIZABLE_COLUMNS,
   })
@@ -163,6 +180,10 @@ export default function ProjectPage() {
       })
     }
   }
+
+  // Get ordered and visible columns
+  const orderedColumns = getOrderedColumns(COLUMNS).filter((col) => isColumnVisible(col.key))
+
   const handleFilterClick = (filter: string) => () => {
     setSelectedFilter(filter)
     setCurrentPage(1)
@@ -222,6 +243,82 @@ export default function ProjectPage() {
         icon: "error",
         confirmButtonColor: "#31BCFF",
       })
+    }
+  }
+
+  const renderCell = (project: Project, columnKey: string) => {
+    switch (columnKey) {
+      case "projectNumber":
+        return (
+          <Link
+            href={`/dashboard/projects/${project.id}/edit`}
+            title="Edit Project"
+          >
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#31BCFF]/10 text-blue-600 hover:underline">
+              {formatProjectNumberForDisplay(project.projectNumber) || "-"}
+            </span>
+          </Link>
+        )
+
+      case "name":
+        return (
+          <Link
+            href={`/dashboard/projects/${project.id}/edit`}
+            title="Edit Project"
+          >
+            <span className="text-sm font-medium text-blue-600 hover:underline">
+              {project.name}
+            </span>
+          </Link>
+        )
+
+      case "customer":
+        return (
+          <span className="text-sm text-gray-600">
+            {project.customer?.customerName || "-"}
+          </span>
+        )
+
+      case "category":
+        return (
+          <span className="text-sm text-gray-600">
+            {project.category?.name || "-"}
+          </span>
+        )
+
+      case "startDate":
+        return (
+          <span className="text-sm text-gray-600">
+            {project.startDate
+              ? new Date(project.startDate).toLocaleDateString()
+              : "-"}
+          </span>
+        )
+
+      case "endDate":
+        return (
+          <span className="text-sm text-gray-600">
+            {project.endDate
+              ? new Date(project.endDate).toLocaleDateString()
+              : "-"}
+          </span>
+        )
+
+      case "active":
+        return (
+          <div className="flex items-center">
+            <Switch
+              id={`status-${project.id}`}
+              checked={project.active}
+              onCheckedChange={(checked) =>
+                handleStatusChange(project.id, checked)
+              }
+            />
+          </div>
+        )
+
+      default:
+        return null
     }
   }
 
@@ -332,7 +429,7 @@ export default function ProjectPage() {
           <div className="hidden md:block bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full" style={{ tableLayout: "fixed" }}>
-                <colgroup>
+                {/* <colgroup>
                   {isColumnVisible("projectNumber") && (
                     <col style={{ width: getColumnWidth("projectNumber") }} />
                   )}
@@ -355,81 +452,46 @@ export default function ProjectPage() {
                     <col style={{ width: getColumnWidth("active") }} />
                   )}
                   <col style={{ width: getColumnWidth("actions") }} />
+                </colgroup> */}
+                <colgroup>
+                  {orderedColumns.map((col) => (
+                    <col key={col.key} style={{ width: getColumnWidth(col.key) }} />
+                  ))}
+                  <col style={{ width: getColumnWidth("actions") }} />
                 </colgroup>
                 <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
                   <tr>
-                    {isColumnVisible("projectNumber") && (
-                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider select-none border-r border-border">
-                        Project No.
-                        <div
-                          onMouseDown={onMouseDown("projectNumber")}
-                          className="absolute right-0 top-0 w-1 h-full cursor-col-resize hover:bg-[#31BCFF]"
-                        />
-                      </th>
-                    )}
-                    {isColumnVisible("name") && (
-                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider select-none border-r border-border">
-                        Project Name
-                        <div
-                          onMouseDown={onMouseDown("name")}
-                          className="absolute right-0 top-0 w-1 h-full cursor-col-resize hover:bg-[#31BCFF]"
-                        />
-                      </th>
-                    )}
-                    {isColumnVisible("customer") && (
-                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider select-none border-r border-border">
-                        Customer
-                        <div
-                          onMouseDown={onMouseDown("customer")}
-                          className="absolute right-0 top-0 w-1 h-full cursor-col-resize hover:bg-[#31BCFF]"
-                        />
-                      </th>
-                    )}
-                    {isColumnVisible("category") && (
-                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider select-none border-r border-border">
-                        Category
-                        <div
-                          onMouseDown={onMouseDown("category")}
-                          className="absolute right-0 top-0 w-1 h-full cursor-col-resize hover:bg-[#31BCFF]"
-                        />
-                      </th>
-                    )}
-                    {isColumnVisible("startDate") && (
-                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider select-none border-r border-border">
-                        Start Date
-                        <div
-                          onMouseDown={onMouseDown("startDate")}
-                          className="absolute right-0 top-0 w-1 h-full cursor-col-resize hover:bg-[#31BCFF]"
-                        />
-                      </th>
-                    )}
-                    {isColumnVisible("endDate") && (
-                      <th className="relative px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider select-none border-r border-border">
-                        End Date
-                        <div
-                          onMouseDown={onMouseDown("endDate")}
-                          className="absolute right-0 top-0 w-1 h-full cursor-col-resize hover:bg-[#31BCFF]"
-                        />
-                      </th>
-                    )}
-                    {isColumnVisible("active") && (
-                      <th className="relative px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider select-none border-r border-border">
-                        Status
-                        <div
-                          onMouseDown={onMouseDown("active")}
-                          className="absolute right-0 top-0 w-1 h-full cursor-col-resize hover:bg-[#31BCFF]"
-                        />
-                      </th>
-                    )}
-                    <th className="relative px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider border-r border-border">
+                    {orderedColumns.map((col) => (
+                      <th
+                        key={col.key}
+                        draggable
+                        onDragStart={onDragStart(col.key)}
+                        onDragOver={onDragOver(col.key)}
+                        onDragLeave={onDragLeave}
+                        onDrop={onDrop(col.key)}
+                        onDragEnd={onDragEnd}
+                        className={cn(
+                          "group/th relative px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider select-none cursor-grab active:cursor-grabbing transition-colors",
+                          draggedColumn === col.key && "opacity-50 bg-muted",
+                          dropTargetColumn === col.key && "bg-[#31BCFF]/10 border-l-2 border-l-[#31BCFF]"
+                        )}
+                      >
+                        <div className="flex items-center gap-2">
+                          <GripVertical className="w-3 h-3 text-muted-foreground/50 flex-shrink-0" />
+                          <span className="truncate">{col.label}</span>
+                        </div>
+                        <ResizeHandle onMouseDown={onMouseDown(col.key)} />
+                      </th>))}
+                    <th className="relative px-6 py-4 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider border-r border-border">
                       <div className="flex items-center justify-end gap-2">
-                        <span>Actions</span> 
+                        <span>Actions</span>
                         <ColumnVisibilityToggle
                           columns={columns}
                           onColumnToggle={toggleColumn}
                           onResetColumns={() => {
                             resetColumns()
                             resetWidths()
+                            resetColumnOrder()
                           }}
                         />
                       </div>
@@ -438,66 +500,17 @@ export default function ProjectPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {paginatedProjects.map((project) => (
-                    <tr key={project.id} className="hover:bg-blue-50/50 transition-colors duration-150">
-                      {isColumnVisible("projectNumber") && (
-                        <td className="px-6 py-4 whitespace-nowrap">
-                            <Link
-                            href={`/dashboard/projects/${project.id}/edit`}
-                            title="Edit Project"
-                          >
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#31BCFF]/10 text-blue-600 hover:underline">
-                            {formatProjectNumberForDisplay(project.projectNumber) || "-"}
-                          </span>
-                          </Link>
+                    <tr
+                      key={project.id}
+                      className="hover:bg-blue-50/50 transition-colors duration-150"
+                    >
+                      {orderedColumns.map((col) => (
+                        <td key={col.key} className="px-6 py-4 overflow-hidden">
+                          {renderCell(project, col.key)}
                         </td>
-                      )}
-                      {isColumnVisible("name") && (
-                        <td className="px-6 py-4 whitespace-nowrap">
-                             <Link
-                            href={`/dashboard/projects/${project.id}/edit`}
-                            title="Edit Project"
-                          >
-                          <span className="text-sm font-medium text-blue-600 hover:underline">{project.name}</span>
-                          </Link>
-                        </td>
-                      )}
-                      {isColumnVisible("customer") && (
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-sm text-gray-600">{project.customer?.customerName || "-"}</span>
-                        </td>
-                      )}
-                      {isColumnVisible("category") && (
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-sm text-gray-600">{project.category?.name || "-"}</span>
-                        </td>
-                      )}
-                      {isColumnVisible("startDate") && (
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-sm text-gray-600">{project.startDate ? new Date(project.startDate).toLocaleDateString() : "-"}</span>
-                        </td>
-                      )}
-                      {isColumnVisible("endDate") && (
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-sm text-gray-600">{project.endDate ? new Date(project.endDate).toLocaleDateString() : "-"}</span>
-                        </td>
-                      )}
-                      {isColumnVisible("active") && (
-                        <td className="px-6 py-4">
-                          {/* <span
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${project.active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
-                              }`}
-                          >
-                            {project.active ? "Active" : "Inactive"}
-                          </span> */}
-                          <div className="flex items-center">
-                            <Switch
-                              id="status"
-                              checked={project.active}
-                              onCheckedChange={(checked) => handleStatusChange(project.id, checked)}
-                            />
-                          </div>
-                        </td>
-                      )}
+                      ))}
+
+                      {/* Actions column */}
                       <td className="px-6 py-4 whitespace-nowrap text-right">
                         <div className="flex items-center justify-end gap-2">
                           <Link
@@ -507,6 +520,7 @@ export default function ProjectPage() {
                           >
                             <PencilIcon className="h-4 w-4" />
                           </Link>
+
                           <button
                             onClick={() => handleDelete(project.id, project.name)}
                             className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"

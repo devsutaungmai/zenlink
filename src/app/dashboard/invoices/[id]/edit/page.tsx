@@ -67,7 +67,7 @@ export default function EditInvoicePage({
         contactPersonId: '',
         deliveryAddress: '',
         sentAt: new Date().toISOString().split('T')[0],
-        dueDay: 0,
+        dueDay: 14,
         paidAt: '',
         projectId: '',
         departmentId: '',
@@ -81,7 +81,6 @@ export default function EditInvoicePage({
         showDiscount: true,
         showPaymentTerms: true,
         showDepartment: true,
-        showSeller: true,
         showContactPerson: true,
         showDeliveryAddress: true,
         showProject: true,
@@ -171,7 +170,6 @@ export default function EditInvoicePage({
                 showDiscount: settings.showDiscount,
                 showPaymentTerms: settings.showPaymentTerms,
                 showDepartment: settings.showDepartment,
-                showSeller: settings.showSeller,
                 showContactPerson: settings.showContactPerson,
                 showDeliveryAddress: settings.showDeliveryAddress,
                 showProject: settings.showProject,
@@ -513,12 +511,12 @@ export default function EditInvoicePage({
                             <div className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] min-w-[250px]">
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Customer *</label>
                                 <CustomerCombobox customers={customers} value={formData.customerId || ''} onChange={(customerId) => setFormData({ ...formData, customerId })} placeholder="Select Customer" disabled={isCreditNote} />
-                                <p className="text-xs mt-2 text-blue-400">Customer is already assigned</p>
+                                {/* <p className="text-xs mt-2 text-blue-400">Customer is already assigned</p> */}
                             </div>
 
                             {settings.showContactPerson && (
                                 <div className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] min-w-[250px]">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Contact Name *</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Contact Name</label>
                                     <select value={formData.contactPersonId || ''} onChange={(e) => setFormData({ ...formData, contactPersonId: e.target.value })} disabled={isCreditNote} className={`block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 ${isCreditNote ? 'opacity-60 cursor-not-allowed' : ''}`}>
                                         <option value="">Select Contact Name</option>
                                         {contacts.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -541,7 +539,7 @@ export default function EditInvoicePage({
 
                             {settings.showProject && (
                                 <div className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] min-w-[250px]">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Project *</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Project</label>
                                     <select value={formData.projectId || ''} onChange={(e) => setFormData({ ...formData, projectId: e.target.value })} disabled={isCreditNote} className={`block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 ${isCreditNote ? 'opacity-60 cursor-not-allowed' : ''}`}>
                                         <option value="">Select Project</option>
                                         {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -551,7 +549,7 @@ export default function EditInvoicePage({
 
                             {settings.showDepartment && (
                                 <div className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] min-w-[250px]">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Department *</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Department</label>
                                     <select value={formData.departmentId || ''} onChange={(e) => setFormData({ ...formData, departmentId: e.target.value })} disabled={isCreditNote} className={`block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 ${isCreditNote ? 'opacity-60 cursor-not-allowed' : ''}`}>
                                         <option value="">Select Department</option>
                                         {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
@@ -561,7 +559,7 @@ export default function EditInvoicePage({
 
                             {settings.showDeliveryAddress && (
                                 <div className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] min-w-[250px]">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Delivery Address *</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Delivery Address</label>
                                     <input type="text" value={formData.deliveryAddress || ''} onChange={(e) => setFormData({ ...formData, deliveryAddress: e.target.value })} disabled={isCreditNote} className={`block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 ${isCreditNote ? 'opacity-60 cursor-not-allowed' : ''}`} placeholder="Enter delivery address" />
                                 </div>
                             )}
@@ -569,7 +567,7 @@ export default function EditInvoicePage({
                     </div>
 
                     {/* Seller */}
-                    {settings.showSeller && (
+                    {/* {settings.showSeller && (
                         <div className="bg-gradient-to-br rounded-xl border p-6">
                             <h2 className="text-lg font-semibold text-gray-900 mb-4">Seller Information</h2>
                             <div>
@@ -577,16 +575,19 @@ export default function EditInvoicePage({
                                 <input type="text" value={formData.seller || ''} disabled className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed" placeholder="Seller Name" />
                             </div>
                         </div>
-                    )}
+                    )} */}
 
                     {/* Order Lines */}
                     <div className="bg-gradient-to-br rounded-xl border p-6">
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-lg font-semibold text-gray-900">Order Lines</h2>
                             {!isCreditNote && (
-                                <button type="button" onClick={handleNewOrderLine} disabled={loading} className="px-4 py-2 rounded-lg bg-[#31BCFF] text-white hover:bg-[#0ea5e9] transition-colors">
-                                    New Order Line
-                                </button>
+                                <button
+                                type="button"
+                                onClick={handleNewOrderLine}
+                                disabled={loading}
+                                className="px-4 py-2 rounded-lg bg-[#31BCFF] text-white hover:bg-[#0ea5e9] transition-colors"
+                            >New Order Line</button>
                             )}
                         </div>
                         {formData.invoiceLines.map((line, index) => {
