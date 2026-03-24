@@ -176,7 +176,7 @@ export default function InvoicesPage() {
         { key: "seller", initialWidth: 120, minWidth: 100 },
         { key: "project", initialWidth: 120, minWidth: 100 },
         { key: "deliveryAddress", initialWidth: 150, minWidth: 120 },
-        { key: "actions", initialWidth: 200, minWidth: 80 },
+        { key: "actions", initialWidth: 120, minWidth: 80 },
 
     ]
 
@@ -757,7 +757,44 @@ export default function InvoicesPage() {
                                         >
                                             <div className="flex items-center gap-2">
                                                 <GripVertical className="w-3 h-3 text-muted-foreground/50 flex-shrink-0" />
-                                                <span className="truncate">{col.label}</span>
+                                                {col.key === 'invoiceNumber' ? (
+                                                    <button
+                                                        onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                                                        className="flex items-center gap-1 hover:text-foreground transition-colors duration-150 group min-w-0 overflow-hidden"
+                                                    >
+                                                        <span className="truncate">{col.label}</span>
+                                                        <span className="flex flex-col leading-none flex-shrink-0">
+                                                            <svg
+                                                                xmlns="http://www.w3.org/2000/svg"
+                                                                viewBox="0 0 10 6"
+                                                                className={cn(
+                                                                    "w-2.5 h-2",
+                                                                    sortOrder === 'asc'
+                                                                        ? "text-[#31BCFF]"
+                                                                        : "text-gray-300"
+                                                                )}
+                                                                fill="currentColor"
+                                                            >
+                                                                <path d="M5 0L10 6H0z" />
+                                                            </svg>
+                                                            <svg
+                                                                xmlns="http://www.w3.org/2000/svg"
+                                                                viewBox="0 0 10 6"
+                                                                className={cn(
+                                                                    "w-2.5 h-2",
+                                                                    sortOrder === 'desc'
+                                                                        ? "text-[#31BCFF]"
+                                                                        : "text-gray-300"
+                                                                )}
+                                                                fill="currentColor"
+                                                            >
+                                                                <path d="M5 6L0 0H10z" />
+                                                            </svg>
+                                                        </span>
+                                                    </button>
+                                                ) : (
+                                                    <span className="truncate">{col.label}</span>
+                                                )}
                                             </div>
                                             <ResizeHandle onMouseDown={onMouseDown(col.key)} />
                                         </th>))}
