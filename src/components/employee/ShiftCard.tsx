@@ -8,6 +8,7 @@ export interface ShiftCardShift {
   startTime: string
   endTime: string | null
   shiftType?: string
+  shiftTypeConfig?: { id: string; name: string } | null
   status?: string
   note?: string | null
   approved?: boolean
@@ -90,7 +91,7 @@ export default function ShiftCard({ shift, variant = 'upcoming', onClick, classN
     CANCELLED: t('shift_status.cancelled', 'Cancelled'),
   }
 
-  const hasAnyTag = shift.function || shift.department || shift.employeeGroup
+  const hasAnyTag = shift.function || shift.department || shift.employeeGroup || shift.shiftTypeConfig
 
   return (
     <div
@@ -152,6 +153,11 @@ export default function ShiftCard({ shift, variant = 'upcoming', onClick, classN
         {/* Tags: function (emerald), department (sky), employeeGroup (purple) */}
         {hasAnyTag && (
           <div className="flex flex-wrap gap-1 mt-1.5">
+            {shift.shiftTypeConfig && (
+              <span className="text-[10px] bg-violet-100 text-violet-700 px-1.5 py-0.5 rounded-md font-medium">
+                {shift.shiftTypeConfig.name}
+              </span>
+            )}
             {shift.function && (
               <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-md font-medium">
                 {shift.function.name}

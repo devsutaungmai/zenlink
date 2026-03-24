@@ -51,12 +51,14 @@ interface OpenShiftsCardProps {
   openShifts: OpenShift[]
   myShiftRequests: ShiftRequest[]
   onRefresh: () => void
+  employeeId?: string
 }
 
 export default function OpenShiftsCard({
   openShifts,
   myShiftRequests,
-  onRefresh
+  onRefresh,
+  employeeId
 }: OpenShiftsCardProps) {
   const { t, i18n } = useTranslation('employee-dashboard')
   const [requestingShiftId, setRequestingShiftId] = useState<string | null>(null)
@@ -101,7 +103,7 @@ export default function OpenShiftsCard({
       const res = await fetch('/api/shift-requests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ shiftId })
+        body: JSON.stringify({ shiftId, ...(employeeId ? { employeeId } : {}) })
       })
 
       if (!res.ok) {
@@ -157,11 +159,6 @@ export default function OpenShiftsCard({
             </div>
             {t('open_shifts.title') || 'Open Shifts'}
           </CardTitle>
-          {totalCount > 0 && (
-            <span className="text-xs font-semibold bg-emerald-500 text-white rounded-full px-2 py-0.5 min-w-[22px] text-center">
-              {totalCount}
-            </span>
-          )}
         </div>
       </CardHeader>
       <CardContent className="pt-0 space-y-4">

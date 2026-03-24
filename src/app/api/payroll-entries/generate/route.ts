@@ -4,6 +4,7 @@ import { prisma } from '@/shared/lib/prisma'
 import { payRulesEngine } from '@/shared/lib/pay-rules-engine'
 import { attendanceCalculator } from '@/shared/lib/attendance-calculator'
 import { getEmployeeContractInfo, ContractValidator } from '@/shared/lib/contractValidation'
+import { calculateShiftTypeAdjustment } from '@/shared/lib/salary-calculator'
 
 export async function POST(request: NextRequest) {
   try {
@@ -152,15 +153,72 @@ export async function POST(request: NextRequest) {
       }
 
       let finalOvertimeHours = payCalc.overtimeHours
-      let finalOvertimePay = finalOvertimeHours * payCalc.overtimeRate
 
       if (!isOvertimeEligible) {
         finalOvertimeHours = 0
-        finalOvertimePay = 0
       }
 
-      const regularPay = payCalc.regularHours * payCalc.regularRate
-      const grossPay = regularPay + finalOvertimePay + payCalc.bonuses
+      // --- Per-attendance pay calculation with shift type adjustments ---
+      const approvedDetails = attendanceCalc.attendanceDetails
+        .filter(att => att.isApproved && att.punchOutTime)
+
+      const hasShiftTypeAdjustments = approvedDetails.some(
+        att => att.shift?.shiftTypeConfig && att.shift.shiftTypeConfig.payCalculationType !== 'UNPAID'
+      )
+
+      // Build date -> regular/overtime ratio from payCalc daily breakdown
+      const dateOvertimeMap = new Map<string, { regularHours: number; overtimeHours: number; totalHours: number }>()
+      for (const day of payCalc.overtimeCalculations) {
+        const total = day.regularHours + day.overtimeHours
+        dateOvertimeMap.set(day.date, {
+          regularHours: day.regularHours,
+          overtimeHours: day.overtimeHours,
+          totalHours: total
+        })
+      }
+
+      const overtimeMultiplier = payCalc.regularRate > 0
+        ? payCalc.overtimeRate / payCalc.regularRate
+        : 1.5
+
+      let totalRegularPay = 0
+      let totalOvertimePay = 0
+      const shiftTypeNotes: string[] = []
+
+      for (const att of approvedDetails) {
+        // Determine this attendance's regular/overtime split using daily breakdown
+        const dayInfo = dateOvertimeMap.get(att.date)
+        let attRegularHours = att.duration
+        let attOvertimeHours = 0
+
+        if (dayInfo && dayInfo.totalHours > 0) {
+          const regularRatio = dayInfo.regularHours / dayInfo.totalHours
+          const overtimeRatio = dayInfo.overtimeHours / dayInfo.totalHours
+          attRegularHours = att.duration * regularRatio
+          attOvertimeHours = att.duration * overtimeRatio
+        }
+
+        if (!isOvertimeEligible) {
+          attRegularHours = att.duration
+          attOvertimeHours = 0
+        }
+
+        // Apply shift type adjustment to the base rate
+        const shiftTypeConfig = att.shift?.shiftTypeConfig || null
+        const effectiveRegularRate = calculateShiftTypeAdjustment(payCalc.regularRate, shiftTypeConfig as any)
+        const effectiveOvertimeRate = effectiveRegularRate * overtimeMultiplier
+
+        totalRegularPay += attRegularHours * effectiveRegularRate
+        totalOvertimePay += attOvertimeHours * effectiveOvertimeRate
+
+        if (shiftTypeConfig && effectiveRegularRate !== payCalc.regularRate) {
+          shiftTypeNotes.push(
+            `${att.date}: ${shiftTypeConfig.name} – ${att.duration}h @ ${effectiveRegularRate.toFixed(2)}/hr`
+          )
+        }
+      }
+
+      const grossPay = totalRegularPay + totalOvertimePay + payCalc.bonuses
       const netPay = grossPay - payCalc.deductions
 
       let notes = ''
@@ -169,6 +227,11 @@ export async function POST(request: NextRequest) {
           payCalc.appliedRules.map(rule =>
             `- ${rule.ruleName} (${rule.salaryCode}): ${rule.amount >= 0 ? '+' : ''}${rule.amount.toFixed(2)}`
           ).join('\n')
+      }
+
+      if (shiftTypeNotes.length > 0) {
+        notes += (notes ? '\n\n' : '') + 'Shift Type Adjustments:\n' +
+          shiftTypeNotes.map(n => `- ${n}`).join('\n')
       }
 
       if (!isOvertimeEligible && overtimeExemptReason) {

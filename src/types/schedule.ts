@@ -28,6 +28,10 @@ export type ShiftWithRelations = Shift & {
       }
     }
   }
+  shiftTypeConfig?: {
+    id: string
+    name: string
+  } | null
   shiftExchanges?: Array<{
     id: string
     status: string

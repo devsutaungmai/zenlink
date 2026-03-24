@@ -58,6 +58,7 @@ interface Shift {
   startTime: string
   endTime: string | null
   shiftType: string
+  shiftTypeConfig?: { id: string; name: string } | null
   breakStart?: string | null
   breakEnd?: string | null
   employeeId: string

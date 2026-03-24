@@ -172,9 +172,9 @@ export async function POST(request: NextRequest) {
         punchClockProfileId: punchClockProfileId || null,
         punchInTime: punchInTime ? new Date(punchInTime) : new Date(),
         punchOutTime: punchOutTime ? new Date(punchOutTime) : null,
-        approved: shiftId ? true : (isAdmin ? true : false),
-        approvedAt: (shiftId || isAdmin) ? new Date() : null,
-        approvedBy: (shiftId || isAdmin) ? (isAdmin ? ((auth.data as any).id) : 'system') : null
+        approved: isAdmin ? true : false,
+        approvedAt: isAdmin ? new Date() : null,
+        approvedBy: isAdmin ? (auth.data as any).id : null
       },
       include: {
         employee: {
@@ -188,11 +188,11 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // If there's a shift, update its status based on whether punchOutTime is provided
+    // If there's a shift, update its status
     if (shiftId) {
       await prisma.shift.update({
         where: { id: shiftId },
-        data: { status: punchOutTime ? 'COMPLETED' : 'WORKING' }
+        data: { status: isAdmin ? 'COMPLETED' : (punchOutTime ? 'COMPLETED' : 'WORKING') }
       })
     }
 
@@ -456,8 +456,15 @@ export async function GET(request: NextRequest) {
             startTime: true,
             endTime: true,
             shiftType: true,
+            shiftTypeId: true,
             status: true,
             approved: true,
+            shiftTypeConfig: {
+              select: {
+                id: true,
+                name: true
+              }
+            },
             employeeGroup: {
               select: {
                 name: true
