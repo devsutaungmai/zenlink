@@ -166,7 +166,7 @@ export default function CreateCustomersPage() {
     }
 
     useEffect(() => {
-        fetchDepartments();
+        // fetchDepartments();
         getDefaultCustomerNumber();
         fetchProjects();
     }, [])
@@ -191,17 +191,17 @@ export default function CreateCustomersPage() {
 
     };
 
-    const fetchDepartments = async () => {
-        try {
-            const res = await fetch('/api/departments')
-            if (res.ok) {
-                const data = await res.json()
-                setDepartments(data)
-            }
-        } catch (error) {
-            console.error('Error fetching departments:', error)
-        }
-    }
+    // const fetchDepartments = async () => {
+    //     try {
+    //         const res = await fetch('/api/departments')
+    //         if (res.ok) {
+    //             const data = await res.json()
+    //             setDepartments(data)
+    //         }
+    //     } catch (error) {
+    //         console.error('Error fetching departments:', error)
+    //     }
+    // }
 
     const fetchProjects = async () => {
         try {
@@ -389,7 +389,7 @@ export default function CreateCustomersPage() {
         showEmail: true,
         showDiscountPercentage: true,
         showDeliveryAddress: true,
-        showDepartment: true,
+        // showDepartment: true,
         showProject: true,
         showInvoicePaymentTerms: true,
         showContactPerson: true,
@@ -404,7 +404,7 @@ export default function CreateCustomersPage() {
                 showEmail: settings.showEmail ?? true,
                 showDiscountPercentage: settings.showDiscountPercentage ?? true,
                 showDeliveryAddress: settings.showDeliveryAddress ?? true,
-                showDepartment: settings.showDepartment ?? true,
+                // showDepartment: settings.showDepartment ?? true,
                 showProject: settings.showProject ?? true,
                 showInvoicePaymentTerms: settings.showInvoicePaymentTerms ?? true,
                 showContactPerson: settings.showContactPerson ?? true,
@@ -772,7 +772,7 @@ export default function CreateCustomersPage() {
                         )}
 
                         {/* Department - Conditional */}
-                        {visibleFields.showDepartment && (
+                        {/* {visibleFields.showDepartment && (
                             <div className="grow basis-[calc(25%-12px)] min-w-[250px]">
                                 <label htmlFor="departmentId" className="block text-sm font-medium text-gray-700 mb-2">
                                     Department
@@ -799,7 +799,7 @@ export default function CreateCustomersPage() {
                                     <p className="mt-1 text-sm text-red-600">{validationErrors.departmentId}</p>
                                 )}
                             </div>
-                        )}
+                        )} */}
                         {visibleFields.showProject && <div className="grow basis-[calc(100%-12px)] min-w-[250px]">
                             <label htmlFor="projectIds" className="block text-sm font-medium text-gray-700 mb-2">
                                 Projects

@@ -60,7 +60,7 @@ export default function CustomersPage() {
     { key: "address", label: "Address" },
     { key: "discountPercentage", label: "Discount %" },
     { key: "organizationNumber", label: "Organization Number" },
-    { key: "department", label: "Department" },
+    // { key: "department", label: "Department" },
     { key: "deliveryAddress", label: "Delivery Address" },
     { key: "active", label: "Status" },
   ]
@@ -78,7 +78,7 @@ export default function CustomersPage() {
       address: true,
       discountPercentage: true,
       organizationNumber: false,
-      department: false,
+      // department: false,
       deliveryAddress: false,
       active: true,
     },
@@ -229,7 +229,7 @@ export default function CustomersPage() {
     { key: "address", initialWidth: 200, minWidth: 120 },
     { key: "discountPercentage", initialWidth: 120, minWidth: 80 },
     { key: "organizationNumber", initialWidth: 150, minWidth: 100 },
-    { key: "department", initialWidth: 130, minWidth: 90 },
+    // { key: "department", initialWidth: 130, minWidth: 90 },
     { key: "deliveryAddress", initialWidth: 200, minWidth: 120 },
     { key: "active", initialWidth: 100, minWidth: 70 },
     { key: "actions", initialWidth: 120, minWidth: 80 },
@@ -332,12 +332,12 @@ export default function CustomersPage() {
           </span>
         )
 
-      case "department":
-        return (
-          <span className="text-sm text-gray-600">
-            {customer.department?.name || "-"}
-          </span>
-        )
+      // case "department":
+      //   return (
+      //     <span className="text-sm text-gray-600">
+      //       {customer.department?.name || "-"}
+      //     </span>
+      //   )
 
       case "deliveryAddress":
         return (

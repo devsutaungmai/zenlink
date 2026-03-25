@@ -133,7 +133,7 @@ export default function InvoicesPage() {
         { key: "outstanding", label: "Outstanding Amount" },
         { key: "discount", label: "Discount" },
         { key: "department", label: "Department" },
-        { key: "seller", label: "Seller" },
+        // { key: "seller", label: "Seller" },
         { key: "project", label: "Project" },
         { key: "deliveryAddress", label: "Delivery Address" },
 
@@ -154,7 +154,7 @@ export default function InvoicesPage() {
             outstanding: true,
             discount: false,
             department: false,
-            seller: false,
+            // seller: false,
             project: false,
             deliveryAddress: false,
 
@@ -173,7 +173,7 @@ export default function InvoicesPage() {
         { key: "outstanding", initialWidth: 120, minWidth: 100 },
         { key: "discount", initialWidth: 120, minWidth: 80 },
         { key: "department", initialWidth: 120, minWidth: 100 },
-        { key: "seller", initialWidth: 120, minWidth: 100 },
+        // { key: "seller", initialWidth: 120, minWidth: 100 },
         { key: "project", initialWidth: 120, minWidth: 100 },
         { key: "deliveryAddress", initialWidth: 150, minWidth: 120 },
         { key: "actions", initialWidth: 120, minWidth: 80 },
@@ -270,7 +270,7 @@ export default function InvoicesPage() {
         const matchesSearch = invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
             invoice.customer?.customerName.toLowerCase().includes(searchTerm.toLowerCase());
 
-        const matchesFilter = selectedFilter === "all" ||
+        const matchesFilter = selectedFilter === "all" || (selectedFilter === "credit" ? invoice.status.toLocaleLowerCase() === "credit_note" || invoice.status.toLowerCase() === "credited" : "") ||
             (selectedFilter === "outstanding" ? invoice.status.toLocaleLowerCase() === "partially_paid" : "") || invoice.status.toLowerCase() === selectedFilter.toLowerCase();
 
         return matchesSearch && matchesFilter;
@@ -563,8 +563,8 @@ export default function InvoicesPage() {
             case "department":
                 return invoice.department?.name || "-";
 
-            case "seller":
-                return invoice.customer?.business?.name || "-";
+            // case "seller":
+            //     return invoice.customer?.business?.name || "-";
 
             case "project":
                 return invoice.project?.name || "-";
@@ -680,7 +680,8 @@ export default function InvoicesPage() {
                             { value: 'all', label: "ALL" },
                             { value: 'draft', label: "DRAFT" },
                             { value: 'outstanding', label: "OUTSTANDING" },
-                            { value: 'paid', label: "PAID" }
+                            { value: 'paid', label: "PAID" },
+                            { value: 'credit', label: "CREDIT_NOTE/CREDITED" }
                         ].map((filter) => (
                             <button
                                 key={filter.value}
@@ -873,7 +874,7 @@ export default function InvoicesPage() {
                                             <td></td>
                                             {/* Actions */}
                                             <td className="px-6 py-4">
-                                                {(!hasSelectedInvoices && invoice.status === InvoiceStatus.DRAFT) ? (
+                                                {(invoice.status === InvoiceStatus.DRAFT) ? (
                                                     <div className="flex items-center justify-end gap-2">
                                                         <Link
                                                             href={`/dashboard/invoices/${invoice.id}/edit`}
@@ -921,14 +922,6 @@ export default function InvoicesPage() {
 
                                                         </button>
                                                     ) : null}
-                                                    {/* {(invoice.status !== InvoiceStatus.CREDIT_NOTE && invoice.status !== InvoiceStatus.CREDITED) ?
-                                                        <button
-                                                            className="px-1 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2"
-                                                            onClick={() => setSelectedInvoiceForCredit(invoice)}
-                                                        >
-                                                            <span className="text-base">✓</span>
-                                                        </button> : null
-                                                    } */}
 
                                                     {(invoice.status !== InvoiceStatus.CREDIT_NOTE && invoice.status !== InvoiceStatus.CREDITED) ?
                                                         <Link href={`/dashboard/invoices/${invoice.id}/edit?credit-note=true`} className="px-1 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2 group relative"

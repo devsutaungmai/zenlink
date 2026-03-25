@@ -31,7 +31,7 @@ export default function EditCustomersPage({ params, searchParams }: { params: Pr
     const { t } = useTranslation()
     const [loading, setLoading] = useState(false)
     const [fetchingLoading, setFetchingLoading] = useState(false)
-    const [departments, setDepartments] = useState<Department[]>([])
+    // const [departments, setDepartments] = useState<Department[]>([])
     const [paymentTermDefaults, setPaymentTermDefaults] = useState<CustomerPaymentTermForComponent>({
         dueDateType: 'DAYS_AFTER' as const,
         daysAfter: 14,
@@ -91,7 +91,7 @@ export default function EditCustomersPage({ params, searchParams }: { params: Pr
         showEmail: true,
         showDiscountPercentage: true,
         showDeliveryAddress: true,
-        showDepartment: true,
+        // showDepartment: true,
         showProject: true,
         showInvoicePaymentTerms: true,
         showContactPerson: true,
@@ -108,7 +108,7 @@ export default function EditCustomersPage({ params, searchParams }: { params: Pr
                 showEmail: settings.showEmail ?? true,
                 showDiscountPercentage: settings.showDiscountPercentage ?? true,
                 showDeliveryAddress: settings.showDeliveryAddress ?? true,
-                showDepartment: settings.showDepartment ?? true,
+                // showDepartment: settings.showDepartment ?? true,
                 showProject: settings.showProject ?? true,
                 showInvoicePaymentTerms: settings.showInvoicePaymentTerms ?? true,
                 showContactPerson: settings.showContactPerson ?? true,
@@ -141,21 +141,21 @@ export default function EditCustomersPage({ params, searchParams }: { params: Pr
     }
     useEffect(() => {
         fetchCustomer()
-        fetchDepartments()
+        // fetchDepartments()
         fetchProjects()
     }, [resolvedParams.id, overviewMode])
 
-    const fetchDepartments = async () => {
-        try {
-            const res = await fetch('/api/departments')
-            if (res.ok) {
-                const data = await res.json()
-                setDepartments(data)
-            }
-        } catch (error) {
-            console.error('Error fetching departments:', error)
-        }
-    }
+    // const fetchDepartments = async () => {
+    //     try {
+    //         const res = await fetch('/api/departments')
+    //         if (res.ok) {
+    //             const data = await res.json()
+    //             setDepartments(data)
+    //         }
+    //     } catch (error) {
+    //         console.error('Error fetching departments:', error)
+    //     }
+    // }
     const fetchCustomer = async () => {
         try {
             const res = await fetch(`/api/customers/${resolvedParams.id}`)
@@ -181,7 +181,7 @@ export default function EditCustomersPage({ params, searchParams }: { params: Pr
                         unit: data.InvoicePaymentTerms.invoiceDueDateUnit,
                     }
                 }
-                const formattedData =  {
+                const formattedData = {
                     customerName: data.customerName || '',
                     active: data.active || false,
                     customerNumber: data.customerNumber || '',
@@ -428,7 +428,7 @@ export default function EditCustomersPage({ params, searchParams }: { params: Pr
             {/* Form Container */}
             <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg p-6">
                 <form onSubmit={handleSubmit} className="space-y-6">
-                     {hasChanges && (
+                    {hasChanges && (
                         <div className="flex justify-end items-center gap-3">
                             <Badge variant="secondary" className="bg-amber-100 text-amber-800">
                                 <AlertTriangle className="w-3 h-3 mr-1" />
@@ -438,7 +438,7 @@ export default function EditCustomersPage({ params, searchParams }: { params: Pr
 
                     )}
                     <div className="flex justify-end items-center gap-3 mt-8">
-                        
+
                         <input
                             id="active"
                             type="checkbox"
@@ -713,7 +713,7 @@ export default function EditCustomersPage({ params, searchParams }: { params: Pr
                             </div>
                         )}
 
-                        {settings.showDepartment && (
+                        {/* {settings.showDepartment && (
                             <div className="grow basis-[calc(25%-12px)] min-w-[250px]">
                                 <label htmlFor="departmentId" className="block text-sm font-medium text-gray-700 mb-2">
                                     Department
@@ -740,7 +740,7 @@ export default function EditCustomersPage({ params, searchParams }: { params: Pr
                                     <p className="mt-1 text-sm text-red-600">{validationErrors.departmentId}</p>
                                 )}
                             </div>
-                        )}
+                        )} */}
 
                         {settings.showDeliveryAddress && (
                             <div className="grow basis-[calc(25%-12px)] min-w-[250px]">

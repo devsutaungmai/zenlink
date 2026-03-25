@@ -66,7 +66,7 @@ export default function ProjectPage() {
     { key: "projectNumber", label: "Project Number" },
     { key: "name", label: "Project Name" },
     { key: "customer", label: "Customer" },
-    { key: "category", label: "Category" },
+    // { key: "category", label: "Category" },
     { key: "startDate", label: "Start Date" },
     { key: "endDate", label: "End Date" },
     { key: "active", label: "Status" },
@@ -79,7 +79,7 @@ export default function ProjectPage() {
       projectNumber: true,
       name: true,
       customer: true,
-      category: true,
+      // category: true,
       startDate: false,
       endDate: false,
       active: true,
@@ -90,7 +90,7 @@ export default function ProjectPage() {
     { key: "projectNumber", initialWidth: 120, minWidth: 80 },
     { key: "name", initialWidth: 220, minWidth: 120 },
     { key: "customer", initialWidth: 180, minWidth: 120 },
-    { key: "category", initialWidth: 140, minWidth: 100 },
+    // { key: "category", initialWidth: 140, minWidth: 100 },
     { key: "startDate", initialWidth: 150, minWidth: 100 },
     { key: "endDate", initialWidth: 150, minWidth: 100 },
     { key: "active", initialWidth: 100, minWidth: 70 },
@@ -279,12 +279,12 @@ export default function ProjectPage() {
           </span>
         )
 
-      case "category":
-        return (
-          <span className="text-sm text-gray-600">
-            {project.category?.name || "-"}
-          </span>
-        )
+      // case "category":
+      //   return (
+      //     <span className="text-sm text-gray-600">
+      //       {project.category?.name || "-"}
+      //     </span>
+      //   )
 
       case "startDate":
         return (
@@ -645,7 +645,7 @@ export default function ProjectPage() {
                       <span className="truncate">{project.customer.customerName}</span>
                     </div>
                   )}
-                  {isColumnVisible("category") && project.category?.name && (
+                  {/* {isColumnVisible("category") && project.category?.name && (
                     <div className="flex items-center text-gray-600">
                       <svg className="w-4 h-4 mr-2 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path
@@ -657,7 +657,7 @@ export default function ProjectPage() {
                       </svg>
                       <span className="truncate">{project.category.name}</span>
                     </div>
-                  )}
+                  )} */}
                   {isColumnVisible("startDate") && project.startDate && (
                     <div className="flex items-center text-gray-600">
                       <svg className="w-4 h-4 mr-2 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
