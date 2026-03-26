@@ -480,7 +480,8 @@ export default function PayrollEntriesPage() {
     if (salaryAmount === 0) {
       return 0
     }
-    return getTotalWorkedHours(entry) / salaryAmount
+
+    return getTotalWorkedHours(entry) === 0 ? 0 : salaryAmount / getTotalWorkedHours(entry)
   }
 
   const getEmployeeGroupName = (entry: PayrollEntry) => {
@@ -805,13 +806,13 @@ export default function PayrollEntriesPage() {
                           >
                             <EyeIcon className="h-4 w-4" />
                           </Link>
-                          <button
+                          {/* <button
                             onClick={() => handleExportPayslip(entry.id, `${entry.employee.firstName} ${entry.employee.lastName}`)}
                             className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200"
                             title={t('actions.download_payslip')}
                           >
                             <DocumentArrowDownIcon className="h-4 w-4" />
-                          </button>
+                          </button> */}
                           {entry.status === 'DRAFT' && (
                             <button
                               onClick={() => handleDelete(entry.id)}

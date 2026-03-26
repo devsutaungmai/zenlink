@@ -200,6 +200,11 @@ export default function GeneratePayrollEntriesPage() {
         })
       })
 
+      const contentType = response.headers.get('content-type')
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Server error: request timed out or returned an invalid response. Please try again.')
+      }
+
       const data = await response.json()
 
       if (response.ok) {

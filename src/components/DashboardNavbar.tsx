@@ -110,7 +110,7 @@ export default function DashboardNavbar() {
         { name: "LedgerAccount", href: '/dashboard/ledger-accounts' },
       ],
     },
-    { name: t('navigation.settings'), href: '/dashboard/settings', icon: Cog6ToothIcon },
+    { name: t('navigation.settings'), href: '/dashboard/settings', icon: Cog6ToothIcon, permissionKey: 'settings' },
   ]
 
   const employeeNavigation: NavigationItem[] = [
@@ -121,18 +121,49 @@ export default function DashboardNavbar() {
     { name: t('navigation.sick_leaves'), href: '/dashboard/sick-leaves', icon: ClockIcon },
   ]
 
+  const employeeDefaultHrefs = new Set([
+    '/dashboard',
+    '/dashboard/hours',
+    '/dashboard/contracts',
+    '/dashboard/availability',
+    '/dashboard/sick-leaves',
+  ])
+
   const filteredNavigation = useMemo(() => {
     if (isEmployeeUser) {
-      return employeeNavigation
+      return adminNavigation
+        .map(item => {
+          if (item.name === 'Invoice') {
+            return null
+          }
+
+          if (item.children) {
+            const filteredChildren = item.children.filter(child => {
+              if (employeeDefaultHrefs.has(child.href)) return true
+              if (!child.permissionKey) return true
+              const requiredPermissions = NAV_PERMISSIONS[child.permissionKey]
+              return hasAnyPermission(requiredPermissions)
+            })
+
+            if (filteredChildren.length === 0) return null
+            return { ...item, children: filteredChildren }
+          }
+
+          if (employeeDefaultHrefs.has(item.href || '')) return item
+
+          if (item.permissionKey) {
+            const requiredPermissions = NAV_PERMISSIONS[item.permissionKey]
+            if (!hasAnyPermission(requiredPermissions)) return null
+          }
+
+          return item
+        })
+        .filter((item): item is NavigationItem => item !== null)
     }
 
     if (isAdmin) {
       return adminNavigation
         .map(item => {
-          if (isEmployeeUser && (item.name === 'Invoice' || item.href === '/dashboard/settings')) {
-            return null
-          }
-
           if (item.children) {
             const filteredChildren = item.children.filter(child => child.permissionKey !== 'yourHours')
             if (filteredChildren.length === 0) return null
@@ -148,10 +179,6 @@ export default function DashboardNavbar() {
 
     return adminNavigation
       .map(item => {
-        if (isEmployeeUser && (item.name === 'Invoice' || item.href === '/dashboard/settings')) {
-          return null
-        }
-
         if (item.children) {
           const filteredChildren = item.children.filter(child => {
             if (!child.permissionKey) return true

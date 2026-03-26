@@ -318,6 +318,8 @@ export class AttendanceBasedCalculator {
     const regularRule = applicableRules.find(r => r.rule.ruleType === 'REGULAR')
     if (regularRule) {
       regularRate = regularRule.rate
+    } else if (employee.salaryRate && employee.salaryRate > 0) {
+      regularRate = employee.salaryRate
     } else {
       // Fall back to employee group hourly wage
       regularRate = employee.employeeGroup?.hourlyWage || 0

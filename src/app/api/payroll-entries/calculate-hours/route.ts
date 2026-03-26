@@ -267,7 +267,10 @@ export async function POST(req: NextRequest) {
       let regularRate = 0
       let overtimeRate = 0
 
-      if (employee.employeeGroup) {
+      if (employee.salaryRate && employee.salaryRate > 0) {
+        regularRate = employee.salaryRate
+        overtimeRate = regularRate * 1.5
+      } else if (employee.employeeGroup) {
         if (employee.employeeGroup.defaultWageType === 'HOURLY') {
           regularRate = employee.employeeGroup.hourlyWage
           overtimeRate = employee.employeeGroup.hourlyWage * 1.5
