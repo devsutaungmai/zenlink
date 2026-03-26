@@ -62,8 +62,9 @@ export function calculateShiftTypeAdjustment(
       return 0
 
     case 'FIXED_AMOUNT':
+      // Replaces the hourly wage entirely with the fixed amount
       if (payCalculationValue !== null && payCalculationValue !== undefined) {
-        return baseRate + Number(payCalculationValue)
+        return Number(payCalculationValue)
       }
       return baseRate
 
@@ -74,9 +75,10 @@ export function calculateShiftTypeAdjustment(
       return baseRate
 
     case 'PERCENTAGE':
+      // Percentage of hourly wage: 200% = 2x base rate, 50% = 0.5x base rate
       if (payCalculationValue !== null && payCalculationValue !== undefined) {
         const percentage = Number(payCalculationValue) / 100
-        return baseRate * (1 + percentage)
+        return baseRate * percentage
       }
       return baseRate
 
