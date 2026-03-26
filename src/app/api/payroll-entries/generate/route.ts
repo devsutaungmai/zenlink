@@ -5,6 +5,9 @@ import { payRulesEngine } from '@/shared/lib/pay-rules-engine'
 import { attendanceCalculator } from '@/shared/lib/attendance-calculator'
 import { getEmployeeContractInfo, ContractValidator } from '@/shared/lib/contractValidation'
 import { calculateShiftTypeAdjustment } from '@/shared/lib/salary-calculator'
+import { captureApiError } from '@/shared/lib/sentry'
+
+export const maxDuration = 60
 
 export async function POST(request: NextRequest) {
   try {
@@ -278,6 +281,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error generating payroll entries:', error)
+    captureApiError(error, { route: '/api/payroll-entries/generate', method: 'POST' })
     return NextResponse.json(
       { error: 'Failed to generate payroll entries' },
       { status: 500 }
