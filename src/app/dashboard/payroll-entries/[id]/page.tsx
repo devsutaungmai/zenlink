@@ -378,21 +378,21 @@ export default function PayrollEntryViewPage({ params }: { params: Promise<{ id:
             >
               {t('view_page.change_status')}
             </button>
-            <button
+            {/* <button
               onClick={handleDownloadPayslip}
               className="inline-flex items-center justify-center px-4 py-2 text-xs sm:text-sm font-medium text-white bg-[#31BCFF] rounded-lg hover:bg-[#31BCFF]/90 transition-colors"
             >
               <DocumentArrowDownIcon className="w-4 h-4 mr-2" />
               <span className="hidden sm:inline">{t('view_page.download_payslip')}</span>
               <span className="sm:hidden">{t('view_page.payslip')}</span>
-            </button>
-            <button
+            </button> */}
+            {/* <button
               onClick={handleEdit}
               className="inline-flex items-center justify-center px-4 py-2 text-xs sm:text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
               <PencilIcon className="w-4 h-4 mr-2" />
               {t('view_page.edit')}
-            </button>
+            </button> */}
           </div>
         </div>
       </div>

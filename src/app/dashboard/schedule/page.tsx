@@ -1360,6 +1360,19 @@ export default function SchedulePage() {
   };
 
   const handleOpenCreateAttendance = (shift: ShiftWithRelations) => {
+    if (shift.id.startsWith('temp-')) {
+      Swal.fire({
+        text: t('toasts.shift_still_saving', 'Shift is still saving. Please try again in a moment.'),
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        icon: 'info',
+        customClass: { popup: 'swal-toast-wide' }
+      })
+      return
+    }
     setAttendanceShift(shift)
     setAttendanceFormData({
       punchInTime: shift.startTime || '09:00',
