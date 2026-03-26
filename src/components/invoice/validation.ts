@@ -168,9 +168,9 @@ export const productValidationSchema = z.object({
       message: 'Product number must be equal to or less than 9999'
     }),
 
-  salesPrice: z.number().optional().default(0),
-  costPrice: z.number().optional().default(0),
-  discountPercentage: z.number().optional().default(0),
+  salesPrice: z.coerce.number().optional().default(0),
+  costPrice: z.coerce.number().optional().default(0),
+  discountPercentage: z.coerce.number().optional().default(0),
   unitId: z.string().optional().or(z.literal('')),
   productGroupId: z.string().optional().or(z.literal('')),
   ledgerAccountId: z.string().optional().or(z.literal('')),

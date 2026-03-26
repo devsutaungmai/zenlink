@@ -15,15 +15,23 @@ export interface ProjectOption {
 
 interface ProjectMultiSelectComboboxProps {
   projects: ProjectOption[]
-  value: string[]                          // array of selected project IDs
+  value: string[]
   onChange: (projectIds: string[]) => void
-  onProjectCreated?: (project: ProjectOption) => void   // called after new project saved, so parent can add it to its list
-  onSaveNewProject: (project: ProjectFormType) => Promise<ProjectOption>  // parent handles API call, returns saved project with id
+  onProjectCreated?: (project: ProjectOption) => void
+  onSaveNewProject: (project: ProjectFormType) => Promise<ProjectOption>
   placeholder?: string
   emptyMessage?: string
   disabled?: boolean
   overviewMode?: boolean
   paddingYValue?: string
+  /**
+   * When true the combobox behaves as a single-select:
+   * - Selecting an item replaces the current value (instead of toggling)
+   * - The dropdown closes immediately after selection
+   * - Backspace does NOT remove the last tag
+   * All other features (search, keyboard nav, Add New Project) are unchanged.
+   */
+  singleSelect?: boolean
 }
 
 export function ProjectMultiSelectCombobox({
@@ -37,6 +45,7 @@ export function ProjectMultiSelectCombobox({
   disabled = false,
   overviewMode = false,
   paddingYValue = "py-3",
+  singleSelect = false,
 }: ProjectMultiSelectComboboxProps) {
   const [open, setOpen] = React.useState(false)
   const [inputValue, setInputValue] = React.useState("")
@@ -49,35 +58,33 @@ export function ProjectMultiSelectCombobox({
   const containerRef = React.useRef<HTMLDivElement>(null)
 
   const uniqueValue = React.useMemo(
-  () => Array.from(new Set(value)),
-  [value]
-)
-
-// Deduplicate projects prop in case parent passes duplicates
-const uniqueProjects = React.useMemo(
-  () => [...new Map(projects.map((p) => [p.id, p])).values()],
-  [projects]
-)
-
-const selectedProjects = React.useMemo(
-  () => uniqueProjects.filter((p) => uniqueValue.includes(p.id)),
-  [uniqueProjects, uniqueValue]
-)
-
-const filteredProjects = React.useMemo(() => {
-  if (!inputValue) return uniqueProjects
-  return uniqueProjects.filter(
-    (p) =>
-      p.name.toLowerCase().includes(inputValue.toLowerCase()) ||
-      p.projectNumber?.toLowerCase().includes(inputValue.toLowerCase())
+    () => Array.from(new Set(value)),
+    [value]
   )
-}, [uniqueProjects, inputValue])  
+
+  const uniqueProjects = React.useMemo(
+    () => [...new Map(projects.map((p) => [p.id, p])).values()],
+    [projects]
+  )
+
+  const selectedProjects = React.useMemo(
+    () => uniqueProjects.filter((p) => uniqueValue.includes(p.id)),
+    [uniqueProjects, uniqueValue]
+  )
+
+  const filteredProjects = React.useMemo(() => {
+    if (!inputValue) return uniqueProjects
+    return uniqueProjects.filter(
+      (p) =>
+        p.name.toLowerCase().includes(inputValue.toLowerCase()) ||
+        p.projectNumber?.toLowerCase().includes(inputValue.toLowerCase())
+    )
+  }, [uniqueProjects, inputValue])
 
   React.useEffect(() => {
     setHighlightedIndex(0)
   }, [filteredProjects])
 
-  // Close dropdown on outside click (but not when dialog is open)
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -92,20 +99,30 @@ const filteredProjects = React.useMemo(() => {
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
+  // ─── Core selection logic ────────────────────────────────────────────────
   const toggleProject = (project: ProjectOption) => {
-    if (value.includes(project.id)) {
-      onChange(value.filter((id) => id !== project.id))
+    if (singleSelect) {
+      // Single-select: replace value, close dropdown
+      onChange([project.id])
+      setInputValue("")
+      setOpen(false)
     } else {
-      onChange(Array.from(new Set([...value, project.id])))
+      // Multi-select: toggle membership
+      if (value.includes(project.id)) {
+        onChange(value.filter((id) => id !== project.id))
+      } else {
+        onChange(Array.from(new Set([...value, project.id])))
+      }
+      setInputValue("")
+      inputRef.current?.focus()
     }
-    setInputValue("")
-    inputRef.current?.focus()
   }
 
   const removeProject = (projectId: string, e: React.MouseEvent) => {
     e.stopPropagation()
     onChange(value.filter((id) => id !== projectId))
   }
+  // ────────────────────────────────────────────────────────────────────────
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(e.target.value)
@@ -146,8 +163,8 @@ const filteredProjects = React.useMemo(() => {
         setInputValue("")
         break
       case "Backspace":
-        // Remove last tag on backspace when input is empty
-        if (!inputValue && selectedProjects.length > 0) {
+        // Only remove last tag in multi-select mode
+        if (!singleSelect && !inputValue && selectedProjects.length > 0) {
           onChange(value.slice(0, -1))
         }
         break
@@ -157,7 +174,6 @@ const filteredProjects = React.useMemo(() => {
     }
   }
 
-  // Scroll highlighted item into view
   React.useEffect(() => {
     if (open && listRef.current) {
       const el = listRef.current.children[highlightedIndex] as HTMLElement
@@ -175,9 +191,11 @@ const filteredProjects = React.useMemo(() => {
     setSavingProject(true)
     try {
       const newProject = await onSaveNewProject(form)
-      // Auto-select the newly created project
-      // onChange([...value, newProject.id])
-      onChange(Array.from(new Set([...value, newProject.id])))
+      if (singleSelect) {
+        onChange([newProject.id])
+      } else {
+        onChange(Array.from(new Set([...value, newProject.id])))
+      }
       onProjectCreated?.(newProject)
       setProjectDialogOpen(false)
     } finally {
@@ -206,9 +224,7 @@ const filteredProjects = React.useMemo(() => {
               key={project.id}
               className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#31BCFF]/10 text-[#0EA5E9] text-sm font-medium border border-[#31BCFF]/20"
             >
-              {project.projectNumber
-                ? `${project.name}`
-                : project.name}
+              {project.projectNumber ? project.name : project.name}
               {!disabled && !overviewMode && (
                 <button
                   type="button"
@@ -221,22 +237,24 @@ const filteredProjects = React.useMemo(() => {
             </span>
           ))}
 
-          {/* Search input */}
-          <input
-            ref={inputRef}
-            type="text"
-            value={inputValue}
-            onChange={handleInputChange}
-            onFocus={handleInputFocus}
-            onKeyDown={handleKeyDown}
-            disabled={disabled || overviewMode}
-            placeholder={selectedProjects.length === 0 ? placeholder : ""}
-            className="flex-1 min-w-[120px] bg-transparent text-gray-900 placeholder-gray-500 focus:outline-none text-sm"
-            role="combobox"
-            aria-expanded={open}
-            aria-haspopup="listbox"
-            aria-autocomplete="list"
-          />
+          {/* Search input — hide when single-select already has a value */}
+          {(!singleSelect || selectedProjects.length === 0) && (
+            <input
+              ref={inputRef}
+              type="text"
+              value={inputValue}
+              onChange={handleInputChange}
+              onFocus={handleInputFocus}
+              onKeyDown={handleKeyDown}
+              disabled={disabled || overviewMode}
+              placeholder={selectedProjects.length === 0 ? placeholder : ""}
+              className="flex-1 min-w-[120px] bg-transparent text-gray-900 placeholder-gray-500 focus:outline-none text-sm"
+              role="combobox"
+              aria-expanded={open}
+              aria-haspopup="listbox"
+              aria-autocomplete="list"
+            />
+          )}
 
           {/* Chevron */}
           <button
@@ -296,7 +314,7 @@ const filteredProjects = React.useMemo(() => {
               })
             )}
 
-            {/* Sticky "Add New Project" button — always visible at bottom */}
+            {/* Sticky "Add New Project" button */}
             <li className="sticky bottom-0 border-t border-gray-500 bg-gray-700">
               <button
                 type="button"
@@ -311,7 +329,6 @@ const filteredProjects = React.useMemo(() => {
         )}
       </div>
 
-      {/* Project creation dialog — rendered outside the dropdown */}
       {projectDialogOpen && (
         <ProjectDialog
           open={true}
