@@ -26,11 +26,11 @@ import FunctionGroupedView from '@/components/schedule/FunctionGroupedView'
 import ShiftFormModal from '@/components/schedule/ShiftFormModel'
 import { laborLawValidator, formatValidationMessage, separateViolations, type LaborLawViolation } from '@/shared/lib/laborLawValidation'
 import { ShiftWithRelations } from '@/types/schedule'
-import { 
-  WeekViewSkeleton, 
-  EmployeeGroupedViewSkeleton, 
+import {
+  WeekViewSkeleton,
+  EmployeeGroupedViewSkeleton,
   GroupGroupedViewSkeleton,
-  FunctionGroupedViewSkeleton 
+  FunctionGroupedViewSkeleton
 } from '@/components/skeletons/ScheduleSkeleton'
 import { usePermissions } from '@/shared/lib/usePermissions'
 import { PERMISSIONS } from '@/shared/lib/permissions'
@@ -60,7 +60,7 @@ export default function SchedulePage() {
   const [selectTemplateMode, setSelectTemplateMode] = useState<'edit' | 'apply'>('edit')
   const [shiftInitialData, setShiftInitialData] = useState<any>(null)
   const [modalViewType, setModalViewType] = useState<'week' | 'day' | 'month'>('week')
-  
+
   const [showCreateAttendanceModal, setShowCreateAttendanceModal] = useState(false)
   const [attendanceShift, setAttendanceShift] = useState<ShiftWithRelations | null>(null)
   const [attendanceFormData, setAttendanceFormData] = useState({
@@ -197,7 +197,7 @@ export default function SchedulePage() {
       if (filters.timeTo && shift.startTime > filters.timeTo) {
         return false
       }
-      
+
       return true
     })
   }, [shifts, filters, employees, selectedDepartmentId, selectedCategoryId, selectedFunctionId, scheduleViewType])
@@ -238,7 +238,7 @@ export default function SchedulePage() {
     return employees.filter((employee: any) => {
       // Check new many-to-many departments relationship
       if (employee.departments && employee.departments.length > 0) {
-        return employee.departments.some((ed: any) => 
+        return employee.departments.some((ed: any) =>
           ed.departmentId === selectedDepartmentId || ed.department?.id === selectedDepartmentId
         )
       }
@@ -256,7 +256,7 @@ export default function SchedulePage() {
     }
     return startOfWeek(currentDate, { weekStartsOn: 0 })
   }, [currentDate, viewMode, selectedDate])
-  
+
   const endDate = useMemo(() => {
     if (viewMode === 'month') {
       return endOfMonth(currentDate)
@@ -269,7 +269,7 @@ export default function SchedulePage() {
     }
     return endOfWeek(currentDate, { weekStartsOn: 0 })
   }, [currentDate, viewMode, selectedDate, startDate])
-  
+
   const weekDates = useMemo(() => Array(7).fill(0).map((_, i) => addDays(startDate, i)), [startDate])
   const twoWeekDates = useMemo(() => {
     if (viewMode !== 'two-week') return []
@@ -318,7 +318,7 @@ export default function SchedulePage() {
       const settingsRes = await fetch('/api/employee-settings')
       const settings = settingsRes.ok ? await settingsRes.json() : null
       const useSchedulableFilter = settings?.incompleteProfileBehavior === 'BLOCK_SCHEDULING'
-      
+
       const url = useSchedulableFilter ? '/api/employees?schedulable=true' : '/api/employees'
       const res = await fetch(url, {
         headers: { 'Cache-Control': 'max-age=300' }
@@ -429,21 +429,21 @@ export default function SchedulePage() {
       setLoading(true)
       const start = format(startDate, 'yyyy-MM-dd')
       const end = format(endDate, 'yyyy-MM-dd')
-      
+
       let url = `/api/shifts?startDate=${start}&endDate=${end}`
       if (selectedEmployeeId) {
         url += `&employeeId=${selectedEmployeeId}`
       }
-      
+
       const res = await fetch(url, {
         headers: { 'Cache-Control': 'max-age=60' },
         next: { revalidate: 60 }
       })
-      
+
       if (!res.ok) {
         throw new Error(`Failed to fetch shifts: ${res.statusText}`)
       }
-      
+
       const data = await res.json()
       setShifts(Array.isArray(data) ? data : [])
     } catch (error) {
@@ -471,14 +471,14 @@ export default function SchedulePage() {
       title: t('alerts.employee_unavailable.title'),
       text: status?.note
         ? t('alerts.employee_unavailable.with_note', {
-            name: employeeName,
-            date: formattedDate,
-            note: status.note
-          })
+          name: employeeName,
+          date: formattedDate,
+          note: status.note
+        })
         : t('alerts.employee_unavailable.without_note', {
-            name: employeeName,
-            date: formattedDate
-          }),
+          name: employeeName,
+          date: formattedDate
+        }),
       confirmButtonColor: '#31BCFF'
     })
   }, [employees, getAvailabilityStatus, t])
@@ -610,7 +610,7 @@ export default function SchedulePage() {
 
   const handleShiftFormSubmit = async (formData: any) => {
     // Check if this is an approval-only update (existing shift with only approval status changing)
-    const isApprovalOnlyUpdate = formData.id && shiftInitialData && 
+    const isApprovalOnlyUpdate = formData.id && shiftInitialData &&
       formData.approved !== shiftInitialData.approved &&
       formData.date === shiftInitialData.date &&
       formData.startTime === shiftInitialData.startTime &&
@@ -627,7 +627,7 @@ export default function SchedulePage() {
           formData.endTime,
           formData.id
         )
-        
+
         if (existingShift) {
           const employee = employees.find(emp => emp.id === formData.employeeId);
           const employeeName = employee ? `${employee.firstName} ${employee.lastName}` : t('labels.this_employee');
@@ -651,7 +651,7 @@ export default function SchedulePage() {
               popup: 'swal-toast-wide'
             }
           });
-          
+
           return;
         }
       }
@@ -674,15 +674,15 @@ export default function SchedulePage() {
         const shiftDate = new Date(formData.date);
         const weekStart = new Date(shiftDate);
         weekStart.setDate(shiftDate.getDate() - shiftDate.getDay());
-        
+
         const weekEnd = new Date(weekStart);
         weekEnd.setDate(weekStart.getDate() + 6);
-        
-        const existingEmployeeShifts = shifts.filter(shift => 
+
+        const existingEmployeeShifts = shifts.filter(shift =>
           shift.employeeId === formData.employeeId &&
           shift.id !== formData.id &&
           shift.endTime !== null && // Only include completed shifts
-          shift.employeeId !== null && 
+          shift.employeeId !== null &&
           new Date(shift.date) >= weekStart &&
           new Date(shift.date) <= weekEnd
         ).map(shift => ({
@@ -696,15 +696,15 @@ export default function SchedulePage() {
         }));
 
         const validation = await laborLawValidator.validateShift(shiftData, existingEmployeeShifts);
-        
+
         if (!validation.isValid) {
           // Separate overridable and non-overridable violations
           const { overridable, nonOverridable } = separateViolations(validation.violations);
-          
+
           // If there are non-overridable violations, block the shift creation
           if (nonOverridable.length > 0) {
             const violationMessages = nonOverridable.map(formatValidationMessage).join('\n');
-            
+
             Swal.fire({
               text: violationMessages,
               toast: true,
@@ -716,10 +716,10 @@ export default function SchedulePage() {
                 popup: 'swal-toast-wide'
               }
             });
-            
+
             return;
           }
-          
+
           // If there are only overridable violations, show confirmation dialog
           if (overridable.length > 0) {
             setShiftInitialData({ ...formData })
@@ -805,7 +805,7 @@ export default function SchedulePage() {
           }
         } else if (validation.warnings.length > 0) {
           const warningMessages = validation.warnings.map(w => w.message).join('\n');
-          
+
           Swal.fire({
             text: warningMessages,
             toast: true,
@@ -825,7 +825,7 @@ export default function SchedulePage() {
 
     const successToastKey = formData.id ? 'toasts.shift_updated' : 'toasts.shift_created'
     const failureToastKey = formData.id ? 'toasts.shift_update_failed' : 'toasts.shift_create_failed'
-    
+
     const optimisticShift = {
       ...formData,
       id: formData.id || `temp-${Date.now()}`,
@@ -835,18 +835,18 @@ export default function SchedulePage() {
       function: formData.functionId ? functions.find(f => f.id === formData.functionId) : null,
       shiftTypeConfig: formData.shiftTypeId ? shiftTypes.find(st => st.id === formData.shiftTypeId) : null,
     }
-    
+
     if (formData.id) {
       setShifts(prev => prev.map(s => s.id === formData.id ? { ...s, ...optimisticShift } : s))
     } else {
       setShifts(prev => [...prev, optimisticShift as any])
     }
     setShowShiftModal(false)
-    
+
     try {
       const method = formData.id ? 'PUT' : 'POST';
-      const url = formData.id 
-        ? `/api/shifts/${formData.id}` 
+      const url = formData.id
+        ? `/api/shifts/${formData.id}`
         : '/api/shifts';
 
       const { _bulkCopyCount, ...submitData } = formData
@@ -887,7 +887,7 @@ export default function SchedulePage() {
         } else {
           setShifts(prev => prev.map(s => s.id === optimisticShift.id ? savedShift : s))
         }
-        
+
         const toastText = bulkCount > 1 && !submitData.id
           ? `${bulkCount} shifts created`
           : t(successToastKey)
@@ -905,7 +905,7 @@ export default function SchedulePage() {
         });
       } else {
         const errorData = await res.json();
-        
+
         if (formData.id) {
           setShifts(prev => prev.map(s => s.id === formData.id ? shifts.find(os => os.id === formData.id) || s : s))
         } else {
@@ -966,7 +966,7 @@ export default function SchedulePage() {
           })
           return
         }
-        
+
         Swal.fire({
           text: errorData.error || t(failureToastKey),
           toast: true,
@@ -981,13 +981,13 @@ export default function SchedulePage() {
       }
     } catch (error) {
       console.error('Error submitting shift form:', error)
-      
+
       if (formData.id) {
         setShifts(prev => prev.map(s => s.id === formData.id ? shifts.find(os => os.id === formData.id) || s : s))
       } else {
         setShifts(prev => prev.filter(s => s.id !== optimisticShift.id))
       }
-      
+
       Swal.fire({
         text: t(failureToastKey),
         toast: true,
@@ -1319,21 +1319,21 @@ export default function SchedulePage() {
       const [hours, minutes] = timeStr.split(':').map(Number)
       return hours * 60 + minutes
     }
-    
+
     const startMinutes = getMinutes(startTime)
     const endMinutes = getMinutes(endTime)
-    
+
     let minutesWorked = endMinutes - startMinutes
     if (minutesWorked < 0) {
-      minutesWorked += 24 * 60 
+      minutesWorked += 24 * 60
     }
-    
+
     return minutesWorked / 60
   }
 
   const handleEditShift = (shift: ShiftWithRelations) => {
     setModalViewType('week');
-    
+
     const shiftData = {
       ...shift,
       date: typeof shift.date === 'string'
@@ -1354,7 +1354,7 @@ export default function SchedulePage() {
       breakEnd: shift.breakEnd || undefined,
       note: shift.note || '',
     };
-    
+
     setShiftInitialData(shiftData);
     setShowShiftModal(true);
   };
@@ -1391,7 +1391,7 @@ export default function SchedulePage() {
         : format(attendanceShift.date as Date, 'yyyy-MM-dd')
 
       const punchInDateTime = new Date(`${shiftDate}T${attendanceFormData.punchInTime}:00`)
-      const punchOutDateTime = attendanceFormData.punchOutTime 
+      const punchOutDateTime = attendanceFormData.punchOutTime
         ? new Date(`${shiftDate}T${attendanceFormData.punchOutTime}:00`)
         : null
 
@@ -1411,6 +1411,12 @@ export default function SchedulePage() {
         const errorData = await response.json()
         throw new Error(errorData.error || 'Failed to create attendance')
       }
+
+      setShifts(prev => prev.map(s =>
+        s.id === attendanceShift.id
+          ? { ...s, status: 'COMPLETED' } as typeof s
+          : s
+      ))
 
       await Swal.fire({
         icon: 'success',
@@ -1445,7 +1451,7 @@ export default function SchedulePage() {
     // Calculate offsets in minutes since midnight
     const startOffset = startHour * 60 + startMinutes;
     let endOffset = endHour * 60 + endMinutes;
-    
+
     // If end time is earlier than start time, assume it's the next day
     if (endOffset < startOffset) {
       endOffset += 24 * 60; // Add 24 hours
@@ -1453,11 +1459,11 @@ export default function SchedulePage() {
 
     // Height calculation: 1 hour = 60px
     const height = ((endOffset - startOffset) / 60) * 60;
-    
+
     // Top position: offset from the top of the schedule grid
     // Assuming the grid starts at hour 1 (not 0)
     const top = ((startOffset - 60) / 60) * 60; // Subtract 60 minutes to adjust for grid starting at hour 1
-    
+
     return { top, height };
   };
 
@@ -1475,7 +1481,7 @@ export default function SchedulePage() {
     if (!canUseTemplates) {
       return
     }
-    
+
     switch (action) {
       case 'create':
         setShowCreateTemplateModal(true)
@@ -1717,11 +1723,10 @@ export default function SchedulePage() {
                     onClick={() => setScheduleViewType(tab.value)}
                     role="tab"
                     aria-selected={isActive}
-                    className={`flex-1 rounded-xl border px-2 py-2 text-[11px] font-semibold uppercase tracking-wide transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#31BCFF] focus-visible:ring-offset-2 ${
-                      isActive
-                        ? 'border-[#31BCFF] bg-[#31BCFF]/10 text-[#0B5CAB]'
-                        : 'border-gray-200 bg-white text-gray-500'
-                    }`}
+                    className={`flex-1 rounded-xl border px-2 py-2 text-[11px] font-semibold uppercase tracking-wide transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#31BCFF] focus-visible:ring-offset-2 ${isActive
+                      ? 'border-[#31BCFF] bg-[#31BCFF]/10 text-[#0B5CAB]'
+                      : 'border-gray-200 bg-white text-gray-500'
+                      }`}
                   >
                     {tab.label}
                   </button>
@@ -1744,18 +1749,16 @@ export default function SchedulePage() {
                     onClick={() => setScheduleViewType(tab.value)}
                     role="tab"
                     aria-selected={isActive}
-                    className={`group flex min-w-[170px] flex-1 items-center gap-3 rounded-2xl border px-3 md:px-4 py-2.5 text-left text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#31BCFF] focus-visible:ring-offset-2 snap-start ${
-                      isActive
-                        ? 'border-[#31BCFF] bg-blue-50 text-[#0B5CAB] shadow-sm'
-                        : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50'
-                    }`}
+                    className={`group flex min-w-[170px] flex-1 items-center gap-3 rounded-2xl border px-3 md:px-4 py-2.5 text-left text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#31BCFF] focus-visible:ring-offset-2 snap-start ${isActive
+                      ? 'border-[#31BCFF] bg-blue-50 text-[#0B5CAB] shadow-sm'
+                      : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                      }`}
                   >
                     <span
-                      className={`inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border text-base transition-colors ${
-                        isActive
-                          ? 'border-transparent bg-[#31BCFF]/15 text-[#0B5CAB]'
-                          : 'border-gray-200 bg-white text-gray-500'
-                      }`}
+                      className={`inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border text-base transition-colors ${isActive
+                        ? 'border-transparent bg-[#31BCFF]/15 text-[#0B5CAB]'
+                        : 'border-gray-200 bg-white text-gray-500'
+                        }`}
                     >
                       <Icon className="h-4 w-4" />
                     </span>
@@ -1917,202 +1920,202 @@ export default function SchedulePage() {
         )}
       </main>
 
-        <ShiftFormModal
-          isOpen={showShiftModal}
-          onClose={() => setShowShiftModal(false)}
-          initialData={shiftInitialData}
-          employees={employees}
-          employeeGroups={employeeGroups}
-          onSubmit={handleShiftFormSubmit}
-          onDelete={handleShiftDelete}
-          viewType={modalViewType}
-          loading={loading}
-          canEditShifts={canEditShifts}
-          canDeleteShifts={canDeleteShifts}
-        />
+      <ShiftFormModal
+        isOpen={showShiftModal}
+        onClose={() => setShowShiftModal(false)}
+        initialData={shiftInitialData}
+        employees={employees}
+        employeeGroups={employeeGroups}
+        onSubmit={handleShiftFormSubmit}
+        onDelete={handleShiftDelete}
+        viewType={modalViewType}
+        loading={loading}
+        canEditShifts={canEditShifts}
+        canDeleteShifts={canDeleteShifts}
+      />
 
-        <CreateTemplateModal
-          isOpen={showCreateTemplateModal}
-          onClose={() => setShowCreateTemplateModal(false)}
-        />
+      <CreateTemplateModal
+        isOpen={showCreateTemplateModal}
+        onClose={() => setShowCreateTemplateModal(false)}
+      />
 
-        <SelectTemplateModal
-          isOpen={showSelectTemplateModal}
-          onClose={() => setShowSelectTemplateModal(false)}
-          mode={selectTemplateMode}
-          onApply={(templateId) => {
-            // TODO: Implement apply template logic
-            console.log('Apply template:', templateId)
-          }}
-        />
+      <SelectTemplateModal
+        isOpen={showSelectTemplateModal}
+        onClose={() => setShowSelectTemplateModal(false)}
+        mode={selectTemplateMode}
+        onApply={(templateId) => {
+          // TODO: Implement apply template logic
+          console.log('Apply template:', templateId)
+        }}
+      />
 
-        <ApplyTemplateModal
-          isOpen={showApplyTemplateModal}
-          onClose={() => setShowApplyTemplateModal(false)}
-          currentWeekStart={startOfWeek(currentDate, { weekStartsOn: 0 })}
-          onApply={async (data) => {
-            try {
-              // Format date as YYYY-MM-DD to avoid timezone issues
-              // Using local date components ensures the user's selected date is preserved
-              const year = data.applyToDate.getFullYear()
-              const month = String(data.applyToDate.getMonth() + 1).padStart(2, '0')
-              const day = String(data.applyToDate.getDate()).padStart(2, '0')
-              const applyToDateStr = `${year}-${month}-${day}`
-              
-              const response = await fetch(`/api/schedule-templates/${data.templateId}/apply`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                  applyToDate: applyToDateStr,
-                  existingShiftsOption: data.existingShiftsOption
-                })
-              })
+      <ApplyTemplateModal
+        isOpen={showApplyTemplateModal}
+        onClose={() => setShowApplyTemplateModal(false)}
+        currentWeekStart={startOfWeek(currentDate, { weekStartsOn: 0 })}
+        onApply={async (data) => {
+          try {
+            // Format date as YYYY-MM-DD to avoid timezone issues
+            // Using local date components ensures the user's selected date is preserved
+            const year = data.applyToDate.getFullYear()
+            const month = String(data.applyToDate.getMonth() + 1).padStart(2, '0')
+            const day = String(data.applyToDate.getDate()).padStart(2, '0')
+            const applyToDateStr = `${year}-${month}-${day}`
 
-              if (!response.ok) {
-                const errorData = await response.json()
-                throw new Error(errorData.error || 'Failed to apply template')
-              }
-
-              const result = await response.json()
-              
-              Swal.fire({
-                icon: 'success',
-                title: 'Template Applied',
-                text: result.message || `Successfully applied ${result.shiftsCreated} shifts`,
-                timer: 2500,
-                showConfirmButton: false
-              })
-
-              // Refresh shifts after applying
-              fetchShifts()
-            } catch (error) {
-              console.error('Error applying template:', error)
-              Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: error instanceof Error ? error.message : 'Failed to apply template'
-              })
-            }
-          }}
-        />
-
-        <SaveAsTemplateModal
-          isOpen={showSaveAsTemplateModal}
-          onClose={() => setShowSaveAsTemplateModal(false)}
-          shifts={shifts}
-          weekStart={startOfWeek(currentDate, { weekStartsOn: 0 })}
-          onSave={async (templateName) => {
-            const weekStartDate = startOfWeek(currentDate, { weekStartsOn: 0 })
-            
-            const response = await fetch('/api/schedule-templates/save-from-schedule', {
+            const response = await fetch(`/api/schedule-templates/${data.templateId}/apply`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json'
               },
               body: JSON.stringify({
-                name: templateName,
-                weekStart: weekStartDate.toISOString(),
-                shifts: shifts.map(shift => ({
-                  id: shift.id,
-                  date: typeof shift.date === 'string' ? shift.date : shift.date.toISOString(),
-                  startTime: shift.startTime,
-                  endTime: shift.endTime,
-                  employeeId: shift.employeeId,
-                  employeeGroupId: shift.employeeGroupId,
-                  functionId: shift.functionId,
-                  departmentId: shift.departmentId,
-                  note: shift.note,
-                  breakPaid: shift.breakPaid
-                }))
+                applyToDate: applyToDateStr,
+                existingShiftsOption: data.existingShiftsOption
               })
             })
 
             if (!response.ok) {
               const errorData = await response.json()
-              throw new Error(errorData.error || 'Failed to save template')
+              throw new Error(errorData.error || 'Failed to apply template')
             }
 
             const result = await response.json()
-            
+
             Swal.fire({
               icon: 'success',
-              title: t('templates.saved', 'Template Saved'),
-              text: t('templates.saved_message', 'Template "{{name}}" saved with {{count}} shifts', { 
-                name: templateName, 
-                count: result.template.shiftsCount 
-              }),
+              title: 'Template Applied',
+              text: result.message || `Successfully applied ${result.shiftsCreated} shifts`,
               timer: 2500,
               showConfirmButton: false
             })
-          }}
-        />
 
-        {/* Create Attendance Modal */}
-        <Dialog open={showCreateAttendanceModal} onOpenChange={setShowCreateAttendanceModal}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>{t('create_attendance.title')}</DialogTitle>
-              <DialogDescription>{t('create_attendance.description')}</DialogDescription>
-            </DialogHeader>
-            {attendanceShift && (
-              <div className="space-y-4 py-4">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-500">{t('create_attendance.employee')}:</span>
-                    <p className="font-medium">
-                      {employees.find(e => e.id === attendanceShift.employeeId)?.firstName}{' '}
-                      {employees.find(e => e.id === attendanceShift.employeeId)?.lastName}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-gray-500">{t('create_attendance.date')}:</span>
-                    <p className="font-medium">
-                      {typeof attendanceShift.date === 'string'
-                        ? attendanceShift.date.substring(0, 10)
-                        : format(attendanceShift.date, 'yyyy-MM-dd')}
-                    </p>
-                  </div>
+            // Refresh shifts after applying
+            fetchShifts()
+          } catch (error) {
+            console.error('Error applying template:', error)
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: error instanceof Error ? error.message : 'Failed to apply template'
+            })
+          }
+        }}
+      />
+
+      <SaveAsTemplateModal
+        isOpen={showSaveAsTemplateModal}
+        onClose={() => setShowSaveAsTemplateModal(false)}
+        shifts={shifts}
+        weekStart={startOfWeek(currentDate, { weekStartsOn: 0 })}
+        onSave={async (templateName) => {
+          const weekStartDate = startOfWeek(currentDate, { weekStartsOn: 0 })
+
+          const response = await fetch('/api/schedule-templates/save-from-schedule', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              name: templateName,
+              weekStart: weekStartDate.toISOString(),
+              shifts: shifts.map(shift => ({
+                id: shift.id,
+                date: typeof shift.date === 'string' ? shift.date : shift.date.toISOString(),
+                startTime: shift.startTime,
+                endTime: shift.endTime,
+                employeeId: shift.employeeId,
+                employeeGroupId: shift.employeeGroupId,
+                functionId: shift.functionId,
+                departmentId: shift.departmentId,
+                note: shift.note,
+                breakPaid: shift.breakPaid
+              }))
+            })
+          })
+
+          if (!response.ok) {
+            const errorData = await response.json()
+            throw new Error(errorData.error || 'Failed to save template')
+          }
+
+          const result = await response.json()
+
+          Swal.fire({
+            icon: 'success',
+            title: t('templates.saved', 'Template Saved'),
+            text: t('templates.saved_message', 'Template "{{name}}" saved with {{count}} shifts', {
+              name: templateName,
+              count: result.template.shiftsCount
+            }),
+            timer: 2500,
+            showConfirmButton: false
+          })
+        }}
+      />
+
+      {/* Create Attendance Modal */}
+      <Dialog open={showCreateAttendanceModal} onOpenChange={setShowCreateAttendanceModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('create_attendance.title')}</DialogTitle>
+            <DialogDescription>{t('create_attendance.description')}</DialogDescription>
+          </DialogHeader>
+          {attendanceShift && (
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-gray-500">{t('create_attendance.employee')}:</span>
+                  <p className="font-medium">
+                    {employees.find(e => e.id === attendanceShift.employeeId)?.firstName}{' '}
+                    {employees.find(e => e.id === attendanceShift.employeeId)?.lastName}
+                  </p>
                 </div>
-                {attendanceShift.shiftTypeConfig && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="text-gray-500">{t('create_attendance.shift_type', 'Shift Type')}:</span>
-                    <span className="bg-violet-100 text-violet-700 px-2 py-0.5 rounded text-xs font-medium">
-                      {attendanceShift.shiftTypeConfig.name}
-                    </span>
-                  </div>
-                )}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">{t('create_attendance.punch_in')}</label>
-                    <Input
-                      type="time"
-                      value={attendanceFormData.punchInTime}
-                      onChange={(e) => setAttendanceFormData(prev => ({ ...prev, punchInTime: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">{t('create_attendance.punch_out')}</label>
-                    <Input
-                      type="time"
-                      value={attendanceFormData.punchOutTime}
-                      onChange={(e) => setAttendanceFormData(prev => ({ ...prev, punchOutTime: e.target.value }))}
-                    />
-                  </div>
+                <div>
+                  <span className="text-gray-500">{t('create_attendance.date')}:</span>
+                  <p className="font-medium">
+                    {typeof attendanceShift.date === 'string'
+                      ? attendanceShift.date.substring(0, 10)
+                      : format(attendanceShift.date, 'yyyy-MM-dd')}
+                  </p>
                 </div>
               </div>
-            )}
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowCreateAttendanceModal(false)}>
-                {t('create_attendance.cancel')}
-              </Button>
-              <Button onClick={handleCreateAttendance} disabled={isCreatingAttendance}>
-                {isCreatingAttendance ? t('create_attendance.creating') : t('create_attendance.create')}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+              {attendanceShift.shiftTypeConfig && (
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-gray-500">{t('create_attendance.shift_type', 'Shift Type')}:</span>
+                  <span className="bg-violet-100 text-violet-700 px-2 py-0.5 rounded text-xs font-medium">
+                    {attendanceShift.shiftTypeConfig.name}
+                  </span>
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">{t('create_attendance.punch_in')}</label>
+                  <Input
+                    type="time"
+                    value={attendanceFormData.punchInTime}
+                    onChange={(e) => setAttendanceFormData(prev => ({ ...prev, punchInTime: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">{t('create_attendance.punch_out')}</label>
+                  <Input
+                    type="time"
+                    value={attendanceFormData.punchOutTime}
+                    onChange={(e) => setAttendanceFormData(prev => ({ ...prev, punchOutTime: e.target.value }))}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateAttendanceModal(false)}>
+              {t('create_attendance.cancel')}
+            </Button>
+            <Button onClick={handleCreateAttendance} disabled={isCreatingAttendance}>
+              {isCreatingAttendance ? t('create_attendance.creating') : t('create_attendance.create')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       {/* Bulk Selection Action Bar */}
       {selectedShiftIds.size > 0 && (
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-xl px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
@@ -2163,6 +2166,6 @@ export default function SchedulePage() {
           </div>
         </div>
       )}
-      </div>
+    </div>
   )
 }

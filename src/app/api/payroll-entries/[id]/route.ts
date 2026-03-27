@@ -150,6 +150,7 @@ export async function GET(
             breakStart: true,
             breakEnd: true,
             breakPaid: true,
+            wage: true,
             shiftTypeConfig: {
               select: {
                 id: true,
@@ -180,6 +181,7 @@ export async function GET(
       payCalculationType: PayCalculationType
       payCalculationValue: number
       payCalculationLabel: string
+      effectiveRate: number
       rawEarned: number
     }> = []
 
@@ -203,7 +205,10 @@ export async function GET(
       const payCalculationValueRaw = Number(attendance.shift?.shiftTypeConfig?.payCalculationValue ?? 0)
       const payCalculationValue = Number.isFinite(payCalculationValueRaw) ? payCalculationValueRaw : 0
       const payCalculationLabel = buildPayCalculationLabel(payCalculationType, payCalculationValue)
-      const effectiveRate = calculateShiftTypeAdjustment(baseSalaryRate, attendance.shift?.shiftTypeConfig || null)
+      const attendanceBaseRate = attendance.shift?.wage && attendance.shift.wage > 0
+        ? attendance.shift.wage
+        : baseSalaryRate
+      const effectiveRate = calculateShiftTypeAdjustment(attendanceBaseRate, attendance.shift?.shiftTypeConfig || null)
 
       attendanceRows.push({
         date,
@@ -213,6 +218,7 @@ export async function GET(
         payCalculationType,
         payCalculationValue,
         payCalculationLabel,
+        effectiveRate,
         rawEarned: safeWorkedHours * effectiveRate,
       })
     }
@@ -317,8 +323,8 @@ export async function GET(
         shiftTypeLabel: Array.from(row.shiftTypes).join(', '),
         payCalculationRules,
         payCalculationLabel: Array.from(row.payCalculationLabels).join(' | '),
-        effectiveRate: baseSalaryRate,
-        effectiveRateLabel: baseSalaryRate.toFixed(2),
+        effectiveRate: row.workedHours > 0 ? row.rawEarned / row.workedHours : baseSalaryRate,
+        effectiveRateLabel: (row.workedHours > 0 ? row.rawEarned / row.workedHours : baseSalaryRate).toFixed(2),
         earned: grossByDay[index],
         bonus: bonusByDay[index],
         deduction: deductionByDay[index],

@@ -24,6 +24,7 @@ interface AttendanceCalculationResult {
       startTime: string
       endTime: string | null
       shiftTypeId: string | null
+      wage: number | null
       shiftTypeConfig: {
         id: string
         name: string
@@ -116,6 +117,7 @@ export class AttendanceBasedCalculator {
             startTime: true,
             endTime: true,
             shiftTypeId: true,
+            wage: true,
             shiftTypeConfig: {
               select: {
                 id: true,
@@ -169,6 +171,7 @@ export class AttendanceBasedCalculator {
           startTime: attendance.shift.startTime,
           endTime: attendance.shift.endTime,
           shiftTypeId: attendance.shift.shiftTypeId ?? null,
+          wage: attendance.shift.wage ?? null,
           shiftTypeConfig: attendance.shift.shiftTypeConfig ? {
             id: attendance.shift.shiftTypeConfig.id,
             name: attendance.shift.shiftTypeConfig.name,
@@ -188,7 +191,7 @@ export class AttendanceBasedCalculator {
     )
 
     // Calculate rates
-    const { regularRate, overtimeRate } = this.calculateRates(employee)
+    const { regularRate, overtimeRate } = this.calculateRates(employee, attendanceDetails)
 
     return {
       totalHours: Math.round(totalHours * 100) / 100,
@@ -308,15 +311,21 @@ export class AttendanceBasedCalculator {
   /**
    * Calculate hourly rates from pay rules or employee group
    */
-  private calculateRates(employee: any) {
+  private calculateRates(employee: any, attendanceDetails: any[] = []) {
     const applicableRules = this.getApplicablePayRules(employee)
     
     let regularRate = 0
     let overtimeRate = 0
 
+    const shiftWithWage = attendanceDetails.find(
+      attendance => attendance.isApproved && attendance.shift?.wage && attendance.shift.wage > 0
+    )
+
     // Find regular rate rule
     const regularRule = applicableRules.find(r => r.rule.ruleType === 'REGULAR')
-    if (regularRule) {
+    if (shiftWithWage) {
+      regularRate = shiftWithWage.shift.wage
+    } else if (regularRule) {
       regularRate = regularRule.rate
     } else if (employee.salaryRate && employee.salaryRate > 0) {
       regularRate = employee.salaryRate

@@ -184,6 +184,11 @@ export async function POST(request: NextRequest) {
         ? payCalc.overtimeRate / payCalc.regularRate
         : 1.5
 
+      const entryBaseRate = approvedDetails.find(
+        att => att.shift?.wage !== null && att.shift?.wage !== undefined && att.shift.wage > 0
+      )?.shift?.wage ?? payCalc.regularRate
+      const entryOvertimeRate = entryBaseRate * overtimeMultiplier
+
       let totalRegularPay = 0
       let totalOvertimePay = 0
       const shiftTypeNotes: string[] = []
@@ -206,15 +211,24 @@ export async function POST(request: NextRequest) {
           attOvertimeHours = 0
         }
 
+        const shiftWage = att.shift?.wage
+        const baseRate = (shiftWage !== null && shiftWage !== undefined && shiftWage > 0)
+          ? shiftWage
+          : payCalc.regularRate
+
         // Apply shift type adjustment to the base rate
         const shiftTypeConfig = att.shift?.shiftTypeConfig || null
-        const effectiveRegularRate = calculateShiftTypeAdjustment(payCalc.regularRate, shiftTypeConfig as any)
+        const effectiveRegularRate = calculateShiftTypeAdjustment(baseRate, shiftTypeConfig as any)
         const effectiveOvertimeRate = effectiveRegularRate * overtimeMultiplier
 
         totalRegularPay += attRegularHours * effectiveRegularRate
         totalOvertimePay += attOvertimeHours * effectiveOvertimeRate
 
-        if (shiftTypeConfig && effectiveRegularRate !== payCalc.regularRate) {
+        if (shiftWage !== null && shiftWage !== undefined && shiftWage > 0) {
+          shiftTypeNotes.push(
+            `${att.date}: Shift wage – ${att.duration}h @ ${effectiveRegularRate.toFixed(2)}/hr`
+          )
+        } else if (shiftTypeConfig && effectiveRegularRate !== payCalc.regularRate) {
           shiftTypeNotes.push(
             `${att.date}: ${shiftTypeConfig.name} – ${att.duration}h @ ${effectiveRegularRate.toFixed(2)}/hr`
           )
@@ -247,8 +261,8 @@ export async function POST(request: NextRequest) {
           payrollPeriodId: payrollPeriodId,
           regularHours: payCalc.regularHours,
           overtimeHours: finalOvertimeHours,
-          regularRate: payCalc.regularRate,
-          overtimeRate: payCalc.overtimeRate,
+          regularRate: entryBaseRate,
+          overtimeRate: entryOvertimeRate,
           grossPay: grossPay,
           deductions: payCalc.deductions,
           netPay: netPay,
