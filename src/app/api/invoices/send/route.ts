@@ -29,7 +29,7 @@ export async function POST(
         errors.push({ id, error: 'Invoice not found' })
         continue
       }
-
+      console.log("ExistingInvoice ===========>",existingInvoice);
       if (existingInvoice.status === InvoiceStatus.DRAFT) {
         await prisma.$transaction(async (tx) => {
           const voucher = await generateVoucherNumber(businessId, VoucherType.INVOICE);

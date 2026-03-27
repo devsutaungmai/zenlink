@@ -514,6 +514,17 @@ export default function ProjectPage() {
                       <td className="px-6 py-4 whitespace-nowrap text-right">
                         <div className="flex items-center justify-end gap-2">
                           <Link
+                            href={`/dashboard/projects/create?projectId=${project.id}&copy=true`}
+                            className="px-1 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2 group relative"
+
+                          >
+                            <span className="text-base">📋</span>
+                            <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 text-xs text-white bg-gray-800 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                              Copy Project
+                            </span>
+
+                          </Link>
+                          <Link
                             href={`/dashboard/projects/${project.id}/edit`}
                             className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
                             title="Edit Project"
@@ -609,6 +620,17 @@ export default function ProjectPage() {
                     {isColumnVisible("name") && <h3 className="text-lg font-semibold text-gray-900 mt-2">{project.name}</h3>}
                   </div>
                   <div className="flex items-center gap-2">
+                    <Link
+                      href={`/dashboard/projects/create?projectId=${project.id}&copy=true`}
+                      className="px-1 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2 group relative"
+
+                    >
+                      <span className="text-base">📋</span>
+                      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 text-xs text-white bg-gray-800 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                        Copy Project
+                      </span>
+
+                    </Link>
                     <Link
                       href={`/dashboard/projects/${project.id}/edit`}
                       className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"

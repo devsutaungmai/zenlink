@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import Link from 'next/link'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
@@ -44,16 +44,35 @@ interface LedgerAccount {
   businessVatCodes: BusinessVatCode[]
 }
 
+interface ProductFormData {
+  active: boolean
+  productNumber: string
+  defaultProductNumber?: string
+  sequence?: number
+  year?: number
+  productName: string
+  salesPrice: number
+  costPrice: number
+  discountPercentage: number
+  unitId: string
+  productGroupId: string
+  ledgerAccountId: string
+}
+
 export default function CreateProductPage() {
   const router = useRouter()
   const { t } = useTranslation()
+  const searchParams = useSearchParams()
+  const copyMode = searchParams.get('copy') === "true";
+  const productId = searchParams.get('productId') ?? "";
   const [loading, setLoading] = useState(false)
   const [units, setUnits] = useState<Unit[]>([])
   const [productGroups, setProductGroups] = useState<ProductGroup[]>([])
   const [salesLedgerAccounts, setSalesLedgerAccounts] = useState<LedgerAccount[]>([])
   const firstInputRef = useAutoFocus<HTMLInputElement>()
+  const [fetchingLoading, setFetchingLoading] = useState(true)
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<ProductFormData>({
     active: true,
     productNumber: '',
     defaultProductNumber: '',
@@ -98,6 +117,39 @@ export default function CreateProductPage() {
     fetchSalesLedgerAccounts()
     getDefaultProductNumber()
   }, [])
+
+
+  useEffect(() => {
+    if (copyMode && productId) {
+      fetchProduct()
+    }
+  }, [copyMode, productId]);
+
+
+  const fetchProduct = async () => {
+    try {
+      const res = await fetch(`/api/products/${productId}`)
+      if (res.ok) {
+        const data = await res.json()
+        const formattedData = {
+          active: data.active,
+          productNumber: formatProductNumberForDisplay(data.productNumber) || '',
+          productName: data.productName || '',
+          salesPrice: data.salesPrice || '',
+          costPrice: data.costPrice || '',
+          discountPercentage: data.discountPercentage || '',
+          unitId: data.unitId || '',
+          productGroupId: data.productGroupId || '',
+          ledgerAccountId: data.ledgerAccountId || ''
+        };
+        setFormData(formattedData)
+      }
+    } catch (error) {
+      console.error('Error fetching category:', error)
+    } finally {
+      setFetchingLoading(false)
+    }
+  }
 
   const fetchUnits = async () => {
     try {
@@ -203,7 +255,7 @@ export default function CreateProductPage() {
         throw new Error(error.error || 'Failed to create product')
       }
 
-       Swal.fire({
+      Swal.fire({
         text: 'Product created successfully',
         toast: true,
         position: 'top-end',
@@ -261,7 +313,7 @@ export default function CreateProductPage() {
               Add a new category to organize your department functions
             </p>
           </div>
-          
+
           <div className="hidden md:flex items-center space-x-2">
             <ProductFieldSettingsDialog
               initialSettings={visibleFields}

@@ -137,9 +137,6 @@ export default function CreateInvoicePage() {
         notes: ''
     })
     const [netTotals, setNetTotals] = useState<Number[]>([]);
-
-    const [loadingCustomer, setLoadingCustomer] = useState<boolean>(false);
-    const [customerDialog, setCustomerDialog] = useState<boolean>(false)
     const { settings, refetch } = useInvoiceSettings();
     const [visibleFields, setVisibleFields] = useState({
         showDiscount: true,
@@ -256,35 +253,6 @@ export default function CreateInvoicePage() {
         }
     }
 
-    const onSaveCustomer = async (customer: CustomerFormType) => {
-        console.log("CustomerFormData" + JSON.stringify(customer));
-        setCustomerDialog(false)
-        try {
-            setLoadingCustomer(true)
-            const res = await fetch('/api/customers', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(customer),
-            })
-
-            if (!res.ok) {
-                const error = await res.json()
-                throw new Error(error.error || 'Failed to create customer')
-            }
-
-            await toast('success', 'Customer created successfully')
-            router.refresh()
-        } catch (error) {
-            await toast(
-                'error',
-                error instanceof Error ? error.message : 'An error occurred'
-            )
-        } finally {
-            setLoadingCustomer(false)
-            setCustomerDialog(false)
-        }
-    }
-
     useEffect(() => {
         fetchCustomers()
         fetchProducts()
@@ -314,13 +282,6 @@ export default function CreateInvoicePage() {
             fetchInvoice();
         }
     }, [copyMode, invoiceId]);
-
-    useEffect(() => {
-        // Refetch customers when dialog closes after successful save
-        if (!customerDialog && !loadingCustomer) {
-            fetchCustomers()
-        }
-    }, [customerDialog, loadingCustomer])
 
     useEffect(() => {
         if (settings) {
@@ -545,43 +506,50 @@ export default function CreateInvoicePage() {
 
     }
 
-    const updateLineTotal = (index: number, currentQty?: number) => {
-        const line = formData.invoiceLines[index];
-        const qty = currentQty !== undefined ? currentQty : Number(line.quantity);
-        const absQty = Math.abs(qty) || 0;
-        const price = Math.abs(Number(line.pricePerUnit)) || 0;
-        const discount = Number(line.discountPercentage) || 0;
-        const vat = Number(line.vatPercentage) || 0;
-        const { totalExclVAT } = calculateInvoiceTotals(absQty, price, discount, vat);
-        // Derive sign from the actual current quantity, not stale isNegativeTotal
-        const sign = (isCreditNote && !!line.id) ? -1 : (qty < 0 ? -1 : 1);
-        setNetTotals((prevNetTotals) => {
-            const newNetTotals = [...prevNetTotals];
-            newNetTotals[index] = totalExclVAT * sign;
-            return newNetTotals;
-        });
-    };
+    const updateLineTotal = (index: number, currentQty?: number, currentPrice?: number, currentDiscount?: number, currentVat?: number) => {
+    const line = formData.invoiceLines[index];
+    const qty = currentQty !== undefined ? currentQty : Number(line.quantity);
+    const price = currentPrice !== undefined ? currentPrice : Math.abs(Number(line.pricePerUnit));
+    const discount = currentDiscount !== undefined ? currentDiscount : Number(line.discountPercentage);
+    const vat = currentVat !== undefined ? currentVat : Number(line.vatPercentage);
+    const absQty = Math.abs(qty) || 0;
+    const { totalExclVAT } = calculateInvoiceTotals(absQty, Math.abs(price), discount, vat);
+    const sign = (isCreditNote && !!line.id) ? -1 : (qty < 0 ? -1 : 1);
+    setNetTotals((prevNetTotals) => {
+        const newNetTotals = [...prevNetTotals];
+        newNetTotals[index] = totalExclVAT * sign;
+        return newNetTotals;
+    });
+};
+
+    
 
     const handleSendClick = (action: 'send_invoice_without_email' | 'send_invoice_with_email' | 'print' | 'send_new_credit_note') => {
         setPendingAction(action)
         setShowSendDialog(true)
     }
     const handleProductChange = (index: number, productId: string) => {
-        const product = products.find(p => p.id === productId);
-        const updatedLines = [...formData.invoiceLines];
-        const businessVat = product?.ledgerAccount?.businessVatCodes?.[0]?.vatCode
-        const vatRate = businessVat?.rate ?? product?.ledgerAccount?.vatCode?.rate ?? 0
-        updatedLines[index] = {
-            ...updatedLines[index],
-            productId: productId,
-            pricePerUnit: product?.salesPrice ?? 0,
-            discountPercentage: product?.discountPercentage ?? 0,
-            vatPercentage: Number(vatRate),
-            productName: product?.productName,
-        }
-        setFormData({ ...formData, invoiceLines: updatedLines });
-        updateLineTotal(index, updatedLines[index].quantity);
+    const product = products.find(p => p.id === productId);
+    const updatedLines = [...formData.invoiceLines];
+    const businessVat = product?.ledgerAccount?.businessVatCodes?.[0]?.vatCode
+    const vatRate = businessVat?.rate ?? product?.ledgerAccount?.vatCode?.rate ?? 0
+    const newPrice = product?.salesPrice ?? 0
+    const newDiscount = product?.discountPercentage ?? 0
+    const newVat = Number(vatRate)
+
+    updatedLines[index] = {
+        ...updatedLines[index],
+        productId: productId,
+        pricePerUnit: newPrice,
+        discountPercentage: newDiscount,
+        vatPercentage: newVat,
+        productName: product?.productName,
     }
+    setFormData({ ...formData, invoiceLines: updatedLines });
+
+    // Pass the fresh values directly — don't rely on stale formData state
+    updateLineTotal(index, updatedLines[index].quantity, newPrice, newDiscount, newVat);
+}
 
     const onSaveProduct = async (product: ProductFormType): Promise<ProductOption> => {
         const res = await fetch('/api/products', {
@@ -637,7 +605,7 @@ export default function CreateInvoicePage() {
             const res = await fetch('/api/projects', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(project),
+                body: JSON.stringify({...project, customerId: formData.customerId || null}),
             })
             if (!res.ok) {
                 const error = await res.json()
@@ -844,13 +812,6 @@ export default function CreateInvoicePage() {
                     <div className="bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-xl border border-slate-200 p-6">
                         <div className="flex items-center justify-between mb-4">
                             <h2 className="text-lg font-semibold text-gray-900">Customer Information</h2>
-                            {!overviewMode && <button
-                                type="button"
-                                onClick={() => setCustomerDialog(true)}
-                                className="px-4 py-2 rounded-lg bg-[#31BCFF] text-white hover:bg-[#0ea5e9] transition-colors"
-                            >
-                                Add New Customer
-                            </button>}
                         </div>
 
                         <div className="flex flex-wrap gap-6 mb-6">
@@ -865,6 +826,21 @@ export default function CreateInvoicePage() {
                                     onChange={handleCustomerChange}
                                     placeholder="Select Customer"
                                     overviewMode={overviewMode}
+                                    onSaveNewCustomer={async (customer) => {          
+                                        const res = await fetch('/api/customers', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify(customer),
+                                        })
+                                        if (!res.ok) {
+                                            const error = await res.json()
+                                            throw new Error(error.error || 'Failed to create customer')
+                                        }
+                                        const created = await res.json()
+                                        setCustomers(prev => [...prev, created])
+                                        await toast('success', 'Customer created successfully')
+                                        return created
+                                    }}
                                 />
                             </div>
 
@@ -995,8 +971,8 @@ export default function CreateInvoicePage() {
                                 </label>
                                 <ProjectMultiSelectCombobox
                                     projects={projects}
-                                    value={formData.projectId ? [formData.projectId] : []}  // string → string[]
-                                    onChange={handleProjectChange}                           // string[] → string via [0]
+                                    value={formData.projectId ? [formData.projectId] : []}  
+                                    onChange={handleProjectChange}                          
                                     onProjectCreated={handleProjectCreated}
                                     onSaveNewProject={onSaveProject}
                                     placeholder="Select Project"
@@ -1068,7 +1044,7 @@ export default function CreateInvoicePage() {
                                             const updatedLines = [...formData.invoiceLines];
                                             updatedLines[index].quantity = Number(val);
                                             setFormData({ ...formData, invoiceLines: updatedLines });
-                                            updateLineTotal(index, Number(val));
+                                            updateLineTotal(index,undefined, Number(val));
                                         }}
                                         disabled={overviewMode}
                                         className="block w-full px-3 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
@@ -1087,7 +1063,7 @@ export default function CreateInvoicePage() {
                                             const updatedLines = [...formData.invoiceLines];
                                             updatedLines[index].pricePerUnit = parseFloat(e.target.value);
                                             setFormData({ ...formData, invoiceLines: updatedLines });
-                                            updateLineTotal(index);
+                                            updateLineTotal(index,undefined,undefined,Number(e.target.value));
                                         }}
                                         disabled={overviewMode}
                                         className="block w-full px-3 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
@@ -1201,14 +1177,6 @@ export default function CreateInvoicePage() {
                     {/* </form> */}
                 </div>
             </div>
-            {customerDialog && <CustomerDialog
-                open={true}
-                onOpenChange={(open) => {
-                    setCustomerDialog(open);
-                }}
-                loading={loadingCustomer}
-                onSave={onSaveCustomer}
-            />}
 
             <SendInvoiceDialog
                 open={showSendDialog}

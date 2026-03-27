@@ -353,7 +353,7 @@ export default function EditInvoicePage({
     const handleProjectChange = (selectedProjectIds: string[]) => {
             setFormData(prev => ({
                 ...prev,
-                projectIds: selectedProjectIds
+                projectId: selectedProjectIds[0] ?? ""
             }))
         }
     
@@ -361,7 +361,7 @@ export default function EditInvoicePage({
             setProjects(prev => [...prev, newProject])
             setFormData(prev => ({
                 ...prev,
-                projectIds: [...(prev.projectId || ''), newProject.id]
+                projectIds: newProject.id
             }))
         }
     
@@ -370,7 +370,7 @@ export default function EditInvoicePage({
                 const res = await fetch('/api/projects', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(project),
+                    body: JSON.stringify({...project,customerId: formData.customerId || null}),
                 })
                 if (!res.ok) {
                     const error = await res.json()
@@ -380,7 +380,7 @@ export default function EditInvoicePage({
                 setProjects(prev => [...prev, createdProject])
                 setFormData(prev => ({
                     ...prev,
-                    projectIds: [...(prev.projectId || ''), createdProject.id]
+                    projectIds: createdProject.id
                 }))
                 await Swal.fire({
                     text: 'Project created successfully',
@@ -415,6 +415,77 @@ export default function EditInvoicePage({
                 setLoadingProject(false)
             }
         }
+
+    const handleCustomerChange = (customerId: string) => {
+        setFormData({ ...formData, customerId })
+        fetchCustomerDetails(customerId)
+    }
+
+     const fetchCustomerDetails = async (customerId: string) => {
+        if (!customerId) return
+
+        setFetchingCustomer(true)
+        try {
+            const res = await fetch(`/api/customers/${customerId}`)
+            if (res.ok) {
+                const data = await res.json()
+                console.log("Customer Details ===> ", JSON.stringify(data?.InvoicePaymentTerms))
+                // Calculate default due days from payment terms
+                let defaultDueDay = 14 // Default fallback
+                if (data.InvoicePaymentTerms) {
+                    const { invoiceDueDateValue, invoiceDueDateUnit } = data.InvoicePaymentTerms
+                    if (invoiceDueDateUnit === 'DAYS') {
+                        defaultDueDay = invoiceDueDateValue
+                    } else if (invoiceDueDateUnit === 'MONTHS') {
+                        defaultDueDay = invoiceDueDateValue * 30 // Convert months to days
+                    }
+                }
+                // Update form data with customer information
+                setFormData(prev => ({
+                    ...prev,
+                    customerId: customerId,
+                    contactName: data.contactPersons?.[0]?.name || '',
+                    deliveryAddress: data.deliveryAddress || data.address || '',
+                    departmentId: data.departmentId || '',
+                    discountPercentage: data.discountPercentage || prev.invoiceLines[0].discountPercentage,
+                    seller: data.business?.name,
+                    dueDay: defaultDueDay
+                }))
+
+                // Update projects list if customer has projects
+                if (data.projects && data.projects.length > 0) {
+                    setProjects(data.projects)
+                    setFormData(prev => ({
+                        ...prev,
+                        projectId: data.projects?.[0].id
+                    }))
+                } else {
+                    setProjects([]);
+                }
+
+                // Update departments list if customer has department
+                if (data.department) {
+                    setDepartments([data.department])
+                }
+
+                if (Array.isArray(data.contactPersons) && data.contactPersons.length > 0) {
+                    setContacts(data.contactPersons)
+                    setFormData(prev => ({
+                        ...prev,
+                        contactPersonId: data.contactPersons[0]?.id ?? prev.contactPersonId ?? ''
+                    }))
+                } else if (data.contactPersons) {
+                    // Ensure contacts is cleared if contactPersons exists but has no items
+                    setContacts([])
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching customer details:', error)
+            await toast('error', 'Failed to fetch customer details')
+        } finally {
+            setFetchingCustomer(false)
+        }
+    }
 
     // ─── Submit ───────────────────────────────────────────────────────────────
     const handleSubmit = async (
@@ -598,8 +669,28 @@ export default function EditInvoicePage({
                         <div className="flex flex-wrap gap-6 mb-6">
                             <div className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] min-w-[250px]">
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Customer *</label>
-                                <CustomerCombobox customers={customers} value={formData.customerId || ''} onChange={(customerId) => setFormData({ ...formData, customerId })} placeholder="Select Customer" disabled={isCreditNote} />
-                                {/* <p className="text-xs mt-2 text-blue-400">Customer is already assigned</p> */}
+                                <CustomerCombobox
+                                    customers={customers}
+                                    value={formData.customerId || ""}
+                                    onChange={handleCustomerChange}
+                                    placeholder="Select Customer"
+                                    disabled={isCreditNote}
+                                    onSaveNewCustomer={async (customer) => {          
+                                        const res = await fetch('/api/customers', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify(customer),
+                                        })
+                                        if (!res.ok) {
+                                            const error = await res.json()
+                                            throw new Error(error.error || 'Failed to create customer')
+                                        }
+                                        const created = await res.json()
+                                        setCustomers(prev => [...prev, created])
+                                        await toast('success', 'Customer created successfully')
+                                        return created
+                                    }}
+                                />
                             </div>
 
                             {settings.showContactPerson && (
@@ -671,6 +762,7 @@ export default function EditInvoicePage({
                                         onProjectCreated={handleProjectCreated}
                                         onSaveNewProject={onSaveProject}
                                         placeholder="Select Projects"
+                                        singleSelect
                                     />
                                     {validationErrors.projectIds && (
                                         <p className="mt-1 text-sm text-red-600">{validationErrors.projectIds}</p>
