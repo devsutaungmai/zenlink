@@ -372,19 +372,27 @@ export async function POST(req: Request) {
       const date = new Date(baseDate);
       date.setHours(hours, minutes, 0, 0);
       return date;
-    };
+    }
 
-    // Prepare data for Prisma - extract relational fields
-    const { autoBreakType, autoBreakValue, employeeId, employeeGroupId, shiftTypeId, departmentId, functionId, categoryId, ...shiftData } = rawData;
+    const {
+      autoBreakType,
+      autoBreakValue,
+      employeeId,
+      employeeGroupId,
+      shiftTypeId,
+      departmentId,
+      functionId,
+      categoryId,
+      ...shiftData
+    } = rawData;
 
     const data = {
       ...shiftData,
       breakStart: shiftData.breakStart ? convertTimeToDateTime(shiftData.breakStart, shiftData.date) : null,
       breakEnd: shiftData.breakEnd ? convertTimeToDateTime(shiftData.breakEnd, shiftData.date) : null,
+      wage: shiftData.wage !== undefined ? parseFloat(String(shiftData.wage)) : undefined,
     };
 
-    // If shiftTypeId is provided (custom shift type), use NORMAL as the enum value
-    // The actual custom shift type reference is stored in shiftTypeId
     if (shiftTypeId) {
       data.shiftType = 'NORMAL';
     }

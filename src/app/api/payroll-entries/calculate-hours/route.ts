@@ -212,6 +212,16 @@ export async function POST(req: NextRequest) {
         orderBy: {
           date: 'asc',
         },
+        select: {
+          id: true,
+          date: true,
+          startTime: true,
+          endTime: true,
+          breakStart: true,
+          breakEnd: true,
+          breakPaid: true,
+          wage: true,
+        }
       })
 
       let totalHours = 0
@@ -267,7 +277,12 @@ export async function POST(req: NextRequest) {
       let regularRate = 0
       let overtimeRate = 0
 
-      if (employee.salaryRate && employee.salaryRate > 0) {
+      const shiftWithWage = shifts.find(shift => shift.wage && shift.wage > 0)
+
+      if (shiftWithWage) {
+        regularRate = shiftWithWage.wage
+        overtimeRate = regularRate * 1.5
+      } else if (employee.salaryRate && employee.salaryRate > 0) {
         regularRate = employee.salaryRate
         overtimeRate = regularRate * 1.5
       } else if (employee.employeeGroup) {
@@ -289,7 +304,7 @@ export async function POST(req: NextRequest) {
         overtimeRate,
         shiftDetails,
         wageCalculationMethod: 'shifts_fallback',
-        shiftsWithWage: 0,
+        shiftsWithWage: shifts.filter(shift => shift.wage && shift.wage > 0).length,
         employee: {
           firstName: employee.firstName,
           lastName: employee.lastName,

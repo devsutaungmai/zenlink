@@ -238,8 +238,8 @@ export default function ShiftForm({
       autoBreakValue: null,
     };
 
-    // If there's an employeeId, calculate the wage
-    if (baseData.employeeId) {
+    // If there's an employeeId on a new shift, calculate the default wage
+    if (!initialData && baseData.employeeId) {
       const selectedEmployee = employees.find(emp => emp.id === baseData.employeeId);
       if (selectedEmployee) {
         if (selectedEmployee.salaryRate) {
@@ -258,43 +258,52 @@ export default function ShiftForm({
     return baseData as ShiftFormData;
   })
 
+  const previousEmployeeIdRef = React.useRef<string | undefined>(initialData?.employeeId)
+
   useEffect(() => {
-    if (formData.employeeId) {
-      const selectedEmployee = employees.find(emp => emp.id === formData.employeeId);
-      if (selectedEmployee) {
-        const updates: Partial<ShiftFormData> = {};
-        
-        // Auto-populate wage
-        if (selectedEmployee.salaryRate) {
-          updates.wage = selectedEmployee.salaryRate;
-          updates.wageType = 'HOURLY';
-        } else if (selectedEmployee.employeeGroupId) {
-          const group = employeeGroups.find(g => g.id === selectedEmployee.employeeGroupId);
-          if (group && group.wage) {
-            updates.wage = group.wage;
-            updates.wageType = 'HOURLY';
-          } else {
-            updates.wage = 0;
-          }
-        } else {
-          updates.wage = 0;
-        }
-
-        // Auto-populate employeeGroupId (editable)
-        if (selectedEmployee.employeeGroupId && !formData.employeeGroupId) {
-          updates.employeeGroupId = selectedEmployee.employeeGroupId;
-        }
-
-        // Auto-populate departmentId (editable)
-        if (selectedEmployee.departmentId && !formData.departmentId) {
-          updates.departmentId = selectedEmployee.departmentId;
-        }
-
-        setFormData(prev => ({ ...prev, ...updates }));
-      }
+    if (!formData.employeeId) {
+      previousEmployeeIdRef.current = undefined
+      return
     }
+
+    if (previousEmployeeIdRef.current === formData.employeeId) {
+      return
+    }
+
+    const selectedEmployee = employees.find(emp => emp.id === formData.employeeId);
+    if (!selectedEmployee) {
+      return
+    }
+
+    const updates: Partial<ShiftFormData> = {};
+    
+    if (selectedEmployee.salaryRate) {
+      updates.wage = selectedEmployee.salaryRate;
+      updates.wageType = 'HOURLY';
+    } else if (selectedEmployee.employeeGroupId) {
+      const group = employeeGroups.find(g => g.id === selectedEmployee.employeeGroupId);
+      if (group && group.wage) {
+        updates.wage = group.wage;
+        updates.wageType = 'HOURLY';
+      } else {
+        updates.wage = 0;
+      }
+    } else {
+      updates.wage = 0;
+    }
+
+    if (selectedEmployee.employeeGroupId && !formData.employeeGroupId) {
+      updates.employeeGroupId = selectedEmployee.employeeGroupId;
+    }
+
+    if (selectedEmployee.departmentId && !formData.departmentId) {
+      updates.departmentId = selectedEmployee.departmentId;
+    }
+
+    previousEmployeeIdRef.current = formData.employeeId
+    setFormData(prev => ({ ...prev, ...updates }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formData.employeeId, employees, employeeGroups]);
+  }, [formData.employeeId, formData.employeeGroupId, formData.departmentId, employees, employeeGroups]);
 
   const [activeTab, setActiveTab] = useState<'basic' | 'break' | 'exchange' | 'requests'>('basic')
   const [shiftExchanges, setShiftExchanges] = useState<ShiftExchange[]>([])
