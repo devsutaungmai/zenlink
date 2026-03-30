@@ -2,6 +2,7 @@ import { prisma } from '@/shared/lib/prisma'
 import { NotificationType } from '@prisma/client'
 import nodemailer from 'nodemailer'
 import { SNSClient, PublishCommand } from '@aws-sdk/client-sns'
+import { triggerPusherEvent, getNotificationChannel, getUserNotificationChannel } from '@/shared/lib/pusher-server'
 
 // Email configuration
 export const createEmailTransporter = () => {
@@ -416,6 +417,31 @@ export class NotificationService {
       })
 
       const recipientEmail = notification.recipient?.email || notification.recipientUser?.email
+
+      // Trigger real-time Pusher event
+      const pusherPayload = {
+        id: notification.id,
+        type: notification.type,
+        title: notification.title,
+        message: notification.message,
+        createdAt: notification.createdAt,
+        data: notification.data,
+      }
+
+      if (params.recipientId) {
+        await triggerPusherEvent(
+          getNotificationChannel(params.recipientId),
+          'new-notification',
+          pusherPayload
+        )
+      }
+      if (params.recipientUserId) {
+        await triggerPusherEvent(
+          getUserNotificationChannel(params.recipientUserId),
+          'new-notification',
+          pusherPayload
+        )
+      }
 
       // Send email if requested and email is available
       if (params.sendEmail && recipientEmail) {

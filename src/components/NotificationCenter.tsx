@@ -1,9 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { BellIcon, XMarkIcon, CheckIcon } from '@heroicons/react/24/outline'
 import { BellIcon as BellSolidIcon } from '@heroicons/react/24/solid'
 import { useTranslation } from 'react-i18next'
+import { getPusherClient } from '@/shared/lib/pusher-client'
+import type PusherClient from 'pusher-js'
+import type { Channel } from 'pusher-js'
 
 interface Notification {
   id: string
@@ -17,17 +20,19 @@ interface Notification {
 
 interface NotificationCenterProps {
   employeeId?: string
+  userId?: string
 }
 
-export default function NotificationCenter({ employeeId }: NotificationCenterProps) {
+export default function NotificationCenter({ employeeId, userId }: NotificationCenterProps) {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const { t } = useTranslation('settings')
+  const channelsRef = useRef<Channel[]>([])
+  const pusherRef = useRef<PusherClient | null>(null)
 
-  // Fetch notifications
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     try {
       setLoading(true)
       const response = await fetch('/api/notifications')
@@ -40,10 +45,9 @@ export default function NotificationCenter({ employeeId }: NotificationCenterPro
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  // Fetch notification count
-  const fetchNotificationCount = async () => {
+  const fetchNotificationCount = useCallback(async () => {
     try {
       const response = await fetch('/api/notifications/count')
       if (response.ok) {
@@ -53,33 +57,31 @@ export default function NotificationCenter({ employeeId }: NotificationCenterPro
     } catch (error) {
       console.error('Failed to fetch notification count:', error)
     }
-  }
+  }, [])
 
-  // Mark notification as read
   const markAsRead = async (notificationId: string) => {
     try {
       const response = await fetch(`/api/notifications/${notificationId}/read`, {
         method: 'PATCH',
       })
       if (response.ok) {
-        setNotifications(notifications.map(notif => 
+        setNotifications(prev => prev.map(notif =>
           notif.id === notificationId ? { ...notif, isRead: true } : notif
         ))
-        setUnreadCount(Math.max(0, unreadCount - 1))
+        setUnreadCount(prev => Math.max(0, prev - 1))
       }
     } catch (error) {
       console.error('Failed to mark notification as read:', error)
     }
   }
 
-  // Mark all as read
   const markAllAsRead = async () => {
     try {
       const response = await fetch('/api/notifications/mark-all-read', {
         method: 'POST',
       })
       if (response.ok) {
-        setNotifications(notifications.map(notif => ({ ...notif, isRead: true })))
+        setNotifications(prev => prev.map(notif => ({ ...notif, isRead: true })))
         setUnreadCount(0)
       }
     } catch (error) {
@@ -87,7 +89,6 @@ export default function NotificationCenter({ employeeId }: NotificationCenterPro
     }
   }
 
-  // Format time
   const formatTime = (dateString: string) => {
     const date = new Date(dateString)
     const now = new Date()
@@ -103,7 +104,6 @@ export default function NotificationCenter({ employeeId }: NotificationCenterPro
     return date.toLocaleDateString()
   }
 
-  // Get notification icon based on type
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'SHIFT_EXCHANGE_REQUEST':
@@ -121,20 +121,57 @@ export default function NotificationCenter({ employeeId }: NotificationCenterPro
     }
   }
 
+  // Pusher real-time subscription
+  useEffect(() => {
+    const pusher = getPusherClient()
+    pusherRef.current = pusher
+
+    if (pusher) {
+      const channelNames: string[] = []
+      if (employeeId) channelNames.push(`private-notifications-${employeeId}`)
+      if (userId) channelNames.push(`private-notifications-user-${userId}`)
+
+      const handleNewNotification = (data: any) => {
+        const incoming: Notification = {
+          id: data.id,
+          type: data.type,
+          title: data.title,
+          message: data.message,
+          isRead: false,
+          createdAt: data.createdAt,
+          data: data.data,
+        }
+        setNotifications(prev => [incoming, ...prev])
+        setUnreadCount(prev => prev + 1)
+      }
+
+      for (const name of channelNames) {
+        const channel = pusher.subscribe(name)
+        channel.bind('new-notification', handleNewNotification)
+        channelsRef.current.push(channel)
+      }
+    }
+
+    return () => {
+      for (const channel of channelsRef.current) {
+        channel.unbind_all()
+        pusherRef.current?.unsubscribe(channel.name)
+      }
+      channelsRef.current = []
+    }
+  }, [employeeId, userId])
+
+  // Initial fetch + slow fallback poll (2 min) for resilience
   useEffect(() => {
     fetchNotifications()
     fetchNotificationCount()
 
-    // Refresh every 30 seconds
     const interval = setInterval(() => {
       fetchNotificationCount()
-      if (isOpen) {
-        fetchNotifications()
-      }
-    }, 30000)
+    }, 120000)
 
     return () => clearInterval(interval)
-  }, [isOpen])
+  }, [fetchNotifications, fetchNotificationCount])
 
   return (
     <div className="relative">

@@ -42,6 +42,7 @@ export default function DashboardNavbar() {
   const { hasAnyPermission, isAdmin, loading: permissionsLoading } = usePermissions()
   const [activeBottomMenu, setActiveBottomMenu] = useState<string | null>(null)
   const isEmployeeUser = user?.role === 'EMPLOYEE' || Boolean(user?.employee)
+  const isInvoiceEnabled = process.env.NEXT_PUBLIC_FEATURE_INVOICE === 'true'
   const profileInitials = (() => {
     const first = user?.firstName?.charAt(0) ?? ''
     const last = user?.lastName?.charAt(0) ?? ''
@@ -95,7 +96,7 @@ export default function DashboardNavbar() {
         { name: t('navigation.overtime_rules'), href: '/dashboard/overtime-rules', permissionKey: 'overtimeRules' },
       ],
     },
-    {
+    ...(isInvoiceEnabled ? [{
       name: "Invoice",
       icon: CurrencyDollarIcon,
       children: [
@@ -109,7 +110,7 @@ export default function DashboardNavbar() {
         { name: "Product", href: '/dashboard/products' },
         { name: "LedgerAccount", href: '/dashboard/ledger-accounts' },
       ],
-    },
+    }] as NavigationItem[] : []),
     { name: t('navigation.settings'), href: '/dashboard/settings', icon: Cog6ToothIcon, permissionKey: 'settings' },
   ]
 
@@ -331,7 +332,7 @@ export default function DashboardNavbar() {
           <div className="flex items-center space-x-3">
             <LanguageSwitcher />
 
-            <NotificationCenter />
+            <NotificationCenter userId={user?.id} employeeId={user?.employee?.id} />
 
             <Menu as="div" className="relative">
               <Menu.Button className="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50/50 rounded-xl transition-all duration-200 group">
@@ -428,7 +429,7 @@ export default function DashboardNavbar() {
           </div>
           <div className="flex items-center gap-2">
             <LanguageSwitcher />
-            <NotificationCenter />
+            <NotificationCenter userId={user?.id} employeeId={user?.employee?.id} />
             <Menu as="div" className="relative">
               <Menu.Button
                 aria-label={t('navigation.profile')}
