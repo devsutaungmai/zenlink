@@ -128,7 +128,9 @@ export async function sendEmail(invoiceId: string, type?: string) {
       body: JSON.stringify({ invoiceId }),
     })
     const data = await response.json()
-    if (!response.ok) {
+    console.log("Data======>"+JSON.stringify(data));
+    console.log("Response=======>"+ JSON.stringify(response));
+    if (!response.ok || data.error) {
       return {
         success: false,
         message: data.error || 'Failed to send email'

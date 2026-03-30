@@ -12,6 +12,9 @@ import { useAutoFocus } from '@/shared/hooks/useAutoFocus'
 import { formatProductNumberForDisplay } from '@/shared/lib/invoiceHelper'
 import { productValidationSchema } from '@/components/invoice/validation'
 import z from 'zod'
+import { LedgerAccountOption, LedgerAccountSelectCombobox } from '@/components/invoice/LedgerAccountSelectCombobox'
+import { LedgerAccountFormType } from '@/components/invoice/LedgerAccountDialog'
+import { toast } from '@/shared/lib/toast'
 
 interface Unit {
   id: string
@@ -236,6 +239,24 @@ export default function CreateProductPage() {
     validationTimeoutRef.current = setTimeout(() => {
       validateField(fieldName, value)
     }, 500)
+  }
+
+    const onSaveLedgerAccount = async (
+    account: LedgerAccountFormType
+  ): Promise<LedgerAccountOption> => {
+    const res = await fetch('/api/ledger/accounts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(account),
+    })
+    if (!res.ok) {
+      const error = await res.json()
+      throw new Error(error.error || 'Failed to create ledger account')
+    }
+    const created: LedgerAccount = await res.json()
+    setSalesLedgerAccounts(prev => [...prev, created])
+    await toast('success', 'Ledger account created successfully')
+    return created
   }
 
 
@@ -488,7 +509,7 @@ export default function CreateProductPage() {
             </div>
 
             {/* Ledger Account - always visible */}
-            <div className='mt-4'>
+            {/* <div className='mt-4'>
               <label htmlFor="ledgerAccountId" className="block text-sm font-medium text-gray-700 mb-2">
                 Ledger Account
               </label>
@@ -516,6 +537,21 @@ export default function CreateProductPage() {
                 })}
 
               </select>
+            </div> */}
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Ledger Account *
+              </label>
+              <LedgerAccountSelectCombobox
+                ledgerAccounts={salesLedgerAccounts}
+                value={formData.ledgerAccountId}
+                onChange={(id) => setFormData(prev => ({ ...prev, ledgerAccountId: id }))}
+                onLedgerAccountCreated={(newAccount) => {
+                  // state already updated inside onSaveLedgerAccount
+                }}
+                onSaveNewLedgerAccount={onSaveLedgerAccount}
+                placeholder="Select Ledger Account"
+              />
             </div>
 
             {/* Form Actions */}

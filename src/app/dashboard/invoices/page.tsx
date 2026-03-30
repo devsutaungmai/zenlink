@@ -365,41 +365,48 @@ export default function InvoicesPage() {
 
             // Step 2: If sendType is 'send_with_email', also send emails
             if (sendType === 'send_with_email') {
-                const emailErrors = []
+                const emailErrors: { invoiceNumber: string; error: string }[] = []
+
+                const invoiceList: { id: string; invoiceNumber: string }[] =
+                    Array.isArray(result?.invoices) ? result.invoices :
+                        Array.isArray(result?.processedInvoices) ? result.processedInvoices.map((id: string) => {
+                            const found = invoices.find(inv => inv.id === id)
+                            return {
+                                id,
+                                invoiceNumber: found
+                                    ? (formatInvoiceNumberForDisplay(found.invoiceNumber) || found.invoiceNumber)
+                                    : id
+                            }
+                        }) :
+                            selectedInvoices.map(id => {
+                                const found = invoices.find(inv => inv.id === id)
+                                return {
+                                    id,
+                                    invoiceNumber: found
+                                        ? (formatInvoiceNumberForDisplay(found.invoiceNumber) || found.invoiceNumber)
+                                        : id
+                                }
+                            })
 
                 // Send email for each successfully updated invoice
-                for (const invoice of result.invoices) {
-                    try {
-                        await sendEmail(invoice.id)
-                    } catch (emailError) {
+                for (const invoice of invoiceList) {
+                    const emailResult = await sendEmail(invoice.id)
+                    if (!emailResult.success) {
                         emailErrors.push({
-                            invoiceNumber: invoice.invoiceNumber,
-                            error: emailError instanceof Error ? emailError.message : 'Failed to send email'
+                            invoiceNumber: invoice.invoiceNumber ?? invoice.id,
+                            error: emailResult.message  // this already has "Customer email not found..."
                         })
                     }
                 }
-                // Show appropriate success message
-                //   if (emailErrors.length === 0) {
-                //     await Swal.fire({
-                //       title: 'Success!',
-                //       text: `${result.count} invoice(s) sent successfully with email notifications`,
-                //       icon: 'success',
-                //       confirmButtonColor: '#31BCFF',
-                //     })
-                //   } else {
-                //     await Swal.fire({
-                //       title: 'Partial Success',
-                //       html: `
-                //         <p>${result.count} invoice(s) updated to SENT status</p>
-                //         <p class="text-red-600 mt-2">Failed to send ${emailErrors.length} email(s):</p>
-                //         <ul class="text-sm text-left mt-2">
-                //           ${emailErrors.map(e => `<li>${e.invoiceNumber}: ${e.error}</li>`).join('')}
-                //         </ul>
-                //       `,
-                //       icon: 'warning',
-                //       confirmButtonColor: '#31BCFF',
-                //     })
-                //   }
+
+                if (emailErrors.length > 0) {
+                    // Show each error message, not just the invoice number
+                    emailErrors.forEach(e => {
+                        toast('error', `${e.error}`)
+                    })
+                } else {
+                    toast('success', 'Invoice(s) sent and emails delivered successfully')
+                }
             } else {
                 // Just show success for status update
                 toast('success', 'Invoice(s) sent successfully')
