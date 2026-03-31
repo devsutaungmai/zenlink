@@ -1,12 +1,14 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { XMarkIcon } from '@heroicons/react/24/outline'
+import { WageType } from '@prisma/client'
 
 interface Employee {
   id: string
   firstName: string
   lastName: string
   employeeNo?: string | null
+  salaryRate?: number | null
   employeeGroupId?: string | null
   departmentId?: string | null
   departments?: Array<{
@@ -28,6 +30,14 @@ interface Employee {
 }
 
 interface EmployeeGroup {
+  id: string
+  name: string
+  hourlyWage?: number | null
+  wagePerShift?: number | null
+  defaultWageType?: WageType | null
+}
+
+interface ShiftTypeOption {
   id: string
   name: string
 }
@@ -69,6 +79,70 @@ interface TemplateShiftModalProps {
   functions: FunctionItem[]
 }
 
+const formatTimeValue = (date: Date) =>
+  `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+
+const calculateBreakMinutes = (breakStart?: string | null, breakEnd?: string | null): number | null => {
+  if (!breakStart || !breakEnd) return null
+
+  const start = new Date(`2000-01-01T${breakStart}:00`)
+  const end = new Date(`2000-01-01T${breakEnd}:00`)
+
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    return null
+  }
+
+  if (end <= start) {
+    end.setDate(end.getDate() + 1)
+  }
+
+  return Math.round((end.getTime() - start.getTime()) / (1000 * 60))
+}
+
+const calculateBreakDurationLabel = (breakStart?: string | null, breakEnd?: string | null): string => {
+  const minutes = calculateBreakMinutes(breakStart, breakEnd)
+  if (!minutes || minutes <= 0) return '0 minutes'
+
+  const hours = Math.floor(minutes / 60)
+  const remainingMinutes = minutes % 60
+
+  if (hours > 0) {
+    return `${hours}h ${remainingMinutes}m`
+  }
+
+  return `${remainingMinutes} minutes`
+}
+
+const deriveBreakTimesFromMinutes = (
+  startTime?: string | null,
+  endTime?: string | null,
+  breakMinutes?: number | null
+) => {
+  if (!startTime || !breakMinutes || breakMinutes <= 0) {
+    return { breakStart: '', breakEnd: '' }
+  }
+
+  const shiftStart = new Date(`2000-01-01T${startTime}:00`)
+  const shiftEnd = new Date(`2000-01-01T${endTime || startTime}:00`)
+
+  if (Number.isNaN(shiftStart.getTime()) || Number.isNaN(shiftEnd.getTime())) {
+    return { breakStart: '', breakEnd: '' }
+  }
+
+  if (shiftEnd <= shiftStart) {
+    shiftEnd.setDate(shiftEnd.getDate() + 1)
+  }
+
+  const midpoint = new Date(shiftStart.getTime() + (shiftEnd.getTime() - shiftStart.getTime()) / 2)
+  const breakStart = new Date(midpoint.getTime() - breakMinutes * 60 * 1000 / 2)
+  const breakEnd = new Date(breakStart.getTime() + breakMinutes * 60 * 1000)
+
+  return {
+    breakStart: formatTimeValue(breakStart),
+    breakEnd: formatTimeValue(breakEnd)
+  }
+}
+
 export default function TemplateShiftModal({
   isOpen,
   onClose,
@@ -79,14 +153,23 @@ export default function TemplateShiftModal({
   functions
 }: TemplateShiftModalProps) {
   const { t } = useTranslation('schedule')
+  const translationT = useCallback(
+    (key: string, fallback: string) => t(`translation:${key}`, fallback),
+    [t]
+  )
   const [startTime, setStartTime] = useState('')
   const [endTime, setEndTime] = useState('')
   const [employeeId, setEmployeeId] = useState('')
   const [employeeGroupId, setEmployeeGroupId] = useState('')
   const [functionId, setFunctionId] = useState('')
   const [note, setNote] = useState('')
-  const [breakMinutes, setBreakMinutes] = useState<number | ''>('')
+  const [breakStart, setBreakStart] = useState('')
+  const [breakEnd, setBreakEnd] = useState('')
   const [breakPaid, setBreakPaid] = useState(false)
+  const [showBreakFields, setShowBreakFields] = useState(false)
+  const [shiftTypeId, setShiftTypeId] = useState('')
+  const [wage, setWage] = useState<number | ''>('')
+  const [wageType, setWageType] = useState<WageType>('HOURLY')
   const [isSubmitting, setIsSubmitting] = useState(false)
   
   // Store the original pre-selected employee ID to prevent it from being cleared
@@ -98,8 +181,10 @@ export default function TemplateShiftModal({
   const [departments, setDepartments] = useState<Department[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [filteredFunctions, setFilteredFunctions] = useState<FunctionItem[]>([])
+  const [shiftTypes, setShiftTypes] = useState<ShiftTypeOption[]>([])
   const [loadingDepartments, setLoadingDepartments] = useState(false)
   const [loadingCategories, setLoadingCategories] = useState(false)
+  const [loadingShiftTypes, setLoadingShiftTypes] = useState(false)
 
   // Fetch departments
   const fetchDepartments = useCallback(async () => {
@@ -139,6 +224,21 @@ export default function TemplateShiftModal({
     }
   }, [])
 
+  const fetchShiftTypes = useCallback(async () => {
+    setLoadingShiftTypes(true)
+    try {
+      const response = await fetch('/api/shift-types')
+      if (response.ok) {
+        const data = await response.json()
+        setShiftTypes(data.shiftTypes || [])
+      }
+    } catch (error) {
+      console.error('Error fetching shift types:', error)
+    } finally {
+      setLoadingShiftTypes(false)
+    }
+  }, [])
+
   // Filter functions by category
   useEffect(() => {
     if (categoryId) {
@@ -153,8 +253,9 @@ export default function TemplateShiftModal({
   useEffect(() => {
     if (isOpen) {
       fetchDepartments()
+      fetchShiftTypes()
     }
-  }, [isOpen, fetchDepartments])
+  }, [isOpen, fetchDepartments, fetchShiftTypes])
 
   // Check if function is pre-selected (need this before the effects)
   const isFunctionPreSelectedCheck = Boolean(initialData?.functionId && !initialData?.employeeId && !initialData?.employeeGroupId)
@@ -185,6 +286,14 @@ export default function TemplateShiftModal({
 
   useEffect(() => {
     if (initialData) {
+      const fallbackBreakTimes = deriveBreakTimesFromMinutes(
+        initialData.startTime || '09:00',
+        initialData.endTime || '17:00',
+        initialData.breakMinutes
+      )
+      const resolvedBreakStart = initialData.breakStart || fallbackBreakTimes.breakStart
+      const resolvedBreakEnd = initialData.breakEnd || fallbackBreakTimes.breakEnd
+
       // Use defaults matching ShiftForm: startTime 09:00, endTime 17:00
       setStartTime(initialData.startTime || '09:00')
       setEndTime(initialData.endTime || '17:00')
@@ -192,8 +301,13 @@ export default function TemplateShiftModal({
       setEmployeeGroupId(initialData.employeeGroupId || '')
       setFunctionId(initialData.functionId || '')
       setNote(initialData.note || '')
-      setBreakMinutes(initialData.breakMinutes || '')
+      setBreakStart(resolvedBreakStart)
+      setBreakEnd(resolvedBreakEnd)
       setBreakPaid(initialData.breakPaid || false)
+      setShowBreakFields(Boolean(resolvedBreakStart && resolvedBreakEnd))
+      setShiftTypeId(initialData.shiftTypeId || '')
+      setWage(initialData.wage ?? '')
+      setWageType(initialData.wageType || 'HOURLY')
       setDepartmentId(initialData.departmentId || '')
       setCategoryId(initialData.categoryId || '')
       setIsInitialLoad(true)
@@ -207,8 +321,13 @@ export default function TemplateShiftModal({
       setEmployeeGroupId('')
       setFunctionId('')
       setNote('')
-      setBreakMinutes('')
+      setBreakStart('')
+      setBreakEnd('')
       setBreakPaid(false)
+      setShowBreakFields(false)
+      setShiftTypeId('')
+      setWage('')
+      setWageType('HOURLY')
       setDepartmentId('')
       setCategoryId('')
       setIsInitialLoad(true)
@@ -425,6 +544,40 @@ export default function TemplateShiftModal({
     return emp.employeeGroupId === groupId
   }, [])
 
+  const resolveEmployeePrimaryGroupId = useCallback((employee: Employee): string | undefined => {
+    const primaryGroup = employee.employeeGroups?.find((group) => group.isPrimary)?.employeeGroupId
+    return primaryGroup || employee.employeeGroupId || undefined
+  }, [])
+
+  const resolveGroupWage = useCallback((groupId?: string | null) => {
+    if (!groupId) return null
+    const selectedGroup = employeeGroups.find((group) => group.id === groupId)
+    if (!selectedGroup) return null
+
+    if (selectedGroup.defaultWageType === 'PER_SHIFT' && selectedGroup.wagePerShift && selectedGroup.wagePerShift > 0) {
+      return {
+        wage: selectedGroup.wagePerShift,
+        wageType: 'PER_SHIFT' as WageType,
+      }
+    }
+
+    if (selectedGroup.hourlyWage && selectedGroup.hourlyWage > 0) {
+      return {
+        wage: selectedGroup.hourlyWage,
+        wageType: 'HOURLY' as WageType,
+      }
+    }
+
+    if (selectedGroup.wagePerShift && selectedGroup.wagePerShift > 0) {
+      return {
+        wage: selectedGroup.wagePerShift,
+        wageType: 'PER_SHIFT' as WageType,
+      }
+    }
+
+    return null
+  }, [employeeGroups])
+
   // Filter employees based on function and employee group
   const filteredEmployees = useMemo(() => {
     // If employee is pre-selected, always include them in the list
@@ -488,6 +641,55 @@ export default function TemplateShiftModal({
     }
   }, [employeeId, filteredEmployees, isEmployeePreSelected])
 
+  useEffect(() => {
+    const selectedEmployee = employees.find((employee) => employee.id === employeeId)
+    if (!selectedEmployee) return
+
+    const employeeGroupFromEmployee = resolveEmployeePrimaryGroupId(selectedEmployee)
+    if (employeeGroupFromEmployee && !employeeGroupId) {
+      setEmployeeGroupId(employeeGroupFromEmployee)
+    }
+
+    if (selectedEmployee.salaryRate && selectedEmployee.salaryRate > 0) {
+      setWage(selectedEmployee.salaryRate)
+      setWageType('HOURLY')
+      return
+    }
+
+    const groupWage = resolveGroupWage(employeeGroupFromEmployee || employeeGroupId)
+    if (groupWage) {
+      setWage(groupWage.wage)
+      setWageType(groupWage.wageType)
+    }
+  }, [employeeId, employees, employeeGroupId, resolveEmployeePrimaryGroupId, resolveGroupWage])
+
+  useEffect(() => {
+    if (employeeId) return
+
+    const groupWage = resolveGroupWage(employeeGroupId)
+    if (groupWage) {
+      setWage(groupWage.wage)
+      setWageType(groupWage.wageType)
+    }
+  }, [employeeGroupId, employeeId, resolveGroupWage])
+
+  const toggleBreakFields = () => {
+    const nextValue = !showBreakFields
+    setShowBreakFields(nextValue)
+
+    if (!nextValue) {
+      setBreakStart('')
+      setBreakEnd('')
+      setBreakPaid(false)
+      return
+    }
+
+    if (!breakStart && !breakEnd) {
+      setBreakStart('12:00')
+      setBreakEnd('13:00')
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
@@ -507,12 +709,17 @@ export default function TemplateShiftModal({
         endTime: endTime || null,
         employeeId: finalEmployeeId,
         employeeGroupId: employeeGroupId || null,
+        shiftTypeId: shiftTypeId || null,
         functionId: functionId || null,
         departmentId: departmentId || null,
         categoryId: categoryId || null,
+        wage: wage === '' ? 0 : Number(wage),
+        wageType,
         note: note || null,
-        breakMinutes: breakMinutes ? Number(breakMinutes) : null,
-        breakPaid: breakPaid
+        breakStart: showBreakFields ? (breakStart || null) : null,
+        breakEnd: showBreakFields ? (breakEnd || null) : null,
+        breakMinutes: showBreakFields ? calculateBreakMinutes(breakStart, breakEnd) : null,
+        breakPaid: showBreakFields ? breakPaid : false
       })
     } finally {
       setIsSubmitting(false)
@@ -565,6 +772,30 @@ export default function TemplateShiftModal({
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] outline-none"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {translationT('shifts.form.shift_type', 'Shift Type')} <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={shiftTypeId}
+              onChange={(e) => setShiftTypeId(e.target.value)}
+              disabled={loadingShiftTypes}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] outline-none disabled:bg-gray-100"
+              required
+            >
+              <option value="">
+                {loadingShiftTypes
+                  ? translationT('shifts.form.loading_shift_types', 'Loading shift types...')
+                  : translationT('shifts.form.shift_type', 'Shift Type')}
+              </option>
+              {shiftTypes.map((shiftType) => (
+                <option key={shiftType.id} value={shiftType.id}>
+                  {shiftType.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Department */}
@@ -734,6 +965,36 @@ export default function TemplateShiftModal({
             )}
           </div>
 
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {translationT('shifts.form.wage', 'Wage ($)')} <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={wage}
+                onChange={(e) => setWage(e.target.value ? Number(e.target.value) : '')}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] outline-none"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {translationT('employee_groups.form.default_wage_type', 'Wage Type')}
+              </label>
+              <select
+                value={wageType}
+                onChange={(e) => setWageType(e.target.value as WageType)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] outline-none"
+              >
+                <option value="HOURLY">{translationT('employee_groups.form.hourly_wage_option', 'Hourly Wage')}</option>
+                <option value="PER_SHIFT">{translationT('employee_groups.form.wage_per_shift_option', 'Wage Per Shift')}</option>
+              </select>
+            </div>
+          </div>
+
           {/* Employee */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -786,32 +1047,102 @@ export default function TemplateShiftModal({
           </div>
 
           {/* Break Settings */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t('templates.break_minutes', 'Break (minutes)')}
-              </label>
-              <input
-                type="number"
-                min="0"
-                value={breakMinutes}
-                onChange={(e) => setBreakMinutes(e.target.value ? parseInt(e.target.value) : '')}
-                placeholder="0"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] outline-none"
-              />
-            </div>
-            <div className="flex items-end pb-2">
-              <label className="flex items-center gap-2 cursor-pointer">
+          <div className="space-y-4 rounded-lg border border-gray-200 p-4">
+            <div className="flex items-center justify-between gap-4 rounded-lg bg-gray-50 p-4">
+              <div className="flex-1">
+                <h3 className="text-sm font-medium text-gray-900">
+                  {translationT('shifts.form.enable_break_time', 'Enable Break Time')}
+                </h3>
+                <p className="mt-1 text-xs text-gray-500">
+                  {translationT('shifts.form.add_break_periods', 'Add break periods to this shift')}
+                </p>
+              </div>
+              <label className="flex items-center">
                 <input
                   type="checkbox"
-                  checked={breakPaid}
-                  onChange={(e) => setBreakPaid(e.target.checked)}
-                  className="rounded border-gray-300 text-[#31BCFF] focus:ring-[#31BCFF] h-4 w-4"
+                  checked={showBreakFields}
+                  onChange={toggleBreakFields}
+                  className="h-4 w-4 rounded border-gray-300 text-[#31BCFF] focus:ring-[#31BCFF]"
                 />
-                <span className="text-sm font-medium text-gray-700">
-                  {t('templates.break_paid', 'Paid Break')}
-                </span>
               </label>
+            </div>
+
+            {showBreakFields && (
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {translationT('shifts.form.break_start_time', 'Break Start Time')}
+                    </label>
+                    <input
+                      type="time"
+                      value={breakStart}
+                      onChange={(e) => setBreakStart(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] outline-none"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      {translationT('shifts.form.break_start_hint', 'Time when break period starts')}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {translationT('shifts.form.break_end_time', 'Break End Time')}
+                    </label>
+                    <input
+                      type="time"
+                      value={breakEnd}
+                      onChange={(e) => setBreakEnd(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] outline-none"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      {translationT('shifts.form.break_end_hint', 'Time when break period ends')}
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={breakPaid}
+                      onChange={(e) => setBreakPaid(e.target.checked)}
+                      className="h-4 w-4 rounded border-gray-300 text-[#31BCFF] focus:ring-[#31BCFF]"
+                    />
+                    <span className="text-sm font-medium text-gray-700">
+                      {translationT('shifts.form.paid_break', 'Paid Break')}
+                    </span>
+                  </label>
+                  <p className="mt-1 text-xs text-gray-500">
+                    {translationT(
+                      'shifts.form.paid_break_hint',
+                      'Check if this break time should be included in payroll calculations'
+                    )}
+                  </p>
+                </div>
+
+                {breakStart && breakEnd && (
+                  <div className="rounded-md border border-blue-200 bg-blue-50 p-3">
+                    <p className="text-sm text-blue-700">
+                      <strong>{translationT('shifts.form.break_duration', 'Break Duration:')}</strong>{' '}
+                      {calculateBreakDurationLabel(breakStart, breakEnd)}
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
+
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+              <h4 className="mb-2 text-sm font-medium text-amber-800">
+                {translationT('shifts.form.break_guidelines', 'Break Time Guidelines')}
+              </h4>
+              <ul className="space-y-1 text-sm text-amber-700">
+                <li>{translationT('shifts.form.guideline_unpaid', '• Unpaid breaks are automatically deducted from total worked hours')}</li>
+                <li>{translationT('shifts.form.guideline_paid', '• Paid breaks are included in payroll calculations and not deducted from hours')}</li>
+                <li>{translationT('shifts.form.guideline_start', '• Ensure break start time is after shift start time')}</li>
+                <li>{translationT('shifts.form.guideline_end', '• Ensure break end time is before shift end time')}</li>
+                <li>{translationT('shifts.form.guideline_lunch', '• Standard lunch break is typically 1 hour (12:00 - 13:00)')}</li>
+              </ul>
             </div>
           </div>
 

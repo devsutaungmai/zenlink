@@ -39,7 +39,12 @@ export default function ShiftFormModal({
   canDeleteShifts = true
 }: ShiftFormModalProps) {
   const { t } = useTranslation()
-  const formKey = initialData?.id || 'new-shift'
+  const formKey = [
+    initialData?.id || 'new-shift',
+    initialData?.breakStart || 'no-break-start',
+    initialData?.breakEnd || 'no-break-end',
+    initialData?.shiftTypeId || initialData?.shiftType || 'no-shift-type',
+  ].join(':')
   
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>

@@ -85,7 +85,8 @@
         "no_shift": "Ingen godkjent vakt planlagt i dag",
         "no_shift_hint": "Du kan fortsatt stemple inn for uplanlagt arbeid",
         "unscheduled": "Uplanlagt arbeid",
-        "ready_unscheduled": "Klar til å stemple inn for uplanlagt arbeid"
+        "ready_unscheduled": "Klar til å stemple inn for uplanlagt arbeid",
+        "end_break_before_punch_out": "Avslutt pausen før du stempler ut"
       }
     },
     "attendance_feed": {

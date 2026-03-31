@@ -1443,8 +1443,8 @@ export default function PunchClockPage() {
                               {t('actions.edit')}
                             </button>
 
-                            {/* Show approval buttons for unscheduled work that needs approval */}
-                            {!record.shift && getAttendanceStatus(record) === 'pending' && (
+                            {/* Show approval buttons for any pending attendance, including extra shifts with linked auto-created shifts */}
+                            {getAttendanceStatus(record) === 'pending' && (
                               <>
                                 <button
                                   onClick={() => handleAttendanceApproval(record.id, true)}
@@ -1596,7 +1596,7 @@ export default function PunchClockPage() {
                         {t('actions.edit')}
                       </button>
 
-                      {!record.shift && getAttendanceStatus(record) === 'pending' && (
+                      {getAttendanceStatus(record) === 'pending' && (
                         <>
                           <button
                             onClick={() => handleAttendanceApproval(record.id, true)}

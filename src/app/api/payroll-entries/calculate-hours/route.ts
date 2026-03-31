@@ -78,8 +78,15 @@ export async function POST(req: NextRequest) {
             startTime: new Date(att.punchInTime).toTimeString().substring(0, 5),
             endTime: att.punchOutTime ? new Date(att.punchOutTime).toTimeString().substring(0, 5) : '',
             hours: att.duration,
-            breakDuration: 0,
-            breakPaid: false
+            breakDuration: att.shift?.breakStart && att.shift?.breakEnd
+              ? Math.max(
+                  0,
+                  Math.round(
+                    (new Date(att.shift.breakEnd).getTime() - new Date(att.shift.breakStart).getTime()) / (1000 * 60)
+                  )
+                )
+              : 0,
+            breakPaid: att.shift?.breakPaid ?? false
           }))
 
         const payCalculation = await payRulesEngine.calculatePay({

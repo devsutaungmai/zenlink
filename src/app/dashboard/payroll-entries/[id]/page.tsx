@@ -50,7 +50,8 @@ interface PayrollEntry {
   }
   dailyBreakdown?: Array<{
     date: string
-    workedHours: number
+    scheduledHours: number
+    payableHours: number
     totalBreakHours: number
     totalShifts: number
     regularHours: number
@@ -62,18 +63,22 @@ interface PayrollEntry {
       value: number
     }>
     payCalculationLabel: string
+    baseRate: number
     effectiveRate: number | null
     effectiveRateLabel: string
+    shiftPremiumRate: number
     earned: number
     bonus: number
     deduction: number
     net: number
   }>
   breakdownTotals?: {
+    scheduledHours: number
     workedHours: number
     breakHours: number
     totalShifts: number
     basicSalaryRate: number
+    averageEffectiveRate: number
     regularHours: number
     overtimeHours: number
     earned: number
@@ -186,6 +191,46 @@ export default function PayrollEntryViewPage({ params }: { params: Promise<{ id:
           return t('view_page.pay_calculation.hourly_wage')
       }
     }).join(' | ')
+  }
+
+  const getRateSummaryText = (
+    day: NonNullable<PayrollEntry['dailyBreakdown']>[number]
+  ) => {
+    const safeRules = (day.payCalculationRules || []).filter((rule) => rule?.type)
+
+    if (safeRules.length !== 1) {
+      return t('view_page.rate_summary_line.mixed', {
+        base: formatAmount(day.baseRate ?? 0),
+        effective: formatAmount(day.effectiveRate ?? 0)
+      })
+    }
+
+    const rule = safeRules[0]
+
+    switch (rule.type) {
+      case 'HOURLY_PLUS_FIXED':
+        return t('view_page.rate_summary_line.hourly_plus_fixed', {
+          base: formatAmount(day.baseRate ?? 0),
+          amount: formatAmount(rule.value ?? 0),
+          effective: formatAmount(day.effectiveRate ?? 0)
+        })
+      case 'FIXED_AMOUNT':
+        return t('view_page.rate_summary_line.fixed_amount', {
+          amount: formatAmount(rule.value ?? day.effectiveRate ?? 0)
+        })
+      case 'PERCENTAGE':
+        return t('view_page.rate_summary_line.percentage', {
+          base: formatAmount(day.baseRate ?? 0),
+          percentage: formatAmount(rule.value ?? 0),
+          effective: formatAmount(day.effectiveRate ?? 0)
+        })
+      case 'UNPAID':
+        return t('view_page.rate_summary_line.unpaid')
+      default:
+        return t('view_page.rate_summary_line.base', {
+          amount: formatAmount(day.baseRate ?? 0)
+        })
+    }
   }
 
   const getStatusColor = (status: string) => {
@@ -411,6 +456,12 @@ export default function PayrollEntryViewPage({ params }: { params: Promise<{ id:
               <div className="rounded-lg border border-gray-200 p-4 bg-gray-50">
                 <p className="text-xs text-gray-500">{t('view_page.total_work_hours')}</p>
                 <p className="text-2xl font-bold text-gray-900 mt-1">{(entry.breakdownTotals?.workedHours ?? 0).toFixed(2)}</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {t('view_page.hours_summary_line', {
+                    scheduled: (entry.breakdownTotals?.scheduledHours ?? entry.breakdownTotals?.workedHours ?? 0).toFixed(2),
+                    break: (entry.breakdownTotals?.breakHours ?? 0).toFixed(2)
+                  })}
+                </p>
               </div>
               <div className="rounded-lg border border-gray-200 p-4 bg-gray-50">
                 <p className="text-xs text-gray-500">{t('view_page.salary_amount')}</p>
@@ -423,6 +474,11 @@ export default function PayrollEntryViewPage({ params }: { params: Promise<{ id:
               <div className="rounded-lg border border-gray-200 p-4 bg-gray-50">
                 <p className="text-xs text-gray-500">{t('view_page.basic_salary_rate')}</p>
                 <p className="text-2xl font-bold text-gray-900 mt-1">{formatCurrency(entry.breakdownTotals?.basicSalaryRate ?? entry.regularRate)}</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {t('view_page.effective_rate_summary', {
+                    amount: formatAmount(entry.breakdownTotals?.averageEffectiveRate ?? entry.regularRate)
+                  })}
+                </p>
               </div>
             </div>
           </div>
@@ -445,7 +501,7 @@ export default function PayrollEntryViewPage({ params }: { params: Promise<{ id:
                     <th className="px-3 py-2 text-right font-medium text-gray-600">{t('view_page.rate_per_hour')}</th>
                     <th className="px-3 py-2 text-right font-medium text-gray-600">{t('view_page.worked_hours')}</th>
                     <th className="px-3 py-2 text-right font-medium text-gray-600">{t('view_page.earned')}</th>
-                    <th className="px-3 py-2 text-right font-medium text-gray-600">{t('view_page.reduced')}</th>
+                    {/* <th className="px-3 py-2 text-right font-medium text-gray-600">{t('view_page.reduced')}</th> */}
                     <th className="px-3 py-2 text-right font-medium text-gray-600">{t('view_page.net')}</th>
                   </tr>
                 </thead>
@@ -457,10 +513,31 @@ export default function PayrollEntryViewPage({ params }: { params: Promise<{ id:
                         <div className="font-medium">{day.shiftTypeLabel || t('view_page.normal_shift')}</div>
                         <div className="text-[11px] text-gray-500 mt-0.5">{getPayCalculationText(day.payCalculationRules)}</div>
                       </td>
-                      <td className="px-3 py-2 text-right text-gray-900">{day.effectiveRateLabel || '-'}</td>
-                      <td className="px-3 py-2 text-right text-gray-900">{day.workedHours.toFixed(2)}</td>
-                      <td className="px-3 py-2 text-right text-green-700">{formatCurrency(day.earned + day.bonus)}</td>
-                      <td className="px-3 py-2 text-right text-red-700">-{formatCurrency(day.deduction)}</td>
+                      <td className="px-3 py-2 text-right text-gray-900">
+                        <div>{day.effectiveRateLabel || '-'}</div>
+                        <div className="text-[11px] text-gray-500 mt-0.5">
+                          {getRateSummaryText(day)}
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 text-right text-gray-900">
+                        <div>{day.payableHours.toFixed(2)}</div>
+                        <div className="text-[11px] text-gray-500 mt-0.5">
+                          {t('view_page.hours_summary_line', {
+                            scheduled: day.scheduledHours.toFixed(2),
+                            break: day.totalBreakHours.toFixed(2)
+                          })}
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 text-right text-green-700">
+                        <div>{formatCurrency(day.earned + day.bonus)}</div>
+                        <div className="text-[11px] text-gray-500 mt-0.5">
+                          {t('view_page.earned_summary_line', {
+                            hours: day.payableHours.toFixed(2),
+                            rate: formatAmount(day.effectiveRate ?? 0)
+                          })}
+                        </div>
+                      </td>
+                      {/* <td className="px-3 py-2 text-right text-red-700">-{formatCurrency(day.deduction)}</td> */}
                       <td className="px-3 py-2 text-right font-semibold text-gray-900">{formatCurrency(day.net)}</td>
                     </tr>
                   ))}
@@ -470,7 +547,7 @@ export default function PayrollEntryViewPage({ params }: { params: Promise<{ id:
                     <th className="px-3 py-2 text-left font-semibold text-gray-900">{t('view_page.totals')}</th>
                     <th className="px-3 py-2 text-left font-semibold text-gray-900">-</th>
                     <th className="px-3 py-2 text-right font-semibold text-gray-900">
-                      {(entry.breakdownTotals?.basicSalaryRate ?? entry.regularRate).toFixed(2)}
+                      {formatAmount(entry.breakdownTotals?.averageEffectiveRate ?? entry.regularRate)}
                     </th>
                     <th className="px-3 py-2 text-right font-semibold text-gray-900">
                       {(entry.breakdownTotals?.workedHours ?? 0).toFixed(2)}
@@ -478,9 +555,9 @@ export default function PayrollEntryViewPage({ params }: { params: Promise<{ id:
                     <th className="px-3 py-2 text-right font-semibold text-green-700">
                       {formatCurrency((entry.breakdownTotals?.earned ?? 0) + (entry.breakdownTotals?.bonus ?? 0))}
                     </th>
-                    <th className="px-3 py-2 text-right font-semibold text-red-700">
+                    {/* <th className="px-3 py-2 text-right font-semibold text-red-700">
                       -{formatCurrency(entry.breakdownTotals?.deduction ?? 0)}
-                    </th>
+                    </th> */}
                     <th className="px-3 py-2 text-right font-semibold text-gray-900">
                       {formatCurrency(entry.breakdownTotals?.net ?? 0)}
                     </th>

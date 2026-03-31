@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { AutoBreakType, ShiftType, WageType } from '@prisma/client'
 import { useUser } from '@/shared/lib/useUser'
+import { formatTimeFromDateTime } from '@/shared/lib/timeFormatting'
 import { useTranslation } from 'react-i18next'
 import { ShiftExchange } from '@/shared/types'
 import Swal from 'sweetalert2'
@@ -188,16 +189,8 @@ export default function ShiftForm({
 
   const [formData, setFormData] = useState<ShiftFormData>(() => {
     const convertDateTimeToTimeString = (dateTime: any): string | undefined => {
-      if (!dateTime) return undefined;
-      try {
-        const date = new Date(dateTime);
-        const hours = String(date.getHours()).padStart(2, '0');
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-        return `${hours}:${minutes}`;
-      } catch (e) {
-        return undefined;
-      }
-    };
+      return formatTimeFromDateTime(dateTime) || undefined
+    }
 
     const baseData = initialData ? {
       ...initialData,
@@ -833,51 +826,47 @@ export default function ShiftForm({
   }, [])
 
   useEffect(() => {
-  if (!initialData || shiftTypeOptions.length === 0) return
+    if (!initialData || shiftTypeOptions.length === 0) return
 
-  // console.log('Initial data:', initialData)
-  // console.log('Available shift types:', shiftTypeOptions)
+    const matchingType = shiftTypeOptions.find(
+      st => st.id === initialData.shiftTypeId
+    )
 
-  const matchingType = shiftTypeOptions.find(
-    st => st.id === initialData.shiftTypeId
-  )
+    if (!matchingType) return
 
-  if (!matchingType) return
+    const existingBreakStart = formatTimeFromDateTime(initialData.breakStart)
+    const existingBreakEnd = formatTimeFromDateTime(initialData.breakEnd)
+    const hasExistingBreakTimes = Boolean(existingBreakStart && existingBreakEnd)
 
-  const hasConfigChanged =
-    matchingType.autoBreakType === 'AUTO_BREAK' &&
-    matchingType.autoBreakValue !== undefined &&
-    matchingType.autoBreakValue !== null &&
-    (matchingType.autoBreakValue !== initialData.autoBreakValue)
-
-  if (hasConfigChanged) {
-
-    if (matchingType.autoBreakType === 'AUTO_BREAK') {
+    if (hasExistingBreakTimes) {
       setShowBreakFields(true)
-      recalcAutoBreak(matchingType.autoBreakType,matchingType.autoBreakValue!)
-    } else if (matchingType.autoBreakType === 'MANUAL_BREAK') {
-      setShowBreakFields(false)
-      setShowBreakFields(false)
       setFormData(prev => ({
         ...prev,
-        autoBreakType: 'MANUAL_BREAK',
-        autoBreakValue: null,
-        breakStart: '',
-        breakEnd: '',
+        autoBreakType: matchingType.autoBreakType ?? 'MANUAL_BREAK',
+        autoBreakValue: matchingType.autoBreakValue !== undefined && matchingType.autoBreakValue !== null
+          ? Number(matchingType.autoBreakValue)
+          : null,
+        breakStart: existingBreakStart || undefined,
+        breakEnd: existingBreakEnd || undefined,
       }))
+      return
     }
-  }else{
-    // If changed to manual, clear auto-break settings
-      setShowBreakFields(false)
-      setFormData(prev => ({
-        ...prev,
-        autoBreakType: 'MANUAL_BREAK',
-        autoBreakValue: null,
-        breakStart: '',
-        breakEnd: '',
-      }))
-  }
-}, [initialData, shiftTypeOptions])
+
+    if (matchingType.autoBreakType === 'AUTO_BREAK' && matchingType.autoBreakValue !== undefined && matchingType.autoBreakValue !== null) {
+      setShowBreakFields(true)
+      recalcAutoBreak(matchingType.autoBreakType, Number(matchingType.autoBreakValue))
+      return
+    }
+
+    setShowBreakFields(false)
+    setFormData(prev => ({
+      ...prev,
+      autoBreakType: 'MANUAL_BREAK',
+      autoBreakValue: null,
+      breakStart: '',
+      breakEnd: '',
+    }))
+  }, [initialData, shiftTypeOptions])
 
   const fetchShiftTypes = async () => {
     setLoadingShiftTypes(true)

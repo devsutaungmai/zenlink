@@ -7,6 +7,7 @@ import { PERMISSIONS } from '@/shared/lib/permissions'
 import { canEmployeeBeScheduled } from '@/shared/lib/employeeProfileHelper'
 import { validateShiftCombined, getEmployeeShiftsForValidation, getBatchEmployeeShiftsForValidation } from '@/shared/lib/shiftValidation'
 import { shiftWithRelationsInclude } from '@/shared/lib/shiftIncludes'
+import { formatTimeFromDateTime } from '@/shared/lib/timeFormatting'
 import jwt from 'jsonwebtoken'
 import { cookies } from 'next/headers'
 import { startOfWeek, endOfWeek } from 'date-fns'
@@ -227,8 +228,14 @@ export async function GET(request: Request) {
     )
 
     const shiftsWithValidation = await Promise.all(shifts.map(async (shift) => {
+      const serializedShift = {
+        ...shift,
+        breakStart: formatTimeFromDateTime(shift.breakStart),
+        breakEnd: formatTimeFromDateTime(shift.breakEnd),
+      }
+
       if (!shift.employeeId) {
-        return { ...shift, validation: null }
+        return { ...serializedShift, validation: null }
       }
 
       try {
@@ -241,15 +248,15 @@ export async function GET(request: Request) {
             date: shift.date,
             startTime: shift.startTime,
             endTime: shift.endTime || '',
-            breakStart: shift.breakStart?.toISOString().split('T')[1]?.substring(0, 5) || null,
-            breakEnd: shift.breakEnd?.toISOString().split('T')[1]?.substring(0, 5) || null,
+            breakStart: formatTimeFromDateTime(shift.breakStart),
+            breakEnd: formatTimeFromDateTime(shift.breakEnd),
             employeeId: shift.employeeId,
           },
           existingShifts
         )
 
         return {
-          ...shift,
+          ...serializedShift,
           validation: {
             hasLaborLawViolations: validationResult.laborLaw.violations.length > 0,
             hasContractDeviations: validationResult.contract?.hasDeviations || false,
@@ -259,7 +266,7 @@ export async function GET(request: Request) {
         }
       } catch (error) {
         console.error(`Error validating shift ${shift.id}:`, error)
-        return { ...shift, validation: null }
+        return { ...serializedShift, validation: null }
       }
     }))
 

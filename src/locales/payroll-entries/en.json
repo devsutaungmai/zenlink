@@ -170,7 +170,7 @@
     "last_updated": "Last Updated",
     "entry_id": "Entry ID",
     "work_summary": "Work Summary",
-    "total_work_hours": "Total Work Hours",
+    "total_work_hours": "Total Payable Hours",
     "salary_amount": "Salary Amount",
     "total_shifts": "Total Shifts",
     "basic_salary_rate": "Basic Salary Rate",
@@ -186,9 +186,9 @@
     "normal_shift": "Normal Shift",
     "pay_calculation": {
       "hourly_wage": "Pay Calculation: Hourly Wage",
-      "hourly_plus_fixed": "Pay Calculation: Hourly Wage + Fixed Amount (${{amount}})",
-      "fixed_amount": "Pay Calculation: Fixed Amount (${{amount}})",
-      "percentage": "Pay Calculation: Hourly Wage + {{percentage}}%",
+      "hourly_plus_fixed": "Pay Calculation: Hourly Wage + ${{amount}}/hr",
+      "fixed_amount": "Pay Calculation: Fixed Hourly Rate (${{amount}}/hr)",
+      "percentage": "Pay Calculation: Hourly Wage x {{percentage}}%",
       "unpaid": "Pay Calculation: Unpaid"
     },
     "back_button": "Back to Payroll Entries",
@@ -198,7 +198,18 @@
     "payslip_downloaded": "Payslip downloaded successfully",
     "payslip_failed": "Failed to download payslip",
     "status_updated": "Status updated successfully",
-    "status_update_failed": "Failed to update status"
+    "status_update_failed": "Failed to update status",
+    "hours_summary_line": "Scheduled {{scheduled}}h - unpaid break {{break}}h",
+    "effective_rate_summary": "Avg. effective rate: ${{amount}}/hr",
+    "rate_summary_line": {
+      "base": "Base rate ${{amount}}/hr",
+      "hourly_plus_fixed": "Base ${{base}} + ${{amount}}/hr = ${{effective}}/hr",
+      "fixed_amount": "Fixed rate ${{amount}}/hr",
+      "percentage": "Base ${{base}} x {{percentage}}% = ${{effective}}/hr",
+      "unpaid": "Unpaid shift = $0/hr",
+      "mixed": "Base ${{base}}/hr, effective ${{effective}}/hr"
+    },
+    "earned_summary_line": "{{hours}}h x ${{rate}}/hr"
   },
   "edit_page": {
     "title": "Edit Payroll Entry",

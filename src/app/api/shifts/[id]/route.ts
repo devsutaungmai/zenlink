@@ -9,6 +9,7 @@ import {
   getEmployeeShiftsForValidation,
   formatCombinedValidationSummary
 } from '@/shared/lib/shiftValidation'
+import { formatTimeFromDateTime } from '@/shared/lib/timeFormatting'
 import { shiftWithRelationsInclude } from '@/shared/lib/shiftIncludes'
 
 export async function GET(
@@ -69,7 +70,11 @@ export async function GET(
       )
     }
     
-    return NextResponse.json(shift)
+    return NextResponse.json({
+      ...shift,
+      breakStart: formatTimeFromDateTime(shift.breakStart),
+      breakEnd: formatTimeFromDateTime(shift.breakEnd),
+    })
   } catch (error) {
     return NextResponse.json(
       { error: 'Failed to fetch shift' }, 

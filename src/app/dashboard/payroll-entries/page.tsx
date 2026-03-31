@@ -739,7 +739,7 @@ export default function PayrollEntriesPage() {
           <p className="text-sm sm:text-base text-gray-500 mb-4 sm:mb-6">
             {searchTerm ? t('no_entries.search_message') : t('no_entries.empty_message')}
           </p>
-          {!searchTerm && (
+          {/* {!searchTerm && (
             <Link
               href="/dashboard/payroll-entries/create"
               className="inline-flex items-center px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base rounded-lg sm:rounded-xl bg-[#31BCFF] text-white font-medium hover:bg-[#31BCFF]/90 transition-colors duration-200"
@@ -747,7 +747,7 @@ export default function PayrollEntriesPage() {
               <PlusIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
               {t('create_first_entry')}
             </Link>
-          )}
+          )} */}
         </div>
       ) : (
         <>

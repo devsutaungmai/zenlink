@@ -92,7 +92,8 @@
         "no_shift": "No approved shift scheduled for today",
         "no_shift_hint": "You can still punch in for unscheduled work",
         "unscheduled": "Unscheduled Work",
-        "ready_unscheduled": "Ready to punch in for unscheduled work"
+        "ready_unscheduled": "Ready to punch in for unscheduled work",
+        "end_break_before_punch_out": "Please end the break before punching out"
       }
     },
     "attendance_feed": {

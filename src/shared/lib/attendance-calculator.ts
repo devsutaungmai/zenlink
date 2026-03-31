@@ -23,6 +23,9 @@ interface AttendanceCalculationResult {
       id: string
       startTime: string
       endTime: string | null
+      breakStart: string | null
+      breakEnd: string | null
+      breakPaid: boolean
       shiftTypeId: string | null
       wage: number | null
       shiftTypeConfig: {
@@ -39,6 +42,28 @@ interface AttendanceCalculationResult {
 }
 
 export class AttendanceBasedCalculator {
+  private roundHours(value: number, precision: number = 4): number {
+    const factor = Math.pow(10, precision)
+    return Math.round(value * factor) / factor
+  }
+
+  private calculateBreakHours(
+    breakStart: Date | null | undefined,
+    breakEnd: Date | null | undefined,
+    breakPaid: boolean | null | undefined
+  ): number {
+    if (!breakStart || !breakEnd || breakPaid) {
+      return 0
+    }
+
+    const durationMs = breakEnd.getTime() - breakStart.getTime()
+    if (!Number.isFinite(durationMs) || durationMs <= 0) {
+      return 0
+    }
+
+    return durationMs / (1000 * 60 * 60)
+  }
+
   /**
    * Calculate hours worked based on approved attendance records
    */
@@ -116,6 +141,9 @@ export class AttendanceBasedCalculator {
             id: true,
             startTime: true,
             endTime: true,
+            breakStart: true,
+            breakEnd: true,
+            breakPaid: true,
             shiftTypeId: true,
             wage: true,
             shiftTypeConfig: {
@@ -149,7 +177,13 @@ export class AttendanceBasedCalculator {
       const punchIn = new Date(attendance.punchInTime)
       const punchOut = new Date(attendance.punchOutTime)
       const durationMs = punchOut.getTime() - punchIn.getTime()
-      const durationHours = durationMs / (1000 * 60 * 60)
+      const rawDurationHours = durationMs / (1000 * 60 * 60)
+      const breakHours = this.calculateBreakHours(
+        attendance.shift?.breakStart,
+        attendance.shift?.breakEnd,
+        attendance.shift?.breakPaid
+      )
+      const durationHours = Math.max(0, rawDurationHours - breakHours)
 
       totalHours += durationHours
 
@@ -164,12 +198,15 @@ export class AttendanceBasedCalculator {
         date: punchIn.toISOString().split('T')[0],
         punchInTime: punchIn.toISOString(),
         punchOutTime: punchOut.toISOString(),
-        duration: Math.round(durationHours * 100) / 100,
+        duration: this.roundHours(durationHours),
         isApproved: attendance.approved,
         shift: attendance.shift ? {
           id: attendance.shift.id,
           startTime: attendance.shift.startTime,
           endTime: attendance.shift.endTime,
+          breakStart: attendance.shift.breakStart ? attendance.shift.breakStart.toISOString() : null,
+          breakEnd: attendance.shift.breakEnd ? attendance.shift.breakEnd.toISOString() : null,
+          breakPaid: attendance.shift.breakPaid ?? false,
           shiftTypeId: attendance.shift.shiftTypeId ?? null,
           wage: attendance.shift.wage ?? null,
           shiftTypeConfig: attendance.shift.shiftTypeConfig ? {
@@ -194,16 +231,16 @@ export class AttendanceBasedCalculator {
     const { regularRate, overtimeRate } = this.calculateRates(employee, attendanceDetails)
 
     return {
-      totalHours: Math.round(totalHours * 100) / 100,
+      totalHours: this.roundHours(totalHours),
       totalShifts: attendanceDetails.length,
-      regularHours: Math.round(regularHours * 100) / 100,
-      overtimeHours: Math.round(overtimeHours * 100) / 100,
+      regularHours: this.roundHours(regularHours),
+      overtimeHours: this.roundHours(overtimeHours),
       regularRate,
       overtimeRate,
       attendanceDetails,
       wageCalculationMethod: 'attendance',
-      unapprovedHours: Math.round(unapprovedHours * 100) / 100,
-      approvedHours: Math.round(approvedHours * 100) / 100
+      unapprovedHours: this.roundHours(unapprovedHours),
+      approvedHours: this.roundHours(approvedHours)
     }
   }
 

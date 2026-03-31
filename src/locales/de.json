@@ -105,7 +105,8 @@
         "no_shift": "Heute ist keine genehmigte Schicht geplant",
         "no_shift_hint": "Du kannst trotzdem für ungeplante Arbeit einstempeln",
         "unscheduled": "Ungeplanter Einsatz",
-        "ready_unscheduled": "Bereit zum Einstempeln für ungeplante Arbeit"
+        "ready_unscheduled": "Bereit zum Einstempeln für ungeplante Arbeit",
+        "end_break_before_punch_out": "Bitte beenden Sie zuerst die Pause, bevor Sie ausstempeln"
       }
     },
     "attendance_feed": {

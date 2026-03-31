@@ -436,8 +436,8 @@ export default function SchedulePage() {
       }
 
       const res = await fetch(url, {
-        headers: { 'Cache-Control': 'max-age=60' },
-        next: { revalidate: 60 }
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-store, max-age=0' }
       })
 
       if (!res.ok) {

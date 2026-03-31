@@ -123,10 +123,15 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const resolvedPunchInTime = punchInTime ? new Date(punchInTime) : new Date()
+    const resolvedPunchOutTime = punchOutTime ? new Date(punchOutTime) : null
+    let resolvedShiftId = shiftId || null
+    let autoCreatedShiftId: string | null = null
+
     // If a shiftId is provided, validate it exists and is in a valid state
-    if (shiftId) {
+    if (resolvedShiftId) {
       const shift = await prisma.shift.findUnique({
-        where: { id: shiftId }
+        where: { id: resolvedShiftId }
       })
 
       if (!shift) {
@@ -142,7 +147,7 @@ export async function POST(request: NextRequest) {
       }
 
       const existingForShift = await prisma.attendance.findFirst({
-        where: { employeeId, shiftId, punchOutTime: null },
+        where: { employeeId, shiftId: resolvedShiftId, punchOutTime: null },
         include: {
           employee: { select: { firstName: true, lastName: true, employeeNo: true } },
           shift: true
@@ -164,14 +169,43 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
+    // For extra/unscheduled work, create a real shift immediately on punch in.
+    if (!resolvedShiftId) {
+      const primaryDepartmentId = employee.departmentId || employee.departments[0]?.departmentId || null
+
+      const extraShift = await prisma.shift.create({
+        data: {
+          date: resolvedPunchInTime,
+          startTime: resolvedPunchInTime.toTimeString().split(' ')[0].substring(0, 5),
+          endTime: resolvedPunchOutTime ? resolvedPunchOutTime.toTimeString().split(' ')[0].substring(0, 5) : null,
+          employeeId,
+          employeeGroupId: employee.employeeGroupId || null,
+          departmentId: primaryDepartmentId,
+          shiftType: 'NORMAL',
+          wage: 0,
+          wageType: 'HOURLY',
+          isPublished: true,
+          approved: isAdmin,
+          approvedAt: isAdmin ? new Date() : null,
+          approvedBy: isAdmin ? (auth.data as any).id : null,
+          breakPaid: false,
+          status: resolvedPunchOutTime ? 'COMPLETED' : 'WORKING',
+          note: 'Auto-created from extra shift punch in'
+        }
+      })
+
+      resolvedShiftId = extraShift.id
+      autoCreatedShiftId = extraShift.id
+    }
+
     const attendance = await prisma.attendance.create({
       data: {
         employeeId,
         businessId,
-        shiftId: shiftId || null,
+        shiftId: resolvedShiftId,
         punchClockProfileId: punchClockProfileId || null,
-        punchInTime: punchInTime ? new Date(punchInTime) : new Date(),
-        punchOutTime: punchOutTime ? new Date(punchOutTime) : null,
+        punchInTime: resolvedPunchInTime,
+        punchOutTime: resolvedPunchOutTime,
         approved: isAdmin ? true : false,
         approvedAt: isAdmin ? new Date() : null,
         approvedBy: isAdmin ? (auth.data as any).id : null
@@ -189,10 +223,10 @@ export async function POST(request: NextRequest) {
     })
 
     // If there's a shift, update its status
-    if (shiftId) {
+    if (resolvedShiftId && !autoCreatedShiftId) {
       await prisma.shift.update({
-        where: { id: shiftId },
-        data: { status: isAdmin ? 'COMPLETED' : (punchOutTime ? 'COMPLETED' : 'WORKING') }
+        where: { id: resolvedShiftId },
+        data: { status: isAdmin ? 'COMPLETED' : (resolvedPunchOutTime ? 'COMPLETED' : 'WORKING') }
       })
     }
 
@@ -517,6 +551,12 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
+    const auth = await getCurrentUserOrEmployee()
+    const isAdmin = auth?.type === 'user' && (auth.data as any)?.role === 'ADMIN'
+    if (!isAdmin) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const body = await request.json()
     const { attendanceIds, approved, approvalNote } = body
 
@@ -537,8 +577,18 @@ export async function PATCH(request: NextRequest) {
     const updateData: any = {
       approved,
       approvedAt: approved ? new Date() : null,
-      approvedBy: approved ? 'admin' : null
+      approvedBy: approved ? (auth.data as any).id : null
     }
+
+    const linkedShifts = await prisma.attendance.findMany({
+      where: {
+        id: { in: attendanceIds },
+        shiftId: { not: null }
+      },
+      select: {
+        shiftId: true
+      }
+    })
 
     const updatedAttendances = await prisma.attendance.updateMany({
       where: {
@@ -546,6 +596,23 @@ export async function PATCH(request: NextRequest) {
       },
       data: updateData
     })
+
+    const shiftIds = linkedShifts
+      .map(att => att.shiftId)
+      .filter((shiftId): shiftId is string => Boolean(shiftId))
+
+    if (shiftIds.length > 0) {
+      await prisma.shift.updateMany({
+        where: {
+          id: { in: shiftIds }
+        },
+        data: {
+          approved,
+          approvedAt: approved ? new Date() : null,
+          approvedBy: approved ? (auth.data as any).id : null
+        }
+      })
+    }
 
     return NextResponse.json({
       message: `${updatedAttendances.count} attendance records ${approved ? 'approved' : 'unapproved'}`,
