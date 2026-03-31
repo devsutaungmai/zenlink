@@ -200,7 +200,7 @@ export function LedgerAccountSelectCombobox({
         >
           {/* Selected chip */}
           {selectedAccount && !inputValue && (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#31BCFF]/10 text-[#0EA5E9] text-sm font-medium border border-[#31BCFF]/20 mr-2 shrink-0 max-w-[80%] truncate">
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-sm font-medium shrink-0 max-w-[80%] truncate">
               {ledgerLabel(selectedAccount)}
               {!disabled && (
                 <button
@@ -208,7 +208,7 @@ export function LedgerAccountSelectCombobox({
                   onClick={clearAccount}
                   className="ml-0.5 hover:text-red-500 transition-colors shrink-0"
                 >
-                  <X className="h-3 w-3" />
+                  {/* <X className="h-3 w-3" /> */}
                 </button>
               )}
             </span>

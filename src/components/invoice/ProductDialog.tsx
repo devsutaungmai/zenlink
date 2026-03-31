@@ -5,6 +5,8 @@ import { useEffect, useState, useRef } from "react";
 import React from "react";
 import z from "zod";
 import { productValidationSchema } from "./validation";
+import { LedgerAccountOption, LedgerAccountSelectCombobox } from "./LedgerAccountSelectCombobox";
+import { LedgerAccountFormType } from "./LedgerAccountDialog";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -14,9 +16,9 @@ export interface ProductFormType {
   productName: string;
   productNumber: string;
   defaultProductNumber?: string;
-  salesPrice: number ;
-  costPrice?: number ;
-  discountPercentage?: number ;
+  salesPrice: number;
+  costPrice?: number;
+  discountPercentage?: number;
   ledgerAccountId?: string;
 }
 
@@ -55,7 +57,7 @@ export default function ProductDialog({
   loading,
 }: ProductDialogProps) {
   const [form, setForm] = useState<ProductFormType>(emptyProduct);
-  const [ledgerAccounts, setLedgerAccounts] = useState<LedgerAccount[]>([]);
+  const [ledgerAccounts, setLedgerAccounts] = useState<LedgerAccountOption[]>([]);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const validationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -104,6 +106,24 @@ export default function ProductDialog({
     }
   };
 
+  const onSaveLedgerAccount = async (
+    account: LedgerAccountFormType
+  ): Promise<LedgerAccountOption> => {
+    const res = await fetch("/api/ledger/accounts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(account),
+    });
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.error || "Failed to create ledger account");
+    }
+    const created: LedgerAccountOption = await res.json();
+    // Add to local list so it shows in the dropdown immediately
+    setLedgerAccounts((prev) => [...prev, created]);
+    return created;
+  };
+
   const validateField = (fieldName: string, value: unknown) => {
     try {
       const fieldSchema =
@@ -150,8 +170,8 @@ export default function ProductDialog({
     const vatPart = bv
       ? `${bv.name} (${bv.rate}%)`
       : sa.vatCode
-      ? `${sa.vatCode.name} (${sa.vatCode.rate}%)`
-      : "0%";
+        ? `${sa.vatCode.name} (${sa.vatCode.rate}%)`
+        : "0%";
     return `${sa.accountNumber} - ${sa.name} - ${vatPart}`;
   };
 
@@ -222,28 +242,23 @@ export default function ProductDialog({
             {/* Ledger Account — full width below the grid */}
             <div className="mt-4 text-sm">
               <label className="block text-gray-500 mb-1">Ledger Account *</label>
-              <select
-                required
+              <LedgerAccountSelectCombobox
+                ledgerAccounts={ledgerAccounts}
                 value={form.ledgerAccountId ?? ""}
-                onChange={(e) => {
-                  updateField("ledgerAccountId", e.target.value);
-                  validateField("ledgerAccountId", e.target.value);
+                onChange={(id) => {
+                  updateField("ledgerAccountId", id);
+                  validateField("ledgerAccountId", id);
                 }}
-                className={`w-full px-3 py-2 rounded-md border ${
-                  validationErrors.ledgerAccountId
-                    ? "border-red-500 focus:ring-red-300"
-                    : "border-gray-300 focus:ring-[#31BCFF]/50"
-                } focus:ring-2 outline-none`}
-              >
-                <option value="">-- Select Ledger Account --</option>
-                {ledgerAccounts.map((sa) => (
-                  <option key={sa.id} value={sa.id}>
-                    {ledgerLabel(sa)}
-                  </option>
-                ))}
-              </select>
+                onSaveNewLedgerAccount={onSaveLedgerAccount}
+                onLedgerAccountCreated={(newAccount) => {
+                  // ledgerAccounts state already updated inside onSaveLedgerAccount
+                }}
+                placeholder="Select Ledger Account"
+              />
               {validationErrors.ledgerAccountId && (
-                <p className="mt-1 text-xs text-red-600">{validationErrors.ledgerAccountId}</p>
+                <p className="mt-1 text-xs text-red-600">
+                  {validationErrors.ledgerAccountId}
+                </p>
               )}
             </div>
 
@@ -294,11 +309,10 @@ const ProductInput = React.forwardRef<
       value={value}
       onChange={(e) => onChange(e.target.value)}
       onBlur={(e) => onBlur?.(e.target.value)}
-      className={`w-full px-3 py-2 rounded-md border ${
-        error
+      className={`w-full px-3 py-2 rounded-md border ${error
           ? "border-red-500 focus:ring-red-300"
           : "border-gray-300 focus:ring-[#31BCFF]/50"
-      } focus:ring-2 outline-none`}
+        } focus:ring-2 outline-none`}
       required={required}
     />
     {error && <p className="mt-1 text-xs text-red-600">{error}</p>}

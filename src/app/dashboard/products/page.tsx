@@ -297,15 +297,34 @@ export default function ProductsPage() {
 
   // Render cell content based on column key
   const renderCell = (product: Product, columnKey: string) => {
+    const isDefaultLedgerAccount = product.ledgerAccount.businessId == null ? "true" : "false";
     switch (columnKey) {
       case "productNumber":
-        return <div className="text-sm font-medium text-gray-900 truncate">{formatProductNumberForDisplay(product.productNumber)}</div>
+        return <div className="text-sm font-medium text-blue-600 hover:underline cursor-pointer truncate">
+          <Link
+            href={`/dashboard/products/${product.id}/edit`}
+
+            title="Edit Product"
+          >
+            {formatProductNumberForDisplay(product.productNumber)}
+          </Link>
+        </div>
       case "productName":
-        return <div className="text-sm text-gray-900 truncate">{product.productName}</div>
+        return <div className="text-sm text-blue-600 hover:underline cursor-pointer truncate">
+          <Link
+            href={`/dashboard/products/${product.id}/edit`}
+
+            title="Edit Product"
+          >
+            {product.productName}
+          </Link>
+        </div>
       case "ledgerAccount":
         return (
           <div className="text-sm text-blue-600 hover:underline truncate cursor-pointer">
+             <Link href={`/dashboard/ledger-accounts/${product.ledgerAccount.id}/edit?default=${isDefaultLedgerAccount}`} className="hover:underline">
             {product.ledgerAccount.name} ({product.ledgerAccount.accountNumber})
+            </Link>
           </div>
         )
       case "salesPrice":
@@ -601,7 +620,13 @@ export default function ProductsPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="text-lg font-semibold text-gray-900 group-hover:text-[#31BCFF] transition-colors duration-200">
-                        {isColumnVisible("productName") && product.productName}
+                        <Link
+                          href={`/dashboard/products/${product.id}/edit`}
+
+                          title="Edit Product"
+                        >{isColumnVisible("productName") &&
+                          product.productName}
+                        </Link>
                       </h3>
                       <span
                         className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${product.active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
@@ -644,7 +669,13 @@ export default function ProductsPage() {
                       </div>
                       <div>
                         <p className="text-xs text-gray-500">Product Number</p>
-                        <p className="text-lg font-bold text-gray-900">{formatProductNumberForDisplay(product.productNumber)}</p>
+                        <Link
+                          href={`/dashboard/products/${product.id}/edit`}
+
+                          title="Edit Product"
+                        >
+                          <p className="text-lg font-bold text-gray-900">{formatProductNumberForDisplay(product.productNumber)}</p>
+                        </Link>
                       </div>
                     </div>
                   </div>
