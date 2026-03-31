@@ -170,7 +170,7 @@
     "last_updated": "Sist Oppdatert",
     "entry_id": "Oppførings-ID",
     "work_summary": "Arbeidsoversikt",
-    "total_work_hours": "Totale arbeidstimer",
+    "total_work_hours": "Totale betalbare timer",
     "salary_amount": "Lønnsbeløp",
     "total_shifts": "Totale vakter",
     "basic_salary_rate": "Grunnlønnssats",
@@ -186,9 +186,9 @@
     "normal_shift": "Vanlig skift",
     "pay_calculation": {
       "hourly_wage": "Lønnsberegning: Timelønn",
-      "hourly_plus_fixed": "Lønnsberegning: Timelønn + fast beløp (${{amount}})",
-      "fixed_amount": "Lønnsberegning: Fast beløp (${{amount}})",
-      "percentage": "Lønnsberegning: Timelønn + {{percentage}}%",
+      "hourly_plus_fixed": "Lønnsberegning: Timelønn + ${{amount}}/time",
+      "fixed_amount": "Lønnsberegning: Fast timesats (${{amount}}/time)",
+      "percentage": "Lønnsberegning: Timelønn x {{percentage}}%",
       "unpaid": "Lønnsberegning: Ubetalt"
     },
     "back_button": "Tilbake til Lønnsoppføringer",
@@ -198,7 +198,18 @@
     "payslip_downloaded": "Lønnslipp lastet ned",
     "payslip_failed": "Kunne ikke laste ned lønnslipp",
     "status_updated": "Status oppdatert",
-    "status_update_failed": "Kunne ikke oppdatere status"
+    "status_update_failed": "Kunne ikke oppdatere status",
+    "hours_summary_line": "Planlagt {{scheduled}} t - ubetalt pause {{break}} t",
+    "effective_rate_summary": "Gj.sn. effektiv sats: ${{amount}}/time",
+    "rate_summary_line": {
+      "base": "Grunnsats ${{amount}}/time",
+      "hourly_plus_fixed": "Grunnsats ${{base}} + ${{amount}}/time = ${{effective}}/time",
+      "fixed_amount": "Fast sats ${{amount}}/time",
+      "percentage": "Grunnsats ${{base}} x {{percentage}}% = ${{effective}}/time",
+      "unpaid": "Ubetalt skift = $0/time",
+      "mixed": "Grunnsats ${{base}}/time, effektiv ${{effective}}/time"
+    },
+    "earned_summary_line": "{{hours}} t x ${{rate}}/time"
   },
   "edit_page": {
     "title": "Rediger Lønnsoppføring",

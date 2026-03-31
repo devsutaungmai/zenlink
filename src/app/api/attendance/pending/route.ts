@@ -67,9 +67,26 @@ export async function PATCH(request: NextRequest) {
             lastName: true,
             employeeNo: true
           }
-        }
+        },
+        shift: true
       }
     })
+
+    if (updatedAttendance.shiftId) {
+      const approvalActionTime = new Date()
+      await prisma.shift.update({
+        where: { id: updatedAttendance.shiftId },
+        data: {
+          approved,
+          approvedAt: approved ? new Date() : null,
+          approvedBy: approved ? adminId || null : null,
+          ...(approved ? {} : {
+            status: 'COMPLETED',
+            endTime: updatedAttendance.shift?.endTime || approvalActionTime.toTimeString().substring(0, 5)
+          })
+        }
+      })
+    }
 
     // If rejected, also punch out the employee
     if (!approved) {

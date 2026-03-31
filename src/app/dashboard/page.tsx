@@ -204,6 +204,7 @@ export default function DashboardPage() {
 
   const showAdminQuickCards = !isEmployeeUser && canViewStats
   const canAutoStartExtraShift = !todayShift || todayShift.status === 'COMPLETED'
+  const canManageBreak = Boolean(activeShift || currentAttendance || todayShift)
 
   const formatDurationText = (ms: number) => {
     const totalMinutes = Math.floor(ms / (1000 * 60))
@@ -670,6 +671,11 @@ export default function DashboardPage() {
   const handlePunchOut = async () => {
     if (!currentAttendance) return
 
+    if (isOnBreak) {
+      alert(t('dashboard.cards.punch_clock.end_break_before_punch_out', 'Please end the break before punching out'))
+      return
+    }
+
     // Punch out directly without location validation
     setClockingOut(true)
     try {
@@ -690,6 +696,7 @@ export default function DashboardPage() {
       setCurrentAttendance(null)
 
       // Refresh today's shift and attendance data
+      await fetchActiveShift()
       await fetchTodayShift()
       await fetchCurrentAttendance()
     } catch (error: any) {
@@ -733,6 +740,7 @@ export default function DashboardPage() {
         setCurrentAttendance(result.attendance)
 
         // Refresh today's shift and attendance data
+        await fetchActiveShift()
         await fetchTodayShift()
         await fetchCurrentAttendance()
       } catch (error: any) {
@@ -814,6 +822,7 @@ export default function DashboardPage() {
       setCurrentAttendance(result.attendance)
 
       // Refresh today's shift and attendance data
+      await fetchActiveShift()
       await fetchTodayShift()
       await fetchCurrentAttendance()
     } catch (error: any) {
@@ -829,9 +838,9 @@ export default function DashboardPage() {
     if (activeShift) {
       // Use existing shift break endpoint for "Start New Shift" scenarios
       await handleStartBreakForShift(activeShift.id)
-    } else if (currentAttendance?.shiftId && todayShift) {
-      // Use existing shift break endpoint for scheduled shifts
-      await handleStartBreakForShift(todayShift.id)
+    } else if (currentAttendance?.shiftId) {
+      // Use the linked shift for both scheduled and extra/unscheduled work
+      await handleStartBreakForShift(currentAttendance.shiftId)
     } else if (currentAttendance && !currentAttendance.shiftId) {
       // Use attendance break endpoint for unscheduled work
       await handleStartBreakForAttendance(currentAttendance.id)
@@ -1502,13 +1511,13 @@ export default function DashboardPage() {
                   <div className="mt-6 flex flex-col gap-2">
                     <button
                       onClick={handlePunchOut}
-                      disabled={clockingOut}
+                      disabled={clockingOut || isOnBreak}
                       className="inline-flex items-center justify-center rounded-full bg-red-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 disabled:opacity-60"
                     >
                       <ClockIcon className="mr-1 h-4 w-4" />
                       {clockingOut ? t('dashboard.cards.punch_clock.punching_out') : t('dashboard.cards.punch_clock.punch_out')}
                     </button>
-                    {(activeShift || currentAttendance?.shiftId || todayShift) && (
+                    {canManageBreak && (
                       <button
                         onClick={isOnBreak ? handleEndBreak : handleStartBreak}
                         disabled={breakLoading}
@@ -1525,6 +1534,11 @@ export default function DashboardPage() {
                       </button>
                     )}
                   </div>
+                  {isOnBreak && (
+                    <p className="text-xs text-amber-600">
+                      {t('dashboard.cards.punch_clock.end_break_before_punch_out', 'Please end the break before punching out')}
+                    </p>
+                  )}
                 </div>
               </div>
             )}

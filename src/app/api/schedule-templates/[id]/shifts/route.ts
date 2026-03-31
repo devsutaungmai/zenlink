@@ -8,6 +8,22 @@ interface RouteParams {
   params: Promise<{ id: string }>
 }
 
+function calculateBreakMinutes(breakStart?: string | null, breakEnd?: string | null): number | null {
+  if (!breakStart || !breakEnd) return null
+
+  const [startHours, startMinutes] = breakStart.split(':').map(Number)
+  const [endHours, endMinutes] = breakEnd.split(':').map(Number)
+
+  const startTotalMinutes = startHours * 60 + startMinutes
+  let endTotalMinutes = endHours * 60 + endMinutes
+
+  if (endTotalMinutes <= startTotalMinutes) {
+    endTotalMinutes += 24 * 60
+  }
+
+  return endTotalMinutes - startTotalMinutes
+}
+
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     const auth = await getCurrentUserOrEmployee()
@@ -28,7 +44,24 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     const { id: templateId } = await params
     const body = await request.json()
-    const { dayIndex, startTime, endTime, employeeId, employeeGroupId, functionId, departmentId, categoryId, note, breakMinutes, breakPaid } = body
+    const {
+      dayIndex,
+      startTime,
+      endTime,
+      employeeId,
+      employeeGroupId,
+      shiftTypeId,
+      functionId,
+      departmentId,
+      categoryId,
+      wage,
+      wageType,
+      note,
+      breakStart,
+      breakEnd,
+      breakMinutes,
+      breakPaid
+    } = body
 
     const template = await prisma.scheduleTemplate.findFirst({
       where: {
@@ -57,11 +90,16 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         endTime: endTime || null,
         employeeId: employeeId || null,
         employeeGroupId: employeeGroupId || null,
+        shiftTypeId: shiftTypeId || null,
         functionId: functionId || null,
         departmentId: departmentId || null,
         categoryId: categoryId || null,
+        wage: wage !== undefined ? Number(wage) : 0,
+        wageType: wageType || 'HOURLY',
         note: note || null,
-        breakMinutes: breakMinutes || null,
+        breakStart: breakStart || null,
+        breakEnd: breakEnd || null,
+        breakMinutes: breakMinutes ?? calculateBreakMinutes(breakStart, breakEnd),
         breakPaid: breakPaid || false
       }
     })

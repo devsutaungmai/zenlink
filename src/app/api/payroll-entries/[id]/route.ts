@@ -62,11 +62,11 @@ function buildPayCalculationLabel(
 
   switch (payCalculationType) {
     case 'HOURLY_PLUS_FIXED':
-      return `Pay Calculation: Hourly Wage + Fixed Amount ($${formatAmount(safeValue)})`
+      return `Pay Calculation: Hourly Wage + $${formatAmount(safeValue)}/hr`
     case 'FIXED_AMOUNT':
-      return `Pay Calculation: Fixed Amount ($${formatAmount(safeValue)})`
+      return `Pay Calculation: Fixed Hourly Rate ($${formatAmount(safeValue)}/hr)`
     case 'PERCENTAGE':
-      return `Pay Calculation: Hourly Wage + ${formatAmount(safeValue)}%`
+      return `Pay Calculation: Hourly Wage x ${formatAmount(safeValue)}%`
     case 'UNPAID':
       return 'Pay Calculation: Unpaid'
     default:
@@ -175,12 +175,14 @@ export async function GET(
 
     const attendanceRows: Array<{
       date: string
-      workedHours: number
+      scheduledHours: number
+      payableHours: number
       breakHours: number
       shiftType: string
       payCalculationType: PayCalculationType
       payCalculationValue: number
       payCalculationLabel: string
+      baseRate: number
       effectiveRate: number
       rawEarned: number
     }> = []
@@ -199,6 +201,7 @@ export async function GET(
       }
 
       const safeWorkedHours = Number.isFinite(workedHours) && workedHours > 0 ? workedHours : 0
+      const payableHours = Math.max(0, safeWorkedHours - breakHours)
       const date = new Date(attendance.punchInTime).toISOString().split('T')[0]
       const shiftTypeName = attendance.shift?.shiftTypeConfig?.name || 'Normal Shift'
       const payCalculationType = (attendance.shift?.shiftTypeConfig?.payCalculationType ?? 'BASE') as PayCalculationType
@@ -212,23 +215,27 @@ export async function GET(
 
       attendanceRows.push({
         date,
-        workedHours: safeWorkedHours,
+        scheduledHours: safeWorkedHours,
+        payableHours,
         breakHours: Number.isFinite(breakHours) && breakHours > 0 ? breakHours : 0,
         shiftType: shiftTypeName,
         payCalculationType,
         payCalculationValue,
         payCalculationLabel,
+        baseRate: attendanceBaseRate,
         effectiveRate,
-        rawEarned: safeWorkedHours * effectiveRate,
+        rawEarned: payableHours * effectiveRate,
       })
     }
 
     const dayMap = new Map<string, {
       date: string
-      workedHours: number
+      scheduledHours: number
+      payableHours: number
       breakHours: number
       shiftCount: number
       rawEarned: number
+      rawBaseEarned: number
       shiftTypes: Set<string>
       payCalculationRules: Set<string>
       payCalculationLabels: Set<string>
@@ -237,20 +244,24 @@ export async function GET(
     for (const row of attendanceRows) {
       const existing = dayMap.get(row.date)
       if (existing) {
-        existing.workedHours += row.workedHours
+        existing.scheduledHours += row.scheduledHours
+        existing.payableHours += row.payableHours
         existing.breakHours += row.breakHours
         existing.shiftCount += 1
         existing.rawEarned += row.rawEarned
+        existing.rawBaseEarned += row.payableHours * row.baseRate
         existing.shiftTypes.add(row.shiftType)
         existing.payCalculationRules.add(`${row.payCalculationType}:${row.payCalculationValue}`)
         existing.payCalculationLabels.add(row.payCalculationLabel)
       } else {
         dayMap.set(row.date, {
           date: row.date,
-          workedHours: row.workedHours,
+          scheduledHours: row.scheduledHours,
+          payableHours: row.payableHours,
           breakHours: row.breakHours,
           shiftCount: 1,
           rawEarned: row.rawEarned,
+          rawBaseEarned: row.payableHours * row.baseRate,
           shiftTypes: new Set([row.shiftType]),
           payCalculationRules: new Set([`${row.payCalculationType}:${row.payCalculationValue}`]),
           payCalculationLabels: new Set([row.payCalculationLabel]),
@@ -264,19 +275,21 @@ export async function GET(
       const fallbackDate = new Date(payrollEntry.payrollPeriod.endDate).toISOString().split('T')[0]
       dayRows.push({
         date: fallbackDate,
-        workedHours: (payrollEntry.regularHours ?? 0) + (payrollEntry.overtimeHours ?? 0),
+        scheduledHours: (payrollEntry.regularHours ?? 0) + (payrollEntry.overtimeHours ?? 0),
+        payableHours: (payrollEntry.regularHours ?? 0) + (payrollEntry.overtimeHours ?? 0),
         breakHours: 0,
         shiftCount: 0,
         rawEarned: (payrollEntry.regularHours ?? 0) * baseSalaryRate,
+        rawBaseEarned: (payrollEntry.regularHours ?? 0) * baseSalaryRate,
         shiftTypes: new Set(['No Shift Data']),
         payCalculationRules: new Set(['BASE:0']),
         payCalculationLabels: new Set(['Pay Calculation: Hourly Wage']),
       })
     }
 
-    const rawRegularHours = dayRows.map((row) => Math.min(row.workedHours, 8))
-    const rawOvertimeHours = dayRows.map((row) => Math.max(row.workedHours - 8, 0))
-    const workedHourWeights = dayRows.map((row) => row.workedHours)
+    const rawRegularHours = dayRows.map((row) => Math.min(row.payableHours, 8))
+    const rawOvertimeHours = dayRows.map((row) => Math.max(row.payableHours - 8, 0))
+    const workedHourWeights = dayRows.map((row) => row.payableHours)
 
     const regularHoursByDay = allocateByWeight(payrollEntry.regularHours ?? 0, rawRegularHours.some((h) => h > 0) ? rawRegularHours : workedHourWeights)
     const overtimeHoursByDay = allocateByWeight(payrollEntry.overtimeHours ?? 0, rawOvertimeHours.some((h) => h > 0) ? rawOvertimeHours : workedHourWeights)
@@ -314,7 +327,8 @@ export async function GET(
 
       return {
         date: row.date,
-        workedHours: row.workedHours,
+        scheduledHours: row.scheduledHours,
+        payableHours: row.payableHours,
         totalBreakHours: row.breakHours,
         totalShifts: row.shiftCount,
         regularHours: regularHoursByDay[index],
@@ -323,8 +337,10 @@ export async function GET(
         shiftTypeLabel: Array.from(row.shiftTypes).join(', '),
         payCalculationRules,
         payCalculationLabel: Array.from(row.payCalculationLabels).join(' | '),
-        effectiveRate: row.workedHours > 0 ? row.rawEarned / row.workedHours : baseSalaryRate,
-        effectiveRateLabel: (row.workedHours > 0 ? row.rawEarned / row.workedHours : baseSalaryRate).toFixed(2),
+        baseRate: row.payableHours > 0 ? row.rawBaseEarned / row.payableHours : baseSalaryRate,
+        effectiveRate: row.payableHours > 0 ? row.rawEarned / row.payableHours : baseSalaryRate,
+        effectiveRateLabel: (row.payableHours > 0 ? row.rawEarned / row.payableHours : baseSalaryRate).toFixed(2),
+        shiftPremiumRate: row.payableHours > 0 ? (row.rawEarned - row.rawBaseEarned) / row.payableHours : 0,
         earned: grossByDay[index],
         bonus: bonusByDay[index],
         deduction: deductionByDay[index],
@@ -333,10 +349,16 @@ export async function GET(
     })
 
     const breakdownTotals = {
-      workedHours: dailyBreakdown.reduce((sum, row) => sum + row.workedHours, 0),
+      scheduledHours: dailyBreakdown.reduce((sum, row) => sum + row.scheduledHours, 0),
+      workedHours: dailyBreakdown.reduce((sum, row) => sum + row.payableHours, 0),
       breakHours: dailyBreakdown.reduce((sum, row) => sum + row.totalBreakHours, 0),
       totalShifts: dailyBreakdown.reduce((sum, row) => sum + row.totalShifts, 0),
       basicSalaryRate: baseSalaryRate,
+      averageEffectiveRate:
+        dailyBreakdown.reduce((sum, row) => sum + row.payableHours, 0) > 0
+          ? dailyBreakdown.reduce((sum, row) => sum + row.earned, 0) /
+            dailyBreakdown.reduce((sum, row) => sum + row.payableHours, 0)
+          : baseSalaryRate,
       regularHours: dailyBreakdown.reduce((sum, row) => sum + row.regularHours, 0),
       overtimeHours: dailyBreakdown.reduce((sum, row) => sum + row.overtimeHours, 0),
       earned: dailyBreakdown.reduce((sum, row) => sum + row.earned, 0),

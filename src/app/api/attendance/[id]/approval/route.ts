@@ -27,6 +27,7 @@ export async function PATCH(
       where: { id: attendanceId },
       include: {
         employee: true,
+        shift: true,
       },
     })
 
@@ -63,6 +64,22 @@ export async function PATCH(
         shift: true,
       },
     })
+
+    if (updatedAttendance.shiftId) {
+      const approvalActionTime = new Date()
+      await prisma.shift.update({
+        where: { id: updatedAttendance.shiftId },
+        data: {
+          approved,
+          approvedAt: approved ? new Date() : null,
+          approvedBy: approved ? user.id : null,
+          ...(approved ? {} : {
+            status: 'COMPLETED',
+            endTime: attendance.shift?.endTime || approvalActionTime.toTimeString().substring(0, 5)
+          })
+        }
+      })
+    }
 
     return NextResponse.json(updatedAttendance)
   } catch (error) {

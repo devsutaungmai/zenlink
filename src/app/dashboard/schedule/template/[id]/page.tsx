@@ -28,10 +28,15 @@ interface TemplateShift {
   endTime: string | null
   employeeId?: string | null
   employeeGroupId?: string | null
+  shiftTypeId?: string | null
   functionId?: string | null
   departmentId?: string | null
   categoryId?: string | null
+  wage?: number | null
+  wageType?: 'HOURLY' | 'PER_SHIFT'
   note?: string | null
+  breakStart?: string | null
+  breakEnd?: string | null
   breakMinutes?: number
   breakPaid?: boolean
 }
@@ -51,6 +56,7 @@ interface Employee {
   firstName: string
   lastName: string
   employeeNo?: string | null
+  salaryRate?: number | null
   employeeGroupId?: string | null
   departmentId?: string | null
   departments?: Array<{
@@ -74,6 +80,9 @@ interface Employee {
 interface EmployeeGroup {
   id: string
   name: string
+  hourlyWage?: number | null
+  wagePerShift?: number | null
+  defaultWageType?: 'HOURLY' | 'PER_SHIFT' | null
 }
 
 interface FunctionItem {
@@ -391,10 +400,15 @@ export default function TemplateEditorPage() {
       endTime: shift.endTime,
       employeeId: shift.employeeId,
       employeeGroupId: shift.employeeGroupId,
+      shiftTypeId: shift.shiftTypeId,
       functionId: shift.functionId,
       departmentId: shift.departmentId,
       categoryId: shift.categoryId,
+      wage: shift.wage,
+      wageType: shift.wageType,
       note: shift.note,
+      breakStart: shift.breakStart,
+      breakEnd: shift.breakEnd,
       breakMinutes: shift.breakMinutes,
       breakPaid: shift.breakPaid
     })
@@ -536,7 +550,12 @@ export default function TemplateEditorPage() {
           functionId: target.functionId !== undefined ? target.functionId : sourceShift.functionId,
           departmentId: sourceShift.departmentId,
           categoryId: sourceShift.categoryId,
+          shiftTypeId: sourceShift.shiftTypeId,
+          wage: sourceShift.wage,
+          wageType: sourceShift.wageType,
           note: sourceShift.note,
+          breakStart: sourceShift.breakStart,
+          breakEnd: sourceShift.breakEnd,
           breakMinutes: sourceShift.breakMinutes,
           breakPaid: sourceShift.breakPaid,
         })

@@ -67,6 +67,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       }, { status: 400 })
     }
 
+    if (!isAdmin && finalPunchOutTime && attendance.shift?.breakStart && !attendance.shift?.breakEnd) {
+      return NextResponse.json({
+        error: 'Please end the break before punching out'
+      }, { status: 400 })
+    }
+
     // Update attendance record
     const updatedAttendance = await prisma.attendance.update({
       where: { id },
@@ -85,9 +91,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     // If there's a shift and we're punching out, update its status to COMPLETED
     if (updateData.punchOutTime && attendance.shiftId) {
+      const punchOutValue = new Date(updateData.punchOutTime)
       await prisma.shift.update({
         where: { id: attendance.shiftId },
-        data: { status: 'COMPLETED' }
+        data: {
+          status: 'COMPLETED',
+          endTime: attendance.shift?.endTime || punchOutValue.toTimeString().substring(0, 5)
+        }
       })
     }
 

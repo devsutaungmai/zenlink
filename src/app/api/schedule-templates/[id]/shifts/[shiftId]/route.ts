@@ -8,6 +8,22 @@ interface RouteParams {
   params: Promise<{ id: string; shiftId: string }>
 }
 
+function calculateBreakMinutes(breakStart?: string | null, breakEnd?: string | null): number | null {
+  if (!breakStart || !breakEnd) return null
+
+  const [startHours, startMinutes] = breakStart.split(':').map(Number)
+  const [endHours, endMinutes] = breakEnd.split(':').map(Number)
+
+  const startTotalMinutes = startHours * 60 + startMinutes
+  let endTotalMinutes = endHours * 60 + endMinutes
+
+  if (endTotalMinutes <= startTotalMinutes) {
+    endTotalMinutes += 24 * 60
+  }
+
+  return endTotalMinutes - startTotalMinutes
+}
+
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
     const auth = await getCurrentUserOrEmployee()
@@ -28,7 +44,24 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     const { id: templateId, shiftId } = await params
     const body = await request.json()
-    const { dayIndex, startTime, endTime, employeeId, employeeGroupId, functionId, departmentId, categoryId, note, breakMinutes, breakPaid } = body
+    const {
+      dayIndex,
+      startTime,
+      endTime,
+      employeeId,
+      employeeGroupId,
+      shiftTypeId,
+      functionId,
+      departmentId,
+      categoryId,
+      wage,
+      wageType,
+      note,
+      breakStart,
+      breakEnd,
+      breakMinutes,
+      breakPaid
+    } = body
 
     const template = await prisma.scheduleTemplate.findFirst({
       where: {
@@ -60,11 +93,21 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         ...(endTime !== undefined && { endTime: endTime || null }),
         ...(employeeId !== undefined && { employeeId: employeeId || null }),
         ...(employeeGroupId !== undefined && { employeeGroupId: employeeGroupId || null }),
+        ...(shiftTypeId !== undefined && { shiftTypeId: shiftTypeId || null }),
         ...(functionId !== undefined && { functionId: functionId || null }),
         ...(departmentId !== undefined && { departmentId: departmentId || null }),
         ...(categoryId !== undefined && { categoryId: categoryId || null }),
+        ...(wage !== undefined && { wage: Number(wage) }),
+        ...(wageType !== undefined && { wageType }),
         ...(note !== undefined && { note: note || null }),
-        ...(breakMinutes !== undefined && { breakMinutes: breakMinutes || null }),
+        ...(breakStart !== undefined && { breakStart: breakStart || null }),
+        ...(breakEnd !== undefined && { breakEnd: breakEnd || null }),
+        ...((breakStart !== undefined || breakEnd !== undefined || breakMinutes !== undefined) && {
+          breakMinutes: breakMinutes ?? calculateBreakMinutes(
+            breakStart !== undefined ? breakStart : existingShift.breakStart,
+            breakEnd !== undefined ? breakEnd : existingShift.breakEnd
+          )
+        }),
         ...(breakPaid !== undefined && { breakPaid }),
         updatedAt: new Date()
       }

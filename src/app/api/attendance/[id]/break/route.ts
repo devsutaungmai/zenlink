@@ -57,8 +57,9 @@ export async function POST(
         wageType: 'HOURLY',
         approved: false,
         breakStart: now,
+        breakPaid: false,
         status: 'WORKING',
-        note: 'Auto-created for break tracking in unscheduled work'
+        note: 'Auto-created for unpaid break tracking in unscheduled work'
       },
       include: {
         employee: {
@@ -86,7 +87,7 @@ export async function POST(
     })
 
     return NextResponse.json({ 
-      message: 'Break started for unscheduled work',
+      message: 'Unpaid break started for unscheduled work',
       shift: autoShift,
       attendance: updatedAttendance
     })

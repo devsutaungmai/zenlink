@@ -29,6 +29,20 @@ function getWeekStartDateString(dateStr: string): string {
   return formatDateString(date)
 }
 
+function convertTimeToDateTime(timeStr: string | null | undefined, baseDate: string, compareToTime?: string): Date | null {
+  if (!timeStr) return null
+
+  const [hours, minutes] = timeStr.split(':').map(Number)
+  const date = new Date(baseDate)
+  date.setHours(hours, minutes, 0, 0)
+
+  if (compareToTime && timeStr < compareToTime) {
+    date.setDate(date.getDate() + 1)
+  }
+
+  return date
+}
+
 interface RouteParams {
   params: Promise<{ id: string }>
 }
@@ -139,15 +153,24 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         })
 
         if (existingShift) {
+          const breakStart = convertTimeToDateTime(templateShift.breakStart, shiftDateStr, templateShift.startTime)
+          const breakEnd = convertTimeToDateTime(templateShift.breakEnd, shiftDateStr, templateShift.breakStart || templateShift.startTime)
+
           const updated = await prisma.shift.update({
             where: { id: existingShift.id },
             data: {
               startTime: templateShift.startTime,
               endTime: templateShift.endTime || templateShift.startTime,
               employeeGroupId: templateShift.employeeGroupId,
+              shiftTypeId: templateShift.shiftTypeId,
+              shiftType: templateShift.shiftTypeId ? 'CUSTOM' : 'NORMAL',
               functionId: templateShift.functionId,
               departmentId: templateShift.departmentId,
+              wage: templateShift.wage ?? 0,
+              wageType: templateShift.wageType || 'HOURLY',
               note: templateShift.note,
+              breakStart,
+              breakEnd,
               breakPaid: templateShift.breakPaid || false
             }
           })
@@ -159,6 +182,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       const isOpenShift = !templateShift.employeeId
 
       try {
+        const breakStart = convertTimeToDateTime(templateShift.breakStart, shiftDateStr, templateShift.startTime)
+        const breakEnd = convertTimeToDateTime(templateShift.breakEnd, shiftDateStr, templateShift.breakStart || templateShift.startTime)
+
         const newShift = await prisma.shift.create({
           data: {
             date: shiftDateUTC,
@@ -166,14 +192,17 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
             endTime: templateShift.endTime || templateShift.startTime,
             employeeId: templateShift.employeeId || undefined,
             employeeGroupId: templateShift.employeeGroupId,
+            shiftTypeId: templateShift.shiftTypeId,
             functionId: templateShift.functionId,
             departmentId: templateShift.departmentId,
             note: templateShift.note,
+            breakStart,
+            breakEnd,
             breakPaid: templateShift.breakPaid || false,
-            shiftType: 'NORMAL',
+            shiftType: templateShift.shiftTypeId ? 'CUSTOM' : 'NORMAL',
             status: isOpenShift ? 'OPEN' : 'SCHEDULED',
-            wage: 0,
-            wageType: 'HOURLY',
+            wage: templateShift.wage ?? 0,
+            wageType: templateShift.wageType || 'HOURLY',
             approved: false
           }
         })

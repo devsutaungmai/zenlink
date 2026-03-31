@@ -173,7 +173,7 @@
     "last_updated": "Zuletzt Aktualisiert",
     "entry_id": "Eintrags-ID",
     "work_summary": "Arbeitsübersicht",
-    "total_work_hours": "Gesamte Arbeitsstunden",
+    "total_work_hours": "Gesamte bezahlte Stunden",
     "salary_amount": "Lohnbetrag",
     "total_shifts": "Gesamte Schichten",
     "basic_salary_rate": "Grundlohnsatz",
@@ -189,9 +189,9 @@
     "normal_shift": "Normale Schicht",
     "pay_calculation": {
       "hourly_wage": "Lohnberechnung: Stundenlohn",
-      "hourly_plus_fixed": "Lohnberechnung: Stundenlohn + Festbetrag (${{amount}})",
-      "fixed_amount": "Lohnberechnung: Festbetrag (${{amount}})",
-      "percentage": "Lohnberechnung: Stundenlohn + {{percentage}}%",
+      "hourly_plus_fixed": "Lohnberechnung: Stundenlohn + ${{amount}}/Std.",
+      "fixed_amount": "Lohnberechnung: Fester Stundensatz (${{amount}}/Std.)",
+      "percentage": "Lohnberechnung: Stundenlohn x {{percentage}}%",
       "unpaid": "Lohnberechnung: Unbezahlt"
     },
     "back_button": "Zurück zu Lohneinträgen",
@@ -201,7 +201,18 @@
     "payslip_downloaded": "Lohnzettel erfolgreich heruntergeladen",
     "payslip_failed": "Lohnzettel konnte nicht heruntergeladen werden",
     "status_updated": "Status erfolgreich aktualisiert",
-    "status_update_failed": "Status konnte nicht aktualisiert werden"
+    "status_update_failed": "Status konnte nicht aktualisiert werden",
+    "hours_summary_line": "Geplant {{scheduled}} Std. - unbezahlte Pause {{break}} Std.",
+    "effective_rate_summary": "Durchschn. effektiver Satz: ${{amount}}/Std.",
+    "rate_summary_line": {
+      "base": "Grundsatz ${{amount}}/Std.",
+      "hourly_plus_fixed": "Basis ${{base}} + ${{amount}}/Std. = ${{effective}}/Std.",
+      "fixed_amount": "Fester Satz ${{amount}}/Std.",
+      "percentage": "Basis ${{base}} x {{percentage}}% = ${{effective}}/Std.",
+      "unpaid": "Unbezahlte Schicht = $0/Std.",
+      "mixed": "Grundsatz ${{base}}/Std., effektiv ${{effective}}/Std."
+    },
+    "earned_summary_line": "{{hours}} Std. x ${{rate}}/Std."
   },
   "edit_page": {
     "title": "Lohneintrag Bearbeiten",

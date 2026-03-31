@@ -1,4 +1,5 @@
 import { prisma } from '@/shared/lib/prisma'
+import { formatTimeFromDateTime } from '@/shared/lib/timeFormatting'
 import { 
   LaborLawValidator, 
   ValidationResult as LaborLawValidationResult,
@@ -191,8 +192,8 @@ export async function getEmployeeShiftsForValidation(
     date: s.date,
     startTime: s.startTime,
     endTime: s.endTime || '',
-    breakStart: s.breakStart?.toISOString().split('T')[1]?.substring(0, 5) || null,
-    breakEnd: s.breakEnd?.toISOString().split('T')[1]?.substring(0, 5) || null,
+    breakStart: formatTimeFromDateTime(s.breakStart),
+    breakEnd: formatTimeFromDateTime(s.breakEnd),
     employeeId: s.employeeId || '',
   }))
 }
@@ -278,8 +279,8 @@ export async function getBatchEmployeeShiftsForValidation(
       date: s.date,
       startTime: s.startTime,
       endTime: s.endTime || '',
-      breakStart: s.breakStart?.toISOString().split('T')[1]?.substring(0, 5) || null,
-      breakEnd: s.breakEnd?.toISOString().split('T')[1]?.substring(0, 5) || null,
+      breakStart: formatTimeFromDateTime(s.breakStart),
+      breakEnd: formatTimeFromDateTime(s.breakEnd),
       employeeId: employeeId,
     })
   })
