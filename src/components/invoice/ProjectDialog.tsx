@@ -10,6 +10,7 @@ export interface ProjectFormType {
   name: string;
   projectNumber: string;
   defaultProjectNumber?: string
+  customerId: string;
   startDate?: string;
   endDate?: string;
 }
@@ -24,6 +25,7 @@ interface ProjectDialogProps {
 const emptyProject: ProjectFormType = {
   name: "",
   projectNumber: "",
+  customerId: "",
   startDate: undefined,
   endDate: undefined,
 };

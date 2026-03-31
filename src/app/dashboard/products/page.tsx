@@ -297,15 +297,34 @@ export default function ProductsPage() {
 
   // Render cell content based on column key
   const renderCell = (product: Product, columnKey: string) => {
+    const isDefaultLedgerAccount = product.ledgerAccount.businessId == null ? "true" : "false";
     switch (columnKey) {
       case "productNumber":
-        return <div className="text-sm font-medium text-gray-900 truncate">{formatProductNumberForDisplay(product.productNumber)}</div>
+        return <div className="text-sm font-medium text-blue-600 hover:underline cursor-pointer truncate">
+          <Link
+            href={`/dashboard/products/${product.id}/edit`}
+
+            title="Edit Product"
+          >
+            {formatProductNumberForDisplay(product.productNumber)}
+          </Link>
+        </div>
       case "productName":
-        return <div className="text-sm text-gray-900 truncate">{product.productName}</div>
+        return <div className="text-sm text-blue-600 hover:underline cursor-pointer truncate">
+          <Link
+            href={`/dashboard/products/${product.id}/edit`}
+
+            title="Edit Product"
+          >
+            {product.productName}
+          </Link>
+        </div>
       case "ledgerAccount":
         return (
           <div className="text-sm text-blue-600 hover:underline truncate cursor-pointer">
+             <Link href={`/dashboard/ledger-accounts/${product.ledgerAccount.id}/edit?default=${isDefaultLedgerAccount}`} className="hover:underline">
             {product.ledgerAccount.name} ({product.ledgerAccount.accountNumber})
+            </Link>
           </div>
         )
       case "salesPrice":
@@ -513,12 +532,23 @@ export default function ProductsPage() {
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2">
                         <Link
-                            href={`/dashboard/products/${product.id}/edit`}
-                            className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
-                            title="Edit Product"
-                          >
-                            <PencilIcon className="h-4 w-4" />
-                          </Link>
+                          href={`/dashboard/products/create?productId=${product.id}&copy=true`}
+                          className="px-1 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2 group relative"
+
+                        >
+                          <span className="text-base">📋</span>
+                          <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 text-xs text-white bg-gray-800 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                            Copy Product
+                          </span>
+
+                        </Link>
+                        <Link
+                          href={`/dashboard/products/${product.id}/edit`}
+                          className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
+                          title="Edit Product"
+                        >
+                          <PencilIcon className="h-4 w-4" />
+                        </Link>
                         <button
                           onClick={() => handleDelete(product.id, product.productName)}
                           className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
@@ -590,7 +620,13 @@ export default function ProductsPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="text-lg font-semibold text-gray-900 group-hover:text-[#31BCFF] transition-colors duration-200">
-                        {isColumnVisible("productName") && product.productName}
+                        <Link
+                          href={`/dashboard/products/${product.id}/edit`}
+
+                          title="Edit Product"
+                        >{isColumnVisible("productName") &&
+                          product.productName}
+                        </Link>
                       </h3>
                       <span
                         className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${product.active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
@@ -633,7 +669,13 @@ export default function ProductsPage() {
                       </div>
                       <div>
                         <p className="text-xs text-gray-500">Product Number</p>
-                        <p className="text-lg font-bold text-gray-900">{formatProductNumberForDisplay(product.productNumber)}</p>
+                        <Link
+                          href={`/dashboard/products/${product.id}/edit`}
+
+                          title="Edit Product"
+                        >
+                          <p className="text-lg font-bold text-gray-900">{formatProductNumberForDisplay(product.productNumber)}</p>
+                        </Link>
                       </div>
                     </div>
                   </div>

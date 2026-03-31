@@ -51,14 +51,14 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
     const { hasChanges, resetChanges, setInitialData } = useHasChanges(formData);
 
     useEffect(() => {
-        fetchProjectCategories()
+        // fetchProjectCategories()
         fetchCustomers()
         fetchProject()
     }, [resolvedParams.id])
 
     const { settings, refetch } = useProjectSettings();
     const [visibleFields, setVisibleFields] = useState({
-        showCategory: true,
+        // showCategory: true,
         showCustomer: true,
         showStartDate: true,
         showEndDate: true,
@@ -67,7 +67,7 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
     useEffect(() => {
         if (settings) {
             setVisibleFields({
-                showCategory: settings.showCategory,
+                // showCategory: settings.showCategory,
                 showCustomer: settings.showCustomer,
                 showStartDate: settings.showStartDate,
                 showEndDate: settings.showEndDate,
@@ -137,17 +137,17 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
         }
     }
 
-    const fetchProjectCategories = async () => {
-        try {
-            const res = await fetch('/api/project-categories')
-            if (res.ok) {
-                const data = await res.json()
-                setProjectCategories(data)
-            }
-        } catch (error) {
-            console.error('Error fetching project category:', error)
-        }
-    }
+    // const fetchProjectCategories = async () => {
+    //     try {
+    //         const res = await fetch('/api/project-categories')
+    //         if (res.ok) {
+    //             const data = await res.json()
+    //             setProjectCategories(data)
+    //         }
+    //     } catch (error) {
+    //         console.error('Error fetching project category:', error)
+    //     }
+    // }
 
     const fetchCustomers = async () => {
         try {
@@ -322,7 +322,7 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
 
                         {/* Category & Customer */}
 
-                        {settings.showCategory
+                        {/* {settings.showCategory
                             && <div className="grow basis-[calc(20%-12px)] min-w-[150px]">
                                 <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700 mb-2">
                                     Category
@@ -340,7 +340,7 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
                                         </option>
                                     ))}
                                 </select>
-                            </div>}
+                            </div>} */}
 
                         {settings.showCustomer
                             && <div className="grow basis-[calc(20%-12px)] min-w-[150px]">

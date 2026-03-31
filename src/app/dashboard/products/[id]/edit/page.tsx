@@ -14,6 +14,9 @@ import { productValidationSchema } from '@/components/invoice/validation'
 import { useHasChanges } from '@/hooks/useHasChanges'
 import { AlertTriangle } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { LedgerAccountOption, LedgerAccountSelectCombobox } from '@/components/invoice/LedgerAccountSelectCombobox'
+import { LedgerAccountFormType } from '@/components/invoice/LedgerAccountDialog'
+import { toast } from '@/shared/lib/toast'
 
 interface Unit {
     id: string
@@ -194,6 +197,24 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         validationTimeoutRef.current = setTimeout(() => {
             validateField(fieldName, value)
         }, 500)
+    }
+
+    const onSaveLedgerAccount = async (
+        account: LedgerAccountFormType
+    ): Promise<LedgerAccountOption> => {
+        const res = await fetch('/api/ledger/accounts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(account),
+        })
+        if (!res.ok) {
+            const error = await res.json()
+            throw new Error(error.error || 'Failed to create ledger account')
+        }
+        const created: LedgerAccount = await res.json()
+        setSalesLedgerAccounts(prev => [...prev, created])
+        await toast('success', 'Ledger account created successfully')
+        return created
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -458,28 +479,16 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                             <label htmlFor="ledgerAccountId" className="block text-sm font-medium text-gray-700 mb-2">
                                 Ledger Account
                             </label>
-                            <select
-                                id="ledgerAccountId"
-                                required
-                                value={formData.ledgerAccountId || ""}
-                                onChange={(e) => setFormData({ ...formData, ledgerAccountId: e.target.value })}
-                                className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
-                            >
-                                <option value="">--Select Sales Account--</option>
-                                {salesLedgerAccounts.map((sa) => {
-                                    const businessVat = sa.businessVatCodes?.[0]?.vatCode
-                                    return (
-                                        <option key={sa.id} value={sa.id}>
-                                            {sa.accountNumber} - {sa.name} -{" "}
-                                            {businessVat
-                                                ? `${businessVat.name} (${businessVat.rate}%)`
-                                                : sa.vatCode
-                                                    ? `${sa.vatCode.name} (${sa.vatCode.rate}%)`
-                                                    : "0%"}
-                                        </option>
-                                    )
-                                })}
-                            </select>
+                            <LedgerAccountSelectCombobox
+                                ledgerAccounts={salesLedgerAccounts}
+                                value={formData.ledgerAccountId}
+                                onChange={(id) => setFormData(prev => ({ ...prev, ledgerAccountId: id }))}
+                                onLedgerAccountCreated={(newAccount) => {
+                                    // state already updated inside onSaveLedgerAccount
+                                }}
+                                onSaveNewLedgerAccount={onSaveLedgerAccount}
+                                placeholder="Select Ledger Account"
+                            />
                         </div>
 
                         {/* Form Actions */}

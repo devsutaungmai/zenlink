@@ -66,7 +66,7 @@ export default function ProjectPage() {
     { key: "projectNumber", label: "Project Number" },
     { key: "name", label: "Project Name" },
     { key: "customer", label: "Customer" },
-    { key: "category", label: "Category" },
+    // { key: "category", label: "Category" },
     { key: "startDate", label: "Start Date" },
     { key: "endDate", label: "End Date" },
     { key: "active", label: "Status" },
@@ -79,7 +79,7 @@ export default function ProjectPage() {
       projectNumber: true,
       name: true,
       customer: true,
-      category: true,
+      // category: true,
       startDate: false,
       endDate: false,
       active: true,
@@ -90,7 +90,7 @@ export default function ProjectPage() {
     { key: "projectNumber", initialWidth: 120, minWidth: 80 },
     { key: "name", initialWidth: 220, minWidth: 120 },
     { key: "customer", initialWidth: 180, minWidth: 120 },
-    { key: "category", initialWidth: 140, minWidth: 100 },
+    // { key: "category", initialWidth: 140, minWidth: 100 },
     { key: "startDate", initialWidth: 150, minWidth: 100 },
     { key: "endDate", initialWidth: 150, minWidth: 100 },
     { key: "active", initialWidth: 100, minWidth: 70 },
@@ -279,12 +279,12 @@ export default function ProjectPage() {
           </span>
         )
 
-      case "category":
-        return (
-          <span className="text-sm text-gray-600">
-            {project.category?.name || "-"}
-          </span>
-        )
+      // case "category":
+      //   return (
+      //     <span className="text-sm text-gray-600">
+      //       {project.category?.name || "-"}
+      //     </span>
+      //   )
 
       case "startDate":
         return (
@@ -514,6 +514,17 @@ export default function ProjectPage() {
                       <td className="px-6 py-4 whitespace-nowrap text-right">
                         <div className="flex items-center justify-end gap-2">
                           <Link
+                            href={`/dashboard/projects/create?projectId=${project.id}&copy=true`}
+                            className="px-1 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2 group relative"
+
+                          >
+                            <span className="text-base">📋</span>
+                            <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 text-xs text-white bg-gray-800 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                              Copy Project
+                            </span>
+
+                          </Link>
+                          <Link
                             href={`/dashboard/projects/${project.id}/edit`}
                             className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
                             title="Edit Project"
@@ -610,6 +621,17 @@ export default function ProjectPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Link
+                      href={`/dashboard/projects/create?projectId=${project.id}&copy=true`}
+                      className="px-1 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2 group relative"
+
+                    >
+                      <span className="text-base">📋</span>
+                      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 text-xs text-white bg-gray-800 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                        Copy Project
+                      </span>
+
+                    </Link>
+                    <Link
                       href={`/dashboard/projects/${project.id}/edit`}
                       className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
                       title="Edit Project"
@@ -645,7 +667,7 @@ export default function ProjectPage() {
                       <span className="truncate">{project.customer.customerName}</span>
                     </div>
                   )}
-                  {isColumnVisible("category") && project.category?.name && (
+                  {/* {isColumnVisible("category") && project.category?.name && (
                     <div className="flex items-center text-gray-600">
                       <svg className="w-4 h-4 mr-2 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path
@@ -657,7 +679,7 @@ export default function ProjectPage() {
                       </svg>
                       <span className="truncate">{project.category.name}</span>
                     </div>
-                  )}
+                  )} */}
                   {isColumnVisible("startDate") && project.startDate && (
                     <div className="flex items-center text-gray-600">
                       <svg className="w-4 h-4 mr-2 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor">

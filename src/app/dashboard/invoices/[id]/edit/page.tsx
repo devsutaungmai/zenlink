@@ -18,6 +18,10 @@ import { useHasChanges } from '@/hooks/useHasChanges'
 import { AlertTriangle } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { toast } from '@/shared/lib/toast'
+import { ProductFormType } from '@/components/invoice/ProductDialog'
+import { ProductOption, ProductSelectCombobox } from '@/components/invoice/ProductSelectCombobox'
+import { ProjectFormType } from '@/components/invoice/ProjectDialog'
+import { ProjectMultiSelectCombobox } from '@/components/invoice/ProjectMultiSelectCombobox'
 
 interface Customer {
     id: string
@@ -69,7 +73,7 @@ export default function EditInvoicePage({
         sentAt: new Date().toISOString().split('T')[0],
         dueDay: 14,
         paidAt: '',
-        projectId: '',
+        projectId:'',
         departmentId: '',
         seller: '',
         invoiceLines: [],
@@ -90,6 +94,8 @@ export default function EditInvoicePage({
         customerId: string
         amount: number
     } | null>(null)
+    const [loadingProject, setLoadingProject] = useState<boolean>(false)
+    const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
 
     // ── Dialog state ──────────────────────────────────────────────────────────
     const [showSendDialog, setShowSendDialog] = useState(false)
@@ -296,6 +302,22 @@ export default function EditInvoicePage({
         }))
     }
 
+    const onSaveProduct = async (product: ProductFormType): Promise<ProductOption> => {
+        const res = await fetch('/api/products', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(product),
+        })
+        if (!res.ok) {
+            const error = await res.json()
+            throw new Error(error.error || 'Failed to create product')
+        }
+        const created: Product = await res.json()
+        setProducts((prev) => [...prev, created])
+        await toast('success', 'Product created successfully')
+        return created
+    }
+
     const updateInvoiceLine = (index: number, updates: Partial<InvoiceLine>) => {
         setFormData(prev => ({
             ...prev,
@@ -326,6 +348,143 @@ export default function EditInvoicePage({
         }
 
         await handleSubmit(resolvedAction, { sentAt: result.sentAt, dueDay: result.dueDay, paidAt: result.paidAt })
+    }
+
+    const handleProjectChange = (selectedProjectIds: string[]) => {
+            setFormData(prev => ({
+                ...prev,
+                projectId: selectedProjectIds[0] ?? ""
+            }))
+        }
+    
+        const handleProjectCreated = (newProject: Project) => {
+            setProjects(prev => [...prev, newProject])
+            setFormData(prev => ({
+                ...prev,
+                projectIds: newProject.id
+            }))
+        }
+    
+        const onSaveProject = async (project: ProjectFormType): Promise<Project> => {
+            try {
+                const res = await fetch('/api/projects', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({...project,customerId: formData.customerId || null}),
+                })
+                if (!res.ok) {
+                    const error = await res.json()
+                    throw new Error(error.error || 'Failed to create project')
+                }
+                const createdProject = await res.json()
+                setProjects(prev => [...prev, createdProject])
+                setFormData(prev => ({
+                    ...prev,
+                    projectIds: createdProject.id
+                }))
+                await Swal.fire({
+                    text: 'Project created successfully',
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true,
+                    icon: 'success',
+                    customClass: {
+                        popup: 'swal-toast-wide'
+                    }
+                })
+    
+                return createdProject
+            } catch (error) {
+                await Swal.fire({
+                    text: error instanceof Error ? error.message : 'An error occurred',
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true,
+                    icon: 'error',
+                    customClass: {
+                        popup: 'swal-toast-wide'
+                    }
+                })
+    
+                throw error
+            } finally {
+                setLoadingProject(false)
+            }
+        }
+
+    const handleCustomerChange = (customerId: string) => {
+        setFormData({ ...formData, customerId })
+        fetchCustomerDetails(customerId)
+    }
+
+     const fetchCustomerDetails = async (customerId: string) => {
+        if (!customerId) return
+
+        setFetchingCustomer(true)
+        try {
+            const res = await fetch(`/api/customers/${customerId}`)
+            if (res.ok) {
+                const data = await res.json()
+                console.log("Customer Details ===> ", JSON.stringify(data?.InvoicePaymentTerms))
+                // Calculate default due days from payment terms
+                let defaultDueDay = 14 // Default fallback
+                if (data.InvoicePaymentTerms) {
+                    const { invoiceDueDateValue, invoiceDueDateUnit } = data.InvoicePaymentTerms
+                    if (invoiceDueDateUnit === 'DAYS') {
+                        defaultDueDay = invoiceDueDateValue
+                    } else if (invoiceDueDateUnit === 'MONTHS') {
+                        defaultDueDay = invoiceDueDateValue * 30 // Convert months to days
+                    }
+                }
+                // Update form data with customer information
+                setFormData(prev => ({
+                    ...prev,
+                    customerId: customerId,
+                    contactName: data.contactPersons?.[0]?.name || '',
+                    deliveryAddress: data.deliveryAddress || data.address || '',
+                    departmentId: data.departmentId || '',
+                    discountPercentage: data.discountPercentage || prev.invoiceLines[0].discountPercentage,
+                    seller: data.business?.name,
+                    dueDay: defaultDueDay
+                }))
+
+                // Update projects list if customer has projects
+                if (data.projects && data.projects.length > 0) {
+                    setProjects(data.projects)
+                    setFormData(prev => ({
+                        ...prev,
+                        projectId: data.projects?.[0].id
+                    }))
+                } else {
+                    setProjects([]);
+                }
+
+                // Update departments list if customer has department
+                if (data.department) {
+                    setDepartments([data.department])
+                }
+
+                if (Array.isArray(data.contactPersons) && data.contactPersons.length > 0) {
+                    setContacts(data.contactPersons)
+                    setFormData(prev => ({
+                        ...prev,
+                        contactPersonId: data.contactPersons[0]?.id ?? prev.contactPersonId ?? ''
+                    }))
+                } else if (data.contactPersons) {
+                    // Ensure contacts is cleared if contactPersons exists but has no items
+                    setContacts([])
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching customer details:', error)
+            await toast('error', 'Failed to fetch customer details')
+        } finally {
+            setFetchingCustomer(false)
+        }
     }
 
     // ─── Submit ───────────────────────────────────────────────────────────────
@@ -510,8 +669,28 @@ export default function EditInvoicePage({
                         <div className="flex flex-wrap gap-6 mb-6">
                             <div className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] min-w-[250px]">
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Customer *</label>
-                                <CustomerCombobox customers={customers} value={formData.customerId || ''} onChange={(customerId) => setFormData({ ...formData, customerId })} placeholder="Select Customer" disabled={isCreditNote} />
-                                {/* <p className="text-xs mt-2 text-blue-400">Customer is already assigned</p> */}
+                                <CustomerCombobox
+                                    customers={customers}
+                                    value={formData.customerId || ""}
+                                    onChange={handleCustomerChange}
+                                    placeholder="Select Customer"
+                                    disabled={isCreditNote}
+                                    onSaveNewCustomer={async (customer) => {          
+                                        const res = await fetch('/api/customers', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify(customer),
+                                        })
+                                        if (!res.ok) {
+                                            const error = await res.json()
+                                            throw new Error(error.error || 'Failed to create customer')
+                                        }
+                                        const created = await res.json()
+                                        setCustomers(prev => [...prev, created])
+                                        await toast('success', 'Customer created successfully')
+                                        return created
+                                    }}
+                                />
                             </div>
 
                             {settings.showContactPerson && (
@@ -537,7 +716,7 @@ export default function EditInvoicePage({
                                 </>
                             )} */}
 
-                            {settings.showProject && (
+                            {/* {settings.showProject && (
                                 <div className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] min-w-[250px]">
                                     <label className="block text-sm font-medium text-gray-700 mb-2">Project</label>
                                     <select value={formData.projectId || ''} onChange={(e) => setFormData({ ...formData, projectId: e.target.value })} disabled={isCreditNote} className={`block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 ${isCreditNote ? 'opacity-60 cursor-not-allowed' : ''}`}>
@@ -545,7 +724,7 @@ export default function EditInvoicePage({
                                         {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                                     </select>
                                 </div>
-                            )}
+                            )} */}
 
                             {settings.showDepartment && (
                                 <div className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] min-w-[250px]">
@@ -566,6 +745,32 @@ export default function EditInvoicePage({
                         </div>
                     </div>
 
+                     {visibleFields.showProject && 
+                        <div className="bg-gradient-to-br rounded-xl border p-6">
+                        <h2 className="text-lg font-semibold text-gray-900 mb-4">Project Information</h2>
+
+                        <div className="grid grid-cols-1 md:grid-cols-1 gap-6 mb-6">
+
+                            <div>
+                                <label htmlFor="seller" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Project *
+                                </label>
+                                 <ProjectMultiSelectCombobox
+                                        projects={projects}
+                                        value={formData.projectId ? [formData.projectId] : []}
+                                        onChange={handleProjectChange}
+                                        onProjectCreated={handleProjectCreated}
+                                        onSaveNewProject={onSaveProject}
+                                        placeholder="Select Projects"
+                                        singleSelect
+                                    />
+                                    {validationErrors.projectIds && (
+                                        <p className="mt-1 text-sm text-red-600">{validationErrors.projectIds}</p>
+                                    )}
+                            </div>
+                        </div>
+                    </div>}
+
                     {/* Seller */}
                     {/* {settings.showSeller && (
                         <div className="bg-gradient-to-br rounded-xl border p-6">
@@ -583,11 +788,11 @@ export default function EditInvoicePage({
                             <h2 className="text-lg font-semibold text-gray-900">Order Lines</h2>
                             {!isCreditNote && (
                                 <button
-                                type="button"
-                                onClick={handleNewOrderLine}
-                                disabled={loading}
-                                className="px-4 py-2 rounded-lg bg-[#31BCFF] text-white hover:bg-[#0ea5e9] transition-colors"
-                            >New Order Line</button>
+                                    type="button"
+                                    onClick={handleNewOrderLine}
+                                    disabled={loading}
+                                    className="px-4 py-2 rounded-lg bg-[#31BCFF] text-white hover:bg-[#0ea5e9] transition-colors"
+                                >New Order Line</button>
                             )}
                         </div>
                         {formData.invoiceLines.map((line, index) => {
@@ -599,55 +804,118 @@ export default function EditInvoicePage({
                             const sign = (isCreditNote && !!line.id) ? -1 : (qty < 0 ? -1 : 1)
                             const totalExclVAT = rawTotal * sign
                             return (!line.isCredited && (
-                                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-10" key={index}>
-                                    <div>
+                                <div className="grid grid-cols-12 gap-8 items-end mb-4" key={index}>
+
+                                    <div className="col-span-12 md:col-span-3">
                                         <label className="block text-sm font-medium text-gray-700 mb-2">Product *</label>
-                                        <select required value={line.productId || ''} disabled={isCreditNote} onChange={(e) => {
-                                            const product = products.find(p => p.id === e.target.value)
-                                            const businessVat = product?.ledgerAccount?.businessVatCodes?.[0]?.vatCode
-                                            const vatRate = businessVat?.rate ?? product?.ledgerAccount?.vatCode?.rate ?? 0
-                                            const basePrice = product?.salesPrice ?? 0
-                                            updateInvoiceLine(index, {
-                                                productId: e.target.value,
-                                                pricePerUnit: isCreditNote && line.id ? -Math.abs(basePrice) : basePrice,
-                                                vatPercentage: Number(vatRate),
-                                                productName: product?.productName,
-                                            })
-                                        }} className={`block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 ${isCreditNote ? 'opacity-60 cursor-not-allowed' : ''}`}>
-                                            <option value="">Select Product</option>
-                                            {products.map(pr => <option key={pr.id} value={pr.id}>{pr.productName}</option>)}
-                                        </select>
+                                        <ProductSelectCombobox
+                                            products={products}
+                                            value={line.productId || ""}
+                                            onChange={(productId) => {
+                                                const product = products.find(p => p.id === productId)
+                                                const businessVat = product?.ledgerAccount?.businessVatCodes?.[0]?.vatCode
+                                                const vatRate = businessVat?.rate ?? product?.ledgerAccount?.vatCode?.rate ?? 0
+                                                const basePrice = product?.salesPrice ?? 0
+                                                updateInvoiceLine(index, {
+                                                    productId,
+                                                    pricePerUnit: isCreditNote && line.id ? -Math.abs(basePrice) : basePrice,
+                                                    vatPercentage: Number(vatRate),
+                                                    productName: product?.productName,
+                                                })
+                                            }}
+                                            onSaveNewProduct={onSaveProduct}
+                                            placeholder="Select Product"
+                                            disabled={isCreditNote}
+                                            overviewMode={isCreditNote}
+                                        />
                                     </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Quantity *</label>
-                                        <input type="number" required value={line.quantity || ''} disabled={isCreditNote} onChange={(e) => updateInvoiceLine(index, { quantity: parseFloat(e.target.value) })} className={`block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 ${isCreditNote ? 'opacity-60 cursor-not-allowed' : ''}`} placeholder="Enter quantity" />
+
+                                    <div className="col-span-6 md:col-span-1">
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Qty *</label>
+                                        <input
+                                            type="number"
+                                            required
+                                            value={line.quantity || ""}
+                                            onChange={(e) => updateInvoiceLine(index, { quantity: parseFloat(e.target.value) })}
+                                            disabled={isCreditNote}
+                                            className="block w-full px-3 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                            placeholder="Qty"
+                                        />
                                     </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Price Per Unit *</label>
-                                        <input type="number" required step="0.01" value={line.pricePerUnit || 0.0} disabled={isCreditNote} onChange={(e) => updateInvoiceLine(index, { pricePerUnit: parseFloat(e.target.value) })} className={`block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 ${isCreditNote ? 'opacity-60 cursor-not-allowed' : ''}`} placeholder="Enter price per unit" />
+
+                                    <div className="col-span-6 md:col-span-2">
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Price / Unit *</label>
+                                        <input
+                                            type="number"
+                                            required
+                                            step="0.01"
+                                            value={line.pricePerUnit || 0.0}
+                                            onChange={(e) => updateInvoiceLine(index, { pricePerUnit: parseFloat(e.target.value) })}
+                                            disabled={isCreditNote}
+                                            className="block w-full px-3 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                            placeholder="Price"
+                                        />
                                     </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Vat Percent *</label>
-                                        <input type="number" readOnly step="0.01" value={line.vatPercentage || 0} className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 opacity-60 cursor-not-allowed" />
+
+                                    <div className="col-span-6 md:col-span-1">
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">VAT %</label>
+                                        <input
+                                            type="number"
+                                            required
+                                            step="0.01"
+                                            value={line.vatPercentage || 0.0}
+                                            disabled
+                                            className="block w-full px-3 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                                        />
                                     </div>
-                                    {settings.showDiscount && (
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">Discount(%) *</label>
-                                            <input type="number" step="0.01" min="0" max="100" value={line.discountPercentage || ''} disabled={isCreditNote} onChange={(e) => updateInvoiceLine(index, { discountPercentage: parseFloat(e.target.value) })} className={`block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 ${isCreditNote ? 'opacity-60 cursor-not-allowed' : ''}`} placeholder="Enter discount percentage" />
+
+                                    {(settings.showDiscount || line.discountPercentage > 0) && (
+                                        <div className="col-span-6 md:col-span-1">
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">Disc %</label>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                min="0"
+                                                max="100"
+                                                value={line.discountPercentage || ""}
+                                                onChange={(e) => updateInvoiceLine(index, { discountPercentage: parseFloat(e.target.value) })}
+                                                disabled={isCreditNote}
+                                                className="block w-full px-3 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
+                                                placeholder="0"
+                                            />
                                         </div>
                                     )}
-                                    <div>
+
+                                    <div className={`col-span-6 ${isCreditNote
+                                            ? (settings.showDiscount || line.discountPercentage > 0 ? 'md:col-span-2' : 'md:col-span-5')
+                                            : (settings.showDiscount || line.discountPercentage > 0 ? 'md:col-span-2' : 'md:col-span-3')
+                                        }`}>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">Net Total</label>
-                                        <input type="number" step="0.01" value={(totalExclVAT || 0).toFixed(2)} disabled className="block w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed" />
+                                        <input
+                                            type="number"
+                                            required
+                                            step="0.01"
+                                            value={(totalExclVAT || 0).toFixed(2)}
+                                            disabled
+                                            className="block w-full px-3 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                                        />
                                     </div>
-                                    <div className="items-end flex space-x-4 mb-3">
-                                        <button type="button" onClick={() => deleteInvoiceLine(index)} disabled={isCreditNote} className={isCreditNote ? 'opacity-60 cursor-not-allowed' : ''}>
-                                            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                        </button>
-                                        <button type="button" onClick={() => handleCopyOrderLine(line, Number(totalExclVAT || 0))} disabled={isCreditNote} className={isCreditNote ? 'opacity-60 cursor-not-allowed' : ''}>
-                                            <svg className="w-8 h-8 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2h-6a2 2 0 01-2-2V7z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H7a2 2 0 00-2 2v7a2 2 0 002 2h7a2 2 0 002-2v-1" /></svg>
-                                        </button>
-                                    </div>
+
+                                    {!isCreditNote && (
+                                        <div className="col-span-12 md:col-span-2 flex items-end space-x-3 pb-3">
+                                            <button type='button' onClick={() => deleteInvoiceLine(index)}>
+                                                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </button>
+                                            <button type='button' onClick={() => handleCopyOrderLine(line, Number(totalExclVAT || 0))}>
+                                                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2h-6a2 2 0 01-2-2V7z" />
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H7a2 2 0 00-2 2v7a2 2 0 002 2h7a2 2 0 002-2v-1" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             ))
                         })}

@@ -6,7 +6,7 @@ interface InvoiceSettings {
   showDeliveryAddress: boolean
   showPaymentTerms: boolean
   showDepartment: boolean
-  showSeller: boolean
+  // showSeller: boolean
   showDiscount: boolean
   showProject: boolean
   showNote:boolean
@@ -18,7 +18,7 @@ export function useInvoiceSettings() {
     showDeliveryAddress: true,
     showPaymentTerms: true,
     showDepartment: true,
-    showSeller: true,
+    // showSeller: true,
     showDiscount: true,
     showProject: true,
     showNote: true
@@ -48,7 +48,7 @@ export function useInvoiceSettings() {
         showDeliveryAddress: data.showDeliveryAddress,
         showPaymentTerms: data.showPaymentTerms,
         showDepartment: data.showDepartment,
-        showSeller: data.showSeller,
+        // showSeller: data.showSeller,
         showDiscount: data.showDiscount,
         showProject: data.showProject,
         showNote: data.showNote

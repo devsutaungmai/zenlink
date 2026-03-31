@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import Link from 'next/link'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
@@ -29,17 +29,22 @@ interface ProjectCategory {
 export default function CreateProjectPage() {
     const router = useRouter()
     const { t } = useTranslation()
+    const searchParams = useSearchParams()
+
+    const copyMode = searchParams.get('copy') === "true";
+    const projectId = searchParams.get('projectId') ?? "";
     const [loading, setLoading] = useState(false)
     const [customers, setCustomers] = useState<Customer[]>([])
     const [projectCategories, setProjectCategories] = useState<ProjectCategory[]>([])
     const today = new Date().toISOString().split("T")[0];
+    const [initialLoading, setInitialLoading] = useState(true)
     const [formData, setFormData] = useState<{
         name: string
         projectNumber: string
         defaultProjectNumber?: string
         active: boolean
-        sequence: number
-        year: number
+        sequence?: number
+        year?: number
         categoryId: string
         startDate: string
         endDate: string
@@ -60,7 +65,7 @@ export default function CreateProjectPage() {
 
     const { settings, refetch } = useProjectSettings();
     const [visibleFields, setVisibleFields] = useState({
-        showCategory: true,
+        // showCategory: true,
         showCustomer: true,
         showStartDate: true,
         showEndDate: true,
@@ -71,7 +76,7 @@ export default function CreateProjectPage() {
     useEffect(() => {
         if (settings) {
             setVisibleFields({
-                showCategory: settings.showCategory,
+                // showCategory: settings.showCategory,
                 showCustomer: settings.showCustomer,
                 showStartDate: settings.showStartDate,
                 showEndDate: settings.showEndDate,
@@ -80,10 +85,52 @@ export default function CreateProjectPage() {
     }, [settings])
 
     useEffect(() => {
-        fetchProjectCategories()
+        // fetchProjectCategories()
         fetchCustomers()
         getDefaultProjectNumber()
     }, [])
+    useEffect(() => {
+        if (copyMode && projectId) {
+            fetchProject()
+        }
+    }, [copyMode, projectId]);
+    const fetchProject = async () => {
+        try {
+            const res = await fetch(`/api/projects/${projectId}`)
+            if (res.ok) {
+                const data = await res.json()
+                const formattedData = {
+                    name: data.name || '',
+                    projectNumber: formatProjectNumberForDisplay(data.projectNumber) || '',
+                    active: data.active ?? true,
+                    categoryId: data.categoryId || '',
+                    startDate: data.startDate ? new Date(data.startDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+                    endDate: data.endDate ? new Date(data.endDate).toISOString().split('T')[0] : '',
+                    customerId: data.customerId || ''
+                }
+                setFormData(formattedData);
+            } else {
+                throw new Error('Failed to fetch project')
+            }
+        } catch (error) {
+            console.error('Error fetching project:', error)
+            await Swal.fire({
+                text: 'Failed to load project data',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3500,
+                timerProgressBar: true,
+                icon: 'error',
+                customClass: {
+                    popup: 'swal-toast-wide'
+                }
+            })
+            router.push('/dashboard/projects')
+        } finally {
+            setInitialLoading(false)
+        }
+    }
 
     const getDefaultProjectNumber = async () => {
         try {
@@ -127,17 +174,17 @@ export default function CreateProjectPage() {
         }, 500)
     }
 
-    const fetchProjectCategories = async () => {
-        try {
-            const res = await fetch('/api/project-categories')
-            if (res.ok) {
-                const data = await res.json()
-                setProjectCategories(data)
-            }
-        } catch (error) {
-            console.error('Error fetching project category:', error)
-        }
-    }
+    // const fetchProjectCategories = async () => {
+    //     try {
+    //         const res = await fetch('/api/project-categories')
+    //         if (res.ok) {
+    //             const data = await res.json()
+    //             setProjectCategories(data)
+    //         }
+    //     } catch (error) {
+    //         console.error('Error fetching project category:', error)
+    //     }
+    // }
 
     const fetchCustomers = async () => {
         try {
@@ -328,7 +375,7 @@ export default function CreateProjectPage() {
                         </div>
 
                         {/* Category & Customer */}
-                        {visibleFields.showCategory
+                        {/* {visibleFields.showCategory
                             && <div className="grow basis-[calc(20%-12px)] min-w-[150px]">
                                 <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700 mb-2">
                                     Category
@@ -346,7 +393,7 @@ export default function CreateProjectPage() {
                                         </option>
                                     ))}
                                 </select>
-                            </div>}
+                            </div>} */}
 
                         {visibleFields.showCustomer &&
                             <div className="grow basis-[calc(20%-12px)] min-w-[150px]">

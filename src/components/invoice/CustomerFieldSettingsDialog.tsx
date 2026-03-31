@@ -16,7 +16,7 @@ interface CustomerFieldSettings {
     showDeliveryAddress: boolean;
     showDeliveryAddressPostalCode?: boolean;
     showDeliveryAddressPostalAddress?: boolean;
-    showDepartment: boolean;
+    // showDepartment: boolean;
     showProject: boolean;
     showInvoicePaymentTerms: boolean;
     showContactPerson: boolean;
@@ -253,7 +253,7 @@ export function CustomerFieldSettingsDialog({
                     </label>
                 </div> */}
 
-                <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                {/* <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
                     <input
                         type="checkbox"
                         id="showDepartment"
@@ -266,7 +266,7 @@ export function CustomerFieldSettingsDialog({
                     <label htmlFor="showDepartment" className="text-base font-medium cursor-pointer flex-1">
                         Department
                     </label>
-                </div>
+                </div> */}
 
 
                 <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">

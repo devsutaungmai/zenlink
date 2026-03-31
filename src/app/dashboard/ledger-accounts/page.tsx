@@ -236,16 +236,28 @@ export default function LedgerAccountsPage() {
         switch (columnKey) {
             case "accountNumber":
                 return (
-                    <span className="text-sm font-medium text-gray-900">
-                        {account.accountNumber}
-                    </span>
+                    <Link
+                        href={`/dashboard/ledger-accounts/${account.id}/edit?default=${account.businessId === null}`}
+                        className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
+                        title="Edit Account"
+                    >
+                        <span className="text-sm font-medium text-blue-600 hover:underline cursor-pointer">
+                            {account.accountNumber}
+                        </span>
+                    </Link>
                 )
 
             case "accountName":
                 return (
-                    <span className="text-sm text-gray-900">
-                        {account.name}
-                    </span>
+                    <Link
+                        href={`/dashboard/ledger-accounts/${account.id}/edit?default=${account.businessId === null}`}
+                        className="p-2 text-gray-400 hover:text-[#31BCFF] hover:bg-blue-50 rounded-lg transition-all duration-200"
+                        title="Edit Account"
+                    >
+                        <span className="text-sm text-blue-600 hover:underline cursor-pointer">
+                            {account.name}
+                        </span>
+                    </Link>
                 )
 
             case "type":

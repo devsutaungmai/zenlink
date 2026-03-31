@@ -133,7 +133,7 @@ export default function InvoicesPage() {
         { key: "outstanding", label: "Outstanding Amount" },
         { key: "discount", label: "Discount" },
         { key: "department", label: "Department" },
-        { key: "seller", label: "Seller" },
+        // { key: "seller", label: "Seller" },
         { key: "project", label: "Project" },
         { key: "deliveryAddress", label: "Delivery Address" },
 
@@ -154,7 +154,7 @@ export default function InvoicesPage() {
             outstanding: true,
             discount: false,
             department: false,
-            seller: false,
+            // seller: false,
             project: false,
             deliveryAddress: false,
 
@@ -173,7 +173,7 @@ export default function InvoicesPage() {
         { key: "outstanding", initialWidth: 120, minWidth: 100 },
         { key: "discount", initialWidth: 120, minWidth: 80 },
         { key: "department", initialWidth: 120, minWidth: 100 },
-        { key: "seller", initialWidth: 120, minWidth: 100 },
+        // { key: "seller", initialWidth: 120, minWidth: 100 },
         { key: "project", initialWidth: 120, minWidth: 100 },
         { key: "deliveryAddress", initialWidth: 150, minWidth: 120 },
         { key: "actions", initialWidth: 120, minWidth: 80 },
@@ -270,7 +270,7 @@ export default function InvoicesPage() {
         const matchesSearch = invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
             invoice.customer?.customerName.toLowerCase().includes(searchTerm.toLowerCase());
 
-        const matchesFilter = selectedFilter === "all" ||
+        const matchesFilter = selectedFilter === "all" || (selectedFilter === "credit" ? invoice.status.toLocaleLowerCase() === "credit_note" || invoice.status.toLowerCase() === "credited" : "") ||
             (selectedFilter === "outstanding" ? invoice.status.toLocaleLowerCase() === "partially_paid" : "") || invoice.status.toLowerCase() === selectedFilter.toLowerCase();
 
         return matchesSearch && matchesFilter;
@@ -365,41 +365,48 @@ export default function InvoicesPage() {
 
             // Step 2: If sendType is 'send_with_email', also send emails
             if (sendType === 'send_with_email') {
-                const emailErrors = []
+                const emailErrors: { invoiceNumber: string; error: string }[] = []
+
+                const invoiceList: { id: string; invoiceNumber: string }[] =
+                    Array.isArray(result?.invoices) ? result.invoices :
+                        Array.isArray(result?.processedInvoices) ? result.processedInvoices.map((id: string) => {
+                            const found = invoices.find(inv => inv.id === id)
+                            return {
+                                id,
+                                invoiceNumber: found
+                                    ? (formatInvoiceNumberForDisplay(found.invoiceNumber) || found.invoiceNumber)
+                                    : id
+                            }
+                        }) :
+                            selectedInvoices.map(id => {
+                                const found = invoices.find(inv => inv.id === id)
+                                return {
+                                    id,
+                                    invoiceNumber: found
+                                        ? (formatInvoiceNumberForDisplay(found.invoiceNumber) || found.invoiceNumber)
+                                        : id
+                                }
+                            })
 
                 // Send email for each successfully updated invoice
-                for (const invoice of result.invoices) {
-                    try {
-                        await sendEmail(invoice.id)
-                    } catch (emailError) {
+                for (const invoice of invoiceList) {
+                    const emailResult = await sendEmail(invoice.id)
+                    if (!emailResult.success) {
                         emailErrors.push({
-                            invoiceNumber: invoice.invoiceNumber,
-                            error: emailError instanceof Error ? emailError.message : 'Failed to send email'
+                            invoiceNumber: invoice.invoiceNumber ?? invoice.id,
+                            error: emailResult.message  // this already has "Customer email not found..."
                         })
                     }
                 }
-                // Show appropriate success message
-                //   if (emailErrors.length === 0) {
-                //     await Swal.fire({
-                //       title: 'Success!',
-                //       text: `${result.count} invoice(s) sent successfully with email notifications`,
-                //       icon: 'success',
-                //       confirmButtonColor: '#31BCFF',
-                //     })
-                //   } else {
-                //     await Swal.fire({
-                //       title: 'Partial Success',
-                //       html: `
-                //         <p>${result.count} invoice(s) updated to SENT status</p>
-                //         <p class="text-red-600 mt-2">Failed to send ${emailErrors.length} email(s):</p>
-                //         <ul class="text-sm text-left mt-2">
-                //           ${emailErrors.map(e => `<li>${e.invoiceNumber}: ${e.error}</li>`).join('')}
-                //         </ul>
-                //       `,
-                //       icon: 'warning',
-                //       confirmButtonColor: '#31BCFF',
-                //     })
-                //   }
+
+                if (emailErrors.length > 0) {
+                    // Show each error message, not just the invoice number
+                    emailErrors.forEach(e => {
+                        toast('error', `${e.error}`)
+                    })
+                } else {
+                    toast('success', 'Invoice(s) sent and emails delivered successfully')
+                }
             } else {
                 // Just show success for status update
                 toast('success', 'Invoice(s) sent successfully')
@@ -563,8 +570,8 @@ export default function InvoicesPage() {
             case "department":
                 return invoice.department?.name || "-";
 
-            case "seller":
-                return invoice.customer?.business?.name || "-";
+            // case "seller":
+            //     return invoice.customer?.business?.name || "-";
 
             case "project":
                 return invoice.project?.name || "-";
@@ -680,7 +687,8 @@ export default function InvoicesPage() {
                             { value: 'all', label: "ALL" },
                             { value: 'draft', label: "DRAFT" },
                             { value: 'outstanding', label: "OUTSTANDING" },
-                            { value: 'paid', label: "PAID" }
+                            { value: 'paid', label: "PAID" },
+                            { value: 'credit', label: "CREDIT_NOTE/CREDITED" }
                         ].map((filter) => (
                             <button
                                 key={filter.value}
@@ -873,7 +881,7 @@ export default function InvoicesPage() {
                                             <td></td>
                                             {/* Actions */}
                                             <td className="px-6 py-4">
-                                                {(!hasSelectedInvoices && invoice.status === InvoiceStatus.DRAFT) ? (
+                                                {(invoice.status === InvoiceStatus.DRAFT) ? (
                                                     <div className="flex items-center justify-end gap-2">
                                                         <Link
                                                             href={`/dashboard/invoices/${invoice.id}/edit`}
@@ -921,14 +929,6 @@ export default function InvoicesPage() {
 
                                                         </button>
                                                     ) : null}
-                                                    {/* {(invoice.status !== InvoiceStatus.CREDIT_NOTE && invoice.status !== InvoiceStatus.CREDITED) ?
-                                                        <button
-                                                            className="px-1 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2"
-                                                            onClick={() => setSelectedInvoiceForCredit(invoice)}
-                                                        >
-                                                            <span className="text-base">✓</span>
-                                                        </button> : null
-                                                    } */}
 
                                                     {(invoice.status !== InvoiceStatus.CREDIT_NOTE && invoice.status !== InvoiceStatus.CREDITED) ?
                                                         <Link href={`/dashboard/invoices/${invoice.id}/edit?credit-note=true`} className="px-1 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none flex items-center gap-2 group relative"

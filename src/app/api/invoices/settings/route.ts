@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
                     showDeliveryAddress: true,
                     showPaymentTerms: true,
                     showDepartment: true,
-                    showSeller: true,
+                    showSeller: false,
                     showDiscount: true,
                     showProject: true,
                     showNote: true
@@ -75,7 +75,6 @@ export async function POST(req: NextRequest) {
             showDeliveryAddress,
             showPaymentTerms,
             showDepartment,
-            showSeller,
             showDiscount,
             showProject,
             showNote
@@ -87,7 +86,6 @@ export async function POST(req: NextRequest) {
             showDeliveryAddress,
             showPaymentTerms,
             showDepartment,
-            showSeller,
             showDiscount,
             showProject,
             showNote
@@ -112,7 +110,6 @@ export async function POST(req: NextRequest) {
                 showDeliveryAddress,
                 showPaymentTerms,
                 showDepartment,
-                showSeller,
                 showDiscount,
                 showProject,
                 showNote
@@ -123,7 +120,6 @@ export async function POST(req: NextRequest) {
                 showDeliveryAddress,
                 showPaymentTerms,
                 showDepartment,
-                showSeller,
                 showDiscount,
                 showProject,
                 showNote
