@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
-import { CalendarIcon, ClockIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
+import { CalendarIcon, ClockIcon, CheckCircleIcon, CheckIcon, XMarkIcon, ArrowsRightLeftIcon } from '@heroicons/react/24/outline'
 import { useUser } from '@/shared/lib/useUser'
 import { usePermissions } from '@/shared/lib/usePermissions'
 import { PERMISSIONS } from '@/shared/lib/permissions'
@@ -189,6 +189,9 @@ export default function DashboardPage() {
   const [myShiftRequests, setMyShiftRequests] = useState<any[]>([])
   const [showShiftDetailsModal, setShowShiftDetailsModal] = useState(false)
   const [selectedShiftForDetails, setSelectedShiftForDetails] = useState<any>(null)
+  const [pendingHandoverRequests, setPendingHandoverRequests] = useState<any[]>([])
+  const [pendingHandoverLoading, setPendingHandoverLoading] = useState(false)
+  const [processingHandoverId, setProcessingHandoverId] = useState<string | null>(null)
   const { t } = useTranslation();
 
   const canClockInOut = hasPermission(PERMISSIONS.ATTENDANCE_CLOCK_IN_OUT)
@@ -384,6 +387,12 @@ export default function DashboardPage() {
   }, [user, isEmployeeUser, employees])
 
   useEffect(() => {
+    if (hasEmployeeRecord) {
+      fetchPendingHandoverRequests()
+    }
+  }, [hasEmployeeRecord, user])
+
+  useEffect(() => {
     if (!currentAttendance) {
       setWorkDuration('')
       setLiveTimer('')
@@ -527,6 +536,69 @@ export default function DashboardPage() {
       }
     } catch (err) {
       console.error('Error fetching employee dashboard data:', err)
+    }
+  }
+
+  const fetchPendingHandoverRequests = async () => {
+    if (!hasEmployeeRecord) return
+    setPendingHandoverLoading(true)
+    try {
+      const res = await fetch('/api/employee/pending-requests')
+      if (res.ok) {
+        const data = await res.json()
+        setPendingHandoverRequests(Array.isArray(data) ? data : [])
+      }
+    } catch (err) {
+      console.error('Error fetching pending handover requests:', err)
+    } finally {
+      setPendingHandoverLoading(false)
+    }
+  }
+
+  const handleHandoverResponse = async (exchangeId: string, action: 'accept' | 'reject') => {
+    setProcessingHandoverId(exchangeId)
+    try {
+      const res = await fetch(`/api/shift-exchanges/${exchangeId}/employee-response`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      })
+      if (res.ok) {
+        await fetchPendingHandoverRequests()
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
+          icon: 'success',
+          title: action === 'accept' ? t('dashboard.pending_handover.toast_accepted') : t('dashboard.pending_handover.toast_rejected'),
+        })
+      } else {
+        const err = await res.json()
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
+          icon: 'error',
+          title: err.error || t('dashboard.pending_handover.toast_error'),
+        })
+      }
+    } catch (err) {
+      console.error('Error responding to handover request:', err)
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        icon: 'error',
+        title: t('dashboard.pending_handover.toast_error'),
+      })
+    } finally {
+      setProcessingHandoverId(null)
     }
   }
 
@@ -1259,6 +1331,96 @@ export default function DashboardPage() {
                 })
               )}
             </div>
+          </section>
+        )}
+
+        {hasEmployeeRecord && (pendingHandoverLoading || pendingHandoverRequests.length > 0) && (
+          <section className="mt-6 rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_20px_50px_rgba(15,23,42,0.08)]">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <div className="inline-flex items-center gap-2 text-sm font-medium text-slate-500">
+                  <ArrowsRightLeftIcon className="h-4 w-4 text-slate-400" />
+                  <span>{t('dashboard.pending_handover.caption')}</span>
+                </div>
+                <h3 className="text-2xl font-semibold text-slate-900">{t('dashboard.pending_handover.title')}</h3>
+              </div>
+              {pendingHandoverRequests.filter(r => r.status === 'EMPLOYEE_PENDING').length > 0 && (
+                <span className="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
+                  {t('dashboard.pending_handover.awaiting_badge', { count: pendingHandoverRequests.filter(r => r.status === 'EMPLOYEE_PENDING').length })}
+                </span>
+              )}
+            </div>
+
+            {pendingHandoverLoading ? (
+              <div className="space-y-3">
+                {[0, 1].map(i => (
+                  <div key={i} className="h-24 rounded-2xl bg-slate-100 animate-pulse" />
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {pendingHandoverRequests.map((req) => {
+                  const shiftDate = new Date(req.shift.date).toLocaleDateString('en-US', {
+                    weekday: 'short', month: 'short', day: 'numeric'
+                  })
+                  const shiftTime = `${req.shift.startTime?.substring(0, 5)} - ${req.shift.endTime?.substring(0, 5) ?? '?'}`
+                  const requester = `${req.fromEmployee.firstName} ${req.fromEmployee.lastName}`
+                  const isPending = req.status === 'EMPLOYEE_PENDING'
+                  const isProcessing = processingHandoverId === req.id
+
+                  return (
+                    <div
+                      key={req.id}
+                      className="flex flex-col gap-3 rounded-2xl border border-slate-100 bg-slate-50/80 p-4 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${req.type === 'HANDOVER' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                            {req.type}
+                          </span>
+                          {!isPending && (
+                            <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">
+                              {t('dashboard.pending_handover.accepted_awaiting_admin')}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm font-semibold text-slate-900">
+                          {t('dashboard.pending_handover.wants_handover', { name: requester })}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          {shiftDate} · {shiftTime}
+                          {req.fromEmployee.department?.name ? ` · ${req.fromEmployee.department.name}` : ''}
+                        </p>
+                        {req.reason && (
+                          <p className="text-xs text-slate-400 mt-1 italic">"{req.reason}"</p>
+                        )}
+                      </div>
+
+                      {isPending && (
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            onClick={() => handleHandoverResponse(req.id, 'reject')}
+                            disabled={isProcessing}
+                            className="inline-flex items-center gap-1.5 rounded-full border border-red-200 px-4 py-1.5 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+                          >
+                            <XMarkIcon className="h-4 w-4" />
+                            {t('dashboard.pending_handover.reject')}
+                          </button>
+                          <button
+                            onClick={() => handleHandoverResponse(req.id, 'accept')}
+                            disabled={isProcessing}
+                            className="inline-flex items-center gap-1.5 rounded-full bg-[#2563eb] px-4 py-1.5 text-sm font-medium text-white transition hover:bg-[#1d4ed8] disabled:opacity-50"
+                          >
+                            <CheckIcon className="h-4 w-4" />
+                            {t('dashboard.pending_handover.accept')}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </section>
         )}
 

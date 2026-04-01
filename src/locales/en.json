@@ -127,6 +127,18 @@
     },
     "recent_activity": "Recent Activity",
     "no_recent_activity": "No recent activity",
+    "pending_handover": {
+      "caption": "Shift Requests",
+      "title": "Pending Handover Requests",
+      "awaiting_badge": "{{count}} awaiting response",
+      "wants_handover": "{{name}} wants to hand over their shift to you",
+      "accepted_awaiting_admin": "Accepted — Awaiting Admin",
+      "accept": "Accept",
+      "reject": "Reject",
+      "toast_accepted": "Request accepted",
+      "toast_rejected": "Request rejected",
+      "toast_error": "Failed to respond to request"
+    },
     "punch_clock": {
       "title": "Punch Clock",
       "description": "Working as an extra shift today?",
