@@ -73,7 +73,7 @@ export default function EditInvoicePage({
         sentAt: new Date().toISOString().split('T')[0],
         dueDay: 14,
         paidAt: '',
-        projectId:'',
+        projectId: '',
         departmentId: '',
         seller: '',
         invoiceLines: [],
@@ -302,6 +302,21 @@ export default function EditInvoicePage({
         }))
     }
 
+    const handleProductChange = async (index: number, productId: string, line: InvoiceLine) => {
+        const fullProduct = await fetch(`/api/products/${productId}`).then(res => res.ok ? res.json() : null).catch(() => null);
+
+        const product = products.find(p => p.id === productId) || fullProduct; // Try to find in existing list first, fallback to fetched details
+        const businessVat = product?.ledgerAccount?.businessVatCodes?.[0]?.vatCode
+        const vatRate = businessVat?.rate ?? product?.ledgerAccount?.vatCode?.rate ?? 0
+        const basePrice = product?.salesPrice ?? 0
+        updateInvoiceLine(index, {
+            productId,
+            pricePerUnit: isCreditNote && line.id ? -Math.abs(basePrice) : basePrice,
+            vatPercentage: Number(vatRate),
+            productName: product?.productName,
+        })
+    }
+
     const onSaveProduct = async (product: ProductFormType): Promise<ProductOption> => {
         const res = await fetch('/api/products', {
             method: 'POST',
@@ -351,77 +366,79 @@ export default function EditInvoicePage({
     }
 
     const handleProjectChange = (selectedProjectIds: string[]) => {
-            setFormData(prev => ({
-                ...prev,
-                projectId: selectedProjectIds[0] ?? ""
-            }))
-        }
-    
-        const handleProjectCreated = (newProject: Project) => {
-            setProjects(prev => [...prev, newProject])
-            setFormData(prev => ({
-                ...prev,
-                projectIds: newProject.id
-            }))
-        }
-    
-        const onSaveProject = async (project: ProjectFormType): Promise<Project> => {
-            try {
-                const res = await fetch('/api/projects', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({...project,customerId: formData.customerId || null}),
-                })
-                if (!res.ok) {
-                    const error = await res.json()
-                    throw new Error(error.error || 'Failed to create project')
-                }
-                const createdProject = await res.json()
-                setProjects(prev => [...prev, createdProject])
-                setFormData(prev => ({
-                    ...prev,
-                    projectIds: createdProject.id
-                }))
-                await Swal.fire({
-                    text: 'Project created successfully',
-                    toast: true,
-                    position: 'top-end',
-                    showConfirmButton: false,
-                    timer: 3000,
-                    timerProgressBar: true,
-                    icon: 'success',
-                    customClass: {
-                        popup: 'swal-toast-wide'
-                    }
-                })
-    
-                return createdProject
-            } catch (error) {
-                await Swal.fire({
-                    text: error instanceof Error ? error.message : 'An error occurred',
-                    toast: true,
-                    position: 'top-end',
-                    showConfirmButton: false,
-                    timer: 3000,
-                    timerProgressBar: true,
-                    icon: 'error',
-                    customClass: {
-                        popup: 'swal-toast-wide'
-                    }
-                })
-    
-                throw error
-            } finally {
-                setLoadingProject(false)
+        setFormData(prev => ({
+            ...prev,
+            projectId: selectedProjectIds[0] ?? ""
+        }))
+    }
+
+    const handleProjectCreated = (newProject: Project) => {
+        setProjects(prev => [...prev, newProject])
+        setFormData(prev => ({
+            ...prev,
+            projectIds: newProject.id
+        }))
+    }
+
+
+
+    const onSaveProject = async (project: ProjectFormType): Promise<Project> => {
+        try {
+            const res = await fetch('/api/projects', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...project, customerId: formData.customerId || null }),
+            })
+            if (!res.ok) {
+                const error = await res.json()
+                throw new Error(error.error || 'Failed to create project')
             }
+            const createdProject = await res.json()
+            setProjects(prev => [...prev, createdProject])
+            setFormData(prev => ({
+                ...prev,
+                projectIds: createdProject.id
+            }))
+            await Swal.fire({
+                text: 'Project created successfully',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+                icon: 'success',
+                customClass: {
+                    popup: 'swal-toast-wide'
+                }
+            })
+
+            return createdProject
+        } catch (error) {
+            await Swal.fire({
+                text: error instanceof Error ? error.message : 'An error occurred',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+                icon: 'error',
+                customClass: {
+                    popup: 'swal-toast-wide'
+                }
+            })
+
+            throw error
+        } finally {
+            setLoadingProject(false)
         }
+    }
 
     const handleCustomerChange = (customerId: string) => {
         setFormData({ ...formData, customerId })
         fetchCustomerDetails(customerId)
     }
 
-     const fetchCustomerDetails = async (customerId: string) => {
+    const fetchCustomerDetails = async (customerId: string) => {
         if (!customerId) return
 
         setFetchingCustomer(true)
@@ -675,7 +692,7 @@ export default function EditInvoicePage({
                                     onChange={handleCustomerChange}
                                     placeholder="Select Customer"
                                     disabled={isCreditNote}
-                                    onSaveNewCustomer={async (customer) => {          
+                                    onSaveNewCustomer={async (customer) => {
                                         const res = await fetch('/api/customers', {
                                             method: 'POST',
                                             headers: { 'Content-Type': 'application/json' },
@@ -745,17 +762,17 @@ export default function EditInvoicePage({
                         </div>
                     </div>
 
-                     {visibleFields.showProject && 
+                    {visibleFields.showProject &&
                         <div className="bg-gradient-to-br rounded-xl border p-6">
-                        <h2 className="text-lg font-semibold text-gray-900 mb-4">Project Information</h2>
+                            <h2 className="text-lg font-semibold text-gray-900 mb-4">Project Information</h2>
 
-                        <div className="grid grid-cols-1 md:grid-cols-1 gap-6 mb-6">
+                            <div className="grid grid-cols-1 md:grid-cols-1 gap-6 mb-6">
 
-                            <div>
-                                <label htmlFor="seller" className="block text-sm font-medium text-gray-700 mb-2">
-                                    Project *
-                                </label>
-                                 <ProjectMultiSelectCombobox
+                                <div>
+                                    <label htmlFor="seller" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Project *
+                                    </label>
+                                    <ProjectMultiSelectCombobox
                                         projects={projects}
                                         value={formData.projectId ? [formData.projectId] : []}
                                         onChange={handleProjectChange}
@@ -767,9 +784,9 @@ export default function EditInvoicePage({
                                     {validationErrors.projectIds && (
                                         <p className="mt-1 text-sm text-red-600">{validationErrors.projectIds}</p>
                                     )}
+                                </div>
                             </div>
-                        </div>
-                    </div>}
+                        </div>}
 
                     {/* Seller */}
                     {/* {settings.showSeller && (
@@ -811,18 +828,7 @@ export default function EditInvoicePage({
                                         <ProductSelectCombobox
                                             products={products}
                                             value={line.productId || ""}
-                                            onChange={(productId) => {
-                                                const product = products.find(p => p.id === productId)
-                                                const businessVat = product?.ledgerAccount?.businessVatCodes?.[0]?.vatCode
-                                                const vatRate = businessVat?.rate ?? product?.ledgerAccount?.vatCode?.rate ?? 0
-                                                const basePrice = product?.salesPrice ?? 0
-                                                updateInvoiceLine(index, {
-                                                    productId,
-                                                    pricePerUnit: isCreditNote && line.id ? -Math.abs(basePrice) : basePrice,
-                                                    vatPercentage: Number(vatRate),
-                                                    productName: product?.productName,
-                                                })
-                                            }}
+                                            onChange={(productId) => handleProductChange(index, productId, line)}
                                             onSaveNewProduct={onSaveProduct}
                                             placeholder="Select Product"
                                             disabled={isCreditNote}
@@ -887,8 +893,8 @@ export default function EditInvoicePage({
                                     )}
 
                                     <div className={`col-span-6 ${isCreditNote
-                                            ? (settings.showDiscount || line.discountPercentage > 0 ? 'md:col-span-2' : 'md:col-span-5')
-                                            : (settings.showDiscount || line.discountPercentage > 0 ? 'md:col-span-2' : 'md:col-span-3')
+                                        ? (settings.showDiscount || line.discountPercentage > 0 ? 'md:col-span-2' : 'md:col-span-5')
+                                        : (settings.showDiscount || line.discountPercentage > 0 ? 'md:col-span-2' : 'md:col-span-3')
                                         }`}>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">Net Total</label>
                                         <input
