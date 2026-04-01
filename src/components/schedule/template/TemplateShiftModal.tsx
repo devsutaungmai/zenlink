@@ -182,7 +182,7 @@ export default function TemplateShiftModal({
   const [departments, setDepartments] = useState<Department[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [filteredFunctions, setFilteredFunctions] = useState<FunctionItem[]>([])
-  const [shiftTypes, setShiftTypes] = useState<ShiftTypeOption[]>([])
+  const [shiftTypes, setShiftTypes] = useState<ShiftTypeOption[]>([{ id: '', name: 'Normal' }])
   const [loadingDepartments, setLoadingDepartments] = useState(false)
   const [loadingCategories, setLoadingCategories] = useState(false)
   const [loadingShiftTypes, setLoadingShiftTypes] = useState(false)
@@ -231,10 +231,14 @@ export default function TemplateShiftModal({
       const response = await fetch('/api/shift-types')
       if (response.ok) {
         const data = await response.json()
-        setShiftTypes(data.shiftTypes || [])
+        setShiftTypes([
+          { id: '', name: 'Normal' },
+          ...(data.shiftTypes || [])
+        ])
       }
     } catch (error) {
       console.error('Error fetching shift types:', error)
+      setShiftTypes([{ id: '', name: 'Normal' }])
     } finally {
       setLoadingShiftTypes(false)
     }
@@ -782,25 +786,23 @@ export default function TemplateShiftModal({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              {translationT('shifts.form.shift_type', 'Shift Type')} <span className="text-red-500">*</span>
+              {translationT('shifts.form.shift_type', 'Shift Type')}
             </label>
             <select
               value={shiftTypeId}
               onChange={(e) => setShiftTypeId(e.target.value)}
               disabled={loadingShiftTypes}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] outline-none disabled:bg-gray-100"
-              required
             >
-              <option value="">
-                {loadingShiftTypes
-                  ? translationT('shifts.form.loading_shift_types', 'Loading shift types...')
-                  : translationT('shifts.form.shift_type', 'Shift Type')}
-              </option>
-              {shiftTypes.map((shiftType) => (
-                <option key={shiftType.id} value={shiftType.id}>
-                  {shiftType.name}
-                </option>
-              ))}
+              {loadingShiftTypes ? (
+                <option value="">{translationT('shifts.form.loading_shift_types', 'Loading shift types...')}</option>
+              ) : (
+                shiftTypes.map((shiftType) => (
+                  <option key={shiftType.id} value={shiftType.id}>
+                    {shiftType.name}
+                  </option>
+                ))
+              )}
             </select>
           </div>
 
