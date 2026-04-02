@@ -104,7 +104,7 @@ export async function PATCH(
       if (status === 'APPROVED') {
         await ShiftExchangeNotifications.notifyShiftExchangeApproved(exchange.id)
       } else {
-        await ShiftExchangeNotifications.notifyShiftExchangeRejected(exchange.id)
+        await ShiftExchangeNotifications.notifyShiftExchangeRejectedByAdmin(exchange.id)
       }
     } catch (notificationError) {
       console.error('Failed to send notification:', notificationError)

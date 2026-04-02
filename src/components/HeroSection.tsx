@@ -43,12 +43,6 @@ export default function HeroSection({ isAuthenticated = false }: HeroSectionProp
               >
                 {primaryCtaLabel}
               </Link>
-              <Link
-                href="#demo"
-                className="border-2 border-[#31BCFF] text-[#31BCFF] px-8 py-3.5 rounded-full font-semibold hover:bg-[#31BCFF]/10 transition-all duration-200 text-center"
-              >
-                Book Demo
-              </Link>
             </div>
 
             {/* Trust badges */}

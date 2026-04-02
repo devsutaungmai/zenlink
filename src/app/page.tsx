@@ -1,7 +1,6 @@
 import Navbar from '@/components/Navbar'
 import HeroSection from '@/components/HeroSection'
 import FeaturesSection from '@/components/FeaturesSection'
-import StatsSection from '@/components/StatsSection'
 import Footer from '@/components/Footer'
 import { getCurrentUserOrEmployee } from '@/shared/lib/auth'
 
@@ -15,7 +14,6 @@ export default async function Home() {
       <main className="flex-1">
         <HeroSection isAuthenticated={isAuthenticated} />
         <FeaturesSection />
-        <StatsSection />
       </main>
       <Footer />
     </div>

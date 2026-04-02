@@ -29,6 +29,27 @@ function PasswordForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
+  const [existingSession, setExistingSession] = useState<{ name: string; role: string } | null>(null)
+
+  useEffect(() => {
+    const checkExistingSession = async () => {
+      try {
+        const res = await fetch('/api/me')
+        if (res.ok) {
+          const data = await res.json()
+          if (data.role === 'ADMIN' || data.role === 'MANAGER') {
+            setExistingSession({
+              name: [data.firstName, data.lastName].filter(Boolean).join(' ') || data.email,
+              role: data.role,
+            })
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+    checkExistingSession()
+  }, [])
 
   useEffect(() => {
     const fetchEmployeeData = async () => {
@@ -378,6 +399,22 @@ function PasswordForm() {
             </p>
           </div>
           
+          {existingSession && (
+            <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm">
+              <p className="font-semibold text-amber-800 mb-1">Active session detected</p>
+              <p className="text-amber-700">
+                You are signed in as <span className="font-medium">{existingSession.name}</span> ({existingSession.role.toLowerCase()}) in this browser.
+                After creating your account you will be taken to the sign-in page — logging in there will end the current admin session.
+              </p>
+              <a
+                href="/dashboard"
+                className="mt-2 inline-block text-[#0369A1] hover:underline font-medium text-sm"
+              >
+                ← Back to Dashboard
+              </a>
+            </div>
+          )}
+
           {/* Employee Info */}
           <div className="mb-6 text-center p-4 bg-gray-50 rounded-md">
             <p className="text-lg font-medium text-gray-900">

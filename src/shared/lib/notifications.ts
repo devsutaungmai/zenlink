@@ -511,8 +511,12 @@ export class NotificationService {
         }
     }
     
+    const recipientEmail = notification.recipient?.email || notification.recipientUser?.email
+    if (!recipientEmail) {
+      return { success: false, error: 'No email address available for recipient' }
+    }
     return EmailService.sendEmail(
-      notification.recipient.email,
+      recipientEmail,
       emailContent.subject,
       emailContent.html
     )
@@ -521,7 +525,7 @@ export class NotificationService {
   // Send SMS for a notification
   private static async sendNotificationSMS(notification: any): Promise<{ success: boolean; error?: string }> {
     try {
-      if (!notification.recipient.mobile) {
+      if (!notification.recipient?.mobile) {
         return { success: false, error: 'No mobile number available for recipient' }
       }
       
@@ -714,7 +718,7 @@ export class ShiftExchangeNotifications {
       reason: exchange.reason || undefined,
     }
 
-    // Notify the original requester
+    // Notify the original requester only — admin notification handled by notifyAdminForApproval
     await NotificationService.createNotification({
       type: 'SHIFT_EXCHANGE_ACCEPTED',
       title: `${exchange.type} Request Accepted`,
@@ -726,37 +730,6 @@ export class ShiftExchangeNotifications {
       sendEmail: true,
       sendSms: false,
     })
-
-    // Notify ONLY admin users (not team leaders) - find admin users who have employee records
-    const adminUsers = await prisma.user.findMany({
-      where: {
-        role: 'ADMIN'
-      },
-      include: {
-        employees: {
-          select: { id: true }
-        }
-      }
-    })
-
-    // Send notification to admin users who have employee records
-    for (const adminUser of adminUsers) {
-      if (adminUser.employees.length > 0) {
-        // Use the first employee record for this admin user
-        const employeeRecord = adminUser.employees[0]
-        await NotificationService.createNotification({
-          type: 'SHIFT_EXCHANGE_APPROVED',
-          title: `${exchange.type} Request Needs Approval`,
-          message: `${exchange.fromEmployee.firstName} ${exchange.fromEmployee.lastName} and ${exchange.toEmployee.firstName} ${exchange.toEmployee.lastName} have agreed on a shift ${exchange.type.toLowerCase()}. Please review and approve.`,
-          recipientId: employeeRecord.id,
-          data,
-          shiftId: exchange.shiftId,
-          shiftExchangeId: exchange.id,
-          sendEmail: true,
-          sendSms: false,
-        })
-      }
-    }
   }
 
   // Send notification when employee rejects a shift exchange request
@@ -807,10 +780,67 @@ export class ShiftExchangeNotifications {
       include: {
         shift: true,
         fromEmployee: {
-          select: { firstName: true, lastName: true },
+          select: { firstName: true, lastName: true, user: { select: { businessId: true } } },
         },
         toEmployee: {
           select: { firstName: true, lastName: true },
+        },
+      },
+    })
+
+    if (!exchange) throw new Error('Shift exchange not found')
+
+    const businessId = exchange.fromEmployee.user?.businessId
+    if (!businessId) throw new Error('Could not determine business for shift exchange')
+
+    const data: NotificationData = {
+      shiftId: exchange.shiftId,
+      shiftExchangeId: exchange.id,
+      fromEmployeeName: `${exchange.fromEmployee.firstName} ${exchange.fromEmployee.lastName}`,
+      toEmployeeName: `${exchange.toEmployee.firstName} ${exchange.toEmployee.lastName}`,
+      shiftDate: exchange.shift.date.toLocaleDateString(),
+      shiftTime: `${exchange.shift.startTime} - ${exchange.shift.endTime}`,
+      exchangeType: exchange.type,
+      reason: exchange.reason || undefined,
+    }
+
+    // Notify admin users belonging to the same business
+    const adminUsers = await prisma.user.findMany({
+      where: {
+        businessId,
+        role: 'ADMIN',
+      },
+      select: { id: true },
+    })
+
+    await Promise.all(
+      adminUsers.map((adminUser) =>
+        NotificationService.createNotification({
+          type: 'SHIFT_EXCHANGE_APPROVED',
+          title: `${exchange.type} Request Needs Approval`,
+          message: `${exchange.fromEmployee.firstName} ${exchange.fromEmployee.lastName} and ${exchange.toEmployee.firstName} ${exchange.toEmployee.lastName} have agreed on a shift ${exchange.type.toLowerCase()}. Please review and approve.`,
+          recipientUserId: adminUser.id,
+          data,
+          shiftId: exchange.shiftId,
+          shiftExchangeId: exchange.id,
+          sendEmail: true,
+          sendSms: false,
+        })
+      )
+    )
+  }
+
+  // Send notification to both employees when admin rejects a shift exchange
+  static async notifyShiftExchangeRejectedByAdmin(shiftExchangeId: string) {
+    const exchange = await prisma.shiftExchange.findUnique({
+      where: { id: shiftExchangeId },
+      include: {
+        shift: true,
+        fromEmployee: {
+          select: { firstName: true, lastName: true, id: true },
+        },
+        toEmployee: {
+          select: { firstName: true, lastName: true, id: true },
         },
       },
     })
@@ -828,36 +858,30 @@ export class ShiftExchangeNotifications {
       reason: exchange.reason || undefined,
     }
 
-    // Notify ONLY admin users (not team leaders) - find admin users who have employee records
-    const adminUsers = await prisma.user.findMany({
-      where: {
-        role: 'ADMIN'
-      },
-      include: {
-        employees: {
-          select: { id: true }
-        }
-      }
-    })
-
-    // Send notification to admin users who have employee records
-    for (const adminUser of adminUsers) {
-      if (adminUser.employees.length > 0) {
-        // Use the first employee record for this admin user
-        const employeeRecord = adminUser.employees[0]
-        await NotificationService.createNotification({
-          type: 'SHIFT_EXCHANGE_APPROVED',
-          title: `${exchange.type} Request Needs Approval`,
-          message: `${exchange.fromEmployee.firstName} ${exchange.fromEmployee.lastName} and ${exchange.toEmployee.firstName} ${exchange.toEmployee.lastName} have agreed on a shift ${exchange.type.toLowerCase()}. Please review and approve.`,
-          recipientId: employeeRecord.id,
-          data,
-          shiftId: exchange.shiftId,
-          shiftExchangeId: exchange.id,
-          sendEmail: true,
-          sendSms: false,
-        })
-      }
-    }
+    await Promise.all([
+      NotificationService.createNotification({
+        type: 'SHIFT_EXCHANGE_REJECTED',
+        title: `${exchange.type} Request Rejected`,
+        message: `Your ${exchange.type.toLowerCase()} request for ${exchange.shift.date.toLocaleDateString()} has been rejected by an administrator.`,
+        recipientId: exchange.fromEmployee.id,
+        data,
+        shiftId: exchange.shiftId,
+        shiftExchangeId: exchange.id,
+        sendEmail: true,
+        sendSms: false,
+      }),
+      NotificationService.createNotification({
+        type: 'SHIFT_EXCHANGE_REJECTED',
+        title: `${exchange.type} Request Rejected`,
+        message: `The ${exchange.type.toLowerCase()} request you accepted for ${exchange.shift.date.toLocaleDateString()} has been rejected by an administrator.`,
+        recipientId: exchange.toEmployee.id,
+        data,
+        shiftId: exchange.shiftId,
+        shiftExchangeId: exchange.id,
+        sendEmail: true,
+        sendSms: false,
+      }),
+    ])
   }
 
   // Send notification when admin approves a shift exchange

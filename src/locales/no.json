@@ -139,6 +139,18 @@
     },
     "recent_activity": "Nylig aktivitet",
     "no_recent_activity": "Ingen nylig aktivitet",
+    "pending_handover": {
+      "caption": "Vaktforespørsler",
+      "title": "Ventende overlevering av vakt",
+      "awaiting_badge": "{{count}} venter på svar",
+      "wants_handover": "{{name}} ønsker å overlate vakten sin til deg",
+      "accepted_awaiting_admin": "Godtatt — Venter på admin",
+      "accept": "Godta",
+      "reject": "Avslå",
+      "toast_accepted": "Forespørsel godtatt",
+      "toast_rejected": "Forespørsel avslått",
+      "toast_error": "Kunne ikke svare på forespørselen"
+    },
     "punch_clock": {
       "title": "Stemplingsur",
       "description": "Jobber som ekstra skift i dag?",

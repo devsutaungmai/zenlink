@@ -140,6 +140,18 @@
     },
     "recent_activity": "Neueste Aktivität",
     "no_recent_activity": "Keine neueste Aktivität",
+    "pending_handover": {
+      "caption": "Schichtanfragen",
+      "title": "Ausstehende Schichtübergaben",
+      "awaiting_badge": "{{count}} warten auf Antwort",
+      "wants_handover": "{{name}} möchte Ihnen seine Schicht übergeben",
+      "accepted_awaiting_admin": "Akzeptiert — Wartet auf Admin",
+      "accept": "Akzeptieren",
+      "reject": "Ablehnen",
+      "toast_accepted": "Anfrage akzeptiert",
+      "toast_rejected": "Anfrage abgelehnt",
+      "toast_error": "Antwort auf Anfrage fehlgeschlagen"
+    },
     "punch_clock": {
       "title": "Stechuhr",
       "description": "Arbeiten Sie heute als zusätzliche Schicht?",

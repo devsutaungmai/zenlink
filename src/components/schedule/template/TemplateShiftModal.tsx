@@ -170,6 +170,7 @@ export default function TemplateShiftModal({
   const [shiftTypeId, setShiftTypeId] = useState('')
   const [wage, setWage] = useState<number | ''>('')
   const [wageType, setWageType] = useState<WageType>('HOURLY')
+  const [isWageManuallySet, setIsWageManuallySet] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   
   // Store the original pre-selected employee ID to prevent it from being cleared
@@ -181,7 +182,7 @@ export default function TemplateShiftModal({
   const [departments, setDepartments] = useState<Department[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [filteredFunctions, setFilteredFunctions] = useState<FunctionItem[]>([])
-  const [shiftTypes, setShiftTypes] = useState<ShiftTypeOption[]>([])
+  const [shiftTypes, setShiftTypes] = useState<ShiftTypeOption[]>([{ id: '', name: 'Normal' }])
   const [loadingDepartments, setLoadingDepartments] = useState(false)
   const [loadingCategories, setLoadingCategories] = useState(false)
   const [loadingShiftTypes, setLoadingShiftTypes] = useState(false)
@@ -230,10 +231,14 @@ export default function TemplateShiftModal({
       const response = await fetch('/api/shift-types')
       if (response.ok) {
         const data = await response.json()
-        setShiftTypes(data.shiftTypes || [])
+        setShiftTypes([
+          { id: '', name: 'Normal' },
+          ...(data.shiftTypes || [])
+        ])
       }
     } catch (error) {
       console.error('Error fetching shift types:', error)
+      setShiftTypes([{ id: '', name: 'Normal' }])
     } finally {
       setLoadingShiftTypes(false)
     }
@@ -308,6 +313,7 @@ export default function TemplateShiftModal({
       setShiftTypeId(initialData.shiftTypeId || '')
       setWage(initialData.wage ?? '')
       setWageType(initialData.wageType || 'HOURLY')
+      setIsWageManuallySet(initialData.wage !== undefined && initialData.wage !== null)
       setDepartmentId(initialData.departmentId || '')
       setCategoryId(initialData.categoryId || '')
       setIsInitialLoad(true)
@@ -328,6 +334,7 @@ export default function TemplateShiftModal({
       setShiftTypeId('')
       setWage('')
       setWageType('HOURLY')
+      setIsWageManuallySet(false)
       setDepartmentId('')
       setCategoryId('')
       setIsInitialLoad(true)
@@ -642,6 +649,8 @@ export default function TemplateShiftModal({
   }, [employeeId, filteredEmployees, isEmployeePreSelected])
 
   useEffect(() => {
+    if (isWageManuallySet) return
+
     const selectedEmployee = employees.find((employee) => employee.id === employeeId)
     if (!selectedEmployee) return
 
@@ -661,9 +670,10 @@ export default function TemplateShiftModal({
       setWage(groupWage.wage)
       setWageType(groupWage.wageType)
     }
-  }, [employeeId, employees, employeeGroupId, resolveEmployeePrimaryGroupId, resolveGroupWage])
+  }, [employeeId, employees, employeeGroupId, isWageManuallySet, resolveEmployeePrimaryGroupId, resolveGroupWage])
 
   useEffect(() => {
+    if (isWageManuallySet) return
     if (employeeId) return
 
     const groupWage = resolveGroupWage(employeeGroupId)
@@ -671,7 +681,7 @@ export default function TemplateShiftModal({
       setWage(groupWage.wage)
       setWageType(groupWage.wageType)
     }
-  }, [employeeGroupId, employeeId, resolveGroupWage])
+  }, [employeeGroupId, employeeId, isWageManuallySet, resolveGroupWage])
 
   const toggleBreakFields = () => {
     const nextValue = !showBreakFields
@@ -776,25 +786,23 @@ export default function TemplateShiftModal({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              {translationT('shifts.form.shift_type', 'Shift Type')} <span className="text-red-500">*</span>
+              {translationT('shifts.form.shift_type', 'Shift Type')}
             </label>
             <select
               value={shiftTypeId}
               onChange={(e) => setShiftTypeId(e.target.value)}
               disabled={loadingShiftTypes}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] outline-none disabled:bg-gray-100"
-              required
             >
-              <option value="">
-                {loadingShiftTypes
-                  ? translationT('shifts.form.loading_shift_types', 'Loading shift types...')
-                  : translationT('shifts.form.shift_type', 'Shift Type')}
-              </option>
-              {shiftTypes.map((shiftType) => (
-                <option key={shiftType.id} value={shiftType.id}>
-                  {shiftType.name}
-                </option>
-              ))}
+              {loadingShiftTypes ? (
+                <option value="">{translationT('shifts.form.loading_shift_types', 'Loading shift types...')}</option>
+              ) : (
+                shiftTypes.map((shiftType) => (
+                  <option key={shiftType.id} value={shiftType.id}>
+                    {shiftType.name}
+                  </option>
+                ))
+              )}
             </select>
           </div>
 
@@ -965,34 +973,22 @@ export default function TemplateShiftModal({
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                {translationT('shifts.form.wage', 'Wage ($)')} <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={wage}
-                onChange={(e) => setWage(e.target.value ? Number(e.target.value) : '')}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] outline-none"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                {translationT('employee_groups.form.default_wage_type', 'Wage Type')}
-              </label>
-              <select
-                value={wageType}
-                onChange={(e) => setWageType(e.target.value as WageType)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] outline-none"
-              >
-                <option value="HOURLY">{translationT('employee_groups.form.hourly_wage_option', 'Hourly Wage')}</option>
-                <option value="PER_SHIFT">{translationT('employee_groups.form.wage_per_shift_option', 'Wage Per Shift')}</option>
-              </select>
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {translationT('shifts.form.wage', 'Wage ($)')} <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={wage}
+              onChange={(e) => {
+                setIsWageManuallySet(true)
+                setWage(e.target.value ? Number(e.target.value) : '')
+              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#31BCFF] focus:border-[#31BCFF] outline-none"
+              required
+            />
           </div>
 
           {/* Employee */}

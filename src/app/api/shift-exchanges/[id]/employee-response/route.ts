@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/shared/lib/prisma'
-import { getCurrentEmployee } from '@/shared/lib/auth'
+import { getCurrentUserOrEmployee } from '@/shared/lib/auth'
 import { ShiftExchangeNotifications } from '@/shared/lib/notifications'
 
 export async function PATCH(
@@ -9,13 +9,28 @@ export async function PATCH(
 ) {
   try {
     const { id } = await context.params
-    const employee = await getCurrentEmployee()
+    const auth = await getCurrentUserOrEmployee()
     const { action } = await request.json()
 
-    if (!employee) {
+    if (!auth) {
       return NextResponse.json(
-        { error: 'Employee not found or not authenticated' },
+        { error: 'Not authenticated' },
         { status: 401 }
+      )
+    }
+
+    let employeeId: string | null = null
+    if (auth.type === 'employee') {
+      employeeId = auth.data.id
+    } else {
+      const emp = await prisma.employee.findFirst({ where: { userId: auth.data.id } })
+      employeeId = emp?.id ?? null
+    }
+
+    if (!employeeId) {
+      return NextResponse.json(
+        { error: 'No employee record found for this user' },
+        { status: 403 }
       )
     }
 
@@ -44,7 +59,7 @@ export async function PATCH(
     }
 
     // Verify that the current employee is the target employee (toEmployee)
-    if (exchange.toEmployeeId !== employee.id) {
+    if (exchange.toEmployeeId !== employeeId) {
       return NextResponse.json(
         { error: 'You are not authorized to respond to this request' },
         { status: 403 }
@@ -61,13 +76,13 @@ export async function PATCH(
 
     // Update the exchange with employee response
     const newStatus = action === 'accept' ? 'EMPLOYEE_ACCEPTED' : 'EMPLOYEE_REJECTED'
-    
+
     const updatedExchange = await prisma.shiftExchange.update({
       where: { id },
       data: {
         status: newStatus,
         employeeResponseAt: new Date(),
-        employeeResponseBy: employee.id,
+        employeeResponseBy: employeeId,
       },
       include: {
         shift: true,
@@ -81,11 +96,8 @@ export async function PATCH(
       if (action === 'accept') {
         // Notify original requester that their request was accepted
         await ShiftExchangeNotifications.notifyShiftExchangeAccepted(updatedExchange.id)
-        
-        // If it's a HANDOVER that was accepted, notify admins for approval
-        if (exchange.type === 'HANDOVER') {
-          await ShiftExchangeNotifications.notifyAdminForApproval(updatedExchange.id)
-        }
+        // Notify admins to review and approve
+        await ShiftExchangeNotifications.notifyAdminForApproval(updatedExchange.id)
       } else if (action === 'reject') {
         // Notify original requester that their request was rejected
         await ShiftExchangeNotifications.notifyShiftExchangeRejected(updatedExchange.id)
