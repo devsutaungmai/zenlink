@@ -511,7 +511,7 @@ export default function EditInvoicePage({
     ) => {
         setLoading(true)
         const invoiceStatus =
-            action === 'send_invoice_with_email' || action === 'send_invoice_without_email'
+            action === 'send_invoice_with_email' || action === 'send_invoice_without_email' || action === 'print'
                 ? 'SENT'
                 : 'DRAFT'
         let { seller, ...filteredData } = formData

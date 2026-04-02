@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, act } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import Link from 'next/link'
@@ -661,7 +661,7 @@ export default function CreateInvoicePage() {
         setLoading(true)
 
         const invoiceStatus =
-            action === 'send_invoice_with_email' || action === 'send_invoice_without_email'
+            action === 'send_invoice_with_email' || action === 'send_invoice_without_email' || action === 'print'
                 ? 'SENT'
                 : 'DRAFT'
 
