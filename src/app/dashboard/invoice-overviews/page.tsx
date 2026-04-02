@@ -105,19 +105,51 @@ export default function InvoiceOverview() {
     const [selectedStatus, setSelectedStatus] = useState("All statuses")
     const [dateRange, setDateRange] = useState("2024-11-20 - 2025-11-20")
     const [selectedInvoices, setSelectedInvoices] = useState<Set<string>>(new Set())
+    const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' }>({ key: 'invoiceNumber', direction: 'asc' })
+
+    const NON_SORTABLE_COLUMNS = new Set(['status', 'actions'])
+
+    const handleSort = (key: string) => {
+        setSortConfig(prev => prev.key === key ? { key, direction: prev.direction === 'asc' ? 'desc' : 'asc' } : { key, direction: 'asc' })
+    }
+
+    const getSortValue = (invoice: Invoice, key: string): string | number => {
+        const paid = invoice.paymentAllocations.reduce((s, p) => s + Number(p.amountAllocated), 0)
+        switch (key) {
+            case 'invoiceNumber': return invoice.invoiceNumber.toLowerCase()
+            case 'customer': return invoice.customer?.customerName?.toLowerCase() ?? ''
+            case 'project': return invoice.project?.name?.toLowerCase() ?? ''
+            case 'sentAt': return invoice.sentAt ? new Date(invoice.sentAt).getTime() : 0
+            case 'dueDate': return invoice.dueDate ? new Date(invoice.dueDate).getTime() : 0
+            case 'totalInclVAT': return Number(invoice.totalInclVAT)
+            case 'totalExclVAT': return Number(invoice.totalExclVAT)
+            case 'totalVatAmount': return Number(invoice.totalVatAmount)
+            case 'paid': return paid
+            case 'outstanding': return Number(invoice.totalInclVAT) - paid
+            default: return ''
+        }
+    }
 
     const [currentPage, setCurrentPage] = useState(1)
     const [itemsPerPage] = useState(10)
 
-    const totalPages = Math.ceil(invoices.length / itemsPerPage)
+    const sortedInvoices = [...invoices].sort((a, b) => {
+        const valA = getSortValue(a, sortConfig.key)
+        const valB = getSortValue(b, sortConfig.key)
+        if (typeof valA === 'string' && typeof valB === 'string') return sortConfig.direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA)
+        return sortConfig.direction === 'asc' ? (valA as number) - (valB as number) : (valB as number) - (valA as number)
+    })
+
+    const totalPages = Math.ceil(sortedInvoices.length / itemsPerPage)
     const startIndex = (currentPage - 1) * itemsPerPage
     const endIndex = startIndex + itemsPerPage
-    const paginatedInvoices = invoices.slice(startIndex, endIndex)
+    const paginatedInvoices = sortedInvoices.slice(startIndex, endIndex)
     const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] = useState<Invoice | null>(null)
     const [selectedInvoiceForCredit, setSelectedInvoiceForCredit] = useState<Invoice | null>(null)
     const [loadingPayment, setLoadingPayment] = useState<boolean>(false);
     const [loadingCredit, setLoadingCredit] = useState<boolean>(false);
     const [loadingEmail, setLoadingEmail] = useState<Record<string, boolean>>({});
+
     const COLUMNS = [
         { key: "invoiceNumber", label: "Invoice no." },
         { key: "customer", label: "Customer" },
@@ -541,7 +573,17 @@ export default function InvoiceOverview() {
                                         >
                                             <div className="flex items-center gap-2">
                                                 <GripVertical className="w-3 h-3 text-muted-foreground/50 flex-shrink-0" />
-                                                <span className="truncate">{col.label}</span>
+                                                {!NON_SORTABLE_COLUMNS.has(col.key) ? (
+                                                    <button onClick={() => handleSort(col.key)} className="flex items-center gap-1 hover:text-foreground transition-colors duration-150 min-w-0 overflow-hidden">
+                                                        <span className="truncate">{col.label}</span>
+                                                        <span className="flex flex-col leading-none flex-shrink-0">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 6" className={cn("w-2.5 h-2", sortConfig.key === col.key && sortConfig.direction === 'asc' ? "text-[#31BCFF]" : "text-gray-300")} fill="currentColor"><path d="M5 0L10 6H0z" /></svg>
+                                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 6" className={cn("w-2.5 h-2", sortConfig.key === col.key && sortConfig.direction === 'desc' ? "text-[#31BCFF]" : "text-gray-300")} fill="currentColor"><path d="M5 6L0 0H10z" /></svg>
+                                                        </span>
+                                                    </button>
+                                                ) : (
+                                                    <span className="truncate">{col.label}</span>
+                                                )}
                                             </div>
                                             <ResizeHandle onMouseDown={onMouseDown(col.key)} />
                                         </th>))}
