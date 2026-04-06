@@ -79,8 +79,8 @@ export default function DashboardLayout({
       <DashboardNavbar />
 
       <div className="flex flex-col flex-1">
-        <div className="pt-16 pb-24 xl:pb-0"> {/* Padding for fixed top+bottom navs */}
-          <div className="py-8 px-4 sm:px-6 xl:px-8">
+        <div className="pt-16 pb-32 xl:pb-0">
+          <div className="py-6 px-4 sm:px-6 xl:px-8">
             {children}
           </div>
         </div>

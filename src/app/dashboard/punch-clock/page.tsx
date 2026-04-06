@@ -1063,7 +1063,7 @@ export default function PunchClockPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6 overflow-x-hidden">
+    <div className="overflow-x-hidden">
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-blue-100 mb-4 sm:mb-6">
         <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">

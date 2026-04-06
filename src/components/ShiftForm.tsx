@@ -151,11 +151,35 @@ interface ShiftFormProps {
   onCancel: () => void
   loading: boolean
   employees: EmployeeForForm[]
-  employeeGroups: { id: string; name: string; wage?: number | null; functions?: Array<{ id: string; name: string }> }[]
+  employeeGroups: { id: string; name: string; wage?: number | null; hourlyWage?: number | null; functions?: Array<{ id: string; name: string }> }[]
   showEmployee?: boolean
   showStartTime?: boolean
   showDate?: boolean
   readOnly?: boolean
+}
+
+function resolveEmployeeGroupAndWage(
+  employee: EmployeeForForm,
+  employeeGroups: { id: string; name: string; wage?: number | null; hourlyWage?: number | null }[]
+): { autoGroupId: string | undefined; wage: number } {
+  const empGroups = employee.employeeGroups ?? []
+  let autoGroupId: string | undefined
+
+  if (empGroups.length === 1) {
+    autoGroupId = empGroups[0].employeeGroup.id
+  } else if (empGroups.length === 0 && employee.employeeGroupId) {
+    autoGroupId = employee.employeeGroupId
+  }
+
+  let wage = 0
+  if (employee.salaryRate) {
+    wage = employee.salaryRate
+  } else if (autoGroupId) {
+    const group = employeeGroups.find(g => g.id === autoGroupId)
+    wage = group?.hourlyWage ?? group?.wage ?? 0
+  }
+
+  return { autoGroupId, wage }
 }
 
 export default function ShiftForm({
@@ -235,15 +259,11 @@ export default function ShiftForm({
     if (!initialData?.id && baseData.employeeId && !baseData.wage) {
       const selectedEmployee = employees.find(emp => emp.id === baseData.employeeId);
       if (selectedEmployee) {
-        if (selectedEmployee.salaryRate) {
-          baseData.wage = selectedEmployee.salaryRate;
-          baseData.wageType = 'HOURLY';
-        } else if (selectedEmployee.employeeGroupId) {
-          const group = employeeGroups.find(g => g.id === selectedEmployee.employeeGroupId);
-          if (group && group.wage) {
-            baseData.wage = group.wage;
-            baseData.wageType = 'HOURLY';
-          }
+        const { autoGroupId, wage } = resolveEmployeeGroupAndWage(selectedEmployee, employeeGroups);
+        baseData.wage = wage;
+        baseData.wageType = 'HOURLY';
+        if (autoGroupId && !baseData.employeeGroupId) {
+          baseData.employeeGroupId = autoGroupId;
         }
       }
     }
@@ -269,24 +289,12 @@ export default function ShiftForm({
     }
 
     const updates: Partial<ShiftFormData> = {};
-    
-    if (selectedEmployee.salaryRate) {
-      updates.wage = selectedEmployee.salaryRate;
-      updates.wageType = 'HOURLY';
-    } else if (selectedEmployee.employeeGroupId) {
-      const group = employeeGroups.find(g => g.id === selectedEmployee.employeeGroupId);
-      if (group && group.wage) {
-        updates.wage = group.wage;
-        updates.wageType = 'HOURLY';
-      } else {
-        updates.wage = 0;
-      }
-    } else {
-      updates.wage = 0;
-    }
+    const { autoGroupId, wage } = resolveEmployeeGroupAndWage(selectedEmployee, employeeGroups);
+    updates.wage = wage;
+    updates.wageType = 'HOURLY';
 
-    if (selectedEmployee.employeeGroupId && !formData.employeeGroupId) {
-      updates.employeeGroupId = selectedEmployee.employeeGroupId;
+    if (autoGroupId && !formData.employeeGroupId) {
+      updates.employeeGroupId = autoGroupId;
     }
 
     if (selectedEmployee.departmentId && !formData.departmentId) {
