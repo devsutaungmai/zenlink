@@ -113,7 +113,7 @@ export default function DashboardNavbar() {
             { name: 'Customer ledger', href: '/dashboard/accounts/customer-ledger' },
             { name: 'Voucher Overviews', href: '/dashboard/voucher/overviews' },
             { name: 'Invoice Overviews', href: '/dashboard/invoice-overviews' },
-            { name: 'Ledger Account', href: '/dashboard/ledger-accounts' },
+            // { name: 'Ledger Account', href: '/dashboard/ledger-accounts' },
           ],
         },
       ],

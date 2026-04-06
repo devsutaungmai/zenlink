@@ -26,6 +26,7 @@ import { CustomerCombobox } from "@/components/invoice/CustomerCombobox"
 import { Customer } from "../../invoices/create/page"
 import { ResizeHandle } from "@/components/invoice/resize-handle"
 import { useResizableColumns } from "@/hooks/use-resizable-columns"
+import { toast } from "@/shared/lib/toast"
 
 // --- Data types ---
 
@@ -89,7 +90,7 @@ export default function CustomerLedger() {
     const [matchDialogOpen, setMatchDialogOpen] = useState(false)
     const [selectedMatchGroup, setSelectedMatchGroup] = useState<OpenItem | null>(null)
 
-     const RESIZABLE_COLUMNS = [
+    const RESIZABLE_COLUMNS = [
         { key: "date", initialWidth: 80, minWidth: 60 },
         { key: "text", initialWidth: 120, minWidth: 80 },
         { key: "description", initialWidth: 220, minWidth: 120 },
@@ -98,11 +99,11 @@ export default function CustomerLedger() {
         { key: "amount", initialWidth: 70, minWidth: 90 },
         { key: "balance", initialWidth: 90, minWidth: 100 },
         { key: "payable", initialWidth: 70, minWidth: 90 },
-      ]
-      const { getColumnWidth, onMouseDown, resetWidths } = useResizableColumns({
+    ]
+    const { getColumnWidth, onMouseDown, resetWidths } = useResizableColumns({
         storageKey: "customer-ledger-col-widths",
         columns: RESIZABLE_COLUMNS,
-      })
+    })
 
     const openMatchDialog = (item: OpenItem) => {
         setSelectedMatchGroup(item)
@@ -346,6 +347,21 @@ export default function CustomerLedger() {
                             onChange={setCustomerFilter}
                             placeholder="Select Customer"
                             paddingYValue="py-1"
+                            onSaveNewCustomer={async (customer) => {
+                                const res = await fetch('/api/customers', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(customer),
+                                })
+                                if (!res.ok) {
+                                    const error = await res.json()
+                                    throw new Error(error.error || 'Failed to create customer')
+                                }
+                                const created = await res.json()
+                                setCustomers(prev => [...prev, created])
+                                await toast('success', 'Customer created successfully')
+                                return created
+                            }}
                         />
                     </div>
 
@@ -475,7 +491,7 @@ export default function CustomerLedger() {
                 <div className="hidden md:block overflow-auto">
                     <table className="w-full border-collapse text-sm">
                         <colgroup>
-                            <col style={{ width:getColumnWidth("closed") }} />
+                            <col style={{ width: getColumnWidth("closed") }} />
                             <col style={{ width: getColumnWidth("date") }} />
                             <col style={{ width: getColumnWidth("text") }} />
                             <col style={{ width: getColumnWidth("description") }} />
@@ -546,7 +562,7 @@ export default function CustomerLedger() {
                             <tr className="border-b bg-white font-semibold">
                                 <td></td>
                                 <td className="p-2.5 font-semibold text-right" colSpan={7}>
-                                     {activeTab === "open" ? "Total Outstanding" : "Total"}
+                                    {activeTab === "open" ? "Total Outstanding" : "Total"}
                                 </td>
                                 <td className="p-2.5 font-semibold text-right">
                                     {formatNumber(subTotal)}
