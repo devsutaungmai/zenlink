@@ -160,18 +160,21 @@ export default function EmployeeGroupedView({
     shift: ShiftWithRelations | null
   }>({ show: false, x: 0, y: 0, shift: null })
   const contextMenuRef = useRef<HTMLDivElement>(null)
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       if (contextMenuRef.current && !contextMenuRef.current.contains(event.target as Node)) {
         setContextMenu(prev => ({ ...prev, show: false }))
       }
     }
     if (contextMenu.show) {
       document.addEventListener('mousedown', handleClickOutside)
+      document.addEventListener('touchstart', handleClickOutside)
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('touchstart', handleClickOutside)
     }
   }, [contextMenu.show])
 
@@ -179,6 +182,22 @@ export default function EmployeeGroupedView({
     e.preventDefault()
     e.stopPropagation()
     setContextMenu({ show: true, x: e.clientX, y: e.clientY, shift })
+  }
+
+  const handleShiftTouchStart = (e: React.TouchEvent, shift: ShiftWithRelations) => {
+    const touch = e.touches[0]
+    const x = touch.clientX
+    const y = touch.clientY
+    longPressTimer.current = setTimeout(() => {
+      setContextMenu({ show: true, x, y, shift })
+    }, 500)
+  }
+
+  const handleShiftTouchEnd = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current)
+      longPressTimer.current = null
+    }
   }
   
   const groupOverlappingShifts = (shifts: ShiftWithRelations[]) => {
@@ -751,6 +770,9 @@ export default function EmployeeGroupedView({
                               onDragEnd={handleDragEnd}
                               onClick={() => !pendingShiftIds.has(shift.id) && onEditShift(shift)}
                               onContextMenu={(e) => handleShiftContextMenu(e, shift)}
+                              onTouchStart={(e) => !pendingShiftIds.has(shift.id) && handleShiftTouchStart(e, shift)}
+                              onTouchEnd={handleShiftTouchEnd}
+                              onTouchMove={handleShiftTouchEnd}
                               className={`mb-1 cursor-pointer group/card ${canEditShifts ? 'cursor-grab active:cursor-grabbing' : ''} ${pendingShiftIds.has(shift.id) ? 'opacity-50 animate-pulse pointer-events-none' : ''}`}
                             >
                               <div 

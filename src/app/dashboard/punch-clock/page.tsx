@@ -161,6 +161,7 @@ export default function PunchClockPage() {
     totalPages: 1,
     totalCount: 0
   })
+  const [statsCount, setStatsCount] = useState({ workingCount: 0, completedCount: 0 })
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedFilter, setSelectedFilter] = useState('all')
   const [selectedDate, setSelectedDate] = useState(getCurrentDateISO())
@@ -430,6 +431,9 @@ export default function PunchClockPage() {
 
       setAttendanceRecords(data.data || [])
       setPaginationMeta({ totalPages: totalPagesFromServer, totalCount: totalCountFromServer })
+      if (data.stats) {
+        setStatsCount({ workingCount: data.stats.workingCount, completedCount: data.stats.completedCount })
+      }
     } catch (error) {
       console.error('Error fetching attendance:', error)
       setAttendanceRecords([])
@@ -654,8 +658,8 @@ export default function PunchClockPage() {
     return null
   }
 
-  const activeCount = displayedAttendance.filter(record => !record.punchOutTime).length
-  const completedCount = displayedAttendance.filter(record => record.punchOutTime).length
+  const activeCount = statsCount.workingCount
+  const completedCount = statsCount.completedCount
   const totalCountDisplay = paginationMeta.totalCount ?? displayedAttendance.length
   const paginationStart = totalCountDisplay === 0 || displayedAttendance.length === 0
     ? 0
@@ -1059,10 +1063,10 @@ export default function PunchClockPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
+    <div className="p-4 sm:p-6 overflow-x-hidden">
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-blue-100 mb-4 sm:mb-6">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-2">
               {t('title')}
@@ -1309,7 +1313,7 @@ export default function PunchClockPage() {
         ) : (
           <>
             {/* Desktop Table View */}
-            <div className="hidden lg:block overflow-x-auto">
+            <div className="hidden xl:block overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
@@ -1472,7 +1476,7 @@ export default function PunchClockPage() {
             </div>
 
             {/* Mobile Card View */}
-            <div className="lg:hidden divide-y divide-gray-200">
+            <div className="xl:hidden divide-y divide-gray-200">
               {displayedAttendance.map((record) => (
                 <div key={record.id} className="p-4 hover:bg-gray-50">
                   {/* Employee Info */}
