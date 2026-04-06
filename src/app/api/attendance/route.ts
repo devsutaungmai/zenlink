@@ -226,7 +226,7 @@ export async function POST(request: NextRequest) {
     if (resolvedShiftId && !autoCreatedShiftId) {
       await prisma.shift.update({
         where: { id: resolvedShiftId },
-        data: { status: isAdmin ? 'COMPLETED' : (resolvedPunchOutTime ? 'COMPLETED' : 'WORKING') }
+        data: { status: resolvedPunchOutTime ? 'COMPLETED' : 'WORKING' }
       })
     }
 
@@ -332,14 +332,6 @@ export async function GET(request: NextRequest) {
         } else {
           whereClause.employeeId = requestedEmployeeId
         }
-      }
-    }
-
-    if (statusParam === 'working') {
-      whereClause.punchOutTime = null
-    } else if (statusParam === 'completed') {
-      whereClause.punchOutTime = {
-        not: null
       }
     }
 
@@ -450,6 +442,15 @@ export async function GET(request: NextRequest) {
       delete whereClause.employee
     }
 
+    // Save base clause (with date/search but without status filter) for aggregate counts
+    const baseWhereClause = { ...whereClause }
+
+    if (statusParam === 'working') {
+      whereClause.punchOutTime = null
+    } else if (statusParam === 'completed') {
+      whereClause.punchOutTime = { not: null }
+    }
+
     const attendances = await prisma.attendance.findMany({
       where: whereClause,
       select: {
@@ -524,7 +525,11 @@ export async function GET(request: NextRequest) {
     })
 
     if (isPaginated) {
-      const totalCount = await prisma.attendance.count({ where: whereClause })
+      const [totalCount, workingCount, completedCount] = await Promise.all([
+        prisma.attendance.count({ where: whereClause }),
+        prisma.attendance.count({ where: { ...baseWhereClause, punchOutTime: null } }),
+        prisma.attendance.count({ where: { ...baseWhereClause, punchOutTime: { not: null } } }),
+      ])
       const totalPages = Math.max(1, Math.ceil(totalCount / pageSize) || 1)
 
       return NextResponse.json({
@@ -534,6 +539,10 @@ export async function GET(request: NextRequest) {
           pageSize,
           totalCount,
           totalPages
+        },
+        stats: {
+          workingCount,
+          completedCount
         }
       })
     }

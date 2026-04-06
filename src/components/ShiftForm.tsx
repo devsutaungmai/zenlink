@@ -231,8 +231,8 @@ export default function ShiftForm({
       autoBreakValue: null,
     };
 
-    // If there's an employeeId on a new shift, calculate the default wage
-    if (!initialData && baseData.employeeId) {
+    // If there's an employeeId on a new shift (no id = not an existing shift), calculate the default wage
+    if (!initialData?.id && baseData.employeeId && !baseData.wage) {
       const selectedEmployee = employees.find(emp => emp.id === baseData.employeeId);
       if (selectedEmployee) {
         if (selectedEmployee.salaryRate) {
