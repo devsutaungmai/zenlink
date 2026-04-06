@@ -22,6 +22,7 @@ import { ResizeHandle } from "@/components/invoice/resize-handle"
 import { CustomerContact } from "./create/page"
 import { GripVertical } from "lucide-react"
 import { cn } from "@/shared/lib/utils"
+import { ca } from "date-fns/locale"
 
 interface Customer {
   id: string
@@ -65,6 +66,29 @@ export default function CustomersPage() {
     { key: "active", label: "Status" },
   ]
   const [selectedFilter, setSelectedFilter] = useState('active')
+
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' }>({ key: 'customerNumber', direction: 'asc' })
+
+  const NON_SORTABLE_COLUMNS = new Set(['active', 'actions'])
+
+  const handleSort = (key: string) => {
+    setSortConfig(prev => prev.key === key ? { key, direction: prev.direction === 'asc' ? 'desc' : 'asc' } : { key, direction: 'asc' })
+  }
+
+  const getSortValue = (customer: Customer, key: string): string | number => {
+    switch (key) {
+      case 'customerNumber': return customer.customerNumber.toLowerCase()
+      case 'customerName': return customer.customerName.toLowerCase()
+      case 'contactPersons': return customer.contactPersons?.[0]?.name.toLowerCase() ?? ''
+      case 'email': return customer.email?.toLowerCase() ?? ''
+      case 'phoneNumber': return customer.phoneNumber?.toLowerCase() ?? ''
+      case 'address': return customer.address?.toLowerCase() ?? ''
+      case 'discountPercentage': return customer.discountPercentage ?? 0
+      case 'organizationNumber': return customer.organizationNumber?.toLowerCase() ?? ''
+      case 'deliveryAddress': return customer.deliveryAddress?.toLowerCase() ?? ''
+      default: return ''
+    }
+  }
 
   const { columns, toggleColumn, resetColumns, isColumnVisible } = useColumnVisibility({
     storageKey: "customers-columns",
@@ -172,7 +196,12 @@ export default function CustomersPage() {
         (selectedFilter === 'inactive' && !customer.active)
       return matchesSearch && matchesFilter
     }
-  )
+  ).sort((a, b) => {
+    const valA = getSortValue(a, sortConfig.key)
+    const valB = getSortValue(b, sortConfig.key)
+    if (typeof valA === 'string' && typeof valB === 'string') return sortConfig.direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA)
+    return sortConfig.direction === 'asc' ? (valA as number) - (valB as number) : (valB as number) - (valA as number)
+  })
 
   const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
@@ -621,7 +650,17 @@ export default function CustomersPage() {
                       >
                         <div className="flex items-center gap-2">
                           <GripVertical className="w-3 h-3 text-muted-foreground/50 flex-shrink-0" />
-                          <span className="truncate">{col.label}</span>
+                          {!NON_SORTABLE_COLUMNS.has(col.key) ? (
+                            <button onClick={() => handleSort(col.key)} className="flex items-center gap-1 hover:text-foreground transition-colors duration-150 min-w-0 overflow-hidden">
+                              <span className="truncate">{col.label}</span>
+                              <span className="flex flex-col leading-none flex-shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 6" className={cn("w-2.5 h-2", sortConfig.key === col.key && sortConfig.direction === 'asc' ? "text-[#31BCFF]" : "text-gray-300")} fill="currentColor"><path d="M5 0L10 6H0z" /></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 6" className={cn("w-2.5 h-2", sortConfig.key === col.key && sortConfig.direction === 'desc' ? "text-[#31BCFF]" : "text-gray-300")} fill="currentColor"><path d="M5 6L0 0H10z" /></svg>
+                              </span>
+                            </button>
+                          ) : (
+                            <span className="truncate">{col.label}</span>
+                          )}
                         </div>
                         <ResizeHandle onMouseDown={onMouseDown(col.key)} />
                       </th>))}

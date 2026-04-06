@@ -7,6 +7,13 @@ import ProductDialog, { ProductFormType } from "./ProductDialog"
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
+interface VatCode {
+    name: string
+    rate: number
+}
+interface BusinessVatCode {
+    vatCode: VatCode
+}
 
 export interface ProductOption {
   id: string
@@ -14,6 +21,13 @@ export interface ProductOption {
   productNumber?: string | null
   salesPrice?: number
   discountPercentage?: number
+      ledgerAccount?: {
+        vatCode?: {
+            code: number
+            rate: number
+        },
+        businessVatCodes: BusinessVatCode[]
+    }
 }
 
 interface ProductSelectComboboxProps {

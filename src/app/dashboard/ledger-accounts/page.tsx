@@ -38,6 +38,26 @@ export default function LedgerAccountsPage() {
     const [error, setError] = useState<string | null>(null)
     const [searchTerm, setSearchTerm] = useState('')
     const [selectedFilter, setSelectedFilter] = useState('active')
+    const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' }>({ key: 'accountNumber', direction: 'asc' })
+
+    const NON_SORTABLE_COLUMNS = new Set(['status', 'actions'])
+
+    const handleSort = (key: string) => {
+        setSortConfig(prev => prev.key === key ? { key, direction: prev.direction === 'asc' ? 'desc' : 'asc' } : { key, direction: 'asc' })
+    }
+
+    const getSortValue = (account: LedgerAccount, key: string): string | number => {
+        switch (key) {
+            case 'accountNumber': return account.accountNumber
+            case 'accountName': return account.name.toLowerCase()
+            case 'type': return account.type.toLowerCase()
+            case 'vatCode': return account.vatCode?.name?.toLowerCase() ?? ''
+            case 'industrySpecification': return account.industrySpecification?.toLowerCase() ?? ''
+            case 'reportGroup': return account.reportGroup?.toLowerCase() ?? ''
+            case 'saftStandardAccount': return account.saftStandardAccount?.toLowerCase() ?? ''
+            default: return ''
+        }
+    }
 
     // Customer columns + usage
     const COLUMNS = [
@@ -179,12 +199,17 @@ export default function LedgerAccountsPage() {
             account.name.toLowerCase().includes(normalizedSearch) ||
             account.accountNumber.toString().includes(normalizedSearch) ||
             account.type.toLowerCase().includes(normalizedSearch)
-        );
+        )
         const matchesFilter =
             selectedFilter === 'all' ||
             (selectedFilter === 'active' && account.isActive === true) ||
-            (selectedFilter === 'inactive' && account.isActive === false);
-        return matchesSearch && matchesFilter;
+            (selectedFilter === 'inactive' && account.isActive === false)
+        return matchesSearch && matchesFilter
+    }).sort((a, b) => {
+        const valA = getSortValue(a, sortConfig.key)
+        const valB = getSortValue(b, sortConfig.key)
+        if (typeof valA === 'string' && typeof valB === 'string') return sortConfig.direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA)
+        return sortConfig.direction === 'asc' ? (valA as number) - (valB as number) : (valB as number) - (valA as number)
     })
 
     const handleStatusChange = async (ledgerAccountId: string, newStatus: boolean) => {
@@ -468,7 +493,17 @@ export default function LedgerAccountsPage() {
                                         >
                                             <div className="flex items-center gap-2">
                                                 <GripVertical className="w-3 h-3 text-muted-foreground/50 flex-shrink-0" />
-                                                <span className="truncate">{col.label}</span>
+                                                {!NON_SORTABLE_COLUMNS.has(col.key) ? (
+                                                    <button onClick={() => handleSort(col.key)} className="flex items-center gap-1 hover:text-foreground transition-colors duration-150 min-w-0 overflow-hidden">
+                                                        <span className="truncate">{col.label}</span>
+                                                        <span className="flex flex-col leading-none flex-shrink-0">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 6" className={cn("w-2.5 h-2", sortConfig.key === col.key && sortConfig.direction === 'asc' ? "text-[#31BCFF]" : "text-gray-300")} fill="currentColor"><path d="M5 0L10 6H0z" /></svg>
+                                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 6" className={cn("w-2.5 h-2", sortConfig.key === col.key && sortConfig.direction === 'desc' ? "text-[#31BCFF]" : "text-gray-300")} fill="currentColor"><path d="M5 6L0 0H10z" /></svg>
+                                                        </span>
+                                                    </button>
+                                                ) : (
+                                                    <span className="truncate">{col.label}</span>
+                                                )}
                                             </div>
                                             <ResizeHandle onMouseDown={onMouseDown(col.key)} />
                                         </th>))}

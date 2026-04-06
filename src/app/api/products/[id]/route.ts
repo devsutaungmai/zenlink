@@ -26,7 +26,22 @@ export async function GET(
       where: {
         id: id,
         businessId: businessId
-      }
+      },
+       include: {
+        ledgerAccount: {
+          select: {
+            id: true,
+            name: true,
+            accountNumber: true,
+            businessId: true,
+            vatCode: { select: { code: true, rate: true } },
+            businessVatCodes: {
+              where: { businessId },
+              include: { vatCode: { select: { name: true, rate: true } } }
+            }
+          }
+        }
+      },
     })
 
     if (!product) {

@@ -97,18 +97,18 @@ export interface Invoice {
 
 export default function InvoicesPage() {
     const { t } = useTranslation()
-    // const { currencySymbol } = useCurrency()
     const router = useRouter()
     const [invoices, setInvoices] = useState<Invoice[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [searchTerm, setSearchTerm] = useState('')
     const [selectedFilter, setSelectedFilter] = useState('all')
-    const [selectedInvoiceForCredit, setSelectedInvoiceForCredit] = useState<Invoice | null>(null)
-    const [loadingCredit, setLoadingCredit] = useState<boolean>(false);
     const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] = useState<Invoice | null>(null)
     const [loadingPayment, setLoadingPayment] = useState<boolean>(false);
-    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
+    const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' }>({
+        key: 'invoiceNumber',
+        direction: 'asc',
+    })
 
     // Pagination states
     const [currentPage, setCurrentPage] = useState(1)
@@ -199,7 +199,6 @@ export default function InvoicesPage() {
         columns: RESIZABLE_COLUMNS,
     })
 
-
     useEffect(() => {
         fetchInvoices()
     }, [])
@@ -266,6 +265,34 @@ export default function InvoicesPage() {
         }
     }
 
+
+    const NON_SORTABLE_COLUMNS = new Set(['status', 'actions'])
+
+    const handleSort = (key: string) => {
+        setSortConfig(prev =>
+            prev.key === key
+                ? { key, direction: prev.direction === 'asc' ? 'desc' : 'asc' }
+                : { key, direction: 'asc' }
+        )
+    }
+
+    const getSortValue = (invoice: Invoice, key: string): string | number => {
+        switch (key) {
+            case 'invoiceNumber': return invoice.sequence ?? 0
+            case 'customer': return invoice.customer?.customerName?.toLowerCase() ?? ''
+            case 'sentAt': return invoice.sentAt ? new Date(invoice.sentAt).getTime() : 0
+            case 'totalExclVAT': return Number(invoice.totalExclVAT ?? 0)
+            case 'vatAmount': return Number(invoice.totalVatAmount ?? 0)
+            case 'totalInclVAT': return Number(invoice.totalInclVAT ?? 0)
+            case 'paid': return invoice.paymentAllocations?.reduce((s, p) => s + Number(p.amountAllocated), 0) ?? 0
+            case 'outstanding': return Number(invoice.totalInclVAT ?? 0) - (invoice.paymentAllocations?.reduce((s, p) => s + Number(p.amountAllocated), 0) ?? 0)
+            case 'discount': return invoice.customer?.discountPercentage ?? 0
+            case 'department': return invoice.department?.name?.toLowerCase() ?? ''
+            case 'project': return invoice.project?.name?.toLowerCase() ?? ''
+            case 'deliveryAddress': return invoice.customer?.deliveryAddress?.toLowerCase() ?? ''
+            default: return ''
+        }
+    }
     const filteredInvoices = invoices.filter(invoice => {
         const matchesSearch = invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
             invoice.customer?.customerName.toLowerCase().includes(searchTerm.toLowerCase());
@@ -276,9 +303,16 @@ export default function InvoicesPage() {
         return matchesSearch && matchesFilter;
     }
     ).sort((a, b) => {
-        const seqA = a.sequence ?? 0
-        const seqB = b.sequence ?? 0
-        return sortOrder === 'asc' ? seqA - seqB : seqB - seqA
+        const valA = getSortValue(a, sortConfig.key)
+        const valB = getSortValue(b, sortConfig.key)
+        if (typeof valA === 'string' && typeof valB === 'string') {
+            return sortConfig.direction === 'asc'
+                ? valA.localeCompare(valB)
+                : valB.localeCompare(valA)
+        }
+        return sortConfig.direction === 'asc'
+            ? (valA as number) - (valB as number)
+            : (valB as number) - (valA as number)
     })
 
     // Pagination calculations
@@ -765,37 +799,17 @@ export default function InvoicesPage() {
                                         >
                                             <div className="flex items-center gap-2">
                                                 <GripVertical className="w-3 h-3 text-muted-foreground/50 flex-shrink-0" />
-                                                {col.key === 'invoiceNumber' ? (
+                                                {!NON_SORTABLE_COLUMNS.has(col.key) ? (
                                                     <button
-                                                        onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
-                                                        className="flex items-center gap-1 hover:text-foreground transition-colors duration-150 group min-w-0 overflow-hidden"
+                                                        onClick={() => handleSort(col.key)}
+                                                        className="flex items-center gap-1 hover:text-foreground transition-colors duration-150 min-w-0 overflow-hidden"
                                                     >
                                                         <span className="truncate">{col.label}</span>
                                                         <span className="flex flex-col leading-none flex-shrink-0">
-                                                            <svg
-                                                                xmlns="http://www.w3.org/2000/svg"
-                                                                viewBox="0 0 10 6"
-                                                                className={cn(
-                                                                    "w-2.5 h-2",
-                                                                    sortOrder === 'asc'
-                                                                        ? "text-[#31BCFF]"
-                                                                        : "text-gray-300"
-                                                                )}
-                                                                fill="currentColor"
-                                                            >
+                                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 6" className={cn("w-2.5 h-2", sortConfig.key === col.key && sortConfig.direction === 'asc' ? "text-[#31BCFF]" : "text-gray-300")} fill="currentColor">
                                                                 <path d="M5 0L10 6H0z" />
                                                             </svg>
-                                                            <svg
-                                                                xmlns="http://www.w3.org/2000/svg"
-                                                                viewBox="0 0 10 6"
-                                                                className={cn(
-                                                                    "w-2.5 h-2",
-                                                                    sortOrder === 'desc'
-                                                                        ? "text-[#31BCFF]"
-                                                                        : "text-gray-300"
-                                                                )}
-                                                                fill="currentColor"
-                                                            >
+                                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 6" className={cn("w-2.5 h-2", sortConfig.key === col.key && sortConfig.direction === 'desc' ? "text-[#31BCFF]" : "text-gray-300")} fill="currentColor">
                                                                 <path d="M5 6L0 0H10z" />
                                                             </svg>
                                                         </span>
@@ -804,6 +818,7 @@ export default function InvoicesPage() {
                                                     <span className="truncate">{col.label}</span>
                                                 )}
                                             </div>
+
                                             <ResizeHandle onMouseDown={onMouseDown(col.key)} />
                                         </th>))}
                                     <th></th>

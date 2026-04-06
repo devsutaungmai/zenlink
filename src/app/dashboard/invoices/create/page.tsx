@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, act } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import Link from 'next/link'
@@ -457,6 +457,7 @@ export default function CreateInvoicePage() {
             setFetchingCustomer(false)
         }
     }
+    
     const handleCustomerChange = (customerId: string) => {
         setFormData({ ...formData, customerId })
         fetchCustomerDetails(customerId)
@@ -507,49 +508,50 @@ export default function CreateInvoicePage() {
     }
 
     const updateLineTotal = (index: number, currentQty?: number, currentPrice?: number, currentDiscount?: number, currentVat?: number) => {
-    const line = formData.invoiceLines[index];
-    const qty = currentQty !== undefined ? currentQty : Number(line.quantity);
-    const price = currentPrice !== undefined ? currentPrice : Math.abs(Number(line.pricePerUnit));
-    const discount = currentDiscount !== undefined ? currentDiscount : Number(line.discountPercentage);
-    const vat = currentVat !== undefined ? currentVat : Number(line.vatPercentage);
-    const absQty = Math.abs(qty) || 0;
-    const { totalExclVAT } = calculateInvoiceTotals(absQty, Math.abs(price), discount, vat);
-    const sign = (isCreditNote && !!line.id) ? -1 : (qty < 0 ? -1 : 1);
-    setNetTotals((prevNetTotals) => {
-        const newNetTotals = [...prevNetTotals];
-        newNetTotals[index] = totalExclVAT * sign;
-        return newNetTotals;
-    });
-};
-
-    
+        const line = formData.invoiceLines[index];
+        const qty = currentQty !== undefined ? currentQty : Number(line.quantity);
+        const price = currentPrice !== undefined ? currentPrice : Math.abs(Number(line.pricePerUnit));
+        const discount = currentDiscount !== undefined ? currentDiscount : Number(line.discountPercentage);
+        const vat = currentVat !== undefined ? currentVat : Number(line.vatPercentage);
+        const absQty = Math.abs(qty) || 0;
+        const { totalExclVAT } = calculateInvoiceTotals(absQty, Math.abs(price), discount, vat);
+        const sign = (isCreditNote && !!line.id) ? -1 : (qty < 0 ? -1 : 1);
+        setNetTotals((prevNetTotals) => {
+            const newNetTotals = [...prevNetTotals];
+            newNetTotals[index] = totalExclVAT * sign;
+            return newNetTotals;
+        });
+    };
 
     const handleSendClick = (action: 'send_invoice_without_email' | 'send_invoice_with_email' | 'print' | 'send_new_credit_note') => {
         setPendingAction(action)
         setShowSendDialog(true)
     }
-    const handleProductChange = (index: number, productId: string) => {
-    const product = products.find(p => p.id === productId);
-    const updatedLines = [...formData.invoiceLines];
-    const businessVat = product?.ledgerAccount?.businessVatCodes?.[0]?.vatCode
-    const vatRate = businessVat?.rate ?? product?.ledgerAccount?.vatCode?.rate ?? 0
-    const newPrice = product?.salesPrice ?? 0
-    const newDiscount = product?.discountPercentage ?? 0
-    const newVat = Number(vatRate)
+    const handleProductChange = async (index: number, productId: string) => {
+        console.log("Selected product ID ===> ", productId);
+        const fullProduct = await fetch(`/api/products/${productId}`).then(res => res.ok ? res.json() : null).catch(() => null);
+        const product = products.find(p => p.id === productId) || fullProduct; // Try to find in existing list first, fallback to fetched details   
+        console.log("Selected product details ===> ", JSON.stringify(product));
+        const updatedLines = [...formData.invoiceLines];
+        const businessVat = product?.ledgerAccount?.businessVatCodes?.[0]?.vatCode
+        const vatRate = businessVat?.rate ?? product?.ledgerAccount?.vatCode?.rate ?? 0
+        const newPrice = product?.salesPrice ?? 0
+        const newDiscount = product?.discountPercentage ?? 0
+        const newVat = Number(vatRate)
 
-    updatedLines[index] = {
-        ...updatedLines[index],
-        productId: productId,
-        pricePerUnit: newPrice,
-        discountPercentage: newDiscount,
-        vatPercentage: newVat,
-        productName: product?.productName,
+        updatedLines[index] = {
+            ...updatedLines[index],
+            productId: productId,
+            pricePerUnit: newPrice,
+            discountPercentage: newDiscount,
+            vatPercentage: newVat,
+            productName: product?.productName,
+        }
+        setFormData({ ...formData, invoiceLines: updatedLines });
+
+        // Pass the fresh values directly — don't rely on stale formData state
+        updateLineTotal(index, updatedLines[index].quantity, newPrice, newDiscount, newVat);
     }
-    setFormData({ ...formData, invoiceLines: updatedLines });
-
-    // Pass the fresh values directly — don't rely on stale formData state
-    updateLineTotal(index, updatedLines[index].quantity, newPrice, newDiscount, newVat);
-}
 
     const onSaveProduct = async (product: ProductFormType): Promise<ProductOption> => {
         const res = await fetch('/api/products', {
@@ -605,7 +607,7 @@ export default function CreateInvoicePage() {
             const res = await fetch('/api/projects', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({...project, customerId: formData.customerId || null}),
+                body: JSON.stringify({ ...project, customerId: formData.customerId || null }),
             })
             if (!res.ok) {
                 const error = await res.json()
@@ -659,7 +661,7 @@ export default function CreateInvoicePage() {
         setLoading(true)
 
         const invoiceStatus =
-            action === 'send_invoice_with_email' || action === 'send_invoice_without_email'
+            action === 'send_invoice_with_email' || action === 'send_invoice_without_email' || action === 'print'
                 ? 'SENT'
                 : 'DRAFT'
 
@@ -826,7 +828,7 @@ export default function CreateInvoicePage() {
                                     onChange={handleCustomerChange}
                                     placeholder="Select Customer"
                                     overviewMode={overviewMode}
-                                    onSaveNewCustomer={async (customer) => {          
+                                    onSaveNewCustomer={async (customer) => {
                                         const res = await fetch('/api/customers', {
                                             method: 'POST',
                                             headers: { 'Content-Type': 'application/json' },
@@ -971,8 +973,8 @@ export default function CreateInvoicePage() {
                                 </label>
                                 <ProjectMultiSelectCombobox
                                     projects={projects}
-                                    value={formData.projectId ? [formData.projectId] : []}  
-                                    onChange={handleProjectChange}                          
+                                    value={formData.projectId ? [formData.projectId] : []}
+                                    onChange={handleProjectChange}
                                     onProjectCreated={handleProjectCreated}
                                     onSaveNewProject={onSaveProject}
                                     placeholder="Select Project"
@@ -1044,7 +1046,7 @@ export default function CreateInvoicePage() {
                                             const updatedLines = [...formData.invoiceLines];
                                             updatedLines[index].quantity = Number(val);
                                             setFormData({ ...formData, invoiceLines: updatedLines });
-                                            updateLineTotal(index,undefined, Number(val));
+                                            updateLineTotal(index, undefined, Number(val));
                                         }}
                                         disabled={overviewMode}
                                         className="block w-full px-3 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
@@ -1063,7 +1065,7 @@ export default function CreateInvoicePage() {
                                             const updatedLines = [...formData.invoiceLines];
                                             updatedLines[index].pricePerUnit = parseFloat(e.target.value);
                                             setFormData({ ...formData, invoiceLines: updatedLines });
-                                            updateLineTotal(index,undefined,undefined,Number(e.target.value));
+                                            updateLineTotal(index, undefined, undefined, Number(e.target.value));
                                         }}
                                         disabled={overviewMode}
                                         className="block w-full px-3 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"

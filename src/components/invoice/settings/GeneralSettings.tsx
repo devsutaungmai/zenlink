@@ -6,8 +6,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { AlertTriangle, Save, Loader2, FileText, Users, CreditCard } from 'lucide-react'
+import { AlertTriangle, Save, Loader2, FileText, Users, CreditCard, PlusIcon, NotebookIcon } from 'lucide-react'
 import Swal from 'sweetalert2'
+import { t } from 'i18next'
+import router from 'next/dist/client/router'
+import Link from 'next/link'
 
 export interface GeneralSetting {
   firstInvoiceNumber: number
@@ -41,23 +44,23 @@ export default function GeneralSetting() {
     defaultDueDays: 30
   })
   const [originalData, setOriginalData] = useState<GeneralSetting>(formData)
-  const [isInvoiceStarted,setIsInvoiceStarted] = useState<boolean>(false);
+  const [isInvoiceStarted, setIsInvoiceStarted] = useState<boolean>(false);
 
   useEffect(() => {
     fetchSettings()
     fetchInvoiceStarted()
   }, [])
 
-  const fetchInvoiceStarted = async()=>{
+  const fetchInvoiceStarted = async () => {
     try {
       const response = await fetch('/api/invoice-started')
-      if(response.ok){
+      if (response.ok) {
         const data = await response.json()
         setIsInvoiceStarted(data.started)
       }
 
     } catch (error) {
-      console.error('Error fetching settings....',error);
+      console.error('Error fetching settings....', error);
     }
   }
 
@@ -65,7 +68,7 @@ export default function GeneralSetting() {
     try {
       setIsLoading(true)
       const response = await fetch('/api/invoice-general-settings')
-      
+
       if (response.ok) {
         const data = await response.json()
         if (data.settings) {
@@ -77,7 +80,7 @@ export default function GeneralSetting() {
             projectNumberSeriesStart: data.settings.projectNumberSeriesStart || 10000,
             projectNumberSeriesEnd: data.settings.projectNumberSeriesEnd || 19999,
             productNumberSeriesStart: data.settings.productNumberSeriesStart || 10000,
-            productNumberSeriesEnd: data.settings.productNumberSeriesEnd || 19999, 
+            productNumberSeriesEnd: data.settings.productNumberSeriesEnd || 19999,
             defaultBankAccount: data.settings.defaultBankAccount || '',
             defaultPaymentTermsDays: data.settings.defaultPaymentTermsDays || 30,
             defaultDueDays: data.settings.defaultDueDays || 30
@@ -117,8 +120,8 @@ export default function GeneralSetting() {
         }
       }
 
-      if(formData.projectNumberSeriesStart && formData.projectNumberSeriesEnd){
-        if(formData.projectNumberSeriesStart >= formData.projectNumberSeriesEnd){
+      if (formData.projectNumberSeriesStart && formData.projectNumberSeriesEnd) {
+        if (formData.projectNumberSeriesStart >= formData.projectNumberSeriesEnd) {
           Swal.fire({
             icon: 'error',
             title: 'Validation Error',
@@ -128,8 +131,8 @@ export default function GeneralSetting() {
         }
       }
 
-      if(formData.productNumberSeriesStart && formData.productNumberSeriesEnd){
-        if(formData.productNumberSeriesStart >= formData.productNumberSeriesEnd){
+      if (formData.productNumberSeriesStart && formData.productNumberSeriesEnd) {
+        if (formData.productNumberSeriesStart >= formData.productNumberSeriesEnd) {
           Swal.fire({
             icon: 'error',
             title: 'Validation Error',
@@ -138,7 +141,7 @@ export default function GeneralSetting() {
           return
         }
       }
-      
+
       const response = await fetch('/api/invoice-general-settings', {
         method: 'POST',
         headers: {
@@ -210,6 +213,14 @@ export default function GeneralSetting() {
               Unsaved Changes
             </Badge>
           )}
+        </div>
+        <div>
+            <Link href="/dashboard/ledger-accounts">
+              <button className="inline-flex items-center px-4 py-2 bg-[#31BCFF] text-white text-sm font-medium rounded-lg hover:bg-[#31BCFF]/90 transition-colors">
+                <NotebookIcon className="w-4 h-4 mr-2" />
+                Manage Ledger Account
+              </button>
+            </Link>
         </div>
       </div>
 

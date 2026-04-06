@@ -105,33 +105,23 @@ export async function PUT(
       )
     }
 
-    // Check if invoice exists and belongs to the business
-    const existingInvoice = await prisma.invoice.findFirst({
-      where: {
-        id: invoiceId,
-        businessId
-      }
-    })
+    const [existingInvoice, customer] = await Promise.all([
+      prisma.invoice.findFirst({ where: { id: invoiceId, businessId } }),
+      prisma.customer.findUnique({ where: { id: customerId } }),
+    ])
 
     if (!existingInvoice) {
-      return NextResponse.json(
-        { error: 'Invoice not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Invoice not found' }, { status: 404 })
     }
-
-    // Verify customer exists
-    const customer = await prisma.customer.findUnique({
-      where: { id: customerId }
-    })
-
     if (!customer) {
-      return NextResponse.json(
-        { error: 'Customer not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Customer not found' }, { status: 404 })
     }
 
+    const productIds = invoiceLines.map((l: any) => l.productId).filter(Boolean)
+    const products = await prisma.product.findMany({
+      where: { id: { in: productIds }, businessId }
+    })
+    const productMap = new Map(products.map(p => [p.id, p]))
     // Prepare invoice lines data with calculations
     let totalExclVAT = 0
     const invoiceLinesData: any = []
@@ -147,11 +137,7 @@ export async function PUT(
         )
       }
 
-      // Get product details for snapshot
-      const product = await prisma.product.findFirst({
-        where: { id: productId, businessId }
-      })
-
+      const product = productMap.get(productId)
       if (!product) {
         return NextResponse.json(
           { error: `Product not found: ${productId}` },
@@ -195,9 +181,13 @@ export async function PUT(
     const totalInclVAT = totalExclVAT + totalVatAmount  // Correct calculation
     const isTransitioningToSent =
       (existingInvoice.status === "DRAFT" && status === "SENT") ? true : false;
-    console.log("Existing Invoice Status==>", existingInvoice.status);
-
-    console.log("Invoice Lines Data==>", JSON.stringify(isTransitioningToSent));
+    // Pre-generate invoice/voucher numbers BEFORE the transaction if needed
+    // (only if your generateInvoiceNumber supports being called outside a tx,
+    //  otherwise keep inside but it's the main cause of timeout — see note below)
+    let invoiceNumberData: { year: number; sequence: number; invoiceNumber: string } | null = null
+    if (isTransitioningToSent) {
+      invoiceNumberData = await generateInvoiceNumber(businessId)  // outside tx
+    }
 
     // Update invoice with transaction (delete old lines, create new ones)
     const invoice = await prisma.$transaction(async (tx) => {
@@ -220,11 +210,11 @@ export async function PUT(
           create: invoiceLinesData
         }
       }
-      if (isTransitioningToSent) {
-        const { year, sequence, invoiceNumber } = await generateInvoiceNumber(businessId, tx)
-        invoiceData.invoiceNumber = invoiceNumber
-        invoiceData.year = year
-        invoiceData.sequence = sequence
+
+      if (invoiceNumberData) {
+        invoiceData.invoiceNumber = invoiceNumberData.invoiceNumber
+        invoiceData.year = invoiceNumberData.year
+        invoiceData.sequence = invoiceNumberData.sequence
       }
 
       if (contactPersonId && contactPersonId.trim() !== '') {
@@ -255,7 +245,7 @@ export async function PUT(
 
       }
 
-      console.log("Invoice Data to update==>", JSON.stringify(invoiceData));
+      // console.log("Invoice Data to update==>", JSON.stringify(invoiceData));
 
       // Update invoice with new data and create new lines
       const updatedInvoice = await tx.invoice.update({
@@ -278,7 +268,10 @@ export async function PUT(
         })
       }
       return updatedInvoice
-    })
+    }, {
+      timeout: 10000
+    }
+    )
 
     if (isTransitioningToSent) {
       await invoiceToLedgerPosting(invoice.id);

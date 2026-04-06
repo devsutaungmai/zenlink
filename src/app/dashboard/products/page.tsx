@@ -93,6 +93,29 @@ export default function ProductsPage() {
   const [itemsPerPage] = useState(10)
   const [selectedFilter, setSelectedFilter] = useState('active')
 
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' }>({ key: 'productNumber', direction: 'asc' })
+
+  const NON_SORTABLE_COLUMNS = new Set(['status', 'actions'])
+
+  const handleSort = (key: string) => {
+    setSortConfig(prev => prev.key === key ? { key, direction: prev.direction === 'asc' ? 'desc' : 'asc' } : { key, direction: 'asc' })
+  }
+
+  const getSortValue = (product: Product, key: string): string | number => {
+    switch (key) {
+      case 'productNumber': return product.productNumber.toLowerCase()
+      case 'productName': return product.productName.toLowerCase()
+      case 'ledgerAccount': return product.ledgerAccount.name.toLowerCase()
+      case 'salesPrice': return Number(product.salesPrice)
+      case 'costPrice': return Number(product.costPrice)
+      case 'vatRate': return product.ledgerAccount.businessVatCodes?.[0]?.vatCode?.rate ?? product.ledgerAccount.vatCode?.rate ?? 0
+      case 'discount': return product.discountPercentage ?? 0
+      case 'unit': return product.unit?.name?.toLowerCase() ?? ''
+      case 'productGroup': return product.productGroup?.name?.toLowerCase() ?? ''
+      default: return ''
+    }
+  }
+
   // Define columns configuration
   const COLUMNS = [
     { key: "productNumber", label: "Product Number" },
@@ -243,6 +266,11 @@ export default function ProductsPage() {
       (selectedFilter === 'inactive' && !product.active)
 
     return matchesSearch && matchesFilter
+  }).sort((a, b) => {
+    const valA = getSortValue(a, sortConfig.key)
+    const valB = getSortValue(b, sortConfig.key)
+    if (typeof valA === 'string' && typeof valB === 'string') return sortConfig.direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA)
+    return sortConfig.direction === 'asc' ? (valA as number) - (valB as number) : (valB as number) - (valA as number)
   })
   const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
@@ -322,8 +350,8 @@ export default function ProductsPage() {
       case "ledgerAccount":
         return (
           <div className="text-sm text-blue-600 hover:underline truncate cursor-pointer">
-             <Link href={`/dashboard/ledger-accounts/${product.ledgerAccount.id}/edit?default=${isDefaultLedgerAccount}`} className="hover:underline">
-            {product.ledgerAccount.name} ({product.ledgerAccount.accountNumber})
+            <Link href={`/dashboard/ledger-accounts/${product.ledgerAccount.id}/edit?default=${isDefaultLedgerAccount}`} className="hover:underline">
+              {product.ledgerAccount.name} ({product.ledgerAccount.accountNumber})
             </Link>
           </div>
         )
@@ -501,7 +529,17 @@ export default function ProductsPage() {
                     >
                       <div className="flex items-center gap-2">
                         <GripVertical className="w-3 h-3 text-muted-foreground/50 flex-shrink-0" />
-                        <span className="truncate">{col.label}</span>
+                        {!NON_SORTABLE_COLUMNS.has(col.key) ? (
+                          <button onClick={() => handleSort(col.key)} className="flex items-center gap-1 hover:text-foreground transition-colors duration-150 min-w-0 overflow-hidden">
+                            <span className="truncate">{col.label}</span>
+                            <span className="flex flex-col leading-none flex-shrink-0">
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 6" className={cn("w-2.5 h-2", sortConfig.key === col.key && sortConfig.direction === 'asc' ? "text-[#31BCFF]" : "text-gray-300")} fill="currentColor"><path d="M5 0L10 6H0z" /></svg>
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 6" className={cn("w-2.5 h-2", sortConfig.key === col.key && sortConfig.direction === 'desc' ? "text-[#31BCFF]" : "text-gray-300")} fill="currentColor"><path d="M5 6L0 0H10z" /></svg>
+                            </span>
+                          </button>
+                        ) : (
+                          <span className="truncate">{col.label}</span>
+                        )}
                       </div>
                       <ResizeHandle onMouseDown={onMouseDown(col.key)} />
                     </th>))}

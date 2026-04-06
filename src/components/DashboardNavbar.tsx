@@ -24,6 +24,7 @@ type NavigationChild = {
   name: string
   href: string
   permissionKey?: keyof typeof NAV_PERMISSIONS
+  children?: { name: string; href: string }[]
 }
 
 type NavigationItem = {
@@ -100,15 +101,21 @@ export default function DashboardNavbar() {
       name: "Invoice",
       icon: CurrencyDollarIcon,
       children: [
-        { name: 'General ledger', href: '/dashboard/accounts/general-ledger' },
-        { name: 'Customer ledger', href: '/dashboard/accounts/customer-ledger' },
-        { name: 'Voucher Overviews', href: '/dashboard/voucher/overviews' },
-        { name: 'Invoice Overviews', href: '/dashboard/invoice-overviews' },
         { name: 'Invoice', href: '/dashboard/invoices' },
-        { name: "Project", href: '/dashboard/projects' },
-        { name: "Customer", href: '/dashboard/customers' },
-        { name: "Product", href: '/dashboard/products' },
-        { name: "LedgerAccount", href: '/dashboard/ledger-accounts' },
+        { name: 'Product', href: '/dashboard/products' },
+        { name: 'Customer', href: '/dashboard/customers' },
+        { name: 'Project', href: '/dashboard/projects' },
+        {
+          name: 'Reports',
+          href: '',
+          children: [
+            { name: 'General ledger', href: '/dashboard/accounts/general-ledger' },
+            { name: 'Customer ledger', href: '/dashboard/accounts/customer-ledger' },
+            { name: 'Voucher Overviews', href: '/dashboard/voucher/overviews' },
+            { name: 'Invoice Overviews', href: '/dashboard/invoice-overviews' },
+            // { name: 'Ledger Account', href: '/dashboard/ledger-accounts' },
+          ],
+        },
       ],
     }] as NavigationItem[] : []),
     { name: t('navigation.settings'), href: '/dashboard/settings', icon: Cog6ToothIcon, permissionKey: 'settings' },
@@ -289,40 +296,79 @@ export default function DashboardNavbar() {
                 </Link>
               ) : (
                 <Menu key={item.name} as="div" className="relative">
-                  <Menu.Button className="flex items-center px-4 py-2.5 text-gray-600 hover:text-[#31BCFF] hover:bg-blue-50/50 rounded-xl transition-all duration-200 group">
-                    <item.icon className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
-                    <span className="font-medium">{item.name}</span>
-                    <ChevronDownIcon className="h-4 w-4 ml-1 group-hover:rotate-180 transition-transform duration-200" />
-                  </Menu.Button>
-                  <Transition
-                    as={Fragment}
-                    enter="transition ease-out duration-200"
-                    enterFrom="transform opacity-0 scale-95 translate-y-2"
-                    enterTo="transform opacity-100 scale-100 translate-y-0"
-                    leave="transition ease-in duration-150"
-                    leaveFrom="transform opacity-100 scale-100 translate-y-0"
-                    leaveTo="transform opacity-0 scale-95 translate-y-2"
-                  >
-                    <Menu.Items className="absolute left-0 mt-3 w-56 origin-top-left bg-white/95 backdrop-blur-xl rounded-2xl shadow-xl ring-1 ring-black/5 focus:outline-none border border-gray-200/50">
-                      <div className="py-2">
-                        {item.children?.map((child) => (
-                          <Menu.Item key={child.name}>
-                            {({ active }) => (
-                              <Link
-                                href={child.href}
-                                prefetch={false}
-                                className={`${active ? 'bg-blue-50/70 text-[#31BCFF]' : 'text-gray-700'
-                                  } flex items-center px-4 py-3 text-sm font-medium rounded-xl mx-2 transition-all duration-200 hover:scale-105`}
-                              >
-                                <div className="w-2 h-2 bg-current rounded-full mr-3 opacity-60"></div>
-                                {child.name}
-                              </Link>
-                            )}
-                          </Menu.Item>
-                        ))}
-                      </div>
-                    </Menu.Items>
-                  </Transition>
+                  {({ open, close }) => (
+                    <>
+                      <Menu.Button className="flex items-center px-4 py-2.5 text-gray-600 hover:text-[#31BCFF] hover:bg-blue-50/50 rounded-xl transition-all duration-200 group">
+                        <item.icon className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
+                        <span className="font-medium">{item.name}</span>
+                        <ChevronDownIcon className={`h-4 w-4 ml-1 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+                      </Menu.Button>
+
+                      <Transition
+                        as={Fragment}
+                        enter="transition ease-out duration-200"
+                        enterFrom="transform opacity-0 scale-95 translate-y-2"
+                        enterTo="transform opacity-100 scale-100 translate-y-0"
+                        leave="transition ease-in duration-150"
+                        leaveFrom="transform opacity-100 scale-100 translate-y-0"
+                        leaveTo="transform opacity-0 scale-95 translate-y-2"
+                      >
+                        <Menu.Items className="absolute left-0 mt-3 w-52 origin-top-left bg-white/95 backdrop-blur-xl rounded-2xl shadow-xl ring-1 ring-black/5 focus:outline-none border border-gray-200/50 py-2 z-50">
+                          {item.children?.map((child) => {
+                            const hasGrandchildren = !!(child as any).children
+
+                            if (!hasGrandchildren) {
+                              return (
+                                <Menu.Item key={child.name}>
+                                  {({ active }) => (
+                                    <Link
+                                      href={child.href}
+                                      prefetch={false}
+                                      className={`${active ? 'bg-blue-50/70 text-[#31BCFF]' : 'text-gray-700'} flex items-center px-4 py-2.5 text-sm font-medium rounded-xl mx-2 transition-all duration-200`}
+                                    >
+                                      <div className="w-2 h-2 bg-current rounded-full mr-3 opacity-60" />
+                                      {child.name}
+                                    </Link>
+                                  )}
+                                </Menu.Item>
+                              )
+                            }
+
+                            // Sub-group with flyout — uses its own hover group, close() called on grandchild click
+                            return (
+                              <div key={child.name} className="relative group/sub mx-2">
+                                <button className="flex items-center justify-between w-full px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-blue-50/70 hover:text-[#31BCFF] rounded-xl transition-all duration-200">
+                                  <span className="flex items-center gap-3">
+                                    <div className="w-2 h-2 bg-current rounded-full opacity-60" />
+                                    {child.name}
+                                  </span>
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                  </svg>
+                                </button>
+
+                                {/* Flyout panel */}
+                                <div className="absolute left-full top-0 ml-1 w-52 bg-white/95 backdrop-blur-xl rounded-2xl shadow-xl ring-1 ring-black/5 border border-gray-200/50 py-2 opacity-0 invisible group-hover/sub:opacity-100 group-hover/sub:visible transition-all duration-200 z-50">
+                                  {(child as any).children?.map((grandchild: any) => (
+                                    <Link
+                                      key={grandchild.name}
+                                      href={grandchild.href}
+                                      prefetch={false}
+                                      onClick={() => close()}
+                                      className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-blue-50/70 hover:text-[#31BCFF] rounded-xl mx-2 transition-all duration-200"
+                                    >
+                                      <div className="w-2 h-2 bg-current rounded-full mr-3 opacity-60" />
+                                      {grandchild.name}
+                                    </Link>
+                                  ))}
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </Menu.Items>
+                      </Transition>
+                    </>
+                  )}
                 </Menu>
               )
             )}
@@ -561,16 +607,41 @@ export default function DashboardNavbar() {
                 </button>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                {activeBottomItem?.children?.map(child => (
-                  <button
-                    key={child.name}
-                    onClick={() => handleChildNavClick(child.href)}
-                    className="flex items-center gap-2 w-full px-3 py-3 text-sm rounded-2xl border border-gray-100 hover:border-[#31BCFF] hover:bg-blue-50/70 hover:text-[#31BCFF] transition-all duration-200"
-                  >
-                    <span className="h-2 w-2 rounded-full bg-current opacity-60"></span>
-                    <span className="text-left">{child.name}</span>
-                  </button>
-                ))}
+                {activeBottomItem?.children?.map(child => {
+                  if ((child as any).children) {
+                    // Render sub-group as a label + its children
+                    return (
+                      <div key={child.name} className="col-span-2 space-y-2">
+                        <p className="px-1 pt-2 text-[10px] font-semibold uppercase tracking-widest text-gray-400">
+                          {child.name}
+                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                          {(child as any).children.map((grandchild: any) => (
+                            <button
+                              key={grandchild.name}
+                              onClick={() => handleChildNavClick(grandchild.href)}
+                              className="flex items-center gap-2 w-full px-3 py-3 text-sm rounded-2xl border border-gray-100 hover:border-[#31BCFF] hover:bg-blue-50/70 hover:text-[#31BCFF] transition-all duration-200"
+                            >
+                              <span className="h-2 w-2 rounded-full bg-current opacity-60 flex-shrink-0" />
+                              <span className="text-left">{grandchild.name}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  }
+
+                  return (
+                    <button
+                      key={child.name}
+                      onClick={() => handleChildNavClick(child.href)}
+                      className="flex items-center gap-2 w-full px-3 py-3 text-sm rounded-2xl border border-gray-100 hover:border-[#31BCFF] hover:bg-blue-50/70 hover:text-[#31BCFF] transition-all duration-200"
+                    >
+                      <span className="h-2 w-2 rounded-full bg-current opacity-60 flex-shrink-0" />
+                      <span className="text-left">{child.name}</span>
+                    </button>
+                  )
+                })}
               </div>
             </div>
           </div>
