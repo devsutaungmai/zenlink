@@ -196,7 +196,11 @@ export default function ProductDialog({
           </div>
 
           {/* Form */}
-          <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleSubmit();
+          }}>
 
             {/* 2-col grid for the smaller fields */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
@@ -310,8 +314,8 @@ const ProductInput = React.forwardRef<
       onChange={(e) => onChange(e.target.value)}
       onBlur={(e) => onBlur?.(e.target.value)}
       className={`w-full px-3 py-2 rounded-md border ${error
-          ? "border-red-500 focus:ring-red-300"
-          : "border-gray-300 focus:ring-[#31BCFF]/50"
+        ? "border-red-500 focus:ring-red-300"
+        : "border-gray-300 focus:ring-[#31BCFF]/50"
         } focus:ring-2 outline-none`}
       required={required}
     />
