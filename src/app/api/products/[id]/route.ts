@@ -28,6 +28,13 @@ export async function GET(
         businessId: businessId
       },
        include: {
+        unit:{
+          select: {
+            id: true,
+            name: true,
+            symbol: true
+          }
+        },
         ledgerAccount: {
           select: {
             id: true,

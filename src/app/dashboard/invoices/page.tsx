@@ -358,6 +358,18 @@ export default function InvoicesPage() {
     }
 
     const handleSendInvoices = async (sendType: 'send' | 'send_with_email') => {
+          const result = await Swal.fire({
+            title: t('common.confirm'),
+            text: `Are you sure you want to ${sendType === 'send_with_email' ? 'send and email' : 'send'} the selected invoices?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#31BCFF',
+            cancelButtonColor: '#d33',
+            confirmButtonText: t('common.yes'),
+            cancelButtonText: t('common.cancel')
+        })
+
+        if (result.isConfirmed) {
         // Validate that selected invoices are all in DRAFT status
         const selectedInvoicesList = paginatedInvoices.filter(inv =>
             selectedInvoices.includes(inv.id)
@@ -450,6 +462,7 @@ export default function InvoicesPage() {
             setSelectedInvoices([])
             fetchInvoices()
             router.refresh()
+            
 
         } catch (error) {
             toast(
@@ -459,6 +472,7 @@ export default function InvoicesPage() {
         } finally {
             setLoading(false)
         }
+    }
     }
 
     const handlePDf = async (invoiceId: string) => {

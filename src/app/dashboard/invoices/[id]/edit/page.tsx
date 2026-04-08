@@ -84,7 +84,7 @@ export default function EditInvoicePage({
     const [visibleFields, setVisibleFields] = useState({
         showDiscount: true,
         showPaymentTerms: true,
-        showDepartment: true,
+        // showDepartment: true,
         showContactPerson: true,
         showDeliveryAddress: true,
         showProject: true,
@@ -175,7 +175,7 @@ export default function EditInvoicePage({
             setVisibleFields({
                 showDiscount: settings.showDiscount,
                 showPaymentTerms: settings.showPaymentTerms,
-                showDepartment: settings.showDepartment,
+                // showDepartment: settings.showDepartment,
                 showContactPerson: settings.showContactPerson,
                 showDeliveryAddress: settings.showDeliveryAddress,
                 showProject: settings.showProject,
@@ -227,9 +227,12 @@ export default function EditInvoicePage({
                 if (data.customer?.department) setDepartments([data.customer.department])
                 if (data.customer?.contactPersons) setContacts(data.customer.contactPersons)
 
-                const rawLines: InvoiceLine[] = data.invoiceLines || []
+                  const rawLines = (data.invoiceLines || []).map((line: any) => ({
+                    ...line,
+                    unit: line.product?.unit || null
+                }));
                 const invoiceLines = isCreditNote
-                    ? rawLines.map(line => ({
+                    ? rawLines.map((line:InvoiceLine) => ({
                         ...line,
                         quantity: -Math.abs(Number(line.quantity)),
                         pricePerUnit: -Math.abs(Number(line.pricePerUnit)),
@@ -237,7 +240,7 @@ export default function EditInvoicePage({
                     : rawLines
 
                 if (isCreditNote) {
-                    const totalAmount = rawLines.reduce((sum, line) => {
+                    const totalAmount = rawLines.reduce((sum: any, line: InvoiceLine) => {
                         const qty = Math.abs(Number(line.quantity)) || 0
                         const price = Math.abs(Number(line.pricePerUnit)) || 0
                         const discount = Number(line.discountPercentage) || 0
@@ -298,6 +301,7 @@ export default function EditInvoicePage({
                 vatPercentage: copiedInvoiceLine.vatPercentage,
                 discountPercentage: copiedInvoiceLine.discountPercentage,
                 productName: copiedInvoiceLine.productName,
+                unit: copiedInvoiceLine.unit
             }],
         }))
     }
@@ -309,11 +313,13 @@ export default function EditInvoicePage({
         const businessVat = product?.ledgerAccount?.businessVatCodes?.[0]?.vatCode
         const vatRate = businessVat?.rate ?? product?.ledgerAccount?.vatCode?.rate ?? 0
         const basePrice = product?.salesPrice ?? 0
+        const unit = product?.unit || { id: '', name: '', symbol: '' }
         updateInvoiceLine(index, {
             productId,
             pricePerUnit: isCreditNote && line.id ? -Math.abs(basePrice) : basePrice,
             vatPercentage: Number(vatRate),
             productName: product?.productName,
+            unit: unit
         })
     }
 
@@ -742,7 +748,7 @@ export default function EditInvoicePage({
                                     </select>
                                 </div>
                             )} */}
-
+{/* 
                             {settings.showDepartment && (
                                 <div className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] min-w-[250px]">
                                     <label className="block text-sm font-medium text-gray-700 mb-2">Department</label>
@@ -751,7 +757,7 @@ export default function EditInvoicePage({
                                         {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                                     </select>
                                 </div>
-                            )}
+                            )} */}
 
                             {settings.showDeliveryAddress && (
                                 <div className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] min-w-[250px]">
@@ -849,7 +855,7 @@ export default function EditInvoicePage({
                                         />
                                     </div>
 
-                                    <div className="col-span-6 md:col-span-2">
+                                    <div className="col-span-6 md:col-span-1">
                                         <label className="block text-sm font-medium text-gray-700 mb-2">Price / Unit *</label>
                                         <input
                                             type="number"
@@ -874,6 +880,17 @@ export default function EditInvoicePage({
                                             className="block w-full px-3 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
                                         />
                                     </div>
+                                    
+                                    <div className="col-span-6 md:col-span-1">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Unit *</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={line.unit ? `${line.unit.symbol ? `${line.unit.symbol}` : "-"}` : "-"}
+                                        disabled
+                                        className="block w-full px-3 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                                    />
+                                </div>
 
                                     {(settings.showDiscount || line.discountPercentage > 0) && (
                                         <div className="col-span-6 md:col-span-1">
@@ -892,10 +909,7 @@ export default function EditInvoicePage({
                                         </div>
                                     )}
 
-                                    <div className={`col-span-6 ${isCreditNote
-                                        ? (settings.showDiscount || line.discountPercentage > 0 ? 'md:col-span-2' : 'md:col-span-5')
-                                        : (settings.showDiscount || line.discountPercentage > 0 ? 'md:col-span-2' : 'md:col-span-3')
-                                        }`}>
+                                    <div className={`col-span-6 md:col-span-2`}>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">Net Total</label>
                                         <input
                                             type="number"

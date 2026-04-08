@@ -53,7 +53,18 @@ export async function GET(
             vatPercentage: true,
             productName: true,
             productNumber: true,
-            isCredited: true
+            isCredited: true,
+            product:{
+              select: {
+                unit: {
+                  select:{
+                    id: true,
+                    name: true,
+                    symbol: true
+                  }
+                }
+              }
+            }
           }
         }
       }

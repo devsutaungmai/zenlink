@@ -8,7 +8,6 @@ import { t } from 'i18next'
 interface InvoiceFieldSettings {
     showDiscount: boolean
     showPaymentTerms: boolean
-    showDepartment: boolean
     showContactPerson: boolean
     showDeliveryAddress: boolean
     showProject: boolean
@@ -118,7 +117,7 @@ export function InvoiceFieldSettingsDialog({
                     </label>
                 </div>
 
-                <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                {/* <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
                     <input
                         type="checkbox"
                         id="showDepartment"
@@ -131,7 +130,7 @@ export function InvoiceFieldSettingsDialog({
                     <label htmlFor="showDepartment" className="text-base font-medium cursor-pointer flex-1">
                         Department
                     </label>
-                </div>
+                </div> */}
 
                 {/* <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
                     <input

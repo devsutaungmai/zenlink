@@ -28,12 +28,13 @@ import { useTranslation } from 'react-i18next'
 import { usePermissions } from '@/shared/lib/usePermissions'
 import { PERMISSIONS } from '@/shared/lib/permissions'
 import GeneralSetting from '@/components/invoice/settings/GeneralSettings'
+import Swal from 'sweetalert2'
 
 interface SettingSubmenu {
   id: string
   name: string
   description: string
-  component?: React.ComponentType
+  component?: React.ComponentType<any>
 }
 
 interface SettingSection {
@@ -41,11 +42,12 @@ interface SettingSection {
   name: string
   description: string
   icon: React.ComponentType<{ className?: string }>
-  component?: React.ComponentType
+  component?: React.ComponentType<any>
   hasSubmenus?: boolean
   submenus?: SettingSubmenu[]
   disabled?: boolean
   href?: string
+  
 }
 
 export default function SettingsPage() {
@@ -61,6 +63,24 @@ export default function SettingsPage() {
   const canManageBusiness = hasPermission(PERMISSIONS.SETTINGS_BUSINESS)
   const canManageShiftTypes = hasPermission(PERMISSIONS.SETTINGS_SHIFT_TYPES)
   const canManagePeopleGeneral = hasPermission(PERMISSIONS.SETTINGS_PEOPLE_GENERAL)
+  const [isDirty, setIsDirty] = useState(false) 
+   const handleSectionChange = async (newSectionId: string) => {
+    if (isDirty) {
+      const result = await Swal.fire({
+        title: t('common.confirm'),
+        text: 'You have unsaved changes. Are you sure you want to leave?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#31BCFF',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Leave',
+        cancelButtonText: 'cancel',
+      })
+      if (!result.isConfirmed) return
+      setIsDirty(false)
+    }
+    setActiveSection(newSectionId)
+  }
   
   const settingSections = useMemo((): SettingSection[] => {
     const sections: SettingSection[] = []
@@ -282,7 +302,7 @@ export default function SettingsPage() {
                             {section.submenus.map((submenu) => (
                               <button
                                 key={submenu.id}
-                                onClick={() => setActiveSection(submenu.id)}
+                                onClick={() => handleSectionChange(submenu.id)}
                                 className={`w-full flex items-start px-2 sm:px-3 py-2 text-xs sm:text-sm rounded-lg transition-all ${
                                   activeSection === submenu.id
                                     ? 'bg-[#31BCFF] text-white'
@@ -304,7 +324,7 @@ export default function SettingsPage() {
                       </>
                     ) : (
                       <button
-                        onClick={() => !section.disabled && setActiveSection(section.id)}
+                        onClick={() => !section.disabled && handleSectionChange(section.id)}
                         disabled={section.disabled}
                         className={`w-full flex items-center px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium rounded-lg transition-all group ${
                           activeSection === section.id
@@ -349,7 +369,7 @@ export default function SettingsPage() {
           {/* Settings Content */}
           <div className="lg:col-span-3">
             {ActiveComponent ? (
-              <ActiveComponent />
+              <ActiveComponent onDirtyChange={setIsDirty} />
             ) : (
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sm:p-8 text-center">
                 <div className="flex items-center justify-center mb-3 sm:mb-4">
