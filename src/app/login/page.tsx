@@ -18,34 +18,19 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(true)
   const [checkingAuth, setCheckingAuth] = useState(true)
 
-  // Redirect away if any valid session exists
+  // Middleware already redirects authenticated admins away from /login.
+  // Only check for a lingering employee session here.
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Check admin/manager session
-        const response = await fetch('/api/me')
-        if (response.ok) {
-          const data = await response.json()
-          if (data.role === 'ADMIN' || data.role === 'MANAGER') {
-            router.replace('/dashboard')
-            return
-          }
-        }
-      } catch (err) {
-        // ignore
-      }
-
-      try {
-        // Check employee session
         const empResponse = await fetch('/api/employee/me')
         if (empResponse.ok) {
           router.replace('/employee/dashboard')
           return
         }
-      } catch (err) {
+      } catch {
         // ignore
       }
-
       setCheckingAuth(false)
     }
     checkAuth()

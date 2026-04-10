@@ -1,4 +1,6 @@
-import { useState, useEffect, useCallback } from 'react'
+'use client'
+
+import { useState, useEffect } from 'react'
 
 interface User {
   id: string
@@ -26,41 +28,24 @@ export function useUser(options: UseUserOptions = {}) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
 
-  const refreshSession = useCallback(async () => {
-    try {
-      await fetch('/api/auth/refresh', { method: 'POST' })
-    } catch (err) {
-      console.warn('Session refresh failed:', err)
-    }
-  }, [])
-
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        // Check sessionStorage for tab-specific session mode
-        // This allows admin and employee sessions to coexist in different tabs
-        const sessionMode = typeof window !== 'undefined' 
-          ? sessionStorage.getItem('zenlink_session_mode') 
+        const sessionMode = typeof window !== 'undefined'
+          ? sessionStorage.getItem('zenlink_session_mode')
           : null
         const useEmployeeSession = preferEmployee || sessionMode === 'employee'
         const url = useEmployeeSession ? '/api/me?preferEmployee=true' : '/api/me'
         const response = await fetch(url)
-        
+
         if (!response.ok) {
-          if (response.status === 401) {
-            setUser(null)
-            setLoading(false)
-            return
-          }
-          throw new Error('Failed to fetch user data')
+          setUser(null)
+          return
         }
-        
+
         const userData = await response.json()
         setUser(userData)
-
-        refreshSession()
       } catch (err) {
-        console.error('Error fetching user:', err)
         setError(err instanceof Error ? err : new Error('Unknown error'))
       } finally {
         setLoading(false)
@@ -68,18 +53,7 @@ export function useUser(options: UseUserOptions = {}) {
     }
 
     fetchUser()
-  }, [refreshSession, preferEmployee])
+  }, [preferEmployee])
 
-  // Set up periodic session refresh in a separate effect
-  useEffect(() => {
-    if (!user) return
-
-    const sessionRefreshInterval = setInterval(() => {
-      refreshSession()
-    }, 24 * 60 * 60 * 1000) // 24 hours
-
-    return () => clearInterval(sessionRefreshInterval)
-  }, [user, refreshSession])
-
-  return { user, loading, error, refreshSession }
+  return { user, loading, error }
 }
