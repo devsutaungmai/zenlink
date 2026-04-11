@@ -265,6 +265,14 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             setLoading(false)
         }
     }
+
+    const handleBack = () => {
+        if (window.history.length > 1) {
+            router.back()
+        } else {
+            router.push("/dashboard/products")
+        }
+    }
     if (fetchingLoading) {
         return (
             <div className="flex items-center justify-center h-64">
@@ -279,12 +287,15 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 <div className="flex items-center justify-between">
                     <div>
                         <div className="flex items-center gap-3 mb-2">
-                            <Link
+                            {/* <Link
                                 href="/dashboard/products"
                                 className="p-2 hover:bg-white/50 rounded-lg transition-colors"
                             >
                                 <ArrowLeftIcon className="w-5 h-5 text-gray-600" />
-                            </Link>
+                            </Link> */}
+                            <button onClick={handleBack}>
+                                <ArrowLeftIcon className="w-5 h-5 text-gray-600" />
+                            </button>
                             <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
                                 Edit Product
                             </h1>

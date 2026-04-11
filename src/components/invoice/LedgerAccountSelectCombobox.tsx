@@ -10,6 +10,7 @@ export interface LedgerAccountOption {
   name: string
   vatCode?: { name: string; rate: number } | null
   businessVatCodes?: { vatCode: { name: string; rate: number } }[]
+  businessId?: string | null
 }
 
 interface LedgerAccountSelectComboboxProps {
@@ -18,6 +19,7 @@ interface LedgerAccountSelectComboboxProps {
   onChange: (id: string) => void
   onLedgerAccountCreated?: (account: LedgerAccountOption) => void
   onSaveNewLedgerAccount: (account: LedgerAccountFormType) => Promise<LedgerAccountOption>
+  onEditLedgerAccount?: (id: string) => void
   placeholder?: string
   emptyMessage?: string
   disabled?: boolean
@@ -31,8 +33,8 @@ function ledgerLabel(account: LedgerAccountOption): string {
   const vatPart = bv
     ? `${bv.name} (${bv.rate}%)`
     : account.vatCode
-    ? `${account.vatCode.name} (${account.vatCode.rate}%)`
-    : "0%"
+      ? `${account.vatCode.name} (${account.vatCode.rate}%)`
+      : "0%"
   return `${account.accountNumber} - ${account.name} - ${vatPart}`
 }
 
@@ -49,6 +51,7 @@ export function LedgerAccountSelectCombobox({
   placeholder = "Select Ledger Account",
   emptyMessage = "No ledger account found.",
   disabled = false,
+  onEditLedgerAccount
 }: LedgerAccountSelectComboboxProps) {
   const [open, setOpen] = React.useState(false)
   const [inputValue, setInputValue] = React.useState("")
@@ -121,6 +124,29 @@ export function LedgerAccountSelectCombobox({
   const handleInputFocus = () => setOpen(true)
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // ✅ EDIT (F2 or ⌘+E)
+    if (
+      e.key === "F2" ||
+      (e.metaKey && e.key.toLowerCase() === "e")
+    ) {
+      e.preventDefault()
+
+      let accountToEdit: LedgerAccountOption | null = null
+
+      if (open && filteredAccounts.length > 0) {
+        accountToEdit = filteredAccounts[highlightedIndex]
+      } else {
+        accountToEdit = selectedAccount
+      }
+
+      if (accountToEdit?.id) {
+        onEditLedgerAccount?.(accountToEdit.id)
+      }
+
+      return
+    }
+
+    // ✅ OPEN dropdown with keyboard
     if (!open) {
       if (["ArrowDown", "ArrowUp", "Enter"].includes(e.key)) {
         setOpen(true)
@@ -129,6 +155,7 @@ export function LedgerAccountSelectCombobox({
       return
     }
 
+    // ✅ NAVIGATION
     switch (e.key) {
       case "ArrowDown":
         e.preventDefault()
@@ -136,21 +163,25 @@ export function LedgerAccountSelectCombobox({
           prev < filteredAccounts.length - 1 ? prev + 1 : prev
         )
         break
+
       case "ArrowUp":
         e.preventDefault()
         setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : 0))
         break
+
       case "Enter":
         e.preventDefault()
         if (filteredAccounts[highlightedIndex]) {
           selectAccount(filteredAccounts[highlightedIndex])
         }
         break
+
       case "Escape":
         e.preventDefault()
         setOpen(false)
         setInputValue("")
         break
+
       case "Tab":
         setOpen(false)
         break
@@ -183,9 +214,49 @@ export function LedgerAccountSelectCombobox({
     }
   }
 
+  React.useEffect(() => {
+    const handleGlobalKey = (e: KeyboardEvent) => {
+      if (
+        e.key === "F2" ||
+        (e.metaKey && e.key.toLowerCase() === "e")
+      ) {
+        e.preventDefault()
+
+        let accountToEdit: LedgerAccountOption | null = null
+
+        if (open && filteredAccounts.length > 0) {
+          // 👉 dropdown open → highlighted item
+          accountToEdit = filteredAccounts[highlightedIndex]
+        } else {
+          // 👉 dropdown closed → selected item
+          accountToEdit = selectedAccount
+        }
+
+        if (accountToEdit?.id) {
+          onEditLedgerAccount?.(accountToEdit.id)
+        }
+      }
+    }
+
+    const el = containerRef.current
+    if (!el) return
+
+    el.addEventListener("keydown", handleGlobalKey)
+
+    return () => {
+      el.removeEventListener("keydown", handleGlobalKey)
+    }
+  }, [
+    open,
+    filteredAccounts,
+    highlightedIndex,
+    selectedAccount,
+    onEditLedgerAccount
+  ])
+
   return (
     <>
-      <div ref={containerRef} className="relative w-full">
+      <div ref={containerRef} tabIndex={0} className="relative w-full">
         {/* Trigger */}
         <div
           className={`flex items-center w-full px-3 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm cursor-text transition-all duration-200

@@ -775,7 +775,7 @@ export default function CreateInvoicePage() {
                 throw new Error(error.error || 'Failed to create invoice')
             }
             const createdInvoice = await res.json()
-
+            isDirtyRef.current = false
             if (action === 'print') {
                 const pdfSuccess = await exportToPDF(createdInvoice.id)
                 await toast(
@@ -786,13 +786,11 @@ export default function CreateInvoicePage() {
                 )
             } else if (action === 'send_invoice_with_email') {
                 const result = await sendEmail(createdInvoice.id)
-
                 await toast('success', result?.message)
             } else {
                 await toast('success', 'Invoice created successfully')
             }
 
-            isDirtyRef.current = false
             router.push('/dashboard/invoices')
             router.refresh()
         } catch (error) {
@@ -893,7 +891,11 @@ export default function CreateInvoicePage() {
                                         await toast('success', 'Customer created successfully')
                                         return created
                                     }}
+                                    onEdit={(id) => router.push(`/dashboard/customers/${id}/edit`)}
                                 />
+                                <div className="text-xs text-gray-500 mt-1">
+                                    Press F2 to edit selected customer
+                                </div>
                             </div>
 
                             {visibleFields.showContactPerson && (
@@ -1029,10 +1031,15 @@ export default function CreateInvoicePage() {
                                     onSaveNewProject={onSaveProject}
                                     placeholder="Select Project"
                                     singleSelect
+                                    onEdit={(id) => router.push(`/dashboard/projects/${id}/edit`)}
+
                                 />
                                 {validationErrors.projectId && (
                                     <p className="mt-1 text-sm text-red-600">{validationErrors.projectId}</p>
                                 )}
+                            </div>
+                            <div className="text-xs text-gray-500 mt-1">
+                                Press F2 to edit selected project
                             </div>
                         </div>
                     </div>}
@@ -1073,7 +1080,7 @@ export default function CreateInvoicePage() {
                             <div className="grid grid-cols-12 gap-8 items-end mb-4" key={index}>
 
                                 <div className="col-span-12 md:col-span-3">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Product *</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Product *(Press F2 to edit selected product)</label>
                                     <ProductSelectCombobox
                                         products={products}
                                         value={line.productId || ""}
@@ -1082,8 +1089,11 @@ export default function CreateInvoicePage() {
                                         placeholder="Select Product"
                                         disabled={overviewMode}
                                         overviewMode={overviewMode}
+                                        onEdit={(id) => router.push(`/dashboard/products/${id}/edit`)}
                                     />
+
                                 </div>
+
 
                                 <div className="col-span-6 md:col-span-1">
                                     <label className="block text-sm font-medium text-gray-700 mb-2">Qty *</label>

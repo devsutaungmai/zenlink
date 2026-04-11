@@ -32,6 +32,7 @@ interface ProjectMultiSelectComboboxProps {
    * All other features (search, keyboard nav, Add New Project) are unchanged.
    */
   singleSelect?: boolean
+  onEdit?: (id: string) => void
 }
 
 export function ProjectMultiSelectCombobox({
@@ -46,6 +47,7 @@ export function ProjectMultiSelectCombobox({
   overviewMode = false,
   paddingYValue = "py-3",
   singleSelect = false,
+  onEdit
 }: ProjectMultiSelectComboboxProps) {
   const [open, setOpen] = React.useState(false)
   const [inputValue, setInputValue] = React.useState("")
@@ -132,6 +134,28 @@ export function ProjectMultiSelectCombobox({
   const handleInputFocus = () => setOpen(true)
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // STEP 1: Handle F2 (EDIT)
+    if (e.key === "F2") {
+      e.preventDefault()
+
+      let projectToEdit: ProjectOption | undefined
+
+      if (singleSelect) {
+        // Single select → edit selected project
+        projectToEdit = selectedProjects[0]
+      } else {
+        // Multi select → edit highlighted project
+        projectToEdit = filteredProjects[highlightedIndex]
+      }
+
+      if (projectToEdit?.id) {
+        onEdit?.(projectToEdit.id)
+      }
+
+      return
+    }
+
+    // STEP 2: Open dropdown if closed
     if (!open) {
       if (["ArrowDown", "ArrowUp", "Enter"].includes(e.key)) {
         setOpen(true)
@@ -140,6 +164,7 @@ export function ProjectMultiSelectCombobox({
       return
     }
 
+    // STEP 3: Normal navigation
     switch (e.key) {
       case "ArrowDown":
         e.preventDefault()
@@ -147,27 +172,33 @@ export function ProjectMultiSelectCombobox({
           prev < filteredProjects.length - 1 ? prev + 1 : prev
         )
         break
+
       case "ArrowUp":
         e.preventDefault()
-        setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : 0))
+        setHighlightedIndex((prev) =>
+          prev > 0 ? prev - 1 : 0
+        )
         break
+
       case "Enter":
         e.preventDefault()
         if (filteredProjects[highlightedIndex]) {
           toggleProject(filteredProjects[highlightedIndex])
         }
         break
+
       case "Escape":
         e.preventDefault()
         setOpen(false)
         setInputValue("")
         break
+
       case "Backspace":
-        // Only remove last tag in multi-select mode
         if (!singleSelect && !inputValue && selectedProjects.length > 0) {
           onChange(value.slice(0, -1))
         }
         break
+
       case "Tab":
         setOpen(false)
         break
@@ -203,9 +234,36 @@ export function ProjectMultiSelectCombobox({
     }
   }
 
+  React.useEffect(() => {
+  const handleGlobalKey = (e: KeyboardEvent) => {
+    if (e.key === "F2") {
+      e.preventDefault()
+
+      let projectToEdit: ProjectOption | undefined
+
+      if (singleSelect) {
+        projectToEdit = selectedProjects[0]
+      } else {
+        projectToEdit = filteredProjects[highlightedIndex]
+      }
+
+      if (projectToEdit?.id) {
+        onEdit?.(projectToEdit.id)
+      }
+    }
+  }
+
+  const el = containerRef.current
+  el?.addEventListener("keydown", handleGlobalKey)
+
+  return () => {
+    el?.removeEventListener("keydown", handleGlobalKey)
+  }
+}, [selectedProjects, filteredProjects, highlightedIndex, singleSelect, onEdit])
+
   return (
     <>
-      <div ref={containerRef} className="relative w-full">
+      <div ref={containerRef} tabIndex={0} className="relative w-full">
         {/* Trigger / tag container */}
         <div
           className={`flex flex-wrap items-center gap-1.5 w-full max-h-25 overflow-auto px-3 ${paddingYValue} rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm cursor-text transition-all duration-200
@@ -221,7 +279,8 @@ export function ProjectMultiSelectCombobox({
           {/* Selected project tags */}
           {selectedProjects.map((project) => (
             <span
-              key={project.id}
+    key={project.id}
+    onClick={() => inputRef.current?.focus()} 
               className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#31BCFF]/10 text-[#0EA5E9] text-sm font-medium border border-[#31BCFF]/20"
             >
               {project.projectNumber ? project.name : project.name}

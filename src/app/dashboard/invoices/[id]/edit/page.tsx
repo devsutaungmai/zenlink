@@ -227,12 +227,12 @@ export default function EditInvoicePage({
                 if (data.customer?.department) setDepartments([data.customer.department])
                 if (data.customer?.contactPersons) setContacts(data.customer.contactPersons)
 
-                  const rawLines = (data.invoiceLines || []).map((line: any) => ({
+                const rawLines = (data.invoiceLines || []).map((line: any) => ({
                     ...line,
                     unit: line.product?.unit || null
                 }));
                 const invoiceLines = isCreditNote
-                    ? rawLines.map((line:InvoiceLine) => ({
+                    ? rawLines.map((line: InvoiceLine) => ({
                         ...line,
                         quantity: -Math.abs(Number(line.quantity)),
                         pricePerUnit: -Math.abs(Number(line.pricePerUnit)),
@@ -713,8 +713,13 @@ export default function EditInvoicePage({
                                         await toast('success', 'Customer created successfully')
                                         return created
                                     }}
+                                    onEdit={(id) => router.push(`/dashboard/customers/${id}/edit`)}
                                 />
+                                <div className="text-xs text-gray-500 mt-1">
+                                    Press F2 to edit selected customer
+                                </div>
                             </div>
+
 
                             {settings.showContactPerson && (
                                 <div className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] min-w-[250px]">
@@ -748,7 +753,7 @@ export default function EditInvoicePage({
                                     </select>
                                 </div>
                             )} */}
-{/* 
+                            {/* 
                             {settings.showDepartment && (
                                 <div className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] min-w-[250px]">
                                     <label className="block text-sm font-medium text-gray-700 mb-2">Department</label>
@@ -786,10 +791,14 @@ export default function EditInvoicePage({
                                         onSaveNewProject={onSaveProject}
                                         placeholder="Select Projects"
                                         singleSelect
+                                        onEdit={(id) => router.push(`/dashboard/projects/${id}/edit`)}
                                     />
                                     {validationErrors.projectIds && (
                                         <p className="mt-1 text-sm text-red-600">{validationErrors.projectIds}</p>
                                     )}
+                                </div>
+                                <div className="text-xs text-gray-500 mt-1">
+                                    Press F2 to edit selected project
                                 </div>
                             </div>
                         </div>}
@@ -830,7 +839,7 @@ export default function EditInvoicePage({
                                 <div className="grid grid-cols-12 gap-8 items-end mb-4" key={index}>
 
                                     <div className="col-span-12 md:col-span-3">
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Product *</label>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Product *(Press F2 to edit selected product)</label>
                                         <ProductSelectCombobox
                                             products={products}
                                             value={line.productId || ""}
@@ -839,7 +848,9 @@ export default function EditInvoicePage({
                                             placeholder="Select Product"
                                             disabled={isCreditNote}
                                             overviewMode={isCreditNote}
+                                            onEdit={(id) => router.push(`/dashboard/products/${id}/edit`)}
                                         />
+  
                                     </div>
 
                                     <div className="col-span-6 md:col-span-1">
@@ -880,17 +891,17 @@ export default function EditInvoicePage({
                                             className="block w-full px-3 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
                                         />
                                     </div>
-                                    
+
                                     <div className="col-span-6 md:col-span-1">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Unit *</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        value={line.unit ? `${line.unit.symbol ? `${line.unit.symbol}` : "-"}` : "-"}
-                                        disabled
-                                        className="block w-full px-3 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
-                                    />
-                                </div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Unit *</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={line.unit ? `${line.unit.symbol ? `${line.unit.symbol}` : "-"}` : "-"}
+                                            disabled
+                                            className="block w-full px-3 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                                        />
+                                    </div>
 
                                     {(settings.showDiscount || line.discountPercentage > 0) && (
                                         <div className="col-span-6 md:col-span-1">
