@@ -87,11 +87,6 @@ export async function GET(request: Request) {
       })
     }
 
-    if (employeeToken) {
-      const employeeResult = await getEmployeeFromToken(employeeToken)
-      if (employeeResult) return NextResponse.json(employeeResult)
-    }
-    
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     
   } catch (error) {

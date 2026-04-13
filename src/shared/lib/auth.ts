@@ -1,28 +1,17 @@
 'use server'
 
+import { auth } from '@/auth'
 import { verify } from 'jsonwebtoken'
 import { cookies } from 'next/headers'
 import { prisma } from '@/shared/lib/prisma'
 
 export async function getCurrentUser() {
-  const store = await cookies() 
-  const token = store.get('token')?.value
+  const session = await auth()
+  if (!session?.user?.id) return null
 
-  if (!token) return null
-
-  try {
-    const decoded = verify(token, process.env.JWT_SECRET!) as {
-      id: string
-      role: string
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.id },
-    })
-    return user
-  } catch (error) {
-    return null
-  }
+  return await prisma.user.findUnique({
+    where: { id: session.user.id },
+  })
 }
 
 export async function getCurrentEmployee() {
@@ -50,39 +39,29 @@ export async function getCurrentEmployee() {
         employeeGroup: true,
       },
     })
-  } catch (error) {
+  } catch {
     return null
   }
 }
 
 export async function getCurrentUserOrEmployee() {
-  // Try admin authentication first
   const user = await getCurrentUser()
-  if (user) {
-    return { type: 'user', data: user }
-  }
+  if (user) return { type: 'user', data: user }
 
-  // Try employee authentication
   const employee = await getCurrentEmployee()
-  if (employee) {
-    return { type: 'employee', data: employee }
-  }
+  if (employee) return { type: 'employee', data: employee }
 
   return null
 }
 
 export async function requireAuth() {
   const user = await getCurrentUser()
-  if (!user) {
-    throw new Error('Not authenticated')
-  }
+  if (!user) throw new Error('Not authenticated')
   return user
 }
 
 export async function requireAdmin() {
   const user = await getCurrentUser()
-  if (!user || user.role !== 'ADMIN') {
-    throw new Error('Not authorized')
-  }
+  if (!user || user.role !== 'ADMIN') throw new Error('Not authorized')
   return user
 }

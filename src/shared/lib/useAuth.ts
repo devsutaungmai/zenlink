@@ -2,28 +2,28 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { signIn } from 'next-auth/react'
 
 export function useAuth() {
   const router = useRouter()
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
-  async function login(email: string, password: string, rememberMe: boolean = true) {
+  async function login(email: string, password: string, _rememberMe: boolean = true) {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, rememberMe }),
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
       })
 
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Login failed')
+      if (result?.error) {
+        throw new Error('Invalid email or password')
+      }
 
-      // Set session mode in sessionStorage (tab-specific) so this tab uses admin session
       sessionStorage.setItem('zenlink_session_mode', 'admin')
-      
       router.push('/dashboard')
     } catch (err: any) {
       setError(err.message)

@@ -4,6 +4,7 @@ import "./globals.css";
 import { APP_NAME } from "./constants/constants";
 import DevRibbon from "@/components/DevRibbon";
 import I18nProvider from "@/components/I18nProvider";
+import Providers from "@/components/Providers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,10 +32,12 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning={true}
       >
-        <I18nProvider>
-          <DevRibbon />
-          {children}
-        </I18nProvider>
+        <Providers>
+          <I18nProvider>
+            <DevRibbon />
+            {children}
+          </I18nProvider>
+        </Providers>
       </body>
     </html>
   );

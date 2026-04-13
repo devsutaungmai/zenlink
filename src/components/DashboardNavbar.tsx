@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { Fragment, useState, useMemo } from 'react'
+import { signOut } from 'next-auth/react'
 import { Menu, Transition } from '@headlessui/react'
 import { APP_NAME } from '@/app/constants/constants'
 import {
@@ -213,15 +214,12 @@ export default function DashboardNavbar() {
 
   const handleLogout = async () => {
     try {
-      const res = await fetch('/api/auth/logout', {
-        method: 'POST',
-      })
-
-      if (res.ok) {
-        // Clear tab-specific session mode
-        sessionStorage.removeItem('zenlink_session_mode')
-        router.push('/login')
-      }
+      // Clear employee_token cookie and sessionStorage
+      await fetch('/api/auth/logout', { method: 'POST' })
+      sessionStorage.removeItem('zenlink_session_mode')
+      // Sign out of Auth.js session and redirect
+      await signOut({ redirect: false })
+      router.push('/login')
     } catch (error) {
       console.error('Error logging out:', error)
     }

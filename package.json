@@ -63,6 +63,7 @@
     "libphonenumber-js": "^1.12.26",
     "lucide-react": "^0.510.0",
     "next": "^16.0.7",
+    "next-auth": "^5.0.0-beta.30",
     "nodemailer": "^7.0.5",
     "puppeteer": "^24.10.2",
     "pusher": "^5.3.3",
