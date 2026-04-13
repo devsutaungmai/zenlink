@@ -112,6 +112,12 @@ model Business {
   createdAt                DateTime                  @default(now())
   updatedAt                DateTime                  @updatedAt
   currency                 String                    @default("USD")
+  organizationNumber       String?
+  phone                    String?
+  email                    String?
+  website                  String?
+  logoUrl                  String?
+  isApproved               Boolean                   @default(false)
   attendances              Attendance[]
   categories               DepartmentCategory[]      @relation("BusinessCategories")
   contracts                Contract[]
