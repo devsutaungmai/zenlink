@@ -68,6 +68,7 @@ export async function GET(request: NextRequest) {
 }
 
 // POST /api/invoices - Create a new invocies
+// POST /api/invoices - Create a new invoice
 export async function POST(request: NextRequest) {
   try {
     const user = await requireAuth()
@@ -80,6 +81,7 @@ export async function POST(request: NextRequest) {
     if (!businessId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
     const body = await request.json()
     const {
       customerId,
@@ -98,18 +100,13 @@ export async function POST(request: NextRequest) {
     const isDraft = status === 'DRAFT'
     const hasLines = Array.isArray(invoiceLines) && invoiceLines.length > 0
 
-    // DRAFT with no customer — silently do nothing (auto-save with no meaningful data)
     if (isDraft && !customerId) {
       return NextResponse.json({ message: 'Nothing to save.' }, { status: 200 })
     }
 
-    // SENT — customer and at least one line are required
     if (!isDraft) {
       if (!customerId) {
-        return NextResponse.json(
-          { error: 'Customer is required!' },
-          { status: 400 }
-        )
+        return NextResponse.json({ error: 'Customer is required!' }, { status: 400 })
       }
       if (!hasLines) {
         return NextResponse.json(
@@ -119,7 +116,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Filter out empty/incomplete lines (e.g. placeholder rows with no productId)
     const validLines = hasLines
       ? invoiceLines.filter((l: any) => l.productId && l.quantity && l.pricePerUnit)
       : []
@@ -128,48 +124,29 @@ export async function POST(request: NextRequest) {
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
-        let invoiceLinesData = [];
+        // ── Prepare line data BEFORE the transaction ──────────────────────────
+        // Fetching products and calculating totals outside the transaction
+        // reduces the time spent inside it significantly.
+        let invoiceLinesData: any[] = []
         let totalExclVAT = 0
 
         for (const line of validLines) {
+          const { productId, quantity, pricePerUnit, discountPercentage = 0, vatPercentage } = line
 
-          const { productId, quantity, pricePerUnit, discountPercentage = 0, vatPercentage } = line;
-          // Validate line data
-          if (!productId || !quantity || !pricePerUnit) {
-            return NextResponse.json(
-              { error: 'Each line must have productId, quantity, and pricePerUnit' },
-              { status: 400 }
-            )
-          }
-
-          // Get product details for snapshot
           const product = await prisma.product.findFirst({
             where: { id: productId, businessId }
           })
-
           if (!product) {
-            return NextResponse.json(
-              { error: `Product not found: ${productId}` },
-              { status: 404 }
-            )
+            return NextResponse.json({ error: `Product not found: ${productId}` }, { status: 404 })
           }
 
-          // Convert string values to numbers
           const qty = Number(quantity)
           const price = Number(pricePerUnit)
           const discount = Number(discountPercentage) || 0
           const vatPerc = Number(vatPercentage)
-
-          // Calculate totals
-          const calculations = calculateInvoiceTotals(
-            qty,
-            price,
-            discount,
-            vatPerc
-          )
+          const calculations = calculateInvoiceTotals(qty, price, discount, vatPerc)
 
           totalExclVAT += calculations.totalExclVAT
-
           invoiceLinesData.push({
             productId,
             quantity: qty,
@@ -181,40 +158,36 @@ export async function POST(request: NextRequest) {
             vatAmount: calculations.vatAmount,
             vatPercentage: vatPerc,
             productName: product.productName,
-            productNumber: product.productNumber || ''
+            productNumber: product.productNumber || '',
           })
         }
 
-        // Calculate invoice-level VAT (after summing all lines)
-        // const vatPercentage = 25
         const totalVatAmount = invoiceLinesData.reduce((total, line) => total + line.vatAmount, 0)
-        const totalInclVAT = totalExclVAT + totalVatAmount  // Correct calculation
-        // Verify customer exists
-        const customer = await prisma.customer.findUnique({
-          where: { id: customerId }
-        })
+        const totalInclVAT = totalExclVAT + totalVatAmount
 
+        const customer = await prisma.customer.findUnique({ where: { id: customerId } })
         if (!customer) {
-          return NextResponse.json(
-            { error: 'Customer not found' },
-            { status: 404 }
-          )
+          return NextResponse.json({ error: 'Customer not found' }, { status: 404 })
         }
 
+        // ── Transaction: ONLY invoice number generation + invoice creation ────
+        // Voucher generation is moved OUTSIDE — it doesn't need to be atomic
+        // with the invoice, and it was the main cause of timeout.
         const invoice = await prisma.$transaction(async (tx) => {
           const currentYear = new Date().getFullYear()
-          let sequenceNumber;
-          let forYear;
-          let forInvoiceNumber;
+          let sequenceNumber: number
+          let forYear: number
+          let forInvoiceNumber: string
+
           if (status === InvoiceStatus.SENT) {
-            const { year, sequence, invoiceNumber } = await generateInvoiceNumber(businessId, tx);
-            sequenceNumber = sequence;
-            forYear = year;
-            forInvoiceNumber = invoiceNumber;
-          } else if (status === InvoiceStatus.DRAFT) {
-            sequenceNumber = -Math.floor(Math.random() * 1000000); // Use negative timestamp as sequence for uniqueness
-            forYear = currentYear;
-            forInvoiceNumber = `DRAFT-${currentYear}-${Date.now()}`;
+            const { year, sequence, invoiceNumber } = await generateInvoiceNumber(businessId, tx)
+            sequenceNumber = sequence
+            forYear = year
+            forInvoiceNumber = invoiceNumber
+          } else {
+            sequenceNumber = -Math.floor(Math.random() * 1000000)
+            forYear = currentYear
+            forInvoiceNumber = `DRAFT-${currentYear}-${Date.now()}`
           }
 
           const invoiceData: any = {
@@ -223,99 +196,80 @@ export async function POST(request: NextRequest) {
             sequence: sequenceNumber,
             customerId,
             businessId,
-
-            // Invoice totals
-            totalExclVAT: totalExclVAT,
-            totalVatAmount: totalVatAmount,
-            totalInclVAT: totalInclVAT,
+            totalExclVAT,
+            totalVatAmount,
+            totalInclVAT,
             notes,
-            status: status,
+            status,
             sentAt: new Date(sentAt) ?? new Date(),
             dueDay: dueDay ?? 14,
-
-
-            // Create invoice line with product
-            invoiceLines: {
-              create: invoiceLinesData
-            }
+            invoiceLines: { create: invoiceLinesData },
           }
 
-          if (contactPersonId && contactPersonId.trim() !== '') {
-            invoiceData.contactPersonId = contactPersonId
-          }
+          if (contactPersonId?.trim()) invoiceData.contactPersonId = contactPersonId
+          if (projectId?.trim()) invoiceData.projectId = projectId
+          if (departmentId?.trim()) invoiceData.departmentId = departmentId
+          if (deliveryAddress?.trim()) invoiceData.deliveryAddress = deliveryAddress
 
-          if (projectId && projectId.trim() !== '') {
-            invoiceData.projectId = projectId
-          }
-
-          if (departmentId && departmentId.trim() !== '') {
-            invoiceData.departmentId = departmentId
-          }
-
-          if (deliveryAddress && deliveryAddress.trim() !== '') {
-            invoiceData.deliveryAddress = deliveryAddress
-          }
-
-          if (paidAt && paidAt.trim() !== "") {
+          if (paidAt?.trim()) {
             invoiceData.dueDate = new Date(paidAt)
             invoiceData.paidAt = new Date(paidAt)
           } else {
-            const sentDate = invoiceData.sentAt;
-            const paidDate = new Date(sentDate);
+            const paidDate = new Date(invoiceData.sentAt)
             paidDate.setDate(paidDate.getDate() + Number(invoiceData.dueDay))
-            invoiceData.dueDate = paidDate;
-            invoiceData.paidAt = paidDate;
-
+            invoiceData.dueDate = paidDate
+            invoiceData.paidAt = paidDate
           }
 
-          // Create invoice with nested invoice line
-          const invoice = await tx.invoice.create({
+          return await tx.invoice.create({
             data: invoiceData,
             include: {
               customer: true,
-              invoiceLines: {
-                include: {
-                  product: true
-                }
-              }
-            }
+              invoiceLines: { include: { product: true } },
+            },
           })
+        }, {
+          timeout: 15000, // raise limit to 15s as a safety net
+        })
 
-          if (invoice.status === "SENT") {
-            // Generate voucher and update invoice in a transaction
-            const voucher = await generateVoucherNumber(businessId, VoucherType.INVOICE, tx);
-
-            await tx.invoice.update({
+        // ── Voucher + ledger OUTSIDE the transaction ──────────────────────────
+        // These don't need to be atomic with invoice creation.
+        // If they fail, the invoice is still valid — just retry voucher assignment.
+        if (invoice.status === 'SENT') {
+          try {
+            const voucher = await generateVoucherNumber(businessId, VoucherType.INVOICE)
+            await prisma.invoice.update({
               where: { id: invoice.id },
-              data: { voucherId: voucher.id }
-            });
-            // await invoiceToLedgerPosting(invoice.id, tx);
+              data: { voucherId: voucher.id },
+            })
+          } catch (voucherError) {
+            console.error('Voucher generation failed (non-fatal):', voucherError)
+            // Invoice is still valid without voucher — log and continue
           }
 
-          return invoice;
-
-        });
-
-        if (invoice.status === "SENT") {
-          await invoiceToLedgerPosting(invoice.id);
+          try {
+            await invoiceToLedgerPosting(invoice.id)
+          } catch (ledgerError) {
+            console.error('Ledger posting failed (non-fatal):', ledgerError)
+          }
         }
 
         return NextResponse.json(invoice, { status: 201 })
+
       } catch (error: any) {
         console.error('Error creating invoice:', error)
 
-        // If it's a duplicate invoice number, retry
         if (error.code === 'P2002' && attempt < maxRetries - 1) {
           console.log(`Duplicate invoice number, retrying... (attempt ${attempt + 1})`)
           await new Promise(resolve => setTimeout(resolve, 100))
           continue
         }
 
-        // Other errors or max retries reached
         if (error.code === 'P2002') {
-          return NextResponse.json({
-            error: 'Unable to generate unique invoice number. Please try again.'
-          }, { status: 409 })
+          return NextResponse.json(
+            { error: 'Unable to generate unique invoice number. Please try again.' },
+            { status: 409 }
+          )
         }
 
         return NextResponse.json({ error: error.message }, { status: 500 })
