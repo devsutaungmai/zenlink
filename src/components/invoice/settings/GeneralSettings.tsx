@@ -11,6 +11,7 @@ import Swal from 'sweetalert2'
 import { t } from 'i18next'
 import router from 'next/dist/client/router'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 export interface GeneralSetting {
   firstInvoiceNumber: number
@@ -25,8 +26,11 @@ export interface GeneralSetting {
   defaultPaymentTermsDays: number
   defaultDueDays: number
 }
+interface Props {
+  onDirtyChange?: (isDirty: boolean) => void
+}
 
-export default function GeneralSetting() {
+export default function GeneralSetting({ onDirtyChange }: Props) {
   const [hasChanges, setHasChanges] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -45,11 +49,91 @@ export default function GeneralSetting() {
   })
   const [originalData, setOriginalData] = useState<GeneralSetting>(formData)
   const [isInvoiceStarted, setIsInvoiceStarted] = useState<boolean>(false);
+  const router = useRouter()
+  // ─── Navigation Guard ────────────────────────────────────────────────────────
+
+  // 1. Browser tab close / refresh
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasChanges) {
+        e.preventDefault()
+        e.returnValue = ''
+      }
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [hasChanges])
+
+  // 2. Intercept ALL link clicks (covers sidebar nav, <Link>, etc.)
+  useEffect(() => {
+    if (!hasChanges) return
+
+    const handleClick = async (e: MouseEvent) => {
+      const anchor = (e.target as HTMLElement).closest('a')
+      if (!anchor) return
+
+      const href = anchor.getAttribute('href')
+      if (!href || href === '#' || href === window.location.pathname) return
+
+      e.preventDefault()
+      e.stopPropagation()
+
+      const result = await Swal.fire({
+        title: t('common.confirm'),
+        text: 'You have unsaved changes. Are you sure you want to leave?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#31BCFF',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Leave',
+        cancelButtonText: t('common.cancel'),
+      })
+
+      if (result.isConfirmed) {
+        router.push(href)
+      }
+    }
+
+    document.addEventListener('click', handleClick, true) // `true` = capture phase, fires before Next.js
+    return () => document.removeEventListener('click', handleClick, true)
+  }, [hasChanges, router])
+
+  // 3. Browser back/forward button
+  useEffect(() => {
+    const handlePopState = async () => {
+      if (!hasChanges) return
+
+      history.pushState(null, '', window.location.href)
+
+      const result = await Swal.fire({
+        title: t('common.confirm'),
+        text: 'You have unsaved changes. Are you sure you want to leave?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#31BCFF',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Leave',
+        cancelButtonText: t('common.cancel'),
+      })
+
+      if (result.isConfirmed) {
+        window.removeEventListener('popstate', handlePopState)
+        history.back()
+      }
+    }
+
+    history.pushState(null, '', window.location.href)
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [hasChanges])
+
+  // ─────────────────────────────────────────────────────────────────────────────
 
   useEffect(() => {
     fetchSettings()
     fetchInvoiceStarted()
   }, [])
+
 
   const fetchInvoiceStarted = async () => {
     try {
@@ -97,11 +181,13 @@ export default function GeneralSetting() {
   }
 
   const handleInputChange = (field: keyof GeneralSetting, value: any) => {
-    setFormData(prev => {
-      const updated = { ...prev, [field]: value }
-      setHasChanges(JSON.stringify(updated) !== JSON.stringify(originalData))
-      return updated
-    })
+    const updated = { ...formData, [field]: value }
+    const dirty = JSON.stringify(updated) !== JSON.stringify(originalData)
+
+
+    setFormData(updated)
+    setHasChanges(dirty)
+    onDirtyChange?.(dirty)
   }
 
   const handleSave = async () => {
@@ -158,6 +244,7 @@ export default function GeneralSetting() {
       const data = await response.json()
       setOriginalData(formData)
       setHasChanges(false)
+      onDirtyChange?.(false)
 
       Swal.fire({
         text: 'Settings saved successfully!',
@@ -215,12 +302,12 @@ export default function GeneralSetting() {
           )}
         </div>
         <div>
-            <Link href="/dashboard/ledger-accounts">
-              <button className="inline-flex items-center px-4 py-2 bg-[#31BCFF] text-white text-sm font-medium rounded-lg hover:bg-[#31BCFF]/90 transition-colors">
-                <NotebookIcon className="w-4 h-4 mr-2" />
-                Manage Ledger Account
-              </button>
-            </Link>
+          <Link href="/dashboard/ledger-accounts">
+            <button className="inline-flex items-center px-4 py-2 bg-[#31BCFF] text-white text-sm font-medium rounded-lg hover:bg-[#31BCFF]/90 transition-colors">
+              <NotebookIcon className="w-4 h-4 mr-2" />
+              Manage Ledger Account
+            </button>
+          </Link>
         </div>
       </div>
 

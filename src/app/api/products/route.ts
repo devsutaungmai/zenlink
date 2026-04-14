@@ -24,6 +24,13 @@ export async function GET(request: NextRequest) {
         businessId: businessId,
       },
       include: {
+        unit:{
+          select: {
+            id: true,
+            name: true,
+            symbol: true
+          }
+        },
         ledgerAccount: {
           select: {
             id: true,

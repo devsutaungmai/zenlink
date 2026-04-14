@@ -36,6 +36,7 @@ interface ProductSelectComboboxProps {
   onChange: (productId: string) => void
   onProductCreated?: (product: ProductOption) => void        // called after new product saved
   onSaveNewProduct: (product: ProductFormType) => Promise<ProductOption>
+  onEdit?: (productId: string) => void 
   placeholder?: string
   emptyMessage?: string
   disabled?: boolean
@@ -52,10 +53,11 @@ export function ProductSelectCombobox({
   onChange,
   onProductCreated,
   onSaveNewProduct,
+  onEdit,
   placeholder = "Select Product",
   emptyMessage = "No product found.",
   disabled = false,
-  overviewMode = false,
+  overviewMode = false
 }: ProductSelectComboboxProps) {
   const [open, setOpen] = React.useState(false)
   const [inputValue, setInputValue] = React.useState("")
@@ -125,41 +127,68 @@ export function ProductSelectCombobox({
   const handleInputFocus = () => setOpen(true)
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!open) {
-      if (["ArrowDown", "ArrowUp", "Enter"].includes(e.key)) {
-        setOpen(true)
-        e.preventDefault()
-      }
-      return
+  // ✅ F2 / ⌘+E → Edit product
+  if (e.key === "F2" || (e.metaKey && e.key.toLowerCase() === "e")) {
+    e.preventDefault()
+
+    let productToEdit: ProductOption | null = null
+
+    if (open) {
+      // 👉 If dropdown open → edit highlighted product
+      productToEdit = filteredProducts[highlightedIndex] || null
+    } else {
+      // 👉 If closed → edit selected product
+      productToEdit = selectedProduct
     }
 
-    switch (e.key) {
-      case "ArrowDown":
-        e.preventDefault()
-        setHighlightedIndex((prev) =>
-          prev < filteredProducts.length - 1 ? prev + 1 : prev
-        )
-        break
-      case "ArrowUp":
-        e.preventDefault()
-        setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : 0))
-        break
-      case "Enter":
-        e.preventDefault()
-        if (filteredProducts[highlightedIndex]) {
-          selectProduct(filteredProducts[highlightedIndex])
-        }
-        break
-      case "Escape":
-        e.preventDefault()
-        setOpen(false)
-        setInputValue("")
-        break
-      case "Tab":
-        setOpen(false)
-        break
+    if (productToEdit?.id) {
+      onEdit?.(productToEdit.id)
     }
+
+    return
   }
+
+  // ✅ Open dropdown with arrows / enter
+  if (!open) {
+    if (["ArrowDown", "ArrowUp", "Enter"].includes(e.key)) {
+      setOpen(true)
+      e.preventDefault()
+    }
+    return
+  }
+
+  // ✅ Navigation & selection
+  switch (e.key) {
+    case "ArrowDown":
+      e.preventDefault()
+      setHighlightedIndex((prev) =>
+        prev < filteredProducts.length - 1 ? prev + 1 : prev
+      )
+      break
+
+    case "ArrowUp":
+      e.preventDefault()
+      setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : 0))
+      break
+
+    case "Enter":
+      e.preventDefault()
+      if (filteredProducts[highlightedIndex]) {
+        selectProduct(filteredProducts[highlightedIndex])
+      }
+      break
+
+    case "Escape":
+      e.preventDefault()
+      setOpen(false)
+      setInputValue("")
+      break
+
+    case "Tab":
+      setOpen(false)
+      break
+  }
+}
 
   // Scroll highlighted item into view
   React.useEffect(() => {
@@ -187,9 +216,44 @@ export function ProductSelectCombobox({
     }
   }
 
+  React.useEffect(() => {
+  const handleGlobalKey = (e: KeyboardEvent) => {
+    if (e.key === "F2") {
+      e.preventDefault()
+
+      let productToEdit: ProductOption | null = null
+
+      if (open) {
+        // 👉 If dropdown open → edit highlighted product
+        productToEdit = filteredProducts[highlightedIndex] || null
+      } else {
+        // 👉 If closed → edit selected product
+        productToEdit = selectedProduct
+      }
+
+      if (productToEdit?.id) {
+        onEdit?.(productToEdit.id)
+      }
+    }
+  }
+
+  const el = containerRef.current
+  el?.addEventListener("keydown", handleGlobalKey)
+
+  return () => {
+    el?.removeEventListener("keydown", handleGlobalKey)
+  }
+}, [
+  open,
+  selectedProduct,
+  filteredProducts,
+  highlightedIndex,
+  onEdit
+])
+
   return (
     <>
-      <div ref={containerRef} className="relative w-full">
+      <div ref={containerRef} tabIndex={0} onClick={() => containerRef.current?.focus()} className="relative w-full">
         {/* Trigger */}
         <div
           className={`flex items-center w-full px-3 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm cursor-text transition-all duration-200

@@ -7,6 +7,7 @@ import z from "zod";
 import { productValidationSchema } from "./validation";
 import { LedgerAccountOption, LedgerAccountSelectCombobox } from "./LedgerAccountSelectCombobox";
 import { LedgerAccountFormType } from "./LedgerAccountDialog";
+import { useRouter } from "next/navigation";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -28,6 +29,7 @@ interface LedgerAccount {
   name: string;
   vatCode?: { name: string; rate: number } | null;
   businessVatCodes?: { vatCode: { name: string; rate: number } }[];
+  businessId: string
 }
 
 interface ProductDialogProps {
@@ -56,6 +58,8 @@ export default function ProductDialog({
   onSave,
   loading,
 }: ProductDialogProps) {
+      const router = useRouter()
+  
   const [form, setForm] = useState<ProductFormType>(emptyProduct);
   const [ledgerAccounts, setLedgerAccounts] = useState<LedgerAccountOption[]>([]);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
@@ -258,6 +262,9 @@ export default function ProductDialog({
                   // ledgerAccounts state already updated inside onSaveLedgerAccount
                 }}
                 placeholder="Select Ledger Account"
+                onEditLedgerAccount={(id) => {
+                  const acc = ledgerAccounts.find((la) => la.id === id);
+                  router.push(`/dashboard/ledger-accounts/${id}/edit?default=${acc?.businessId === null}`)}}
               />
               {validationErrors.ledgerAccountId && (
                 <p className="mt-1 text-xs text-red-600">

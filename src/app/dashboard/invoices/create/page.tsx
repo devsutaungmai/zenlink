@@ -18,6 +18,8 @@ import { ProductOption, ProductSelectCombobox } from '@/components/invoice/Produ
 import { ProductFormType } from '@/components/invoice/ProductDialog'
 import { ProjectMultiSelectCombobox } from '@/components/invoice/ProjectMultiSelectCombobox'
 import { ProjectFormType } from '@/components/invoice/ProjectDialog'
+import { id } from 'date-fns/locale'
+import { projectUpdate } from 'next/dist/build/swc/generated-native'
 export interface Customer {
     id: string
     customerName: string
@@ -60,6 +62,7 @@ export interface Product {
         },
         businessVatCodes: BusinessVatCode[]
     }
+    unit?: { id: string, name: string, symbol: string }
 }
 
 
@@ -89,6 +92,11 @@ export interface InvoiceLine {
     productName?: string;
     productNumber?: string;
     isCredited?: boolean;
+    unit?: {
+        id: string;
+        name: string;
+        symbol: string;
+    };
 }
 export interface InvoiceFormData {
     invoiceNumber: string,
@@ -141,7 +149,6 @@ export default function CreateInvoicePage() {
     const [visibleFields, setVisibleFields] = useState({
         showDiscount: true,
         showPaymentTerms: true,
-        showDepartment: true,
         showContactPerson: true,
         showDeliveryAddress: true,
         showProject: true,
@@ -268,6 +275,7 @@ export default function CreateInvoicePage() {
                         quantity: 1,
                         pricePerUnit: 0,
                         vatPercentage: 0,
+                        unit: undefined,
                         discountPercentage: 0
                     }
                 ]
@@ -288,7 +296,6 @@ export default function CreateInvoicePage() {
             setVisibleFields({
                 showDiscount: settings.showDiscount,
                 showPaymentTerms: settings.showPaymentTerms,
-                showDepartment: settings.showDepartment,
                 showContactPerson: settings.showContactPerson,
                 showDeliveryAddress: settings.showDeliveryAddress,
                 showProject: settings.showProject,
@@ -319,10 +326,13 @@ export default function CreateInvoicePage() {
                     setContacts(data.customer?.contactPersons)
                 }
 
-                const rawLines: InvoiceLine[] = data.invoiceLines || [];
+                const rawLines = (data.invoiceLines || []).map((line: any) => ({
+                    ...line,
+                    unit: line.product?.unit || null
+                }));
 
                 const invoiceLines = isCreditNote
-                    ? rawLines.map((line) => ({
+                    ? rawLines.map((line: InvoiceLine) => ({
                         ...line,
                         quantity: -Math.abs(Number(line.quantity)),
                         pricePerUnit: -Math.abs(Number(line.pricePerUnit)),
@@ -457,7 +467,7 @@ export default function CreateInvoicePage() {
             setFetchingCustomer(false)
         }
     }
-    
+
     const handleCustomerChange = (customerId: string) => {
         setFormData({ ...formData, customerId })
         fetchCustomerDetails(customerId)
@@ -500,6 +510,7 @@ export default function CreateInvoicePage() {
                     vatPercentage: copiedInvoiceLine.vatPercentage,
                     discountPercentage: copiedInvoiceLine.discountPercentage,
                     productName: copiedInvoiceLine.productName,
+                    unit: copiedInvoiceLine.unit,
                 }
             ]
         }))
@@ -507,17 +518,51 @@ export default function CreateInvoicePage() {
 
     }
 
-    const updateLineTotal = (index: number, currentQty?: number, currentPrice?: number, currentDiscount?: number, currentVat?: number) => {
+    // const updateLineTotal = (index: number, currentQty?: number, currentPrice?: number, currentDiscount?: number, currentVat?: number) => {
+    //     const line = formData.invoiceLines[index];
+    //     const qty = currentQty !== undefined ? currentQty : Number(line.quantity);
+    //     const price = currentPrice !== undefined ? currentPrice : Math.abs(Number(line.pricePerUnit));
+    //     const discount = currentDiscount !== undefined ? currentDiscount : Number(line.discountPercentage);
+    //     const vat = currentVat !== undefined ? currentVat : Number(line.vatPercentage);
+    //     const absQty = Math.abs(qty) || 0;
+    //     const { totalExclVAT } = calculateInvoiceTotals(absQty, Math.abs(price), discount, vat);
+    //     const sign = (isCreditNote && !!line.id) ? -1 : (qty < 0 ? -1 : 1);
+    //     setNetTotals((prevNetTotals) => {
+    //         const newNetTotals = [...prevNetTotals];
+    //         newNetTotals[index] = totalExclVAT * sign;
+    //         return newNetTotals;
+    //     });
+    // };
+
+    const updateLineTotal = (
+        index: number,
+        updates: {
+            qty?: number;
+            price?: number;
+            discount?: number;
+            vat?: number;
+        }
+    ) => {
         const line = formData.invoiceLines[index];
-        const qty = currentQty !== undefined ? currentQty : Number(line.quantity);
-        const price = currentPrice !== undefined ? currentPrice : Math.abs(Number(line.pricePerUnit));
-        const discount = currentDiscount !== undefined ? currentDiscount : Number(line.discountPercentage);
-        const vat = currentVat !== undefined ? currentVat : Number(line.vatPercentage);
+
+        const qty = updates.qty ?? Number(line.quantity);
+        const price = updates.price ?? Math.abs(Number(line.pricePerUnit));
+        const discount = updates.discount ?? Number(line.discountPercentage);
+        const vat = updates.vat ?? Number(line.vatPercentage);
+
         const absQty = Math.abs(qty) || 0;
-        const { totalExclVAT } = calculateInvoiceTotals(absQty, Math.abs(price), discount, vat);
+
+        const { totalExclVAT } = calculateInvoiceTotals(
+            absQty,
+            Math.abs(price),
+            discount,
+            vat
+        );
+
         const sign = (isCreditNote && !!line.id) ? -1 : (qty < 0 ? -1 : 1);
-        setNetTotals((prevNetTotals) => {
-            const newNetTotals = [...prevNetTotals];
+
+        setNetTotals(prev => {
+            const newNetTotals = [...prev];
             newNetTotals[index] = totalExclVAT * sign;
             return newNetTotals;
         });
@@ -529,8 +574,11 @@ export default function CreateInvoicePage() {
     }
     const handleProductChange = async (index: number, productId: string) => {
         console.log("Selected product ID ===> ", productId);
-        const fullProduct = await fetch(`/api/products/${productId}`).then(res => res.ok ? res.json() : null).catch(() => null);
-        const product = products.find(p => p.id === productId) || fullProduct; // Try to find in existing list first, fallback to fetched details   
+        let product = products.find(p => p.id === productId) || null;
+        if (product == null) {
+            const fullProduct = await fetch(`/api/products/${productId}`).then(res => res.ok ? res.json() : null).catch(() => null);
+            product = fullProduct;
+        }
         console.log("Selected product details ===> ", JSON.stringify(product));
         const updatedLines = [...formData.invoiceLines];
         const businessVat = product?.ledgerAccount?.businessVatCodes?.[0]?.vatCode
@@ -538,6 +586,7 @@ export default function CreateInvoicePage() {
         const newPrice = product?.salesPrice ?? 0
         const newDiscount = product?.discountPercentage ?? 0
         const newVat = Number(vatRate)
+        const unit = product?.unit || { id: '', name: '', symbol: '' };
 
         updatedLines[index] = {
             ...updatedLines[index],
@@ -545,12 +594,13 @@ export default function CreateInvoicePage() {
             pricePerUnit: newPrice,
             discountPercentage: newDiscount,
             vatPercentage: newVat,
+            unit: unit,
             productName: product?.productName,
         }
         setFormData({ ...formData, invoiceLines: updatedLines });
 
         // Pass the fresh values directly — don't rely on stale formData state
-        updateLineTotal(index, updatedLines[index].quantity, newPrice, newDiscount, newVat);
+        updateLineTotal(index, { qty: updatedLines[index].quantity, price: newPrice, discount: newDiscount, vat: newVat });
     }
 
     const onSaveProduct = async (product: ProductFormType): Promise<ProductOption> => {
@@ -725,7 +775,7 @@ export default function CreateInvoicePage() {
                 throw new Error(error.error || 'Failed to create invoice')
             }
             const createdInvoice = await res.json()
-
+            isDirtyRef.current = false
             if (action === 'print') {
                 const pdfSuccess = await exportToPDF(createdInvoice.id)
                 await toast(
@@ -736,13 +786,11 @@ export default function CreateInvoicePage() {
                 )
             } else if (action === 'send_invoice_with_email') {
                 const result = await sendEmail(createdInvoice.id)
-
                 await toast('success', result?.message)
             } else {
                 await toast('success', 'Invoice created successfully')
             }
 
-            isDirtyRef.current = false
             router.push('/dashboard/invoices')
             router.refresh()
         } catch (error) {
@@ -843,7 +891,11 @@ export default function CreateInvoicePage() {
                                         await toast('success', 'Customer created successfully')
                                         return created
                                     }}
+                                    onEdit={(id) => router.push(`/dashboard/customers/${id}/edit`)}
                                 />
+                                <div className="text-xs text-gray-500 mt-1">
+                                    Press F2 to edit selected customer
+                                </div>
                             </div>
 
                             {visibleFields.showContactPerson && (
@@ -922,7 +974,7 @@ export default function CreateInvoicePage() {
                             )} */}
 
 
-                            {visibleFields.showDepartment && (
+                            {/* {visibleFields.showDepartment && (
                                 <div className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] min-w-[250px]">
                                     <label htmlFor="departmentId" className="block text-sm font-medium text-gray-700 mb-2">
                                         Department
@@ -941,7 +993,7 @@ export default function CreateInvoicePage() {
                                         ))}
                                     </select>
                                 </div>
-                            )}
+                            )} */}
 
                             {visibleFields.showDeliveryAddress && (
                                 <div className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] min-w-[250px]">
@@ -979,10 +1031,15 @@ export default function CreateInvoicePage() {
                                     onSaveNewProject={onSaveProject}
                                     placeholder="Select Project"
                                     singleSelect
+                                    onEdit={(id) => router.push(`/dashboard/projects/${id}/edit`)}
+
                                 />
                                 {validationErrors.projectId && (
                                     <p className="mt-1 text-sm text-red-600">{validationErrors.projectId}</p>
                                 )}
+                            </div>
+                            <div className="text-xs text-gray-500 mt-1">
+                                Press F2 to edit selected project
                             </div>
                         </div>
                     </div>}
@@ -1023,7 +1080,7 @@ export default function CreateInvoicePage() {
                             <div className="grid grid-cols-12 gap-8 items-end mb-4" key={index}>
 
                                 <div className="col-span-12 md:col-span-3">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Product *</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Product *(Press F2 to edit selected product)</label>
                                     <ProductSelectCombobox
                                         products={products}
                                         value={line.productId || ""}
@@ -1032,8 +1089,11 @@ export default function CreateInvoicePage() {
                                         placeholder="Select Product"
                                         disabled={overviewMode}
                                         overviewMode={overviewMode}
+                                        onEdit={(id) => router.push(`/dashboard/products/${id}/edit`)}
                                     />
+
                                 </div>
+
 
                                 <div className="col-span-6 md:col-span-1">
                                     <label className="block text-sm font-medium text-gray-700 mb-2">Qty *</label>
@@ -1046,7 +1106,7 @@ export default function CreateInvoicePage() {
                                             const updatedLines = [...formData.invoiceLines];
                                             updatedLines[index].quantity = Number(val);
                                             setFormData({ ...formData, invoiceLines: updatedLines });
-                                            updateLineTotal(index, undefined, Number(val));
+                                            updateLineTotal(index, { qty: Number(val) });
                                         }}
                                         disabled={overviewMode}
                                         className="block w-full px-3 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
@@ -1054,7 +1114,7 @@ export default function CreateInvoicePage() {
                                     />
                                 </div>
 
-                                <div className="col-span-6 md:col-span-2">
+                                <div className="col-span-6 md:col-span-1">
                                     <label className="block text-sm font-medium text-gray-700 mb-2">Price / Unit *</label>
                                     <input
                                         type="number"
@@ -1065,7 +1125,7 @@ export default function CreateInvoicePage() {
                                             const updatedLines = [...formData.invoiceLines];
                                             updatedLines[index].pricePerUnit = parseFloat(e.target.value);
                                             setFormData({ ...formData, invoiceLines: updatedLines });
-                                            updateLineTotal(index, undefined, undefined, Number(e.target.value));
+                                            updateLineTotal(index, { price: Number(e.target.value) });
                                         }}
                                         disabled={overviewMode}
                                         className="block w-full px-3 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
@@ -1085,6 +1145,18 @@ export default function CreateInvoicePage() {
                                     />
                                 </div>
 
+                                <div className="col-span-6 md:col-span-1">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Unit *</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={line.unit ? `${line.unit.symbol ? `${line.unit.symbol}` : "-"}` : "-"}
+                                        disabled
+                                        className="block w-full px-3 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                                    />
+                                </div>
+
+
                                 {(visibleFields.showDiscount || formData.invoiceLines[index].discountPercentage > 0) && (
                                     <div className="col-span-6 md:col-span-1">
                                         <label className="block text-sm font-medium text-gray-700 mb-2">Disc %</label>
@@ -1098,7 +1170,7 @@ export default function CreateInvoicePage() {
                                                 const updatedLines = [...formData.invoiceLines];
                                                 updatedLines[index].discountPercentage = parseFloat(e.target.value);
                                                 setFormData({ ...formData, invoiceLines: updatedLines });
-                                                updateLineTotal(index);
+                                                updateLineTotal(index, { discount: Number(e.target.value) });
                                             }}
                                             disabled={overviewMode}
                                             className="block w-full px-3 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-[#31BCFF]/50 focus:border-[#31BCFF] transition-all duration-200"
@@ -1107,10 +1179,7 @@ export default function CreateInvoicePage() {
                                     </div>
                                 )}
 
-                                <div className={`col-span-6 ${overviewMode
-                                    ? (visibleFields.showDiscount || line.discountPercentage > 0 ? 'md:col-span-4' : 'md:col-span-5')
-                                    : (visibleFields.showDiscount || line.discountPercentage > 0 ? 'md:col-span-2' : 'md:col-span-3')
-                                    }`}>
+                                <div className={`col-span-6 md:col-span-2`}>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">Net Total</label>
                                     <input
                                         type="number"

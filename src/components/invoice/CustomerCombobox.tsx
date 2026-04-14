@@ -3,6 +3,7 @@
 import * as React from "react"
 import { Check, ChevronDown, Plus } from "lucide-react"
 import CustomerDialog, { CustomerFormType } from "./CustomerDialog"
+import { on } from "events"
 
 export interface CustomerOption {
   id: string
@@ -20,6 +21,7 @@ interface CustomerComboboxProps {
   disabled?: boolean
   overviewMode?: boolean
   paddingYValue?: string
+  onEdit?: (id: string) => void
 }
 
 export function CustomerCombobox({
@@ -32,7 +34,8 @@ export function CustomerCombobox({
   emptyMessage = "No customer found.",
   disabled = false,
   overviewMode = false,
-  paddingYValue = "py-3"
+  paddingYValue = "py-3",
+  onEdit
 }: CustomerComboboxProps) {
   const [open, setOpen] = React.useState(false)
   const [inputValue, setInputValue] = React.useState("")
@@ -114,6 +117,18 @@ export function CustomerCombobox({
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // ✅ STEP 3.1: Handle F2
+    if (e.key === "F2") {
+      e.preventDefault()
+
+      if (selectedCustomer?.id) {
+        onEdit?.(selectedCustomer.id)
+      }
+
+      return
+    }
+
+    // ✅ STEP 3.2: If dropdown is closed
     if (!open) {
       if (e.key === "ArrowDown" || e.key === "ArrowUp" || e.key === "Enter") {
         setOpen(true)
@@ -122,28 +137,38 @@ export function CustomerCombobox({
       return
     }
 
+    // ✅ STEP 3.3: If dropdown is open
     switch (e.key) {
       case "ArrowDown":
         e.preventDefault()
-        setHighlightedIndex((prev) => (prev < filteredCustomers.length - 1 ? prev + 1 : prev))
+        setHighlightedIndex((prev) =>
+          prev < filteredCustomers.length - 1 ? prev + 1 : prev
+        )
         break
+
       case "ArrowUp":
         e.preventDefault()
-        setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : 0))
+        setHighlightedIndex((prev) =>
+          prev > 0 ? prev - 1 : 0
+        )
         break
+
       case "Enter":
         e.preventDefault()
         if (filteredCustomers[highlightedIndex]) {
           handleSelect(filteredCustomers[highlightedIndex])
         }
         break
+
       case "Escape":
         e.preventDefault()
         setOpen(false)
+
         if (selectedCustomer) {
           setInputValue(selectedCustomer.customerName)
         }
         break
+
       case "Tab":
         setOpen(false)
         break
@@ -160,9 +185,44 @@ export function CustomerCombobox({
     }
   }, [highlightedIndex, open])
 
+  React.useEffect(() => {
+    const handleGlobalKey = (e: KeyboardEvent) => {
+      if (e.key === "F2") {
+        e.preventDefault()
+
+        let customerToEdit: CustomerOption | undefined
+
+        if (open) {
+          // 👉 If dropdown open → use highlighted item
+          customerToEdit = filteredCustomers[highlightedIndex]
+        } else {
+          // 👉 If closed → use selected customer
+          customerToEdit = selectedCustomer
+        }
+
+        if (customerToEdit?.id) {
+          onEdit?.(customerToEdit.id)
+        }
+      }
+    }
+
+    const el = containerRef.current
+    el?.addEventListener("keydown", handleGlobalKey)
+
+    return () => {
+      el?.removeEventListener("keydown", handleGlobalKey)
+    }
+  }, [
+    open,
+    selectedCustomer,
+    filteredCustomers,
+    highlightedIndex,
+    onEdit
+  ])
+
   return (
     <>
-      <div ref={containerRef} className="relative w-full">
+      <div ref={containerRef} tabIndex={0} onClick={() => containerRef.current?.focus()} className="relative w-full">
         {/* Input that acts as both trigger and search */}
         <div className="relative">
           <input

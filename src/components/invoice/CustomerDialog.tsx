@@ -19,7 +19,7 @@ export interface CustomerFormType {
     defaultCustomerNumber?: string;
     organizationNumber: string;
     sequence: number
-        year: number
+    year: number
     address: string;
     postalCode: string;
     postalAddress: string;
@@ -45,8 +45,8 @@ const emptyCustomer: CustomerFormType = {
     customerName: "",
     customerNumber: "",
     organizationNumber: "",
-    sequence:0,
-    year:new Date().getFullYear(),
+    sequence: 0,
+    year: new Date().getFullYear(),
     address: "",
     postalCode: "",
     postalAddress: "",
@@ -149,8 +149,8 @@ export default function CustomerDialog({
 
             updateField("customerNumber", defaultNumber);
             updateField("defaultCustomerNumber", data.customerNumber);
-            updateField("sequence",data.sequence)
-            updateField("year",data.year)
+            updateField("sequence", data.sequence)
+            updateField("year", data.year)
 
         } catch (error) {
             console.error('Error fetching customerDefaultNumber:', error)
@@ -219,15 +219,15 @@ export default function CustomerDialog({
                             <Input label="Postal code" value={form.postalCode} onChange={(v) => updateField("postalCode", v)} />
                             <Input label="Postal address" value={form.postalAddress} onChange={(v) => updateField("postalAddress", v)} />
                             <Input label="Phone number" value={form.phoneNumber} onChange={(v) => updateField("phoneNumber", v)} />
-                            <Input label="Email" value={form.email} onChange={(v) => updateField("email", v)} />
-                            <Input label="Delivery postal code" value={form.deliveryAddressPostalCode} onChange={(v) => updateField("deliveryAddressPostalCode", v)} />
-                            <Input label="Delivery postal address" value={form.deliveryAddressPostalAddress} onChange={(v) => updateField("deliveryAddressPostalAddress", v)} />
                             <Input
                                 className="md:col-span-3"
                                 label="Delivery address"
                                 value={form.deliveryAddress}
                                 onChange={(v) => updateField("deliveryAddress", v)}
                             />
+                            <Input label="Delivery postal code" value={form.deliveryAddressPostalCode} onChange={(v) => updateField("deliveryAddressPostalCode", v)} />
+                            <Input label="Delivery postal address" value={form.deliveryAddressPostalAddress} onChange={(v) => updateField("deliveryAddressPostalAddress", v)} />
+                            <Input label="Email" value={form.email} onChange={(v) => updateField("email", v)} />
                             {/* <Input className="md:col-span-3" label="Customer Contact Name" value={form.customerContactName} onChange={(v) => updateField("customerContactName", v)} /> */}
 
                         </div>
@@ -264,7 +264,7 @@ const Input = React.forwardRef<HTMLInputElement, {
     className?: string;
     required?: boolean;
     placeholder?: string;
-    error?: string; 
+    error?: string;
 }>(({ label, value, onChange, onBlur, className = "", required = false, placeholder, error }, ref) => {
     return (
         <div className={className}>

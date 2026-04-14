@@ -145,17 +145,37 @@ export async function GET(request: NextRequest) {
     doc.text(invoice.business?.name || '[Firmanavn]', 14, 15)
     doc.setFontSize(9)
     doc.setFont('helvetica', 'normal')
-    // doc.text('Org.nr.: [Organisasjonsnr]', 14, 20)
-    // doc.text(`Telefon: ${invoice.business?.phone || '[Telefon]'}`, 14, 25)
+    doc.text(`Org.nr.: ${invoice.business?.organizationNumber || '[Organisasjonsnr]'}`, 14, 20)
+    doc.text(`Telefon: ${invoice.business?.phone || '[Telefon]'}`, 14, 25)
     doc.text(`Mailadresse: ${invoice.business?.users?.[0]?.email || '[Mailadresse]'}`, 14, 30)
-    // doc.text('Web: [Web]', 14, 35)
+    doc.text(`Web: ${invoice.business?.website || '[Web]'}`, 14, 35)
 
     // Logo Placeholder (same layout)
-    // doc.text('[Logo]', 180, 15)
+    if (invoice.business?.logoUrl) {
+      try {
+        const logoRes = await fetch(invoice.business.logoUrl)
+        const logoBuffer = await logoRes.arrayBuffer()
+        const logoBase64 = Buffer.from(logoBuffer).toString('base64')
+        const mimeType = invoice.business.logoUrl.match(/\.png/i) ? 'PNG' : 'JPEG'
+
+        // Contain within 45x25mm box (top-right)
+        const maxW = 70, maxH = 28
+        const imgProps = doc.getImageProperties(`data:image/${mimeType.toLowerCase()};base64,${logoBase64}`)
+        const ratio = Math.min(maxW / imgProps.width, maxH / imgProps.height)
+        const imgW = imgProps.width * ratio
+        const imgH = imgProps.height * ratio
+        const imgX = 196 - imgW  // right-align
+        const imgY = 2
+
+        doc.addImage(`data:image/${mimeType.toLowerCase()};base64,${logoBase64}`, mimeType, imgX, imgY, imgW, imgH)
+      } catch (e) {
+        doc.text('[Logo]', 180, 15)
+      }
+    }
 
 
     // Invoice number or Credit number (same layout as POST)
-    doc.setFont('helvetica', 'bold')
+    doc.setFont('helvetica')
 
     // Invoice number block (top-right, above divider)
 
@@ -168,7 +188,7 @@ export async function GET(request: NextRequest) {
 
     // label (below number)
     // Replace the label/number block (around line with doc.text(label...))
-    doc.setFont('helvetica', 'bold')
+    doc.setFont('helvetica')
     doc.setFontSize(10)
     doc.text(label, 120, 35)                          // ← align left like other fields
     doc.setFont('helvetica', 'normal')
@@ -185,7 +205,8 @@ export async function GET(request: NextRequest) {
     let yPos = 50
 
     // Customer block
-    doc.setFont('helvetica', 'bold')
+    // Customer block
+    doc.setFont('helvetica')
     doc.setFontSize(10)
     doc.text('Kunde:', 14, yPos)
     doc.setFont('helvetica', 'normal')
@@ -193,37 +214,37 @@ export async function GET(request: NextRequest) {
       doc.text(invoice.customer.customerName, 14, yPos + 5)
     }
     if (invoice.customer.address) {
-      doc.text(invoice.customer.address, 14, yPos + 10)
+      doc.text(`Adresse: ${invoice.customer.address}`, 14, yPos + 10)
     }
     if (invoice.customer.postalCode) {
-      doc.text(invoice.customer.postalCode, 14, yPos + 15)
+      doc.text(`Postnummer: ${invoice.customer.postalCode}`, 14, yPos + 15)
     }
     if (invoice.customer.organizationNumber) {
       doc.text(`Org. nr.: ${invoice.customer.organizationNumber}`, 14, yPos + 20)
     }
-    // doc.text(`Kundenummer: ${formatCustomerNumberForDisplay(invoice.customer.customerNumber)|| '[Kundenummer]'}`, 14, yPos + 25)
+
 
     // Invoice details (right)
     const rightX = 120
 
-    doc.setFont('helvetica', 'bold')
+    doc.setFont('helvetica')
     doc.text('Fakturadato:', rightX, yPos)
     doc.setFont('helvetica', 'normal')
     doc.text(formatDate(invoice.sentAt ?? invoice.createdAt), 170, yPos, { align: 'right' })
 
-    doc.setFont('helvetica', 'bold')
+    doc.setFont('helvetica')
     doc.text('Forfallsdato:', rightX, yPos + 5)
     doc.setFont('helvetica', 'normal')
     doc.text(formatDate(invoice.dueDate ?? invoice.createdAt), 170, yPos + 5, { align: 'right' })
 
     if (invoice.business?.invoiceGeneralSetting?.defaultBankAccount) {
-      doc.setFont('helvetica', 'bold')
+      doc.setFont('helvetica')
       doc.text('Bankkonto:', rightX, yPos + 10)
       doc.setFont('helvetica', 'normal')
       doc.text(invoice.business?.invoiceGeneralSetting?.defaultBankAccount || '[Bankkontonummer]', 173, yPos + 10, { align: 'right' })
     }
 
-    doc.setFont('helvetica', 'bold')
+    doc.setFont('helvetica')
     doc.text('Kundenummer:', rightX, yPos + 15)
     doc.setFont('helvetica', 'normal')
     doc.text(formatCustomerNumberForDisplay(invoice.customer.customerNumber) || '[Kundenummer]', 170, yPos + 15, { align: 'right' })
@@ -251,7 +272,7 @@ export async function GET(request: NextRequest) {
     })
 
     autoTable(doc, {
-      startY: yPos + 35,
+      startY: yPos + 25,
       head: [[
         'Beskrivelse',
         'Antall',
@@ -286,38 +307,42 @@ export async function GET(request: NextRequest) {
     //
     // ===== SUMMARY SECTION (same layout as POST) =====
     //
+    // ===== SUMMARY SECTION =====
     const finalY = (doc as any).lastAutoTable.finalY + 10
     const summaryX = 90
 
     doc.setFontSize(10)
-    doc.text('SUM', summaryX, finalY)
+    doc.setFont('helvetica')
+    doc.text('Sum', summaryX, finalY)
+    doc.setFont('helvetica', 'normal')
     doc.text(`kr ${formatCurrency(totalAmountAfterDiscount)}`, 196, finalY, { align: 'right' })
 
     doc.line(summaryX, finalY + 1, 196, finalY + 1)
 
     vatPayableBreakdowns.forEach((line: any, index: number) => {
       const y = finalY + 5 + index * 5
-      const netFormatted = formatCurrency(line.netAmount)  // now uses fixed formatCurrency
+      const netFormatted = formatCurrency(line.netAmount)
       const vatFormatted = formatCurrency(line.vatAmount)
+      // Capitalize first letter only
       doc.text(
-        `VAT AMOUNT(${line.vatPercentage}%) of ${netFormatted} - kr ${vatFormatted}`,
+        `Vat amount(${line.vatPercentage}%) of ${netFormatted} - kr ${vatFormatted}`,
         summaryX, y
       )
-    });
+    })
 
     const totalVatY = finalY + 5 + invoiceLinesData.length * 5
 
-    doc.text(`TOTAL VAT AMOUNT(%)`, summaryX, totalVatY)
+    doc.text(`Total vat amount(%)`, summaryX, totalVatY)
     doc.text(`kr ${formatCurrency(TotalVatAmount)}`, 196, totalVatY, { align: 'right' })
 
     doc.line(summaryX, totalVatY + 3, 196, totalVatY + 3)
 
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(12)
+    doc.setFont('helvetica')
+    doc.setFontSize(10)
     doc.text('Sum å betale', summaryX, totalVatY + 8)
-    doc.text(`kr ${formatCurrency(totalIncVATAmount)}`, 196, totalVatY + 13, { align: 'right' })
+    doc.text(`kr ${formatCurrency(totalIncVATAmount)}`, 196, totalVatY + 8, { align: 'right' })  // ← same Y as label
 
-    doc.line(14, totalVatY + 15, 196, totalVatY + 15)
+    doc.line(14, totalVatY + 11, 196, totalVatY + 11)
 
     //
     // ===== SEND PDF BACK =====
