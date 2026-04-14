@@ -20,6 +20,16 @@ export function useAuth() {
       })
 
       if (result?.error) {
+        const check = await fetch('/api/auth/login-status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        })
+        const { status } = await check.json()
+
+        if (status === 'pending_approval') {
+          throw new Error('Your account is pending approval by Zenlink.')
+        }
         throw new Error('Invalid email or password')
       }
 

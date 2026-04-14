@@ -16,11 +16,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         if (!email || !password) return null
 
-        const user = await prisma.user.findUnique({ where: { email } })
+        const user = await prisma.user.findUnique({
+          where: { email },
+          include: { business: true },
+        })
         if (!user) return null
 
         const valid = await bcrypt.compare(password, user.password)
         if (!valid) return null
+
+        if (user.role === 'ADMIN' && !user.business.isApproved) return null
 
         return {
           id: user.id,
