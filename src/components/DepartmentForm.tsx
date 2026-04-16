@@ -217,7 +217,7 @@ export default function DepartmentForm({ initialData, onSubmit, loading, existin
           </label>
           <input
             type="text"
-            value={formData.number}
+            value={formData.number ?? ''}
             onChange={(e) => {
               setFormData({ ...formData, number: e.target.value })
               if (existingDepartments.length) {
@@ -252,7 +252,7 @@ export default function DepartmentForm({ initialData, onSubmit, loading, existin
           </label>
           <input
             type="text"
-            value={formData.address2}
+            value={formData.address2 ?? ''}
             onChange={(e) => setFormData({ ...formData, address2: e.target.value })}
             className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-[#31BCFF] focus:outline-none focus:ring-1 focus:ring-[#31BCFF]"
             placeholder={t('departments.apartment_suite')}
@@ -265,7 +265,7 @@ export default function DepartmentForm({ initialData, onSubmit, loading, existin
           </label>
           <input
             type="text"
-            value={formData.postCode}
+            value={formData.postCode ?? ''}
             onChange={(e) => setFormData({ ...formData, postCode: e.target.value })}
             className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-[#31BCFF] focus:outline-none focus:ring-1 focus:ring-[#31BCFF]"
             placeholder={t('departments.postal_code')}

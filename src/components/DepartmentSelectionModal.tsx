@@ -12,7 +12,7 @@ interface Department {
   id: string
   name: string
   _count?: {
-    employees: number
+    employeesMulti: number
   }
 }
 
@@ -151,7 +151,7 @@ export default function DepartmentSelectionModal({
                           <h5 className="text-sm font-medium text-gray-900">{dept.name}</h5>
                           {dept._count && (
                             <p className="text-xs text-gray-500">
-                              {dept._count.employees} employee{dept._count.employees !== 1 ? 's' : ''}
+                              {dept._count.employeesMulti} employee{dept._count.employeesMulti !== 1 ? 's' : ''}
                             </p>
                           )}
                         </div>

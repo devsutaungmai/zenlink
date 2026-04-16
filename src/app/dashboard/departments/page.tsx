@@ -20,7 +20,7 @@ interface Department {
   phone: string
   country: string
   _count: {
-    employees: number
+    employeesMulti: number
   }
 }
 
@@ -30,6 +30,7 @@ export default function DepartmentsPage() {
   const [departments, setDepartments] = useState<Department[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
+  const [totalEmployees, setTotalEmployees] = useState(0)
 
   // Permission checks
   const canCreateDepartments = hasPermission(PERMISSIONS.DEPARTMENTS_CREATE)
@@ -38,7 +39,20 @@ export default function DepartmentsPage() {
 
   useEffect(() => {
     fetchDepartments()
+    fetchTotalEmployees()
   }, [])
+
+  const fetchTotalEmployees = async () => {
+    try {
+      const res = await fetch('/api/employees?limit=1')
+      if (res.ok) {
+        const count = res.headers.get('X-Total-Count')
+        setTotalEmployees(count ? parseInt(count, 10) : 0)
+      }
+    } catch (error) {
+      console.error('Error fetching employee count:', error)
+    }
+  }
 
   const fetchDepartments = async () => {
     try {
@@ -138,7 +152,7 @@ export default function DepartmentsPage() {
               </span>
               <span className="flex items-center">
                 <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                {t('departments.total_employees', { count: departments.reduce((sum, dept) => sum + dept._count.employees, 0) })}
+                {t('departments.total_employees', { count: totalEmployees })}
               </span>
             </div>
           </div>
@@ -238,10 +252,10 @@ export default function DepartmentsPage() {
                     </div>
                     <div>
                       <p className="text-2xl font-bold text-gray-900">
-                        {department._count.employees}
+                        {department._count.employeesMulti}
                       </p>
                       <p className="text-sm text-gray-500">
-                        {department._count.employees === 1 ? t('departments.employees_count', { count: department._count.employees }) : t('departments.employees_count_plural', { count: department._count.employees })}
+                        {department._count.employeesMulti === 1 ? t('departments.employees_count', { count: department._count.employeesMulti }) : t('departments.employees_count_plural', { count: department._count.employeesMulti })}
                       </p>
                     </div>
                   </div>

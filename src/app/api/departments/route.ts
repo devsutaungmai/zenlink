@@ -101,7 +101,7 @@ export async function GET() {
       where: whereClause,
       include: {
         _count: {
-          select: { employees: true }
+          select: { employeesMulti: true }
         }
       }
     })

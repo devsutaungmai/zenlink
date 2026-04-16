@@ -17,7 +17,7 @@ interface Department {
   name: string
   address: string
   _count?: {
-    employees: number
+    employeesMulti: number
   }
 }
 
@@ -325,9 +325,9 @@ export default function PunchClockAccessSettings() {
                     />
                     <span className="text-xs sm:text-sm text-gray-700 min-w-0 break-words">
                       {dept.name}
-                      {dept._count?.employees ? (
+                      {dept._count?.employeesMulti ? (
                         <span className="text-xs text-gray-500 ml-1">
-                          ({dept._count.employees} {dept._count.employees === 1 ? t('punch_clock.access_setting.allowed_locations.employee') : t('punch_clock.access_setting.allowed_locations.employees')})
+                          ({dept._count.employeesMulti} {dept._count.employeesMulti === 1 ? t('punch_clock.access_setting.allowed_locations.employee') : t('punch_clock.access_setting.allowed_locations.employees')})
                         </span>
                       ) : null}
                     </span>
