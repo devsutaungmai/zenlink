@@ -137,9 +137,12 @@ export default function EditLedgerAccountPage({ params, searchParams }: { params
                 }
             })
 
-            resetChanges()
-            router.push('/dashboard/ledger-accounts')
-            router.refresh()
+            resetChanges();
+            if (window.history.length > 1) {
+                router.back()
+            } else {
+                router.push('/dashboard/ledger-accounts')
+            }
         } catch (error) {
             await Swal.fire({
                 text: error instanceof Error ? error.message : 'An error occurred',

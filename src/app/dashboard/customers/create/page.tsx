@@ -383,31 +383,31 @@ export default function CreateCustomersPage() {
 
     const { settings, refetch } = useCustomerSettings();
     const [visibleFields, setVisibleFields] = useState({
-        showOrganizationNumber: true,
-        showAddress: true,
-        showPhoneNumber: true,
-        showEmail: true,
-        showDiscountPercentage: true,
-        showDeliveryAddress: true,
-        // showDepartment: true,
-        showProject: true,
-        showInvoicePaymentTerms: true,
-        showContactPerson: true,
+        showOrganizationNumber: false,
+        showAddress: false,
+        showPhoneNumber: false,
+        showEmail: false,
+        showDiscountPercentage: false,
+        showDeliveryAddress: false,
+        // showDepartment: false,
+        showProject: false,
+        showInvoicePaymentTerms: false,
+        showContactPerson: false,
     })
 
     useEffect(() => {
         if (settings) {
             setVisibleFields({
-                showOrganizationNumber: settings.showOrganizationNumber ?? true,
-                showAddress: settings.showAddress ?? true,
-                showPhoneNumber: settings.showPhoneNumber ?? true,
-                showEmail: settings.showEmail ?? true,
-                showDiscountPercentage: settings.showDiscountPercentage ?? true,
-                showDeliveryAddress: settings.showDeliveryAddress ?? true,
-                // showDepartment: settings.showDepartment ?? true,
-                showProject: settings.showProject ?? true,
-                showInvoicePaymentTerms: settings.showInvoicePaymentTerms ?? true,
-                showContactPerson: settings.showContactPerson ?? true,
+                showOrganizationNumber: settings.showOrganizationNumber ?? false,
+                showAddress: settings.showAddress ?? false,
+                showPhoneNumber: settings.showPhoneNumber ?? false,
+                showEmail: settings.showEmail ?? false,
+                showDiscountPercentage: settings.showDiscountPercentage ?? false,
+                showDeliveryAddress: settings.showDeliveryAddress ?? false,
+                // showDepartment: settings.showDepartment ?? false,
+                showProject: settings.showProject ?? false,
+                showInvoicePaymentTerms: settings.showInvoicePaymentTerms ?? false,
+                showContactPerson: settings.showContactPerson ?? false,
             })
         }
     }, [settings])

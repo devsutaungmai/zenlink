@@ -16,16 +16,16 @@ interface CustomerSettings {
 
 export function useCustomerSettings() {
     const [settings, setSettings] = useState<CustomerSettings>({
-        showOrganizationNumber: true,
-        showAddress: true,
-        showPhoneNumber: true,
-        showEmail: true,
-        showDiscountPercentage: true,
-        showDeliveryAddress: true,
-        showDepartment: true,
-        showProject: true,
-        showInvoicePaymentTerms: true,
-        showContactPerson: true
+        showOrganizationNumber: false,
+        showAddress: false,
+        showPhoneNumber: false,
+        showEmail: false,
+        showDiscountPercentage: false,
+        showDeliveryAddress: false,
+        showDepartment: false,
+        showProject: false,
+        showInvoicePaymentTerms: false,
+        showContactPerson: false
     })
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -48,16 +48,16 @@ export function useCustomerSettings() {
             const data = await res.json()
 
             setSettings({
-                showOrganizationNumber: data.showOrganizationNumber ?? true,
-                showAddress: data.showAddress ?? true,
-                showPhoneNumber: data.showPhoneNumber ?? true,
-                showEmail: data.showEmail ?? true,
-                showDiscountPercentage: data.showDiscountPercentage ?? true,
-                showDeliveryAddress: data.showDeliveryAddress ?? true,
-                showDepartment: data.showDepartment ?? true,
-                showProject: data.showProject ?? true,
-                showInvoicePaymentTerms: data.showInvoicePaymentTerms ?? true,
-                showContactPerson: data.showContactPerson ?? true
+                showOrganizationNumber: data.showOrganizationNumber ?? false,
+                showAddress: data.showAddress ?? false,
+                showPhoneNumber: data.showPhoneNumber ?? false,
+                showEmail: data.showEmail ?? false,
+                showDiscountPercentage: data.showDiscountPercentage ?? false,
+                showDeliveryAddress: data.showDeliveryAddress ?? false,
+                showDepartment: data.showDepartment ?? false,
+                showProject: data.showProject ?? false,
+                showInvoicePaymentTerms: data.showInvoicePaymentTerms ?? false,
+                showContactPerson: data.showContactPerson ?? false
             })
         } catch (err) {
             console.error('Error fetching invoice settings:', err)

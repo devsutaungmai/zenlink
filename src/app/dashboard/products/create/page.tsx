@@ -92,11 +92,11 @@ export default function CreateProductPage() {
 
   const { settings, refetch } = useProductSettings();
   const [visibleFields, setVisibleFields] = useState({
-    showSalesPrice: true,
-    showCostPrice: true,
-    showDiscountPercentage: true,
-    showUnit: true,
-    showProductGroup: true,
+    showSalesPrice: false,
+    showCostPrice: false,
+    showDiscountPercentage: false,
+    showUnit: false,
+    showProductGroup: false,
   })
 
   useEffect(() => {

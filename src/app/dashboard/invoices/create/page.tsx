@@ -8,7 +8,6 @@ import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
 import { calculateInvoiceTotals, exportToPDF, formatCreditNoteNumberForDisplay, formatInvoiceNumberForDisplay, sendEmail } from '@/shared/lib/invoiceHelper'
 import InvoiceSummaryCalculation from '@/components/invoice/InvoiceSummaryCalculation'
-import CustomerDialog, { CustomerFormType } from '@/components/invoice/CustomerDialog'
 import { useInvoiceSettings } from '@/shared/hooks/useInvoiceSettings'
 import { CustomerCombobox } from '@/components/invoice/CustomerCombobox'
 import { InvoiceFieldSettingsDialog } from '@/components/invoice/InvoiceFieldSettingsDialog'
@@ -18,8 +17,6 @@ import { ProductOption, ProductSelectCombobox } from '@/components/invoice/Produ
 import { ProductFormType } from '@/components/invoice/ProductDialog'
 import { ProjectMultiSelectCombobox } from '@/components/invoice/ProjectMultiSelectCombobox'
 import { ProjectFormType } from '@/components/invoice/ProjectDialog'
-import { id } from 'date-fns/locale'
-import { projectUpdate } from 'next/dist/build/swc/generated-native'
 export interface Customer {
     id: string
     customerName: string
@@ -147,18 +144,20 @@ export default function CreateInvoicePage() {
     const [netTotals, setNetTotals] = useState<Number[]>([]);
     const { settings, refetch } = useInvoiceSettings();
     const [visibleFields, setVisibleFields] = useState({
-        showDiscount: true,
-        showPaymentTerms: true,
-        showContactPerson: true,
-        showDeliveryAddress: true,
-        showProject: true,
-        showNote: true
+        showDiscount: false,
+        showPaymentTerms: false,
+        showContactPerson: false,
+        showDeliveryAddress: false,
+        showProject: false,
+        showNote: false
     })
 
     const [showSendDialog, setShowSendDialog] = useState(false)
     const [pendingAction, setPendingAction] = useState<'send_invoice_without_email' | 'send_invoice_with_email' | 'print' | 'send_new_credit_note' | null>(null)
     const [loadingProject, setLoadingProject] = useState<boolean>(false)
     const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
+    const isF2NavigatingRef = useRef(false)
+    const [reopenProductDialogForLine, setReopenProductDialogForLine] = useState<number | null>(null)
 
     // ─── 1. Refs (place after all useState declarations) ─────────────────────────
 
@@ -180,6 +179,10 @@ export default function CreateInvoicePage() {
 
     const fireBeacon = useCallback(() => {
         if (!isDirtyRef.current || isSavingRef.current || overviewMode) return
+        if (isF2NavigatingRef.current) {
+            isF2NavigatingRef.current = false
+            return
+        }
         const current = formDataRef.current
         if (!current.customerId) return
         isSavingRef.current = true
@@ -303,6 +306,53 @@ export default function CreateInvoicePage() {
             })
         }
     }, [settings])
+
+    useEffect(() => {
+
+        // In InvoicePage sessionStorage restore useEffect:
+        const saved = sessionStorage.getItem('invoice_draft_state')
+        const reopenLine = sessionStorage.getItem('reopen_product_dialog_line')
+
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved)
+                setFormData(parsed)
+                // Re-hydrate the projects/contacts/departments list for the saved customer
+                if (parsed.customerId) {
+                    fetchCustomerDetails(parsed.customerId)
+                }
+                if (parsed.projectId) {
+                    fetchProject(parsed.projectId)
+                }
+            } catch (_) { }
+        }
+        if (reopenLine !== null) {
+            setReopenProductDialogForLine(parseInt(reopenLine))
+            sessionStorage.removeItem('reopen_product_dialog_line')
+        }
+        sessionStorage.removeItem('invoice_draft_state')
+
+
+
+    }, [])
+
+    const fetchProject = async (projectId: string) => {
+        try {
+            const res = await fetch(`/api/projects/${projectId}`)
+            if (res.ok) {
+                const data = await res.json()
+                if (data) {
+                    setProjects([data])
+                } else {
+                    setProjects([])
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching project:', error)
+
+        }
+        return null
+    }
 
     const fetchInvoice = async () => {
         try {
@@ -891,7 +941,11 @@ export default function CreateInvoicePage() {
                                         await toast('success', 'Customer created successfully')
                                         return created
                                     }}
-                                    onEdit={(id) => router.push(`/dashboard/customers/${id}/edit`)}
+                                    onEdit={(id) => {
+                                        isF2NavigatingRef.current = true  // signal: this is F2 nav, skip beacon
+                                        sessionStorage.setItem('invoice_draft_state', JSON.stringify(formData))
+                                        router.push(`/dashboard/customers/${id}/edit`)
+                                    }}
                                 />
                                 <div className="text-xs text-gray-500 mt-1">
                                     Press F2 to edit selected customer
@@ -1031,8 +1085,12 @@ export default function CreateInvoicePage() {
                                     onSaveNewProject={onSaveProject}
                                     placeholder="Select Project"
                                     singleSelect
-                                    onEdit={(id) => router.push(`/dashboard/projects/${id}/edit`)}
-
+                                    onEdit={(id) => {
+                                        isF2NavigatingRef.current = true  // signal: this is F2 nav, skip beacon
+                                        sessionStorage.setItem('invoice_draft_state', JSON.stringify(formData))
+                                        router.push(`/dashboard/projects/${id}/edit`)
+                                    }
+                                    }
                                 />
                                 {validationErrors.projectId && (
                                     <p className="mt-1 text-sm text-red-600">{validationErrors.projectId}</p>
@@ -1089,11 +1147,22 @@ export default function CreateInvoicePage() {
                                         placeholder="Select Product"
                                         disabled={overviewMode}
                                         overviewMode={overviewMode}
-                                        onEdit={(id) => router.push(`/dashboard/products/${id}/edit`)}
+                                        onEdit={(id) => {
+                                            isF2NavigatingRef.current = true;
+                                            sessionStorage.setItem('invoice_draft_state', JSON.stringify(formData))
+                                            router.push(`/dashboard/products/${id}/edit`)
+                                        }}
+                                        onEditLedgerAccount={(ledgerAccountId) => {
+                                            isF2NavigatingRef.current = true;
+                                            // index is available here from the .map()
+                                            sessionStorage.setItem('invoice_draft_state', JSON.stringify(formData))
+                                            sessionStorage.setItem('reopen_product_dialog_line', String(index))
+                                            // router.push(`/dashboard/ledger-accounts/${ledgerAccountId}/edit?default=...`)
+                                        }}
+                                        autoOpenProductDialog={reopenProductDialogForLine === index}
+                                        onProductDialogOpened={() => setReopenProductDialogForLine(null)}
                                     />
-
                                 </div>
-
 
                                 <div className="col-span-6 md:col-span-1">
                                     <label className="block text-sm font-medium text-gray-700 mb-2">Qty *</label>

@@ -59,9 +59,9 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
     const { settings, refetch } = useProjectSettings();
     const [visibleFields, setVisibleFields] = useState({
         // showCategory: true,
-        showCustomer: true,
-        showStartDate: true,
-        showEndDate: true,
+        showCustomer: false,
+        showStartDate: false,
+        showEndDate: false,
     })
 
     useEffect(() => {

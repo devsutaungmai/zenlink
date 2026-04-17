@@ -82,13 +82,13 @@ export default function EditInvoicePage({
     })
     const { settings, refetch } = useInvoiceSettings()
     const [visibleFields, setVisibleFields] = useState({
-        showDiscount: true,
-        showPaymentTerms: true,
-        // showDepartment: true,
-        showContactPerson: true,
-        showDeliveryAddress: true,
-        showProject: true,
-        showNote: true,
+        showDiscount: false,
+        showPaymentTerms: false,
+        // showDepartment: false,
+        showContactPerson: false,
+        showDeliveryAddress: false,
+        showProject: false,
+        showNote: false,
     })
     const [originalInvoiceData, setOriginalInvoiceData] = useState<{
         customerId: string
@@ -96,6 +96,8 @@ export default function EditInvoicePage({
     } | null>(null)
     const [loadingProject, setLoadingProject] = useState<boolean>(false)
     const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
+    const isF2NavigatingRef = useRef(false)
+    const [reopenProductDialogForLine, setReopenProductDialogForLine] = useState<number | null>(null)
 
     // ── Dialog state ──────────────────────────────────────────────────────────
     const [showSendDialog, setShowSendDialog] = useState(false)
@@ -117,6 +119,10 @@ export default function EditInvoicePage({
     // ─── 2. Beacon ────────────────────────────────────────────────────────────
     const fireBeacon = useCallback(() => {
         if (!isDirtyRef.current || isSavingRef.current || isCreditNote) return
+        if (isF2NavigatingRef.current) {
+            isF2NavigatingRef.current = false
+            return
+        }
         const current = formDataRef.current
         if (!current.customerId) return
         isSavingRef.current = true
@@ -185,6 +191,35 @@ export default function EditInvoicePage({
     }, [settings])
 
     const { hasChanges, resetChanges, setInitialData } = useHasChanges(formData);
+
+    useEffect(() => {
+
+        // In InvoicePage sessionStorage restore useEffect:
+        const saved = sessionStorage.getItem('invoice_draft_state')
+        const reopenLine = sessionStorage.getItem('reopen_product_dialog_line')
+
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved)
+                setFormData(parsed)
+                // Re-hydrate the projects/contacts/departments list for the saved customer
+                if (parsed.customerId) {
+                    fetchCustomerDetails(parsed.customerId)
+                }
+                // if (parsed.projectId) {
+                //     fetchProject(parsed.projectId)
+                // }
+            } catch (_) { }
+        }
+        if (reopenLine !== null) {
+            setReopenProductDialogForLine(parseInt(reopenLine))
+            sessionStorage.removeItem('reopen_product_dialog_line')
+        }
+        sessionStorage.removeItem('invoice_draft_state')
+
+
+
+    }, [])
 
     useEffect(() => {
         fetchCustomers()
@@ -713,7 +748,11 @@ export default function EditInvoicePage({
                                         await toast('success', 'Customer created successfully')
                                         return created
                                     }}
-                                    onEdit={(id) => router.push(`/dashboard/customers/${id}/edit`)}
+                                    onEdit={(id) => {
+                                        isF2NavigatingRef.current = true
+                                        sessionStorage.setItem('invoice_draft_state', JSON.stringify(formData))
+                                        router.push(`/dashboard/customers/${id}/edit`)
+                                    }}
                                 />
                                 <div className="text-xs text-gray-500 mt-1">
                                     Press F2 to edit selected customer
@@ -791,7 +830,12 @@ export default function EditInvoicePage({
                                         onSaveNewProject={onSaveProject}
                                         placeholder="Select Projects"
                                         singleSelect
-                                        onEdit={(id) => router.push(`/dashboard/projects/${id}/edit`)}
+                                        onEdit={(id) => {
+                                            isF2NavigatingRef.current = true  // signal: this is F2 nav, skip beacon
+                                            sessionStorage.setItem('invoice_draft_state', JSON.stringify(formData))
+                                            router.push(`/dashboard/projects/${id}/edit`)
+                                        }
+                                        }
                                     />
                                     {validationErrors.projectIds && (
                                         <p className="mt-1 text-sm text-red-600">{validationErrors.projectIds}</p>
@@ -848,9 +892,22 @@ export default function EditInvoicePage({
                                             placeholder="Select Product"
                                             disabled={isCreditNote}
                                             overviewMode={isCreditNote}
-                                            onEdit={(id) => router.push(`/dashboard/products/${id}/edit`)}
+                                            onEdit={(id) => {
+                                                isF2NavigatingRef.current = true;
+                                                sessionStorage.setItem('invoice_draft_state', JSON.stringify(formData))
+                                                router.push(`/dashboard/products/${id}/edit`)
+                                            }}
+                                            onEditLedgerAccount={(ledgerAccountId) => {
+                                                isF2NavigatingRef.current = true;
+                                                // index is available here from the .map()
+                                                sessionStorage.setItem('invoice_draft_state', JSON.stringify(formData))
+                                                sessionStorage.setItem('reopen_product_dialog_line', String(index))
+                                                // router.push(`/dashboard/ledger-accounts/${ledgerAccountId}/edit?default=...`)
+                                            }}
+                                            autoOpenProductDialog={reopenProductDialogForLine === index}
+                                            onProductDialogOpened={() => setReopenProductDialogForLine(null)}
                                         />
-  
+
                                     </div>
 
                                     <div className="col-span-6 md:col-span-1">

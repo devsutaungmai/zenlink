@@ -66,9 +66,9 @@ export default function CreateProjectPage() {
     const { settings, refetch } = useProjectSettings();
     const [visibleFields, setVisibleFields] = useState({
         // showCategory: true,
-        showCustomer: true,
-        showStartDate: true,
-        showEndDate: true,
+        showCustomer: false,
+        showStartDate: false,
+        showEndDate: false,
     })
     const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
     const validationTimeoutRef = useRef<NodeJS.Timeout | null>(null)

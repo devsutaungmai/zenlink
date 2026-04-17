@@ -8,6 +8,7 @@ import { productValidationSchema } from "./validation";
 import { LedgerAccountOption, LedgerAccountSelectCombobox } from "./LedgerAccountSelectCombobox";
 import { LedgerAccountFormType } from "./LedgerAccountDialog";
 import { useRouter } from "next/navigation";
+import { se } from "date-fns/locale";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -36,6 +37,7 @@ interface ProductDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (product: ProductFormType) => Promise<void>;
+  onEditLedgerAccount?: (ledgerAccountId: string) => void;
   loading: boolean;
 }
 
@@ -56,10 +58,11 @@ export default function ProductDialog({
   open,
   onOpenChange,
   onSave,
+  onEditLedgerAccount,
   loading,
 }: ProductDialogProps) {
-      const router = useRouter()
-  
+  const router = useRouter()
+
   const [form, setForm] = useState<ProductFormType>(emptyProduct);
   const [ledgerAccounts, setLedgerAccounts] = useState<LedgerAccountOption[]>([]);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
@@ -67,13 +70,28 @@ export default function ProductDialog({
 
   // On open: reset form, fetch both defaults in parallel
   useEffect(() => {
-    if (open) {
-      setForm(emptyProduct);
-      setValidationErrors({});
-      getDefaultProductNumber();
-      fetchLedgerAccounts();
+    if (!open) return
+
+    // Check if we're returning from a ledger account edit
+    const savedDraft = sessionStorage.getItem('product_draft_state')
+
+    if (savedDraft) {
+      // Restore the form exactly as it was before navigating away
+      try {
+        const parsed = JSON.parse(savedDraft)
+        setForm(parsed)
+      } catch (_) { }
+      sessionStorage.removeItem('product_draft_state')
+      // Still need the fresh ledger accounts list so the dropdown renders correctly
+      fetchLedgerAccounts(savedDraft)   // pass draft so we restore selected id after fetch
+    } else {
+      // Normal open — fresh form
+      setForm(emptyProduct)
+      setValidationErrors({})
+      getDefaultProductNumber()
+      fetchLedgerAccounts()
     }
-  }, [open]);
+  }, [open])
 
   const getDefaultProductNumber = async () => {
     try {
@@ -94,21 +112,47 @@ export default function ProductDialog({
     }
   };
 
-  const fetchLedgerAccounts = async () => {
+  const fetchLedgerAccounts = async (savedDraftJson?: string) => {
     try {
-      const res = await fetch("/api/sales-ledger-accounts");
+      const res = await fetch("/api/sales-ledger-accounts")
       if (res.ok) {
-        const data: LedgerAccount[] = await res.json();
-        setLedgerAccounts(data);
-        // Auto-select first account — mirrors CreateProductPage behaviour
-        if (data.length > 0) {
-          setForm((prev) => ({ ...prev, ledgerAccountId: data[0].id }));
+        const data: LedgerAccount[] = await res.json()
+        setLedgerAccounts(data)
+
+        if (savedDraftJson) {
+          // Returning from ledger edit — restore the previously selected account
+          try {
+            const parsed = JSON.parse(savedDraftJson)
+            if (parsed.ledgerAccountId) {
+              setForm(prev => {
+                if (prev.ledgerAccountId) return prev
+
+                return {
+                  ...prev,
+                  ledgerAccountId: parsed.ledgerAccountId ?? data[0]?.id ?? undefined
+                }
+              })
+            }
+          } catch (_) { }
+        } else {
+          // Fresh open — auto-select first
+          if (data.length > 0) {
+            setForm(prev => {
+              if (prev.ledgerAccountId) return prev
+
+              return {
+                ...prev,
+                ledgerAccountId: data[0]?.id ?? undefined
+              }
+            })
+          }
         }
       }
     } catch (error) {
-      console.error("Error fetching ledger accounts:", error);
+      console.error("Error fetching ledger accounts:", error)
     }
-  };
+  }
+
 
   const onSaveLedgerAccount = async (
     account: LedgerAccountFormType
@@ -263,8 +307,13 @@ export default function ProductDialog({
                 }}
                 placeholder="Select Ledger Account"
                 onEditLedgerAccount={(id) => {
+                  sessionStorage.setItem('product_draft_state', JSON.stringify(form))
+                  onEditLedgerAccount?.(id)
                   const acc = ledgerAccounts.find((la) => la.id === id);
-                  router.push(`/dashboard/ledger-accounts/${id}/edit?default=${acc?.businessId === null}`)}}
+                  router.push(`/dashboard/ledger-accounts/${id}/edit?default=${acc?.businessId === null}`)
+                }
+                }
+
               />
               {validationErrors.ledgerAccountId && (
                 <p className="mt-1 text-xs text-red-600">

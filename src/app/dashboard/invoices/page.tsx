@@ -736,7 +736,7 @@ export default function InvoicesPage() {
                             { value: 'draft', label: "DRAFT" },
                             { value: 'outstanding', label: "OUTSTANDING" },
                             { value: 'paid', label: "PAID" },
-                            { value: 'credit', label: "CREDIT_NOTE/CREDITED" }
+                            { value: 'credit', label: "CREDIT NOTE/CREDITED" }
                         ].map((filter) => (
                             <button
                                 key={filter.value}

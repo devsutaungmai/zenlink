@@ -3,16 +3,17 @@
 import * as React from "react"
 import { Check, ChevronDown, X, Plus } from "lucide-react"
 import ProductDialog, { ProductFormType } from "./ProductDialog"
+import { useEffect } from "react"
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 interface VatCode {
-    name: string
-    rate: number
+  name: string
+  rate: number
 }
 interface BusinessVatCode {
-    vatCode: VatCode
+  vatCode: VatCode
 }
 
 export interface ProductOption {
@@ -21,13 +22,13 @@ export interface ProductOption {
   productNumber?: string | null
   salesPrice?: number
   discountPercentage?: number
-      ledgerAccount?: {
-        vatCode?: {
-            code: number
-            rate: number
-        },
-        businessVatCodes: BusinessVatCode[]
-    }
+  ledgerAccount?: {
+    vatCode?: {
+      code: number
+      rate: number
+    },
+    businessVatCodes: BusinessVatCode[]
+  }
 }
 
 interface ProductSelectComboboxProps {
@@ -36,11 +37,16 @@ interface ProductSelectComboboxProps {
   onChange: (productId: string) => void
   onProductCreated?: (product: ProductOption) => void        // called after new product saved
   onSaveNewProduct: (product: ProductFormType) => Promise<ProductOption>
-  onEdit?: (productId: string) => void 
+  onEditLedgerAccount?: (ledgerAccountId: string) => void
+  onEdit?: (productId: string) => void
   placeholder?: string
   emptyMessage?: string
   disabled?: boolean
   overviewMode?: boolean
+  lineIndex?: number
+  autoOpenProductDialog?: boolean
+  onProductDialogOpened?: () => void
+
 }
 
 // ---------------------------------------------------------------------------
@@ -53,11 +59,15 @@ export function ProductSelectCombobox({
   onChange,
   onProductCreated,
   onSaveNewProduct,
+  onEditLedgerAccount,
   onEdit,
   placeholder = "Select Product",
   emptyMessage = "No product found.",
   disabled = false,
-  overviewMode = false
+  overviewMode = false,
+  lineIndex,
+  autoOpenProductDialog,
+  onProductDialogOpened
 }: ProductSelectComboboxProps) {
   const [open, setOpen] = React.useState(false)
   const [inputValue, setInputValue] = React.useState("")
@@ -90,12 +100,19 @@ export function ProductSelectCombobox({
     )
   }, [uniqueProducts, inputValue])
 
-  React.useEffect(() => {
+  useEffect(() => {
+    if (autoOpenProductDialog) {
+      setProductDialogOpen(true)
+      onProductDialogOpened?.()
+    }
+  }, [autoOpenProductDialog])
+
+  useEffect(() => {
     setHighlightedIndex(0)
   }, [filteredProducts])
 
   // Close on outside click
-  React.useEffect(() => {
+  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setOpen(false)
@@ -127,68 +144,68 @@ export function ProductSelectCombobox({
   const handleInputFocus = () => setOpen(true)
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-  // ✅ F2 / ⌘+E → Edit product
-  if (e.key === "F2" || (e.metaKey && e.key.toLowerCase() === "e")) {
-    e.preventDefault()
-
-    let productToEdit: ProductOption | null = null
-
-    if (open) {
-      // 👉 If dropdown open → edit highlighted product
-      productToEdit = filteredProducts[highlightedIndex] || null
-    } else {
-      // 👉 If closed → edit selected product
-      productToEdit = selectedProduct
-    }
-
-    if (productToEdit?.id) {
-      onEdit?.(productToEdit.id)
-    }
-
-    return
-  }
-
-  // ✅ Open dropdown with arrows / enter
-  if (!open) {
-    if (["ArrowDown", "ArrowUp", "Enter"].includes(e.key)) {
-      setOpen(true)
+    // ✅ F2 / ⌘+E → Edit product
+    if (e.key === "F2" || (e.metaKey && e.key.toLowerCase() === "e")) {
       e.preventDefault()
-    }
-    return
-  }
 
-  // ✅ Navigation & selection
-  switch (e.key) {
-    case "ArrowDown":
-      e.preventDefault()
-      setHighlightedIndex((prev) =>
-        prev < filteredProducts.length - 1 ? prev + 1 : prev
-      )
-      break
+      let productToEdit: ProductOption | null = null
 
-    case "ArrowUp":
-      e.preventDefault()
-      setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : 0))
-      break
-
-    case "Enter":
-      e.preventDefault()
-      if (filteredProducts[highlightedIndex]) {
-        selectProduct(filteredProducts[highlightedIndex])
+      if (open) {
+        // 👉 If dropdown open → edit highlighted product
+        productToEdit = filteredProducts[highlightedIndex] || null
+      } else {
+        // 👉 If closed → edit selected product
+        productToEdit = selectedProduct
       }
-      break
 
-    case "Escape":
-      e.preventDefault()
-      setOpen(false)
-      setInputValue("")
-      break
+      if (productToEdit?.id) {
+        onEdit?.(productToEdit.id)
+      }
 
-    case "Tab":
-      setOpen(false)
-      break
+      return
+    }
+
+    // ✅ Open dropdown with arrows / enter
+    if (!open) {
+      if (["ArrowDown", "ArrowUp", "Enter"].includes(e.key)) {
+        setOpen(true)
+        e.preventDefault()
+      }
+      return
+    }
+
+    // ✅ Navigation & selection
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault()
+        setHighlightedIndex((prev) =>
+          prev < filteredProducts.length - 1 ? prev + 1 : prev
+        )
+        break
+
+      case "ArrowUp":
+        e.preventDefault()
+        setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : 0))
+        break
+
+      case "Enter":
+        e.preventDefault()
+        if (filteredProducts[highlightedIndex]) {
+          selectProduct(filteredProducts[highlightedIndex])
+        }
+        break
+
+      case "Escape":
+        e.preventDefault()
+        setOpen(false)
+        setInputValue("")
+        break
+
+      case "Tab":
+        setOpen(false)
+        break
+    }
   }
-}
 
   // Scroll highlighted item into view
   React.useEffect(() => {
@@ -217,39 +234,39 @@ export function ProductSelectCombobox({
   }
 
   React.useEffect(() => {
-  const handleGlobalKey = (e: KeyboardEvent) => {
-    if (e.key === "F2") {
-      e.preventDefault()
+    const handleGlobalKey = (e: KeyboardEvent) => {
+      if (e.key === "F2") {
+        e.preventDefault()
 
-      let productToEdit: ProductOption | null = null
+        let productToEdit: ProductOption | null = null
 
-      if (open) {
-        // 👉 If dropdown open → edit highlighted product
-        productToEdit = filteredProducts[highlightedIndex] || null
-      } else {
-        // 👉 If closed → edit selected product
-        productToEdit = selectedProduct
-      }
+        if (open) {
+          // 👉 If dropdown open → edit highlighted product
+          productToEdit = filteredProducts[highlightedIndex] || null
+        } else {
+          // 👉 If closed → edit selected product
+          productToEdit = selectedProduct
+        }
 
-      if (productToEdit?.id) {
-        onEdit?.(productToEdit.id)
+        if (productToEdit?.id) {
+          onEdit?.(productToEdit.id)
+        }
       }
     }
-  }
 
-  const el = containerRef.current
-  el?.addEventListener("keydown", handleGlobalKey)
+    const el = containerRef.current
+    el?.addEventListener("keydown", handleGlobalKey)
 
-  return () => {
-    el?.removeEventListener("keydown", handleGlobalKey)
-  }
-}, [
-  open,
-  selectedProduct,
-  filteredProducts,
-  highlightedIndex,
-  onEdit
-])
+    return () => {
+      el?.removeEventListener("keydown", handleGlobalKey)
+    }
+  }, [
+    open,
+    selectedProduct,
+    filteredProducts,
+    highlightedIndex,
+    onEdit
+  ])
 
   return (
     <>
@@ -373,6 +390,7 @@ export function ProductSelectCombobox({
           onOpenChange={setProductDialogOpen}
           loading={savingProduct}
           onSave={handleSaveNewProduct}
+          onEditLedgerAccount={onEditLedgerAccount}
         />
       )}
     </>

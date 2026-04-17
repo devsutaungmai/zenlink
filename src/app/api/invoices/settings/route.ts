@@ -74,7 +74,6 @@ export async function POST(req: NextRequest) {
             showContactPerson,
             showDeliveryAddress,
             showPaymentTerms,
-            showDepartment,
             showDiscount,
             showProject,
             showNote
@@ -85,7 +84,6 @@ export async function POST(req: NextRequest) {
             showContactPerson,
             showDeliveryAddress,
             showPaymentTerms,
-            showDepartment,
             showDiscount,
             showProject,
             showNote
@@ -109,7 +107,6 @@ export async function POST(req: NextRequest) {
                 showContactPerson,
                 showDeliveryAddress,
                 showPaymentTerms,
-                showDepartment,
                 showDiscount,
                 showProject,
                 showNote
@@ -119,7 +116,6 @@ export async function POST(req: NextRequest) {
                 showContactPerson,
                 showDeliveryAddress,
                 showPaymentTerms,
-                showDepartment,
                 showDiscount,
                 showProject,
                 showNote

@@ -72,11 +72,11 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     })
     const { settings, refetch } = useProductSettings();
     const [visibleFields, setVisibleFields] = useState({
-        showSalesPrice: true,
-        showCostPrice: true,
-        showDiscountPercentage: true,
-        showUnit: true,
-        showProductGroup: true,
+        showSalesPrice: false,
+        showCostPrice: false,
+        showDiscountPercentage: false,
+        showUnit: false,
+        showProductGroup: false,
     });
     const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
     const validationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
