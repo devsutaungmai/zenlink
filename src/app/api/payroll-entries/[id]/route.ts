@@ -228,6 +228,76 @@ export async function GET(
       })
     }
 
+    const attendanceShiftIds = attendances.map(a => a.shiftId).filter(Boolean) as string[]
+    const shiftOnlyRecords = await prisma.shift.findMany({
+      where: {
+        employeeId: payrollEntry.employeeId,
+        approved: true,
+        endTime: { not: null },
+        date: { gte: periodStart, lte: periodEnd },
+        ...(attendanceShiftIds.length > 0 ? { id: { notIn: attendanceShiftIds } } : {}),
+      },
+      select: {
+        id: true,
+        date: true,
+        startTime: true,
+        endTime: true,
+        breakStart: true,
+        breakEnd: true,
+        breakPaid: true,
+        wage: true,
+        shiftTypeConfig: {
+          select: {
+            id: true,
+            name: true,
+            payCalculationType: true,
+            payCalculationValue: true,
+          },
+        },
+      },
+      orderBy: { date: 'asc' },
+    })
+
+    for (const shift of shiftOnlyRecords) {
+      if (!shift.startTime || !shift.endTime) continue
+
+      const datePart = new Date(shift.date).toISOString().split('T')[0]
+      const parseShiftTime = (hhmm: string) => new Date(`${datePart}T${hhmm.length === 5 ? hhmm : `${hhmm}:00`}:00`)
+      const startDate = parseShiftTime(shift.startTime)
+      const endDate = parseShiftTime(shift.endTime)
+      if (endDate <= startDate) endDate.setDate(endDate.getDate() + 1)
+
+      let rawHours = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60)
+      let shiftBreakHours = 0
+      if (shift.breakStart && shift.breakEnd && !shift.breakPaid) {
+        shiftBreakHours = (new Date(shift.breakEnd).getTime() - new Date(shift.breakStart).getTime()) / (1000 * 60 * 60)
+      }
+      const payableHours = Math.max(0, rawHours - shiftBreakHours)
+      if (payableHours <= 0) continue
+
+      const shiftTypeName = shift.shiftTypeConfig?.name || 'Normal Shift'
+      const payCalculationType = (shift.shiftTypeConfig?.payCalculationType ?? 'BASE') as PayCalculationType
+      const payCalculationValueRaw = Number(shift.shiftTypeConfig?.payCalculationValue ?? 0)
+      const payCalculationValue = Number.isFinite(payCalculationValueRaw) ? payCalculationValueRaw : 0
+      const payCalculationLabel = buildPayCalculationLabel(payCalculationType, payCalculationValue)
+      const shiftBaseRate = shift.wage && shift.wage > 0 ? Number(shift.wage) : baseSalaryRate
+      const effectiveRate = calculateShiftTypeAdjustment(shiftBaseRate, shift.shiftTypeConfig || null)
+
+      attendanceRows.push({
+        date: datePart,
+        scheduledHours: rawHours,
+        payableHours,
+        breakHours: shiftBreakHours > 0 ? shiftBreakHours : 0,
+        shiftType: shiftTypeName,
+        payCalculationType,
+        payCalculationValue,
+        payCalculationLabel,
+        baseRate: shiftBaseRate,
+        effectiveRate,
+        rawEarned: payableHours * effectiveRate,
+      })
+    }
+
     const dayMap = new Map<string, {
       date: string
       scheduledHours: number

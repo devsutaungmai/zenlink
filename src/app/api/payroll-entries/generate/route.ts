@@ -114,12 +114,11 @@ export async function POST(request: NextRequest) {
         skippedEmployees.push({
           id: employee.id,
           name: `${employee.firstName} ${employee.lastName}`,
-          reason: 'No approved attendance records found'
+          reason: 'No approved attendance records or approved shifts found'
         })
         continue
       }
 
-      // Build shift details for pay rules engine
       const shiftDetails = attendanceCalc.attendanceDetails
         .filter(att => att.isApproved && att.punchOutTime)
         .map(att => ({
@@ -131,7 +130,6 @@ export async function POST(request: NextRequest) {
           breakPaid: false
         }))
 
-      // Use payRulesEngine (same as recalculate flow)
       const payCalc = await payRulesEngine.calculatePay({
         employeeId: employee.id,
         payrollPeriodId,
@@ -140,7 +138,6 @@ export async function POST(request: NextRequest) {
         shiftDetails
       })
 
-      // Check contract rules for overtime eligibility
       let isOvertimeEligible = true
       let overtimeExemptReason: string | null = null
 
@@ -161,7 +158,7 @@ export async function POST(request: NextRequest) {
         finalOvertimeHours = 0
       }
 
-      // --- Per-attendance pay calculation with shift type adjustments ---
+      // --- Per-attendance/shift pay calculation with shift type adjustments ---
       const approvedDetails = attendanceCalc.attendanceDetails
         .filter(att => att.isApproved && att.punchOutTime)
 
@@ -194,7 +191,6 @@ export async function POST(request: NextRequest) {
       const shiftTypeNotes: string[] = []
 
       for (const att of approvedDetails) {
-        // Determine this attendance's regular/overtime split using daily breakdown
         const dayInfo = dateOvertimeMap.get(att.date)
         let attRegularHours = att.duration
         let attOvertimeHours = 0
@@ -216,7 +212,6 @@ export async function POST(request: NextRequest) {
           ? shiftWage
           : payCalc.regularRate
 
-        // Apply shift type adjustment to the base rate
         const shiftTypeConfig = att.shift?.shiftTypeConfig || null
         const effectiveRegularRate = calculateShiftTypeAdjustment(baseRate, shiftTypeConfig as any)
         const effectiveOvertimeRate = effectiveRegularRate * overtimeMultiplier

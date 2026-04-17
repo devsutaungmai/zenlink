@@ -1,19 +1,14 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { 
+import {
   ChevronRightIcon,
-  Cog6ToothIcon,
   ShieldCheckIcon,
-  BellIcon,
-  UserCircleIcon,
-  KeyIcon,
   BuildingOfficeIcon,
   ClockIcon,
   UsersIcon,
-  RectangleGroupIcon
+  RectangleGroupIcon,
 } from '@heroicons/react/24/outline'
 import LaborLawSettings from '@/components/LaborLawSettings'
 import PunchClockProfiles from '@/components/PunchClockProfiles'
@@ -47,24 +42,22 @@ interface SettingSection {
   submenus?: SettingSubmenu[]
   disabled?: boolean
   href?: string
-  
 }
 
 export default function SettingsPage() {
-  const router = useRouter()
-  const [activeSection, setActiveSection] = useState<string>('profile')
-  const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set(['people']))
+  const [activeSection, setActiveSection] = useState<string>('labor-laws')
+  const [isDirty, setIsDirty] = useState(false)
   const { t } = useTranslation('settings')
-  const { hasPermission, loading: permissionsLoading } = usePermissions()
-  
+  const { hasPermission } = usePermissions()
+
   const canManageContractTemplates = hasPermission(PERMISSIONS.CONTRACT_TEMPLATES_MANAGE)
   const canManageLaborLaw = hasPermission(PERMISSIONS.SETTINGS_LABOR_LAW)
   const canManagePunchClock = hasPermission(PERMISSIONS.PUNCH_CLOCK_SETTINGS)
   const canManageBusiness = hasPermission(PERMISSIONS.SETTINGS_BUSINESS)
   const canManageShiftTypes = hasPermission(PERMISSIONS.SETTINGS_SHIFT_TYPES)
-  const canManagePeopleGeneral = hasPermission(PERMISSIONS.SETTINGS_PEOPLE_GENERAL)
-  const [isDirty, setIsDirty] = useState(false) 
-   const handleSectionChange = async (newSectionId: string) => {
+
+
+  const handleSectionChange = async (newSectionId: string) => {
     if (isDirty) {
       const result = await Swal.fire({
         title: t('common.confirm'),
@@ -74,27 +67,27 @@ export default function SettingsPage() {
         confirmButtonColor: '#31BCFF',
         cancelButtonColor: '#d33',
         confirmButtonText: 'Leave',
-        cancelButtonText: 'cancel',
+        cancelButtonText: 'Cancel',
       })
       if (!result.isConfirmed) return
       setIsDirty(false)
     }
     setActiveSection(newSectionId)
   }
-  
+
   const settingSections = useMemo((): SettingSection[] => {
     const sections: SettingSection[] = []
-    
+
     if (canManageLaborLaw) {
       sections.push({
         id: 'labor-laws',
         name: t('labor.title'),
         description: t('labor.description'),
         icon: ShieldCheckIcon,
-        component: LaborLawSettings
+        component: LaborLawSettings,
       })
     }
-    
+
     if (canManagePunchClock) {
       sections.push({
         id: 'punch-clock',
@@ -107,28 +100,18 @@ export default function SettingsPage() {
             id: 'punch-clock-access',
             name: t('punch_clock.menu.access.title'),
             description: t('punch_clock.menu.access.description'),
-            component: PunchClockAccessSettings
+            component: PunchClockAccessSettings,
           },
-          // {
-          //   id: 'punch-clock-general',
-          //   name: t('punch_clock.menu.general.title'),
-          //   description: t('punch_clock.menu.general.description')
-          // },
           {
             id: 'punch-clock-profiles',
             name: t('punch_clock.menu.profiles.title'),
             description: t('punch_clock.menu.profiles.description'),
-            component: PunchClockProfiles
+            component: PunchClockProfiles,
           },
-          // {
-          //   id: 'punch-clock-advance',
-          //   name: t('punch_clock.menu.advance.title'),
-          //   description: t('punch_clock.menu.advance.description')
-          // }
-        ]
+        ],
       })
     }
-    
+
     if (canManageContractTemplates) {
       sections.push({
         id: 'people',
@@ -141,268 +124,186 @@ export default function SettingsPage() {
             id: 'people-general',
             name: t('people.menu.general.title'),
             description: t('people.menu.general.description'),
-            component: PeopleGeneralSettings
+            component: PeopleGeneralSettings,
           },
           {
             id: 'people-labor-law-profiles',
             name: t('people.menu.labor_law_profiles.title'),
             description: t('people.menu.labor_law_profiles.description'),
-            component: LaborLawProfilesSettings
+            component: LaborLawProfilesSettings,
           },
           {
             id: 'people-contract-rules',
             name: t('people.menu.contract_rules.title') || 'Contract Rules',
-            description: t('people.menu.contract_rules.description') || 'Define contract types and employment conditions',
-            component: ContractRulesSettings
+            description: t('people.menu.contract_rules.description') || 'Define contract rules and policies',
+            component: ContractRulesSettings,
           },
           {
             id: 'people-contract-setup',
             name: t('people.menu.contract_setup.title'),
             description: t('people.menu.contract_setup.description'),
-            component: ContractTemplateForm
-          }
-        ]
+            component: ContractTemplateForm,
+          },
+        ],
       })
     }
-    
-    sections.push({
-      id: 'profile',
-      name: t('profile.menu.title'),
-      description: t('profile.menu.description'),
-      icon: UserCircleIcon,
-      href: '/dashboard/profile'
-    })
-    
+
+
     if (canManageBusiness) {
       sections.push({
         id: 'business',
         name: t('business_setting.menu.title'),
         description: t('business_setting.menu.description'),
         icon: BuildingOfficeIcon,
-        component: BusinessInfoSettings
+        component: BusinessInfoSettings,
       })
     }
-    
+
     if (canManageShiftTypes) {
       sections.push({
         id: 'shift-types',
         name: t('shift_types.menu.title'),
         description: t('shift_types.menu.description'),
         icon: RectangleGroupIcon,
-        component: ShiftTypeSettings
+        component: ShiftTypeSettings,
       })
     }
 
     sections.push({
-        id: 'invoice-settings',
-        name: 'Invoice Settings',
-        description: "Manage your invoice preferences",
-        icon: ShieldCheckIcon,
-        component: GeneralSetting
-      })
-    
+      id: 'invoice-settings',
+      name: 'Invoice Settings',
+      description: 'Manage your invoice preferences',
+      icon: ShieldCheckIcon,
+      component: GeneralSetting,
+    })
+
     return sections
   }, [t, canManageContractTemplates, canManageLaborLaw, canManagePunchClock, canManageBusiness, canManageShiftTypes])
 
-  const activeSettingSection = settingSections.find(section => {
-    if (section.id === activeSection) {
-      return true
-    }
+  const activeTopSection = settingSections.find((section) => {
+    if (section.id === activeSection) return true
     if (section.hasSubmenus && section.submenus) {
-      return section.submenus.some(submenu => submenu.id === activeSection)
+      return section.submenus.some((sub) => sub.id === activeSection)
     }
     return false
   })
 
-  const activeSubmenu = activeSettingSection?.hasSubmenus && activeSettingSection.submenus
-    ? activeSettingSection.submenus.find(submenu => submenu.id === activeSection)
+  const activeSubmenu = activeTopSection?.hasSubmenus && activeTopSection.submenus
+    ? activeTopSection.submenus.find((sub) => sub.id === activeSection)
     : null
-    
-  const ActiveComponent = activeSettingSection?.component || activeSubmenu?.component
 
-  const toggleMenuExpansion = (menuId: string) => {
-    const newExpanded = new Set(expandedMenus)
-    if (newExpanded.has(menuId)) {
-      newExpanded.delete(menuId)
+  const ActiveComponent = activeTopSection?.component || activeSubmenu?.component
+
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Page header */}
+      <div className="bg-white border-b border-gray-200 px-4 sm:px-8 pt-6 pb-0">
+        {/* Breadcrumb */}
+        <nav className="flex items-center space-x-2 text-sm text-gray-500 mb-3">
+          <Link href="/dashboard" className="hover:text-gray-700 transition-colors">Dashboard</Link>
+          <ChevronRightIcon className="h-4 w-4 text-gray-400" />
+          <span className="text-gray-900 font-medium">Settings</span>
+        </nav>
+
+        <h1 className="text-2xl font-bold text-gray-900 mb-1">Settings</h1>
+        <p className="text-sm text-gray-500 mb-4">Manage your application settings and preferences.</p>
+
+        {/* ── Horizontal Tab Bar ── */}
+        <div className="flex items-end space-x-1 overflow-x-auto scrollbar-hide -mb-px">
+          {settingSections.map((section) => {
+            const isActive = activeTopSection?.id === section.id
+            return (
+              <TabButton
+                key={section.id}
+                section={section}
+                isActive={isActive}
+                onSelect={handleSectionChange}
+              />
+            )
+          })}
+        </div>
+      </div>
+
+      {/* ── Sub-tab row (for sections with submenus) ── */}
+      {activeTopSection?.hasSubmenus && activeTopSection.submenus && (
+        <div className="bg-white border-b border-gray-200 px-4 sm:px-8">
+          <div className="flex items-end space-x-1 overflow-x-auto scrollbar-hide">
+            {activeTopSection.submenus.map((submenu) => (
+              <button
+                key={submenu.id}
+                onClick={() => handleSectionChange(submenu.id)}
+                className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                  activeSection === submenu.id
+                    ? 'border-[#31BCFF] text-[#31BCFF]'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                {submenu.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Content Area ── */}
+      <div className="px-4 sm:px-8 py-6">
+        {ActiveComponent ? (
+          <ActiveComponent onDirtyChange={setIsDirty} />
+        ) : (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-10 text-center max-w-lg mx-auto mt-8">
+            {activeTopSection?.icon && (
+              <activeTopSection.icon className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+            )}
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              {activeSubmenu
+                ? `${activeTopSection?.name} — ${activeSubmenu.name}`
+                : activeTopSection?.name || 'Profile Settings'}
+            </h3>
+            <p className="text-gray-500 text-sm mb-1">
+              {activeSubmenu ? activeSubmenu.description : activeTopSection?.description || 'Update personal information'}
+            </p>
+            <p className="text-gray-400 text-xs">
+              We&apos;re working on bringing you more configuration options.
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── Tab Button helper ──────────────────────────────────────────────
+function TabButton({
+  section,
+  isActive,
+  onSelect,
+}: {
+  section: SettingSection
+  isActive: boolean
+  onSelect: (id: string) => void
+}) {
+  const handleClick = () => {
+    if (section.href) {
+      window.location.href = section.href
+    } else if (section.hasSubmenus && section.submenus?.length) {
+      onSelect(section.submenus[0].id)
     } else {
-      newExpanded.add(menuId)
+      onSelect(section.id)
     }
-    setExpandedMenus(newExpanded)
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-4 sm:py-8">
-      <div className="px-4 sm:px-0">
-        {/* Header */}
-        <div className="mb-6 sm:mb-8">
-          <nav className="flex" aria-label="Breadcrumb">
-            <ol className="flex items-center space-x-2 sm:space-x-4">
-              <li>
-                <Link
-                  href="/dashboard"
-                  className="text-gray-400 hover:text-gray-500 transition-colors text-xs sm:text-sm"
-                >
-                  Dashboard
-                </Link>
-              </li>
-              <li>
-                <div className="flex items-center">
-                  <ChevronRightIcon className="flex-shrink-0 h-4 w-4 sm:h-5 sm:w-5 text-gray-300" />
-                  <span className="ml-2 sm:ml-4 text-xs sm:text-sm font-medium text-gray-500">Settings</span>
-                </div>
-              </li>
-            </ol>
-          </nav>
-          
-          <div className="mt-3 sm:mt-4">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Settings</h1>
-            <p className="mt-1.5 sm:mt-2 text-sm sm:text-base text-gray-600">
-              Manage your application settings and preferences.
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-8">
-          {/* Settings Navigation */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4">
-              <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Settings</h2>
-              <nav className="space-y-1.5 sm:space-y-2">
-                {settingSections.map((section) => (
-                  <div key={section.id}>
-                    {section.href ? (
-                      <Link
-                        href={section.href}
-                        className="flex items-center px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium text-gray-700 hover:text-[#31BCFF] hover:bg-blue-50/50 rounded-lg transition-all group"
-                      >
-                        <section.icon className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3 flex-shrink-0 text-gray-400 group-hover:text-[#31BCFF]" />
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">{section.name}</p>
-                          <p className="text-xs text-gray-500 truncate">{section.description}</p>
-                        </div>
-                        <ChevronRightIcon className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0 text-gray-400 group-hover:text-[#31BCFF]" />
-                      </Link>
-                    ) : section.hasSubmenus ? (
-                      <>
-                        <button
-                          onClick={() => toggleMenuExpansion(section.id)}
-                          className="w-full flex items-center px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium text-gray-700 hover:text-[#31BCFF] hover:bg-blue-50/50 rounded-lg transition-all group"
-                        >
-                          <section.icon className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3 flex-shrink-0 text-gray-400 group-hover:text-[#31BCFF]" />
-                          <div className="flex-1 text-left min-w-0">
-                            <p className="font-medium truncate">{section.name}</p>
-                            <p className="text-xs text-gray-500 truncate">{section.description}</p>
-                          </div>
-                          <ChevronRightIcon className={`h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0 text-gray-400 group-hover:text-[#31BCFF] transition-transform ${
-                            expandedMenus.has(section.id) ? 'rotate-90' : ''
-                          }`} />
-                        </button>
-                        {expandedMenus.has(section.id) && section.submenus && (
-                          <div className="ml-6 sm:ml-8 mt-1 sm:mt-2 space-y-1">
-                            {section.submenus.map((submenu) => (
-                              <button
-                                key={submenu.id}
-                                onClick={() => handleSectionChange(submenu.id)}
-                                className={`w-full flex items-start px-2 sm:px-3 py-2 text-xs sm:text-sm rounded-lg transition-all ${
-                                  activeSection === submenu.id
-                                    ? 'bg-[#31BCFF] text-white'
-                                    : 'text-gray-600 hover:text-[#31BCFF] hover:bg-blue-50/50'
-                                }`}
-                              >
-                                <div className="flex-1 text-left min-w-0">
-                                  <p className="font-medium truncate">{submenu.name}</p>
-                                  <p className={`text-xs truncate ${
-                                    activeSection === submenu.id ? 'text-blue-100' : 'text-gray-500'
-                                  }`}>
-                                    {submenu.description}
-                                  </p>
-                                </div>
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <button
-                        onClick={() => !section.disabled && handleSectionChange(section.id)}
-                        disabled={section.disabled}
-                        className={`w-full flex items-center px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium rounded-lg transition-all group ${
-                          activeSection === section.id
-                            ? 'bg-[#31BCFF] text-white'
-                            : section.disabled
-                            ? 'text-gray-400 cursor-not-allowed opacity-50'
-                            : 'text-gray-700 hover:text-[#31BCFF] hover:bg-blue-50/50'
-                        }`}
-                      >
-                        <section.icon className={`h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3 flex-shrink-0 ${
-                          activeSection === section.id
-                            ? 'text-white'
-                            : section.disabled
-                            ? 'text-gray-300'
-                            : 'text-gray-400 group-hover:text-[#31BCFF]'
-                        }`} />
-                        <div className="flex-1 text-left min-w-0">
-                          <p className="font-medium truncate">{section.name}</p>
-                          <p className={`text-xs truncate ${
-                            activeSection === section.id
-                              ? 'text-blue-100'
-                              : section.disabled
-                              ? 'text-gray-300'
-                              : 'text-gray-500'
-                          }`}>
-                            {section.description}
-                          </p>
-                        </div>
-                        {section.disabled && (
-                          <span className="text-xs bg-gray-100 text-gray-500 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full flex-shrink-0">
-                            Soon
-                          </span>
-                        )}
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </nav>
-            </div>
-          </div>
-
-          {/* Settings Content */}
-          <div className="lg:col-span-3">
-            {ActiveComponent ? (
-              <ActiveComponent onDirtyChange={setIsDirty} />
-            ) : (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sm:p-8 text-center">
-                <div className="flex items-center justify-center mb-3 sm:mb-4">
-                  {activeSettingSection?.icon && (
-                    <activeSettingSection.icon className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mr-2 sm:mr-3 flex-shrink-0" />
-                  )}
-                  {activeSubmenu && (
-                    <ClockIcon className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400 flex-shrink-0" />
-                  )}
-                </div>
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2 break-words">
-                  {activeSubmenu 
-                    ? `${activeSettingSection?.name} - ${activeSubmenu.name}`
-                    : activeSettingSection?.name || 'Settings Section'
-                  }
-                </h3>
-                <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4 break-words px-4">
-                  {activeSubmenu 
-                    ? activeSubmenu.description 
-                    : activeSettingSection?.description || 'This settings section is coming soon.'
-                  }
-                </p>
-                <p className="text-xs sm:text-sm text-gray-500">
-                  {activeSubmenu 
-                    ? t('punch_clock.general_setting.coming_soon')
-                    : 'We\'re working on bringing you more configuration options.'
-                  }
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
+    <button
+      onClick={handleClick}
+      className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+        isActive
+          ? 'border-[#31BCFF] text-[#31BCFF]'
+          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+      }`}
+    >
+      <section.icon className={`h-4 w-4 flex-shrink-0 ${isActive ? 'text-[#31BCFF]' : 'text-gray-400'}`} />
+      {section.name}
+    </button>
   )
 }

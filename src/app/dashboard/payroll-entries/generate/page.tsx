@@ -210,25 +210,8 @@ export default function GeneratePayrollEntriesPage() {
       if (response.ok) {
         await Swal.fire({
           title: t('generate.success_title'),
-          html: `
-            <div class="text-left">
-              <p><strong>✅ ${t('generate.created_entries')}:</strong> ${data.created} ${t('generate.payroll_entries')}</p>
-              <p><strong>⚠️ ${t('generate.skipped_employees')}:</strong> ${data.skipped} ${t('generate.employees_label')}</p>
-              ${data.skippedEmployees.length > 0 ? 
-                `<div class="mt-3">
-                  <p><strong>${t('generate.skipped_employees_label')}:</strong></p>
-                  <ul class="text-sm text-gray-600 mt-1">
-                    ${data.skippedEmployees.map((emp: any) => 
-                      `<li>• ${emp.name}: ${emp.reason}</li>`
-                    ).join('')}
-                  </ul>
-                </div>` : ''
-              }
-            </div>
-          `,
           icon: 'success',
           confirmButtonColor: '#31BCFF',
-          width: 600
         })
         
         router.push('/dashboard/payroll-entries')

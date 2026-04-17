@@ -19,6 +19,8 @@ interface AttendanceCalculationResult {
     punchOutTime: string | null
     duration: number
     isApproved: boolean
+    /** 'attendance' = came from a punch record; 'shift' = calculated from approved shift schedule */
+    source?: 'attendance' | 'shift'
     shift?: {
       id: string
       startTime: string
@@ -221,7 +223,25 @@ export class AttendanceBasedCalculator {
       })
     }
 
-    // Calculate overtime based on approved hours only
+    const excludeShiftIds = attendances.map(a => a.shiftId).filter(Boolean) as string[]
+    const excludeDates = new Set(
+      attendances
+        .filter(a => !!a.punchOutTime)
+        .map(a => new Date(a.punchInTime).toISOString().split('T')[0])
+    )
+    const shiftDetails = await this.calculateShiftBasedHours({
+      employeeId,
+      payrollPeriodId,
+      excludeShiftIds,
+      excludeDates
+    })
+
+    for (const sd of shiftDetails) {
+      totalHours += sd.duration
+      approvedHours += sd.duration
+      attendanceDetails.push(sd)
+    }
+
     const { regularHours, overtimeHours } = this.calculateOvertimeFromAttendance(
       attendanceDetails.filter(a => a.isApproved),
       employee
@@ -245,10 +265,114 @@ export class AttendanceBasedCalculator {
   }
 
   /**
+   * Calculate hours directly from approved shifts that have no punch records.
+   * Hours = endTime - startTime (minus unpaid break if set).
+   */
+  async calculateShiftBasedHours({
+    employeeId,
+    payrollPeriodId,
+    excludeShiftIds = [],
+    excludeDates = new Set()
+  }: {
+    employeeId: string
+    payrollPeriodId: string
+    excludeShiftIds?: string[]
+    excludeDates?: Set<string>
+  }): Promise<AttendanceCalculationResult['attendanceDetails']> {
+    const payrollPeriod = await prisma.payrollPeriod.findUnique({
+      where: { id: payrollPeriodId }
+    })
+    if (!payrollPeriod) return []
+
+    const periodStart = new Date(payrollPeriod.startDate)
+    const periodEnd = new Date(payrollPeriod.endDate)
+    periodEnd.setHours(23, 59, 59, 999)
+
+    const approvedShifts = await prisma.shift.findMany({
+      where: {
+        employeeId,
+        approved: true,
+        endTime: { not: null },
+        date: { gte: periodStart, lte: periodEnd },
+        ...(excludeShiftIds.length > 0 ? { id: { notIn: excludeShiftIds } } : {})
+      },
+      select: {
+        id: true,
+        date: true,
+        startTime: true,
+        endTime: true,
+        breakStart: true,
+        breakEnd: true,
+        breakPaid: true,
+        shiftTypeId: true,
+        wage: true,
+        shiftTypeConfig: {
+          select: {
+            id: true,
+            name: true,
+            payCalculationType: true,
+            payCalculationValue: true
+          }
+        }
+      }
+    })
+
+    const details: AttendanceCalculationResult['attendanceDetails'] = []
+
+    for (const shift of approvedShifts) {
+      if (!shift.startTime || !shift.endTime) continue
+
+      const datePart = new Date(shift.date).toISOString().split('T')[0]
+      if (excludeDates.has(datePart)) continue
+
+      const parseShiftTime = (hhmm: string) => new Date(`${datePart}T${hhmm.length === 5 ? hhmm : `${hhmm}:00`}:00`)
+      const startDate = parseShiftTime(shift.startTime)
+      const endDate = parseShiftTime(shift.endTime)
+
+      if (endDate <= startDate) endDate.setDate(endDate.getDate() + 1)
+
+      const rawHours = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60)
+      const breakHours = this.calculateBreakHours(shift.breakStart, shift.breakEnd, shift.breakPaid)
+      const durationHours = this.roundHours(Math.max(0, rawHours - breakHours))
+
+      if (durationHours <= 0) continue
+
+      details.push({
+        id: `shift-${shift.id}`,
+        date: datePart,
+        punchInTime: startDate.toISOString(),
+        punchOutTime: endDate.toISOString(),
+        duration: durationHours,
+        isApproved: true,
+        source: 'shift',
+        shift: {
+          id: shift.id,
+          startTime: shift.startTime,
+          endTime: shift.endTime,
+          breakStart: shift.breakStart ? shift.breakStart.toISOString() : null,
+          breakEnd: shift.breakEnd ? shift.breakEnd.toISOString() : null,
+          breakPaid: shift.breakPaid ?? false,
+          shiftTypeId: shift.shiftTypeId ?? null,
+          wage: shift.wage != null ? Number(shift.wage) : null,
+          shiftTypeConfig: shift.shiftTypeConfig ? {
+            id: shift.shiftTypeConfig.id,
+            name: shift.shiftTypeConfig.name,
+            payCalculationType: shift.shiftTypeConfig.payCalculationType as string,
+            payCalculationValue: shift.shiftTypeConfig.payCalculationValue
+              ? Number(shift.shiftTypeConfig.payCalculationValue)
+              : null
+          } : null
+        }
+      })
+    }
+
+    return details
+  }
+
+  /**
    * Calculate overtime based on attendance records
    */
   private calculateOvertimeFromAttendance(approvedAttendances: any[], employee: any) {
-    // Find overtime rule from pay rules
     const applicableRules = this.getApplicablePayRules(employee)
     const overtimeRule = applicableRules.find(r => r.rule.ruleType === 'OVERTIME')
     
@@ -256,7 +380,6 @@ export class AttendanceBasedCalculator {
     let totalOvertimeHours = 0
 
     if (!overtimeRule?.rule.overtimeRule) {
-      // No overtime rule - all approved hours are regular
       totalRegularHours = approvedAttendances.reduce((sum, att) => sum + att.duration, 0)
       return { regularHours: totalRegularHours, overtimeHours: 0 }
     }

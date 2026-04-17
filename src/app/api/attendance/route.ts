@@ -31,11 +31,11 @@ async function getAccessibleDepartmentIds(auth: any): Promise<string[] | null> {
         return userWithRole.assignedRole.departments.map(d => d.departmentId)
       }
     }
-    
+
     return null
   } else {
     const employee = auth.data as any
-    
+
     const employeeRoles = await prisma.employeeRole.findMany({
       where: { employeeId: employee.id },
       include: {
@@ -105,20 +105,20 @@ export async function POST(request: NextRequest) {
       })
 
       if (!profile) {
-        return NextResponse.json({ 
-          error: 'Invalid punch clock profile' 
+        return NextResponse.json({
+          error: 'Invalid punch clock profile'
         }, { status: 400 })
       }
 
       const profileDepartmentIds = profile.departments.map(d => d.departmentId)
       const employeeDepartmentIds = employee.departments.map(d => d.departmentId)
-      const hasMatchingDepartment = employeeDepartmentIds.some(deptId => 
+      const hasMatchingDepartment = employeeDepartmentIds.some(deptId =>
         profileDepartmentIds.includes(deptId)
       )
 
       if (profileDepartmentIds.length > 0 && !hasMatchingDepartment) {
-        return NextResponse.json({ 
-          error: 'Employee is not assigned to any department linked to this punch clock profile' 
+        return NextResponse.json({
+          error: 'Employee is not assigned to any department linked to this punch clock profile'
         }, { status: 403 })
       }
     }
@@ -135,14 +135,14 @@ export async function POST(request: NextRequest) {
       })
 
       if (!shift) {
-        return NextResponse.json({ 
-          error: 'Shift not found. It may have been deleted.' 
+        return NextResponse.json({
+          error: 'Shift not found. It may have been deleted.'
         }, { status: 400 })
       }
 
       if (shift.status === 'COMPLETED') {
-        return NextResponse.json({ 
-          error: 'This shift is already completed. Please select a scheduled shift.' 
+        return NextResponse.json({
+          error: 'This shift is already completed. Please select a scheduled shift.'
         }, { status: 400 })
       }
 
@@ -164,8 +164,8 @@ export async function POST(request: NextRequest) {
     })
 
     if (existingAttendance) {
-      return NextResponse.json({ 
-        error: 'Employee is already punched in. Please punch out first.' 
+      return NextResponse.json({
+        error: 'Employee is already punched in. Please punch out first.'
       }, { status: 400 })
     }
 
@@ -173,11 +173,18 @@ export async function POST(request: NextRequest) {
     if (!resolvedShiftId) {
       const primaryDepartmentId = employee.departmentId || employee.departments[0]?.departmentId || null
 
+      const toLocalHHMM = (d: Date) => {
+        const offsetMs = d.getTimezoneOffset() * 60 * 1000
+        const localMs = d.getTime() - offsetMs
+        const localDate = new Date(localMs)
+        return localDate.toISOString().substring(11, 16)
+      }
+
       const extraShift = await prisma.shift.create({
         data: {
           date: resolvedPunchInTime,
-          startTime: resolvedPunchInTime.toTimeString().split(' ')[0].substring(0, 5),
-          endTime: resolvedPunchOutTime ? resolvedPunchOutTime.toTimeString().split(' ')[0].substring(0, 5) : null,
+          startTime: toLocalHHMM(resolvedPunchInTime),
+          endTime: resolvedPunchOutTime ? toLocalHHMM(resolvedPunchOutTime) : null,
           employeeId,
           employeeGroupId: employee.employeeGroupId || null,
           departmentId: primaryDepartmentId,
@@ -230,16 +237,16 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       message: 'Punched in successfully',
-      attendance 
+      attendance
     })
 
   } catch (error) {
     captureApiError(error, { route: '/api/attendance', method: 'POST' })
     console.error('Error creating attendance:', error)
-    return NextResponse.json({ 
-      error: 'Failed to punch in' 
+    return NextResponse.json({
+      error: 'Failed to punch in'
     }, { status: 500 })
   }
 }
@@ -259,7 +266,7 @@ export async function GET(request: NextRequest) {
       businessId = (auth.data as any)?.businessId || null
     } else {
       const employeeData = auth.data as any
-      businessId = employeeData?.department?.businessId 
+      businessId = employeeData?.department?.businessId
         ?? employeeData?.employeeGroup?.businessId
         ?? null
       enforcedEmployeeId = employeeData?.id || null
@@ -314,8 +321,8 @@ export async function GET(request: NextRequest) {
         }
       } else if (accessibleDepartmentIds !== null && accessibleDepartmentIds.length === 0) {
         // User has role but no departments assigned - return empty
-        return NextResponse.json({ 
-          attendances: [], 
+        return NextResponse.json({
+          attendances: [],
           pagination: {
             total: 0,
             page: 1,
@@ -324,7 +331,7 @@ export async function GET(request: NextRequest) {
           }
         })
       }
-      
+
       // Apply specific employee filter if requested
       if (requestedEmployeeId) {
         if (whereClause.employee) {
@@ -369,8 +376,8 @@ export async function GET(request: NextRequest) {
                 contains: trimmedSearch,
                 mode: 'insensitive'
               },
-              ...(accessibleDepartmentIds !== null && accessibleDepartmentIds.length > 0 
-                ? { departmentId: { in: accessibleDepartmentIds } } 
+              ...(accessibleDepartmentIds !== null && accessibleDepartmentIds.length > 0
+                ? { departmentId: { in: accessibleDepartmentIds } }
                 : {})
             }
           }
@@ -382,8 +389,8 @@ export async function GET(request: NextRequest) {
                 contains: trimmedSearch,
                 mode: 'insensitive'
               },
-              ...(accessibleDepartmentIds !== null && accessibleDepartmentIds.length > 0 
-                ? { departmentId: { in: accessibleDepartmentIds } } 
+              ...(accessibleDepartmentIds !== null && accessibleDepartmentIds.length > 0
+                ? { departmentId: { in: accessibleDepartmentIds } }
                 : {})
             }
           }
@@ -395,8 +402,8 @@ export async function GET(request: NextRequest) {
                 contains: trimmedSearch,
                 mode: 'insensitive'
               },
-              ...(accessibleDepartmentIds !== null && accessibleDepartmentIds.length > 0 
-                ? { departmentId: { in: accessibleDepartmentIds } } 
+              ...(accessibleDepartmentIds !== null && accessibleDepartmentIds.length > 0
+                ? { departmentId: { in: accessibleDepartmentIds } }
                 : {})
             }
           }
@@ -412,8 +419,8 @@ export async function GET(request: NextRequest) {
                   }
                 }
               },
-              ...(accessibleDepartmentIds !== null && accessibleDepartmentIds.length > 0 
-                ? { departmentId: { in: accessibleDepartmentIds } } 
+              ...(accessibleDepartmentIds !== null && accessibleDepartmentIds.length > 0
+                ? { departmentId: { in: accessibleDepartmentIds } }
                 : {})
             }
           }
@@ -429,14 +436,14 @@ export async function GET(request: NextRequest) {
                   }
                 }
               },
-              ...(accessibleDepartmentIds !== null && accessibleDepartmentIds.length > 0 
-                ? { departmentId: { in: accessibleDepartmentIds } } 
+              ...(accessibleDepartmentIds !== null && accessibleDepartmentIds.length > 0
+                ? { departmentId: { in: accessibleDepartmentIds } }
                 : {})
             }
           }
         }
       ]
-      
+
       whereClause.OR = searchConditions
       // Remove standalone employee filter since it's now embedded in search conditions
       delete whereClause.employee
@@ -518,9 +525,9 @@ export async function GET(request: NextRequest) {
       },
       ...(isPaginated
         ? {
-            skip: (page - 1) * pageSize,
-            take: pageSize
-          }
+          skip: (page - 1) * pageSize,
+          take: pageSize
+        }
         : { take: limit || 5000 })
     })
 
@@ -552,8 +559,8 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     captureApiError(error, { route: '/api/attendance', method: 'GET' })
     console.error('Error fetching attendance:', error)
-    return NextResponse.json({ 
-      error: 'Failed to fetch attendance records' 
+    return NextResponse.json({
+      error: 'Failed to fetch attendance records'
     }, { status: 500 })
   }
 }
